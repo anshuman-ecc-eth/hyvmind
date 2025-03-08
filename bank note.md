@@ -1,0 +1,1 @@
+“bank note” means a bank note issued by the Bank, whether in physical or digital form, under section 22;
