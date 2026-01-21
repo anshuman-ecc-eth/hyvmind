@@ -1,0 +1,899 @@
+# Hyvmind   Hierarchical Knowledge Graph Application
+
+## Overview
+Hyvmind is a hierarchical knowledge management system that organizes information through a five-level node structure: Curation → Swarm → Location → Law Token → Interpretation Token. The application provides graph visualization and navigation capabilities for managing interconnected knowledge nodes with collaborative swarm membership functionality, universal read access, and irreversible upvote/downvote functionality with visibility controls.
+
+## Core Features
+
+### Hierarchical Node System
+- Five-level hierarchy: Curation (top level) → Swarm → Location → Law Token → Interpretation Token (bottom level)
+- Each node type has specific properties and relationships to other nodes
+- All nodes are visible to all authenticated users (universal read permissions)
+- Nodes can be created, viewed, and navigated through the hierarchy (except Law Tokens which are auto-generated)
+- Parent-child relationships are maintained between adjacent hierarchy levels
+- Interpretation Tokens are associated with Law Tokens through customizable "From" relationship types and can connect to any node type through customizable "To" relationship types
+
+### Global Postfix-Based Swarm Naming System
+- **Global Unique Swarm Naming**: The backend `createSwarm` function implements global postfix-based naming where each unique base swarm name automatically appends a serial suffix (`_1`, `_2`, `_3`, etc.) to ensure all swarms have unique IDs across the entire system
+- **Cross-Curation Naming**: Swarm naming operates globally across all curations, meaning two swarms with the same base name will receive incremented suffixes even if they are in different curations
+- **Automatic Suffix Generation**: The system automatically calculates the next available suffix number by checking all existing swarms globally for name conflicts, regardless of their parent curation
+- **Preserved Auto-Upvote Logic**: The current automatic creator upvote functionality for Swarms remains unchanged
+- **Maintained Member Permissions**: Existing Swarm member permissions and access control behavior continues to function as before
+- **No Existing Swarm Disruption**: Existing swarms remain unaffected and are not delinked or merged when identical names appear in different curations
+
+### Enhanced Swarm Display with Parent Curation Context
+- **TreeView Curation Context Display**: Each Swarm in the TreeView displays its parent Curation name next to the Swarm name (including the suffix) in a small, theme-consistent label format
+- **OntologiesView Curation Context Display**: Each Swarm in the OntologiesView displays its parent Curation name or ID next to the Swarm name (including the suffix) with minimal monochrome styling
+- **Distinct Node Visualization**: Graph and hierarchy rendering logic correctly displays distinct nodes for Swarms with suffixed names under different Curations
+- **Theme-Consistent Labeling**: Parent Curation labels use monochrome styling consistent with the app's minimal aesthetic with appropriate contrast and spacing
+
+### Core Ontology with SWRL Rules
+- **Formal Ontological Model**: The system implements a core ontology that formally defines the hierarchical knowledge structure and relationships between all node types
+- **SWRL Rule Integration**: The ontology includes Semantic Web Rule Language (SWRL) rules that govern system behavior and data relationships
+- **Custom Attribute Inheritance Rule**: A new SWRL rule formally expresses inheritance of custom attributes across hierarchical relationships:
+  - **Rule Definition**: `Node(?child) ^ belongsTo(?child, ?parent) ^ hasCustomAttribute(?parent, ?attr) → hasCustomAttribute(?child, ?attr)`
+  - **Rule Purpose**: Ensures that all child nodes in the system (Swarm, Location, LawToken, InterpretationToken, etc.) automatically inherit their parent's custom attributes in the ontological model
+  - **Hierarchical Application**: The rule applies across all levels of the hierarchy, enabling attribute inheritance from Curations to Swarms, Swarms to Locations, Locations to Law Tokens, and Law Tokens to Interpretation Tokens
+- **Ontological Consistency**: The custom attribute inheritance rule maintains consistency with the existing Core Ontology structure and style, integrating seamlessly with other ontological definitions and rules
+- **Formal Knowledge Representation**: The ontology provides a formal foundation for the knowledge graph structure, enabling reasoning and inference capabilities over the hierarchical data
+
+### BUZZ Points System
+- **Internal Point System**: BUZZ Points serve as Hyvmind's internal reward and reputation system for user contributions
+- **Point Earning Rules**:
+  - **Law Token Creation**: Each creator earns 3 BUZZ for every Law Token created
+  - **Interpretation Token Creation**: Each creator earns 5 BUZZ for every Interpretation Token created
+  - **Law Token Upvotes**: Each creator gains 1 BUZZ whenever one of their Law Tokens is upvoted
+  - **Interpretation Token Upvotes**: Each creator gains 2 BUZZ whenever one of their Interpretation Tokens is upvoted
+- **Point Loss Rules**:
+  - **Law Token Downvotes**: Each creator loses 1 BUZZ whenever one of their Law Tokens is downvoted
+  - **Interpretation Token Downvotes**: Each creator loses 2 BUZZ whenever one of their Interpretation Tokens is downvoted
+- **Score Storage**: BUZZ scores are stored per user by principal ID in the backend and can be negative values
+- **Automatic Updates**: BUZZ balances are automatically updated when relevant backend events occur (node creation, upvotes, downvotes)
+- **BUZZ Leaderboard**: A ranked list of users ordered by their BUZZ total in descending order, displaying each user's profile name and principal ID
+- **Dynamic Refresh**: The leaderboard refreshes dynamically to reflect current BUZZ standings
+
+### Enhanced Node Creation Interface with Current Path Display
+- **Current Path Display**: The CreateNodeDialog component displays a "Current Path" section above the name/title input field showing the full parent hierarchy for the node being created
+- **Path Format**: The path displays parent node names (not IDs) connected with simple arrows (→), for example: "Indian Arbitration Law → Key Definitions → Section 123"
+- **Automatic Path Fetching**: The system automatically retrieves parent node names from React state/context which already holds selected parent node information
+- **Minimal Path Styling**: The current path element uses monochrome styling consistent with the app's theme-aware design, positioned clearly above the name/title input field
+- **Enhanced Curation Creation**: Interface includes title input field and a fixed "Jurisdiction" attribute with a greyed-out key field labeled "Jurisdiction" and a dropdown containing ISO 3166-1 alpha-3 country codes with "IND" as the default selection, description field removed entirely
+- **Swarm Creation**: Interface includes title and comma-separated tags input field for discovery support (with no placeholder text, keeping the field blank by default), description field removed
+- **Location Creation**: Interface includes title, content, and dynamic custom attributes functionality allowing users to add multiple key-value pairs via "+" button for appending new attribute rows
+- **Enhanced Interpretation Token Creation**: Comprehensive interface with the following fields:
+  - **Title**: Standard title input field
+  - **From Law Token**: Selection dropdown for choosing the parent law token (renamed from "Parent From Law Token")
+  - **From Relationship Type**: Input field for defining the relationship type to the law token (renamed from "Relationship Type")
+  - **To Node**: Selection dropdown allowing users to pick any node (of any type) from swarms they are members of
+  - **To Relationship Type**: Mandatory input field for defining the relationship type to the selected "To Node"
+  - **Context**: Text area for detailed description (renamed from "Description")
+  - **Attributes**: Dynamic custom attributes functionality identical to Location creation, allowing users to add multiple key-value pairs via "+" button for custom metadata
+- **Descriptive Helper Text**: Each node type includes contextual helper text to guide users:
+  - **Curation**: "A curation is an area of law, e.g. Indian Arbitration Law, UK Banking Law etc."
+  - **Swarm**: "A swarm is a research topic, a container for annotations and a collaborative space, all rolled into one. For example: key definitions, important caselaws, rights and duties etc."
+  - **Location**: Two pieces of descriptive text:
+    - "Each location points to a particular chunk of positive law. For example: sec 123 of act ABC, para 456 of case XYZ."
+    - "Wrap the positive law text in curly brackets to generate specific tokens. For example: {appropriate authority}{means}{the State Government}{or}.."
+- Helper text is positioned below the title input or as contextual help boxes with minimal monochrome styling consistent with the app's theme
+- All creation interfaces maintain the app's minimal monochrome aesthetic with gold/yellow hover accents and consistent field spacing
+
+### Universal Read Access with Restricted Write Permissions
+- All node types (Curations, Swarms, Locations, Law Tokens, Interpretation Tokens) are visible to every authenticated user
+- Any authenticated user can create Swarms under any Curation
+- Only Swarm creators and approved members can create Locations within a Swarm
+- Only Swarm creators and approved members can create Interpretation Tokens within a Swarm's hierarchy
+- Law Token creation remains automatic through location content parsing and follows the same access control as Locations
+- Access control validation occurs only for write operations, not read operations
+
+### Automatic Creator Upvote and Enhanced Voting System with Global Shared State (Excluding Curations)
+- **Automatic Creator Upvote**: Every node except Curations is automatically upvoted by its creator upon creation, providing an initial positive vote
+- **Irreversible Upvote/Downvote System**: 
+  - **Swarm Voting**: Any authenticated user can upvote or downvote any Swarm once, irreversibly
+  - **Member-Only Voting**: Only Swarm creators and approved members can upvote or downvote Locations, Law Tokens, and Interpretation Tokens within that specific swarm, also irreversibly
+  - **Curation Voting Exclusion**: Curation nodes cannot be voted on by any users - no upvote or downvote functionality is available for top-level Curation nodes
+  - **Vote Persistence**: All votes are permanently stored and cannot be changed or removed once cast
+  - **Vote Count Display**: Upvote and downvote counts are displayed publicly next to each node in TreeView only (excluding Curations which show no vote counts)
+  - **Vote Validation**: Backend validates voting permissions based on user authentication and swarm membership status
+  - **One Vote Per User Per Node**: Each user can cast only one vote (either upvote or downvote) per node, enforced through user-node vote tracking
+  - **Interactive Voting Interface**: Upvote/downvote buttons are fully functional and interactive in TreeView only for all node types except Curations, allowing authenticated users to vote directly from the tree interface
+- **Global Shared Voting State**: 
+  - **Shared Vote Counts**: Cumulative vote counts are stored in a shared backend map accessible to all users through the existing `voteDataMap` configuration (excluding Curations)
+  - **Real-time Vote Synchronization**: When any user performs an upvote or downvote, these changes are immediately reflected in subsequent `getVoteData()` queries for all users
+  - **Automatic Frontend Refresh**: The frontend automatically refreshes voting counts and button states for all users after any successful vote, ensuring proper synchronization and visible shared voting state
+  - **Global State Updates**: Vote count changes made by any user are instantly visible to all other users without manual refresh
+- **Enhanced Button State Management**: 
+  - **For Non-Creators**: Both upvote and downvote buttons remain available until a vote is cast, then both buttons become permanently greyed out and disabled after the single irreversible vote
+  - **Correct Node ID References**: Voting buttons correctly reference node IDs from the backend to prevent "node not found" errors
+  - **Visual State Indicators**: Buttons show clear visual states for available, voted, and disabled conditions with theme-appropriate styling
+  - **Curation Exclusion**: No voting buttons are displayed for Curation nodes in any interface
+
+### Node Visibility Control Based on Voting with Fixed Filtering Logic (Excluding Curations)
+- **GraphView Filtering**: Nodes with strictly more downvotes than upvotes are automatically hidden from the graph visualization (Curations are always visible as they cannot be voted on)
+- **Hidden Node Exclusion**: Filtered nodes are completely excluded from the GraphView rendering and force simulation updates
+- **TreeView Discarded Section with Fixed Logic**: A collapsed "Discarded" section appears at the bottom of TreeView containing only nodes with strictly more downvotes than upvotes, organized by node type (Curations never appear in this section)
+- **Equal Vote Handling**: Nodes with equal upvotes and downvotes remain in the main tree and visible in the graph
+- **Positive Vote Handling**: Nodes with more upvotes than downvotes remain in the main tree and visible in the graph
+- **Dynamic Restoration**: When a node's upvotes equal or exceed downvotes, it automatically moves back to its original place in the main hierarchy and becomes visible in GraphView
+- **Real-time Updates**: All visibility changes update automatically using React Query's refetch mechanism without manual page refresh
+- **Synchronized Filtering**: The filtering logic waits for global vote data synchronization to complete before performing comparisons to avoid misclassification during load or refresh
+
+### Location Version Control and Deduplication
+- **Automatic Version Control**: When creating a new location in a swarm, if another location with the same name/title already exists in that swarm:
+  - The new location is automatically renamed to `"originalName (vX)"`, where `X` is the next version number (`2`, `3`, etc.)
+  - A custom attribute `{ key = "version"; value = "X" }` is automatically added or updated for the new location
+  - The new location maintains its own independent law token sequence and relations, separate from existing locations with similar names
+- **Version Number Calculation**: The system calculates the next available version number by checking all existing locations in the same swarm for name conflicts
+- **Independent Law Token Relations**: Versioned locations generate their own law tokens through content parsing without merging or reusing law tokens from other versions
+- **Frontend Display**: Updated location names with version suffixes and version attributes are properly displayed in both GraphView and TreeView
+
+### Swarm Membership System with Enhanced Profile Display
+- Collaborative access control for Swarms through membership requests and approvals
+- Users can request to join existing Swarms created by other users
+- Swarm creators can approve or manage pending membership requests
+- Only Swarm creators and approved members can create Locations within a Swarm
+- Membership status tracking with pending and approved states
+- **Enhanced Membership Management Interface**: Visual membership management interface for Swarm creators showing both pending and approved requests with enhanced profile information display:
+  - **Profile Name Display**: Each membership request displays the requester's profile name alongside their principal ID when available from user profile data
+  - **Fallback Display**: When profile name is not available, displays only the principal ID with appropriate fallback handling
+  - **Enhanced Request Information**: Membership requests show both profile name and principal ID for comprehensive requester identification
+- Real-time updates when new join requests are submitted
+- Swarm creators can view all membership requests (pending and approved) for their swarms through dedicated query functions
+- Only swarm creators have access to view membership requests for their own swarms
+- Robust Principal conversion handling in all membership operations with comprehensive error handling and type validation
+- All frontend components handling membership approvals must convert any serialized principal values into valid Motoko Principal objects using Principal.fromText()
+- Type-checking logic ensures invalid or missing principals display user-friendly error messages instead of backend failures
+- Consistent Principal handling across all membership-related operations for reliable functionality with multiple users
+
+### User Profile Management System
+- **Profile Data Storage**: User profiles are stored in the backend with profile name and social URL linked to principal ID
+- **Profile Creation and Updates**: Users can create and modify their profile information including:
+  - **Profile Name**: Customizable display name associated with their principal ID
+  - **Social URL**: Optional social media or website link
+- **Profile Settings Modal**: Accessible through the hamburger menu, allowing users to edit their profile information
+- **Profile Integration**: Profile names are displayed throughout the application where user identification is needed (membership requests, leaderboards, etc.)
+- **Fallback Display**: When profile name is not available, the system displays the principal ID with appropriate fallback handling
+
+### Deterministic Node ID Generation
+- All five node types (Curation, Swarm, Location, Law Token, Interpretation Token) use unique IDs that are deterministically generated
+- Node IDs are created by hashing a combination of the caller's principal and the node's name/title using secure hash-based functions
+- The ID generation ensures consistency and prevents collisions while maintaining deterministic behavior
+- The same user creating a node with the same name will always generate the same ID
+- **Version-Aware ID Generation**: For versioned locations, the ID generation uses the final versioned name (e.g., "originalName (v2)") to ensure unique IDs for each version
+- **Suffixed Swarm ID Generation**: For swarms with global postfix naming, the ID generation uses the final suffixed name (e.g., "baseName_2") to ensure unique IDs for each swarm
+
+### Robust Automatic Law Token Generation with Enhanced Error Handling and Crash Prevention
+- Law Tokens are automatically extracted from location content when curly-bracketed sequences are detected (e.g., `{1}`, `{2}`, `{3}`)
+- **Enhanced Law Token Parsing Logic with Comprehensive Error Handling and Crash Prevention**: The system uses a robust regular expression-based approach to parse law tokens from location content with comprehensive error handling and defensive programming:
+  - Splits location content by the pattern `{...}` using regular expressions rather than simple character splitting
+  - Trims all whitespace from inside each bracket (e.g., `{ 1 }` → `1`)
+  - Ignores empty or malformed brackets completely without causing runtime traps
+  - Only creates or links law tokens for non-empty, cleaned labels
+  - Handles arbitrary spacing, newlines, and whitespace variations correctly
+  - **Comprehensive Error Handling**: Implements robust error handling to skip malformed or duplicate tokens instead of trapping
+  - **Safe Null Handling**: Prevents failed null dereferences through proper null checking and safe unwrapping
+  - **Edge Case Protection**: Handles edge cases like empty content, malformed brackets, and duplicate token labels gracefully
+  - **Defensive Programming**: All token parsing operations are wrapped in try-catch blocks or equivalent error handling mechanisms to prevent crashes
+  - **Graceful Degradation**: When token parsing encounters errors, the location creation process continues successfully without law tokens rather than failing completely
+  - **Error Recovery**: Failed token parsing operations are logged but do not interrupt the overall location creation workflow
+- Each detected sequence automatically creates a child Law Token node under that location with deterministically generated IDs
+- Manual law token creation is disabled - law tokens are only generated through location content parsing
+- When location content is updated, existing law tokens are replaced with newly extracted law tokens
+- **Shared Law Token Relationships**: When an existing law token is reused by a new location, the system adds the new relation while preserving all existing relations
+- **Location-Law Token Relationship Storage**: Explicit storage of location-law token pairs in a dedicated map to track which locations link to which law tokens without overwriting prior relationships
+- During law token parsing, if a law token already exists in the same swarm, only the new location's ID is appended to that law token's relation list
+- Creating or editing locations never deletes existing location-law token links, maintaining shared connections across locations
+- **Swarm-Scoped Deduplication**: Maintains existing logic where repeated labels within the same swarm reuse existing law tokens and only add new location-law token relations
+- **Independent Law Token Generation for Versioned Locations**: Each versioned location generates its own law tokens independently, without merging or reusing law tokens from other versions of the same location
+- **Crash-Resistant Location Creation**: The backend `createLocation` function includes comprehensive error handling and defensive programming to ensure the location creation process completes successfully even when law token parsing encounters any type of error, malformed input, or edge case, with proper error recovery and graceful degradation
+
+### Original Law Token Sequence Display
+- **Full Law Token Sequence Storage**: The backend stores the complete original bracketed law token sequence from each location's content (e.g., `{concept}{definition}{example}`) as it was entered by the user
+- **TreeView Law Token Sequence Display**: In TreeView, the full original law token sequence appears below or alongside each location title, styled monochromatically with minimal spacing consistent with the app's minimal theme
+- **GraphView Law Token Sequence Display**: In GraphView, when a location node is selected or hovered, the same original law token sequence is displayed via tooltip, label, or description area, matching the theme with dark gold/yellow hover highlights
+- **Preserved Interactivity**: All existing graph interactivity, panning, dimming, and slider controls are maintained while integrating this new display cleanly into the interface
+- **Consistent Styling**: Law token sequence display follows the app's monochrome design philosophy with accent colors used only for interactive states
+
+### Enhanced Interpretation Token Management with Bidirectional Relationships
+- Interpretation Tokens can be manually created with comprehensive relationship definitions
+- Each Interpretation Token includes:
+  - **From Law Token**: Reference to the parent law token with customizable "From" relationship type
+  - **To Node**: Reference to any node (of any type) from swarms the user is a member of with customizable "To" relationship type
+  - **Context**: Detailed description of the interpretation
+  - **Custom Attributes**: Key-value pairs for additional metadata, identical to Location attributes functionality
+- **Bidirectional Relationship System**: Interpretation Tokens maintain both "From" relationships to Law Tokens and "To" relationships to any other nodes, with both directions properly stored and visualized in the graph
+- **Complete Relationship Storage**: The backend stores both incoming connections (from law tokens) and outgoing connections (to target nodes) for each Interpretation Token
+- **Graph Visualization of Both Directions**: The graph displays both incoming edges from law tokens and outgoing edges to target nodes for each Interpretation Token
+- **Side Panel Connection Counts**: The side panel "Connections" count correctly shows both "in" and "out" values reflecting all bidirectional relationships
+- Access control for creating Interpretation Tokens follows the same pattern as Location creation (Swarm creator or approved member only)
+- **Node Selection Scope**: "To Node" selection is limited to nodes from swarms where the user has membership (creator or approved member)
+
+### Tree Data Export Functionality with Automatic Data Refresh
+- **Export Functionality**: Export button with minimal down arrow icon in the Tree tab that allows users to download the complete Tree data in JSON format
+- **JSON Format**: Complete hierarchical tree data exported in structured JSON format preserving all node relationships, attributes, and metadata
+- **File Handling**: Standard browser file download for export with proper JSON validation
+- **Minimal Styling**: Export button follows the app's minimal monochrome theme with subtle down arrow icon and accent colors only on hover states
+- **Seamless Integration**: Button integrates seamlessly with the existing scrollable TreeView pane without disrupting the current layout or functionality
+
+### Data Reset Functionality
+- Administrative capability to reset all persistent backend data to empty states
+- Clears all stored nodes, relationships, membership data, user profiles, voting data, and BUZZ scores
+- Restores the system to a blank initial state for fresh starts or testing purposes
+- **Frontend Data Reset Interface**: User interface component that allows invoking the backend's `resetAllData` method
+- Confirmation dialog to prevent accidental data loss
+- Visual feedback during the reset process
+- Automatic refresh or redirect after successful data reset to reflect the clean state
+- Error handling for failed reset operations
+
+### Improved Admin Access Control System with Universal Initialization
+- **Universal Access Control Initialization**: The `initializeAccessControl` function executes successfully for all users, including when the admin limit has already been reached, ensuring proper access initialization and preventing "actor not available" errors
+- **Preserved Admin Limit Enforcement**: The system maintains the maximum limit of 2 administrators with existing admin principals preserved and their status unchanged
+- **No New Admin Assignment**: New users are not assigned admin roles during initialization unless explicitly designated by existing admins through separate admin assignment processes
+- **Profile Initialization Support**: All users can create profiles and access the app without permission errors or initialization failures
+- **Maintained Admin Functionality**: Existing admins continue to have access to all current admin functions
+- **Hidden Admin Interface**: All admin-specific UI elements remain completely hidden from all users, including admins, ensuring equal treatment in the visible interface while preserving backend admin functionality
+
+### Read-Only REST API
+- **Public REST API Endpoints**: The backend exposes read-only HTTP endpoints under `/api/` for public access
+- **API Endpoints**:
+  - `/api/graph` → returns complete graph data including all curations, swarms, locations, lawTokens, interpretationTokens, and edges
+  - `/api/curations` → returns all curations
+  - `/api/swarms?curationId={id}` → returns swarms filtered by curation ID
+  - `/api/locations?swarmId={id}` → returns locations filtered by swarm ID
+  - `/api/lawTokens?locationId={id}` → returns law tokens filtered by location ID
+  - `/api/interpretationTokens?lawTokenId={id}` → returns interpretation tokens filtered by law token ID
+- **JSON Response Format**: All endpoints return JSON objects with proper content-type headers
+- **CORS Headers**: All API responses include `Access-Control-Allow-Origin: *` for public cross-origin access
+- **Enhanced Metadata**: API responses include embedded metadata for Law Tokens, Locations, and Interpretation Tokens:
+  - Creator information with principal and username
+  - Approver information where applicable
+  - Timestamps for creation and modification
+- **Read-Only Restriction**: Only GET requests are supported - no POST, PUT, DELETE, or other write operations are allowed
+- **Public Access**: API endpoints are accessible without authentication for public read-only access
+
+### Enhanced Custom Attribute Search System
+- **Search Interface**: A search modal accessible through a magnifying glass icon button in the header, positioned between the Create Node and Theme Toggle buttons
+- **Enhanced Search Fields**: 
+  - **Keys**: Auto-complete dropdown listing all existing custom attribute keys from backend nodes (Locations and Interpretation Tokens)
+  - **Values**: Auto-complete dropdown showing all available attribute values based on the selected key, ensuring users can only pick from existing keys and values rather than entering free text
+- **Search Results**: Display matching nodes showing name/title, node type, and parent context in a scrollable list with clickable results
+- **Backend Search Query**: Backend function to search all node types and filter nodes matching the specified key-value pair
+- **Enhanced Backend Support**: Backend provides query functions to retrieve all available attribute values for a given key to populate the Values dropdown
+- **Search Modal Styling**: Modal follows the app's minimal monochrome theme with consistent typography and styling
+- **Icon-Only Button**: Search button displays only a magnifying glass icon with "Search" tooltip on hover
+
+### Authentication
+- Internet Identity integration for user authentication
+- User sessions are maintained across the application
+
+### Graph Visualization with Cytoscape.js, Manual Refresh Control, Collapsible Control Panels, and Visualization Control Panel
+- Interactive graph visualization using Cytoscape.js for enhanced performance and stability
+- Visual representation of all nodes and relationships across the complete hierarchy including Interpretation Tokens with bidirectional relationships
+- **Cytoscape.js Implementation**: Complete replacement of D3.js with Cytoscape.js for graph rendering:
+  - **Internal Caching**: Utilizes Cytoscape's built-in caching mechanisms to reduce unnecessary re-renders
+  - **Incremental Updates**: Leverages Cytoscape's incremental update features for efficient data changes
+  - **Performance Optimization**: GPU-accelerated rendering with smooth physics-based interactions
+  - **Stable Layout Algorithms**: Uses Cytoscape's layout engines for consistent node positioning
+  - **Disabled Physics Forces**: Physics-based forces are disabled to make the graph load quickly and smoothly, preserving node placement and interactions like pan/zoom but without force-driven animations or jitter
+- **Manual Data Refresh**: Graph View includes a manual "Refresh" button that fetches graph data from the backend only when pressed by the user
+- **Disabled Automatic Refetching**: All automatic and periodic refetching of graph data is disabled, including React Query polling, auto refetch on window focus, and timed effect triggers
+- **Cache-First Loading**: Graph View uses cached data by default and refreshes only through manual button click
+- **Vote-Based Node Filtering with Fixed Logic**: Nodes with strictly more downvotes than upvotes are automatically hidden from the graph visualization and excluded from rendering updates (Curations are always visible as they cannot be voted on)
+- **Enhanced Canvas Navigation**: Smooth panning and zooming functionality with optimized performance
+- **Non-Draggable Nodes**: Individual nodes cannot be manually dragged or repositioned to maintain consistent layout
+- **Improved Edge Visibility**: Enhanced edge opacity and stroke color contrast optimized for both light and dark themes to improve relationship visibility
+- **Node Focus Interaction**: Click-to-focus behavior where clicking a node highlights only the selected node and its direct relationships, with background click to reset focus
+- **Node Type Filtering**: Interactive filter toggles in the legend for each node type (Curation, Swarm, Location, Law Token, Interpretation Token) allowing users to show or hide specific node types dynamically
+- **Dynamic Filter Updates**: Filtered-out nodes and their associated edges are hidden from view, with smooth layout updates when toggling filters without reloading the entire graph
+- **Active Filter Indicators**: Filter toggles use accent colors (yellow in dark mode, dark gold in light mode) to indicate active states while maintaining the minimal monochrome theme
+- **Distinct Node Color Scheme**: Nodes are displayed with different visual styles based on their type, using a specific color palette that adapts to the current theme:
+  - **Light mode (on white background):**
+    - Curations: `#D32F2F` (Deep red)
+    - Swarms: `#1976D2` (Strong blue)
+    - Locations: `#388E3C` (Forest green)
+    - Law Tokens: `#7B1FA2` (Deep purple)
+    - Interpretation Tokens: `#F57C00` (Dark orange)
+  - **Dark mode (on dark background):**
+    - Curations: `#FF7043` (Light coral/orange)
+    - Swarms: `#42A5F5` (Light blue)
+    - Locations: `#66BB6A` (Light green)
+    - Law Tokens: `#BA68C8` (Light purple)
+    - Interpretation Tokens: `#FFB74D` (Light amber)
+- Color mapping is consistent across the graph's nodes and legends
+- Interactive navigation between connected nodes
+- **Enhanced Edge Labels**: Edge labels displaying relationship types for both "From" and "To" relationships of Interpretation Token nodes
+- Labels are positioned midway along the relevant links and follow the layout dynamically
+- Edge labels have subtle contrast styling with light/dark theme support
+- **Bidirectional Relationship Visualization**: Interpretation Token nodes display both their "From" relationship to Law Tokens and "To" relationship to other nodes with appropriate edge labels and proper directional visualization
+- **Shared Law Token Visualization**: Graph accurately displays shared law tokens connected to multiple locations through all stored location-law token relationships
+- **Location Law Token Sequence Display**: When location nodes are selected or hovered in GraphView, the original bracketed law token sequence is displayed with theme-appropriate styling and accent color highlights
+- **Versioned Location Display**: Versioned locations with their updated names (including version suffixes) are properly displayed in the graph visualization
+- **Suffixed Swarm Display**: Swarms with global postfix suffixes are properly displayed in the graph visualization with their complete suffixed names
+- Smooth transitions during theme switching while maintaining accessibility and visual clarity
+- All labels, edges, and hover accents preserve the minimal monochrome aesthetic
+- **Collapsible Control Panels**: Both the Legends/Filters panel and the Visualization Controls panel are collapsible/minimizable:
+  - **Toggle Buttons**: Small chevron or arrow icons allow users to expand or collapse each panel independently
+  - **Smooth Animations**: Panels expand and collapse with smooth transitions
+  - **Session Persistence**: Collapsed/expanded state is retained during the user session
+  - **Theme Consistency**: Toggle buttons and animations work seamlessly across light/dark themes with monochrome styling
+  - **Accessibility**: All sliders and controls remain fully functional when panels are expanded
+  - **Visual Indicators**: Clear visual cues indicate whether panels are collapsed or expanded
+- **Visualization Control Panel**: A control panel positioned at the bottom-right corner of the Graph View containing:
+  - **Link Distance Slider**: Controls the uniform distance between all connected nodes with real-time updates, automatically disabled or visually grayed out when "circle" or "breadthfirst" layouts are active since link distance does not apply to fixed-layout geometries
+  - **Node Size Slider**: Adjusts the size of all nodes uniformly with real-time updates
+  - **Edge Thickness Slider**: Controls the thickness of all edges/relations with real-time updates
+  - **Layout Selector Dropdown**: Provides layout options including Grid, Circle, Concentric, and Breadthfirst
+  - **Synchronized Dragging**: When a node is dragged, all its directly connected nodes move to maintain the same link distance
+  - **Minimal Monochrome Styling**: Panel follows the app's monochrome theme with accent colors only on hover states
+  - **Smooth Rendering**: All control changes provide smooth, stable updates to the Cytoscape.js visualization
+
+### Landing Page Live Data Voronoi Diagram with Persistent Caching and Fixed Data Processing
+- The landing page displays a Voronoi diagram using the existing `VoronoiDiagram` component with live graph data
+- **Persistent Data Caching**: The Voronoi diagram implements localStorage-based caching to store fetched graph data for 24 hours
+- **Cache Expiration Logic**: Cached data includes a timestamp and is automatically invalidated after 24 hours, triggering a fresh data fetch
+- **Session-Persistent Storage**: Graph data is stored in localStorage and reused across browser sessions until cache expiration
+- **Reduced Backend Calls**: Live data is fetched from the backend only once every 24 hours instead of on each render or page visit
+- **Cache-First Loading Strategy**: The component first checks localStorage for valid cached data before attempting to fetch from the backend
+- **Fixed Data Processing**: The VoronoiDiagram component correctly processes node coordinates and seeds from the `getGraphData()` output, ensuring proper visualization of live graph data instead of showing an empty canvas
+- **Enhanced Error Handling**: When data fetching fails, the component gracefully uses cached replica data to prevent blank rendering states while maintaining visual quality
+- **Real Node Data Preservation**: Cached data maintains actual node names and types from the backend, never displaying placeholder names like "node 1" or "node 7"
+- **All Node Types as Seed Points**: Uses all nodes from the cached or freshly fetched graph data (curations, swarms, locations, law tokens, interpretation tokens) as seed points for the Voronoi diagram visualization
+- **Public Data Access**: The data fetch works publicly without authentication requirements, with caching logic applied to the public data access
+- **Node Type Color Differentiation**: Maintains the existing node type color scheme for visual differentiation:
+  - **Light mode**: Curations (deep red), Swarms (strong blue), Locations (forest green), Law Tokens (deep purple), Interpretation Tokens (dark orange)
+  - **Dark mode**: Curations (light coral), Swarms (light blue), Locations (light green), Law Tokens (light purple), Interpretation Tokens (light amber)
+- **Minimal Monochrome Aesthetic**: Maintains the app's visual design with theme-appropriate base colors and node type differentiation
+- **Enhanced Visual Quality**: Voronoi diagram renders with smooth antialiased lines for reduced pixelation and cleaner visual quality in both light and dark themes
+- **Interactive Tooltips**: Hovering over seed points (nodes) displays tooltips showing the corresponding node's name and type (e.g., Curation, Swarm, Location, Law Token, or Interpretation Token)
+- **Theme-Adaptive Tooltip Styling**: Tooltips use monochrome styling consistent with the app's minimal aesthetic and accent colors (yellow/dark gold) for hover highlights
+- **Static Non-Interactive Display**: The diagram remains static after render, using the cached or fetched graph data to generate the seed points with tooltip interactivity only
+- **Responsive and Centered**: The diagram displays responsively and is centered on the landing page
+- **Clean Interface**: The diagram displays without any cache status buttons or indicators, maintaining a completely minimal aesthetic focused solely on the visualization
+- **Theme-Adaptive Cursor Visibility**: The cursor remains consistently black in light mode and white in dark mode inside the Voronoi diagram area, ensuring visibility throughout all interactions within the diagram
+
+### User Interface
+- Graph View: Primary interface showing the visual graph representation using Cytoscape.js with integrated collapsible control panels including enhanced canvas navigation with smooth panning and zooming, non-draggable but selectable nodes, improved edge visibility, node focus interaction, node type filtering with legend toggles, internal caching and incremental updates for performance optimization, stable layout algorithms with disabled physics forces for quick and smooth loading, vote-based node filtering with fixed logic that hides only nodes with strictly more downvotes than upvotes (Curations are always visible), including all Interpretation Token nodes with bidirectional relationship edge labels, with swarm membership status display, accurate visualization of shared law token connections, distinct node colors based on theme, location law token sequence display on selection/hover, proper display of versioned location names, proper display of suffixed swarm names, manual "Refresh" button for user-controlled data fetching with disabled automatic refetching, collapsible Legends/Filters panel and Visualization Controls panel with toggle buttons, smooth animations, session persistence, and theme consistency, and a visualization control panel positioned at the bottom-right corner containing link distance (automatically disabled for circle/breadthfirst layouts), node size, and edge thickness sliders, layout selector dropdown, and synchronized dragging functionality
+- **Enhanced Tree View with Jurisdiction Display, Global Shared Voting (Excluding Curations), Fixed Filtering Logic, Export Functionality, and Swarm Curation Context**: Hierarchical tree representation of the complete five-level node structure including all Interpretation Tokens, with swarm membership status and join functionality, enhanced with inline creation buttons for streamlined node creation workflow, original law token sequence display below or alongside location titles, proper display of versioned location names with version suffixes, proper display of suffixed swarm names, vote count display next to each node (excluding Curations) with fully functional and interactive upvote/downvote buttons that reflect global shared voting state, and a collapsed "Discarded" section at the bottom containing only nodes with strictly more downvotes than upvotes organized by node type (Curations never appear in this section):
+  - **Updated Title**: The TreeView component displays "Hierarchical View" as the title text instead of "Hierarchical Tree View"
+  - **Jurisdiction Display**: Each Curation node in the TreeView displays its three-letter "Jurisdiction" attribute (e.g., "IND", "USA", "GBR") next to the curation name with minimal monochrome styling consistent with the app's theme
+  - **Swarm Curation Context Display**: Each Swarm in the TreeView displays its parent Curation name next to the Swarm name (including the suffix) in a small, theme-consistent label format with minimal monochrome styling
+  - **Global Shared Voting System (Excluding Curations)**: Upvote and downvote buttons correctly reference node IDs from the backend to prevent "node not found" errors, with automatic creator upvote upon node creation (excluding Curations) and enhanced button state management for non-creators where both buttons remain available until a vote is cast, then become permanently greyed out and disabled, with automatic frontend refresh of voting counts and button states for all users after any successful vote to ensure proper synchronization and visible shared voting state. Curation nodes display no voting buttons or vote counts.
+  - **Fixed Filtering Logic**: The "Discarded" section contains only nodes with strictly more downvotes than upvotes (excluding Curations which cannot be voted on), with nodes having equal votes or more upvotes remaining in the main tree and visible in the graph, with filtering performed only after global vote data synchronization is complete to avoid misclassification during load or refresh
+  - **Export Functionality Only**: Export button with minimal down arrow icon positioned in the Tree tab, allowing users to download complete Tree data in JSON format:
+    - **File Handling**: Standard browser file download for export with proper JSON validation
+    - **Seamless Integration**: Button integrates seamlessly into the existing scrollable TreeView pane
+  - **Scrollable TreeView Interface**: The TreeView pane itself is scrollable with an inner scroll container that provides vertical scrolling for all overflowing node data, ensuring only the Tree View pane scrolls independently (not the entire page) while maintaining smooth scrolling behavior
+  - **Theme-Adaptive Scrollbar Styling**: Custom scrollbar styling that adapts to the current theme (light/dark mode) with monochrome colors and subtle accent highlights, applied to the `.tree-view-scroll` class within the card content
+  - **Scroll Containment**: The scrollable container is properly contained within the TreeView pane so users can move through long hierarchical structures without losing context or stretching the page
+  - **Updated Law Token Sharing Label**: All law token sharing indicators display "Use Count" instead of "Shared" across all relevant UI elements and hover text within the TreeView
+  - **Consistent Label Updates**: The "Use Count" terminology is applied consistently throughout all TreeView components, tooltips, and related interface elements
+  - **Graceful Data Refresh**: The TreeView correctly waits for location creation operations to complete and gracefully refreshes the tree display after law token creation, with proper error handling for failed operations
+- **BUZZ Tab**: A new tab in the application header displaying the BUZZ Leaderboard with a ranked list of users ordered by their BUZZ total in descending order, showing each user's profile name and principal ID, styled consistent with the app's minimal monochrome theme and refreshed dynamically
+- **Enhanced Create Node Dialog with Robust Error Handling**: Comprehensive interface for creating new nodes with type-specific input fields, current path display showing full parent hierarchy above the name/title input field, and descriptive helper text:
+  - **Current Path Display**: Shows the full parent hierarchy (e.g., "Indian Arbitration Law → Key Definitions → Section 123") using parent node names retrieved from React state/context, formatted with simple arrows (→) and styled minimally with monochrome theme-aware design
+  - **Enhanced Curation**: Title input and fixed "Jurisdiction" attribute with a greyed-out key field labeled "Jurisdiction" and a dropdown containing ISO 3166-1 alpha-3 country codes with "IND" as the default selection, with helper text: "A curation is an area of law, e.g. Indian Arbitration Law, UK Banking Law etc."
+  - **Swarm**: Title and comma-separated tags input (with no placeholder text, keeping the field blank by default, description field removed) with helper text: "A swarm is a research topic, a container for annotations and a collaborative space, all rolled into one. For example: key definitions, important caselaws, rights and duties etc."
+  - **Location**: Title, content, and dynamic custom attributes with key-value pairs and "+" button for adding new attribute rows, with helper text: "Each location points to a particular chunk of positive law. For example: sec 123 of act ABC, para 456 of case XYZ." and "Wrap the positive law text in curly brackets to generate specific tokens. For example: {appropriate authority}{means}{the State Government}{or}.."
+  - **Enhanced Interpretation Token**: Comprehensive interface with title, "From Law Token" selection (renamed from "Parent From Law Token"), "From Relationship Type" input, "To Node" selection (any node from user's member swarms), "To Relationship Type" input, "Context" text area, and dynamic custom attributes with key-value pairs and "+" button functionality
+  - **Robust Location Creation**: The frontend correctly waits for the `createLocation` call to complete and handles any errors gracefully, providing user feedback for both successful and failed operations
+- **Enhanced Swarms View with Profile Display**: Interface showing swarm membership management for swarm creators, displaying both pending and approved membership requests retrieved from the backend's query functions:
+  - **Profile Name Integration**: Each membership request displays the requester's profile name alongside their principal ID when available from user profile data
+  - **Enhanced Request Information**: Comprehensive requester identification showing both profile name and principal ID for better user recognition
+  - **Fallback Handling**: Appropriate display fallback when profile name is not available, showing only principal ID with clear indication
+- **Enhanced Ontologies View with Swarm Curation Context**: Comprehensive interface displaying both Core Ontology and Swarm-Specific Extended Ontologies:
+  - **Collapsible Core Ontology Section**: The Core Ontology section is now collapsible/foldable with a minimal toggle (arrow or chevron) while maintaining its static specification that mirrors the backend schema, including classes (Curation, Swarm, Location, LawToken, InterpretationToken), object properties (belongsTo, createsRelation, connectsTo), data properties (hasCustomAttribute, hasTag), and SWRL inheritance rules for custom attributes, displayed in readable Turtle syntax in a code-style panel (not editable)
+  - **Swarm-Specific Extended Ontologies with Icon-Only Download and Curation Context**: For each swarm in the current data (getGraphData output), create a collapsible panel labeled "Extended Ontology — {Swarm Name}" that displays the parent Curation name or ID next to the Swarm name (including the suffix) with minimal monochrome styling, dynamically generates an ontology representation using Core Ontology classes and properties, lists individuals (instances) created within that swarm (Locations, LawTokens, InterpretationTokens), and represents user-specified attributes and relationships as RDF triples, with each panel including a simple down-arrow icon only (no text) that maintains the existing download functionality for exporting swarm-specific Turtle files
+  - **Dynamic Data Refresh**: Extended Ontologies auto-refresh as users modify swarm content by fetching new data dynamically
+  - **Theme-Consistent Design**: Maintains monochrome styling with subtle accent colors on hover, consistent with the app's minimal aesthetic
+- **Data Reset Interface**: Administrative interface component for resetting all application data with confirmation dialog and status feedback
+- **Interactive Voting Interface with Global Shared State (Excluding Curations)**: Upvote and downvote buttons with vote count display that are fully interactive in TreeView only for all node types except Curations, with automatic frontend refresh of voting counts and button states for all users after any successful vote to ensure proper synchronization and visible shared voting state
+- Navigation between different views and hierarchy levels
+- Dark/light theme support for control panel styling and edge labels
+- **Enhanced Navigation with Icon-Only Create Node Button, Search Button, and Hamburger Menu**: All navigation elements, headers, tabs, routes, and links use "Swarms" instead of "My Swarms", with "Ontologies" tab positioned to the right of "Swarms" and "BUZZ" tab positioned to the right of "Ontologies" in the header navigation bar:
+  - **Icon-Only Create Node Button**: The "Create Node" button in the header displays only a plus icon (no text label) with a tooltip showing "Create Node" on hover
+  - **Icon-Only Search Button**: The "Search" button in the header displays only a magnifying glass icon (no text label) with a tooltip showing "Search" on hover, positioned between the Create Node and Theme Toggle buttons
+  - **Hamburger Menu**: A hamburger icon positioned in the top-right of the header (beside the theme toggle) containing:
+    - **Logout Option**: The Logout button moved from standalone position into the hamburger menu
+    - **Profile Settings Option**: New option that opens the Profile Settings modal
+- **Profile Settings Modal**: Modal interface allowing users to edit their profile information:
+  - **Profile Name Field**: Input field for editing the user's display name
+  - **Social URL Field**: Input field for adding or modifying a social media or website link
+  - **Save/Cancel Actions**: Standard modal actions with proper form validation and submission
+  - **Theme-Consistent Styling**: Modal follows the app's monochrome theme with accent colors only on hover states
+- **Enhanced Search Modal**: Modal interface for searching nodes by custom attributes:
+  - **Keys Auto-Complete**: Dropdown listing all existing custom attribute keys from backend nodes (Locations and Interpretation Tokens)
+  - **Values Auto-Complete**: Dropdown showing all available attribute values based on the selected key, ensuring users can only pick from existing keys and values rather than entering free text
+  - **Search Results Display**: Scrollable list showing matching nodes with name/title, node type, and parent context
+  - **Clickable Results**: Search results are clickable for navigation to the selected node
+  - **Theme-Consistent Styling**: Modal follows the app's monochrome theme with consistent typography and minimal styling
+- **Navigation Tab Behavior**: The "BUZZ" tab matches existing navigation behavior including active highlighting, theme toggle compatibility, and consistent spacing
+- SwarmMembershipManager and SwarmMembershipApproval components use backend query functions to display real membership data with enhanced profile information
+- Membership status (pending, approved, or none) is properly reflected in both the "Swarms" tab and SwarmMembershipButton component for all users
+- SwarmMembershipApproval component includes comprehensive Principal conversion handling with type validation and user-friendly error messages for invalid principal data, plus enhanced profile name display functionality
+- All membership-related components implement robust error handling to prevent backend failures from invalid Principal arguments
+
+### Minimalist Notion-like Visual Design
+- **Light Mode**: White background, light grey lines and borders, black text
+- **Dark Mode**: Black background, dark grey lines and borders, white text
+- **Accent Color Usage**: Existing accent colors (dark gold for light mode, yellow for dark mode) are used exclusively for:
+  - Hover effects on interactive elements
+  - Active states (active tabs, selected items, active filter indicators)
+  - Subtle highlights and accent outlines
+  - Focus states on form elements
+- **Monochrome Design Philosophy**: All UI elements maintain predominantly monochrome appearance with minimal accent color usage
+- **Consistent Theme Application**: Applied across all pages and components including:
+  - GraphView with monochrome graph visualization and minimal accent control panel
+  - TreeView with subtle grey hierarchy lines and accent hover states, plus theme-consistent scrollbar styling for the inner scroll container, jurisdiction display for Curations, Swarm curation context display with suffixed names, and Export button with minimal down arrow icon
+  - Schema page with clean monochrome layout
+  - Settings page with minimal accent usage
+  - Profile page with subtle accent highlights
+  - Footer with monochrome styling and accent hover effects
+  - **Enhanced Ontologies page with collapsible Core Ontology section and Swarm-Specific Extended Ontologies using monochrome styling with code-style panels, collapsible sections, icon-only download buttons, and Swarm curation context display with suffixed names**
+  - **BUZZ Leaderboard with minimal monochrome styling and theme-appropriate contrast**
+  - **Profile Settings Modal with monochrome styling and accent colors only on hover states**
+  - **Enhanced Search Modal with monochrome styling and consistent typography**
+- **Button Styling**: All buttons use monochrome base styling with accent colors only on hover/active states
+- **Headers and Navigation**: Clean monochrome headers with accent colors only for active/hover states, including:
+  - **Icon-Only Create Node Button**: Plus icon button with monochrome styling and accent color tooltip on hover
+  - **Icon-Only Search Button**: Magnifying glass icon button with monochrome styling and accent color tooltip on hover
+  - **Hamburger Menu**: Hamburger icon with monochrome styling and accent colors only on hover states
+- **Tabs**: Monochrome tab styling with accent colors only for active tab indicators
+- **Law Token Sequence Styling**: Original law token sequences displayed in TreeView and GraphView follow monochrome styling with minimal spacing, using accent colors only for hover highlights in GraphView
+- **Helper Text Styling**: Descriptive helper text in Create Node Dialog follows monochrome styling with subtle contrast and minimal spacing consistent with the app's theme
+- **Current Path Styling**: Current path display in Create Node Dialog uses monochrome styling with theme-aware design and minimal spacing above the name/title input field
+- **Vote Count Styling**: Upvote and downvote counts displayed with minimal monochrome styling and theme-appropriate contrast (excluding Curations which show no vote counts)
+- **Interactive Voting Styling with Global State (Excluding Curations)**: Voting buttons maintain consistent minimal aesthetics with subtle hover effects and interactive states in TreeView only for all node types except Curations, with proper disabled states for post-vote conditions and automatic refresh of voting counts and button states for all users after any successful vote
+- **Collapsible Panel Styling**: Toggle buttons and panel animations follow the monochrome theme with accent colors only for hover states and visual indicators
+- **Visualization Control Panel Styling**: The control panel follows the monochrome theme with minimal styling, using accent colors only for hover states on interactive elements
+- **Scrollbar Styling**: TreeView scrollbars use theme-consistent styling with monochrome colors and subtle accent highlights that adapt to light/dark mode, specifically applied to the `.tree-view-scroll` class for the inner scroll container
+- **Enhanced Ontologies View Styling**: Code-style panels for Core Ontology display and collapsible swarm sections follow monochrome theme with subtle borders and accent colors only for interactive elements like icon-only download buttons and collapse toggles
+- **Export Button Styling**: Export button follows the app's minimal monochrome theme with subtle down arrow icon and accent colors only on hover states, integrating seamlessly with the existing TreeView interface
+- **BUZZ Leaderboard Styling**: The BUZZ tab and leaderboard interface follow the app's minimal monochrome theme with subtle borders, appropriate spacing, and accent colors only for interactive states
+- **Swarm Curation Context Styling**: Parent Curation labels displayed next to Swarm names (including suffixes) use minimal monochrome styling with appropriate contrast and spacing consistent with the app's theme
+- **Profile Settings Modal Styling**: Modal interface follows the app's monochrome theme with subtle borders, appropriate spacing, and accent colors only for interactive elements and hover states
+- **Enhanced Search Modal Styling**: Modal interface follows the app's monochrome theme with consistent typography, minimal styling, and accent colors only for interactive elements and hover states
+
+### Dynamic Theme-Based Logo Display
+- The application displays theme-appropriate logos in the header:
+  - **Light mode**: Uses the black Hyvmind logo (hyvmind_logo black, transparent.png)
+  - **Dark mode**: Uses the white Hyvmind logo (hyvmind_logo white, transparent.png)
+- Logos are positioned left-aligned in the header with responsive sizing and appropriate margins
+- Logo switching occurs automatically with theme changes
+- Same logo display logic applies to all header states (logged in and logged out)
+
+### Streamlined Landing Page Interface with Hamburger Menu and Updated Community Link
+- Landing page displays only the header with navigation controls in the top-right corner
+- The live data Voronoi diagram with persistent caching (24-hour expiration) and fixed data processing serves as the central visual element, correctly displaying real graph data with proper node coordinate processing
+- Clean, minimal landing page design focused on the cached Voronoi visualization and header navigation
+- **Enhanced Header Layout**: The header includes both the theme-appropriate logo and the app name "hyvmind" positioned to the right of the logo, with font size reduced to match the login text size in the top right corner for consistent typography and visual balance
+- **Hamburger Menu Implementation**: A hamburger menu icon is positioned on the top right corner of the landing page, to the right of the light/dark mode toggle
+- **Menu Content**: The hamburger menu contains:
+  - **Login Button**: The existing Login button moved from the header into the hamburger menu
+  - **Learn More Option**: Links to `https://desci.ng/paper/hyvmind-a-research-to-earn-dapp-for-tokenising-annotation`
+  - **Join Community Option**: Links to `https://telegram.me/+YbeQY2mzwfFlMGU1`
+- **Menu Styling**: The hamburger menu and its contents follow consistent monochrome theme styling matching other landing page elements, with accent colors only on hover states
+- **Page Title Configuration**: The HTML document title is set to "pre-release v1" for proper browser tab display
+- **Optimized Diagram Positioning**: The landing page Voronoi diagram is center-aligned and configured for responsive display with persistent cached data integration (24-hour expiration) and fixed data processing to prevent empty canvas rendering
+
+### Tree View Enhanced Creation Interface
+- Small circular "+" buttons positioned next to Curations, Swarms, and Law Tokens hierarchy levels in the TreeView component
+- Each "+" button opens the CreateNodeDialog prefilled for the appropriate next-level node type:
+  - "+" next to Curations opens dialog to create a new Swarm
+  - "+" next to Swarms opens dialog to create a new Location
+  - "+" next to Law Tokens opens dialog to create a new Interpretation Token
+- Buttons styled consistently with existing UI patterns including hover effects and proper alignment with tree nodes
+- All creation buttons utilize the same dialog logic and permission validation used throughout the application
+- Streamlined node creation workflow directly from the hierarchical tree interface
+
+### Backend Operations
+- Store all node data including hierarchy relationships across five levels
+- Generate deterministic unique IDs for all node types using secure hash-based functions combining caller principal and node name/title
+- **Version-Aware ID Generation**: For versioned locations, use the final versioned name for ID generation to ensure unique IDs
+- **Suffixed Swarm ID Generation**: For swarms with global postfix naming, use the final suffixed name for ID generation to ensure unique IDs
+- Return all nodes to all authenticated users through query functions (universal read access)
+- **Public Graph Data Access**: The `getGraphData()` query function provides universal read access without authentication requirements, allowing unauthenticated visitors to view the complete graph data
+- **Parent Node Name Retrieval**: Provide query functions to retrieve parent node names for current path display in CreateNodeDialog, accessible through React state/context
+- **Enhanced Profile Data Retrieval**: Provide query functions to retrieve user profile information including profile names for membership request display, accessible by swarm creators when viewing membership requests
+- **User Profile Management Backend Operations**:
+  - **Profile Storage**: Store user profiles with profile name and social URL linked to principal ID
+  - **Profile CRUD Operations**: Provide functions to create, read, update user profile information
+  - **Profile Query Functions**: Expose query functions to retrieve profile data for display throughout the application
+- **BUZZ Points Backend Operations**: 
+  - **BUZZ Score Storage**: Store BUZZ scores per user by principal ID in the backend, allowing negative values
+  - **Automatic BUZZ Updates**: Automatically update BUZZ balances when relevant backend events occur:
+    - Award 3 BUZZ for each Law Token created
+    - Award 5 BUZZ for each Interpretation Token created
+    - Award 1 BUZZ for each Law Token upvote received
+    - Award 2 BUZZ for each Interpretation Token upvote received
+  - **BUZZ Leaderboard Query**: Provide query function to retrieve all users' BUZZ scores ordered by total in descending order for leaderboard display
+- **REST API Implementation**: Expose read-only HTTP endpoints under `/api/` that return JSON responses with CORS headers for public access:
+  - `/api/graph` endpoint returns complete graph data structure
+  - `/api/curations` endpoint returns all curations
+  - `/api/swarms?curationId={id}` endpoint returns filtered swarms
+  - `/api/locations?swarmId={id}` endpoint returns filtered locations
+  - `/api/lawTokens?locationId={id}` endpoint returns filtered law tokens
+  - `/api/interpretationTokens?lawTokenId={id}` endpoint returns filtered interpretation tokens
+- **Enhanced API Metadata**: Include embedded metadata in API responses for Law Tokens, Locations, and Interpretation Tokens with creator information (principal and username), approver information, and timestamps
+- **API Security**: Restrict API to GET requests only, no write operations allowed
+- **Enhanced Custom Attribute Search Backend Operations**:
+  - **Attribute Key Indexing**: Provide query function to retrieve all existing custom attribute keys from backend nodes (Locations and Interpretation Tokens)
+  - **Attribute Value Indexing**: Provide query function to retrieve all available attribute values for a given key from backend nodes
+  - **Attribute Search Query**: Provide search function to query all node types and filter nodes matching specified key-value pairs
+  - **Search Result Formatting**: Return search results with node name/title, node type, and parent context information
+- Create new nodes with proper parent-child linkage for Curation, Swarm, Location, and Interpretation Token levels using deterministic ID generation
+- **Global Postfix-Based Swarm Naming Implementation**: The backend `createSwarm` function implements global postfix-based naming where each unique base swarm name automatically appends a serial suffix (`_1`, `_2`, `_3`, etc.) to ensure all swarms have unique IDs across the entire system, irrespective of curations, by checking all existing swarms globally for name conflicts and calculating the next available suffix number
+- **Automatic Creator Upvote Implementation (Excluding Curations)**: Automatically upvote each node by its creator upon creation (excluding Curations), storing this initial vote in the voting system
+- **Enhanced Node Data Storage**: Store additional node properties including:
+  - **Curation jurisdiction**: Fixed "Jurisdiction" attribute with ISO 3166-1 alpha-3 country code value stored as part of curation data
+  - **Swarm tags**: Comma-separated tags stored as part of swarm data for discovery functionality
+  - **Location custom attributes**: Key-value pairs stored as part of location data for flexible metadata, including automatic version attributes for versioned locations
+  - **Interpretation Token attributes**: Key-value pairs stored as part of interpretation token data for custom metadata
+- **Enhanced Interpretation Token Storage with Bidirectional Relationships**: Store comprehensive interpretation token data including:
+  - **From Law Token**: Reference to parent law token with "From" relationship type
+  - **To Node**: Reference to any target node with "To" relationship type
+  - **Context**: Detailed description content
+  - **Custom Attributes**: Key-value pairs for additional metadata
+  - **Bidirectional Relationship Tracking**: Maintain both "From" and "To" relationship mappings with proper storage of both incoming and outgoing connections
+  - **Complete Edge Storage**: Store both directions of relationships to ensure proper graph visualization and connection counting
+- **Enhanced Vote Data Storage with Global Shared State (Excluding Curations)**: Store upvote and downvote counts for all major node types except Curations (Swarms, Locations, Law Tokens, Interpretation Tokens) with automatic creator upvote upon node creation (excluding Curations) in a shared backend map accessible to all users through the existing `voteDataMap` configuration
+- **Vote Tracking**: Maintain user-node vote tracking to enforce one vote per user per node, including automatic creator votes (excluding Curations)
+- **Vote Permission Validation**: Validate voting permissions based on user authentication and swarm membership status, with correct node ID references to prevent "node not found" errors, excluding Curations from all voting operations
+- **Vote Count Queries with Global State (Excluding Curations)**: Provide query functions to retrieve vote counts for all nodes except Curations with proper node ID handling, ensuring that vote changes made by any user are immediately reflected in subsequent `getVoteData()` queries for all users
+- **Location Version Control Logic**: 
+  - Check for existing locations with the same name/title within the same swarm during creation
+  - Calculate the next available version number by examining existing locations for name conflicts
+  - Automatically rename new locations to include version suffix when conflicts are detected
+  - Automatically add or update version custom attribute for versioned locations
+  - Return updated location data with versioned names and attributes to frontend
+- Validate write permissions: any user can create Swarms, only Swarm creators and approved members can create Locations and Interpretation Tokens
+- **Crash-Resistant Law Token Parsing Implementation with Comprehensive Error Handling**: The `createLawTokensForLocation` function implements robust parsing logic with comprehensive error handling and defensive programming that:
+  - Uses regular expression pattern matching to split location content by `{...}` sequences
+  - Trims all whitespace from inside each bracket pair
+  - Ignores empty or malformed brackets completely without causing runtime traps
+  - Only creates or links law tokens for non-empty, cleaned labels
+  - Handles arbitrary spacing, newlines, and whitespace variations correctly
+  - Maintains swarm-scoped deduplication where repeated labels reuse existing law tokens
+  - **Comprehensive Error Handling**: Implements robust error handling to skip malformed or duplicate tokens instead of trapping
+  - **Safe Null Handling**: Prevents failed null dereferences through proper null checking and safe unwrapping
+  - **Edge Case Protection**: Handles edge cases like empty content, malformed brackets, and duplicate token labels gracefully
+  - **Defensive Programming**: All token parsing operations are wrapped in try-catch blocks or equivalent error handling mechanisms to prevent crashes
+  - **Graceful Degradation**: When token parsing encounters errors, the location creation process continues successfully without law tokens rather than failing completely
+  - **Error Recovery**: Failed token parsing operations are logged but do not interrupt the overall location creation workflow
+  - **Backend Function Safety**: The `splitByCurlyBrackets`, `findExistingLawToken`, and `lawTokenExistsInSwarm` functions include comprehensive error handling to prevent runtime traps
+- **Store Original Law Token Sequences**: Store the complete original bracketed law token sequence from each location's content as it was entered by the user
+- **Location-Law Token Relationship Management**: Store location-law token pairs in a dedicated map (locationLawTokenRelations) to track which locations link to which law tokens
+- **Independent Law Token Generation for Versions**: Each versioned location generates its own law tokens independently without merging or reusing law tokens from other versions
+- **Shared Law Token Logic**: When parsing law tokens, if a law token already exists in the same swarm, append the new location's ID to that law token's relation list without overwriting existing relationships
+- **Preserve Existing Relations**: Ensure that creating or editing locations never deletes existing location-law token links
+- **Crash-Resistant Location Creation Process**: The backend `createLocation` function includes comprehensive error handling and defensive programming to ensure the location creation process completes successfully even when law token parsing encounters any type of error, malformed input, or edge case, with proper error recovery, graceful degradation, and user feedback
+- **Enhanced Interpretation Token Creation with Bidirectional Relationships**: Create Interpretation Tokens with complete bidirectional relationship system:
+  - **From Relationship**: Link to parent Law Token with customizable "From" relationship type
+  - **To Relationship**: Link to any target node with customizable "To" relationship type
+  - **Bidirectional Storage**: Store both incoming connections (from law tokens) and outgoing connections (to target nodes)
+  - **Complete Graph Data**: Ensure both relationship directions are included in graph data returned to frontend
+  - **Node Selection Validation**: Validate that "To Node" selection is limited to nodes from swarms where the user has membership
+  - **Attribute Storage**: Store custom attributes as key-value pairs identical to Location attributes functionality
+- Retrieve complete hierarchical graph data with full parent-child relationships including all Interpretation Tokens with bidirectional relationships regardless of user role
+- The `createGraphNodes` function recursively traverses all hierarchy levels (Curation → Swarm → Location → Law Token → Interpretation Token)
+- Each node includes its complete children array by retrieving all corresponding child nodes from the next-level maps
+- The `getGraphData` function returns a fully hierarchical structure with all node relationships intact across all five levels for all users, **reflecting all stored location-law token relationships and interpretation token bidirectional relationships for accurate visualization and connection counting**
+- **Return Original Law Token Sequences**: Include the original bracketed law token sequence in location data returned by query functions
+- **Return Enhanced Node Data**: Include jurisdiction for Curations, tags for Swarms, custom attributes for Locations and Interpretation Tokens in query function responses, including version attributes for versioned locations
+- **Return Enhanced Interpretation Token Data**: Include "From Law Token", "From Relationship Type", "To Node", "To Relationship Type", "Context", and custom attributes in interpretation token query responses with complete bidirectional relationship data
+- **Return Versioned Names**: Ensure all query functions return the updated versioned names for locations that have been automatically renamed
+- **Return Suffixed Swarm Names**: Ensure all query functions return the suffixed names for swarms that have been automatically renamed with global postfix naming
+- **Return Vote Counts with Global State (Excluding Curations)**: Include upvote and downvote counts in all node data returned by query functions except for Curations with proper node ID handling, ensuring that vote changes are immediately reflected for all users
+- **Tree Data Export Backend Support**: Provide backend method to export complete tree data in JSON format:
+  - **Export Method**: `exportTreeData()` method that returns complete tree data structure in JSON format
+- Maintain node metadata and properties including bidirectional relationship types for Interpretation Tokens
+- Handle user-specific write permissions while providing universal read access
+- Manual law token creation functionality is disabled
+- Manage swarm membership requests and approvals through dedicated functions
+- Store membership data with swarm associations, member principals, and approval status
+- Validate swarm membership before allowing location and interpretation token creation
+- **Enhanced Membership Validation**: Validate swarm membership for "To Node" selection in Interpretation Token creation
+- Provide membership status and member list retrieval functionality
+- **Node Selection Queries**: Provide query functions to retrieve all nodes from swarms where the user has membership for "To Node" selection in Interpretation Token creation
+- **Enhanced Membership Request Queries**: Expose query functions that return membership requests with associated user profile information:
+  - `getSwarmMembershipRequests(swarmId: Text)` returns all membership requests (both pending and approved) for a specific swarm with profile name data when available, accessible only by the swarm creator
+  - `getSwarmsByCreator()` returns all swarms created by the creator along with their membership requests including profile information, accessible only by the swarm creator
+- Reset all persistent data by clearing all storage maps (curationMap, swarmMap, locationMap, lawTokenMap, interpretationTokenMap, membershipRequests, userProfiles, locationLawTokenRelations, voteData, userVoteTracking, buzzScores) to empty states
+- **Data Reset Method**: Expose `resetAllData` method that completely wipes all stored data including voting data and BUZZ scores and returns confirmation of successful reset
+- **Enhanced Voting Methods with Global State (Excluding Curations)**: Expose upvote and downvote methods for each applicable node type except Curations with permission validation, vote tracking, and correct node ID handling to prevent "node not found" errors, ensuring that vote changes are immediately reflected in the shared backend map for all users
+- **Core Ontology Implementation with SWRL Rules**: Implement and maintain the core ontology that formally defines the hierarchical knowledge structure:
+  - **SWRL Rule Storage**: Store and manage SWRL rules that govern system behavior and data relationships
+  - **Custom Attribute Inheritance Rule Implementation**: Implement the SWRL rule `Node(?child) ^ belongsTo(?child, ?parent) ^ hasCustomAttribute(?parent, ?attr) → hasCustomAttribute(?child, ?attr)` that ensures automatic inheritance of custom attributes across hierarchical relationships
+  - **Ontological Consistency Validation**: Ensure the custom attribute inheritance rule maintains consistency with existing Core Ontology structure and integrates seamlessly with other ontological definitions
+  - **Hierarchical Rule Application**: Apply the inheritance rule across all levels of the hierarchy (Curations to Swarms, Swarms to Locations, Locations to Law Tokens, Law Tokens to Interpretation Tokens)
+  - **Formal Knowledge Representation**: Maintain the ontology as a formal foundation for the knowledge graph structure, enabling reasoning and inference capabilities over the hierarchical data
+- **Improved Admin Access Control Implementation with Universal Initialization**: 
+  - **Universal Access Control Initialization**: The `initializeAccessControl` function executes successfully for all users, including when the admin limit has already been reached, ensuring proper access initialization and preventing "actor not available" errors
+  - **Preserved Admin Limit Enforcement**: Backend logic maintains the maximum limit of 2 administrators with existing admin principals preserved and their status unchanged
+  - **No New Admin Assignment During Initialization**: New users are not assigned admin roles during the initialization process unless explicitly designated by existing admins through separate admin assignment processes
+  - **Profile Initialization Support**: All users can create profiles and access the app without permission errors or initialization failures
+  - **Maintained Admin Functionality**: Existing admins continue to have access to all current admin functions
+  - **Separate Admin Assignment Process**: Admin role assignment remains available through existing admin assignment functions but is separate from the universal initialization process
+
+## Technical Requirements
+- TypeScript for type safety
+- TailwindCSS for styling with minimalist monochrome theme configuration and selective accent color usage
+- React Query for data fetching and caching with mutations for membership operations, voting operations (excluding Curations), data reset functionality, tree data export operations, profile management operations, BUZZ leaderboard queries, and custom attribute search operations
+- **Manual Refresh Implementation**: React Query configuration with disabled automatic refetching (no polling, no refetch on window focus, no timed triggers) and manual refetch triggered only by user button click
+- **Global Shared Voting State Implementation (Excluding Curations)**: Frontend implementation to automatically refresh voting counts and button states for all users after any successful vote:
+  - **Automatic Vote Data Refresh**: React Query integration to automatically refetch vote data after any voting operation to ensure all users see updated vote counts immediately
+  - **Global State Synchronization**: Frontend logic to update voting button states and counts across all user sessions when any user casts a vote
+  - **Real-time Vote Updates**: Implementation of automatic data refresh mechanisms that trigger after successful vote mutations to keep all users synchronized with the latest voting state
+  - **Shared Vote Count Display**: Vote counts displayed in TreeView automatically update for all users when any user votes, reflecting the global shared voting state (excluding Curations which show no vote counts)
+- **Cytoscape.js Graph Implementation**: Complete replacement of D3.js with Cytoscape.js for enhanced graph visualization:
+  - **Internal Caching Integration**: Utilizes Cytoscape's built-in caching mechanisms to minimize unnecessary re-renders and improve performance
+  - **Incremental Update Features**: Leverages Cytoscape's incremental update capabilities for efficient handling of data changes without full graph re-initialization
+  - **GPU-Accelerated Rendering**: Enhanced performance through GPU acceleration with smooth physics-based interactions
+  - **Stable Layout Algorithms**: Uses Cytoscape's layout engines for consistent and stable node positioning
+  - **Disabled Physics Forces**: Physics-based forces are disabled to make the graph load quickly and smoothly, preserving node placement and interactions like pan/zoom but without force-driven animations or jitter
+  - **Enhanced Canvas Navigation**: Smooth panning and zooming functionality with optimized performance
+  - **Non-Draggable Nodes**: Individual nodes cannot be manually dragged or repositioned to maintain consistent layout
+  - **Improved Edge Visibility**: Enhanced edge opacity and stroke color contrast optimized for both light and dark themes
+  - **Node Focus Interaction**: Click-to-focus behavior with highlighting of selected nodes and direct relationships
+  - **Node Type Filtering**: Interactive filter toggles with dynamic show/hide functionality for each node type
+  - **Vote-Based Node Filtering with Fixed Logic**: Automatic hiding of nodes with strictly more downvotes than upvotes (Curations are always visible as they cannot be voted on)
+  - **Enhanced Edge Label Rendering**: Bidirectional relationship type labels on Interpretation Token edges with dynamic positioning for both "From" and "To" relationships
+  - **Theme-Adaptive Styling**: Distinct node color schemes that adapt to current theme (light/dark mode)
+  - **Location Law Token Sequence Display**: Display of original bracketed law token sequences on node selection/hover
+  - **Shared Law Token Visualization**: Accurate display of shared law tokens connected to multiple locations
+  - **Versioned Location Display**: Proper display of versioned location names with version suffixes
+  - **Suffixed Swarm Display**: Proper display of swarms with global postfix suffixes and their complete suffixed names
+  - **Bidirectional Relationship Visualization**: Accurate display of Interpretation Token bidirectional relationships to both Law Tokens and other nodes with proper edge direction and connection counting
+  - **Collapsible Panel Implementation**: Implementation of collapsible/minimizable panels for both Legends/Filters and Visualization Controls:
+    - **Toggle Button Integration**: Small chevron or arrow icons positioned appropriately for expanding/collapsing each panel independently
+    - **Smooth Animation System**: CSS transitions or animations for smooth panel expand/collapse behavior
+    - **Session State Persistence**: localStorage or sessionStorage integration to maintain collapsed/expanded state during user session
+    - **Theme-Consistent Styling**: Toggle buttons and animations styled with monochrome theme and accent colors only on hover states
+    - **Accessibility Compliance**: Proper ARIA labels and keyboard navigation support for toggle buttons
+    - **Visual State Indicators**: Clear visual cues (chevron direction, panel borders, etc.) to indicate current panel state
+  - **Visualization Control Panel Integration**: Implementation of bottom-right positioned control panel with:
+    - **Link Distance Control**: Slider for uniform link distance between all connected nodes with real-time updates, automatically disabled or visually grayed out when "circle" or "breadthfirst" layouts are active since link distance does not apply to fixed-layout geometries
+    - **Node Size Control**: Slider for uniform node sizing with real-time visual updates
+    - **Edge Thickness Control**: Slider for edge/relation thickness with real-time rendering updates
+    - **Layout Selection**: Dropdown with Grid, Circle, Concentric, and Breadthfirst options
+    - **Synchronized Dragging**: Implementation of coordinated node movement where dragging a node moves all directly connected nodes to maintain link distance
+    - **Smooth Control Updates**: All slider and dropdown changes provide smooth, stable updates to the Cytoscape.js visualization without performance issues
+- Responsive design for different screen sizes
+- React state management for node type filter toggles, visualization control panel state, and collapsible panel states
+- Session persistence for filter states, visualization control settings, and panel collapsed/expanded states
+- **Enhanced Regular Expression Parsing with Comprehensive Error Handling and Crash Prevention**: Robust regex-based law token extraction that handles whitespace variations, newlines, and malformed brackets with comprehensive error handling, defensive programming, and crash prevention mechanisms to prevent runtime traps and ensure graceful degradation
+- Dynamic label positioning that follows Cytoscape.js layout updates
+- Secure hash-based ID generation for deterministic node identification
+- **Version Control Implementation**: Backend logic for detecting name conflicts, calculating version numbers, and automatically renaming locations with version suffixes
+- **Global Postfix Naming Implementation**: Backend logic for detecting global swarm name conflicts, calculating suffix numbers, and automatically renaming swarms with postfix suffixes across all curations
+- **Frontend Version Display**: Updated frontend components to properly display versioned location names in both GraphView and TreeView
+- **Frontend Suffixed Swarm Display**: Updated frontend components to properly display suffixed swarm names in both GraphView and TreeView
+- **Enhanced Interactive Voting System Implementation with Global Shared State (Excluding Curations)**: Frontend voting interface with upvote/downvote buttons that are fully interactive in TreeView only for all node types except Curations, with correct node ID references to prevent "node not found" errors, automatic creator upvote upon node creation (excluding Curations), and enhanced button state management for non-creators where both buttons remain available until a vote is cast, then become permanently greyed out and disabled, with automatic frontend refresh of voting counts and button states for all users after any successful vote to ensure proper synchronization and visible shared voting state
+- **Vote-Based Visibility Control with Fixed Logic**: Frontend logic to filter nodes based on vote counts in GraphView and organize discarded nodes in TreeView, with filtering performed only after global vote data synchronization is complete to avoid misclassification during load or refresh, ensuring only nodes with strictly more downvotes than upvotes are hidden or moved to the "Discarded" section (Curations are always visible and never appear in the "Discarded" section)
+- **Real-time Vote Updates with Global State (Excluding Curations)**: React Query integration for automatic vote count updates and visibility changes that reflect the global shared voting state for all users
+- **BUZZ Points Frontend Implementation**:
+  - **BUZZ Tab Component**: React component for the BUZZ tab in the header navigation with proper routing and active state handling
+  - **BUZZ Leaderboard Component**: Frontend component displaying ranked list of users ordered by BUZZ total in descending order, showing profile names and principal IDs
+  - **Dynamic Leaderboard Refresh**: React Query integration for automatic leaderboard data refresh and real-time updates
+  - **Monochrome Styling**: BUZZ tab and leaderboard styled consistent with the app's minimal monochrome theme with accent colors only on hover states
+  - **Responsive Design**: Leaderboard adapts to different screen sizes while maintaining functionality and readability
+- **Profile Management Frontend Implementation**:
+  - **Profile Settings Modal Component**: React modal component for editing profile information with form validation and submission
+  - **Profile Form Fields**: Input fields for profile name and social URL with proper validation and error handling
+  - **Profile Data Integration**: Integration with backend profile query and mutation functions
+  - **Modal State Management**: React state management for modal open/close states and form data
+  - **Theme-Consistent Modal Styling**: Modal follows the app's monochrome theme with accent colors only on hover states
+- **Enhanced Custom Attribute Search Frontend Implementation**:
+  - **Search Modal Component**: React modal component for searching nodes by custom attributes with form validation and submission
+  - **Keys Auto-Complete**: Dropdown component listing all existing custom attribute keys with proper data fetching and caching
+  - **Values Auto-Complete**: Dropdown component showing all available attribute values based on the selected key, ensuring users can only pick from existing keys and values rather than entering free text
+  - **Search Results Display**: Scrollable list component showing matching nodes with clickable navigation
+  - **Search Integration**: Integration with backend search query functions and React Query for data management
+  - **Enhanced Backend Integration**: Integration with backend functions to retrieve available attribute values for selected keys
+  - **Modal State Management**: React state management for modal open/close states, search form data, and results display
+  - **Theme-Consistent Search Styling**: Modal follows the app's monochrome theme with consistent typography and minimal styling
+- Real-time updates for membership request changes in SwarmMembershipManager component
+- Backend query integration for SwarmMembershipManager and SwarmMembershipApproval components with enhanced profile data retrieval
+- Updated permission validation in frontend components for universal read access and restricted write permissions
+- Comprehensive Principal conversion handling throughout all membership-related frontend operations with robust type checking and error handling
+- All membership approval and join request mutations must include Principal validation and conversion logic
+- User-friendly error messages for invalid or missing principal data instead of backend failures
+- Consistent Principal handling across SwarmMembershipManager.tsx, SwarmMembershipApproval.tsx, and useQueries.ts hooks
+- **Enhanced Profile Integration**: Frontend components must integrate profile name display functionality for membership requests, with appropriate fallback handling when profile data is unavailable
+- TreeView component enhanced with inline creation buttons that integrate with existing CreateNodeDialog component and permission validation systems
+- **TreeView Law Token Sequence Display**: Integration of original law token sequence display below or alongside location titles with monochrome styling and minimal spacing
+- **TreeView Discarded Section with Fixed Logic**: Implementation of collapsed "Discarded" section at bottom of TreeView containing only nodes with strictly more downvotes than upvotes, organized by type, with filtering performed only after global vote data synchronization is complete (Curations never appear in this section)
+- **TreeView Jurisdiction Display Implementation**: Integration of three-letter jurisdiction attribute display next to each Curation node in the TreeView with minimal monochrome styling consistent with the app's theme
+- **TreeView Swarm Curation Context Implementation**: Integration of parent Curation name display next to each Swarm name (including the suffix) in the TreeView with small, theme-consistent label format and minimal monochrome styling
+- **TreeView Export Functionality Implementation**: 
+  - **Export Button**: Minimal down arrow icon button that triggers download of complete Tree data in JSON format
+  - **JSON Processing**: Frontend logic to serialize complete tree data structure with proper validation
+  - **File Handling**: Standard browser file download for export with comprehensive JSON validation
+  - **Seamless Integration**: Button positioned appropriately within the Tree tab without disrupting existing layout or scrollable functionality
+- **TreeView Title Update Implementation**: 
+  - **Updated Title Display**: TreeView component displays "Hierarchical View" as the title text instead of "Hierarchical Tree View"
+- **TreeView Scrollable Interface Implementation**: 
+  - **Scrollable Container**: TreeView component wrapped in a scrollable container with the `.tree-view-scroll` class that allows vertical scrolling through all overflowing node data
+  - **Independent Pane Scrolling**: Only the Tree View pane scrolls independently, not the entire page, ensuring users can move through long hierarchical structures without losing context or stretching the page
+  - **Theme-Consistent Scrollbar Styling**: Custom CSS for scrollbar appearance applied to the `.tree-view-scroll` class that adapts to light/dark theme with monochrome colors and subtle accent highlights
+  - **Smooth Scrolling**: Implementation of smooth scrolling behavior for better user experience within the contained scroll area
+  - **Scroll Position Persistence**: Optional session storage of scroll position to maintain user's place in the tree when navigating between views
+- **Updated Law Token Label Implementation**: 
+  - **Label Text Updates**: All instances of "Shared" related to law token sharing are updated to "Use Count" throughout the TreeView interface
+  - **Tooltip Updates**: Hover text and tooltips for law token sharing indicators display "Use Count" instead of "Shared"
+  - **Consistent Terminology**: The "Use Count" terminology is applied consistently across all TreeView components and related interface elements
+- **Crash-Resistant Frontend Data Refresh Implementation**: 
+  - **Location Creation Error Handling**: The TreeView correctly waits for location creation operations to complete and gracefully refreshes the tree display after law token creation, with comprehensive error handling for failed operations and defensive programming to prevent crashes
+  - **User Feedback**: Provide clear user feedback for both successful and failed location creation operations
+  - **Graceful Recovery**: Handle backend errors gracefully without crashing the frontend interface, with proper error boundaries and fallback states
+  - **Defensive Programming**: All location creation and law token parsing operations include comprehensive error handling to prevent frontend crashes
+- **GraphView Law Token Sequence Display**: Implementation of location law token sequence display on node selection/hover with theme-appropriate styling and accent color highlights
+- **GraphView Vote-Based Filtering with Fixed Logic**: Implementation of automatic node hiding for nodes with strictly more downvotes than upvotes, excluding them from rendering updates (Curations are always visible)
+- **Node Type Filter Implementation**: Interactive filter toggles in the legend with state management for showing/hiding specific node types
+- **Dynamic Graph Filtering**: Real-time filtering of nodes and edges based on active filter states with smooth layout updates
+- **Filter State Persistence**: Session storage of filter toggle states for consistent user experience
+- **Data Reset Integration**: Frontend mutation hook for invoking backend `resetAllData` method with proper error handling and success feedback
+- **Confirmation Dialog**: Modal or dialog component to confirm data reset action before execution
+- **Reset Status Feedback**: Loading states and success/error messages during and after reset operation
+- **Post-Reset Navigation**: Automatic refresh or redirect to appropriate view after successful data reset
+- **Minimalist Theme Implementation**: CSS custom properties or Tailwind configuration for consistent monochrome styling with selective accent color application
+- **Notion-like Styling**: Clean, minimal design patterns with subtle borders, appropriate spacing, and restrained color usage
+- **Theme-based Monochrome Palette**: Automatic switching between light grey/white and dark grey/black color schemes
+- **Selective Accent Usage**: Accent colors applied only to hover states, active elements, active filter indicators, and subtle highlights
+- Logo asset integration with theme-based switching logic for header display
+- Responsive logo sizing and positioning within header layout
+- **Fixed VoronoiDiagram Component Implementation with Persistent Caching**: Robust data fetching, caching, and error handling for the landing page Voronoi diagram:
+  - **localStorage Integration**: Implementation of browser localStorage for persistent graph data caching across sessions
+  - **Cache Expiration Management**: 24-hour cache expiration logic with timestamp-based validation
+  - **Cache-First Loading Strategy**: Priority loading from localStorage before attempting backend data fetch
+  - **Reduced Backend Calls**: Data fetching from backend only occurs once every 24 hours when cache expires
+  - **Fixed Data Processing**: Correct processing of node coordinates and seeds from `getGraphData()` output to ensure proper visualization instead of empty canvas rendering
+  - **Enhanced Error Handling**: Graceful use of cached replica data when fetching fails to prevent blank rendering states while maintaining visual quality
+  - **Real Node Data Preservation**: Cached data maintains actual node names and types from backend, preventing placeholder name display
+  - Integration with `getGraphData()` query function with proper backend actor initialization for unauthenticated visitors
+  - Loading state management with visual indicators while fetching or validating cached graph data
+  - Graceful handling of empty, corrupted, or invalid cached data with appropriate fallback displays
+  - Retry mechanism for failed data fetching attempts with exponential backoff or user-triggered retry
+  - Error boundary implementation to catch and handle connection failures
+  - Proper initialization of backend actor connections even for unauthenticated visitors
+  - Use all node types (curations, swarms, locations, law tokens, interpretation tokens) as seed points with theme-adaptive color mapping
+  - Maintain existing node type color differentiation based on current theme (light/dark mode)
+  - **Antialiased Line Rendering**: Smooth antialiased lines for reduced pixelation and cleaner visual quality in both light and dark themes
+  - **Interactive Tooltip System**: Hover functionality over seed points displaying node name and type with theme-adaptive monochrome styling and accent color highlights
+  - Static non-interactive display after successful data fetch and render (except for tooltip interactivity)
+  - Responsive and centered positioning with persistent cached data integration
+  - **Clean Interface**: The diagram displays without any cache status buttons or indicators, maintaining a completely minimal aesthetic focused solely on the visualization
+  - **Cache Validation and Cleanup**: Automatic validation of cached data integrity with cleanup of corrupted or invalid cache entries
+  - **Theme-Adaptive Cursor Visibility**: CSS styling to ensure the cursor remains consistently black in light mode and white in dark mode inside the Voronoi diagram area for visibility throughout all interactions
+- **Enhanced Landing Page Implementation**: 
+  - Header layout includes both logo and app name "hyvmind" with font size reduced to match the login text size for consistent typography
+  - **Hamburger Menu Implementation**: Hamburger menu icon positioned on the top right corner, to the right of the light/dark mode toggle, with dropdown menu containing Login button, Learn More link, and updated Join Community link pointing to `https://telegram.me/+YbeQY2mzwfFlMGU1`
+  - **Menu Styling**: Consistent monochrome theme styling for hamburger menu and contents with accent colors only on hover states
+  - HTML document title configuration set to "pre-release v1"
+  - Voronoi diagram positioning and scaling optimized for center-aligned, responsive display with persistent cached data (24-hour expiration) and fixed data processing
+- **Enhanced Header Navigation Implementation**:
+  - **Icon-Only Create Node Button**: Implementation of plus icon button (no text label) with tooltip showing "Create Node" on hover, styled with monochrome theme and accent colors only on hover states
+  - **Icon-Only Search Button**: Implementation of magnifying glass icon button (no text label) with tooltip showing "Search" on hover, positioned between Create Node and Theme Toggle buttons, styled with monochrome theme and accent colors only on hover states
+  - **Hamburger Menu Integration**: Hamburger icon positioned in top-right header beside theme toggle with dropdown menu containing:
+    - **Logout Option**: Logout button moved from standalone position into hamburger menu
+    - **Profile Settings Option**: New menu option that opens the Profile Settings modal
+  - **Menu State Management**: React state management for hamburger menu open/close states with proper click outside handling
+  - **Theme-Consistent Menu Styling**: Hamburger menu and dropdown contents styled with monochrome theme and accent colors only on hover states
+- **Consistent Monochrome Application**: All UI components (buttons, headers, footers, tabs, forms, voting interfaces excluding Curations, visualization control panel, collapsible panels, enhanced Ontologies page, scrollable TreeView, Export button, BUZZ tab and leaderboard, Profile Settings modal, enhanced Search modal, icon-only Create Node button, icon-only Search button, hamburger menu) follow the minimalist monochrome design with accent colors reserved for interactive states only
+- **Graph Node Color Implementation**: Theme-aware color mapping for each node type with smooth transitions during theme switching and consistent color application across nodes and legends
+- **Enhanced Graph Interaction Implementation**: Smooth panning and zooming with proper event handling, improved edge styling with theme-appropriate contrast, and node focus behavior with highlighting effects
+- **Enhanced CreateNodeDialog Implementation with Crash-Resistant Error Handling**: 
+  - **Current Path Display Integration**: Implementation of current path display above the name/title input field showing full parent hierarchy using parent node names retrieved from React state/context
+  - **Path Formatting**: Simple arrow (→) formatting for parent node names with monochrome styling consistent with the app's theme-aware design
+  - **Automatic Path Fetching**: Integration with React state/context to automatically retrieve and display parent node names for the current path
+  - Dynamic form field rendering based on node type selection
+  - **Enhanced Curation Interface**: Title input field and fixed "Jurisdiction" attribute with greyed-out key field labeled "Jurisdiction" and dropdown containing ISO 3166-1 alpha-3 country codes with "IND" as default selection
+  - **Swarm Creation with Blank Tags Field**: Comma-separated tags input field for Swarm creation with no placeholder text, keeping the field blank by default, with proper parsing and validation
+  - Dynamic custom attributes interface for Locations with key-value pair management
+  - "+" button functionality for adding new attribute rows with proper state management
+  - **Enhanced Interpretation Token Interface**: Comprehensive form implementation with:
+    - **Corrected Field Labels**: "From Law Token" (corrected from "Parent From Law Token") and "Context" (renamed from "Description")
+    - **Bidirectional Relationship Fields**: "From Relationship Type" and "To Relationship Type" input fields
+    - **To Node Selection**: Dropdown for selecting any node from user's member swarms
+    - **Attributes Support**: Dynamic custom attributes interface identical to Location creation
+    - **Form Validation**: All fields treated as required with proper validation
+    - **Node Selection Logic**: Backend integration to retrieve available nodes from user's member swarms
+  - **Descriptive Helper Text Integration**: Contextual helper text display for each node type positioned below title input or as help boxes with monochrome styling consistent with the app's minimal theme
+  - Form validation and submission handling for new data structures including bidirectional relationship validation and jurisdiction attribute validation
+  - Consistent styling with existing monochrome theme and gold/yellow hover accents
+  - **Crash-Resistant Location Creation Error Handling**: The frontend correctly waits for the `createLocation` call to complete and handles any errors gracefully, providing user feedback for both successful and failed operations with comprehensive error recovery mechanisms, defensive programming, and crash prevention
+- **Manual Refresh Button Implementation**: 
+  - Unobtrusive refresh button integrated into Graph View control panel with minimal monochrome styling
+  - Button triggers manual data fetch from backend only when clicked by user
+  - Loading state indication during refresh operation
+  - Error handling for failed refresh attempts
+  - Consistent styling with existing UI patterns and theme-appropriate hover effects
+  - Disabled automatic refetching configuration in React Query setup
+- **REST API Frontend Integration**: Frontend components and hooks to interact with the new REST API endpoints for public data access
+- **Collapsible Panel System Implementation**:
+  - **Panel State Management**: React state hooks for tracking collapsed/expanded state of both Legends/Filters and Visualization Controls panels independently
+  - **Toggle Button Components**: Small, accessible toggle buttons (chevron/arrow icons) positioned appropriately for each panel with proper click handlers
+  - **Smooth Animation Implementation**: CSS transitions or React animation libraries for smooth expand/collapse animations with appropriate timing and easing
+  - **Session Persistence Logic**: localStorage or sessionStorage integration to save and restore panel states across browser sessions
+  - **Theme-Consistent Toggle Styling**: Toggle buttons styled with monochrome theme, using accent colors only for hover states and visual state indicators
+  - **Accessibility Implementation**: Proper ARIA attributes, keyboard navigation support, and screen reader compatibility for toggle functionality
+  - **Visual State Indicators**: Clear visual cues (chevron direction changes, panel border styling, etc.) to indicate current collapsed/expanded state
+  - **Responsive Behavior**: Panel collapsing behavior adapts appropriately to different screen sizes while maintaining functionality
+- **Visualization Control Panel Implementation**:
+  - **Bottom-Right Positioning**: Panel positioned at the bottom-right corner of the Graph View with appropriate margins and z-index
+  - **Slider Components**: Three range sliders for link distance (automatically disabled for circle/breadthfirst layouts), node size, and edge thickness with real-time value updates
+  - **Layout Dropdown**: Select dropdown with Grid, Circle, Concentric, and Breadthfirst options
+  - **Real-Time Updates**: All control changes immediately update the Cytoscape.js graph without delays or performance issues
+  - **Synchronized Dragging Logic**: Implementation of coordinated node movement where dragging one node moves all directly connected nodes to maintain uniform link distances
+  - **State Management**: React state management for all control panel values with session persistence
+  - **Monochrome Styling**: Panel follows the app's minimal monochrome theme with accent colors only on hover states
+  - **Smooth Rendering**: All control updates provide smooth, stable changes to the graph visualization
+  - **Responsive Design**: Panel adapts to different screen sizes while maintaining functionality
+- **Bidirectional Relationship Implementation**: Frontend components must properly handle and display both incoming and outgoing connections for Interpretation Tokens with accurate connection counting in side panels and proper edge visualization in the graph
+- **Enhanced Ontologies View Implementation**: Comprehensive frontend implementation for the Ontologies tab:
+  - **Collapsible Core Ontology Section Implementation**: The Core Ontology section is now collapsible/foldable with a minimal toggle (arrow or chevron) while maintaining its static specification display that mirrors the backend schema, including classes (Curation, Swarm, Location, LawToken, InterpretationToken), object properties (belongsTo, createsRelation, connectsTo), data properties (hasCustomAttribute, hasTag), and SWRL inheritance rules for custom attributes, displayed in readable Turtle syntax in a code-style panel (not editable)
+  - **Swarm-Specific Extended Ontologies with Icon-Only Download and Curation Context Implementation**: For each swarm in the current data (getGraphData output), create collapsible panels labeled "Extended Ontology — {Swarm Name}" that display the parent Curation name or ID next to the Swarm name (including the suffix) with minimal monochrome styling, dynamically generate ontology representations using Core Ontology classes and properties, list individuals (instances) created within that swarm (Locations, LawTokens, InterpretationTokens), and represent user-specified attributes and relationships as RDF triples, with each panel including a simple down-arrow icon only (no text) that maintains the existing download functionality for exporting swarm-specific Turtle files
+  - **Dynamic Data Refresh Implementation**: Extended Ontologies auto-refresh as users modify swarm content by fetching new data dynamically using React Query integration
+  - **Theme-Consistent Design Implementation**: Maintains monochrome styling with subtle accent colors on hover, consistent with the app's minimal aesthetic
+  - **Collapsible Panel System**: Implementation of collapsible swarm sections with toggle buttons, smooth animations, and session persistence
+  - **Turtle Syntax Formatting**: Proper formatting and display of RDF/Turtle syntax in code-style panels with syntax highlighting and monospace fonts
+  - **File Export Functionality**: Implementation of client-side file download functionality for Turtle ontology files with proper MIME types and filename generation
+- **SWRL Rule Implementation**: Backend implementation of SWRL rule processing and validation for the custom attribute inheritance rule, ensuring proper ontological consistency and hierarchical attribute propagation
+- **ISO 3166-1 Alpha-3 Country Code Implementation**: Frontend dropdown component with complete list of ISO 3166-1 alpha-3 country codes for jurisdiction selection in Curation creation
+- **Global Postfix-Based Swarm Naming Implementation**: Backend modification to the `createSwarm` function to implement global postfix-based naming where each unique base swarm name automatically appends a serial suffix (`_1`, `_2`, `_3`, etc.) to ensure all swarms have unique IDs across the entire system, irrespective of curations, by checking all existing swarms globally for name conflicts and calculating the next available suffix number
+- **Swarm Curation Context Display Implementation**: Frontend components updated to display parent Curation names next to Swarm names (including suffixes) in TreeView and OntologiesView with small, theme-consistent labels using minimal monochrome styling
+- **Universal Access Control Initialization Implementation**: Backend modification to the `initializeAccessControl` function to execute successfully for all users, including when the admin limit has already been reached, ensuring proper access initialization and preventing "actor not available" errors while preserving the two-admin limit and not assigning new admin roles during initialization
+
+## Data Storage
+The backend stores:
+- Node information for all five hierarchy levels (Curation, Swarm, Location, Law Token, Interpretation Token) with deterministically generated unique IDs
+- **Enhanced Node Properties**:
+  - **Curation jurisdiction**: Fixed "Jurisdiction" attribute with ISO 3166-1 alpha-3 country code value stored as part of curation data
+  - **Swarm tags**: Comma-separated tags stored as part of swarm data for discovery functionality
+  - **Location custom attributes**: Key-value pairs stored as part of location data for flexible metadata, including automatic version attributes for versioned locations
+  - **Interpretation Token attributes**: Key-value pairs stored as part of interpretation token data for custom metadata
+- **Enhanced Interpretation Token Data with Bidirectional Relationships**:
+  - **From Law Token**: Reference to parent law token with "From" relationship type
+  - **To Node**: Reference to any target node with "To" relationship type
+  - **Context**: Detailed description content
+  - **Bidirectional Relationship Mappings**: Both "From" and "To" relationship tracking with complete storage of incoming and outgoing connections
+  - **Complete Edge Data**: Both directions of relationships stored to ensure proper graph visualization and accurate connection counting
+- **Versioned Location Names**: Updated location names with version suffixes (e.g., "originalName (v2)") stored as the primary name field
+- **Suffixed Swarm Names**: Updated swarm names with global postfix suffixes (e.g., "baseName_2") stored as the primary name field
+- **Parent Node Information**: Complete parent node data accessible for current path display in CreateNodeDialog through React state/context
+- **Enhanced User Profile Data**: User profile information including profile names and social URLs stored and accessible for membership request display functionality and profile management
+- **BUZZ Scores Storage**: BUZZ scores per user by principal ID stored in the backend, allowing negative values, with automatic updates when relevant events occur (node creation, upvotes, downvotes)
+- **Enhanced Custom Attribute Index**: All existing custom attribute keys and their corresponding values from backend nodes (Locations and Interpretation Tokens) stored and accessible for search auto-complete functionality
+- Complete hierarchical relationships between nodes across all levels including bidirectional relationships for Interpretation Tokens
+- Interpretation Token entities with bidirectional relationship system to both Law Tokens and other nodes
+- Node metadata and properties including bidirectional relationship type information
+- User associations with nodes for write permission validation
+- **Node Selection Data**: Available nodes from user's member swarms for "To Node" selection in Interpretation Token creation
+- Automatically generated law tokens extracted from location content with deterministic IDs using enhanced parsing logic with comprehensive error handling and crash prevention
+- **Original Law Token Sequences**: Complete original bracketed law token sequences from each location's content as entered by the user
+- **Location-Law Token Relationship Map**: Explicit storage of location-law token pairs in locationLawTokenRelations map to track which locations link to which law tokens without overwriting prior relationships
+- **Independent Law Token Relations for Versions**: Each versioned location maintains its own independent law token relations without merging with other versions
+- Swarm membership data including membership requests, approvals, and member associations
+- Membership status tracking for write access control validation and "To Node" selection validation
+- **Enhanced Vote Data Storage with Global Shared State (Excluding Curations)**: Upvote and downvote counts for all major node types except Curations (Swarms, Locations, Law Tokens, Interpretation Tokens) with automatic creator upvote upon node creation (excluding Curations), stored in a shared backend map accessible to all users through the existing `voteDataMap` configuration
+- **User Vote Tracking**: User-node vote tracking to enforce one vote per user per node with irreversible vote persistence, including automatic creator votes (excluding Curations)
+- **Vote Permission Data**: Swarm membership associations for validating voting permissions on Locations, Law Tokens, and Interpretation Tokens with correct node ID handling, excluding Curations from all voting operations
+- **Enhanced Metadata for API**: Creator information with principal and username, approver information, and timestamps for Law Tokens, Locations, and Interpretation Tokens
+- All data can be reset to empty states through administrative data clearing functionality including voting data and BUZZ scores
+- Query access control ensuring only swarm creators can view membership requests for their own swarms
+- Universal read access for all node data regardless of user role or membership status, including public access for unauthenticated visitors through the `getGraphData()` query and REST API endpoints
+- Vote count data accessible to all authenticated users for display purposes with proper node ID handling (excluding Curations), with vote changes immediately reflected in the shared backend map for all users
+- **Enhanced Membership Request Data**: Membership requests stored with associated user profile information for comprehensive requester identification in swarm creator interfaces
+- **Tree Data Storage**: Complete tree data structure available for export in JSON format:
+  - **Export Data Format**: Complete hierarchical tree data structure in JSON format preserving all node relationships, attributes, and metadata
+- **Core Ontology and SWRL Rules Storage**: Formal ontological definitions and SWRL rules including the custom attribute inheritance rule `Node(?child) ^ belongsTo(?child, ?parent) ^ hasCustomAttribute(?parent, ?attr) → hasCustomAttribute(?child, ?attr)` that governs hierarchical attribute inheritance across all node relationships
+- **Global Postfix-Based Swarm Storage**: Swarm data stored with global postfix suffixes to ensure unique naming across the entire system, irrespective of parent curations, with proper parent-child relationships to Curations maintained
+- **Admin Access Control Data**: Admin role assignments with maximum limit of 2 administrators, preserved across system resets and protected from unauthorized expansion, with universal access control initialization support for all users
+
+## Fresh Backend Deployment Requirements
+- Deploy a completely new backend canister with fresh storage initialization
+- Reset all backend storage maps to empty states (clean slate)
+- Maintain identical backend functionality and API interfaces as Version 102
+- Ensure proper frontend-backend actor bindings are established
+- Resolve "actor not available" errors through proper canister initialization
+- Preserve all existing frontend code, structure, and features without modification
+- Maintain English as the application content language
+- Ensure seamless transition from old to new backend canister

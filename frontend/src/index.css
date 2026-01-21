@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 0.625rem;
+        /* Light mode: White background, black text, light grey borders */
+        --background: 1 0 0;
+        --foreground: 0.145 0 0;
+        --card: 1 0 0;
+        --card-foreground: 0.145 0 0;
+        --popover: 1 0 0;
+        --popover-foreground: 0.145 0 0;
+        --primary: 0.145 0 0;
+        --primary-foreground: 1 0 0;
+        --secondary: 0.97 0 0;
+        --secondary-foreground: 0.145 0 0;
+        --muted: 0.97 0 0;
+        --muted-foreground: 0.556 0 0;
+        /* Light mode: Dark Gold (#B8860B) - only for hover/active states */
+        --accent: 0.62 0.15 85;
+        --accent-foreground: 1 0 0;
+        --destructive: 0.577 0.245 27.325;
+        --destructive-foreground: 1 0 0;
+        --border: 0.922 0 0;
+        --input: 0.922 0 0;
+        --ring: 0.708 0 0;
+        --chart-1: 0.646 0.222 41.116;
+        --chart-2: 0.6 0.118 184.704;
+        --chart-3: 0.398 0.07 227.392;
+        --chart-4: 0.828 0.189 84.429;
+        --chart-5: 0.769 0.188 70.08;
+        --sidebar: 1 0 0;
+        --sidebar-foreground: 0.145 0 0;
+        --sidebar-primary: 0.145 0 0;
+        --sidebar-primary-foreground: 1 0 0;
+        --sidebar-accent: 0.97 0 0;
+        --sidebar-accent-foreground: 0.145 0 0;
+        --sidebar-border: 0.922 0 0;
+        --sidebar-ring: 0.708 0 0;
+    }
+
+    .dark {
+        /* Dark mode: Black background, white text, dark grey borders */
+        --background: 0.145 0 0;
+        --foreground: 0.985 0 0;
+        --card: 0.205 0 0;
+        --card-foreground: 0.985 0 0;
+        --popover: 0.205 0 0;
+        --popover-foreground: 0.985 0 0;
+        --primary: 0.985 0 0;
+        --primary-foreground: 0.145 0 0;
+        --secondary: 0.269 0 0;
+        --secondary-foreground: 0.985 0 0;
+        --muted: 0.269 0 0;
+        --muted-foreground: 0.708 0 0;
+        /* Dark mode: Bright Yellow (#FFD700) - only for hover/active states */
+        --accent: 0.88 0.18 95;
+        --accent-foreground: 0.145 0 0;
+        --destructive: 0.704 0.191 22.216;
+        --destructive-foreground: 0.985 0 0;
+        --border: 0.269 0 0;
+        --input: 0.269 0 0;
+        --ring: 0.439 0 0;
+        --chart-1: 0.646 0.222 41.116;
+        --chart-2: 0.6 0.118 184.704;
+        --chart-3: 0.398 0.07 227.392;
+        --chart-4: 0.828 0.189 84.429;
+        --chart-5: 0.769 0.188 70.08;
+        --sidebar: 0.205 0 0;
+        --sidebar-foreground: 0.985 0 0;
+        --sidebar-primary: 0.985 0 0;
+        --sidebar-primary-foreground: 0.145 0 0;
+        --sidebar-accent: 0.269 0 0;
+        --sidebar-accent-foreground: 0.985 0 0;
+        --sidebar-border: 0.269 0 0;
+        --sidebar-ring: 0.439 0 0;
+    }
+
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* Theme-adaptive cursor for Voronoi diagram */
+.voronoi-diagram-container .voronoi-canvas {
+    cursor: crosshair;
+}
+
+/* Light mode: black cursor */
+.voronoi-diagram-container .voronoi-canvas {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke="black" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="black" stroke-width="2"/></svg>') 12 12, crosshair;
+}
+
+/* Dark mode: white cursor */
+.dark .voronoi-diagram-container .voronoi-canvas {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke="white" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/></svg>') 12 12, crosshair;
+}
+
+/* Theme-consistent scrollbar styling for TreeView with smooth scrolling */
+.tree-view-scroll [data-radix-scroll-area-viewport] {
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+}
+
+/* Light mode scrollbar */
+.tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-track {
+    background: oklch(var(--muted));
+    border-radius: 4px;
+}
+
+.tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb {
+    background: oklch(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--accent));
+}
+
+/* Dark mode scrollbar */
+.dark .tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-track {
+    background: oklch(var(--muted));
+}
+
+.dark .tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb {
+    background: oklch(var(--muted-foreground) / 0.4);
+}
+
+.dark .tree-view-scroll [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--accent));
+}
+
+/* Firefox scrollbar styling */
+.tree-view-scroll [data-radix-scroll-area-viewport] {
+    scrollbar-color: oklch(var(--muted-foreground) / 0.3) oklch(var(--muted));
+}
+
+.dark .tree-view-scroll [data-radix-scroll-area-viewport] {
+    scrollbar-color: oklch(var(--muted-foreground) / 0.4) oklch(var(--muted));
+}
+
