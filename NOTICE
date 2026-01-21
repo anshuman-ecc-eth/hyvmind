@@ -1,0 +1,31 @@
+NOTICE
+
+This project is licensed under the Creative Commons Attribution-ShareAlike 
+4.0 International Public License (CC-BY-SA 4.0).
+
+Copyright (c) Anshuman Singh, 2026
+
+For the full license text, see the LICENSE file in this repository or visit:
+http://creativecommons.org/licenses/by-sa/4.0/
+
+======================================================================
+
+ATTRIBUTION
+
+When sharing, distributing, or adapting this work, please provide 
+appropriate credit to:
+
+- Original Author: Anshuman Singh
+- Project Name: Hyvmind
+- License: CC-BY-SA 4.0
+
+For more information on attribution requirements under CC-BY-SA 4.0, see:
+http://creativecommons.org/licenses/by-sa/4.0/
+
+======================================================================
+
+THIRD-PARTY DEPENDENCIES
+
+This project may include third-party dependencies with their own licenses. 
+Please refer to the package.json files and documentation for information 
+about third-party licenses.

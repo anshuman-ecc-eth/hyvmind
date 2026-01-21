@@ -696,3 +696,11 @@ Nodes with equal or more upvotes than upvotes remain visible in both views.
 ## Summary
 
 Hyvmind combines hierarchical knowledge organization with incentive-based contribution to create a collaborative legal research platform. The five-level node structure (Curation → Swarm → Location → Law Token → Interpretation Token) enables structured legal annotation, while the BUZZ points system rewards contributors for creating valuable content. The voting system ensures quality control through community curation, and the swarm membership model enables collaborative research within controlled access groups.
+
+---
+
+## License
+
+Copyright (c) Anshuman Singh, 2026. Licensed under CC-BY-SA 4.0.
+
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for full license and attribution details.

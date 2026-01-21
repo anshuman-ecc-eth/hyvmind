@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) Anshuman Singh, 2026.
+ * SPDX-License-Identifier: CC-BY-SA-4.0
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
+ * International License. To view a copy of this license, visit 
+ * http://creativecommons.org/licenses/by-sa/4.0/
+ */
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import reactHooks from 'eslint-plugin-react-hooks';
