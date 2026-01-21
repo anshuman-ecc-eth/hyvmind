@@ -64,15 +64,7 @@ Hyvmind's graph visualization is built with a custom SVG-based renderer designed
 - **Collapsible Control Panels**: Legend/filters and visualization controls can be minimized
 - **Session Persistence**: User preferences (layout, filters, zoom) are saved to sessionStorage
 
-**Node Colors by Type and Theme**:
-
-| Node Type | Light Mode | Dark Mode |
-|-----------|------------|-----------|
-| Curation | #D32F2F (Deep Red) | #FF7043 (Light Coral) |
-| Swarm | #1976D2 (Strong Blue) | #42A5F5 (Light Blue) |
-| Location | #388E3C (Forest Green) | #66BB6A (Light Green) |
-| Law Token | #7B1FA2 (Deep Purple) | #BA68C8 (Light Purple) |
-| Interpretation Token | #F57C00 (Dark Orange) | #FFB74D (Light Amber) |
+**Theme Adaptation**: Colors adjust automatically to light/dark mode
 
 ---
 
@@ -208,20 +200,6 @@ The GraphView displays the knowledge graph as an interactive SVG visualization. 
    - `wheel` for zoom
    - `click` for node selection and focus
 8. Persist preferences (filters, layout, controls) to sessionStorage
-
-**SVG Structure**:
-```svg
-<svg>
-  <g transform="translate(pan.x, pan.y) scale(zoom)">
-    <!-- Edges layer -->
-    <g>{links.map(link => <line />)}</g>
-    <!-- Edge labels layer -->
-    <g>{links.map(link => <g><rect/><text/></g>)}</g>
-    <!-- Nodes layer -->
-    <g>{nodes.map(node => <g><circle/><text/></g>)}</g>
-  </g>
-</svg>
-```
 
 ### TreeView (`TreeView.tsx`)
 
@@ -700,6 +678,8 @@ Hyvmind combines hierarchical knowledge organization with incentive-based contri
 ---
 
 ## License
+
+[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
 Copyright (c) Anshuman Singh, 2026. Licensed under CC-BY-SA 4.0.
 
