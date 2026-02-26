@@ -1,0 +1,95 @@
+{
+  "kind": "build_request",
+  "title": "Collectibles Tab, Settings Rename, and Leaderboard Tab Rename",
+  "projectName": "Hyvmind",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "In the top-right hamburger menu, rename the button currently labeled 'Profile Settings' to simply 'Settings'.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "rename the profile settings button in the top right hamburger menu to, simply, 'Settings'"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The hamburger menu item previously reading 'Profile Settings' now reads 'Settings'.",
+        "Clicking 'Settings' still opens the same settings modal."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a new top-level authenticated tab titled 'Collectibles' that renders the NFTGallery component (law tokens and interpretation tokens gallery) previously housed in the 'Manage Collectibles' section of the Settings modal. The Collectibles tab should appear alongside the other post-login tabs (Graph, Tree, Terminal, Swarms, Leaderboard).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "Shift the Manage Collectibles section to a separate tab titled 'Collectibles'"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A 'Collectibles' tab is visible in the authenticated navigation alongside other tabs.",
+        "The Collectibles tab displays the law tokens and interpretation tokens gallery (NFTGallery component).",
+        "Clicking a collectible card opens the NFTDetailModal as before."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Remove the 'Manage Collectibles' section (NFTGallery) from the ProfileSettingsModal. The Mint Settings section (Number of Copies / copy count configuration) must remain in the Settings modal.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "the Mint Settings section with Number of Copies can remain in Profile Settings"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The ProfileSettingsModal no longer renders the NFTGallery or any collectibles listing.",
+        "The Mint Settings / Number of Copies field is still present and functional inside the ProfileSettingsModal.",
+        "Opening the Settings modal is noticeably faster due to the removal of the gallery."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Rename the 'BUZZ' tab in the authenticated navigation to 'Leaderboard'. The tab must still navigate to the same BuzzLeaderboard page.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "Rename the BUZZ tab to 'Leaderboard'"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The tab previously labeled 'BUZZ' now displays as 'Leaderboard'.",
+        "Clicking 'Leaderboard' still renders the BuzzLeaderboard page with ranked BUZZ scores.",
+        "No other navigation behavior is changed."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not remove or alter the Mint Settings (Number of Copies) section from the ProfileSettingsModal.",
+    "Do not modify the NFTGallery or NFTDetailModal component logic — only relocate where NFTGallery is rendered.",
+    "The landing page graph diagram and all pre-authentication views must remain untouched.",
+    "All changes are frontend-only; no backend modifications required."
+  ],
+  "nonGoals": [
+    "Filtering Graph View or List View by creator principal — deferred to a later build.",
+    "Any changes to BUZZ balance logic, scoring, or backend data structures.",
+    "Redesigning the collectibles card layout or NFTGallery component internals.",
+    "Adding a debug panel or data reset functionality."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

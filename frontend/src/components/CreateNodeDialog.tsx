@@ -1,11 +1,4 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   useCreateCuration,
   useCreateSwarm,
@@ -31,9 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Info, X, Loader2 } from 'lucide-react';
+import { Plus, Info, X, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import type { NodeId, CustomAttribute } from '../backend';
+import { Directionality } from '../backend';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type NodeType = 'curation' | 'swarm' | 'location' | 'interpretationToken';
 
@@ -44,6 +39,22 @@ interface CreateNodeDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
+
+// Define proper types for options
+interface SimpleOption {
+  id: NodeId;
+  label: string;
+}
+
+interface ExtendedOption {
+  id: NodeId;
+  label: string;
+  type: string;
+  path: string;
+  name: string;
+}
+
+type ParentOption = SimpleOption | ExtendedOption;
 
 // ISO 3166-1 alpha-3 country codes
 const ISO_COUNTRY_CODES = [
@@ -74,6 +85,41 @@ const ISO_COUNTRY_CODES = [
   'ZAF', 'ZMB', 'ZWE'
 ];
 
+// Helper function to check if option is extended
+function isExtendedOption(option: ParentOption): option is ExtendedOption {
+  return 'name' in option && 'path' in option && 'type' in option;
+}
+
+// Helper function to extract node name
+function getNodeName(option: ParentOption): string {
+  if (isExtendedOption(option)) {
+    return option.name;
+  }
+  return option.label;
+}
+
+// Helper function to get node path
+function getNodePath(option: ParentOption): string {
+  if (isExtendedOption(option)) {
+    return option.path;
+  }
+  return '';
+}
+
+// Helper function to get node type label
+function getNodeTypeLabel(type: string): string {
+  switch (type) {
+    case 'location':
+      return 'Location';
+    case 'lawToken':
+      return 'Law Token';
+    case 'interpretationToken':
+      return 'Int. Token';
+    default:
+      return type;
+  }
+}
+
 export default function CreateNodeDialog({
   trigger,
   defaultNodeType,
@@ -92,8 +138,32 @@ export default function CreateNodeDialog({
   ]);
   const [parentId, setParentId] = useState<NodeId>(defaultParentId || '');
   const [fromRelationType, setFromRelationType] = useState('');
+  const [fromDirectionality, setFromDirectionality] = useState<Directionality>(Directionality.unidirectional);
   const [toNodeId, setToNodeId] = useState<NodeId>('');
   const [toRelationType, setToRelationType] = useState('');
+  const [toDirectionality, setToDirectionality] = useState<Directionality>(Directionality.unidirectional);
+
+  // Direct typing states for From Token
+  const [fromTokenInput, setFromTokenInput] = useState('');
+  const [fromTokenDropdownOpen, setFromTokenDropdownOpen] = useState(false);
+  const [fromTokenSelectedIndex, setFromTokenSelectedIndex] = useState(-1);
+  const fromTokenInputRef = useRef<HTMLInputElement>(null);
+
+  // Direct typing states for To Node
+  const [toNodeInput, setToNodeInput] = useState('');
+  const [toNodeDropdownOpen, setToNodeDropdownOpen] = useState(false);
+  const [toNodeSelectedIndex, setToNodeSelectedIndex] = useState(-1);
+  const toNodeInputRef = useRef<HTMLInputElement>(null);
+
+  // Direct typing states for From Relationship Type
+  const [fromRelationTypeDropdownOpen, setFromRelationTypeDropdownOpen] = useState(false);
+  const [fromRelationTypeSelectedIndex, setFromRelationTypeSelectedIndex] = useState(-1);
+  const fromRelationTypeInputRef = useRef<HTMLInputElement>(null);
+
+  // Direct typing states for To Relationship Type
+  const [toRelationTypeDropdownOpen, setToRelationTypeDropdownOpen] = useState(false);
+  const [toRelationTypeSelectedIndex, setToRelationTypeSelectedIndex] = useState(-1);
+  const toRelationTypeInputRef = useRef<HTMLInputElement>(null);
 
   const { data: graphData } = useGetGraphData();
   const createCuration = useCreateCuration();
@@ -125,6 +195,94 @@ export default function CreateNodeDialog({
     }
   }, [defaultParentId]);
 
+  // Helper function to build hierarchical path for a node (same as GraphView)
+  const buildNodePath = (nodeId: string): string => {
+    if (!graphData) return '';
+
+    const pathParts: string[] = [];
+
+    // Find the node and build path based on type
+    const curation = graphData.curations.find(c => c.id === nodeId);
+    if (curation) {
+      return ''; // Curations have no parent path
+    }
+
+    const swarm = graphData.swarms.find(s => s.id === nodeId);
+    if (swarm) {
+      const parentCuration = graphData.curations.find(c => c.id === swarm.parentCurationId);
+      if (parentCuration) pathParts.push(parentCuration.name);
+      return pathParts.join('/');
+    }
+
+    const location = graphData.locations.find(l => l.id === nodeId);
+    if (location) {
+      const parentSwarm = graphData.swarms.find(s => s.id === location.parentSwarmId);
+      if (parentSwarm) {
+        const parentCuration = graphData.curations.find(c => c.id === parentSwarm.parentCurationId);
+        if (parentCuration) pathParts.push(parentCuration.name);
+        pathParts.push(parentSwarm.name);
+      }
+      return pathParts.join('/');
+    }
+
+    const lawToken = graphData.lawTokens.find(t => t.id === nodeId);
+    if (lawToken) {
+      const parentLocation = graphData.locations.find(l => l.id === lawToken.parentLocationId);
+      if (parentLocation) {
+        const parentSwarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
+        if (parentSwarm) {
+          const parentCuration = graphData.curations.find(c => c.id === parentSwarm.parentCurationId);
+          if (parentCuration) pathParts.push(parentCuration.name);
+          pathParts.push(parentSwarm.name);
+        }
+        pathParts.push(parentLocation.title);
+      }
+      return pathParts.join('/');
+    }
+
+    const interpretationToken = graphData.interpretationTokens.find(i => i.id === nodeId);
+    if (interpretationToken) {
+      // Build path from origin token
+      const buildFromToken = (tokenId: string): void => {
+        const originLocation = graphData.locations.find(l => l.id === tokenId);
+        if (originLocation) {
+          const parentSwarm = graphData.swarms.find(s => s.id === originLocation.parentSwarmId);
+          if (parentSwarm) {
+            const parentCuration = graphData.curations.find(c => c.id === parentSwarm.parentCurationId);
+            if (parentCuration) pathParts.push(parentCuration.name);
+            pathParts.push(parentSwarm.name);
+          }
+          pathParts.push(originLocation.title);
+        } else {
+          const originLawToken = graphData.lawTokens.find(t => t.id === tokenId);
+          if (originLawToken) {
+            const parentLocation = graphData.locations.find(l => l.id === originLawToken.parentLocationId);
+            if (parentLocation) {
+              const parentSwarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
+              if (parentSwarm) {
+                const parentCuration = graphData.curations.find(c => c.id === parentSwarm.parentCurationId);
+                if (parentCuration) pathParts.push(parentCuration.name);
+                pathParts.push(parentSwarm.name);
+              }
+              pathParts.push(parentLocation.title);
+            }
+            pathParts.push(originLawToken.tokenLabel);
+          } else {
+            const originInterpretationToken = graphData.interpretationTokens.find(i => i.id === tokenId);
+            if (originInterpretationToken) {
+              buildFromToken(originInterpretationToken.fromTokenId);
+              pathParts.push(originInterpretationToken.title);
+            }
+          }
+        }
+      };
+      buildFromToken(interpretationToken.fromTokenId);
+      return pathParts.join('/');
+    }
+
+    return '';
+  };
+
   const resetForm = () => {
     setName('');
     setContext('');
@@ -135,8 +293,20 @@ export default function CreateNodeDialog({
       setParentId('');
     }
     setFromRelationType('');
+    setFromDirectionality(Directionality.unidirectional);
     setToNodeId('');
     setToRelationType('');
+    setToDirectionality(Directionality.unidirectional);
+    setFromTokenInput('');
+    setToNodeInput('');
+    setFromTokenDropdownOpen(false);
+    setToNodeDropdownOpen(false);
+    setFromTokenSelectedIndex(-1);
+    setToNodeSelectedIndex(-1);
+    setFromRelationTypeDropdownOpen(false);
+    setToRelationTypeDropdownOpen(false);
+    setFromRelationTypeSelectedIndex(-1);
+    setToRelationTypeSelectedIndex(-1);
   };
 
   const handleAddAttribute = () => {
@@ -213,7 +383,7 @@ export default function CreateNodeDialog({
 
         case 'interpretationToken':
           if (!parentId) {
-            toast.error('Please select a from law token');
+            toast.error('Please select a from token');
             return;
           }
           if (!fromRelationType.trim()) {
@@ -222,6 +392,10 @@ export default function CreateNodeDialog({
           }
           if (!toNodeId) {
             toast.error('Please select a to node');
+            return;
+          }
+          if (parentId === toNodeId) {
+            toast.error('From and To nodes must be different');
             return;
           }
           if (!toRelationType.trim()) {
@@ -236,10 +410,12 @@ export default function CreateNodeDialog({
           await createInterpretationToken.mutateAsync({
             title: name.trim(),
             context: context.trim(),
-            fromLawTokenId: parentId,
+            fromTokenId: parentId,
             fromRelationshipType: fromRelationType.trim(),
+            fromDirectionality: fromDirectionality,
             toNodeId: toNodeId,
             toRelationshipType: toRelationType.trim(),
+            toDirectionality: toDirectionality,
             customAttributes: validInterpretationAttributes,
           });
           toast.success('Interpretation token created successfully!');
@@ -256,10 +432,16 @@ export default function CreateNodeDialog({
         toast.error('You must be the swarm creator or an approved member to create this node');
       } else if (errorMessage.includes('Unauthorized')) {
         toast.error('You do not have permission to perform this action');
+      } else if (errorMessage.includes('Invalid from node')) {
+        toast.error('Invalid from node selection. Only Locations, Law Tokens, and Interpretation Tokens are allowed.');
+      } else if (errorMessage.includes('Invalid to node')) {
+        toast.error('Invalid to node selection. Only Locations, Law Tokens, and Interpretation Tokens are allowed.');
       } else if (errorMessage.includes('trap')) {
         toast.error(`Failed to create ${nodeType}. Please check your input and try again.`);
       } else if (errorMessage.includes('Parent') && errorMessage.includes('does not exist')) {
         toast.error('The selected parent node no longer exists. Please refresh and try again.');
+      } else if (errorMessage.includes('From and To nodes must be different')) {
+        toast.error('From and To nodes must be different');
       } else {
         toast.error(`Failed to create ${nodeType}: ${errorMessage}`);
       }
@@ -268,58 +450,381 @@ export default function CreateNodeDialog({
     }
   };
 
-  const getParentOptions = () => {
+  const getParentOptions = (): ParentOption[] => {
     if (!graphData) return [];
 
     switch (nodeType) {
       case 'swarm':
-        return graphData.curations.map((c) => ({ id: c.id, label: c.name }));
+        return graphData.curations.map((c): SimpleOption => ({ id: c.id, label: c.name }));
       case 'location':
-        return graphData.swarms.map((s) => ({ id: s.id, label: s.name }));
-      case 'interpretationToken':
-        return graphData.lawTokens.map((t) => ({ id: t.id, label: t.tokenLabel }));
+        return graphData.swarms.map((s): SimpleOption => ({ id: s.id, label: s.name }));
+      case 'interpretationToken': {
+        // Include Locations, Law Tokens, and Interpretation Tokens (per backend validation)
+        const options: ExtendedOption[] = [];
+        
+        // Add all locations with parent context paths
+        graphData.locations.forEach((l) => {
+          const path = buildNodePath(l.id);
+          options.push({ 
+            id: l.id, 
+            label: l.title, 
+            type: 'location', 
+            path,
+            name: l.title 
+          });
+        });
+        
+        // Add all law tokens with parent context paths
+        graphData.lawTokens.forEach((t) => {
+          const path = buildNodePath(t.id);
+          options.push({ 
+            id: t.id, 
+            label: t.tokenLabel, 
+            type: 'lawToken', 
+            path,
+            name: t.tokenLabel 
+          });
+        });
+        
+        // Add all interpretation tokens with parent context paths
+        graphData.interpretationTokens.forEach((i) => {
+          const path = buildNodePath(i.id);
+          options.push({ 
+            id: i.id, 
+            label: i.title, 
+            type: 'interpretationToken', 
+            path,
+            name: i.title 
+          });
+        });
+        
+        return options;
+      }
       default:
         return [];
     }
   };
 
-  // Get available nodes for "To Node" selection (all nodes from user's member swarms)
-  const getToNodeOptions = () => {
+  // Get available nodes for "To Node" selection (Locations, Law Tokens, and Interpretation Tokens per backend validation)
+  const getToNodeOptions = (): ExtendedOption[] => {
     if (!graphData) return [];
 
-    const allNodes: Array<{ id: NodeId; label: string; type: string }> = [];
+    const allNodes: ExtendedOption[] = [];
 
-    // Add all curations
-    graphData.curations.forEach((c) => {
-      allNodes.push({ id: c.id, label: `${c.name} (Curation)`, type: 'curation' });
-    });
-
-    // Add all swarms
-    graphData.swarms.forEach((s) => {
-      allNodes.push({ id: s.id, label: `${s.name} (Swarm)`, type: 'swarm' });
-    });
-
-    // Add all locations
+    // Add all locations with parent context paths
     graphData.locations.forEach((l) => {
-      allNodes.push({ id: l.id, label: `${l.title} (Location)`, type: 'location' });
+      const path = buildNodePath(l.id);
+      allNodes.push({ 
+        id: l.id, 
+        label: l.title, 
+        type: 'location', 
+        path,
+        name: l.title 
+      });
     });
 
-    // Add all law tokens
+    // Add all law tokens with parent context paths
     graphData.lawTokens.forEach((t) => {
-      allNodes.push({ id: t.id, label: `${t.tokenLabel} (Law Token)`, type: 'lawToken' });
+      const path = buildNodePath(t.id);
+      allNodes.push({ 
+        id: t.id, 
+        label: t.tokenLabel, 
+        type: 'lawToken', 
+        path,
+        name: t.tokenLabel 
+      });
     });
 
-    // Add all interpretation tokens
+    // Add all interpretation tokens with parent context paths
     graphData.interpretationTokens.forEach((i) => {
-      allNodes.push({ id: i.id, label: `${i.title} (Interpretation Token)`, type: 'interpretationToken' });
+      const path = buildNodePath(i.id);
+      allNodes.push({ 
+        id: i.id, 
+        label: i.title, 
+        type: 'interpretationToken', 
+        path,
+        name: i.title 
+      });
     });
 
     return allNodes;
   };
 
+  // Get all existing relationship types from interpretation tokens
+  const getExistingRelationshipTypes = (): string[] => {
+    if (!graphData) return [];
+
+    const relationshipTypes = new Set<string>();
+
+    graphData.interpretationTokens.forEach((token) => {
+      if (token.fromRelationshipType.trim()) {
+        relationshipTypes.add(token.fromRelationshipType.trim());
+      }
+      if (token.toRelationshipType.trim()) {
+        relationshipTypes.add(token.toRelationshipType.trim());
+      }
+    });
+
+    return Array.from(relationshipTypes).sort();
+  };
+
   const parentOptions = getParentOptions();
   const toNodeOptions = getToNodeOptions();
+  const existingRelationshipTypes = getExistingRelationshipTypes();
   const needsParent = nodeType !== 'curation';
+
+  // Filter options based on input - search only by node name, not path
+  const filteredFromTokenOptions = parentOptions.filter((option) => {
+    const nodeName = getNodeName(option);
+    return nodeName.toLowerCase().includes(fromTokenInput.toLowerCase());
+  });
+
+  const filteredToNodeOptions = toNodeOptions.filter((option) => {
+    const nodeName = getNodeName(option);
+    return nodeName.toLowerCase().includes(toNodeInput.toLowerCase());
+  });
+
+  const filteredFromRelationTypes = existingRelationshipTypes.filter((type) =>
+    type.toLowerCase().includes(fromRelationType.toLowerCase())
+  );
+
+  const filteredToRelationTypes = existingRelationshipTypes.filter((type) =>
+    type.toLowerCase().includes(toRelationType.toLowerCase())
+  );
+
+  // Get selected option names for display (name only, without type)
+  const getSelectedFromTokenName = (): string => {
+    const selected = parentOptions.find((opt) => opt.id === parentId);
+    return selected ? getNodeName(selected) : '';
+  };
+
+  const getSelectedToNodeName = (): string => {
+    const selected = toNodeOptions.find((opt) => opt.id === toNodeId);
+    return selected ? getNodeName(selected) : '';
+  };
+
+  // Handle From Token input changes
+  const handleFromTokenInputChange = (value: string) => {
+    setFromTokenInput(value);
+    setFromTokenDropdownOpen(true);
+    setFromTokenSelectedIndex(-1);
+    
+    // Clear selection if input doesn't match
+    if (parentId) {
+      const selected = parentOptions.find((opt) => opt.id === parentId);
+      const selectedName = selected ? getNodeName(selected) : '';
+      if (selectedName !== value) {
+        setParentId('');
+      }
+    }
+  };
+
+  // Handle To Node input changes
+  const handleToNodeInputChange = (value: string) => {
+    setToNodeInput(value);
+    setToNodeDropdownOpen(true);
+    setToNodeSelectedIndex(-1);
+    
+    // Clear selection if input doesn't match
+    if (toNodeId) {
+      const selected = toNodeOptions.find((opt) => opt.id === toNodeId);
+      const selectedName = selected ? getNodeName(selected) : '';
+      if (selectedName !== value) {
+        setToNodeId('');
+      }
+    }
+  };
+
+  // Handle From Relationship Type input changes
+  const handleFromRelationTypeInputChange = (value: string) => {
+    setFromRelationType(value);
+    setFromRelationTypeDropdownOpen(true);
+    setFromRelationTypeSelectedIndex(-1);
+  };
+
+  // Handle To Relationship Type input changes
+  const handleToRelationTypeInputChange = (value: string) => {
+    setToRelationType(value);
+    setToRelationTypeDropdownOpen(true);
+    setToRelationTypeSelectedIndex(-1);
+  };
+
+  // Handle From Token keyboard navigation
+  const handleFromTokenKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!fromTokenDropdownOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setFromTokenDropdownOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFromTokenSelectedIndex((prev) =>
+          prev < filteredFromTokenOptions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFromTokenSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (fromTokenSelectedIndex >= 0 && fromTokenSelectedIndex < filteredFromTokenOptions.length) {
+          const selected = filteredFromTokenOptions[fromTokenSelectedIndex];
+          setParentId(selected.id);
+          // Set only the name without type label
+          const nodeName = getNodeName(selected);
+          setFromTokenInput(nodeName);
+          setFromTokenDropdownOpen(false);
+          setFromTokenSelectedIndex(-1);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setFromTokenDropdownOpen(false);
+        setFromTokenSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Handle To Node keyboard navigation
+  const handleToNodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!toNodeDropdownOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setToNodeDropdownOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setToNodeSelectedIndex((prev) =>
+          prev < filteredToNodeOptions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setToNodeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (toNodeSelectedIndex >= 0 && toNodeSelectedIndex < filteredToNodeOptions.length) {
+          const selected = filteredToNodeOptions[toNodeSelectedIndex];
+          setToNodeId(selected.id);
+          // Set only the name without type label
+          const nodeName = getNodeName(selected);
+          setToNodeInput(nodeName);
+          setToNodeDropdownOpen(false);
+          setToNodeSelectedIndex(-1);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setToNodeDropdownOpen(false);
+        setToNodeSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Handle From Relationship Type keyboard navigation
+  const handleFromRelationTypeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!fromRelationTypeDropdownOpen || filteredFromRelationTypes.length === 0) {
+      if (e.key === 'ArrowDown' && filteredFromRelationTypes.length > 0) {
+        setFromRelationTypeDropdownOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFromRelationTypeSelectedIndex((prev) =>
+          prev < filteredFromRelationTypes.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFromRelationTypeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (fromRelationTypeSelectedIndex >= 0 && fromRelationTypeSelectedIndex < filteredFromRelationTypes.length) {
+          const selected = filteredFromRelationTypes[fromRelationTypeSelectedIndex];
+          setFromRelationType(selected);
+          setFromRelationTypeDropdownOpen(false);
+          setFromRelationTypeSelectedIndex(-1);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setFromRelationTypeDropdownOpen(false);
+        setFromRelationTypeSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Handle To Relationship Type keyboard navigation
+  const handleToRelationTypeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!toRelationTypeDropdownOpen || filteredToRelationTypes.length === 0) {
+      if (e.key === 'ArrowDown' && filteredToRelationTypes.length > 0) {
+        setToRelationTypeDropdownOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setToRelationTypeSelectedIndex((prev) =>
+          prev < filteredToRelationTypes.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setToRelationTypeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (toRelationTypeSelectedIndex >= 0 && toRelationTypeSelectedIndex < filteredToRelationTypes.length) {
+          const selected = filteredToRelationTypes[toRelationTypeSelectedIndex];
+          setToRelationType(selected);
+          setToRelationTypeDropdownOpen(false);
+          setToRelationTypeSelectedIndex(-1);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setToRelationTypeDropdownOpen(false);
+        setToRelationTypeSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Update input when selection changes externally
+  useEffect(() => {
+    if (parentId && nodeType === 'interpretationToken') {
+      const name = getSelectedFromTokenName();
+      if (name && name !== fromTokenInput) {
+        setFromTokenInput(name);
+      }
+    }
+  }, [parentId, nodeType]);
+
+  useEffect(() => {
+    if (toNodeId) {
+      const name = getSelectedToNodeName();
+      if (name && name !== toNodeInput) {
+        setToNodeInput(name);
+      }
+    }
+  }, [toNodeId]);
 
   const getParentLabel = () => {
     switch (nodeType) {
@@ -328,7 +833,7 @@ export default function CreateNodeDialog({
       case 'location':
         return 'Swarm';
       case 'interpretationToken':
-        return 'From Law Token';
+        return 'From Token';
       default:
         return 'Parent';
     }
@@ -388,20 +893,76 @@ export default function CreateNodeDialog({
         break;
       }
       case 'interpretationToken': {
-        // Path: Curation → Swarm → Location → Law Token
-        const lawToken = graphData.lawTokens.find(t => t.id === parentId);
-        if (lawToken) {
-          const location = graphData.locations.find(l => l.id === lawToken.parentLocationId);
-          if (location) {
-            const swarm = graphData.swarms.find(s => s.id === location.parentSwarmId);
-            if (swarm) {
-              const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-              if (curation) path.push(curation.name);
-              path.push(swarm.name);
-            }
-            path.push(location.title);
+        // Path can be from Location, Law Token, or Interpretation Token
+        const location = graphData.locations.find(l => l.id === parentId);
+        if (location) {
+          // Path: Curation → Swarm → Location
+          const swarm = graphData.swarms.find(s => s.id === location.parentSwarmId);
+          if (swarm) {
+            const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
+            if (curation) path.push(curation.name);
+            path.push(swarm.name);
           }
-          path.push(lawToken.tokenLabel);
+          path.push(location.title);
+        } else {
+          const lawToken = graphData.lawTokens.find(t => t.id === parentId);
+          if (lawToken) {
+            // Path: Curation → Swarm → Location → Law Token
+            const parentLocation = graphData.locations.find(l => l.id === lawToken.parentLocationId);
+            if (parentLocation) {
+              const swarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
+              if (swarm) {
+                const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
+                if (curation) path.push(curation.name);
+                path.push(swarm.name);
+              }
+              path.push(parentLocation.title);
+            }
+            path.push(lawToken.tokenLabel);
+          } else {
+            // Check if it's an interpretation token
+            const interpretationToken = graphData.interpretationTokens.find(i => i.id === parentId);
+            if (interpretationToken) {
+              // Recursively build path for interpretation token origin
+              const buildInterpretationPath = (tokenId: NodeId): void => {
+                const token = graphData.interpretationTokens.find(i => i.id === tokenId);
+                if (token) {
+                  // Check if origin is a location
+                  const originLocation = graphData.locations.find(l => l.id === token.fromTokenId);
+                  if (originLocation) {
+                    const swarm = graphData.swarms.find(s => s.id === originLocation.parentSwarmId);
+                    if (swarm) {
+                      const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
+                      if (curation) path.push(curation.name);
+                      path.push(swarm.name);
+                    }
+                    path.push(originLocation.title);
+                  } else {
+                    // Check if origin is a law token
+                    const originLawToken = graphData.lawTokens.find(t => t.id === token.fromTokenId);
+                    if (originLawToken) {
+                      const parentLocation = graphData.locations.find(l => l.id === originLawToken.parentLocationId);
+                      if (parentLocation) {
+                        const swarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
+                        if (swarm) {
+                          const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
+                          if (curation) path.push(curation.name);
+                          path.push(swarm.name);
+                        }
+                        path.push(parentLocation.title);
+                      }
+                      path.push(originLawToken.tokenLabel);
+                    } else {
+                      // Origin is another interpretation token
+                      buildInterpretationPath(token.fromTokenId);
+                    }
+                  }
+                  path.push(token.title);
+                }
+              };
+              buildInterpretationPath(parentId);
+            }
+          }
         }
         break;
       }
@@ -439,8 +1000,12 @@ export default function CreateNodeDialog({
                   setParentId('');
                 }
                 setFromRelationType('');
+                setFromDirectionality(Directionality.unidirectional);
                 setToNodeId('');
                 setToRelationType('');
+                setToDirectionality(Directionality.unidirectional);
+                setFromTokenInput('');
+                setToNodeInput('');
               }}
               disabled={!!defaultNodeType || isPending}
             >
@@ -460,7 +1025,7 @@ export default function CreateNodeDialog({
             </div>
           </div>
 
-          {needsParent && (
+          {needsParent && nodeType !== 'interpretationToken' && (
             <div className="space-y-2">
               <Label htmlFor="parent">{getParentLabel()}</Label>
               <Select value={parentId} onValueChange={setParentId} disabled={!!defaultParentId || isPending}>
@@ -487,53 +1052,292 @@ export default function CreateNodeDialog({
           {nodeType === 'interpretationToken' && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="fromRelationType">From Relationship Type</Label>
-                <Input
-                  id="fromRelationType"
-                  placeholder="e.g., defines, exemplifies, contradicts..."
-                  value={fromRelationType}
-                  onChange={(e) => setFromRelationType(e.target.value)}
-                  disabled={isPending}
-                />
+                <Label htmlFor="fromToken">From Token</Label>
+                <div className="relative">
+                  <Input
+                    ref={fromTokenInputRef}
+                    id="fromToken"
+                    value={fromTokenInput}
+                    onChange={(e) => handleFromTokenInputChange(e.target.value)}
+                    onKeyDown={handleFromTokenKeyDown}
+                    onFocus={() => setFromTokenDropdownOpen(true)}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown item
+                      setTimeout(() => setFromTokenDropdownOpen(false), 200);
+                    }}
+                    placeholder="Type to search tokens..."
+                    disabled={!!defaultParentId || isPending}
+                    className="pr-8"
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  {fromTokenDropdownOpen && filteredFromTokenOptions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
+                      <ScrollArea className="max-h-[300px]">
+                        <div className="p-1 bg-popover">
+                          {filteredFromTokenOptions.map((option, index) => {
+                            const nodeName = getNodeName(option);
+                            const nodePath = getNodePath(option);
+                            const nodeType = isExtendedOption(option) ? getNodeTypeLabel(option.type) : '';
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setParentId(option.id);
+                                  // Set only the name without type label
+                                  setFromTokenInput(nodeName);
+                                  setFromTokenDropdownOpen(false);
+                                  setFromTokenSelectedIndex(-1);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
+                                  index === fromTokenSelectedIndex ? 'bg-accent' : ''
+                                } ${parentId === option.id ? 'bg-accent/50' : ''}`}
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{nodeName}</span>
+                                    {nodeType && (
+                                      <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted rounded">
+                                        {nodeType}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {nodePath && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {nodePath}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Describe how this interpretation relates to the law token
+                  Select a Location, Law Token, or Interpretation Token
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor="fromRelationType">From Relationship Type</Label>
+                  </div>
+                  <div className="w-40">
+                    <Label htmlFor="fromDirectionality" className="text-xs text-muted-foreground">Directionality</Label>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      ref={fromRelationTypeInputRef}
+                      id="fromRelationType"
+                      placeholder="e.g., defines, exemplifies..."
+                      value={fromRelationType}
+                      onChange={(e) => handleFromRelationTypeInputChange(e.target.value)}
+                      onKeyDown={handleFromRelationTypeKeyDown}
+                      onFocus={() => {
+                        if (filteredFromRelationTypes.length > 0) {
+                          setFromRelationTypeDropdownOpen(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setFromRelationTypeDropdownOpen(false), 200);
+                      }}
+                      disabled={isPending}
+                      className="pr-8"
+                    />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    {fromRelationTypeDropdownOpen && filteredFromRelationTypes.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
+                        <ScrollArea className="max-h-[200px]">
+                          <div className="p-1 bg-popover">
+                            {filteredFromRelationTypes.map((type, index) => (
+                              <button
+                                key={type}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setFromRelationType(type);
+                                  setFromRelationTypeDropdownOpen(false);
+                                  setFromRelationTypeSelectedIndex(-1);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
+                                  index === fromRelationTypeSelectedIndex ? 'bg-accent' : ''
+                                } ${fromRelationType === type ? 'bg-accent/50' : ''}`}
+                              >
+                                {type}
+                              </button>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                  <Select 
+                    value={fromDirectionality} 
+                    onValueChange={(value) => setFromDirectionality(value as Directionality)} 
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="fromDirectionality" className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={Directionality.none}>No Direction</SelectItem>
+                      <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
+                      <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Describe how this interpretation relates to the origin token
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="toNode">To Node</Label>
-                <Select value={toNodeId} onValueChange={setToNodeId} disabled={isPending}>
-                  <SelectTrigger id="toNode">
-                    <SelectValue placeholder="Select target node..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {toNodeOptions.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground">
-                        No nodes available
-                      </div>
-                    ) : (
-                      toNodeOptions.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.label}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Input
+                    ref={toNodeInputRef}
+                    id="toNode"
+                    value={toNodeInput}
+                    onChange={(e) => handleToNodeInputChange(e.target.value)}
+                    onKeyDown={handleToNodeKeyDown}
+                    onFocus={() => setToNodeDropdownOpen(true)}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown item
+                      setTimeout(() => setToNodeDropdownOpen(false), 200);
+                    }}
+                    placeholder="Type to search nodes..."
+                    disabled={isPending}
+                    className="pr-8"
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  {toNodeDropdownOpen && filteredToNodeOptions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
+                      <ScrollArea className="max-h-[300px]">
+                        <div className="p-1 bg-popover">
+                          {filteredToNodeOptions.map((option, index) => {
+                            const nodeName = getNodeName(option);
+                            const nodePath = getNodePath(option);
+                            const nodeType = getNodeTypeLabel(option.type);
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setToNodeId(option.id);
+                                  // Set only the name without type label
+                                  setToNodeInput(nodeName);
+                                  setToNodeDropdownOpen(false);
+                                  setToNodeSelectedIndex(-1);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
+                                  index === toNodeSelectedIndex ? 'bg-accent' : ''
+                                } ${toNodeId === option.id ? 'bg-accent/50' : ''}`}
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{nodeName}</span>
+                                    <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted rounded">
+                                      {nodeType}
+                                    </span>
+                                  </div>
+                                  {nodePath && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {nodePath}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Select any node from swarms you are a member of
+                  Select a Location, Law Token, or Interpretation Token
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="toRelationType">To Relationship Type</Label>
-                <Input
-                  id="toRelationType"
-                  placeholder="e.g., references, applies to, extends..."
-                  value={toRelationType}
-                  onChange={(e) => setToRelationType(e.target.value)}
-                  disabled={isPending}
-                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor="toRelationType">To Relationship Type</Label>
+                  </div>
+                  <div className="w-40">
+                    <Label htmlFor="toDirectionality" className="text-xs text-muted-foreground">Directionality</Label>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      ref={toRelationTypeInputRef}
+                      id="toRelationType"
+                      placeholder="e.g., references, applies to..."
+                      value={toRelationType}
+                      onChange={(e) => handleToRelationTypeInputChange(e.target.value)}
+                      onKeyDown={handleToRelationTypeKeyDown}
+                      onFocus={() => {
+                        if (filteredToRelationTypes.length > 0) {
+                          setToRelationTypeDropdownOpen(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setToRelationTypeDropdownOpen(false), 200);
+                      }}
+                      disabled={isPending}
+                      className="pr-8"
+                    />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    {toRelationTypeDropdownOpen && filteredToRelationTypes.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
+                        <ScrollArea className="max-h-[200px]">
+                          <div className="p-1 bg-popover">
+                            {filteredToRelationTypes.map((type, index) => (
+                              <button
+                                key={type}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setToRelationType(type);
+                                  setToRelationTypeDropdownOpen(false);
+                                  setToRelationTypeSelectedIndex(-1);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
+                                  index === toRelationTypeSelectedIndex ? 'bg-accent' : ''
+                                } ${toRelationType === type ? 'bg-accent/50' : ''}`}
+                              >
+                                {type}
+                              </button>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                  <Select 
+                    value={toDirectionality} 
+                    onValueChange={(value) => setToDirectionality(value as Directionality)} 
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="toDirectionality" className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={Directionality.none}>No Direction</SelectItem>
+                      <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
+                      <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Describe how this interpretation relates to the target node
                 </p>
@@ -571,37 +1375,19 @@ export default function CreateNodeDialog({
 
           {nodeType === 'curation' && (
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="jurisdictionKey" className="text-muted-foreground">
-                    Attribute Key
-                  </Label>
-                  <Input
-                    id="jurisdictionKey"
-                    value="Jurisdiction"
-                    disabled
-                    className="bg-muted/50 text-muted-foreground cursor-not-allowed"
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="jurisdiction">Attribute Value</Label>
-                  <Select value={jurisdiction} onValueChange={setJurisdiction} disabled={isPending}>
-                    <SelectTrigger id="jurisdiction">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {ISO_COUNTRY_CODES.map((code) => (
-                        <SelectItem key={code} value={code}>
-                          {code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Select the jurisdiction (ISO 3166-1 alpha-3 country code)
-              </p>
+              <Label htmlFor="jurisdiction">Jurisdiction</Label>
+              <Select value={jurisdiction} onValueChange={setJurisdiction} disabled={isPending}>
+                <SelectTrigger id="jurisdiction">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {ISO_COUNTRY_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 

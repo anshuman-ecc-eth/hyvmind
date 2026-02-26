@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useGetGraphData, useIsCallerAdmin } from '../hooks/useQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -340,8 +333,8 @@ export default function DebugPanel() {
                               <p className="text-sm">{interpretationToken.context || 'No context'}</p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">From Law Token</p>
-                              <p className="text-sm font-mono">{interpretationToken.fromLawTokenId}</p>
+                              <p className="text-xs text-muted-foreground">From Token</p>
+                              <p className="text-sm font-mono">{interpretationToken.fromTokenId}</p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">From Relationship Type</p>

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "A decentralized graph-based app on the Internet Computer with BUZZ token mechanics, node types (curations, swarms, locations, law tokens, interpretation tokens), and multiple UI tabs. Recent work includes BUZZ balance scaling, data wipe on deployment, and UI restructuring of collectibles and tab naming.",
+  "architectural_notes": [
+    "Nodes stored across 5 HashMaps (curationMap, swarmMap, locationMap, lawTokenMap, interpretationTokenMap) keyed by NodeId; creator is a Principal field inside each node record, not a key",
+    "Global hashmaps store all users' contributions; per-principal filtering requires iterating each map and filtering on .creator field; no nodesByCreator index exists yet",
+    "Data wipe on deployment uses the postupgrade system hook to clear all stable data structures; future wipes requested via chat, not an admin panel",
+    "BUZZ balance uses a scaling factor (10^7); existing balances pre-Version 245 are near-zero after migration — accepted since no real users exist",
+    "Landing page graph is visible to all visitors (pre-auth); Graph View and List View are post-login only tabs"
+  ],
+  "known_issues": [
+    "Profile Settings modal is slow due to collectibles gallery (law tokens + interpretation tokens) loading inside it — resolved by moving gallery to separate Collectibles tab"
+  ],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-in-the-top-right-hamburger-menu-rename-the-button-currently-labeled-profile-settings-to-simply-settings",
+      "title": "In the top-right hamburger menu, rename the button currently labeled 'Profile Settings' to simply 'Settings'.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-new-top-level-authenticated-tab-titled-collectibles-that-renders-the-nftgallery-component-law-tokens-and-interpretation-tokens-gallery-previously-housed-in-the-manage-collectibles-section-of-the-settings-modal-the-collectibles-tab-should-appear-alongside-the-other-post-login-tabs-graph-tree-terminal-swarms-leaderboard",
+      "title": "Add a new top-level authenticated tab titled 'Collectibles' that renders the NFTGallery component (law tokens and interpretation tokens gallery) previously housed in the 'Manage Collectibles' section of the Settings modal. The Collectibles tab should appear alongside the other post-login tabs (Graph, Tree, Terminal, Swarms, Leaderboard).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-manage-collectibles-section-nftgallery-from-the-profilesettingsmodal-the-mint-settings-section-number-of-copies-copy-count-configuration-must-remain-in-the-settings-modal",
+      "title": "Remove the 'Manage Collectibles' section (NFTGallery) from the ProfileSettingsModal. The Mint Settings section (Number of Copies / copy count configuration) must remain in the Settings modal.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-rename-the-buzz-tab-in-the-authenticated-navigation-to-leaderboard-the-tab-must-still-navigate-to-the-same-buzzleaderboard-page",
+      "title": "Rename the 'BUZZ' tab in the authenticated navigation to 'Leaderboard'. The tab must still navigate to the same BuzzLeaderboard page.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Rename 'Profile Settings' button in hamburger menu to 'Settings'",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Move 'Manage Collectibles' section (law tokens + interpretation tokens gallery) from Settings modal to a new separate 'Collectibles' tab; keep Mint Settings / Number of Copies in Settings",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Rename 'BUZZ' tab to 'Leaderboard'",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Filter Graph View and List View (post-login) to show only nodes created by the currently authenticated principal — deferred to a later build",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Hyvmind",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

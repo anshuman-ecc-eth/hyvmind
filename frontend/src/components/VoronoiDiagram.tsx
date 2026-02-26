@@ -1,16 +1,9 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { createActorWithConfig } from '../config';
 import type { GraphData } from '../backend';
+import { getNodeTypeStyle } from '../utils/voronoiPalette';
 
 interface Point {
   x: number;
@@ -19,24 +12,6 @@ interface Point {
   nodeName: string;
   nodeId: string;
 }
-
-// Node type colors matching the specification
-const NODE_COLORS = {
-  light: {
-    curation: '#D32F2F',
-    swarm: '#1976D2',
-    location: '#388E3C',
-    lawToken: '#7B1FA2',
-    interpretationToken: '#F57C00',
-  },
-  dark: {
-    curation: '#FF7043',
-    swarm: '#42A5F5',
-    location: '#66BB6A',
-    lawToken: '#BA68C8',
-    interpretationToken: '#FFB74D',
-  },
-};
 
 // Node type display names
 const NODE_TYPE_NAMES: Record<string, string> = {
@@ -52,19 +27,89 @@ const CACHE_KEY = 'hyvmind_voronoi_graph_data';
 const CACHE_TIMESTAMP_KEY = 'hyvmind_voronoi_cache_timestamp';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-interface CachedData {
-  data: GraphData;
-  timestamp: number;
+// Voronoi cell computation using pixel-based approach with polygon extraction
+interface VoronoiCell {
+  pointIndex: number;
+  polygon: Array<{ x: number; y: number }>;
+}
+
+function computeVoronoiCells(
+  points: Array<{ x: number; y: number }>,
+  width: number,
+  height: number
+): VoronoiCell[] {
+  if (points.length === 0) return [];
+
+  const cells: VoronoiCell[] = [];
+  const step = 3; // Sample every 3 pixels for balance between quality and performance
+
+  // Create a map to track which point owns each pixel
+  const cellMap = new Map<string, number>();
+
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      let minDist = Infinity;
+      let closestIdx = 0;
+
+      for (let i = 0; i < points.length; i++) {
+        const dx = x - points[i].x;
+        const dy = y - points[i].y;
+        const dist = dx * dx + dy * dy;
+        if (dist < minDist) {
+          minDist = dist;
+          closestIdx = i;
+        }
+      }
+
+      cellMap.set(`${x},${y}`, closestIdx);
+    }
+  }
+
+  // Extract approximate polygon boundaries for each cell
+  for (let i = 0; i < points.length; i++) {
+    const polygon: Array<{ x: number; y: number }> = [];
+    const visited = new Set<string>();
+
+    // Find boundary pixels for this cell
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const current = cellMap.get(`${x},${y}`);
+        if (current !== i) continue;
+
+        // Check if this pixel is on the boundary
+        const neighbors = [
+          cellMap.get(`${x + step},${y}`),
+          cellMap.get(`${x - step},${y}`),
+          cellMap.get(`${x},${y + step}`),
+          cellMap.get(`${x},${y - step}`),
+        ];
+
+        const isBoundary = neighbors.some(n => n !== undefined && n !== i);
+        if (isBoundary || x === 0 || y === 0 || x >= width - step || y >= height - step) {
+          const key = `${x},${y}`;
+          if (!visited.has(key)) {
+            polygon.push({ x, y });
+            visited.add(key);
+          }
+        }
+      }
+    }
+
+    if (polygon.length > 0) {
+      cells.push({ pointIndex: i, polygon });
+    }
+  }
+
+  return cells;
 }
 
 export default function VoronoiDiagram() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  
+
   // State for data management
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +164,7 @@ export default function VoronoiDiagram() {
         }
 
         const freshData = await anonymousActor.getGraphData();
-        
+
         // Step 3: Store fresh data in cache
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify(freshData));
@@ -136,7 +181,7 @@ export default function VoronoiDiagram() {
 
       } catch (error) {
         console.error('Failed to fetch graph data:', error);
-        
+
         // Step 4: On error, try to use cached data as fallback (even if expired)
         const cachedDataStr = localStorage.getItem(CACHE_KEY);
         if (cachedDataStr) {
@@ -176,7 +221,7 @@ export default function VoronoiDiagram() {
       }
 
       const freshData = await anonymousActor.getGraphData();
-      
+
       // Update cache
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(freshData));
@@ -201,7 +246,7 @@ export default function VoronoiDiagram() {
     if (!graphData) return [];
 
     const generatedPoints: Point[] = [];
-    
+
     // Use a seeded random number generator for consistent positioning
     const seededRandom = (seed: string) => {
       let hash = 0;
@@ -286,30 +331,40 @@ export default function VoronoiDiagram() {
     const canvas = canvasRef.current;
     if (!canvas || points.length === 0 || !mounted) return;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size to match container
+    // Set canvas size to match container with high-DPI support
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+
+      // Set display size (CSS pixels)
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+
+      // Set actual size in memory (scaled for high-DPI)
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      // Scale context to match device pixel ratio
+      ctx.scale(dpr, dpr);
+
       drawVoronoi();
     };
 
     const drawVoronoi = () => {
-      const width = canvas.width;
-      const height = canvas.height;
+      // Use CSS pixel dimensions for drawing
+      const width = canvas.width / (window.devicePixelRatio || 1);
+      const height = canvas.height / (window.devicePixelRatio || 1);
 
       if (width === 0 || height === 0) return;
 
-      // Determine current theme
-      const currentTheme = theme === 'system' ? systemTheme : theme;
-      const isDark = currentTheme === 'dark';
-      const colors = isDark ? NODE_COLORS.dark : NODE_COLORS.light;
+      // Fixed background color (theme-independent)
+      const bgColor = '#ffffff';
 
-      // Clear canvas
-      ctx.fillStyle = isDark ? '#000000' : '#ffffff';
+      // Clear canvas with fixed background
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, width, height);
 
       // Scale normalized coordinates (0-1) to canvas dimensions
@@ -319,102 +374,29 @@ export default function VoronoiDiagram() {
         y: p.y * height,
       }));
 
-      // Draw Voronoi diagram using pixel-by-pixel approach with antialiasing
-      const imageData = ctx.createImageData(width, height);
-      const data = imageData.data;
+      // Compute Voronoi cells
+      const cells = computeVoronoiCells(scaledPoints, width, height);
 
-      // For each pixel, find the closest point
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          let minDist = Infinity;
-          let closestPoint = 0;
+      // Draw filled Voronoi cells with node-type colors
+      for (const cell of cells) {
+        const point = scaledPoints[cell.pointIndex];
+        const style = getNodeTypeStyle(point.nodeType);
 
-          // Find closest seed point
-          for (let i = 0; i < scaledPoints.length; i++) {
-            const dx = x - scaledPoints[i].x;
-            const dy = y - scaledPoints[i].y;
-            const dist = dx * dx + dy * dy;
-            if (dist < minDist) {
-              minDist = dist;
-              closestPoint = i;
-            }
-          }
+        if (cell.polygon.length < 3) continue;
 
-          // Check if this pixel is on a boundary with antialiasing
-          let edgeStrength = 0;
-          
-          // Sample multiple sub-pixel positions for antialiasing
-          const samples = [
-            { dx: 0, dy: 0 },
-            { dx: 0.5, dy: 0 },
-            { dx: -0.5, dy: 0 },
-            { dx: 0, dy: 0.5 },
-            { dx: 0, dy: -0.5 },
-          ];
-
-          for (const sample of samples) {
-            const sx = x + sample.dx;
-            const sy = y + sample.dy;
-
-            let sampleClosest = 0;
-            let sampleMinDist = Infinity;
-
-            for (let i = 0; i < scaledPoints.length; i++) {
-              const dx = sx - scaledPoints[i].x;
-              const dy = sy - scaledPoints[i].y;
-              const dist = dx * dx + dy * dy;
-              if (dist < sampleMinDist) {
-                sampleMinDist = dist;
-                sampleClosest = i;
-              }
-            }
-
-            if (sampleClosest !== closestPoint) {
-              edgeStrength += 1;
-            }
-          }
-
-          const pixelIndex = (y * width + x) * 4;
-
-          if (edgeStrength > 0) {
-            // Draw edge with node type color and antialiasing
-            const nodeType = scaledPoints[closestPoint].nodeType as keyof typeof colors;
-            const color = colors[nodeType] || (isDark ? '#404040' : '#d0d0d0');
-            const rgb = hexToRgb(color);
-            
-            // Calculate alpha based on edge strength for antialiasing
-            const alpha = Math.min(255, (edgeStrength / samples.length) * 255);
-            
-            // Blend with background
-            const bgColor = isDark ? 0 : 255;
-            const blendFactor = alpha / 255;
-            
-            data[pixelIndex] = Math.round(rgb.r * blendFactor + bgColor * (1 - blendFactor));
-            data[pixelIndex + 1] = Math.round(rgb.g * blendFactor + bgColor * (1 - blendFactor));
-            data[pixelIndex + 2] = Math.round(rgb.b * blendFactor + bgColor * (1 - blendFactor));
-            data[pixelIndex + 3] = 255;
-          } else {
-            // Fill with background color
-            if (isDark) {
-              data[pixelIndex] = 0;
-              data[pixelIndex + 1] = 0;
-              data[pixelIndex + 2] = 0;
-            } else {
-              data[pixelIndex] = 255;
-              data[pixelIndex + 1] = 255;
-              data[pixelIndex + 2] = 255;
-            }
-            data[pixelIndex + 3] = 255;
-          }
+        ctx.fillStyle = style.fill;
+        ctx.beginPath();
+        ctx.moveTo(cell.polygon[0].x, cell.polygon[0].y);
+        for (let i = 1; i < cell.polygon.length; i++) {
+          ctx.lineTo(cell.polygon[i].x, cell.polygon[i].y);
         }
+        ctx.closePath();
+        ctx.fill();
       }
 
-      ctx.putImageData(imageData, 0, 0);
-
-      // Draw seed points with node type colors
+      // Draw seed points as simple solid black dots
       for (const point of scaledPoints) {
-        const nodeType = point.nodeType as keyof typeof colors;
-        ctx.fillStyle = colors[nodeType] || (isDark ? '#404040' : '#d0d0d0');
+        ctx.fillStyle = '#000000';
         ctx.beginPath();
         ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -422,14 +404,23 @@ export default function VoronoiDiagram() {
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+
+    // Throttle resize events to avoid performance issues
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
     };
-  }, [theme, systemTheme, points, mounted]);
+  }, [points, mounted]);
 
-  // Handle mouse move for tooltip
+  // Handle mouse move for tooltip (using CSS pixel coordinates)
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -438,9 +429,9 @@ export default function VoronoiDiagram() {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Scale points to canvas dimensions for hit detection
-    const width = canvas.width;
-    const height = canvas.height;
+    // Scale points to CSS pixel dimensions for hit detection
+    const width = rect.width;
+    const height = rect.height;
     const scaledPoints = points.map(p => ({
       ...p,
       x: p.x * width,
@@ -449,7 +440,7 @@ export default function VoronoiDiagram() {
 
     // Find if mouse is near any point
     let foundPoint: Point | null = null;
-    const hoverRadius = 10; // Pixels
+    const hoverRadius = 10; // CSS pixels
 
     for (const point of scaledPoints) {
       const dx = mouseX - point.x;
@@ -474,21 +465,9 @@ export default function VoronoiDiagram() {
     setHoveredPoint(null);
   };
 
-  // Helper function to convert hex color to RGB
-  function hexToRgb(hex: string): { r: number; g: number; b: number } {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : { r: 128, g: 128, b: 128 };
-  }
-
   if (!mounted) {
     return (
-      <div className="relative h-full w-full flex items-center justify-center bg-background">
+      <div className="relative h-full w-full flex items-center justify-center voronoi-loading">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-muted border-t-transparent" />
         </div>
@@ -498,7 +477,7 @@ export default function VoronoiDiagram() {
 
   if (isLoading) {
     return (
-      <div className="relative h-full w-full flex items-center justify-center bg-background">
+      <div className="relative h-full w-full flex items-center justify-center voronoi-loading">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-muted border-t-transparent" />
           <p className="text-muted-foreground">Loading graph data...</p>
@@ -509,7 +488,7 @@ export default function VoronoiDiagram() {
 
   if (isError && !graphData) {
     return (
-      <div className="relative h-full w-full flex items-center justify-center bg-background">
+      <div className="relative h-full w-full flex items-center justify-center voronoi-error">
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
           <AlertCircle className="h-12 w-12 text-destructive" />
           <div>
@@ -533,9 +512,9 @@ export default function VoronoiDiagram() {
 
   if (points.length === 0) {
     return (
-      <div className="relative h-full w-full flex items-center justify-center bg-background">
+      <div className="relative h-full w-full flex items-center justify-center voronoi-empty">
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
-          <p className="text-muted-foreground">No graph data available</p>
+          <p className="text-muted-foreground">No data available to visualize</p>
           <Button
             onClick={handleRefresh}
             variant="outline"
@@ -549,58 +528,46 @@ export default function VoronoiDiagram() {
     );
   }
 
-  const currentTheme = theme === 'system' ? systemTheme : theme;
-  const isDark = currentTheme === 'dark';
-
   return (
-    <div className="relative h-full w-full flex items-center justify-center bg-background voronoi-diagram-container">
+    <div className="relative h-full w-full voronoi-diagram-container">
       <canvas
         ref={canvasRef}
-        className="w-full h-full voronoi-canvas"
-        style={{ display: 'block' }}
+        className="voronoi-canvas w-full h-full"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       />
 
-      {/* Error banner when using cached data as fallback */}
-      {isError && graphData && (
-        <div
-          className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-md shadow-sm border text-xs flex items-center gap-2"
-          style={{
-            backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
-            borderColor: isDark ? '#fbbf24' : '#b45309',
-            color: isDark ? '#fbbf24' : '#b45309',
-          }}
-        >
-          <AlertCircle className="h-3 w-3" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-      
       {/* Tooltip */}
       {hoveredPoint && (
         <div
           ref={tooltipRef}
-          className="fixed pointer-events-none z-50 px-3 py-2 rounded-md shadow-lg border transition-opacity"
+          className="voronoi-tooltip-content"
           style={{
-            left: `${tooltipPosition.x + 10}px`,
-            top: `${tooltipPosition.y + 10}px`,
-            backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
-            borderColor: isDark ? '#404040' : '#e0e0e0',
-            color: isDark ? '#ffffff' : '#000000',
+            position: 'fixed',
+            left: tooltipPosition.x + 12,
+            top: tooltipPosition.y + 12,
+            pointerEvents: 'none',
+            zIndex: 1000,
           }}
         >
-          <div className="text-sm font-medium mb-1">{hoveredPoint.nodeName}</div>
-          <div 
-            className="text-xs"
-            style={{
-              color: isDark ? '#fbbf24' : '#b45309',
-            }}
-          >
+          <div className="text-xs font-medium">{hoveredPoint.nodeName}</div>
+          <div className="text-xs text-muted-foreground">
             {NODE_TYPE_NAMES[hoveredPoint.nodeType] || hoveredPoint.nodeType}
           </div>
         </div>
       )}
+
+      {/* Refresh button - fixed in bottom-right corner */}
+      <Button
+        onClick={handleRefresh}
+        disabled={isLoading}
+        variant="outline"
+        size="icon"
+        className="absolute bottom-4 right-4 rounded-full shadow-lg"
+        aria-label="Refresh graph data"
+      >
+        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+      </Button>
     </div>
   );
 }

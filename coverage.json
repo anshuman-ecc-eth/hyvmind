@@ -1,0 +1,77 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-26T10:04:25.109Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 4,
+    "implemented": 4,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "In the top-right hamburger menu, rename the button currently labeled 'Profile Settings' to simply 'Settings'.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Header.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Header.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add a new top-level authenticated tab titled 'Collectibles' that renders the NFTGallery component (law tokens and interpretation tokens gallery) previously housed in the 'Manage Collectibles' section of the Settings modal. The Collectibles tab should appear alongside the other post-login tabs (Graph, Tree, Terminal, Swarms, Leaderboard).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/CollectiblesView.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/Header.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/CollectiblesView.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/Header.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Remove the 'Manage Collectibles' section (NFTGallery) from the ProfileSettingsModal. The Mint Settings section (Number of Copies / copy count configuration) must remain in the Settings modal.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/ProfileSettingsModal.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/ProfileSettingsModal.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Rename the 'BUZZ' tab in the authenticated navigation to 'Leaderboard'. The tab must still navigate to the same BuzzLeaderboard page.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Header.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Header.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/components/Header.tsx",
+    "frontend/src/components/ProfileSettingsModal.tsx",
+    "frontend/src/pages/CollectiblesView.tsx",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

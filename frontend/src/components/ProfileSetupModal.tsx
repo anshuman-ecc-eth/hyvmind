@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useState } from 'react';
 import { useSaveCallerUserProfile } from '../hooks/useQueries';
 import {
@@ -46,7 +39,7 @@ export default function ProfileSetupModal() {
         <DialogHeader>
           <DialogTitle>Welcome to Hyvmind!</DialogTitle>
           <DialogDescription>
-            Please enter your name to get started with the hierarchical knowledge graph.
+            Please pick a username to get started. You can change it later via Profile Settings.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -73,4 +66,3 @@ export default function ProfileSetupModal() {
     </Dialog>
   );
 }
-

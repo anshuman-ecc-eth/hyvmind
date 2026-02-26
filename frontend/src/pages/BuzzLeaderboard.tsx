@@ -1,15 +1,11 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useGetBuzzLeaderboard } from '../hooks/useQueries';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Zap, Trophy, Medal, Award } from 'lucide-react';
+
+// Scale factor: all BUZZ values are stored as Int × 10^7
+const BUZZ_SCALE = 10_000_000;
 
 export default function BuzzLeaderboard() {
   const { data: leaderboard, isLoading, error } = useGetBuzzLeaderboard();
@@ -36,7 +32,6 @@ export default function BuzzLeaderboard() {
               <Zap className="h-5 w-5" />
               BUZZ Leaderboard
             </CardTitle>
-            <CardDescription>Error loading leaderboard</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -69,18 +64,12 @@ export default function BuzzLeaderboard() {
             <Zap className="h-5 w-5" />
             BUZZ Leaderboard
           </CardTitle>
-          <CardDescription>
-            Top contributors ranked by BUZZ points earned through creating and receiving votes on Law Tokens and Interpretation Tokens
-          </CardDescription>
         </CardHeader>
         <CardContent>
           {!leaderboard || leaderboard.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Zap className="mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-lg font-medium text-foreground">No BUZZ scores yet</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Start creating Law Tokens and Interpretation Tokens to earn BUZZ points!
-              </p>
+              <p className="text-lg font-medium text-foreground">Create tokens to earn points.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -96,7 +85,8 @@ export default function BuzzLeaderboard() {
                 <TableBody>
                   {leaderboard.map((entry, index) => {
                     const rank = index + 1;
-                    const score = Number(entry.score);
+                    // Divide by BUZZ_SCALE (10^7) to get human-readable value
+                    const displayScore = Number(entry.score) / BUZZ_SCALE;
                     const isTopThree = rank <= 3;
                     
                     return (
@@ -120,11 +110,11 @@ export default function BuzzLeaderboard() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge 
-                            variant={score >= 0 ? 'default' : 'destructive'}
+                            variant={displayScore >= 0 ? 'default' : 'destructive'}
                             className="font-mono"
                           >
                             <Zap className="mr-1 h-3 w-3" />
-                            {score}
+                            {displayScore.toFixed(7)}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -136,7 +126,7 @@ export default function BuzzLeaderboard() {
           )}
           
           <div className="mt-6 rounded-lg border border-border bg-muted/50 p-4">
-            <h3 className="mb-2 text-sm font-semibold">How BUZZ Points Work:</h3>
+            <h3 className="mb-2 text-sm font-semibold">How points work:</h3>
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li>• Create a Law Token: <span className="font-medium text-foreground">+3 BUZZ</span></li>
               <li>• Create an Interpretation Token: <span className="font-medium text-foreground">+5 BUZZ</span></li>

@@ -1,18 +1,13 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useGetSwarmMembershipRequests, useApproveJoinRequest } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Check, Loader2, Users, Clock, AlertCircle } from 'lucide-react';
+import { Check, X, Loader2, UserCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import type { NodeId } from '../backend';
+import type { NodeId, MembershipInfo } from '../backend';
 import { MembershipStatus } from '../backend';
+import { Principal } from '@icp-sdk/core/principal';
 import { useState } from 'react';
 
 interface SwarmMembershipApprovalProps {
@@ -20,209 +15,187 @@ interface SwarmMembershipApprovalProps {
 }
 
 export default function SwarmMembershipApproval({ swarmId }: SwarmMembershipApprovalProps) {
-  const { data: membershipRequests, isLoading } = useGetSwarmMembershipRequests(swarmId);
-  const approveRequest = useApproveJoinRequest();
+  const { data: requests, isLoading } = useGetSwarmMembershipRequests(swarmId);
+  const approveMutation = useApproveJoinRequest();
   const [processingMember, setProcessingMember] = useState<string | null>(null);
 
-  const handleApprove = async (memberPrincipal: any) => {
-    // Get the principal string for tracking
-    let memberStr: string;
+  const handleApprove = async (request: MembershipInfo) => {
     try {
-      if (typeof memberPrincipal === 'string') {
-        memberStr = memberPrincipal;
-      } else if (memberPrincipal && typeof memberPrincipal === 'object' && '__principal__' in memberPrincipal) {
-        memberStr = memberPrincipal.__principal__;
-      } else if (memberPrincipal && typeof memberPrincipal.toString === 'function') {
-        memberStr = memberPrincipal.toString();
-      } else {
-        throw new Error('Invalid principal format');
+      // Validate principal before sending
+      if (!request.principal) {
+        toast.error('Invalid member principal');
+        return;
       }
-    } catch (error) {
-      toast.error('Invalid member principal format');
-      return;
-    }
 
-    setProcessingMember(memberStr);
-    
-    try {
-      await approveRequest.mutateAsync({ swarmId, member: memberPrincipal });
-      toast.success('Member approved successfully!');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      let principalToApprove: Principal;
       
-      if (errorMessage.includes('No pending request')) {
-        toast.info('This request has already been processed');
-      } else if (errorMessage.includes('Invalid principal')) {
-        toast.error('Invalid member principal. Please try again.');
-      } else {
-        toast.error(`Failed to approve member: ${errorMessage}`);
+      try {
+        // Convert to Principal object
+        if (typeof request.principal === 'string') {
+          principalToApprove = Principal.fromText(request.principal);
+        } else if (request.principal && typeof request.principal === 'object') {
+          // Handle serialized principal objects
+          const principalObj = request.principal as any;
+          if ('__principal__' in principalObj) {
+            principalToApprove = Principal.fromText(principalObj.__principal__);
+          } else if ('_isPrincipal' in principalObj) {
+            principalToApprove = request.principal as Principal;
+          } else if (principalObj.toString && typeof principalObj.toString === 'function') {
+            principalToApprove = Principal.fromText(principalObj.toString());
+          } else {
+            throw new Error('Unrecognized principal format');
+          }
+        } else {
+          throw new Error('Invalid principal type');
+        }
+      } catch (conversionError) {
+        console.error('Principal conversion error:', conversionError);
+        toast.error('Failed to process member principal. Please try again.');
+        return;
       }
+
+      setProcessingMember(principalToApprove.toString());
+      
+      await approveMutation.mutateAsync({
+        swarmId,
+        member: principalToApprove,
+      });
+      
+      toast.success('Contributor approved successfully');
+    } catch (error) {
+      console.error('Approval error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to approve contributor');
     } finally {
       setProcessingMember(null);
-    }
-  };
-
-  // Helper function to safely get principal string
-  const getPrincipalString = (principal: any): string | null => {
-    try {
-      if (typeof principal === 'string') {
-        return principal;
-      }
-      if (principal && typeof principal === 'object' && '__principal__' in principal) {
-        return principal.__principal__;
-      }
-      if (principal && typeof principal.toString === 'function') {
-        return principal.toString();
-      }
-      return null;
-    } catch {
-      return null;
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (!membershipRequests || membershipRequests.length === 0) {
+  if (!requests || requests.length === 0) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
-        No members or pending requests yet.
+      <div className="p-4 text-center">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <UserCheck className="h-8 w-8 opacity-50" />
+          <p className="text-sm">No contributor requests</p>
+        </div>
       </div>
     );
   }
 
-  const pendingRequests = membershipRequests.filter(
-    (req) => req.status === MembershipStatus.pending
-  );
-  const approvedRequests = membershipRequests.filter(
-    (req) => req.status === MembershipStatus.approved
-  );
-
-  const hasPendingRequests = pendingRequests.length > 0;
-  const hasApprovedMembers = approvedRequests.length > 0;
+  const pendingRequests = requests.filter(r => r.status === MembershipStatus.pending);
+  const approvedRequests = requests.filter(r => r.status === MembershipStatus.approved);
 
   return (
-    <div className="space-y-4 p-4">
-      {/* Pending Requests Section */}
-      {hasPendingRequests && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Clock className="h-4 w-4 text-warning" />
-            <span>Pending Requests ({pendingRequests.length})</span>
-          </div>
-          
+    <ScrollArea className="h-[400px]">
+      <div className="space-y-4 p-4">
+        {pendingRequests.length > 0 && (
           <div className="space-y-2">
-            {pendingRequests.map((request, index) => {
-              const memberStr = getPrincipalString(request.principal);
-              
-              if (!memberStr) {
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">Pending Requests</h3>
+              <Badge variant="secondary" className="ml-auto">
+                {pendingRequests.length}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {pendingRequests.map((request) => {
+                const principalStr = request.principal.toString();
+                const isProcessing = processingMember === principalStr;
+                
                 return (
-                  <div key={index} className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm text-destructive">Invalid principal format</span>
-                    </div>
-                  </div>
-                );
-              }
-              
-              const shortId = `${memberStr.slice(0, 8)}...${memberStr.slice(-6)}`;
-              const isProcessing = processingMember === memberStr;
-              
-              return (
-                <div key={index} className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/5 p-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Pending
-                      </Badge>
+                  <div
+                    key={principalStr}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
                       {request.profileName ? (
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">{request.profileName}</span>
-                          <span className="text-xs font-mono text-muted-foreground">{shortId}</span>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium truncate">{request.profileName}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {principalStr.slice(0, 20)}...
+                          </p>
                         </div>
                       ) : (
-                        <span className="text-sm font-mono">{shortId}</span>
+                        <p className="text-sm font-mono truncate">{principalStr}</p>
                       )}
                     </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleApprove(request.principal)}
-                    disabled={approveRequest.isPending || isProcessing}
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="h-3 w-3 mr-1" />
-                        Approve
-                      </>
-                    )}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Separator between sections */}
-      {hasPendingRequests && hasApprovedMembers && <Separator />}
-
-      {/* Approved Members Section */}
-      {hasApprovedMembers && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Users className="h-4 w-4 text-success" />
-            <span>Approved Members ({approvedRequests.length})</span>
-          </div>
-          
-          <div className="space-y-2">
-            {approvedRequests.map((request, index) => {
-              const memberStr = getPrincipalString(request.principal);
-              
-              if (!memberStr) {
-                return (
-                  <div key={index} className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm text-destructive">Invalid principal format</span>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleApprove(request)}
+                        disabled={isProcessing}
+                        className="h-8"
+                      >
+                        {isProcessing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Approve
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 );
-              }
-              
-              const shortId = `${memberStr.slice(0, 8)}...${memberStr.slice(-6)}`;
-              
-              return (
-                <div key={index} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+              })}
+            </div>
+          </div>
+        )}
+
+        {pendingRequests.length > 0 && approvedRequests.length > 0 && (
+          <Separator className="my-4" />
+        )}
+
+        {approvedRequests.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">Contributors</h3>
+              <Badge variant="secondary" className="ml-auto">
+                {approvedRequests.length}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {approvedRequests.map((request) => {
+                const principalStr = request.principal.toString();
+                
+                return (
+                  <div
+                    key={principalStr}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      {request.profileName ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium truncate">{request.profileName}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {principalStr.slice(0, 20)}...
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-mono truncate">{principalStr}</p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="ml-4">
                       <Check className="h-3 w-3 mr-1" />
                       Approved
                     </Badge>
-                    {request.profileName ? (
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{request.profileName}</span>
-                        <span className="text-xs font-mono text-muted-foreground">{shortId}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm font-mono">{shortId}</span>
-                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ScrollArea>
   );
 }

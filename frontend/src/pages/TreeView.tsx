@@ -1,22 +1,15 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
-import { useGetGraphData, useGetVoteData } from '../hooks/useQueries';
+import { useGetGraphData } from '../hooks/useQueries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronRight, ChevronDown, Loader2, Plus, Link2, Download } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import type { GraphNode, VoteData } from '../backend';
+import type { GraphNode, InterpretationToken } from '../backend';
 import SwarmMembershipButton from '../components/SwarmMembershipButton';
 import CreateNodeDialog from '../components/CreateNodeDialog';
-import VotingButtons from '../components/VotingButtons';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import FilterSortModal from '../components/FilterSortModal';
+import SchemaBuilderFilterModal from '../components/SchemaBuilderFilterModal';
 import { toast } from 'sonner';
 
 interface TreeNodeProps {
@@ -126,8 +119,6 @@ function TreeNode({ node, level, sharedLawTokenIds, lawTokenLocationMap, locatio
             )}
           </div>
 
-          <VotingButtons nodeId={node.id} nodeType={node.nodeType} compact interactive />
-
           {node.nodeType === 'swarm' && (
             <SwarmMembershipButton swarmId={node.id} />
           )}
@@ -184,84 +175,63 @@ function TreeNode({ node, level, sharedLawTokenIds, lawTokenLocationMap, locatio
   );
 }
 
-interface DiscardedNodeItemProps {
-  nodeId: string;
-  label: string;
-  type: string;
+interface InterpretationTokenItemProps {
+  token: InterpretationToken;
+  fromNodeName: string;
+  toNodeName: string;
+  onOpenModal: () => void;
 }
 
-function DiscardedNodeItem({ nodeId, label, type }: DiscardedNodeItemProps) {
+function InterpretationTokenItem({ token, fromNodeName, toNodeName, onOpenModal }: InterpretationTokenItemProps) {
   return (
-    <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-      <Badge variant="outline" className="text-xs bg-muted text-foreground border-border">
-        {type}
-      </Badge>
-      <span className="text-sm flex-1 truncate">{label}</span>
-      <VotingButtons nodeId={nodeId} nodeType={type} compact interactive />
+    <div
+      className="flex flex-col gap-2 rounded-md p-3 hover:bg-muted transition-colors cursor-pointer border border-border"
+      onClick={onOpenModal}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="outline" className="bg-muted text-foreground border-border text-xs">
+          interpretationToken
+        </Badge>
+        <span className="text-sm font-medium">{token.title}</span>
+      </div>
+      
+      <div className="text-xs text-muted-foreground space-y-1 ml-2">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">From:</span>
+          <span>{fromNodeName}</span>
+          <Badge variant="outline" className="text-xs">{token.fromRelationshipType}</Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">To:</span>
+          <span>{toNodeName}</span>
+          <Badge variant="outline" className="text-xs">{token.toRelationshipType}</Badge>
+        </div>
+      </div>
+
+      {token.context && (
+        <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
+          {token.context}
+        </div>
+      )}
+
+      {token.customAttributes.length > 0 && (
+        <div className="flex flex-wrap gap-1 ml-2">
+          {token.customAttributes.map((attr, idx) => (
+            <Badge key={idx} variant="secondary" className="text-xs">
+              {attr.key}: {attr.value}
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-interface DiscardedNode {
-  id: string;
-  label: string;
-  type: string;
-}
-
-// Hook to collect all node IDs from the tree (excluding curations)
-function useAllNodeIds(rootNodes: GraphNode[]): string[] {
-  return useMemo(() => {
-    const nodeIds: string[] = [];
-    
-    const collectIds = (node: GraphNode) => {
-      // Skip curations as they cannot be voted on
-      if (node.nodeType !== 'curation') {
-        nodeIds.push(node.id);
-      }
-      node.children.forEach(collectIds);
-    };
-    
-    rootNodes.forEach(collectIds);
-    return nodeIds;
-  }, [rootNodes]);
-}
-
-// Hook to fetch all vote data for nodes
-function useAllVoteData(nodeIds: string[]) {
-  // Fetch vote data for all nodes
-  const voteQueries = nodeIds.map(nodeId => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useGetVoteData(nodeId);
-  });
-
-  // Check if all queries are loaded
-  const allLoaded = voteQueries.every(q => !q.isLoading);
-  
-  // Build a map of nodeId -> VoteData
-  const voteDataMap = useMemo(() => {
-    const map = new Map<string, VoteData>();
-    nodeIds.forEach((nodeId, index) => {
-      const voteData = voteQueries[index].data;
-      if (voteData) {
-        map.set(nodeId, voteData);
-      }
-    });
-    return map;
-  }, [nodeIds, voteQueries]);
-
-  return { voteDataMap, allLoaded };
-}
-
 export default function TreeView() {
-  const { data: graphData, isLoading } = useGetGraphData();
-  const [discardedOpen, setDiscardedOpen] = useState(false);
+  const { data: graphData, isLoading: graphLoading } = useGetGraphData();
   const [isExporting, setIsExporting] = useState(false);
-
-  // Collect all node IDs (excluding curations)
-  const allNodeIds = useAllNodeIds(graphData?.rootNodes || []);
-  
-  // Fetch all vote data
-  const { voteDataMap, allLoaded: voteDataLoaded } = useAllVoteData(allNodeIds);
+  const [selectedToken, setSelectedToken] = useState<InterpretationToken | null>(null);
+  const [tokenModalOpen, setTokenModalOpen] = useState(false);
 
   // Build curation name map
   const curationNameMap = useMemo(() => {
@@ -274,59 +244,20 @@ export default function TreeView() {
     return map;
   }, [graphData]);
 
-  // Filter nodes based on vote data
-  const { filteredRootNodes, discardedNodes } = useMemo(() => {
-    if (!graphData || !voteDataLoaded) {
-      return { filteredRootNodes: graphData?.rootNodes || [], discardedNodes: [] };
+  // Build node name map for all nodes
+  const nodeNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (graphData) {
+      graphData.curations.forEach(c => map.set(c.id, c.name));
+      graphData.swarms.forEach(s => map.set(s.id, s.name));
+      graphData.locations.forEach(l => map.set(l.id, l.title));
+      graphData.lawTokens.forEach(t => map.set(t.id, t.tokenLabel));
+      graphData.interpretationTokens.forEach(t => map.set(t.id, t.title));
     }
+    return map;
+  }, [graphData]);
 
-    const discarded: DiscardedNode[] = [];
-
-    // Helper to check if a node is discarded
-    const isDiscarded = (nodeId: string, nodeType: string): boolean => {
-      // Curations can never be discarded as they cannot be voted on
-      if (nodeType === 'curation') return false;
-
-      const voteData = voteDataMap.get(nodeId);
-      if (!voteData) return false;
-      
-      const upvotes = Number(voteData.upvotes);
-      const downvotes = Number(voteData.downvotes);
-      
-      // Node is discarded only if downvotes > upvotes (strictly more)
-      return downvotes > upvotes;
-    };
-
-    // Recursively filter nodes and collect discarded ones
-    const filterNode = (node: GraphNode): GraphNode | null => {
-      // Check if this node is discarded
-      if (isDiscarded(node.id, node.nodeType)) {
-        discarded.push({
-          id: node.id,
-          label: node.tokenLabel,
-          type: node.nodeType,
-        });
-        return null;
-      }
-
-      // Filter children recursively
-      const filteredChildren = node.children
-        .map(child => filterNode(child))
-        .filter((child): child is GraphNode => child !== null);
-
-      return {
-        ...node,
-        children: filteredChildren,
-      };
-    };
-
-    // Filter all root nodes
-    const filtered = graphData.rootNodes
-      .map(node => filterNode(node))
-      .filter((node): node is GraphNode => node !== null);
-
-    return { filteredRootNodes: filtered, discardedNodes: discarded };
-  }, [graphData, voteDataMap, voteDataLoaded]);
+  const filteredRootNodes = graphData?.rootNodes || [];
 
   const handleExport = async () => {
     if (!graphData) {
@@ -366,17 +297,25 @@ export default function TreeView() {
     }
   };
 
-  if (isLoading || !voteDataLoaded) {
+  const handleOpenTokenModal = (token: InterpretationToken) => {
+    setSelectedToken(token);
+    setTokenModalOpen(true);
+  };
+
+  if (graphLoading) {
     return (
-      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+          <p className="text-sm text-muted-foreground">Loading tree data...</p>
+        </div>
       </div>
     );
   }
 
   if (!graphData || graphData.rootNodes.length === 0) {
     return (
-      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Card className="w-96">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">
@@ -418,49 +357,48 @@ export default function TreeView() {
     }
   });
 
-  // Group discarded nodes by type (curations will never appear here)
-  const discardedByType = discardedNodes.reduce((acc, node) => {
-    if (!acc[node.type]) {
-      acc[node.type] = [];
-    }
-    acc[node.type].push(node);
-    return acc;
-  }, {} as Record<string, DiscardedNode[]>);
-
   return (
-    <div className="container mx-auto p-6 h-[calc(100vh-8rem)]">
-      <Card className="h-full flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Hierarchical View</CardTitle>
-              {sharedLawTokenIds.size > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {sharedLawTokenIds.size} shared law token{sharedLawTokenIds.size !== 1 ? 's' : ''} detected (highlighted with border)
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                disabled={isExporting}
-                className="hover:bg-accent hover:text-accent-foreground"
-                title="Export tree data"
-              >
-                {isExporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
+    <div className="container mx-auto p-6 h-full flex flex-col min-h-0">
+      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+        {/* Hierarchical View */}
+        <Card className="flex flex-col min-h-0">
+          <CardHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Hierarchical View</CardTitle>
+                {sharedLawTokenIds.size > 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {sharedLawTokenIds.size} shared law token{sharedLawTokenIds.size !== 1 ? 's' : ''} detected (highlighted with border)
+                  </p>
                 )}
-              </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <FilterSortModal
+                  graphData={graphData}
+                  sharedLawTokenIds={sharedLawTokenIds}
+                  lawTokenLocationMap={lawTokenLocationMap}
+                  locationLawTokenSequenceMap={locationLawTokenSequenceMap}
+                  curationNameMap={curationNameMap}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="hover:bg-accent hover:text-accent-foreground"
+                  title="Export tree data"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="flex-1 min-h-0">
-            <ScrollArea className="h-full tree-view-scroll">
+          </CardHeader>
+          <CardContent className="flex-1 min-h-0 p-0">
+            <ScrollArea className="h-full px-6 pb-6">
               <div className="space-y-2 pr-4">
                 {filteredRootNodes.map((node) => (
                   <TreeNode 
@@ -475,52 +413,123 @@ export default function TreeView() {
                 ))}
               </div>
             </ScrollArea>
-          </div>
+          </CardContent>
+        </Card>
 
-          {discardedNodes.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border flex-shrink-0">
-              <Collapsible open={discardedOpen} onOpenChange={setDiscardedOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between hover:bg-muted">
-                    <span className="flex items-center gap-2">
-                      {discardedOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      <span className="font-semibold">Discarded Nodes</span>
-                      <Badge variant="outline" className="bg-muted text-foreground">
-                        {discardedNodes.length}
-                      </Badge>
-                    </span>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <ScrollArea className="max-h-60">
-                    <div className="space-y-3">
-                      {['swarm', 'location', 'lawToken', 'interpretationToken'].map((type) => {
-                        const nodesOfType = discardedByType[type] || [];
-
-                        if (nodesOfType.length === 0) return null;
-
-                        return (
-                          <div key={type} className="space-y-1">
-                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">{type}</h4>
-                            {nodesOfType.map(node => (
-                              <DiscardedNodeItem
-                                key={node.id}
-                                nodeId={node.id}
-                                label={node.label}
-                                type={node.type}
-                              />
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </CollapsibleContent>
-              </Collapsible>
+        {/* Interpretation Tokens Section */}
+        <Card className="flex flex-col min-h-0">
+          <CardHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Interpretation Tokens</CardTitle>
+              </div>
+              <SchemaBuilderFilterModal
+                interpretationTokens={graphData.interpretationTokens}
+                nodeNameMap={nodeNameMap}
+                onOpenTokenModal={handleOpenTokenModal}
+              />
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-0 p-0">
+            <ScrollArea className="h-full px-6 pb-6">
+              <div className="space-y-2 pr-4">
+                {graphData.interpretationTokens.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No interpretation tokens yet. Create one to get started!
+                  </div>
+                ) : (
+                  graphData.interpretationTokens.map((token) => (
+                    <InterpretationTokenItem
+                      key={token.id}
+                      token={token}
+                      fromNodeName={nodeNameMap.get(token.fromTokenId) || 'Unknown'}
+                      toNodeName={nodeNameMap.get(token.toNodeId) || 'Unknown'}
+                      onOpenModal={() => handleOpenTokenModal(token)}
+                    />
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Token Detail Modal */}
+      {selectedToken && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm ${
+            tokenModalOpen ? 'block' : 'hidden'
+          }`}
+          onClick={() => setTokenModalOpen(false)}
+        >
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle>{selectedToken.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Context</h3>
+                <p className="text-sm text-muted-foreground">{selectedToken.context}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">From Node</h3>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      {nodeNameMap.get(selectedToken.fromTokenId) || 'Unknown'}
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      {selectedToken.fromRelationshipType}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      Directionality: {selectedToken.fromDirectionality}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium mb-2">To Node</h3>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      {nodeNameMap.get(selectedToken.toNodeId) || 'Unknown'}
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      {selectedToken.toRelationshipType}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      Directionality: {selectedToken.toDirectionality}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedToken.customAttributes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Custom Attributes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedToken.customAttributes.map((attr, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {attr.key}: {attr.value}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setTokenModalOpen(false)}
+                  className="hover:bg-accent hover:text-accent-foreground"
+                >
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

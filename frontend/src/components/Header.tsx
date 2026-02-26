@@ -1,302 +1,255 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Network, TreePine, Moon, Sun, Users, Menu, ExternalLink, BookOpen, Zap, Plus, LogOut, Settings, Search } from 'lucide-react';
+import { Moon, Sun, Plus, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useState, useEffect } from 'react';
 import CreateNodeDialog from './CreateNodeDialog';
 import ProfileSettingsModal from './ProfileSettingsModal';
-import SearchModal from './SearchModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
-type ViewType = 'graph' | 'tree' | 'membership' | 'ontologies' | 'buzz';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useQueryClient } from '@tanstack/react-query';
+import { clearTreeCache } from '../hooks/useQueries';
 
 interface HeaderProps {
-  currentView: ViewType;
-  onViewChange: (view: ViewType) => void;
+  currentView: 'graph' | 'tree' | 'terminal' | 'swarms' | 'buzz' | 'collectibles';
+  onViewChange: (view: 'graph' | 'tree' | 'terminal' | 'swarms' | 'buzz' | 'collectibles') => void;
+  isAuthenticated: boolean;
+  isLandingPage: boolean;
 }
 
-export default function Header({ currentView, onViewChange }: HeaderProps) {
-  const { login, clear, loginStatus, identity } = useInternetIdentity();
-  const { theme, setTheme } = useTheme();
-  const queryClient = useQueryClient();
+export default function Header({ currentView, onViewChange, isAuthenticated, isLandingPage }: HeaderProps) {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { login, clear, loginStatus } = useInternetIdentity();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const queryClient = useQueryClient();
 
-  const isAuthenticated = !!identity;
-  const disabled = loginStatus === 'logging-in';
-  const buttonText =
-    loginStatus === 'logging-in'
-      ? 'Logging in...'
-      : isAuthenticated
-        ? 'Logout'
-        : 'Login';
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const handleAuth = async () => {
-    if (isAuthenticated) {
-      await clear();
-      queryClient.clear();
-    } else {
-      try {
-        await login();
-      } catch (error: unknown) {
-        console.error('Login error:', error);
-        if (error instanceof Error && error.message === 'User is already authenticated') {
-          await clear();
-          setTimeout(() => login(), 300);
-        }
+  const handleLogout = async () => {
+    await clear();
+    // Clear tree cache on logout
+    clearTreeCache();
+    queryClient.clear();
+  };
+
+  const handleLogin = async () => {
+    try {
+      await login();
+    } catch (error: any) {
+      console.error('Login error:', error);
+      if (error.message === 'User is already authenticated') {
+        await clear();
+        setTimeout(() => login(), 300);
       }
     }
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const handleLearnMore = () => {
-    window.open('https://desci.ng/paper/hyvmind-a-research-to-earn-dapp-for-tokenising-annotation', '_blank');
-  };
-
-  const handleJoinCommunity = () => {
-    window.open('https://telegram.me/+YbeQY2mzwfFlMGU1', '_blank');
-  };
+  // Use resolvedTheme for logo selection to handle system theme correctly
+  const currentTheme = mounted ? resolvedTheme : 'dark';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
+    <header className="border-b border-border bg-background">
+      <div className="container mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo and App Name */}
           <div className="flex items-center gap-3">
-            {theme === 'dark' ? (
-              <img 
-                src="/assets/hyvmind_logo white, transparent.png" 
-                alt="Hyvmind" 
-                className="h-10 w-auto"
-              />
-            ) : (
-              <img 
-                src="/assets/hyvmind_logo black, transparent.png" 
-                alt="Hyvmind" 
-                className="h-10 w-auto"
-              />
-            )}
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              hyvmind
-            </span>
+            <img
+              src={currentTheme === 'dark' ? '/assets/hyvmind_logo white, transparent.png' : '/assets/hyvmind_logo black, transparent.png'}
+              alt="Hyvmind Logo"
+              className="h-8 w-auto opacity-100"
+              style={{ opacity: 1 }}
+            />
+            <span className="text-sm font-medium text-foreground">hyvmind</span>
           </div>
-          
+
+          {/* Navigation Tabs (only for authenticated users) */}
           {isAuthenticated && (
-            <nav className="flex gap-2">
+            <nav className="flex items-center gap-1">
               <Button
-                variant={currentView === 'graph' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
                 onClick={() => onViewChange('graph')}
-                className={currentView === 'graph' ? 'bg-foreground text-background hover:bg-foreground/90' : 'hover:bg-accent hover:text-accent-foreground'}
+                className={`${
+                  currentView === 'graph'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
-                <Network className="mr-2 h-4 w-4" />
                 Graph
               </Button>
               <Button
-                variant={currentView === 'tree' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
                 onClick={() => onViewChange('tree')}
-                className={currentView === 'tree' ? 'bg-foreground text-background hover:bg-foreground/90' : 'hover:bg-accent hover:text-accent-foreground'}
+                className={`${
+                  currentView === 'tree'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
-                <TreePine className="mr-2 h-4 w-4" />
-                Tree
+                List
               </Button>
               <Button
-                variant={currentView === 'membership' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onViewChange('membership')}
-                className={currentView === 'membership' ? 'bg-foreground text-background hover:bg-foreground/90' : 'hover:bg-accent hover:text-accent-foreground'}
+                variant="ghost"
+                onClick={() => onViewChange('terminal')}
+                className={`${
+                  currentView === 'terminal'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
-                <Users className="mr-2 h-4 w-4" />
+                Terminal
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => onViewChange('swarms')}
+                className={`${
+                  currentView === 'swarms'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
                 Swarms
               </Button>
               <Button
-                variant={currentView === 'ontologies' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onViewChange('ontologies')}
-                className={currentView === 'ontologies' ? 'bg-foreground text-background hover:bg-foreground/90' : 'hover:bg-accent hover:text-accent-foreground'}
+                variant="ghost"
+                onClick={() => onViewChange('collectibles')}
+                className={`${
+                  currentView === 'collectibles'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
-                <BookOpen className="mr-2 h-4 w-4" />
-                Ontologies
+                Collectibles
               </Button>
               <Button
-                variant={currentView === 'buzz' ? 'default' : 'ghost'}
-                size="sm"
+                variant="ghost"
                 onClick={() => onViewChange('buzz')}
-                className={currentView === 'buzz' ? 'bg-foreground text-background hover:bg-foreground/90' : 'hover:bg-accent hover:text-accent-foreground'}
+                className={`${
+                  currentView === 'buzz'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
               >
-                <Zap className="mr-2 h-4 w-4" />
-                BUZZ
+                Leaderboard
               </Button>
             </nav>
           )}
-        </div>
 
-        <div className="flex items-center gap-3">
-          {isAuthenticated && (
-            <>
+          {/* Right Side Controls */}
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div>
-                      <CreateNodeDialog 
-                        trigger={
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="hover:bg-accent hover:text-accent-foreground"
-                          >
-                            <Plus className="h-5 w-5" />
-                          </Button>
-                        }
-                      />
-                    </div>
+                    <CreateNodeDialog
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setCreateDialogOpen(true)}
+                          className="hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </Button>
+                      }
+                      open={createDialogOpen}
+                      onOpenChange={setCreateDialogOpen}
+                    />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Create Node</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => setSearchModalOpen(true)}
-                      className="hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Search className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Search</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="hover:bg-muted"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
             )}
-          </Button>
 
-          {!isAuthenticated ? (
+            {/* Theme Toggle - Now visible on landing page and for authenticated users */}
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="hover:bg-accent hover:text-accent-foreground"
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+            )}
+
+            {/* Hamburger Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Menu"
-                  className="hover:bg-muted"
-                >
+                <Button variant="ghost" size="icon" className="hover:bg-accent hover:text-accent-foreground">
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={handleAuth}
-                  disabled={disabled}
-                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                >
-                  {buttonText}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLearnMore}
-                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Learn More
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleJoinCommunity}
-                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Join Community
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border border-border">
+                {!isAuthenticated ? (
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleLogin}
+                      disabled={loginStatus === 'logging-in'}
+                      className="cursor-pointer"
+                    >
+                      {loginStatus === 'logging-in' ? 'Logging in...' : 'Login'}
+                    </DropdownMenuItem>
+                    {isLandingPage && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => window.open('https://app.cg/c/hyvmind/', '_blank')}
+                          className="cursor-pointer"
+                        >
+                          Join Chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => window.open('https://x.com/hyvmind_app', '_blank')}
+                          className="cursor-pointer"
+                        >
+                          Keep Track
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => window.open('https://nodes.desci.com/dpid/969', '_blank')}
+                          className="cursor-pointer"
+                        >
+                          See Whitepaper
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setProfileSettingsOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Menu"
-                  className="hover:bg-muted"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => setProfileSettingsOpen(true)}
-                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleAuth}
-                  disabled={disabled}
-                  className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {buttonText}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          </div>
         </div>
       </div>
-      
-      {isAuthenticated && (
-        <>
-          <ProfileSettingsModal 
-            open={profileSettingsOpen} 
-            onOpenChange={setProfileSettingsOpen} 
-          />
-          <SearchModal 
-            open={searchModalOpen} 
-            onOpenChange={setSearchModalOpen} 
-          />
-        </>
+
+      {/* Profile Settings Modal */}
+      {profileSettingsOpen && (
+        <ProfileSettingsModal
+          open={profileSettingsOpen}
+          onOpenChange={setProfileSettingsOpen}
+        />
       )}
     </header>
   );

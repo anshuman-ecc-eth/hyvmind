@@ -1,0 +1,80 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Collectibles Tab, Settings Rename, and Leaderboard Tab Rename",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Rename 'Profile Settings' to 'Settings' in the hamburger menu",
+      "acceptanceCriteria": [
+        "The hamburger menu item previously reading 'Profile Settings' now reads 'Settings'.",
+        "Clicking 'Settings' still opens the same settings modal."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Update the hamburger menu button label from 'Profile Settings' to 'Settings'. Locate the DropdownMenuItem that renders 'Profile Settings' and change the text content to 'Settings'. Do not modify the onClick handler or any other functionality."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a top-level 'Collectibles' tab rendering the NFTGallery component",
+      "acceptanceCriteria": [
+        "A 'Collectibles' tab is visible in the authenticated navigation alongside other tabs.",
+        "The Collectibles tab displays the law tokens and interpretation tokens gallery (NFTGallery component).",
+        "Clicking a collectible card opens the NFTDetailModal as before."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/CollectiblesView.tsx",
+          "operation": "create",
+          "description": "Create a new page component that renders the NFTGallery component. Import NFTGallery from '../components/NFTGallery'. The page should use a similar layout pattern to other authenticated pages (e.g., BuzzLeaderboard.tsx), wrapping the gallery in a container with appropriate padding and max-width. Include a page title 'Collectibles' using similar heading styles to other views."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add 'collectibles' as a new view option in the View type union (alongside 'graph', 'tree', 'terminal', 'swarms', 'buzz'). Import the CollectiblesView component. Add a case in the view rendering logic to display <CollectiblesView /> when view === 'collectibles'. Ensure the new tab appears in the authenticated navigation flow."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Add a new 'Collectibles' tab button in the authenticated navigation section alongside Graph, Tree, Terminal, Swarms, and BUZZ tabs. The button should call setView('collectibles') when clicked. Position it logically in the tab order (e.g., after Swarms and before the leaderboard tab). Apply consistent styling with the existing tab buttons."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Remove NFTGallery from ProfileSettingsModal, keep Mint Settings",
+      "acceptanceCriteria": [
+        "The ProfileSettingsModal no longer renders the NFTGallery or any collectibles listing.",
+        "The Mint Settings / Number of Copies field is still present and functional inside the ProfileSettingsModal.",
+        "Opening the Settings modal is noticeably faster due to the removal of the gallery."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ProfileSettingsModal.tsx",
+          "operation": "modify",
+          "description": "Remove the NFTGallery component import and all JSX rendering of NFTGallery. Locate the section or container that renders the NFTGallery (likely labeled 'Manage Collectibles' or similar) and delete it entirely. Preserve all other sections: the profile name/social URL fields, the Mint Settings section with Number of Copies input, and the BUZZ balance display. Ensure the modal layout remains clean and functional after removal."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Rename 'BUZZ' tab to 'Leaderboard' in the authenticated navigation",
+      "acceptanceCriteria": [
+        "The tab previously labeled 'BUZZ' now displays as 'Leaderboard'.",
+        "Clicking 'Leaderboard' still renders the BuzzLeaderboard page with ranked BUZZ scores.",
+        "No other navigation behavior is changed."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Locate the tab button that sets view to 'buzz' and change its label from 'BUZZ' to 'Leaderboard'. Do not modify the onClick handler (it should still call setView('buzz')). Ensure the button styling and active state logic remain unchanged."
+        }
+      ]
+    }
+  ]
+}

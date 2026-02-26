@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Anshuman Singh, 2026.
- * SPDX-License-Identifier: CC-BY-SA-4.0
- * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 
- * International License. To view a copy of this license, visit 
- * http://creativecommons.org/licenses/by-sa/4.0/
- */
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useQueries';
 import { ThemeProvider } from 'next-themes';
@@ -15,12 +8,13 @@ import ProfileSetupModal from './components/ProfileSetupModal';
 import GraphView from './pages/GraphView';
 import TreeView from './pages/TreeView';
 import SwarmMembershipManager from './components/SwarmMembershipManager';
-import OntologiesView from './pages/OntologiesView';
 import BuzzLeaderboard from './pages/BuzzLeaderboard';
-import VoronoiDiagram from './components/VoronoiDiagram';
+import TerminalPage from './pages/TerminalPage';
+import LandingGraphDiagram from './components/LandingGraphDiagram';
+import CollectiblesView from './pages/CollectiblesView';
 import { useState } from 'react';
 
-type ViewType = 'graph' | 'tree' | 'membership' | 'ontologies' | 'buzz';
+type ViewType = 'graph' | 'tree' | 'terminal' | 'swarms' | 'buzz' | 'collectibles';
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -35,6 +29,9 @@ export default function App() {
 
   const showProfileSetup =
     isAuthenticated && !profileLoading && isFetched && userProfile === null;
+
+  // Determine if we're showing the landing page (unauthenticated view)
+  const isLandingPage = !isAuthenticated;
 
   if (isInitializing) {
     return (
@@ -51,26 +48,36 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="dark" 
+      enableSystem
+    >
       <div className="flex min-h-screen flex-col bg-background">
-        <Header currentView={currentView} onViewChange={setCurrentView} />
+        <Header 
+          currentView={currentView} 
+          onViewChange={setCurrentView} 
+          isAuthenticated={isAuthenticated}
+          isLandingPage={isLandingPage}
+        />
         
-        <main className="flex-1">
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {!isAuthenticated ? (
-            <div className="h-[calc(100vh-8rem)]">
-              <VoronoiDiagram />
+            <div className="h-full">
+              <LandingGraphDiagram />
             </div>
           ) : (
             <>
               {currentView === 'graph' && <GraphView readOnly={false} usePublicData={false} />}
               {currentView === 'tree' && <TreeView />}
-              {currentView === 'membership' && (
-                <div className="container mx-auto p-6">
+              {currentView === 'terminal' && <TerminalPage />}
+              {currentView === 'swarms' && (
+                <div className="container mx-auto p-6 overflow-auto">
                   <SwarmMembershipManager />
                 </div>
               )}
-              {currentView === 'ontologies' && <OntologiesView />}
               {currentView === 'buzz' && <BuzzLeaderboard />}
+              {currentView === 'collectibles' && <CollectiblesView />}
             </>
           )}
         </main>
