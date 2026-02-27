@@ -24,6 +24,12 @@ export function formatHelpText(): string {
     /filter name=token1
     /filter name=token1 parent=location1
 
+/archive name=<node-name-or-id>
+  Archive a node, hiding it from the graph and list views
+  Example:
+    /archive name="Article 1"
+    /archive name=lawtoken123
+
 Create Commands:
 
 /c name=<name> juris=<ISO-3166-1-alpha-3>
@@ -55,7 +61,8 @@ Attribute Format:
 Notes:
   - Use quotes for names with spaces: name="My Node"
   - Jurisdiction codes must be valid ISO 3166-1 alpha-3 (e.g., IND, USA, GBR)
-  - Directionality: none, uni (unidirectional), bi (bidirectional)`;
+  - Directionality: none, uni (unidirectional), bi (bidirectional)
+  - Archived nodes are hidden locally; use /find to check if a node exists`;
 }
 
 export function formatGraphNotLoadedError(): string {
@@ -78,6 +85,10 @@ export function formatFilterMissingNameError(): string {
   return 'Error: /filter command requires a node name.';
 }
 
+export function formatArchiveMissingNameError(): string {
+  return 'Error: /archive command requires a node name or ID.\nUsage: /archive name=<node-name-or-id>';
+}
+
 export function formatFindResults(matches: Array<{ id: string; type: string; name: string; parentContext?: string }>): string {
   const lines = [`Found ${matches.length} match${matches.length === 1 ? '' : 'es'}:\n`];
   
@@ -90,7 +101,7 @@ export function formatFindResults(matches: Array<{ id: string; type: string; nam
 }
 
 export function formatFilterResults(results: Array<{ id: string; type: string; name: string; parentContext?: string }>): string {
-  const lines = [`Found ${results.length} result${results.length === 1 ? '' : 's'}:\n`];
+  const lines = [`Found ${results.length} result${results.length === 1 ? '' : 'es'}:\n`];
   
   for (const result of results) {
     const contextInfo = result.parentContext ? ` (in ${result.parentContext})` : '';

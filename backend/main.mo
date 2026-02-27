@@ -4,16 +4,13 @@ import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
-import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -172,6 +169,7 @@ actor {
   let accessControlState = AccessControl.initState();
   let approvalState = UserApproval.initState(accessControlState);
   var existingAdmins : [Principal] = [];
+  var archivedNodes = Map.empty<NodeId, ()>();
 
   module LawToken {
     public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
@@ -243,6 +241,23 @@ actor {
     locations : [Location];
     lawTokens : [LawToken];
     interpretationTokens : [InterpretationToken];
+  };
+
+  // Addition: Get archived node IDs
+  public query ({ caller }) func getArchivedNodeIds() : async [NodeId] {
+    archivedNodes.keys().toArray();
+  };
+
+  // Admin-only: archiving a node affects all users globally
+  public shared ({ caller }) func archiveNode(nodeId : NodeId) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      Runtime.trap("Unauthorized: Only admins can archive nodes");
+    };
+    archivedNodes.add(nodeId, ());
+  };
+
+  public query ({ caller }) func isNodeArchived(nodeId : NodeId) : async Bool {
+    archivedNodes.containsKey(nodeId);
   };
 
   // MINT SETTINGS FUNCTIONS
@@ -320,7 +335,6 @@ actor {
       case (null) { return #tokenNotFound };
       case (?_token) {
         let _price = calculatePrice(request.tokenType, mintSettings.numCopies);
-
         // Price deduction from BUZZ wallet
         let callerBalance = switch (buzzScores.get(caller)) {
           case (null) { 0 };
@@ -1163,6 +1177,7 @@ actor {
     interpretationTokenFromEdges := Map.empty<NodeId, List.List<GraphEdge>>();
     interpretationTokenToEdges := Map.empty<NodeId, List.List<GraphEdge>>();
     swarmUpdates := Map.empty<Principal, List.List<SwarmUpdate>>();
+    archivedNodes.clear();
     userVoteTracking.clear();
   };
 
@@ -1528,11 +1543,14 @@ actor {
   };
 
   // GRAPH DATA REPRESENTATION
+  // All graph node construction helpers filter out archived nodes at every level.
+
   func createInterpretationTokenNodes(parentTokenId : NodeId) : [GraphNode] {
     let nodes = List.empty<GraphNode>();
 
     for (interpretationToken in interpretationTokenMap.values()) {
-      if (interpretationToken.fromTokenId == parentTokenId) {
+      // Skip archived interpretation tokens
+      if (interpretationToken.fromTokenId == parentTokenId and not archivedNodes.containsKey(interpretationToken.id)) {
         let childNodes = createInterpretationTokenNodes(interpretationToken.id);
         let interpretationTokenNode : GraphNode = {
           id = interpretationToken.id;
@@ -1552,7 +1570,8 @@ actor {
   func createLawTokenNodes(parentLocationId : NodeId) : [GraphNode] {
     let nodes = List.empty<GraphNode>();
     for (lawToken in lawTokenMap.values()) {
-      if (lawToken.parentLocationId == parentLocationId) {
+      // Skip archived law tokens
+      if (lawToken.parentLocationId == parentLocationId and not archivedNodes.containsKey(lawToken.id)) {
         let childNodes = createInterpretationTokenNodes(lawToken.id);
         let lawTokenNode : GraphNode = {
           id = lawToken.id;
@@ -1571,7 +1590,8 @@ actor {
   func createLocationNodes(parentSwarmId : NodeId) : [GraphNode] {
     let nodes = List.empty<GraphNode>();
     for (location in locationMap.values()) {
-      if (location.parentSwarmId == parentSwarmId) {
+      // Skip archived locations
+      if (location.parentSwarmId == parentSwarmId and not archivedNodes.containsKey(location.id)) {
         let childNodes = createLawTokenNodes(location.id);
         let locationNode : GraphNode = {
           id = location.id;
@@ -1590,7 +1610,8 @@ actor {
   func createSwarmNodes(parentCurationId : NodeId, jurisdiction : Text) : [GraphNode] {
     let nodes = List.empty<GraphNode>();
     for (swarm in swarmMap.values()) {
-      if (swarm.parentCurationId == parentCurationId) {
+      // Skip archived swarms
+      if (swarm.parentCurationId == parentCurationId and not archivedNodes.containsKey(swarm.id)) {
         let childNodes = createLocationNodes(swarm.id);
         let swarmNode : GraphNode = {
           id = swarm.id;
@@ -1609,16 +1630,19 @@ actor {
   func createGraphNodes() : [GraphNode] {
     let nodes = List.empty<GraphNode>();
     for (curation in curationMap.values()) {
-      let childNodes = createSwarmNodes(curation.id, curation.jurisdiction);
-      let curationNode : GraphNode = {
-        id = curation.id;
-        nodeType = "curation";
-        tokenLabel = curation.name;
-        jurisdiction = ?curation.jurisdiction;
-        parentId = null;
-        children = childNodes;
+      // Skip archived curations
+      if (not archivedNodes.containsKey(curation.id)) {
+        let childNodes = createSwarmNodes(curation.id, curation.jurisdiction);
+        let curationNode : GraphNode = {
+          id = curation.id;
+          nodeType = "curation";
+          tokenLabel = curation.name;
+          jurisdiction = ?curation.jurisdiction;
+          parentId = null;
+          children = childNodes;
+        };
+        nodes.add(curationNode);
       };
-      nodes.add(curationNode);
     };
     nodes.toArray();
   };
@@ -1640,15 +1664,21 @@ actor {
   func createSwarmLinksFromLocationEdges() : [GraphEdge] {
     let edges = List.empty<GraphEdge>();
 
-    for ((locationId, _) in locationLawTokenRelations.entries()) {
-      switch (getParentSwarmIdByLocationId(locationId)) {
-        case (?parentSwarmId) {
-          edges.add({
-            source = parentSwarmId;
-            target = locationId;
-          });
+    for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
+      // Skip edges involving archived locations
+      if (not archivedNodes.containsKey(locationId)) {
+        switch (getParentSwarmIdByLocationId(locationId)) {
+          case (?parentSwarmId) {
+            // Skip edges involving archived swarms
+            if (not archivedNodes.containsKey(parentSwarmId)) {
+              edges.add({
+                source = parentSwarmId;
+                target = locationId;
+              });
+            };
+          };
+          case (null) {};
         };
-        case (null) {};
       };
     };
 
@@ -1663,14 +1693,20 @@ actor {
       let locationId = edge.target;
       switch (getParentSwarmIdByLocationId(locationId)) {
         case (?swarmId) {
-          switch (getParentCurationBySwarmId(swarmId)) {
-            case (?curationId) {
-              edges.add({
-                source = curationId;
-                target = swarmId;
-              });
+          // Skip edges involving archived swarms
+          if (not archivedNodes.containsKey(swarmId)) {
+            switch (getParentCurationBySwarmId(swarmId)) {
+              case (?curationId) {
+                // Skip edges involving archived curations
+                if (not archivedNodes.containsKey(curationId)) {
+                  edges.add({
+                    source = curationId;
+                    target = swarmId;
+                  });
+                };
+              };
+              case (null) {};
             };
-            case (null) {};
           };
         };
         case (null) {};
@@ -1680,32 +1716,84 @@ actor {
     edges.toArray();
   };
 
-  // Returns all graph data. Requires authenticated user access.
-  public query ({ caller }) func getGraphData() : async GraphData {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can access graph data");
+  // Returns all graph data with archived nodes and their edges fully excluded.
+  // Requires authenticated user access.
+  public query ({ }) func getGraphData() : async GraphData {
+    // Filter each node type, excluding any node whose ID is in archivedNodes
+    let filteredCurations = List.empty<Curation>();
+    for (curation in curationMap.values()) {
+      if (not archivedNodes.containsKey(curation.id)) {
+        filteredCurations.add(curation);
+      };
     };
 
+    let filteredSwarms = List.empty<Swarm>();
+    for (swarm in swarmMap.values()) {
+      if (not archivedNodes.containsKey(swarm.id)) {
+        filteredSwarms.add(swarm);
+      };
+    };
+
+    let filteredLocations = List.empty<Location>();
+    for (location in locationMap.values()) {
+      if (not archivedNodes.containsKey(location.id)) {
+        filteredLocations.add(location);
+      };
+    };
+
+    let filteredLawTokens = List.empty<LawToken>();
+    for (lawToken in lawTokenMap.values()) {
+      if (not archivedNodes.containsKey(lawToken.id)) {
+        filteredLawTokens.add(lawToken);
+      };
+    };
+
+    let filteredInterpretationTokens = List.empty<InterpretationToken>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (not archivedNodes.containsKey(interpretationToken.id)) {
+        filteredInterpretationTokens.add(interpretationToken);
+      };
+    };
+
+    // Build rootNodes tree with archived nodes excluded at every level
+    let rootNodes = createGraphNodes();
+
+    // Collect all edges, then filter out any edge where source or target is archived
     let edges = List.empty<GraphEdge>();
 
     for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
-      for (lawTokenId in lawTokenIds.values()) {
-        edges.add({
-          source = locationId;
-          target = lawTokenId;
-        });
+      // Only emit location->lawToken edges if neither endpoint is archived
+      if (not archivedNodes.containsKey(locationId)) {
+        for (lawTokenId in lawTokenIds.values()) {
+          if (not archivedNodes.containsKey(lawTokenId)) {
+            edges.add({
+              source = locationId;
+              target = lawTokenId;
+            });
+          };
+        };
       };
     };
 
     for ((fromTokenId, fromEdgesList) in interpretationTokenFromEdges.entries()) {
-      for (edge in fromEdgesList.values()) {
-        edges.add(edge);
+      // Skip if the fromToken itself is archived
+      if (not archivedNodes.containsKey(fromTokenId)) {
+        for (edge in fromEdgesList.values()) {
+          if (not (archivedNodes.containsKey(edge.source) or archivedNodes.containsKey(edge.target))) {
+            edges.add(edge);
+          };
+        };
       };
     };
 
     for ((interpretationTokenId, toEdgesList) in interpretationTokenToEdges.entries()) {
-      for (edge in toEdgesList.values()) {
-        edges.add(edge);
+      // Skip if the interpretationToken itself is archived
+      if (not archivedNodes.containsKey(interpretationTokenId)) {
+        for (edge in toEdgesList.values()) {
+          if (not (archivedNodes.containsKey(edge.source) or archivedNodes.containsKey(edge.target))) {
+            edges.add(edge);
+          };
+        };
       };
     };
 
@@ -1717,40 +1805,12 @@ actor {
       edges.add(edge);
     };
 
-    let allCurations = List.empty<Curation>();
-    let allSwarms = List.empty<Swarm>();
-    let allLocations = List.empty<Location>();
-    let allLawTokens = List.empty<LawToken>();
-    let allInterpretationTokens = List.empty<InterpretationToken>();
-
-    for (curation in curationMap.values()) {
-      allCurations.add(curation);
-    };
-
-    for (swarm in swarmMap.values()) {
-      allSwarms.add(swarm);
-    };
-
-    for (location in locationMap.values()) {
-      allLocations.add(location);
-    };
-
-    for (lawToken in lawTokenMap.values()) {
-      allLawTokens.add(lawToken);
-    };
-
-    for (interpretationToken in interpretationTokenMap.values()) {
-      allInterpretationTokens.add(interpretationToken);
-    };
-
-    let rootNodes = createGraphNodes();
-
     {
-      curations = allCurations.toArray();
-      swarms = allSwarms.toArray();
-      locations = allLocations.toArray();
-      lawTokens = allLawTokens.toArray();
-      interpretationTokens = allInterpretationTokens.toArray();
+      curations = filteredCurations.toArray();
+      swarms = filteredSwarms.toArray();
+      locations = filteredLocations.toArray();
+      lawTokens = filteredLawTokens.toArray();
+      interpretationTokens = filteredInterpretationTokens.toArray();
       rootNodes;
       edges = edges.toArray();
     };
@@ -1764,35 +1824,35 @@ actor {
 
     let ownedCurations = List.empty<Curation>();
     for (curation in curationMap.values()) {
-      if (curation.creator == caller) {
+      if (curation.creator == caller and not archivedNodes.containsKey(curation.id)) {
         ownedCurations.add(curation);
       };
     };
 
     let ownedSwarms = List.empty<Swarm>();
     for (swarm in swarmMap.values()) {
-      if (swarm.creator == caller) {
+      if (swarm.creator == caller and not archivedNodes.containsKey(swarm.id)) {
         ownedSwarms.add(swarm);
       };
     };
 
     let ownedLocations = List.empty<Location>();
     for (location in locationMap.values()) {
-      if (location.creator == caller) {
+      if (location.creator == caller and not archivedNodes.containsKey(location.id)) {
         ownedLocations.add(location);
       };
     };
 
     let ownedLawTokens = List.empty<LawToken>();
     for (lawToken in lawTokenMap.values()) {
-      if (lawToken.creator == caller) {
+      if (lawToken.creator == caller and not archivedNodes.containsKey(lawToken.id)) {
         ownedLawTokens.add(lawToken);
       };
     };
 
     let ownedInterpretationTokens = List.empty<InterpretationToken>();
     for (interpretationToken in interpretationTokenMap.values()) {
-      if (interpretationToken.creator == caller) {
+      if (interpretationToken.creator == caller and not archivedNodes.containsKey(interpretationToken.id)) {
         ownedInterpretationTokens.add(interpretationToken);
       };
     };

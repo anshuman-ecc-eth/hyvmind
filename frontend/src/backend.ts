@@ -266,12 +266,14 @@ export enum Variant_lawToken_interpretationToken {
 }
 export interface backendInterface {
     approveJoinRequest(swarmId: NodeId, member: Principal): Promise<void>;
+    archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCuration(name: string, jurisdiction: string): Promise<NodeId>;
     createInterpretationToken(title: string, context: string, fromTokenId: NodeId, fromRelationshipType: string, fromDirectionality: Directionality, toNodeId: NodeId, toRelationshipType: string, toDirectionality: Directionality, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
     createLocation(title: string, content: string, originalTokenSequence: string, customAttributes: Array<CustomAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
+    getArchivedNodeIds(): Promise<Array<NodeId>>;
     getBuzzLeaderboard(): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -289,6 +291,7 @@ export interface backendInterface {
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
+    isNodeArchived(nodeId: NodeId): Promise<boolean>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     requestApproval(): Promise<void>;
@@ -313,6 +316,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.approveJoinRequest(arg0, arg1);
+            return result;
+        }
+    }
+    async archiveNode(arg0: NodeId): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.archiveNode(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.archiveNode(arg0);
             return result;
         }
     }
@@ -397,6 +414,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.downvoteNode(arg0);
+            return result;
+        }
+    }
+    async getArchivedNodeIds(): Promise<Array<NodeId>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getArchivedNodeIds();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getArchivedNodeIds();
             return result;
         }
     }
@@ -635,6 +666,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerApproved();
+            return result;
+        }
+    }
+    async isNodeArchived(arg0: NodeId): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isNodeArchived(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isNodeArchived(arg0);
             return result;
         }
     }

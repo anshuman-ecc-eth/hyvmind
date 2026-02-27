@@ -1,5 +1,5 @@
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from './hooks/useQueries';
+import { useGetCallerUserProfile, useGetArchivedNodeIds } from './hooks/useQueries';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import Header from './components/Header';
@@ -12,12 +12,14 @@ import BuzzLeaderboard from './pages/BuzzLeaderboard';
 import TerminalPage from './pages/TerminalPage';
 import LandingGraphDiagram from './components/LandingGraphDiagram';
 import CollectiblesView from './pages/CollectiblesView';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { setHiddenCollectibleIds } from './utils/archivedCollectiblesStore';
+import { useGetGraphData } from './hooks/useQueries';
 
 type ViewType = 'graph' | 'tree' | 'terminal' | 'swarms' | 'buzz' | 'collectibles';
 
 export default function App() {
-  const { identity, isInitializing } = useInternetIdentity();
+  const { identity, isInitializing, isLoginSuccess } = useInternetIdentity();
   const [currentView, setCurrentView] = useState<ViewType>('graph');
   const isAuthenticated = !!identity;
 
@@ -32,6 +34,51 @@ export default function App() {
 
   // Determine if we're showing the landing page (unauthenticated view)
   const isLandingPage = !isAuthenticated;
+
+  // Silent cleanup: fetch archived node IDs once per login and persist hidden collectibles
+  const { data: archivedNodeIds } = useGetArchivedNodeIds();
+  const { data: graphData } = useGetGraphData();
+  const cleanupRanRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!identity || !archivedNodeIds || !graphData) return;
+
+    const principal = identity.getPrincipal().toString();
+
+    // Run cleanup only once per principal per login session
+    if (cleanupRanRef.current === principal) return;
+    cleanupRanRef.current = principal;
+
+    try {
+      const archivedSet = new Set(archivedNodeIds);
+
+      // Collect collectible IDs (law tokens + interpretation tokens) whose node is archived
+      const hiddenIds = new Set<string>();
+
+      for (const lt of graphData.lawTokens) {
+        if (archivedSet.has(lt.id) || archivedSet.has(lt.parentLocationId)) {
+          hiddenIds.add(lt.id);
+        }
+      }
+
+      for (const it of graphData.interpretationTokens) {
+        if (archivedSet.has(it.id) || archivedSet.has(it.fromTokenId) || archivedSet.has(it.toNodeId)) {
+          hiddenIds.add(it.id);
+        }
+      }
+
+      setHiddenCollectibleIds(principal, hiddenIds);
+    } catch {
+      // silent — no user-facing feedback
+    }
+  }, [identity, archivedNodeIds, graphData]);
+
+  // Reset cleanup ref on logout so it runs again on next login
+  useEffect(() => {
+    if (!identity) {
+      cleanupRanRef.current = null;
+    }
+  }, [identity]);
 
   if (isInitializing) {
     return (

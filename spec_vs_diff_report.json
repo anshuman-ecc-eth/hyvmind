@@ -1,43 +1,23 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T07:01:03.484Z",
-  "summary": "The diff implements backend principal-based filtering via a new getMyOwnedGraphData() query in backend/main.mo and updates useGetGraphData in frontend/src/hooks/useQueries.ts to call it with a principal-aware cache key. However, REQ-2 explicitly requires updating getGraphData() in frontend/src/pages/GraphView.tsx and frontend/src/pages/TreeView.tsx directly, and neither of those files appears in the modified files list. Additionally, the immutable-path constraint forbids modifying files under frontend/src/hooks/, yet useQueries.ts was modified.",
+  "generatedAt": "2026-02-27T12:16:05.099Z",
+  "summary": "The diff modifies backend/main.mo and project_state.json. The main.mo file is truncated so the exact getGraphData() function body cannot be verified directly, but the project_state.json reflects the architectural note that getGraphData() is now public. However, since the diff is truncated before reaching the getGraphData() function definition, we cannot confirm the specific signature change or removal of AccessControl.hasPermission and Runtime.trap. The project_state.json shows AR-1 status as 'pending', which raises concern about whether the implementation is actually complete.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Update getGraphData() in both frontend/src/pages/GraphView.tsx and frontend/src/pages/TreeView.tsx to call the updated backend query that filters by caller/principal.",
-      "reason": "Neither GraphView.tsx nor TreeView.tsx appears in the list of modified files. The change was routed through the shared hook instead of the page files named in the requirement.",
+      "id": "REQ-1",
+      "requirement": "In backend/main.mo, change getGraphData() signature from public query ({ caller }) to public query ({ }) and remove the AccessControl.hasPermission check and Runtime.trap guard block.",
+      "reason": "The diff for backend/main.mo is truncated before reaching the getGraphData() function definition, so the required signature change and removal of the authorization guard cannot be confirmed. Additionally, project_state.json still marks AR-1 status as 'pending', suggesting the implementation may not be complete.",
       "evidence": [
-        "frontend/src/pages/GraphView.tsx",
-        "frontend/src/pages/TreeView.tsx"
+        "backend/main.mo",
+        "project_state.json"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "A migration module backend/migration.mo was added performing an identity no-op migration.",
-      "reason": "The build request does not request a migration module. The constraint states the persistent data schema and stable state must not be altered, and no migration file was requested.",
-      "evidence": [
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "description": "frontend/src/hooks/useQueries.ts was modified to add buildGraphDataFromOwned helper and OwnedGraphData import.",
-      "reason": "The build request constraint explicitly states files under frontend/src/hooks/ are immutable paths and must not be modified.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts"
-      ]
-    }
-  ],
-  "confidence": 0.78,
+  "hallucinated_features": [],
+  "confidence": 0.45,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/components/CreateNodeDialog.tsx",
-    "frontend/src/components/NFTDetailModal.tsx",
-    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }

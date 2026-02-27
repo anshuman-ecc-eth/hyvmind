@@ -1,35 +1,6 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Frontend query filtering by caller/principal for all node types",
-  "requirements": [
-    {
-      "id": "REQ-2",
-      "summary": "Update getGraphData() calls in GraphView and TreeView to use the new filtered backend query and ensure React Query cache keys reflect the authenticated principal for proper data refresh on login/logout transitions",
-      "acceptanceCriteria": [
-        "getGraphData() calls the new filtered backend query instead of the old unfiltered one.",
-        "When the user is logged in, only nodes they created are displayed in both GraphView and TreeView.",
-        "When the user is not logged in (anonymous), the graph renders empty or shows an appropriate empty-state message.",
-        "The React Query cache key includes the caller's principal so data refreshes on login/logout transitions.",
-        "No runtime errors occur when the backend returns empty arrays for any node type."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Update the useGetGraphData hook to include the caller's principal (from identity.getPrincipal().toText()) in the React Query cache key array. This ensures the query invalidates and re-fetches when the user logs in or out. The backend query getGraphData() already filters by caller, so no changes to the query function itself are needed beyond ensuring the cache key dependency is correct."
-        },
-        {
-          "path": "frontend/src/pages/GraphView.tsx",
-          "operation": "modify",
-          "description": "Verify that GraphView uses the updated useGetGraphData hook and handles empty data gracefully. If the graph data arrays (curations, locations, lawTokens, interpretationTokens, swarms) are all empty, display an appropriate empty-state message such as 'No nodes created yet. Use the terminal or create dialog to add content.' Ensure no runtime errors occur when rendering an empty graph."
-        },
-        {
-          "path": "frontend/src/pages/TreeView.tsx",
-          "operation": "modify",
-          "description": "Verify that TreeView uses the updated useGetGraphData hook and handles empty data gracefully. If the graph data arrays are all empty, display an appropriate empty-state message such as 'No nodes created yet. Use the terminal or create dialog to add content.' Ensure the tree rendering logic does not break when all node arrays are empty."
-        }
-      ]
-    }
-  ]
+  "title": "Make getGraphData() public (remove auth requirement)",
+  "requirements": []
 }

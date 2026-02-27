@@ -1,33 +1,17 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a graph/tree visualization app with Motoko backend and React frontend. Currently implementing backend query changes to filter graph nodes (locations, law tokens, interpretation tokens, curations, swarms) by caller/principal, returning only nodes created by the caller.",
+  "summary": "Project with backend (Motoko/ICP) and frontend featuring a landing page, collectibles tab, and graph data visualization. Recent work involves fixing authentication issues for public-facing endpoints.",
   "architectural_notes": [
-    "Backend (Motoko) handles node filtering by caller principal — frontend should not filter graph data client-side",
-    "getGraphData() in GraphView.tsx and TreeView.tsx fetches nodes filtered by caller/principal from backend query"
+    "getGraphData() is public (no auth required) to support anonymous actor calls from the landing page"
   ],
   "known_issues": [],
-  "isFixRequest": false,
-  "existing_features": [
-    {
-      "id": "feature-update-getgraphdata-in-both-frontend-src-pages-graphview-tsx-and-frontend-src-pages-treeview-tsx-to-call-the-updated-backend-query-that-filters-by-caller-principal-replacing-the-previous-unfiltered-call-ensure-the-react-query-cache-key-reflects-the-authenticated-principal-so-the-data-re-fetches-correctly-when-the-user-logs-in-or-out",
-      "title": "Update `getGraphData()` in both `frontend/src/pages/GraphView.tsx` and `frontend/src/pages/TreeView.tsx` to call the updated backend query that filters by caller/principal, replacing the previous unfiltered call. Ensure the React Query cache key reflects the authenticated principal so the data re-fetches correctly when the user logs in or out.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    }
-  ],
+  "isFixRequest": true,
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update backend Motoko query to filter all graph node types by caller/principal (creator), and update getGraphData() in GraphView.tsx and TreeView.tsx to use the filtered query",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Modify the backend Motoko actor to add or update the graph data query so that it accepts the caller's principal (via the implicit `caller` context in a shared query) and returns only those nodes — Locations, LawTokens, InterpretationTokens, Curations, and Swarms — where the stored creator/owner field matches the caller's principal.",
+      "summary": "In backend/main.mo, remove the { caller } binding and the AccessControl.hasPermission check from the getGraphData() query function so it is publicly accessible without authentication. The function signature should change from `public query ({ caller }) func getGraphData() : async GraphData` to `public query ({ }) func getGraphData() : async GraphData`, and the Runtime.trap(\"Unauthorized: ...\") guard block should be deleted entirely.",
       "reqIds": [
         "REQ-1"
       ],
@@ -35,7 +19,7 @@
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Hyvmind Graph",
+  "projectName": "Make getGraphData() public (remove auth requirement)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

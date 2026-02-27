@@ -22,6 +22,7 @@ import type {
   BuzzScore,
   GraphNode,
   GraphEdge,
+  NodeId,
 } from '../backend';
 import { SwarmUpdateStatus } from '../backend';
 
@@ -158,6 +159,20 @@ export function useGetGraphData() {
       return buildGraphDataFromOwned(owned);
     },
     enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetArchivedNodeIds() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<NodeId[]>({
+    queryKey: ['archivedNodeIds', identity?.getPrincipal().toText() ?? 'anonymous'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getArchivedNodeIds();
+    },
+    enabled: !!actor && !isFetching && !!identity,
   });
 }
 
@@ -635,42 +650,67 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
     queryKey: ['unvotedTokens', swarmId, identity?.getPrincipal().toText()],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      // Use getGraphData (unfiltered) so we can see all tokens in the swarm,
-      // not just the ones created by the caller.
-      const graphData = await actor.getGraphData();
-      const swarmUpdates = await actor.getSwarmUpdatesForUser(swarmId);
 
-      const votedTokenIds = new Set(
+      const [graphData, swarmUpdates] = await Promise.all([
+        actor.getGraphData(),
+        actor.getSwarmUpdatesForUser(swarmId),
+      ]);
+
+      const callerPrincipal = identity?.getPrincipal().toString() ?? '';
+
+      // Get all tokens in this swarm
+      const swarmLocations = graphData.locations.filter(l => l.parentSwarmId === swarmId);
+      const swarmLocationIds = new Set(swarmLocations.map(l => l.id));
+      const swarmLawTokens = graphData.lawTokens.filter(lt => swarmLocationIds.has(lt.parentLocationId));
+      const swarmLawTokenIds = new Set(swarmLawTokens.map(lt => lt.id));
+
+      const swarmInterpretationTokens = graphData.interpretationTokens.filter(it =>
+        swarmLawTokenIds.has(it.fromTokenId) || swarmLawTokenIds.has(it.toNodeId)
+      );
+
+      // Get acted-upon token IDs from swarm updates
+      const actedTokenIds = new Set(
         swarmUpdates
           .filter(u => u.status === SwarmUpdateStatus.acted)
           .map(u => u.tokenId)
       );
 
-      const allTokens = [
-        ...graphData.lawTokens.map(t => ({ ...t, tokenType: 'lawToken' as const })),
-        ...graphData.interpretationTokens.map(t => ({ ...t, tokenType: 'interpretationToken' as const })),
-      ];
+      // Filter out tokens created by the caller and already acted upon
+      const unvotedLawTokens = swarmLawTokens.filter(lt =>
+        lt.creator.toString() !== callerPrincipal && !actedTokenIds.has(lt.id)
+      );
 
-      const swarmTokens = allTokens.filter(token => {
-        if (token.tokenType === 'lawToken') {
-          const lt = token as LawToken & { tokenType: 'lawToken' };
-          const location = graphData.locations.find(l => l.id === lt.parentLocationId);
-          return location?.parentSwarmId === swarmId;
-        } else {
-          const it = token as InterpretationToken & { tokenType: 'interpretationToken' };
-          const fromLocation = graphData.locations.find(l => l.id === it.fromTokenId);
-          const fromLawToken = graphData.lawTokens.find(lt => lt.id === it.fromTokenId);
-          if (fromLocation) return fromLocation.parentSwarmId === swarmId;
-          if (fromLawToken) {
-            const location = graphData.locations.find(l => l.id === fromLawToken.parentLocationId);
-            return location?.parentSwarmId === swarmId;
-          }
-          return false;
-        }
-      });
+      const unvotedInterpretationTokens = swarmInterpretationTokens.filter(it =>
+        it.creator.toString() !== callerPrincipal && !actedTokenIds.has(it.id)
+      );
 
-      return swarmTokens.filter(token => !votedTokenIds.has(token.id));
+      return {
+        lawTokens: unvotedLawTokens,
+        interpretationTokens: unvotedInterpretationTokens,
+      };
     },
-    enabled: !!actor && !isFetching && !!swarmId,
+    enabled: !!actor && !isFetching && !!swarmId && !!identity,
+  });
+}
+
+export function useMarkSwarmUpdateActed() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const { identity } = useInternetIdentity();
+
+  return useMutation({
+    mutationFn: async ({ nodeId, isUpvote }: { nodeId: string; isUpvote: boolean }) => {
+      if (!actor) throw new Error('Actor not available');
+      if (isUpvote) {
+        return actor.upvoteNode(nodeId);
+      } else {
+        return actor.downvoteNode(nodeId);
+      }
+    },
+    onSuccess: (_, { nodeId }) => {
+      queryClient.invalidateQueries({ queryKey: ['unvotedTokens'] });
+      queryClient.invalidateQueries({ queryKey: ['voteData', nodeId] });
+      queryClient.invalidateQueries({ queryKey: ['buzzLeaderboard'] });
+    },
   });
 }

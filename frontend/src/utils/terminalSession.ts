@@ -1,7 +1,7 @@
 import type { TerminalMessage } from '../pages/TerminalPage';
 
 const TERMINAL_SESSION_KEY = 'hyvmind_terminal_session';
-const SESSION_VERSION = 3; // Incremented to invalidate old ontology outputs with new TTL/Mermaid logic
+const SESSION_VERSION = 4; // Incremented to invalidate old sessions with renamed ontologyData fields
 
 interface StoredSession {
   version: number;
@@ -10,8 +10,8 @@ interface StoredSession {
     text: string;
     timestamp: number;
     ontologyData?: {
-      turtle: string;
-      mermaid: string | null;
+      turtleText: string;
+      mermaidText: string | null;
       mermaidError?: string;
     };
   }>;
@@ -40,7 +40,7 @@ export function loadTerminalSession(): TerminalMessage[] | null {
     if (!stored) return null;
 
     const session: StoredSession = JSON.parse(stored);
-    
+
     // Check version compatibility
     if (session.version !== SESSION_VERSION) {
       // Clear old session if version mismatch

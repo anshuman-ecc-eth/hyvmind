@@ -1,63 +1,38 @@
 {
   "kind": "build_request",
-  "title": "Backend query filtering by caller/principal for all node types",
-  "projectName": "Hyvmind Graph",
+  "title": "Make getGraphData() public (remove auth requirement)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Modify the backend Motoko actor to add or update the graph data query so that it accepts the caller's principal (via the implicit `caller` context in a shared query) and returns only those nodes — Locations, LawTokens, InterpretationTokens, Curations, and Swarms — where the stored creator/owner field matches the caller's principal.",
+      "text": "In backend/main.mo, remove the { caller } binding and the AccessControl.hasPermission check from the getGraphData() query function so it is publicly accessible without authentication. The function signature should change from `public query ({ caller }) func getGraphData() : async GraphData` to `public query ({ }) func getGraphData() : async GraphData`, and the Runtime.trap(\"Unauthorized: ...\") guard block should be deleted entirely.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-8",
-          "msg-10"
+          "msg-6",
+          "msg-7"
         ],
         "quotes": [
-          "make the backend query changes.",
-          "getgraphdata should only show those nodes where the caller/principal is the creator"
+          "Remove auth check from getGraphData() in backend",
+          "getGraphData() requires #user permission, but landing page uses anonymous actor",
+          "Remove the { caller } and the permission check entirely (lines 1718-1720)"
         ]
       },
       "acceptanceCriteria": [
-        "The query function uses `msg.caller` (or equivalent caller principal) to filter results.",
-        "All five node types (Locations, LawTokens, InterpretationTokens, Curations, Swarms) are filtered so only nodes whose creator field equals the caller's principal are returned.",
-        "An anonymous caller receives an empty result set for each node type.",
-        "Existing node data structure and stable state are not altered — only the query return logic is changed."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Update `getGraphData()` in both `frontend/src/pages/GraphView.tsx` and `frontend/src/pages/TreeView.tsx` to call the updated backend query that filters by caller/principal, replacing the previous unfiltered call. Ensure the React Query cache key reflects the authenticated principal so the data re-fetches correctly when the user logs in or out.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-8",
-          "msg-10"
-        ],
-        "quotes": [
-          "make the backend query changes.",
-          "update getGraphData() in both GraphView.tsx and TreeView.tsx to use the filtered query"
-        ]
-      },
-      "acceptanceCriteria": [
-        "`getGraphData()` calls the new filtered backend query instead of the old unfiltered one.",
-        "When the user is logged in, only nodes they created are displayed in both GraphView and TreeView.",
-        "When the user is not logged in (anonymous), the graph renders empty or shows an appropriate empty-state message.",
-        "The React Query cache key includes the caller's principal so data refreshes on login/logout transitions.",
-        "No runtime errors occur when the backend returns empty arrays for any node type."
+        "getGraphData() is declared as `public query ({ }) func getGraphData() : async GraphData` with no caller binding",
+        "The AccessControl.hasPermission check and Runtime.trap call are removed from getGraphData()",
+        "An anonymous (unauthenticated) actor can successfully call getGraphData() without receiving an authorization error",
+        "The landing page's LandingGraphDiagram component can fetch graph data on first visit without a cached response"
       ]
     }
   ],
   "constraints": [
-    "Do not alter the persistent data schema or stable state variables in the Motoko backend.",
-    "Do not modify files under frontend/src/hooks/ (immutable paths).",
-    "The filtering must be enforced on the backend (caller-side principal check in Motoko), not solely on the frontend."
+    "Only modify the getGraphData() function — do not alter any other access control checks in backend/main.mo"
   ],
   "nonGoals": [
-    "Filtering by any criterion other than creator/principal (e.g., date, tags, swarm membership).",
-    "Adding new node types or changing existing data models.",
-    "Changing the visual design or layout of GraphView or TreeView.",
-    "Modifying the TerminalPage, FilterSortModal, or any other component that also uses graph data."
+    "Making any other backend endpoints public",
+    "Changes to frontend authentication logic",
+    "Modifying the landing page cache behavior"
   ],
   "imageRequirements": {
     "required": [],

@@ -137,6 +137,10 @@ function getValidTypesForField(command: string, field: string): string[] {
     return ['curation', 'swarm', 'location', 'lawToken', 'interpretationToken'];
   }
 
+  if (command === 'archive' && field === 'name') {
+    return ['curation', 'swarm', 'location', 'lawToken', 'interpretationToken'];
+  }
+
   if (command === 'filter') {
     if (field === 'name') {
       return ['curation', 'swarm', 'location', 'lawToken', 'interpretationToken'];

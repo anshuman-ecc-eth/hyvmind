@@ -1,25 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-update-getgraphdata-in-both-frontend-src-pages-graphview-tsx-and-frontend-src-pages-treeview-tsx-to-call-the-updated-backend-query-that-filters-by-caller-principal-replacing-the-previous-unfiltered-call-ensure-the-react-query-cache-key-reflects-the-authenticated-principal-so-the-data-re-fetches-correctly-when-the-user-logs-in-or-out",
-      "featureTitle": "Update `getGraphData()` in both `frontend/src/pages/GraphView.tsx` and `frontend/src/pages/TreeView.tsx` to call the updated backend query that filters by caller/principal, replacing the previous unfiltered call. Ensure the React Query cache key reflects the authenticated principal so the data re-fetches correctly when the user logs in or out.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

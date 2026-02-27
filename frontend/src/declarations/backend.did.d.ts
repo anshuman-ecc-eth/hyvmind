@@ -148,6 +148,7 @@ export type UserRole = { 'admin' : null } |
 export interface VoteData { 'upvotes' : bigint, 'downvotes' : bigint }
 export interface _SERVICE {
   'approveJoinRequest' : ActorMethod<[NodeId, Principal], undefined>,
+  'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createCuration' : ActorMethod<[string, string], NodeId>,
   'createInterpretationToken' : ActorMethod<
@@ -170,6 +171,7 @@ export interface _SERVICE {
   >,
   'createSwarm' : ActorMethod<[string, Array<Tag>, NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
+  'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
   'getBuzzLeaderboard' : ActorMethod<[], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -187,6 +189,7 @@ export interface _SERVICE {
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
+  'isNodeArchived' : ActorMethod<[NodeId], boolean>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'mintCollectible' : ActorMethod<
     [MintCollectibleRequest],

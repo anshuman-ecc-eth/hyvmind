@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import NFTDetailModal from './NFTDetailModal';
 import type { LawToken, InterpretationToken } from '../backend';
+import { getHiddenCollectibleIds } from '../utils/archivedCollectiblesStore';
 
 // Sub-component to check if a token is minted by the current user
 function MintedBadge({ tokenId, currentPrincipal }: { tokenId: string; currentPrincipal: string }) {
@@ -30,6 +31,11 @@ export default function NFTGallery() {
 
   const currentPrincipal = identity?.getPrincipal().toString() ?? '';
 
+  // Get hidden collectible IDs for the current user (archived node cleanup)
+  const hiddenIds = currentPrincipal
+    ? getHiddenCollectibleIds(currentPrincipal)
+    : new Set<string>();
+
   const handleTokenClick = (token: LawToken | InterpretationToken) => {
     setSelectedToken(token);
     setIsDetailModalOpen(true);
@@ -50,7 +56,11 @@ export default function NFTGallery() {
     );
   }
 
-  const totalTokens = (lawTokens?.length || 0) + (interpretationTokens?.length || 0);
+  // Filter out collectibles whose associated nodes have been archived
+  const visibleLawTokens = (lawTokens ?? []).filter((t) => !hiddenIds.has(t.id));
+  const visibleInterpretationTokens = (interpretationTokens ?? []).filter((t) => !hiddenIds.has(t.id));
+
+  const totalTokens = visibleLawTokens.length + visibleInterpretationTokens.length;
 
   if (totalTokens === 0) {
     return (
@@ -67,7 +77,7 @@ export default function NFTGallery() {
     <>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Law Token Collectibles */}
-        {lawTokens?.map((token) => (
+        {visibleLawTokens.map((token) => (
           <Card
             key={token.id}
             className="cursor-pointer transition-all hover:shadow-lg relative"
@@ -105,7 +115,7 @@ export default function NFTGallery() {
         ))}
 
         {/* Interpretation Token Collectibles */}
-        {interpretationTokens?.map((token) => (
+        {visibleInterpretationTokens.map((token) => (
           <Card
             key={token.id}
             className="cursor-pointer transition-all hover:shadow-lg relative"

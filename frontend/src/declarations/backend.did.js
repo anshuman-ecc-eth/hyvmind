@@ -175,6 +175,7 @@ export const MintCollectibleResult = IDL.Variant({
 
 export const idlService = IDL.Service({
   'approveJoinRequest' : IDL.Func([NodeId, IDL.Principal], [], []),
+  'archiveNode' : IDL.Func([NodeId], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createCuration' : IDL.Func([IDL.Text, IDL.Text], [NodeId], []),
   'createInterpretationToken' : IDL.Func(
@@ -199,6 +200,7 @@ export const idlService = IDL.Service({
     ),
   'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
+  'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getBuzzLeaderboard' : IDL.Func(
       [],
       [IDL.Vec(BuzzLeaderboardEntry)],
@@ -236,6 +238,7 @@ export const idlService = IDL.Service({
   'initializeAccessControl' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+  'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
   'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
   'mintCollectible' : IDL.Func(
       [MintCollectibleRequest],
@@ -415,6 +418,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     'approveJoinRequest' : IDL.Func([NodeId, IDL.Principal], [], []),
+    'archiveNode' : IDL.Func([NodeId], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createCuration' : IDL.Func([IDL.Text, IDL.Text], [NodeId], []),
     'createInterpretationToken' : IDL.Func(
@@ -439,6 +443,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
+    'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getBuzzLeaderboard' : IDL.Func(
         [],
         [IDL.Vec(BuzzLeaderboardEntry)],
@@ -476,6 +481,7 @@ export const idlFactory = ({ IDL }) => {
     'initializeAccessControl' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+    'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
     'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
     'mintCollectible' : IDL.Func(
         [MintCollectibleRequest],

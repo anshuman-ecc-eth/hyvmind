@@ -1,51 +1,33 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T07:01:03.487Z",
+  "generatedAt": "2026-02-27T12:16:05.103Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 1,
+    "total": 1,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Modify the backend Motoko actor to add or update the graph data query so that it accepts the caller's principal (via the implicit `caller` context in a shared query) and returns only those nodes — Locations, LawTokens, InterpretationTokens, Curations, and Swarms — where the stored creator/owner field matches the caller's principal.",
+        "summary": "In backend/main.mo, remove the { caller } binding and the AccessControl.hasPermission check from the getGraphData() query function so it is publicly accessible without authentication. The function signature should change from `public query ({ caller }) func getGraphData() : async GraphData` to `public query ({ }) func getGraphData() : async GraphData`, and the Runtime.trap(\"Unauthorized: ...\") guard block should be deleted entirely.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Update `getGraphData()` in both `frontend/src/pages/GraphView.tsx` and `frontend/src/pages/TreeView.tsx` to call the updated backend query that filters by caller/principal, replacing the previous unfiltered call. Ensure the React Query cache key reflects the authenticated principal so the data re-fetches correctly when the user logs in or out.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/GraphView.tsx",
-          "frontend/src/pages/TreeView.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
-        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/CreateNodeDialog.tsx",
-    "frontend/src/components/NFTDetailModal.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
