@@ -1,6 +1,6 @@
 # Hyvmind
 
-A research 2 earn (R2E) architecture for legal annotators.
+A research 2 earn (R2E) dapp for legal annotators.
 
 ---
 
