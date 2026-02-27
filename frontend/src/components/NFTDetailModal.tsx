@@ -98,8 +98,9 @@ export default function NFTDetailModal({ token, isOpen, onClose }: NFTDetailModa
   const { identity } = useInternetIdentity();
   const currentPrincipal = identity?.getPrincipal().toString() ?? '';
 
+  // Pass empty string when token is null — the query is disabled when tokenId is falsy
   const { data: editions, isLoading: editionsLoading } = useGetCollectibleEditions(
-    token?.id ?? null
+    token?.id ?? ''
   );
   const { data: mintSettings } = useGetMintSettings();
   const { data: buzzBalance } = useGetMyBuzzBalance();
@@ -222,11 +223,6 @@ export default function NFTDetailModal({ token, isOpen, onClose }: NFTDetailModa
                   <dt className="text-sm font-medium text-muted-foreground mb-1">Meaning</dt>
                   <dd className="text-sm">{(token as LawToken).meaning}</dd>
                 </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground mb-1">Parent Location ID</dt>
-                  <dd className="text-sm break-all">{(token as LawToken).parentLocationId}</dd>
-                </div>
               </>
             ) : (
               <>
@@ -237,58 +233,15 @@ export default function NFTDetailModal({ token, isOpen, onClose }: NFTDetailModa
 
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground mb-1">Context</dt>
-                  <dd className="text-sm whitespace-pre-wrap">{(token as InterpretationToken).context}</dd>
+                  <dd className="text-sm">{(token as InterpretationToken).context}</dd>
                 </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground mb-1">From Token ID</dt>
-                  <dd className="text-sm break-all">{(token as InterpretationToken).fromTokenId}</dd>
-                </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground mb-1">From Relationship</dt>
-                  <dd className="text-sm">
-                    {(token as InterpretationToken).fromRelationshipType} ({(token as InterpretationToken).fromDirectionality})
-                  </dd>
-                </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground mb-1">To Node ID</dt>
-                  <dd className="text-sm break-all">{(token as InterpretationToken).toNodeId}</dd>
-                </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground mb-1">To Relationship</dt>
-                  <dd className="text-sm">
-                    {(token as InterpretationToken).toRelationshipType} ({(token as InterpretationToken).toDirectionality})
-                  </dd>
-                </div>
-
-                {(token as InterpretationToken).customAttributes.length > 0 && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground mb-2">Custom Attributes</dt>
-                    <dd className="space-y-2">
-                      {(token as InterpretationToken).customAttributes.map((attr, index) => (
-                        <div key={index} className="flex gap-2 text-sm">
-                          <span className="font-medium">{attr.key}:</span>
-                          <span>{attr.value}</span>
-                        </div>
-                      ))}
-                    </dd>
-                  </div>
-                )}
               </>
             )}
 
             <div>
-              <dt className="text-sm font-medium text-muted-foreground mb-1">Creator</dt>
-              <dd className="text-sm break-all">{token.creator.toString()}</dd>
-            </div>
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground mb-1">Created At</dt>
+              <dt className="text-sm font-medium text-muted-foreground mb-1">Created</dt>
               <dd className="text-sm">
-                {new Date(Number(token.timestamps.createdAt) / 1_000_000).toLocaleString()}
+                {new Date(Number(token.timestamps.createdAt) / 1_000_000).toLocaleDateString()}
               </dd>
             </div>
           </div>
@@ -296,92 +249,71 @@ export default function NFTDetailModal({ token, isOpen, onClose }: NFTDetailModa
           <Separator />
 
           {/* Edition Status */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Edition Status</h4>
-            {editionsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading editions...</span>
-              </div>
-            ) : (
-              <EditionStatusSection
-                editions={editions ?? []}
-                totalCopies={totalCopies}
-                currentPrincipal={currentPrincipal}
-              />
-            )}
-          </div>
+          {editionsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading edition status...
+            </div>
+          ) : (
+            <EditionStatusSection
+              editions={editions ?? []}
+              totalCopies={totalCopies}
+              currentPrincipal={currentPrincipal}
+            />
+          )}
 
           <Separator />
 
-          {/* Mint section */}
+          {/* Mint Section */}
           <div className="space-y-3">
-            {/* Insufficient funds warning */}
-            {!alreadyOwned && !editionLimitReached && hasInsufficientFunds && (
-              <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Mint Price</p>
+                <p className="text-xs text-muted-foreground">{mintPrice} BUZZ per copy</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium">Your Balance</p>
+                <p className="text-xs text-muted-foreground">{displayBalance} BUZZ</p>
+              </div>
+            </div>
+
+            {hasInsufficientFunds && !alreadyOwned && !editionLimitReached && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-600">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span>
-                  Insufficient BUZZ. You have <strong>{displayBalance}</strong> BUZZ but need <strong>{mintPrice}</strong> BUZZ to mint.
+                  Insufficient BUZZ. You have {displayBalance} BUZZ but need {mintPrice} BUZZ.
                 </span>
               </div>
             )}
 
-            {/* Error message */}
             {mintError && (
-              <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span>{mintError}</span>
               </div>
             )}
 
-            {/* Already owned message */}
-            {alreadyOwned && (
-              <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-500/5 px-3 py-2 text-sm text-green-700 dark:text-green-400">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>You own a copy of this collectible.</span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium">
-                  {alreadyOwned
-                    ? 'Already Minted'
-                    : editionLimitReached
-                    ? 'Sold Out'
-                    : `Mint Copy #${(editions?.length ?? 0) + 1} of ${totalCopies}`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {mintPrice} BUZZ per copy · {totalCopies} total {totalCopies === 1 ? 'copy' : 'copies'}
-                </p>
-                {!alreadyOwned && !editionLimitReached && (
-                  <p className="text-xs text-muted-foreground">
-                    Your balance: <span className={hasInsufficientFunds ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-foreground font-medium'}>{displayBalance} BUZZ</span>
-                  </p>
-                )}
-              </div>
-
-              <Button
-                onClick={handleMint}
-                disabled={!canMint || mintCollectible.isPending}
-                variant={alreadyOwned || editionLimitReached || hasInsufficientFunds ? 'outline' : 'default'}
-              >
-                {mintCollectible.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Minting...
-                  </>
-                ) : alreadyOwned ? (
-                  'Already Owned'
-                ) : editionLimitReached ? (
-                  'Sold Out'
-                ) : hasInsufficientFunds ? (
-                  'Insufficient BUZZ'
-                ) : (
-                  `Mint for ${mintPrice} BUZZ`
-                )}
-              </Button>
-            </div>
+            <Button
+              onClick={handleMint}
+              disabled={!canMint || mintCollectible.isPending}
+              className="w-full"
+            >
+              {mintCollectible.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Minting...
+                </>
+              ) : alreadyOwned ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Already Owned
+                </>
+              ) : editionLimitReached ? (
+                'Sold Out'
+              ) : (
+                `Mint for ${mintPrice} BUZZ`
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>

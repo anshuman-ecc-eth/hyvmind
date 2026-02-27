@@ -116,6 +116,13 @@ export const GraphData = IDL.Record({
   'interpretationTokens' : IDL.Vec(InterpretationToken),
 });
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+export const OwnedGraphData = IDL.Record({
+  'curations' : IDL.Vec(Curation),
+  'locations' : IDL.Vec(Location),
+  'swarms' : IDL.Vec(Swarm),
+  'lawTokens' : IDL.Vec(LawToken),
+  'interpretationTokens' : IDL.Vec(InterpretationToken),
+});
 export const MembershipStatus = IDL.Variant({
   'pending' : IDL.Null,
   'approved' : IDL.Null,
@@ -207,6 +214,7 @@ export const idlService = IDL.Service({
   'getGraphData' : IDL.Func([], [GraphData], ['query']),
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+  'getMyOwnedGraphData' : IDL.Func([], [OwnedGraphData], ['query']),
   'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
   'getSwarmMembershipRequests' : IDL.Func(
       [NodeId],
@@ -351,6 +359,13 @@ export const idlFactory = ({ IDL }) => {
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+  const OwnedGraphData = IDL.Record({
+    'curations' : IDL.Vec(Curation),
+    'locations' : IDL.Vec(Location),
+    'swarms' : IDL.Vec(Swarm),
+    'lawTokens' : IDL.Vec(LawToken),
+    'interpretationTokens' : IDL.Vec(InterpretationToken),
+  });
   const MembershipStatus = IDL.Variant({
     'pending' : IDL.Null,
     'approved' : IDL.Null,
@@ -439,6 +454,7 @@ export const idlFactory = ({ IDL }) => {
     'getGraphData' : IDL.Func([], [GraphData], ['query']),
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+    'getMyOwnedGraphData' : IDL.Func([], [OwnedGraphData], ['query']),
     'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
     'getSwarmMembershipRequests' : IDL.Func(
         [NodeId],

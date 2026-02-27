@@ -108,6 +108,13 @@ export type MintCollectibleResult = { 'editionLimitReached' : null } |
   { 'tokenNotFound' : null };
 export interface MintSettings { 'numCopies' : bigint }
 export type NodeId = string;
+export interface OwnedGraphData {
+  'curations' : Array<Curation>,
+  'locations' : Array<Location>,
+  'swarms' : Array<Swarm>,
+  'lawTokens' : Array<LawToken>,
+  'interpretationTokens' : Array<InterpretationToken>,
+}
 export interface Swarm {
   'id' : NodeId,
   'creator' : Principal,
@@ -170,6 +177,7 @@ export interface _SERVICE {
   'getGraphData' : ActorMethod<[], GraphData>,
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
+  'getMyOwnedGraphData' : ActorMethod<[], OwnedGraphData>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
   'getSwarmMembershipRequests' : ActorMethod<[NodeId], Array<MembershipInfo>>,
   'getSwarmUpdatesForUser' : ActorMethod<[NodeId], Array<SwarmUpdate>>,

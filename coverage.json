@@ -1,74 +1,51 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T10:04:25.109Z",
+  "generatedAt": "2026-02-27T07:01:03.487Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the top-right hamburger menu, rename the button currently labeled 'Profile Settings' to simply 'Settings'.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/Header.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/Header.tsx"
-        ]
+        "summary": "Modify the backend Motoko actor to add or update the graph data query so that it accepts the caller's principal (via the implicit `caller` context in a shared query) and returns only those nodes — Locations, LawTokens, InterpretationTokens, Curations, and Swarms — where the stored creator/owner field matches the caller's principal.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Add a new top-level authenticated tab titled 'Collectibles' that renders the NFTGallery component (law tokens and interpretation tokens gallery) previously housed in the 'Manage Collectibles' section of the Settings modal. The Collectibles tab should appear alongside the other post-login tabs (Graph, Tree, Terminal, Swarms, Leaderboard).",
+        "summary": "Update `getGraphData()` in both `frontend/src/pages/GraphView.tsx` and `frontend/src/pages/TreeView.tsx` to call the updated backend query that filters by caller/principal, replacing the previous unfiltered call. Ensure the React Query cache key reflects the authenticated principal so the data re-fetches correctly when the user logs in or out.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/CollectiblesView.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/Header.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/GraphView.tsx",
+          "frontend/src/pages/TreeView.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/CollectiblesView.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/Header.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Remove the 'Manage Collectibles' section (NFTGallery) from the ProfileSettingsModal. The Mint Settings section (Number of Copies / copy count configuration) must remain in the Settings modal.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/ProfileSettingsModal.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/ProfileSettingsModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Rename the 'BUZZ' tab in the authenticated navigation to 'Leaderboard'. The tab must still navigate to the same BuzzLeaderboard page.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/Header.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/Header.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/Header.tsx",
-    "frontend/src/components/ProfileSettingsModal.tsx",
-    "frontend/src/pages/CollectiblesView.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/CreateNodeDialog.tsx",
+    "frontend/src/components/NFTDetailModal.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

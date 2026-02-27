@@ -70,6 +70,13 @@ export interface GraphNode {
     tokenLabel: string;
     nodeType: string;
 }
+export interface OwnedGraphData {
+    curations: Array<Curation>;
+    locations: Array<Location>;
+    swarms: Array<Swarm>;
+    lawTokens: Array<LawToken>;
+    interpretationTokens: Array<InterpretationToken>;
+}
 export interface CollectibleEdition {
     tokenId: NodeId;
     editionNumber: bigint;
@@ -190,6 +197,7 @@ export interface backendInterface {
     getGraphData(): Promise<GraphData>;
     getMintSettings(): Promise<MintSettings>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyOwnedGraphData(): Promise<OwnedGraphData>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
     getSwarmMembershipRequests(swarmId: NodeId): Promise<Array<MembershipInfo>>;
     getSwarmUpdatesForUser(swarmId: NodeId): Promise<Array<SwarmUpdate>>;

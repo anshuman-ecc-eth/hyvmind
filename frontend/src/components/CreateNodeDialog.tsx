@@ -120,6 +120,12 @@ function getNodeTypeLabel(type: string): string {
   }
 }
 
+// Helper to extract law token sequence from content (text inside curly braces)
+function extractLawTokenSequence(content: string): string {
+  const matches = content.match(/\{[^}]+\}/g);
+  return matches ? matches.join('') : '';
+}
+
 export default function CreateNodeDialog({
   trigger,
   defaultNodeType,
@@ -195,16 +201,15 @@ export default function CreateNodeDialog({
     }
   }, [defaultParentId]);
 
-  // Helper function to build hierarchical path for a node (same as GraphView)
+  // Helper function to build hierarchical path for a node
   const buildNodePath = (nodeId: string): string => {
     if (!graphData) return '';
 
     const pathParts: string[] = [];
 
-    // Find the node and build path based on type
     const curation = graphData.curations.find(c => c.id === nodeId);
     if (curation) {
-      return ''; // Curations have no parent path
+      return '';
     }
 
     const swarm = graphData.swarms.find(s => s.id === nodeId);
@@ -242,7 +247,6 @@ export default function CreateNodeDialog({
 
     const interpretationToken = graphData.interpretationTokens.find(i => i.id === nodeId);
     if (interpretationToken) {
-      // Build path from origin token
       const buildFromToken = (tokenId: string): void => {
         const originLocation = graphData.locations.find(l => l.id === tokenId);
         if (originLocation) {
@@ -348,12 +352,11 @@ export default function CreateNodeDialog({
             toast.error('Please select a parent curation');
             return;
           }
-          // Parse comma-separated tags
           const parsedTags = tags
             .split(',')
             .map((tag) => tag.trim())
             .filter((tag) => tag.length > 0);
-          
+
           await createSwarm.mutateAsync({
             name: name.trim(),
             tags: parsedTags,
@@ -367,14 +370,16 @@ export default function CreateNodeDialog({
             toast.error('Please select a parent swarm');
             return;
           }
-          // Filter out empty attributes
           const validAttributes = customAttributes.filter(
             (attr) => attr.key.trim() !== '' || attr.value.trim() !== ''
           );
-          
+          const contentTrimmed = context.trim();
+          const originalTokenSequence = extractLawTokenSequence(contentTrimmed);
+
           await createLocation.mutateAsync({
             title: name.trim(),
-            content: context.trim(),
+            content: contentTrimmed,
+            originalTokenSequence,
             customAttributes: validAttributes,
             parentSwarmId: parentId,
           });
@@ -402,11 +407,10 @@ export default function CreateNodeDialog({
             toast.error('Please enter a to relationship type');
             return;
           }
-          // Filter out empty attributes
           const validInterpretationAttributes = customAttributes.filter(
             (attr) => attr.key.trim() !== '' || attr.value.trim() !== ''
           );
-          
+
           await createInterpretationToken.mutateAsync({
             title: name.trim(),
             context: context.trim(),
@@ -426,8 +430,7 @@ export default function CreateNodeDialog({
       setOpen(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      // Provide user-friendly error messages
+
       if (errorMessage.includes('Only swarm creator or approved members')) {
         toast.error('You must be the swarm creator or an approved member to create this node');
       } else if (errorMessage.includes('Unauthorized')) {
@@ -445,7 +448,7 @@ export default function CreateNodeDialog({
       } else {
         toast.error(`Failed to create ${nodeType}: ${errorMessage}`);
       }
-      
+
       console.error(`Error creating ${nodeType}:`, error);
     }
   };
@@ -459,45 +462,41 @@ export default function CreateNodeDialog({
       case 'location':
         return graphData.swarms.map((s): SimpleOption => ({ id: s.id, label: s.name }));
       case 'interpretationToken': {
-        // Include Locations, Law Tokens, and Interpretation Tokens (per backend validation)
         const options: ExtendedOption[] = [];
-        
-        // Add all locations with parent context paths
+
         graphData.locations.forEach((l) => {
           const path = buildNodePath(l.id);
-          options.push({ 
-            id: l.id, 
-            label: l.title, 
-            type: 'location', 
+          options.push({
+            id: l.id,
+            label: l.title,
+            type: 'location',
             path,
-            name: l.title 
+            name: l.title
           });
         });
-        
-        // Add all law tokens with parent context paths
+
         graphData.lawTokens.forEach((t) => {
           const path = buildNodePath(t.id);
-          options.push({ 
-            id: t.id, 
-            label: t.tokenLabel, 
-            type: 'lawToken', 
+          options.push({
+            id: t.id,
+            label: t.tokenLabel,
+            type: 'lawToken',
             path,
-            name: t.tokenLabel 
+            name: t.tokenLabel
           });
         });
-        
-        // Add all interpretation tokens with parent context paths
-        graphData.interpretationTokens.forEach((i) => {
-          const path = buildNodePath(i.id);
-          options.push({ 
-            id: i.id, 
-            label: i.title, 
-            type: 'interpretationToken', 
+
+        graphData.interpretationTokens.forEach((t) => {
+          const path = buildNodePath(t.id);
+          options.push({
+            id: t.id,
+            label: t.title,
+            type: 'interpretationToken',
             path,
-            name: i.title 
+            name: t.title
           });
         });
-        
+
         return options;
       }
       default:
@@ -505,892 +504,218 @@ export default function CreateNodeDialog({
     }
   };
 
-  // Get available nodes for "To Node" selection (Locations, Law Tokens, and Interpretation Tokens per backend validation)
   const getToNodeOptions = (): ExtendedOption[] => {
     if (!graphData) return [];
 
-    const allNodes: ExtendedOption[] = [];
+    const options: ExtendedOption[] = [];
 
-    // Add all locations with parent context paths
     graphData.locations.forEach((l) => {
       const path = buildNodePath(l.id);
-      allNodes.push({ 
-        id: l.id, 
-        label: l.title, 
-        type: 'location', 
+      options.push({
+        id: l.id,
+        label: l.title,
+        type: 'location',
         path,
-        name: l.title 
+        name: l.title
       });
     });
 
-    // Add all law tokens with parent context paths
     graphData.lawTokens.forEach((t) => {
       const path = buildNodePath(t.id);
-      allNodes.push({ 
-        id: t.id, 
-        label: t.tokenLabel, 
-        type: 'lawToken', 
+      options.push({
+        id: t.id,
+        label: t.tokenLabel,
+        type: 'lawToken',
         path,
-        name: t.tokenLabel 
+        name: t.tokenLabel
       });
     });
 
-    // Add all interpretation tokens with parent context paths
-    graphData.interpretationTokens.forEach((i) => {
-      const path = buildNodePath(i.id);
-      allNodes.push({ 
-        id: i.id, 
-        label: i.title, 
-        type: 'interpretationToken', 
+    graphData.interpretationTokens.forEach((t) => {
+      const path = buildNodePath(t.id);
+      options.push({
+        id: t.id,
+        label: t.title,
+        type: 'interpretationToken',
         path,
-        name: i.title 
+        name: t.title
       });
     });
 
-    return allNodes;
-  };
-
-  // Get all existing relationship types from interpretation tokens
-  const getExistingRelationshipTypes = (): string[] => {
-    if (!graphData) return [];
-
-    const relationshipTypes = new Set<string>();
-
-    graphData.interpretationTokens.forEach((token) => {
-      if (token.fromRelationshipType.trim()) {
-        relationshipTypes.add(token.fromRelationshipType.trim());
-      }
-      if (token.toRelationshipType.trim()) {
-        relationshipTypes.add(token.toRelationshipType.trim());
-      }
-    });
-
-    return Array.from(relationshipTypes).sort();
+    return options;
   };
 
   const parentOptions = getParentOptions();
   const toNodeOptions = getToNodeOptions();
-  const existingRelationshipTypes = getExistingRelationshipTypes();
-  const needsParent = nodeType !== 'curation';
 
-  // Filter options based on input - search only by node name, not path
-  const filteredFromTokenOptions = parentOptions.filter((option) => {
-    const nodeName = getNodeName(option);
-    return nodeName.toLowerCase().includes(fromTokenInput.toLowerCase());
+  // Relationship type suggestions
+  const relationshipTypeSuggestions = [
+    'isA', 'partOf', 'relatedTo', 'causes', 'enables', 'requires',
+    'contradicts', 'supports', 'defines', 'extends', 'implements',
+    'hasProperty', 'hasValue', 'hasContext', 'appliesTo', 'derivedFrom'
+  ];
+
+  // Filter from token options based on input
+  const filteredFromOptions = parentOptions.filter(option => {
+    const name = getNodeName(option).toLowerCase();
+    return name.includes(fromTokenInput.toLowerCase());
   });
 
-  const filteredToNodeOptions = toNodeOptions.filter((option) => {
-    const nodeName = getNodeName(option);
-    return nodeName.toLowerCase().includes(toNodeInput.toLowerCase());
+  // Filter to node options based on input
+  const filteredToOptions = toNodeOptions.filter(option => {
+    const name = getNodeName(option).toLowerCase();
+    return name.includes(toNodeInput.toLowerCase());
   });
 
-  const filteredFromRelationTypes = existingRelationshipTypes.filter((type) =>
-    type.toLowerCase().includes(fromRelationType.toLowerCase())
+  // Filter relationship type suggestions
+  const filteredFromRelationSuggestions = relationshipTypeSuggestions.filter(s =>
+    s.toLowerCase().includes(fromRelationType.toLowerCase())
   );
 
-  const filteredToRelationTypes = existingRelationshipTypes.filter((type) =>
-    type.toLowerCase().includes(toRelationType.toLowerCase())
+  const filteredToRelationSuggestions = relationshipTypeSuggestions.filter(s =>
+    s.toLowerCase().includes(toRelationType.toLowerCase())
   );
 
-  // Get selected option names for display (name only, without type)
-  const getSelectedFromTokenName = (): string => {
-    const selected = parentOptions.find((opt) => opt.id === parentId);
-    return selected ? getNodeName(selected) : '';
-  };
-
-  const getSelectedToNodeName = (): string => {
-    const selected = toNodeOptions.find((opt) => opt.id === toNodeId);
-    return selected ? getNodeName(selected) : '';
-  };
-
-  // Handle From Token input changes
-  const handleFromTokenInputChange = (value: string) => {
-    setFromTokenInput(value);
-    setFromTokenDropdownOpen(true);
-    setFromTokenSelectedIndex(-1);
-    
-    // Clear selection if input doesn't match
-    if (parentId) {
-      const selected = parentOptions.find((opt) => opt.id === parentId);
-      const selectedName = selected ? getNodeName(selected) : '';
-      if (selectedName !== value) {
-        setParentId('');
-      }
+  const handleFromTokenKeyDown = (e: React.KeyboardEvent) => {
+    if (!fromTokenDropdownOpen || filteredFromOptions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFromTokenSelectedIndex(prev => Math.min(prev + 1, filteredFromOptions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFromTokenSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && fromTokenSelectedIndex >= 0) {
+      e.preventDefault();
+      const selected = filteredFromOptions[fromTokenSelectedIndex];
+      setParentId(selected.id);
+      setFromTokenInput(getNodeName(selected));
+      setFromTokenDropdownOpen(false);
+      setFromTokenSelectedIndex(-1);
+    } else if (e.key === 'Escape') {
+      setFromTokenDropdownOpen(false);
     }
   };
 
-  // Handle To Node input changes
-  const handleToNodeInputChange = (value: string) => {
-    setToNodeInput(value);
-    setToNodeDropdownOpen(true);
-    setToNodeSelectedIndex(-1);
-    
-    // Clear selection if input doesn't match
-    if (toNodeId) {
-      const selected = toNodeOptions.find((opt) => opt.id === toNodeId);
-      const selectedName = selected ? getNodeName(selected) : '';
-      if (selectedName !== value) {
-        setToNodeId('');
-      }
+  const handleToNodeKeyDown = (e: React.KeyboardEvent) => {
+    if (!toNodeDropdownOpen || filteredToOptions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setToNodeSelectedIndex(prev => Math.min(prev + 1, filteredToOptions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setToNodeSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && toNodeSelectedIndex >= 0) {
+      e.preventDefault();
+      const selected = filteredToOptions[toNodeSelectedIndex];
+      setToNodeId(selected.id);
+      setToNodeInput(getNodeName(selected));
+      setToNodeDropdownOpen(false);
+      setToNodeSelectedIndex(-1);
+    } else if (e.key === 'Escape') {
+      setToNodeDropdownOpen(false);
     }
   };
 
-  // Handle From Relationship Type input changes
-  const handleFromRelationTypeInputChange = (value: string) => {
-    setFromRelationType(value);
-    setFromRelationTypeDropdownOpen(true);
-    setFromRelationTypeSelectedIndex(-1);
-  };
-
-  // Handle To Relationship Type input changes
-  const handleToRelationTypeInputChange = (value: string) => {
-    setToRelationType(value);
-    setToRelationTypeDropdownOpen(true);
-    setToRelationTypeSelectedIndex(-1);
-  };
-
-  // Handle From Token keyboard navigation
-  const handleFromTokenKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!fromTokenDropdownOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') {
-        setFromTokenDropdownOpen(true);
-        e.preventDefault();
-      }
-      return;
-    }
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFromTokenSelectedIndex((prev) =>
-          prev < filteredFromTokenOptions.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFromTokenSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (fromTokenSelectedIndex >= 0 && fromTokenSelectedIndex < filteredFromTokenOptions.length) {
-          const selected = filteredFromTokenOptions[fromTokenSelectedIndex];
-          setParentId(selected.id);
-          // Set only the name without type label
-          const nodeName = getNodeName(selected);
-          setFromTokenInput(nodeName);
-          setFromTokenDropdownOpen(false);
-          setFromTokenSelectedIndex(-1);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setFromTokenDropdownOpen(false);
-        setFromTokenSelectedIndex(-1);
-        break;
+  const handleFromRelationTypeKeyDown = (e: React.KeyboardEvent) => {
+    if (!fromRelationTypeDropdownOpen || filteredFromRelationSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFromRelationTypeSelectedIndex(prev => Math.min(prev + 1, filteredFromRelationSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFromRelationTypeSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && fromRelationTypeSelectedIndex >= 0) {
+      e.preventDefault();
+      setFromRelationType(filteredFromRelationSuggestions[fromRelationTypeSelectedIndex]);
+      setFromRelationTypeDropdownOpen(false);
+      setFromRelationTypeSelectedIndex(-1);
+    } else if (e.key === 'Escape') {
+      setFromRelationTypeDropdownOpen(false);
     }
   };
 
-  // Handle To Node keyboard navigation
-  const handleToNodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!toNodeDropdownOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') {
-        setToNodeDropdownOpen(true);
-        e.preventDefault();
-      }
-      return;
-    }
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setToNodeSelectedIndex((prev) =>
-          prev < filteredToNodeOptions.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setToNodeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (toNodeSelectedIndex >= 0 && toNodeSelectedIndex < filteredToNodeOptions.length) {
-          const selected = filteredToNodeOptions[toNodeSelectedIndex];
-          setToNodeId(selected.id);
-          // Set only the name without type label
-          const nodeName = getNodeName(selected);
-          setToNodeInput(nodeName);
-          setToNodeDropdownOpen(false);
-          setToNodeSelectedIndex(-1);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setToNodeDropdownOpen(false);
-        setToNodeSelectedIndex(-1);
-        break;
+  const handleToRelationTypeKeyDown = (e: React.KeyboardEvent) => {
+    if (!toRelationTypeDropdownOpen || filteredToRelationSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setToRelationTypeSelectedIndex(prev => Math.min(prev + 1, filteredToRelationSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setToRelationTypeSelectedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && toRelationTypeSelectedIndex >= 0) {
+      e.preventDefault();
+      setToRelationType(filteredToRelationSuggestions[toRelationTypeSelectedIndex]);
+      setToRelationTypeDropdownOpen(false);
+      setToRelationTypeSelectedIndex(-1);
+    } else if (e.key === 'Escape') {
+      setToRelationTypeDropdownOpen(false);
     }
   };
 
-  // Handle From Relationship Type keyboard navigation
-  const handleFromRelationTypeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!fromRelationTypeDropdownOpen || filteredFromRelationTypes.length === 0) {
-      if (e.key === 'ArrowDown' && filteredFromRelationTypes.length > 0) {
-        setFromRelationTypeDropdownOpen(true);
-        e.preventDefault();
-      }
-      return;
-    }
+  const dialogContent = (
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-background border border-border">
+      <DialogHeader className="flex-shrink-0">
+        <DialogTitle>Create New Node</DialogTitle>
+      </DialogHeader>
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFromRelationTypeSelectedIndex((prev) =>
-          prev < filteredFromRelationTypes.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFromRelationTypeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (fromRelationTypeSelectedIndex >= 0 && fromRelationTypeSelectedIndex < filteredFromRelationTypes.length) {
-          const selected = filteredFromRelationTypes[fromRelationTypeSelectedIndex];
-          setFromRelationType(selected);
-          setFromRelationTypeDropdownOpen(false);
-          setFromRelationTypeSelectedIndex(-1);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setFromRelationTypeDropdownOpen(false);
-        setFromRelationTypeSelectedIndex(-1);
-        break;
-    }
-  };
-
-  // Handle To Relationship Type keyboard navigation
-  const handleToRelationTypeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!toRelationTypeDropdownOpen || filteredToRelationTypes.length === 0) {
-      if (e.key === 'ArrowDown' && filteredToRelationTypes.length > 0) {
-        setToRelationTypeDropdownOpen(true);
-        e.preventDefault();
-      }
-      return;
-    }
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setToRelationTypeSelectedIndex((prev) =>
-          prev < filteredToRelationTypes.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setToRelationTypeSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (toRelationTypeSelectedIndex >= 0 && toRelationTypeSelectedIndex < filteredToRelationTypes.length) {
-          const selected = filteredToRelationTypes[toRelationTypeSelectedIndex];
-          setToRelationType(selected);
-          setToRelationTypeDropdownOpen(false);
-          setToRelationTypeSelectedIndex(-1);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setToRelationTypeDropdownOpen(false);
-        setToRelationTypeSelectedIndex(-1);
-        break;
-    }
-  };
-
-  // Update input when selection changes externally
-  useEffect(() => {
-    if (parentId && nodeType === 'interpretationToken') {
-      const name = getSelectedFromTokenName();
-      if (name && name !== fromTokenInput) {
-        setFromTokenInput(name);
-      }
-    }
-  }, [parentId, nodeType]);
-
-  useEffect(() => {
-    if (toNodeId) {
-      const name = getSelectedToNodeName();
-      if (name && name !== toNodeInput) {
-        setToNodeInput(name);
-      }
-    }
-  }, [toNodeId]);
-
-  const getParentLabel = () => {
-    switch (nodeType) {
-      case 'swarm':
-        return 'Curation';
-      case 'location':
-        return 'Swarm';
-      case 'interpretationToken':
-        return 'From Token';
-      default:
-        return 'Parent';
-    }
-  };
-
-  const getPermissionInfo = () => {
-    switch (nodeType) {
-      case 'curation':
-        return 'Any authenticated user can create curations';
-      case 'swarm':
-        return 'Any authenticated user can create swarms under any curation';
-      case 'location':
-        return 'Only swarm creators and approved members can create locations';
-      case 'interpretationToken':
-        return 'Only swarm creators and approved members can create interpretation tokens';
-      default:
-        return '';
-    }
-  };
-
-  const getNodeTypeDescription = () => {
-    switch (nodeType) {
-      case 'curation':
-        return 'A curation is an area of law, e.g. Indian Arbitration Law, UK Banking Law etc.';
-      case 'swarm':
-        return 'A swarm is a research topic, a container for annotations and a collaborative space, all rolled into one. For example: key definitions, important caselaws, rights and duties etc.';
-      case 'location':
-        return null; // Location has two separate descriptions shown in different places
-      case 'interpretationToken':
-        return null;
-      default:
-        return '';
-    }
-  };
-
-  // Build current path showing parent hierarchy
-  const getCurrentPath = (): string[] => {
-    if (!graphData || !parentId) return [];
-
-    const path: string[] = [];
-
-    switch (nodeType) {
-      case 'swarm': {
-        // Path: Curation
-        const curation = graphData.curations.find(c => c.id === parentId);
-        if (curation) path.push(curation.name);
-        break;
-      }
-      case 'location': {
-        // Path: Curation → Swarm
-        const swarm = graphData.swarms.find(s => s.id === parentId);
-        if (swarm) {
-          const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-          if (curation) path.push(curation.name);
-          path.push(swarm.name);
-        }
-        break;
-      }
-      case 'interpretationToken': {
-        // Path can be from Location, Law Token, or Interpretation Token
-        const location = graphData.locations.find(l => l.id === parentId);
-        if (location) {
-          // Path: Curation → Swarm → Location
-          const swarm = graphData.swarms.find(s => s.id === location.parentSwarmId);
-          if (swarm) {
-            const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-            if (curation) path.push(curation.name);
-            path.push(swarm.name);
-          }
-          path.push(location.title);
-        } else {
-          const lawToken = graphData.lawTokens.find(t => t.id === parentId);
-          if (lawToken) {
-            // Path: Curation → Swarm → Location → Law Token
-            const parentLocation = graphData.locations.find(l => l.id === lawToken.parentLocationId);
-            if (parentLocation) {
-              const swarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
-              if (swarm) {
-                const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-                if (curation) path.push(curation.name);
-                path.push(swarm.name);
-              }
-              path.push(parentLocation.title);
-            }
-            path.push(lawToken.tokenLabel);
-          } else {
-            // Check if it's an interpretation token
-            const interpretationToken = graphData.interpretationTokens.find(i => i.id === parentId);
-            if (interpretationToken) {
-              // Recursively build path for interpretation token origin
-              const buildInterpretationPath = (tokenId: NodeId): void => {
-                const token = graphData.interpretationTokens.find(i => i.id === tokenId);
-                if (token) {
-                  // Check if origin is a location
-                  const originLocation = graphData.locations.find(l => l.id === token.fromTokenId);
-                  if (originLocation) {
-                    const swarm = graphData.swarms.find(s => s.id === originLocation.parentSwarmId);
-                    if (swarm) {
-                      const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-                      if (curation) path.push(curation.name);
-                      path.push(swarm.name);
-                    }
-                    path.push(originLocation.title);
-                  } else {
-                    // Check if origin is a law token
-                    const originLawToken = graphData.lawTokens.find(t => t.id === token.fromTokenId);
-                    if (originLawToken) {
-                      const parentLocation = graphData.locations.find(l => l.id === originLawToken.parentLocationId);
-                      if (parentLocation) {
-                        const swarm = graphData.swarms.find(s => s.id === parentLocation.parentSwarmId);
-                        if (swarm) {
-                          const curation = graphData.curations.find(c => c.id === swarm.parentCurationId);
-                          if (curation) path.push(curation.name);
-                          path.push(swarm.name);
-                        }
-                        path.push(parentLocation.title);
-                      }
-                      path.push(originLawToken.tokenLabel);
-                    } else {
-                      // Origin is another interpretation token
-                      buildInterpretationPath(token.fromTokenId);
-                    }
-                  }
-                  path.push(token.title);
-                }
-              };
-              buildInterpretationPath(parentId);
-            }
-          }
-        }
-        break;
-      }
-    }
-
-    return path;
-  };
-
-  const currentPath = getCurrentPath();
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {trigger ? (
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
-      ) : (
-        <DialogTrigger asChild>
-          <Button className="bg-foreground text-background hover:bg-foreground/90">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Node
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Node</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <ScrollArea className="flex-1 overflow-auto">
+        <form onSubmit={handleSubmit} className="space-y-4 p-1">
+          {/* Node Type Selection */}
           <div className="space-y-2">
-            <Label htmlFor="nodeType">Node Type</Label>
+            <Label>Node Type</Label>
             <Select
               value={nodeType}
               onValueChange={(value) => {
                 setNodeType(value as NodeType);
-                if (!defaultParentId) {
-                  setParentId('');
-                }
-                setFromRelationType('');
-                setFromDirectionality(Directionality.unidirectional);
-                setToNodeId('');
-                setToRelationType('');
-                setToDirectionality(Directionality.unidirectional);
+                setParentId(defaultParentId || '');
                 setFromTokenInput('');
                 setToNodeInput('');
               }}
-              disabled={!!defaultNodeType || isPending}
             >
-              <SelectTrigger id="nodeType">
+              <SelectTrigger className="bg-background border-border">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="curation">Curation (Top Level)</SelectItem>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="curation">Curation</SelectItem>
                 <SelectItem value="swarm">Swarm</SelectItem>
                 <SelectItem value="location">Location</SelectItem>
                 <SelectItem value="interpretationToken">Interpretation Token</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <p>{getPermissionInfo()}</p>
-            </div>
           </div>
 
-          {needsParent && nodeType !== 'interpretationToken' && (
-            <div className="space-y-2">
-              <Label htmlFor="parent">{getParentLabel()}</Label>
-              <Select value={parentId} onValueChange={setParentId} disabled={!!defaultParentId || isPending}>
-                <SelectTrigger id="parent">
-                  <SelectValue placeholder="Select parent..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {parentOptions.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      No parent nodes available
-                    </div>
-                  ) : (
-                    parentOptions.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {nodeType === 'interpretationToken' && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="fromToken">From Token</Label>
-                <div className="relative">
-                  <Input
-                    ref={fromTokenInputRef}
-                    id="fromToken"
-                    value={fromTokenInput}
-                    onChange={(e) => handleFromTokenInputChange(e.target.value)}
-                    onKeyDown={handleFromTokenKeyDown}
-                    onFocus={() => setFromTokenDropdownOpen(true)}
-                    onBlur={() => {
-                      // Delay to allow click on dropdown item
-                      setTimeout(() => setFromTokenDropdownOpen(false), 200);
-                    }}
-                    placeholder="Type to search tokens..."
-                    disabled={!!defaultParentId || isPending}
-                    className="pr-8"
-                  />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  {fromTokenDropdownOpen && filteredFromTokenOptions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
-                      <ScrollArea className="max-h-[300px]">
-                        <div className="p-1 bg-popover">
-                          {filteredFromTokenOptions.map((option, index) => {
-                            const nodeName = getNodeName(option);
-                            const nodePath = getNodePath(option);
-                            const nodeType = isExtendedOption(option) ? getNodeTypeLabel(option.type) : '';
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setParentId(option.id);
-                                  // Set only the name without type label
-                                  setFromTokenInput(nodeName);
-                                  setFromTokenDropdownOpen(false);
-                                  setFromTokenSelectedIndex(-1);
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
-                                  index === fromTokenSelectedIndex ? 'bg-accent' : ''
-                                } ${parentId === option.id ? 'bg-accent/50' : ''}`}
-                              >
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">{nodeName}</span>
-                                    {nodeType && (
-                                      <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted rounded">
-                                        {nodeType}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {nodePath && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {nodePath}
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Select a Location, Law Token, or Interpretation Token
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="fromRelationType">From Relationship Type</Label>
-                  </div>
-                  <div className="w-40">
-                    <Label htmlFor="fromDirectionality" className="text-xs text-muted-foreground">Directionality</Label>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      ref={fromRelationTypeInputRef}
-                      id="fromRelationType"
-                      placeholder="e.g., defines, exemplifies..."
-                      value={fromRelationType}
-                      onChange={(e) => handleFromRelationTypeInputChange(e.target.value)}
-                      onKeyDown={handleFromRelationTypeKeyDown}
-                      onFocus={() => {
-                        if (filteredFromRelationTypes.length > 0) {
-                          setFromRelationTypeDropdownOpen(true);
-                        }
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => setFromRelationTypeDropdownOpen(false), 200);
-                      }}
-                      disabled={isPending}
-                      className="pr-8"
-                    />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    {fromRelationTypeDropdownOpen && filteredFromRelationTypes.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
-                        <ScrollArea className="max-h-[200px]">
-                          <div className="p-1 bg-popover">
-                            {filteredFromRelationTypes.map((type, index) => (
-                              <button
-                                key={type}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setFromRelationType(type);
-                                  setFromRelationTypeDropdownOpen(false);
-                                  setFromRelationTypeSelectedIndex(-1);
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
-                                  index === fromRelationTypeSelectedIndex ? 'bg-accent' : ''
-                                } ${fromRelationType === type ? 'bg-accent/50' : ''}`}
-                              >
-                                {type}
-                              </button>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
-                  </div>
-                  <Select 
-                    value={fromDirectionality} 
-                    onValueChange={(value) => setFromDirectionality(value as Directionality)} 
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="fromDirectionality" className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={Directionality.none}>No Direction</SelectItem>
-                      <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
-                      <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Describe how this interpretation relates to the origin token
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="toNode">To Node</Label>
-                <div className="relative">
-                  <Input
-                    ref={toNodeInputRef}
-                    id="toNode"
-                    value={toNodeInput}
-                    onChange={(e) => handleToNodeInputChange(e.target.value)}
-                    onKeyDown={handleToNodeKeyDown}
-                    onFocus={() => setToNodeDropdownOpen(true)}
-                    onBlur={() => {
-                      // Delay to allow click on dropdown item
-                      setTimeout(() => setToNodeDropdownOpen(false), 200);
-                    }}
-                    placeholder="Type to search nodes..."
-                    disabled={isPending}
-                    className="pr-8"
-                  />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  {toNodeDropdownOpen && filteredToNodeOptions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
-                      <ScrollArea className="max-h-[300px]">
-                        <div className="p-1 bg-popover">
-                          {filteredToNodeOptions.map((option, index) => {
-                            const nodeName = getNodeName(option);
-                            const nodePath = getNodePath(option);
-                            const nodeType = getNodeTypeLabel(option.type);
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setToNodeId(option.id);
-                                  // Set only the name without type label
-                                  setToNodeInput(nodeName);
-                                  setToNodeDropdownOpen(false);
-                                  setToNodeSelectedIndex(-1);
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
-                                  index === toNodeSelectedIndex ? 'bg-accent' : ''
-                                } ${toNodeId === option.id ? 'bg-accent/50' : ''}`}
-                              >
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">{nodeName}</span>
-                                    <span className="text-xs text-muted-foreground px-1.5 py-0.5 bg-muted rounded">
-                                      {nodeType}
-                                    </span>
-                                  </div>
-                                  {nodePath && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {nodePath}
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Select a Location, Law Token, or Interpretation Token
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="toRelationType">To Relationship Type</Label>
-                  </div>
-                  <div className="w-40">
-                    <Label htmlFor="toDirectionality" className="text-xs text-muted-foreground">Directionality</Label>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      ref={toRelationTypeInputRef}
-                      id="toRelationType"
-                      placeholder="e.g., references, applies to..."
-                      value={toRelationType}
-                      onChange={(e) => handleToRelationTypeInputChange(e.target.value)}
-                      onKeyDown={handleToRelationTypeKeyDown}
-                      onFocus={() => {
-                        if (filteredToRelationTypes.length > 0) {
-                          setToRelationTypeDropdownOpen(true);
-                        }
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => setToRelationTypeDropdownOpen(false), 200);
-                      }}
-                      disabled={isPending}
-                      className="pr-8"
-                    />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    {toRelationTypeDropdownOpen && filteredToRelationTypes.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md">
-                        <ScrollArea className="max-h-[200px]">
-                          <div className="p-1 bg-popover">
-                            {filteredToRelationTypes.map((type, index) => (
-                              <button
-                                key={type}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setToRelationType(type);
-                                  setToRelationTypeDropdownOpen(false);
-                                  setToRelationTypeSelectedIndex(-1);
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors bg-popover ${
-                                  index === toRelationTypeSelectedIndex ? 'bg-accent' : ''
-                                } ${toRelationType === type ? 'bg-accent/50' : ''}`}
-                              >
-                                {type}
-                              </button>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
-                  </div>
-                  <Select 
-                    value={toDirectionality} 
-                    onValueChange={(value) => setToDirectionality(value as Directionality)} 
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="toDirectionality" className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={Directionality.none}>No Direction</SelectItem>
-                      <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
-                      <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Describe how this interpretation relates to the target node
-                </p>
-              </div>
-            </>
-          )}
-
-          {currentPath.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Current Path</Label>
-              <div className="text-sm font-mono text-foreground bg-muted/30 p-2 rounded border border-border">
-                {currentPath.join(' → ')}
-              </div>
-            </div>
-          )}
-
+          {/* Name/Title Field */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              {nodeType === 'location' || nodeType === 'interpretationToken' ? 'Title' : 'Name'}
+              {nodeType === 'location' ? 'Title' : nodeType === 'interpretationToken' ? 'Title' : 'Name'}
             </Label>
             <Input
               id="name"
-              placeholder={`Enter ${nodeType === 'location' || nodeType === 'interpretationToken' ? 'title' : 'name'}...`}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={isPending}
+              placeholder={`Enter ${nodeType === 'location' || nodeType === 'interpretationToken' ? 'title' : 'name'}...`}
+              className="bg-background border-border"
             />
-            {getNodeTypeDescription() && (
-              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <p>{getNodeTypeDescription()}</p>
-              </div>
-            )}
           </div>
 
+          {/* Jurisdiction (Curation only) */}
           {nodeType === 'curation' && (
             <div className="space-y-2">
-              <Label htmlFor="jurisdiction">Jurisdiction</Label>
-              <Select value={jurisdiction} onValueChange={setJurisdiction} disabled={isPending}>
-                <SelectTrigger id="jurisdiction">
+              <Label>Jurisdiction (ISO 3166-1 alpha-3)</Label>
+              <Select value={jurisdiction} onValueChange={setJurisdiction}>
+                <SelectTrigger className="bg-background border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
+                <SelectContent className="bg-popover border-border max-h-60">
                   {ISO_COUNTRY_CODES.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      {code}
-                    </SelectItem>
+                    <SelectItem key={code} value={code}>{code}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
 
+          {/* Tags (Swarm only) */}
           {nodeType === 'swarm' && (
             <div className="space-y-2">
               <Label htmlFor="tags">Tags (comma-separated)</Label>
@@ -1398,118 +723,364 @@ export default function CreateNodeDialog({
                 id="tags"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                disabled={isPending}
+                placeholder="e.g. legal, finance, tech"
+                className="bg-background border-border"
               />
-              <p className="text-xs text-muted-foreground">
-                Add tags to help others discover this swarm
-              </p>
             </div>
           )}
 
+          {/* Context/Content (Location and InterpretationToken) */}
           {(nodeType === 'location' || nodeType === 'interpretationToken') && (
             <div className="space-y-2">
               <Label htmlFor="context">
-                {nodeType === 'location' ? 'Content' : 'Context'}
+                {nodeType === 'location' ? (
+                  <span className="flex items-center gap-1">
+                    Content
+                    <span title="Wrap law tokens in curly braces: {token}">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </span>
+                  </span>
+                ) : 'Context'}
               </Label>
               <Textarea
                 id="context"
-                placeholder={`Enter ${nodeType === 'location' ? 'content' : 'context'}...`}
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                disabled={isPending}
+                placeholder={
+                  nodeType === 'location'
+                    ? 'Enter content... Wrap law tokens in {curly braces}'
+                    : 'Enter context or description...'
+                }
                 rows={4}
+                className="bg-background border-border"
               />
               {nodeType === 'location' && (
-                <>
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <p>
-                      Each location points to a particular chunk of positive law. For example: sec 123 of act ABC, para 456 of case XYZ.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <p>
-                      Wrap the positive law text in curly brackets to generate specific tokens. For example: {'{appropriate authority}'}{'{means}'}{'{the State Government}'}{'{or}'}..
-                    </p>
-                  </div>
-                </>
+                <p className="text-xs text-muted-foreground">
+                  Law tokens will be auto-extracted from text wrapped in {'{'} {'}'} braces.
+                </p>
               )}
             </div>
           )}
 
+          {/* Parent Selection (Swarm → Curation, Location → Swarm) */}
+          {(nodeType === 'swarm' || nodeType === 'location') && (
+            <div className="space-y-2">
+              <Label>
+                {nodeType === 'swarm' ? 'Parent Curation' : 'Parent Swarm'}
+              </Label>
+              <Select value={parentId} onValueChange={setParentId}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue placeholder={`Select ${nodeType === 'swarm' ? 'curation' : 'swarm'}...`} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  {parentOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Interpretation Token Fields */}
+          {nodeType === 'interpretationToken' && (
+            <>
+              {/* From Token */}
+              <div className="space-y-2">
+                <Label>From Node</Label>
+                <div className="relative">
+                  <Input
+                    ref={fromTokenInputRef}
+                    value={fromTokenInput}
+                    onChange={(e) => {
+                      setFromTokenInput(e.target.value);
+                      setFromTokenDropdownOpen(true);
+                      setFromTokenSelectedIndex(-1);
+                      if (!e.target.value) setParentId('');
+                    }}
+                    onFocus={() => setFromTokenDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setFromTokenDropdownOpen(false), 150)}
+                    onKeyDown={handleFromTokenKeyDown}
+                    placeholder="Search locations, law tokens, interpretation tokens..."
+                    className="bg-background border-border pr-8"
+                  />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  {fromTokenDropdownOpen && filteredFromOptions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-auto">
+                      {filteredFromOptions.map((option, index) => (
+                        <div
+                          key={option.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                            index === fromTokenSelectedIndex ? 'bg-accent text-accent-foreground' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setParentId(option.id);
+                            setFromTokenInput(getNodeName(option));
+                            setFromTokenDropdownOpen(false);
+                            setFromTokenSelectedIndex(-1);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isExtendedOption(option) && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono flex-shrink-0">
+                                {getNodeTypeLabel(option.type)}
+                              </span>
+                            )}
+                            <span className="text-sm font-medium">{getNodeName(option)}</span>
+                          </div>
+                          {isExtendedOption(option) && getNodePath(option) && (
+                            <div className="text-xs text-muted-foreground mt-0.5 ml-0">
+                              {getNodePath(option)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* From Relationship Type */}
+              <div className="space-y-2">
+                <Label>From Relationship Type</Label>
+                <div className="relative">
+                  <Input
+                    ref={fromRelationTypeInputRef}
+                    value={fromRelationType}
+                    onChange={(e) => {
+                      setFromRelationType(e.target.value);
+                      setFromRelationTypeDropdownOpen(true);
+                      setFromRelationTypeSelectedIndex(-1);
+                    }}
+                    onFocus={() => setFromRelationTypeDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setFromRelationTypeDropdownOpen(false), 150)}
+                    onKeyDown={handleFromRelationTypeKeyDown}
+                    placeholder="e.g. isA, partOf, relatedTo..."
+                    className="bg-background border-border"
+                  />
+                  {fromRelationTypeDropdownOpen && filteredFromRelationSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-auto">
+                      {filteredFromRelationSuggestions.map((suggestion, index) => (
+                        <div
+                          key={suggestion}
+                          className={`px-3 py-2 cursor-pointer text-sm hover:bg-accent hover:text-accent-foreground ${
+                            index === fromRelationTypeSelectedIndex ? 'bg-accent text-accent-foreground' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFromRelationType(suggestion);
+                            setFromRelationTypeDropdownOpen(false);
+                            setFromRelationTypeSelectedIndex(-1);
+                          }}
+                        >
+                          {suggestion}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* From Directionality */}
+              <div className="space-y-2">
+                <Label>From Directionality</Label>
+                <Select
+                  value={fromDirectionality}
+                  onValueChange={(v) => setFromDirectionality(v as Directionality)}
+                >
+                  <SelectTrigger className="bg-background border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
+                    <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
+                    <SelectItem value={Directionality.none}>None</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* To Node */}
+              <div className="space-y-2">
+                <Label>To Node</Label>
+                <div className="relative">
+                  <Input
+                    ref={toNodeInputRef}
+                    value={toNodeInput}
+                    onChange={(e) => {
+                      setToNodeInput(e.target.value);
+                      setToNodeDropdownOpen(true);
+                      setToNodeSelectedIndex(-1);
+                      if (!e.target.value) setToNodeId('');
+                    }}
+                    onFocus={() => setToNodeDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setToNodeDropdownOpen(false), 150)}
+                    onKeyDown={handleToNodeKeyDown}
+                    placeholder="Search locations, law tokens, interpretation tokens..."
+                    className="bg-background border-border pr-8"
+                  />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  {toNodeDropdownOpen && filteredToOptions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-auto">
+                      {filteredToOptions.map((option, index) => (
+                        <div
+                          key={option.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                            index === toNodeSelectedIndex ? 'bg-accent text-accent-foreground' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setToNodeId(option.id);
+                            setToNodeInput(getNodeName(option));
+                            setToNodeDropdownOpen(false);
+                            setToNodeSelectedIndex(-1);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono flex-shrink-0">
+                              {getNodeTypeLabel(option.type)}
+                            </span>
+                            <span className="text-sm font-medium">{getNodeName(option)}</span>
+                          </div>
+                          {getNodePath(option) && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {getNodePath(option)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* To Relationship Type */}
+              <div className="space-y-2">
+                <Label>To Relationship Type</Label>
+                <div className="relative">
+                  <Input
+                    ref={toRelationTypeInputRef}
+                    value={toRelationType}
+                    onChange={(e) => {
+                      setToRelationType(e.target.value);
+                      setToRelationTypeDropdownOpen(true);
+                      setToRelationTypeSelectedIndex(-1);
+                    }}
+                    onFocus={() => setToRelationTypeDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setToRelationTypeDropdownOpen(false), 150)}
+                    onKeyDown={handleToRelationTypeKeyDown}
+                    placeholder="e.g. isA, partOf, relatedTo..."
+                    className="bg-background border-border"
+                  />
+                  {toRelationTypeDropdownOpen && filteredToRelationSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-auto">
+                      {filteredToRelationSuggestions.map((suggestion, index) => (
+                        <div
+                          key={suggestion}
+                          className={`px-3 py-2 cursor-pointer text-sm hover:bg-accent hover:text-accent-foreground ${
+                            index === toRelationTypeSelectedIndex ? 'bg-accent text-accent-foreground' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setToRelationType(suggestion);
+                            setToRelationTypeDropdownOpen(false);
+                            setToRelationTypeSelectedIndex(-1);
+                          }}
+                        >
+                          {suggestion}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* To Directionality */}
+              <div className="space-y-2">
+                <Label>To Directionality</Label>
+                <Select
+                  value={toDirectionality}
+                  onValueChange={(v) => setToDirectionality(v as Directionality)}
+                >
+                  <SelectTrigger className="bg-background border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value={Directionality.unidirectional}>Unidirectional</SelectItem>
+                    <SelectItem value={Directionality.bidirectional}>Bidirectional</SelectItem>
+                    <SelectItem value={Directionality.none}>None</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {/* Custom Attributes (Location and InterpretationToken) */}
           {(nodeType === 'location' || nodeType === 'interpretationToken') && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Attributes</Label>
+                <Label>Custom Attributes</Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleAddAttribute}
-                  disabled={isPending}
-                  className="h-8 px-2 hover:bg-accent"
+                  className="h-7 text-xs hover:bg-accent hover:text-accent-foreground"
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>
               </div>
               <div className="space-y-2">
                 {customAttributes.map((attr, index) => (
-                  <div key={index} className="flex gap-2 items-start">
+                  <div key={index} className="flex gap-2 items-center">
                     <Input
-                      placeholder="Key"
                       value={attr.key}
                       onChange={(e) => handleAttributeChange(index, 'key', e.target.value)}
-                      disabled={isPending}
-                      className="flex-1"
+                      placeholder="Key"
+                      className="flex-1 bg-background border-border"
                     />
                     <Input
-                      placeholder="Value"
                       value={attr.value}
                       onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                      disabled={isPending}
-                      className="flex-1"
+                      placeholder="Value"
+                      className="flex-1 bg-background border-border"
                     />
-                    {customAttributes.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveAttribute(index)}
-                        disabled={isPending}
-                        className="h-10 px-2 hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveAttribute(index)}
+                      disabled={customAttributes.length === 1}
+                      className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Add custom key-value pairs for additional metadata
-              </p>
             </div>
           )}
 
-          <div className="flex gap-2">
+          {/* Submit Button */}
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={isPending}
-              className="flex-1 hover:bg-muted"
+              className="hover:bg-muted"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isPending} 
-              className="flex-1 bg-foreground text-background hover:bg-foreground/90"
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="hover:bg-accent hover:text-accent-foreground"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
                 </>
               ) : (
@@ -1518,7 +1089,22 @@ export default function CreateNodeDialog({
             </Button>
           </div>
         </form>
-      </DialogContent>
+      </ScrollArea>
+    </DialogContent>
+  );
+
+  if (trigger) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        {dialogContent}
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      {dialogContent}
     </Dialog>
   );
 }

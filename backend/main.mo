@@ -11,9 +11,9 @@ import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -234,6 +234,15 @@ actor {
     interpretationTokens : [InterpretationToken];
     rootNodes : [GraphNode];
     edges : [GraphEdge];
+  };
+
+  // OwnedGraphData type for only caller-owned nodes
+  type OwnedGraphData = {
+    curations : [Curation];
+    swarms : [Swarm];
+    locations : [Location];
+    lawTokens : [LawToken];
+    interpretationTokens : [InterpretationToken];
   };
 
   // MINT SETTINGS FUNCTIONS
@@ -1671,7 +1680,12 @@ actor {
     edges.toArray();
   };
 
-  public query ({ }) func getGraphData() : async GraphData {
+  // Returns all graph data. Requires authenticated user access.
+  public query ({ caller }) func getGraphData() : async GraphData {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can access graph data");
+    };
+
     let edges = List.empty<GraphEdge>();
 
     for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
@@ -1739,6 +1753,56 @@ actor {
       interpretationTokens = allInterpretationTokens.toArray();
       rootNodes;
       edges = edges.toArray();
+    };
+  };
+
+  // Returns only the nodes owned by the caller. Requires authenticated user access.
+  public query ({ caller }) func getMyOwnedGraphData() : async OwnedGraphData {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can access their owned graph data");
+    };
+
+    let ownedCurations = List.empty<Curation>();
+    for (curation in curationMap.values()) {
+      if (curation.creator == caller) {
+        ownedCurations.add(curation);
+      };
+    };
+
+    let ownedSwarms = List.empty<Swarm>();
+    for (swarm in swarmMap.values()) {
+      if (swarm.creator == caller) {
+        ownedSwarms.add(swarm);
+      };
+    };
+
+    let ownedLocations = List.empty<Location>();
+    for (location in locationMap.values()) {
+      if (location.creator == caller) {
+        ownedLocations.add(location);
+      };
+    };
+
+    let ownedLawTokens = List.empty<LawToken>();
+    for (lawToken in lawTokenMap.values()) {
+      if (lawToken.creator == caller) {
+        ownedLawTokens.add(lawToken);
+      };
+    };
+
+    let ownedInterpretationTokens = List.empty<InterpretationToken>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (interpretationToken.creator == caller) {
+        ownedInterpretationTokens.add(interpretationToken);
+      };
+    };
+
+    {
+      curations = ownedCurations.toArray();
+      swarms = ownedSwarms.toArray();
+      locations = ownedLocations.toArray();
+      lawTokens = ownedLawTokens.toArray();
+      interpretationTokens = ownedInterpretationTokens.toArray();
     };
   };
 };

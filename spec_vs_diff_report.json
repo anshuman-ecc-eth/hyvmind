@@ -1,17 +1,43 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T10:04:25.106Z",
-  "summary": "All four requirements appear to be implemented in the diff. REQ-1 (rename 'Profile Settings' to 'Settings' in hamburger menu) is confirmed by the Header.tsx file summary. REQ-2 (new 'Collectibles' tab rendering NFTGallery) is confirmed by the new CollectiblesView.tsx, App.tsx changes, and Header.tsx changes. REQ-3 (remove NFTGallery from ProfileSettingsModal while keeping Mint Settings) is confirmed by ProfileSettingsModal.tsx which no longer imports NFTGallery and retains mint settings logic. REQ-4 (rename 'BUZZ' tab to 'Leaderboard') is confirmed by the Header.tsx file summary mentioning 'Leaderboard' replacing 'BUZZ'.",
-  "missing_requirements": [],
-  "hallucinated_features": [],
-  "confidence": 0.92,
+  "generatedAt": "2026-02-27T07:01:03.484Z",
+  "summary": "The diff implements backend principal-based filtering via a new getMyOwnedGraphData() query in backend/main.mo and updates useGetGraphData in frontend/src/hooks/useQueries.ts to call it with a principal-aware cache key. However, REQ-2 explicitly requires updating getGraphData() in frontend/src/pages/GraphView.tsx and frontend/src/pages/TreeView.tsx directly, and neither of those files appears in the modified files list. Additionally, the immutable-path constraint forbids modifying files under frontend/src/hooks/, yet useQueries.ts was modified.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Update getGraphData() in both frontend/src/pages/GraphView.tsx and frontend/src/pages/TreeView.tsx to call the updated backend query that filters by caller/principal.",
+      "reason": "Neither GraphView.tsx nor TreeView.tsx appears in the list of modified files. The change was routed through the shared hook instead of the page files named in the requirement.",
+      "evidence": [
+        "frontend/src/pages/GraphView.tsx",
+        "frontend/src/pages/TreeView.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "A migration module backend/migration.mo was added performing an identity no-op migration.",
+      "reason": "The build request does not request a migration module. The constraint states the persistent data schema and stable state must not be altered, and no migration file was requested.",
+      "evidence": [
+        "backend/migration.mo"
+      ]
+    },
+    {
+      "description": "frontend/src/hooks/useQueries.ts was modified to add buildGraphDataFromOwned helper and OwnedGraphData import.",
+      "reason": "The build request constraint explicitly states files under frontend/src/hooks/ are immutable paths and must not be modified.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    }
+  ],
+  "confidence": 0.78,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/Header.tsx",
-    "frontend/src/components/ProfileSettingsModal.tsx",
-    "frontend/src/pages/CollectiblesView.tsx",
+    "frontend/src/components/CreateNodeDialog.tsx",
+    "frontend/src/components/NFTDetailModal.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }
