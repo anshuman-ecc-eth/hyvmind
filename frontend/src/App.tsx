@@ -12,15 +12,18 @@ import BuzzLeaderboard from './pages/BuzzLeaderboard';
 import TerminalPage from './pages/TerminalPage';
 import LandingGraphDiagram from './components/LandingGraphDiagram';
 import CollectiblesView from './pages/CollectiblesView';
+import SwarmsView from './pages/SwarmsView';
+import SwarmDetailView from './pages/SwarmDetailView';
 import { useState, useEffect, useRef } from 'react';
 import { setHiddenCollectibleIds } from './utils/archivedCollectiblesStore';
 import { useGetGraphData } from './hooks/useQueries';
 
-type ViewType = 'graph' | 'tree' | 'terminal' | 'swarms' | 'buzz' | 'collectibles';
+type ViewType = 'graph' | 'tree' | 'terminal' | 'swarms' | 'swarm-detail' | 'buzz' | 'collectibles';
 
 export default function App() {
   const { identity, isInitializing, isLoginSuccess } = useInternetIdentity();
   const [currentView, setCurrentView] = useState<ViewType>('graph');
+  const [selectedSwarmId, setSelectedSwarmId] = useState<string | null>(null);
   const isAuthenticated = !!identity;
 
   const {
@@ -80,6 +83,24 @@ export default function App() {
     }
   }, [identity]);
 
+  const handleSelectSwarm = (swarmId: string) => {
+    setSelectedSwarmId(swarmId);
+    setCurrentView('swarm-detail');
+  };
+
+  const handleBackToSwarms = () => {
+    setSelectedSwarmId(null);
+    setCurrentView('swarms');
+  };
+
+  // When navigating away from swarms entirely, clear selected swarm
+  const handleViewChange = (view: ViewType) => {
+    if (view !== 'swarm-detail') {
+      setSelectedSwarmId(null);
+    }
+    setCurrentView(view);
+  };
+
   if (isInitializing) {
     return (
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
@@ -102,8 +123,8 @@ export default function App() {
     >
       <div className="flex min-h-screen flex-col bg-background">
         <Header 
-          currentView={currentView} 
-          onViewChange={setCurrentView} 
+          currentView={currentView === 'swarm-detail' ? 'swarms' : currentView}
+          onViewChange={handleViewChange}
           isAuthenticated={isAuthenticated}
           isLandingPage={isLandingPage}
         />
@@ -119,9 +140,12 @@ export default function App() {
               {currentView === 'tree' && <TreeView />}
               {currentView === 'terminal' && <TerminalPage />}
               {currentView === 'swarms' && (
-                <div className="container mx-auto p-6 overflow-auto">
-                  <SwarmMembershipManager />
+                <div className="flex-1 overflow-auto">
+                  <SwarmsView onSelectSwarm={handleSelectSwarm} />
                 </div>
+              )}
+              {currentView === 'swarm-detail' && selectedSwarmId && (
+                <SwarmDetailView swarmId={selectedSwarmId} onBack={handleBackToSwarms} />
               )}
               {currentView === 'buzz' && <BuzzLeaderboard />}
               {currentView === 'collectibles' && <CollectiblesView />}

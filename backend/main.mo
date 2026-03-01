@@ -10,6 +10,9 @@ import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
+import Runtime "mo:core/Runtime";
+
+
 
 actor {
   // Type Aliases
@@ -171,6 +174,14 @@ actor {
   var existingAdmins : [Principal] = [];
   var archivedNodes = Map.empty<NodeId, ()>();
 
+  // Store SwarmType (including which swarms are "question-of-law")
+  var swarmTypeMap = Map.empty<NodeId, SwarmType>();
+
+  type SwarmType = {
+    #regular;
+    #questionOfLaw;
+  };
+
   module LawToken {
     public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
       Text.compare(t1.tokenLabel, t2.tokenLabel);
@@ -248,11 +259,12 @@ actor {
     archivedNodes.keys().toArray();
   };
 
-  // Admin-only: archiving a node affects all users globally
+  // Allow any authenticated user to archive their own nodes.
   public shared ({ caller }) func archiveNode(nodeId : NodeId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
-      Runtime.trap("Unauthorized: Only admins can archive nodes");
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Only authenticated users can archive nodes");
     };
+
     archivedNodes.add(nodeId, ());
   };
 
@@ -566,6 +578,9 @@ actor {
       case (_) {};
     };
 
+    // Determine if this swarm is "question-of-law"
+    let isQuestionOfLaw = tags.any(func(tag) { tag == "question-of-law" });
+
     let uniqueName = generateGlobalUniqueSwarmName(name);
 
     let id = generateId("swarm", uniqueName, caller);
@@ -581,9 +596,50 @@ actor {
     };
     swarmMap.add(id, newSwarm);
 
+    // Save the swarm type
+    let swarmType = if (isQuestionOfLaw) { #questionOfLaw } else { #regular };
+    swarmTypeMap.add(id, swarmType);
+
+    if (isQuestionOfLaw) {
+      createAutoLocations(id, caller);
+    };
+
     autoUpvoteNode(id, caller);
 
     id;
+  };
+
+  func createAutoLocations(parentSwarmId : NodeId, creator : Principal) {
+    let yesLocation : Location = {
+      id = generateId("location", "Yes", creator);
+      title = "Yes";
+      content = "";
+      originalTokenSequence = "";
+      customAttributes = [];
+      parentSwarmId;
+      creator;
+      version = 1;
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+
+    let noLocation : Location = {
+      id = generateId("location", "No", creator);
+      title = "No";
+      content = "";
+      originalTokenSequence = "";
+      customAttributes = [];
+      parentSwarmId;
+      creator;
+      version = 1;
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+
+    locationMap.add(yesLocation.id, yesLocation);
+    locationMap.add(noLocation.id, noLocation);
   };
 
   func generateGlobalUniqueSwarmName(baseName : Text) : Text {
@@ -623,6 +679,18 @@ actor {
     switch (swarmMap.get(parentSwarmId)) {
       case (null) { Runtime.trap("Parent swarm does not exist") };
       case (_) {};
+    };
+
+    switch (swarmTypeMap.get(parentSwarmId)) {
+      case (?swarmType) {
+        switch (swarmType) {
+          case (#questionOfLaw) {
+            Runtime.trap("Question-of-law swarms can only have 'Yes' and 'No' locations");
+          };
+          case (#regular) {};
+        };
+      };
+      case (null) {};
     };
 
     if (not isSwarmCreatorOrMember(caller, parentSwarmId)) {
@@ -1179,6 +1247,7 @@ actor {
     swarmUpdates := Map.empty<Principal, List.List<SwarmUpdate>>();
     archivedNodes.clear();
     userVoteTracking.clear();
+    swarmTypeMap.clear();
   };
 
   func splitByCurlyBrackets(text : Text) : [Text] {

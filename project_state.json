@@ -1,25 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project with backend (Motoko/ICP) and frontend featuring a landing page, collectibles tab, and graph data visualization. Recent work involves fixing authentication issues for public-facing endpoints.",
-  "architectural_notes": [
-    "getGraphData() is public (no auth required) to support anonymous actor calls from the landing page"
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "SwarmDetailView plus buttons do not pass the current swarm's ID when creating a law token, causing 'Parent Swarm does not exist' error. Parent swarm ID should be automatically injected from the displayed swarm, no user confirmation needed. UI should stay on swarm detail view after creation."
   ],
-  "known_issues": [],
   "isFixRequest": true,
-  "existing_features": [],
-  "new_feature_requests": [
+  "existing_features": [
     {
-      "id": "AR-1",
-      "summary": "In backend/main.mo, remove the { caller } binding and the AccessControl.hasPermission check from the getGraphData() query function so it is publicly accessible without authentication. The function signature should change from `public query ({ caller }) func getGraphData() : async GraphData` to `public query ({ }) func getGraphData() : async GraphData`, and the Runtime.trap(\"Unauthorized: ...\") guard block should be deleted entirely.",
+      "id": "feature-in-swarmdetailview-when-the-yes-or-no-plus-button-is-clicked-to-open-the-createlawtokendialog-automatically-pass-the-currently-displayed-swarm-s-id-as-the-parent-swarm-id-into-the-dialog-s-creation-call-the-swarm-id-must-be-read-directly-from-the-swarm-detail-view-s-own-state-props-no-user-input-or-confirmation-required-the-dialog-must-call-the-backend-s-law-token-creation-function-with-this-swarm-id-correctly-populated-so-that-the-parent-swarm-does-not-exist-error-no-longer-occurs",
+      "title": "In SwarmDetailView, when the Yes or No plus button is clicked to open the CreateLawTokenDialog, automatically pass the currently displayed swarm's ID as the parent swarm ID into the dialog's creation call. The swarm ID must be read directly from the swarm detail view's own state/props — no user input or confirmation required. The dialog must call the backend's law token creation function with this swarm ID correctly populated so that the 'Parent Swarm does not exist' error no longer occurs.",
       "reqIds": [
         "REQ-1"
       ],
-      "status": "pending"
+      "version": 1
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Make getGraphData() public (remove auth requirement)",
+  "new_feature_requests": [],
+  "projectName": "Fix SwarmDetailView to auto-inject current swarm ID when creating law tokens",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

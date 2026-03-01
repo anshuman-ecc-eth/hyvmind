@@ -1,23 +1,24 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T12:16:05.099Z",
-  "summary": "The diff modifies backend/main.mo and project_state.json. The main.mo file is truncated so the exact getGraphData() function body cannot be verified directly, but the project_state.json reflects the architectural note that getGraphData() is now public. However, since the diff is truncated before reaching the getGraphData() function definition, we cannot confirm the specific signature change or removal of AccessControl.hasPermission and Runtime.trap. The project_state.json shows AR-1 status as 'pending', which raises concern about whether the implementation is actually complete.",
+  "generatedAt": "2026-03-01T07:34:57.108Z",
+  "summary": "The diff modifies CreateLawTokenDialog.tsx to use parentLocation.parentSwarmId when calling actor.createLocation, which is intended to fix the 'Parent Swarm does not exist' error. However, the diff does not show any changes to SwarmDetailView itself — where the swarm ID should be read from the view's own state/props and passed into the dialog. Without seeing SwarmDetailView changes, it is unclear whether the swarm ID is actually being injected from the swarm detail view's state/props correctly.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "In backend/main.mo, change getGraphData() signature from public query ({ caller }) to public query ({ }) and remove the AccessControl.hasPermission check and Runtime.trap guard block.",
-      "reason": "The diff for backend/main.mo is truncated before reaching the getGraphData() function definition, so the required signature change and removal of the authorization guard cannot be confirmed. Additionally, project_state.json still marks AR-1 status as 'pending', suggesting the implementation may not be complete.",
+      "requirement": "In SwarmDetailView, when the Yes or No plus button is clicked, automatically pass the currently displayed swarm's ID as the parent swarm ID into the dialog's creation call. The swarm ID must be read directly from the swarm detail view's own state/props.",
+      "reason": "The diff shows no modifications to SwarmDetailView. There is no evidence that SwarmDetailView was updated to read its own swarm ID from state/props and pass it into CreateLawTokenDialog. The fix in CreateLawTokenDialog relies on parentLocation.parentSwarmId, but it is unknown whether SwarmDetailView correctly populates this field when opening the dialog.",
       "evidence": [
-        "backend/main.mo",
-        "project_state.json"
+        "frontend/src/components/CreateLawTokenDialog.tsx",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
   "hallucinated_features": [],
-  "confidence": 0.45,
+  "confidence": 0.55,
   "changed_files": [
-    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/CreateLawTokenDialog.tsx",
     "project_state.json"
   ]
 }

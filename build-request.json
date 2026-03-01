@@ -1,38 +1,42 @@
 {
   "kind": "build_request",
-  "title": "Make getGraphData() public (remove auth requirement)",
-  "priority": "normal",
+  "title": "Fix SwarmDetailView to auto-inject current swarm ID when creating law tokens",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In backend/main.mo, remove the { caller } binding and the AccessControl.hasPermission check from the getGraphData() query function so it is publicly accessible without authentication. The function signature should change from `public query ({ caller }) func getGraphData() : async GraphData` to `public query ({ }) func getGraphData() : async GraphData`, and the Runtime.trap(\"Unauthorized: ...\") guard block should be deleted entirely.",
-      "target": "backend",
+      "text": "In SwarmDetailView, when the Yes or No plus button is clicked to open the CreateLawTokenDialog, automatically pass the currently displayed swarm's ID as the parent swarm ID into the dialog's creation call. The swarm ID must be read directly from the swarm detail view's own state/props — no user input or confirmation required. The dialog must call the backend's law token creation function with this swarm ID correctly populated so that the 'Parent Swarm does not exist' error no longer occurs.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
-          "msg-7"
+          "msg-1",
+          "msg-2",
+          "msg-3"
         ],
         "quotes": [
-          "Remove auth check from getGraphData() in backend",
-          "getGraphData() requires #user permission, but landing page uses anonymous actor",
-          "Remove the { caller } and the permission check entirely (lines 1718-1720)"
+          "the relevant swarm ID should be automatically fed, without user confirmation",
+          "The plus buttons in SwarmDetailView are not passing the current swarm's ID correctly when calling the create law token function",
+          "I'll make it a focused single-file change to the SwarmDetailView component to ensure the current swarm's ID is automatically injected into the law token creation call"
         ]
       },
       "acceptanceCriteria": [
-        "getGraphData() is declared as `public query ({ }) func getGraphData() : async GraphData` with no caller binding",
-        "The AccessControl.hasPermission check and Runtime.trap call are removed from getGraphData()",
-        "An anonymous (unauthenticated) actor can successfully call getGraphData() without receiving an authorization error",
-        "The landing page's LandingGraphDiagram component can fetch graph data on first visit without a cached response"
+        "Clicking the Yes or No plus button on a swarm's detail view opens the CreateLawTokenDialog without triggering 'Parent Swarm does not exist' error",
+        "The current swarm's ID is automatically injected into the law token creation call without any user input",
+        "A law token is successfully created and associated with the correct parent swarm under the Yes or No location",
+        "After successful creation, the UI remains on the swarm detail view page",
+        "The new law token appears in the correct Yes or No panel of the swarm detail view after creation"
       ]
     }
   ],
   "constraints": [
-    "Only modify the getGraphData() function — do not alter any other access control checks in backend/main.mo"
+    "Only modify SwarmDetailView and/or CreateLawTokenDialog — do not change backend logic or other frontend files unless strictly necessary",
+    "Do not require user confirmation or additional UI steps to pass the swarm ID",
+    "UI must stay on the swarm detail view page after law token creation"
   ],
   "nonGoals": [
-    "Making any other backend endpoints public",
-    "Changes to frontend authentication logic",
-    "Modifying the landing page cache behavior"
+    "Changing the backend createLocation or law token creation logic",
+    "Modifying any other view or dialog unrelated to law token creation from SwarmDetailView",
+    "Adding new navigation flows after law token creation"
   ],
   "imageRequirements": {
     "required": [],
