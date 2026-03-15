@@ -88,7 +88,6 @@ export const LawToken = IDL.Record({
   'id' : NodeId,
   'parentLocationId' : NodeId,
   'creator' : IDL.Principal,
-  'meaning' : IDL.Text,
   'timestamps' : Timestamps,
   'tokenLabel' : IDL.Text,
 });
@@ -334,7 +333,6 @@ export const idlFactory = ({ IDL }) => {
     'id' : NodeId,
     'parentLocationId' : NodeId,
     'creator' : IDL.Principal,
-    'meaning' : IDL.Text,
     'timestamps' : Timestamps,
     'tokenLabel' : IDL.Text,
   });

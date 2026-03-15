@@ -246,10 +246,8 @@ function generateOutgoingTriples(
     }
 
     case "LawToken": {
-      const lawToken = nodeInfo.data as LawToken;
+      const _lawToken = nodeInfo.data as LawToken;
 
-      // Add meaning
-      triples.push(`hm:hasMeaning "${escapeTurtleLiteral(lawToken.meaning)}"`);
       break;
     }
 

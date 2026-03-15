@@ -1,10 +1,11 @@
-import type { LawToken } from "@/backend";
+import type { LawToken, Location } from "@/backend";
 import { Card, CardContent } from "@/components/ui/card";
 import { useActor } from "@/hooks/useActor";
 import { useQuery } from "@tanstack/react-query";
 
 interface LawTokenCardProps {
   lawToken: LawToken;
+  locations?: Location[];
 }
 
 function useCreatorProfile(principal: string) {
@@ -37,21 +38,31 @@ function formatTimestamp(time: bigint): string {
 
 function shortenPrincipal(principal: string): string {
   if (principal.length <= 12) return principal;
-  return `${principal.slice(0, 5)}…${principal.slice(-4)}`;
+  return `${principal.slice(0, 5)}\u2026${principal.slice(-4)}`;
 }
 
-export default function LawTokenCard({ lawToken }: LawTokenCardProps) {
+export default function LawTokenCard({
+  lawToken,
+  locations,
+}: LawTokenCardProps) {
   const creatorPrincipal = lawToken.creator.toString();
   const { data: profile } = useCreatorProfile(creatorPrincipal);
 
   const displayName = profile?.name ?? shortenPrincipal(creatorPrincipal);
+  const parentLocation = locations?.find(
+    (l) => l.id === lawToken.parentLocationId,
+  );
+
+  const contentLabel = parentLocation
+    ? `${parentLocation.title} · ${lawToken.tokenLabel}`
+    : lawToken.tokenLabel;
 
   return (
     <Card className="border border-border bg-card shadow-none">
       <CardContent className="p-3 space-y-2">
-        {/* Content / meaning */}
+        {/* Location title + token label */}
         <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-          {lawToken.meaning || lawToken.tokenLabel}
+          {contentLabel}
         </p>
 
         {/* Footer: creator + timestamp */}

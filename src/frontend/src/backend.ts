@@ -120,7 +120,6 @@ export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
     creator: Principal;
-    meaning: string;
     timestamps: Timestamps;
     tokenLabel: string;
 }

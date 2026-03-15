@@ -11,7 +11,9 @@ import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Runtime "mo:core/Runtime";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -54,10 +56,10 @@ actor {
     timestamps : Timestamps;
   };
 
+  // removed meaning from LawToken
   type LawToken = {
     id : NodeId;
     tokenLabel : Text;
-    meaning : Text;
     parentLocationId : NodeId;
     creator : Principal;
     timestamps : Timestamps;
@@ -1333,7 +1335,6 @@ actor {
             let newLawToken = {
               id = newId;
               tokenLabel = cleanToken;
-              meaning = "Law token extracted from content";
               parentLocationId = location.id;
               creator;
               timestamps = {

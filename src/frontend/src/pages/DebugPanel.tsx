@@ -363,10 +363,17 @@ export default function DebugPanel() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">
-                                Meaning
+                                Location · Label
                               </p>
                               <p className="text-sm">
-                                {lawToken.meaning || "No meaning"}
+                                {(() => {
+                                  const loc = graphData.locations.find(
+                                    (l) => l.id === lawToken.parentLocationId,
+                                  );
+                                  return loc
+                                    ? `${loc.title} · ${lawToken.tokenLabel}`
+                                    : lawToken.tokenLabel;
+                                })()}
                               </p>
                             </div>
                             <div>

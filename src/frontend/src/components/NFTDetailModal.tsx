@@ -254,9 +254,9 @@ export default function NFTDetailModal({
 
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground mb-1">
-                    Meaning
+                    Location · Label
                   </dt>
-                  <dd className="text-sm">{(token as LawToken).meaning}</dd>
+                  <dd className="text-sm">{(token as LawToken).tokenLabel}</dd>
                 </div>
               </>
             ) : (
