@@ -32,8 +32,14 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
 
   const edges: GraphEdge[] = [];
 
-  for (const lawToken of lawTokens) {
-    edges.push({ source: lawToken.parentLocationId, target: lawToken.id });
+  if (owned.edges && owned.edges.length > 0) {
+    for (const edge of owned.edges) {
+      edges.push(edge);
+    }
+  } else {
+    for (const lawToken of lawTokens) {
+      edges.push({ source: lawToken.parentLocationId, target: lawToken.id });
+    }
   }
   for (const location of locations) {
     edges.push({ source: location.parentSwarmId, target: location.id });

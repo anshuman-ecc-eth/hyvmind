@@ -11,9 +11,9 @@ import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -252,6 +252,7 @@ actor {
     locations : [Location];
     lawTokens : [LawToken];
     interpretationTokens : [InterpretationToken];
+    edges : [GraphEdge];
   };
 
   // Addition: Get archived node IDs
@@ -1876,12 +1877,24 @@ actor {
       };
     };
 
+    let ownedEdges = List.empty<GraphEdge>();
+    for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
+      if (not archivedNodes.containsKey(locationId)) {
+        for (lawTokenId in lawTokenIds.values()) {
+          if (not archivedNodes.containsKey(lawTokenId)) {
+            ownedEdges.add({ source = locationId; target = lawTokenId });
+          };
+        };
+      };
+    };
+
     {
       curations = ownedCurations.toArray();
       swarms = ownedSwarms.toArray();
       locations = ownedLocations.toArray();
       lawTokens = ownedLawTokens.toArray();
       interpretationTokens = ownedInterpretationTokens.toArray();
+      edges = ownedEdges.toArray();
     };
   };
 };

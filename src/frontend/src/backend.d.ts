@@ -75,6 +75,7 @@ export interface OwnedGraphData {
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
+    edges: Array<GraphEdge>;
 }
 export interface CollectibleEdition {
     tokenId: NodeId;
