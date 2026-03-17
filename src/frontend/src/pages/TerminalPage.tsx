@@ -12,6 +12,8 @@ import {
   useCreateLocation,
   useCreateSwarm,
   useGetGraphData,
+  useIsCallerAdmin,
+  useResetAllData,
 } from "../hooks/useQueries";
 import {
   executeArchiveCommand,
@@ -19,6 +21,8 @@ import {
 } from "../utils/terminalCommands";
 import {
   formatArchiveMissingNameError,
+  formatDebugError,
+  formatDebugHelpText,
   formatFilterMissingNameError,
   formatFilterResults,
   formatFindResults,
@@ -48,7 +52,7 @@ import {
 import { convertTTLToMermaid } from "../utils/ttlToMermaid";
 
 export interface TerminalMessage {
-  type: "command" | "success" | "error" | "example" | "ontology";
+  type: "command" | "success" | "error" | "example" | "ontology" | "normal";
   text: string;
   timestamp: number;
   ontologyData?: {
@@ -111,6 +115,8 @@ export default function TerminalPage() {
     useState<PendingExecution | null>(null);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [pendingDebugJson, setPendingDebugJson] = useState<string | null>(null);
+  const [debugResetPending, setDebugResetPending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +127,8 @@ export default function TerminalPage() {
   const { data: graphData } = useGetGraphData();
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { data: isAdmin } = useIsCallerAdmin();
+  const resetAllData = useResetAllData();
 
   // Persist messages whenever they change
   useEffect(() => {
@@ -146,7 +154,7 @@ export default function TerminalPage() {
   }, []);
 
   const addMessage = (
-    type: "command" | "success" | "error" | "example" | "ontology",
+    type: "command" | "success" | "error" | "example" | "ontology" | "normal",
     text: string,
     ontologyData?: {
       turtleText: string;
@@ -167,7 +175,11 @@ export default function TerminalPage() {
 
   const handleHelp = () => {
     const helpText = formatHelpText();
-    addMessage("success", helpText);
+    if (isAdmin) {
+      addMessage("success", `${helpText}\n\n${formatDebugHelpText(true)}`);
+    } else {
+      addMessage("success", helpText);
+    }
   };
 
   const handleClear = () => {
@@ -544,6 +556,269 @@ export default function TerminalPage() {
     }
   };
 
+  const handleDebug = async (
+    action: string,
+    fields: Record<string, string | string[]>,
+  ) => {
+    if (!isAdmin) {
+      addMessage("error", formatDebugError("Access denied. Admin only."));
+      return;
+    }
+    if (!actor) {
+      addMessage("error", formatDebugError("Actor not available."));
+      return;
+    }
+
+    const bigIntReplacer = (_: string, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v;
+
+    const showJsonPrompt = (data: unknown) => {
+      const json = JSON.stringify(data, bigIntReplacer, 2);
+      setPendingDebugJson(json);
+      addMessage("normal", "Show full JSON? (Y/N)");
+    };
+
+    try {
+      switch (action) {
+        case "ownedgraph": {
+          const owned = await actor.getMyOwnedGraphData();
+          addMessage(
+            "success",
+            `📊 Owned graph: ${owned.curations.length} curations, ${owned.swarms.length} swarms, ${owned.locations.length} locations, ${owned.lawTokens.length} law tokens, ${owned.interpretationTokens.length} interpretation tokens`,
+          );
+          showJsonPrompt(owned);
+          break;
+        }
+        case "allgraph": {
+          const data = await actor.getGraphData();
+          addMessage(
+            "success",
+            `📊 All graph: ${data.curations.length} curations, ${data.swarms.length} swarms, ${data.locations.length} locations, ${data.lawTokens.length} law tokens, ${data.interpretationTokens.length} interpretation tokens`,
+          );
+          showJsonPrompt(data);
+          break;
+        }
+        case "archived": {
+          const ids = await actor.getArchivedNodeIds();
+          addMessage("success", `📋 Archived nodes: ${ids.length} total`);
+          showJsonPrompt(ids);
+          break;
+        }
+        case "profile": {
+          const profile = await actor.getCallerUserProfile();
+          addMessage("success", "👤 Caller profile retrieved");
+          showJsonPrompt(profile);
+          break;
+        }
+        case "role": {
+          const role = await actor.getCallerUserRole();
+          addMessage(
+            "success",
+            `🔑 Caller role: ${JSON.stringify(role, bigIntReplacer)}`,
+          );
+          break;
+        }
+        case "admin": {
+          const adminResult = await actor.isCallerAdmin();
+          addMessage("success", `🔐 Is admin: ${adminResult}`);
+          break;
+        }
+        case "approved": {
+          const approved = await actor.isCallerApproved();
+          addMessage("success", `✅ Is approved: ${approved}`);
+          break;
+        }
+        case "approvals": {
+          const approvals = await actor.listApprovals();
+          addMessage("success", `📋 Approvals: ${approvals.length} entries`);
+          showJsonPrompt(approvals);
+          break;
+        }
+        case "swarmsbycreator": {
+          const swarms = await actor.getSwarmsByCreator();
+          addMessage("success", `🌀 Swarms by creator: ${swarms.length}`);
+          showJsonPrompt(swarms);
+          break;
+        }
+        case "leaderboard": {
+          const lb = await actor.getBuzzLeaderboard();
+          addMessage("success", `🏆 Leaderboard: ${lb.length} entries`);
+          showJsonPrompt(lb);
+          break;
+        }
+        case "mybuzz": {
+          const buzz = await actor.getMyBuzzBalance();
+          const display =
+            typeof buzz === "bigint" ? Number(buzz) / 10_000_000 : buzz;
+          addMessage("success", `💰 BUZZ balance: ${display}`);
+          break;
+        }
+        case "mintsets": {
+          const settings = await actor.getMintSettings();
+          addMessage("success", "⚙️ Mint settings retrieved");
+          showJsonPrompt(settings);
+          break;
+        }
+        case "swarm": {
+          const swarmId = fields?.swarmId as string;
+          if (!swarmId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: swarmId"),
+            );
+            return;
+          }
+          const members = await actor.getSwarmMembers(swarmId);
+          addMessage(
+            "success",
+            `👥 Swarm members for ${swarmId}: ${members.length}`,
+          );
+          showJsonPrompt(members);
+          break;
+        }
+        case "requests": {
+          const swarmId = fields?.swarmId as string;
+          if (!swarmId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: swarmId"),
+            );
+            return;
+          }
+          const requests = await actor.getSwarmMembershipRequests(swarmId);
+          addMessage(
+            "success",
+            `📨 Membership requests for ${swarmId}: ${requests.length}`,
+          );
+          showJsonPrompt(requests);
+          break;
+        }
+        case "updates": {
+          const swarmId = fields?.swarmId as string;
+          if (!swarmId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: swarmId"),
+            );
+            return;
+          }
+          const updates = await actor.getSwarmUpdatesForUser(swarmId);
+          const count = Array.isArray(updates) ? updates.length : 1;
+          addMessage("success", `🔔 Swarm updates for ${swarmId}: ${count}`);
+          showJsonPrompt(updates);
+          break;
+        }
+        case "unvoted": {
+          const swarmId = fields?.swarmId as string;
+          if (!swarmId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: swarmId"),
+            );
+            return;
+          }
+          const graphDataAll = await actor.getGraphData();
+          const swarmLocations = graphDataAll.locations.filter(
+            (l) => l.parentSwarmId === swarmId,
+          );
+          const locationIds = new Set(swarmLocations.map((l) => l.id));
+          const unvotedTokens = graphDataAll.lawTokens.filter((t) =>
+            locationIds.has(t.parentLocationId),
+          );
+          addMessage(
+            "success",
+            `🗳️ Tokens in swarm ${swarmId} locations: ${unvotedTokens.length}`,
+          );
+          showJsonPrompt(unvotedTokens);
+          break;
+        }
+        case "vote": {
+          const nodeId = fields?.nodeId as string;
+          if (!nodeId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: nodeId"),
+            );
+            return;
+          }
+          const voteData = await actor.getVoteData(nodeId);
+          addMessage("success", `🗳️ Vote data for ${nodeId} retrieved`);
+          showJsonPrompt(voteData);
+          break;
+        }
+        case "editions": {
+          const nodeId = fields?.nodeId as string;
+          if (!nodeId) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: nodeId"),
+            );
+            return;
+          }
+          const editions = await actor.getCollectibleEditions(nodeId);
+          addMessage(
+            "success",
+            `🎴 Collectible editions for ${nodeId}: ${editions.length}`,
+          );
+          showJsonPrompt(editions);
+          break;
+        }
+        case "userprofile": {
+          const user = fields?.user as string;
+          if (!user) {
+            addMessage(
+              "error",
+              formatDebugError("Missing required param: user"),
+            );
+            return;
+          }
+          const userProfile = await actor.getUserProfile(user as any);
+          addMessage("success", `👤 User profile for ${user} retrieved`);
+          showJsonPrompt(userProfile);
+          break;
+        }
+        case "userlawtokens": {
+          const ownedData = await actor.getMyOwnedGraphData();
+          addMessage(
+            "success",
+            `⚖️ User law tokens: ${ownedData.lawTokens.length}`,
+          );
+          showJsonPrompt(ownedData.lawTokens);
+          break;
+        }
+        case "userinterp": {
+          const ownedData = await actor.getMyOwnedGraphData();
+          addMessage(
+            "success",
+            `💡 User interpretation tokens: ${ownedData.interpretationTokens.length}`,
+          );
+          showJsonPrompt(ownedData.interpretationTokens);
+          break;
+        }
+        case "reset": {
+          setDebugResetPending(true);
+          addMessage("normal", "⚠️ Type 'yes' to confirm reset:");
+          break;
+        }
+        default: {
+          addMessage(
+            "error",
+            formatDebugError(
+              `Unknown action: "${action}". Type /help for available debug actions.`,
+            ),
+          );
+        }
+      }
+    } catch (error) {
+      addMessage(
+        "error",
+        formatDebugError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      );
+    }
+  };
+
   const findNodeById = (
     nodeId: string,
     graphData: GraphData,
@@ -690,6 +965,44 @@ export default function TerminalPage() {
 
     addMessage("command", input);
 
+    // Handle pending debug JSON display
+    if (pendingDebugJson !== null) {
+      const answer = input.trim().toLowerCase();
+      if (answer === "y" || answer === "yes") {
+        addMessage("normal", pendingDebugJson);
+      } else {
+        addMessage("normal", "JSON display skipped.");
+      }
+      setPendingDebugJson(null);
+      setInput("");
+      return;
+    }
+
+    // Handle pending debug reset confirmation
+    if (debugResetPending) {
+      const answer = input.trim();
+      if (answer === "yes") {
+        try {
+          await resetAllData.mutateAsync();
+          addMessage("success", "✅ All data has been reset.");
+        } catch (error) {
+          addMessage(
+            "error",
+            formatDebugError(
+              `Reset failed: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            ),
+          );
+        }
+      } else {
+        addMessage("normal", "Reset cancelled.");
+      }
+      setDebugResetPending(false);
+      setInput("");
+      return;
+    }
+
     const parsed = parseCommand(input);
 
     if (!parsed.success) {
@@ -751,6 +1064,25 @@ export default function TerminalPage() {
       const nodeName = fields?.name as string;
       setInput("");
       await handleArchive(nodeName);
+      return;
+    }
+
+    if (command === "debug") {
+      const action = (argument || "").trim();
+      if (!action) {
+        addMessage(
+          "error",
+          formatDebugError(
+            "Missing action. Usage: /debug <action> [paramName=value]",
+          ),
+        );
+      } else {
+        await handleDebug(
+          action,
+          (fields || {}) as Record<string, string | string[]>,
+        );
+      }
+      setInput("");
       return;
     }
 
@@ -1013,7 +1345,8 @@ export default function TerminalPage() {
   };
 
   const renderMessage = (message: TerminalMessage, index: number) => {
-    const emoji = getMessageTypeEmoji(message.type);
+    const emoji =
+      message.type !== "normal" ? getMessageTypeEmoji(message.type) : undefined;
 
     if (message.type === "ontology" && message.ontologyData) {
       return (
@@ -1040,12 +1373,25 @@ export default function TerminalPage() {
       );
     }
 
+    if (message.type === "normal") {
+      return (
+        <div
+          key={index}
+          className="mb-1 text-sm text-muted-foreground font-mono whitespace-pre-wrap"
+        >
+          {message.text}
+        </div>
+      );
+    }
+
     const tokens = formatTerminalOutput(message.text, message.type);
 
     return (
       <div
         key={index}
-        className={`mb-1 text-sm ${message.type === "error" ? "text-destructive" : "text-foreground"}`}
+        className={`mb-1 text-sm ${
+          message.type === "error" ? "text-destructive" : "text-foreground"
+        }`}
       >
         {emoji && <span className="mr-1">{emoji}</span>}
         {renderLineTokens(tokens)}
@@ -1110,7 +1456,11 @@ export default function TerminalPage() {
                 ? "Archiving..."
                 : pendingExecution
                   ? "Select an option above with ↑/↓ then Enter..."
-                  : "Type a command (e.g. /help)"
+                  : pendingDebugJson !== null
+                    ? "Enter Y to show JSON or N to skip..."
+                    : debugResetPending
+                      ? "Type 'yes' to confirm reset..."
+                      : "Type a command (e.g. /help)"
             }
             disabled={isArchiving || !!pendingExecution}
             className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 font-mono text-sm placeholder:text-muted-foreground/50"

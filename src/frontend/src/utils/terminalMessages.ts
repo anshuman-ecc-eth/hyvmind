@@ -123,7 +123,7 @@ export function formatFilterResults(
   }>,
 ): string {
   const lines = [
-    `Found ${results.length} result${results.length === 1 ? "" : "es"}:\n`,
+    `Found ${results.length} result${results.length === 1 ? "" : "s"}:\n`,
   ];
 
   for (const result of results) {
@@ -134,4 +134,49 @@ export function formatFilterResults(
   }
 
   return lines.join("\n");
+}
+
+export function formatDebugError(message: string): string {
+  return `❌ Debug error: ${message}`;
+}
+
+export function formatDebugHelpText(isAdmin: boolean): string {
+  if (!isAdmin) {
+    return "❌ Access denied. Admin only.";
+  }
+  return `Debug Commands (Admin Only):
+
+Syntax: /debug <action> [paramName=value]
+
+Actions:
+  ownedgraph              Get caller's owned graph data
+  allgraph                Get all public graph data
+  archived                Get all archived node IDs
+  profile                 Get caller user profile
+  role                    Get caller user role
+  admin                   Check if caller is admin
+  approved                Check if caller is approved
+  approvals               List all approvals
+  swarmsbycreator         Get swarms created by caller
+  leaderboard             Get BUZZ leaderboard
+  mybuzz                  Get my BUZZ balance
+  mintsets                Get mint settings
+  swarm swarmId=<id>      Get swarm members
+  requests swarmId=<id>   Get swarm membership requests
+  updates swarmId=<id>    Get swarm updates for user
+  unvoted swarmId=<id>    Get unvoted tokens for swarm
+  vote nodeId=<id>        Get vote data for node
+  editions nodeId=<id>    Get collectible editions for node
+  userprofile user=<id>   Get user profile by principal
+  userlawtokens           Get my law tokens
+  userinterp              Get my interpretation tokens
+  reset                   Reset all data (requires confirmation)
+
+Examples:
+  /debug admin
+  /debug ownedgraph
+  /debug allgraph
+  /debug swarm swarmId=s_abc123
+  /debug vote nodeId=t_abc123
+  /debug reset`;
 }
