@@ -36,8 +36,8 @@ export function parseCommand(input: string): ParsedCommand {
   const command = commandMatch[1];
   const rest = trimmed.slice(commandMatch[0].length);
 
-  // Special handling for /find command (takes a simple argument, not key=value)
-  if (command === "find") {
+  // Special handling for /find and /debug commands (take a simple argument, not key=value)
+  if (command === "find" || command === "debug") {
     return {
       success: true,
       command,
