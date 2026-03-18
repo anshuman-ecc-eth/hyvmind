@@ -33,28 +33,30 @@ export default function SwarmDetailView({
   const locations =
     graphData?.locations.filter((l) => l.parentSwarmId === swarmId) || [];
 
-  // Find Yes/No locations by customAttribute side
-  const yesLocation = locations.find((l) =>
+  // Find all Yes/No locations by customAttribute side
+  const yesLocations = locations.filter((l) =>
     l.customAttributes?.some(
       (attr: CustomAttribute) =>
         attr.key === "side" && attr.value.toLowerCase() === "yes",
     ),
   );
-  const noLocation = locations.find((l) =>
+  const noLocations = locations.filter((l) =>
     l.customAttributes?.some(
       (attr: CustomAttribute) =>
         attr.key === "side" && attr.value.toLowerCase() === "no",
     ),
   );
 
-  // Law tokens for each side
+  // Law tokens for each side — collect across all matching locations
   const allLawTokens = graphData?.lawTokens || [];
-  const yesLawTokens = yesLocation
-    ? allLawTokens.filter((lt) => lt.parentLocationId === yesLocation.id)
-    : [];
-  const noLawTokens = noLocation
-    ? allLawTokens.filter((lt) => lt.parentLocationId === noLocation.id)
-    : [];
+  const yesLocationIds = yesLocations.map((l) => l.id);
+  const noLocationIds = noLocations.map((l) => l.id);
+  const yesLawTokens = allLawTokens.filter((lt) =>
+    yesLocationIds.includes(lt.parentLocationId),
+  );
+  const noLawTokens = allLawTokens.filter((lt) =>
+    noLocationIds.includes(lt.parentLocationId),
+  );
 
   const isAuthenticated = !!identity;
 
