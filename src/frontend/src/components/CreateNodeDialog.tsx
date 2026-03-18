@@ -117,12 +117,13 @@ export default function CreateNodeDialog({
     createInterpretationToken.isPending;
 
   // Detect if the swarm being created is a question-of-law swarm
+  const normalizedTags = swarmTags
+    .split(",")
+    .map((t) => t.trim().toLowerCase());
   const isQuestionOfLaw =
     nodeType === "swarm" &&
-    swarmTags
-      .split(",")
-      .map((t) => t.trim().toLowerCase())
-      .includes("question-of-law");
+    (normalizedTags.includes("question-of-law") ||
+      normalizedTags.includes("qol"));
 
   // Sync props into state when dialog opens
   useEffect(() => {
@@ -176,7 +177,12 @@ export default function CreateNodeDialog({
       } else if (nodeType === "swarm") {
         const tags = swarmTags
           .split(",")
-          .map((t) => t.trim())
+          .map((t) => {
+            const trimmed = t.trim();
+            return trimmed.toLowerCase() === "qol"
+              ? "question-of-law"
+              : trimmed;
+          })
           .filter(Boolean);
         await createSwarm.mutateAsync({
           name: swarmName,
@@ -343,11 +349,11 @@ export default function CreateNodeDialog({
               />
             </div>
             <div className="space-y-1">
-              <Label>Tags (comma-separated)</Label>
+              <Label>Tag (comma-separated)</Label>
               <Input
                 value={swarmTags}
                 onChange={(e) => setSwarmTags(e.target.value)}
-                placeholder="e.g. question-of-law, policy"
+                placeholder="e.g. question-of-law"
               />
             </div>
 

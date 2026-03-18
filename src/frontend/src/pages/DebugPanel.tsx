@@ -158,9 +158,7 @@ export default function DebugPanel() {
                             <p className="text-sm font-mono">{swarm.id}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">
-                              Tags
-                            </p>
+                            <p className="text-xs text-muted-foreground">Tag</p>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {swarm.tags.length > 0 ? (
                                 swarm.tags.map((tag) => (

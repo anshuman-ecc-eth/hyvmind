@@ -138,7 +138,7 @@ export default function PublishCollectibleModal({
           {/* Tags */}
           {swarmTags.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Tags</Label>
+              <Label>Tag</Label>
               <div className="flex flex-wrap gap-1.5">
                 {swarmTags.map((tag) => (
                   <Badge
