@@ -11,9 +11,7 @@ import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -1850,6 +1848,18 @@ actor {
         };
       };
     };
+    for ((sublocationId, lawTokenIds) in sublocationLawTokenRelations.entries()) {
+      if (not archivedNodes.containsKey(sublocationId)) {
+        for (lawTokenId in lawTokenIds.values()) {
+          if (not archivedNodes.containsKey(lawTokenId)) {
+            edges.add({
+              source = sublocationId;
+              target = lawTokenId;
+            });
+          };
+        };
+      };
+    };
 
     for ((fromTokenId, fromEdgesList) in interpretationTokenFromEdges.entries()) {
       // Skip if the fromToken itself is archived
@@ -1947,6 +1957,17 @@ actor {
         for (lawTokenId in lawTokenIds.values()) {
           if (not archivedNodes.containsKey(lawTokenId)) {
             ownedEdges.add({ source = locationId; target = lawTokenId });
+          };
+        };
+      };
+    };
+    for ((sublocationId, lawTokenIds) in sublocationLawTokenRelations.entries()) {
+      if (ownedSublocations.toArray() |> _.find(func(sl : Sublocation) : Bool { sl.id == sublocationId }) != null) {
+        if (not archivedNodes.containsKey(sublocationId)) {
+          for (lawTokenId in lawTokenIds.values()) {
+            if (not archivedNodes.containsKey(lawTokenId)) {
+              ownedEdges.add({ source = sublocationId; target = lawTokenId });
+            };
           };
         };
       };

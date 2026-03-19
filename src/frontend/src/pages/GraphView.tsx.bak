@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
-  forceCenter,
-  forceCollide,
-  forceLink,
-  forceManyBody,
-  forceSimulation,
-} from "d3-force";
-import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
@@ -150,48 +143,6 @@ class SpatialIndex {
   }
 }
 
-const LEFT_PANEL_WIDTH = 352;
-const RIGHT_PANEL_WIDTH = 352;
-const BOTTOM_PANEL_HEIGHT = 220;
-const FILL_RATIO = 0.8;
-
-const calculateAutoFitTransform = (
-  nodes: LayoutNode[],
-  viewportWidth: number,
-  viewportHeight: number,
-) => {
-  if (nodes.length === 0) return { scale: 1, offsetX: 0, offsetY: 0 };
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-  for (const node of nodes) {
-    minX = Math.min(minX, node.x);
-    maxX = Math.max(maxX, node.x);
-    minY = Math.min(minY, node.y);
-    maxY = Math.max(maxY, node.y);
-  }
-  const graphWidth = maxX - minX || 1;
-  const graphHeight = maxY - minY || 1;
-  const centerX = (minX + maxX) / 2;
-  const centerY = (minY + maxY) / 2;
-  const usableWidth = viewportWidth - LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH;
-  const usableHeight = viewportHeight - BOTTOM_PANEL_HEIGHT;
-  const viewportCenterX =
-    (LEFT_PANEL_WIDTH + viewportWidth - RIGHT_PANEL_WIDTH) / 2;
-  const viewportCenterY = usableHeight / 2;
-  const scale = Math.min(
-    (usableWidth * FILL_RATIO) / graphWidth,
-    (usableHeight * FILL_RATIO) / graphHeight,
-    1,
-  );
-  return {
-    scale,
-    offsetX: viewportCenterX - centerX * scale,
-    offsetY: viewportCenterY - centerY * scale,
-  };
-};
-
 // Cache key for layout persistence
 const LAYOUT_CACHE_KEY = "graphViewLayoutCache";
 
@@ -261,37 +212,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
 
   // Transition state - only for fade effects
   const [fadeOpacity, setFadeOpacity] = useState(1);
-  const [_isAnimating, _setIsAnimating] = useState(false);
-
-  const _animateNodes = (
-    from: LayoutNode[],
-    to: LayoutNode[],
-    onComplete: () => void,
-  ) => {
-    const fromMap = new Map(from.map((n) => [n.id, n]));
-    const duration = 400;
-    const startTime = performance.now();
-    const easing = (t: number) => 1 - (1 - t) ** 3;
-    const animate = (currentTime: number) => {
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const eased = easing(progress);
-      const current = to.map((t) => {
-        const f = fromMap.get(t.id);
-        return {
-          ...t,
-          x: (f?.x ?? t.x) + (t.x - (f?.x ?? t.x)) * eased,
-          y: (f?.y ?? t.y) + (t.y - (f?.y ?? t.y)) * eased,
-        };
-      });
-      setSubgraphNodes(current);
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        onComplete();
-      }
-    };
-    requestAnimationFrame(animate);
-  };
 
   // Subgraph selector search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -315,16 +235,15 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     const saved = sessionStorage.getItem("graphViewNodeSize");
     return saved ? Number.parseInt(saved, 10) : 20;
   });
-
-  const [edgeDistance, setEdgeDistance] = useState(() => {
-    const saved = sessionStorage.getItem("graphViewEdgeDistance");
-    return saved ? Number.parseInt(saved, 10) : 100;
-  });
   const [edgeThickness, setEdgeThickness] = useState(() => {
     const saved = sessionStorage.getItem("graphViewEdgeThickness");
     return saved ? Number.parseInt(saved, 10) : 2;
   });
 
+  // Node dragging state (only for subgraph)
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<LayoutNode | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -502,35 +421,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     );
   }, [isControlsCollapsed]);
 
-  // Re-run force layout when edgeDistance changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only edgeDistance triggers this
-  useEffect(() => {
-    if (nodes.length === 0) return;
-    const positioned = computeForceLayout(
-      nodes,
-      links,
-      width / 2,
-      height / 2,
-      edgeDistance,
-    );
-    setNodes(positioned);
-    if (subgraphMode && subgraphCenterNode) {
-      const subNodes = positioned.filter((n) =>
-        subgraphNodes.some((s) => s.id === n.id),
-      );
-      const centerNode =
-        subNodes.find((n) => n.id === subgraphCenterNode.id) ?? subNodes[0];
-      if (centerNode) {
-        computeSubgraphLayout(
-          subNodes,
-          subgraphLinks,
-          centerNode,
-          edgeDistance,
-        );
-      }
-    }
-  }, [edgeDistance]);
-
   // Save control settings to session storage
   useEffect(() => {
     sessionStorage.setItem("graphViewNodeSize", nodeSize.toString());
@@ -548,78 +438,51 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   const height = typeof window !== "undefined" ? window.innerHeight - 128 : 800;
 
   // Automatic layout engine - computes layout once during initial render
-  const computeForceLayout = useCallback(
-    (
-      layoutNodes: LayoutNode[],
-      layoutLinks: LayoutLink[],
-      centerX: number,
-      centerY: number,
-      edgeDist: number,
-    ): LayoutNode[] => {
-      if (layoutNodes.length === 0) return layoutNodes;
+  const computeAutomaticLayout = useCallback(
+    (layoutNodes: LayoutNode[], linkDistance: number) => {
+      const centerX = width / 2;
+      const centerY = height / 2;
 
-      type SimNode = LayoutNode & { index?: number };
-      const simNodes: SimNode[] = layoutNodes.map((n) => ({ ...n }));
-      const nodeById = new Map(simNodes.map((n) => [n.id, n]));
+      // Improved node spacing to prevent overlapping
+      const minNodeSpacing = nodeSize * 3;
 
-      type SimLink = { source: SimNode; target: SimNode };
-      const simLinks: SimLink[] = layoutLinks
-        .filter((l) => nodeById.has(l.source) && nodeById.has(l.target))
-        .map((l) => ({
-          source: nodeById.get(l.source)!,
-          target: nodeById.get(l.target)!,
-        }));
+      // Use concentric layout as the automatic layout algorithm
+      const levelGroups = new Map<number, LayoutNode[]>();
+      // biome-ignore lint/complexity/noForEach: imperative code
+      layoutNodes.forEach((node) => {
+        if (!levelGroups.has(node.level)) {
+          levelGroups.set(node.level, []);
+        }
+        levelGroups.get(node.level)!.push(node);
+      });
 
-      const simulation = forceSimulation<SimNode>(simNodes)
-        .force(
-          "link",
-          forceLink<SimNode, SimLink>(simLinks)
-            .distance(edgeDist)
-            .strength(0.5),
-        )
-        .force("charge", forceManyBody<SimNode>().strength(-300))
-        .force("center", forceCenter<SimNode>(centerX, centerY))
-        .force("collide", forceCollide<SimNode>(nodeSize * 1.5))
-        .alphaDecay(0.02)
-        .stop();
+      levelGroups.forEach((nodesInLevel, level) => {
+        const nodesCount = nodesInLevel.length;
+        const circumference = nodesCount * minNodeSpacing;
+        const minRadius = circumference / (2 * Math.PI);
+        const radius = Math.max((level + 1) * (linkDistance * 0.8), minRadius);
 
-      // Fire once and settle synchronously
-      simulation.tick(300);
+        nodesInLevel.forEach((node, i) => {
+          const angle = (i / nodesInLevel.length) * 2 * Math.PI;
+          node.x = centerX + radius * Math.cos(angle);
+          node.y = centerY + radius * Math.sin(angle);
+        });
+      });
 
-      // Write final positions back
-      for (const sn of simNodes) {
-        unifiedLayoutRef.current.nodes.set(sn.id, { x: sn.x, y: sn.y });
-      }
+      // Freeze coordinates immediately after computation
+      // biome-ignore lint/complexity/noForEach: imperative code
+      layoutNodes.forEach((node) => {
+        unifiedLayoutRef.current.nodes.set(node.id, { x: node.x, y: node.y });
+      });
+
       unifiedLayoutRef.current.layoutComputed = true;
       saveLayoutCache();
 
-      return layoutNodes.map((n) => {
-        const sn = nodeById.get(n.id);
-        return sn ? { ...n, x: sn.x, y: sn.y } : n;
-      });
+      return layoutNodes;
     },
-    [nodeSize, saveLayoutCache],
+    [width, height, nodeSize, saveLayoutCache],
   );
 
-  const computeSubgraphLayout = (
-    subNodes: LayoutNode[],
-    subLinks: LayoutLink[],
-    centerNode: LayoutNode,
-    edgeDist: number,
-  ) => {
-    const positioned = computeForceLayout(
-      subNodes,
-      subLinks,
-      centerNode.x,
-      centerNode.y,
-      edgeDist,
-    );
-    setSubgraphNodes(positioned);
-    for (const n of positioned) {
-      unifiedLayoutRef.current.nodes.set(n.id, { x: n.x, y: n.y });
-    }
-    saveLayoutCache();
-  };
   // Build nodes and links from graph data
   useEffect(() => {
     if (!graphData) return;
@@ -844,14 +707,13 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       unifiedLayoutRef.current.nodeCount === currentNodeCount &&
       unifiedLayoutRef.current.edgeCount === currentEdgeCount;
 
-    // Compute force layout on initial render or when graph topology changes
+    // Compute layout only once during initial render or when counts change
     if (!unifiedLayoutRef.current.layoutComputed || !countsUnchanged) {
-      positionedNodes = computeForceLayout(
+      // Use default edge distance for layout computation
+      const defaultEdgeDistance = 120;
+      positionedNodes = computeAutomaticLayout(
         layoutNodes,
-        layoutLinks,
-        width / 2,
-        height / 2,
-        edgeDistance,
+        defaultEdgeDistance,
       );
       unifiedLayoutRef.current.nodeCount = currentNodeCount;
       unifiedLayoutRef.current.edgeCount = currentEdgeCount;
@@ -861,10 +723,9 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
 
     setNodes(positionedNodes);
     setLinks(layoutLinks);
-  }, [graphData, computeForceLayout, width, height, edgeDistance]);
+  }, [graphData, computeAutomaticLayout, width, height]);
 
   // Build subgraph when center node or depth changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: animateNodes is stable within render cycle
   useEffect(() => {
     if (!subgraphCenterNode || !subgraphMode) return;
 
@@ -902,62 +763,26 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       });
     }
 
-    // Get raw positions from unified layout
-    const rawSubNodes = nodes
+    // Use unified layout positions for subgraph nodes
+    const subNodes = nodes
       .filter((n) => connectedNodeIds.has(n.id))
       .map((n) => {
         const unifiedPos = unifiedLayoutRef.current.nodes.get(n.id);
-        return { ...n, x: unifiedPos?.x ?? n.x, y: unifiedPos?.y ?? n.y };
+        return {
+          ...n,
+          x: unifiedPos?.x ?? n.x,
+          y: unifiedPos?.y ?? n.y,
+        };
       });
 
-    // Calculate auto-fit transform for usable viewport
-    const { scale, offsetX, offsetY } = calculateAutoFitTransform(
-      rawSubNodes,
-      width,
-      height,
-    );
-
-    // Apply transform to get fitted positions
-    const fittedSubNodes = rawSubNodes.map((node) => ({
-      ...node,
-      x: node.x * scale + offsetX,
-      y: node.y * scale + offsetY,
-    }));
-
-    // Set auto-fit positions immediately, then run force simulation from there (single animation)
-    setSubgraphNodes(fittedSubNodes);
+    setSubgraphNodes(subNodes);
     setSubgraphLinks(connectedLinks);
-    const fittedCenterNode =
-      fittedSubNodes.find((n) => n.id === subgraphCenterNode.id) ??
-      fittedSubNodes[0];
-    if (fittedCenterNode) {
-      computeSubgraphLayout(
-        fittedSubNodes,
-        connectedLinks,
-        fittedCenterNode,
-        edgeDistance,
-      );
-    }
-
-    // Reset zoom and pan for subgraph view
-    setZoom(1.0);
-    setPan({ x: 0, y: 0 });
-    unifiedLayoutRef.current.zoom = 1.0;
-    unifiedLayoutRef.current.pan = { x: 0, y: 0 };
 
     // Set initial keyboard focus to center node when entering subgraph
-    if (rawSubNodes.length > 0) {
+    if (subNodes.length > 0) {
       setKeyboardFocusedNodeId(subgraphCenterNode.id);
     }
-  }, [
-    subgraphCenterNode,
-    subgraphDepth,
-    subgraphMode,
-    nodes,
-    links,
-    width,
-    height,
-  ]);
+  }, [subgraphCenterNode, subgraphDepth, subgraphMode, nodes, links]);
 
   // Build spatial indices when nodes change
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
@@ -1904,6 +1729,53 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       saveLayoutCache();
 
       setPanStart({ x: e.clientX, y: e.clientY });
+    } else if (isDraggingNode && draggedNodeId) {
+      const deltaX = world.x - dragStart.x;
+      const deltaY = world.y - dragStart.y;
+
+      setSubgraphNodes((prevNodes) => {
+        const newNodes = [...prevNodes];
+        const draggedNode = newNodes.find((n) => n.id === draggedNodeId);
+        if (!draggedNode) return prevNodes;
+
+        const connectedNodeIds = new Set<string>();
+        connectedNodeIds.add(draggedNodeId);
+
+        // biome-ignore lint/complexity/noForEach: imperative code
+        subgraphLinks.forEach((link) => {
+          if (link.source === draggedNodeId) connectedNodeIds.add(link.target);
+          if (link.target === draggedNodeId) connectedNodeIds.add(link.source);
+        });
+
+        draggedNode.x = world.x;
+        draggedNode.y = world.y;
+
+        // Update unified layout state with manual repositioning
+        unifiedLayoutRef.current.nodes.set(draggedNodeId, {
+          x: world.x,
+          y: world.y,
+        });
+
+        // biome-ignore lint/complexity/noForEach: imperative code
+        connectedNodeIds.forEach((connectedId) => {
+          if (connectedId === draggedNodeId) return;
+          const connectedNode = newNodes.find((n) => n.id === connectedId);
+          if (connectedNode) {
+            connectedNode.x += deltaX;
+            connectedNode.y += deltaY;
+            // Update unified layout state with manual repositioning
+            unifiedLayoutRef.current.nodes.set(connectedId, {
+              x: connectedNode.x,
+              y: connectedNode.y,
+            });
+          }
+        });
+
+        saveLayoutCache();
+        return newNodes;
+      });
+
+      setDragStart({ x: world.x, y: world.y });
     } else {
       // Update hovered node
       const node = findNodeAtPosition(world.x, world.y, subgraphMode);
@@ -1913,6 +1785,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
 
   const handleMouseUp = () => {
     setIsPanning(false);
+    setIsDraggingNode(false);
+    setDraggedNodeId(null);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -1930,6 +1804,10 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         if (!isNodeInViewport(node)) {
           panToNode(node);
         }
+
+        setIsDraggingNode(true);
+        setDraggedNodeId(node.id);
+        setDragStart({ x: world.x, y: world.y });
       } else {
         // Enter subgraph mode with smooth fade transition
         setSubgraphCenterNode(node);
@@ -1944,11 +1822,14 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         setFadeOpacity(0.3);
 
         setTimeout(() => {
+          // Switch to subgraph mode
           setSubgraphMode(true);
+
+          // Fade in subgraph
           setTimeout(() => {
             setFadeOpacity(1);
-          }, 200);
-        }, 50);
+          }, 50);
+        }, 300);
       }
     } else {
       setIsPanning(true);
@@ -1973,15 +1854,20 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   };
 
   const closeSubgraph = () => {
+    // Start fade-out transition
     setFadeOpacity(0.3);
+
     setTimeout(() => {
+      // Exit subgraph mode
       setSubgraphMode(false);
       setSubgraphCenterNode(null);
       setKeyboardFocusedNodeId(null);
+
+      // Fade in main graph
       setTimeout(() => {
         setFadeOpacity(1);
-      }, 200);
-    }, 50);
+      }, 50);
+    }, 300);
   };
 
   const handleSearchResultClick = (node: LayoutNode) => {
@@ -2000,11 +1886,14 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     setFadeOpacity(0.3);
 
     setTimeout(() => {
+      // Switch to subgraph mode
       setSubgraphMode(true);
+
+      // Fade in subgraph
       setTimeout(() => {
         setFadeOpacity(1);
-      }, 200);
-    }, 50);
+      }, 50);
+    }, 300);
   };
 
   if (isLoading) {
@@ -2520,31 +2409,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
                     step={1}
                     value={[edgeThickness]}
                     onValueChange={(value) => setEdgeThickness(value[0])}
-                    className="cursor-pointer"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edge-distance"
-                    className="text-xs text-muted-foreground"
-                  >
-                    Edge Distance: {edgeDistance}
-                  </Label>
-                  <Slider
-                    id="edge-distance"
-                    min={50}
-                    max={300}
-                    step={5}
-                    value={[edgeDistance]}
-                    onValueChange={(value) => {
-                      const val = value[0];
-                      setEdgeDistance(val);
-                      sessionStorage.setItem(
-                        "graphViewEdgeDistance",
-                        val.toString(),
-                      );
-                    }}
                     className="cursor-pointer"
                   />
                 </div>

@@ -58,6 +58,24 @@ export default function SwarmDetailView({
     noLocationIds.includes(lt.parentLocationId),
   );
 
+  // Build sublocation lookup: lawTokenId → Sublocation[]
+  const allSublocations = graphData?.sublocations ?? [];
+  const edges = graphData?.edges ?? [];
+  const sublocationIds = new Set(allSublocations.map((sl) => sl.id));
+
+  const sublocationsByLawTokenId: Record<string, typeof allSublocations> = {};
+  for (const edge of edges) {
+    // edge.source = sublocationId, edge.target = lawTokenId
+    if (sublocationIds.has(edge.source)) {
+      const lawTokenId = edge.target;
+      if (!sublocationsByLawTokenId[lawTokenId]) {
+        sublocationsByLawTokenId[lawTokenId] = [];
+      }
+      const sl = allSublocations.find((s) => s.id === edge.source);
+      if (sl) sublocationsByLawTokenId[lawTokenId].push(sl);
+    }
+  }
+
   const isAuthenticated = !!identity;
 
   const isCreator =
@@ -144,7 +162,7 @@ export default function SwarmDetailView({
                   key={lt.id}
                   lawToken={lt}
                   locations={locations}
-                  sublocations={graphData?.sublocations ?? []}
+                  sublocations={sublocationsByLawTokenId[lt.id] ?? []}
                 />
               ))
             )}
@@ -182,7 +200,7 @@ export default function SwarmDetailView({
                   key={lt.id}
                   lawToken={lt}
                   locations={locations}
-                  sublocations={graphData?.sublocations ?? []}
+                  sublocations={sublocationsByLawTokenId[lt.id] ?? []}
                 />
               ))
             )}
