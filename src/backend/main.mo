@@ -11,9 +11,9 @@ import Order "mo:core/Order";
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Runtime "mo:core/Runtime";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -56,7 +56,7 @@ actor {
     timestamps : Timestamps;
   };
 
-  // removed meaning from LawToken
+  // Not needed anymore but required for data migration
   type LawToken = {
     id : NodeId;
     tokenLabel : Text;
@@ -531,11 +531,10 @@ actor {
       Runtime.trap("Unauthorized: Only authenticated users can create curations");
     };
 
-    let uniqueName = getNextAvailableCurationName(name);
-    let id = generateId("curation", uniqueName, caller);
+    let id = generateId("curation", name, caller);
     let newCuration = {
       id;
-      name = uniqueName;
+      name;
       creator = caller;
       jurisdiction;
       timestamps = {
@@ -545,26 +544,6 @@ actor {
     curationMap.add(id, newCuration);
 
     id;
-  };
-
-  func getNextAvailableCurationName(baseName : Text) : Text {
-    var version : Nat = 1;
-    var currentName = baseName;
-
-    let nameExists = func(name : Text) : Bool {
-      curationMap.values().any(func(curation : Curation) : Bool { curation.name == name });
-    };
-
-    func nameWithVersion(name : Text, ver : Nat) : Text {
-      name # " (v" # ver.toText() # ")";
-    };
-
-    while (nameExists(currentName)) {
-      version += 1;
-      currentName := nameWithVersion(baseName, version);
-    };
-
-    currentName;
   };
 
   public shared ({ caller }) func createSwarm(name : Text, tags : [Tag], parentCurationId : NodeId) : async NodeId {
@@ -582,12 +561,10 @@ actor {
     // Determine if this swarm is "question-of-law"
     let isQuestionOfLaw = tags.any(func(tag) { tag == "question-of-law" });
 
-    let uniqueName = generateGlobalUniqueSwarmName(name);
-
-    let id = generateId("swarm", uniqueName, caller);
+    let id = generateId("swarm", name, caller);
     let newSwarm = {
       id;
-      name = uniqueName;
+      name;
       tags;
       parentCurationId;
       creator = caller;
@@ -604,29 +581,6 @@ actor {
     autoUpvoteNode(id, caller);
 
     id;
-  };
-
-  func generateGlobalUniqueSwarmName(baseName : Text) : Text {
-    var suffix : Nat = 1;
-    let allNames = List.empty<Text>();
-    for (swarm in swarmMap.values()) {
-      allNames.add(swarm.name);
-    };
-
-    func nameExists(name : Text) : Bool {
-      allNames.any(func(existing : Text) : Bool { Text.equal(existing, name) });
-    };
-
-    func nameWithSuffix(name : Text, num : Nat) : Text {
-      name # "_" # num.toText();
-    };
-
-    var candidate = baseName;
-    while (nameExists(candidate)) {
-      candidate := nameWithSuffix(baseName, suffix);
-      suffix += 1;
-    };
-    candidate;
   };
 
   public shared ({ caller }) func createLocation(
@@ -650,7 +604,7 @@ actor {
     };
 
     let finalTitle = title.trim(#char ' ');
-    let finalVersion = getNextAvailableLocationVersion(parentSwarmId, finalTitle);
+    let version = 1;
 
     let id = generateId("location", finalTitle, caller);
 
@@ -662,7 +616,7 @@ actor {
       customAttributes;
       parentSwarmId;
       creator = caller;
-      version = finalVersion;
+      version;
       timestamps = {
         createdAt = Time.now();
       };
@@ -688,18 +642,6 @@ actor {
     addSwarmUpdateForContributors(locationUpdate, ?parentSwarmId);
 
     id;
-  };
-
-  func getNextAvailableLocationVersion(parentSwarmId : NodeId, title : Text) : Nat {
-    var maxVersion : Nat = 0;
-    for (location in locationMap.values()) {
-      if (location.parentSwarmId == parentSwarmId and location.title == title) {
-        if (location.version > maxVersion) {
-          maxVersion := location.version;
-        };
-      };
-    };
-    maxVersion + 1;
   };
 
   public shared ({ caller }) func createInterpretationToken(
@@ -1327,78 +1269,32 @@ actor {
       let cleanToken = token.trim(#char ' ');
 
       if (cleanToken.size() != 0) {
-        let existingToken = findExistingLawToken(cleanToken, ?location.parentSwarmId);
-
-        let lawTokenId = switch (existingToken) {
-          case (?existing) { existing.id };
-          case (null) {
-            let newId = generateId("lawToken", cleanToken, creator);
-            let newLawToken = {
-              id = newId;
-              tokenLabel = cleanToken;
-              parentLocationId = location.id;
-              creator;
-              timestamps = {
-                createdAt = Time.now();
-              };
-            };
-            lawTokenMap.add(newId, newLawToken);
-            autoUpvoteNode(newId, creator);
-            tokensCreated += 1;
-            newId;
+        let newId = generateId("lawToken", cleanToken, creator);
+        let newLawToken = {
+          id = newId;
+          tokenLabel = cleanToken;
+          parentLocationId = location.id;
+          creator;
+          timestamps = {
+            createdAt = Time.now();
           };
         };
+        lawTokenMap.add(newId, newLawToken);
+        autoUpvoteNode(newId, creator);
+        tokensCreated += 1;
+        let lawTokenId = newId;
 
         let currentRelations = switch (locationLawTokenRelations.get(location.id)) {
           case (null) { List.empty<NodeId>() };
           case (?relations) { relations };
         };
 
-        let relationExists = currentRelations.any(func(id : NodeId) : Bool { id == lawTokenId });
-
-        if (not relationExists) {
-          currentRelations.add(lawTokenId);
-          locationLawTokenRelations.add(location.id, currentRelations);
-        };
+        currentRelations.add(lawTokenId);
+        locationLawTokenRelations.add(location.id, currentRelations);
       };
     };
 
     tokensCreated;
-  };
-
-  func findExistingLawToken(tokenLabel : Text, requiredSwarmId : ?NodeId) : ?LawToken {
-    for (lawToken in lawTokenMap.values()) {
-      if (Text.equal(lawToken.tokenLabel, tokenLabel)) {
-        switch (requiredSwarmId) {
-          case (?swarmId) {
-            switch (locationMap.get(lawToken.parentLocationId)) {
-              case (?location) {
-                if (location.parentSwarmId == swarmId) {
-                  return ?lawToken;
-                };
-              };
-              case (null) {};
-            };
-          };
-          case (null) { return ?lawToken };
-        };
-      };
-    };
-    null;
-  };
-
-  func lawTokenExistsInSwarm(tokenLabel : Text, requiredSwarmId : NodeId) : Bool {
-    for (lawToken in lawTokenMap.values()) {
-      if (Text.equal(lawToken.tokenLabel, tokenLabel)) {
-        switch (locationMap.get(lawToken.parentLocationId)) {
-          case (?location) {
-            if (location.parentSwarmId == requiredSwarmId) { return true };
-          };
-          case (null) {};
-        };
-      };
-    };
-    false;
   };
 
   func generateId(prefix : Text, input : Text, creatorPrincipal : Principal) : NodeId {

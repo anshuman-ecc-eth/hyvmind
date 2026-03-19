@@ -153,11 +153,11 @@ export interface GraphNode {
 }
 export interface OwnedGraphData {
     curations: Array<Curation>;
+    edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
-    edges: Array<GraphEdge>;
 }
 export interface CollectibleEdition {
     tokenId: NodeId;
@@ -999,12 +999,14 @@ function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     curations: Array<_Curation>;
+    edges: Array<_GraphEdge>;
     locations: Array<_Location>;
     swarms: Array<_Swarm>;
     lawTokens: Array<_LawToken>;
     interpretationTokens: Array<_InterpretationToken>;
 }): {
     curations: Array<Curation>;
+    edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
@@ -1012,6 +1014,7 @@ function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         curations: value.curations,
+        edges: value.edges,
         locations: value.locations,
         swarms: value.swarms,
         lawTokens: value.lawTokens,

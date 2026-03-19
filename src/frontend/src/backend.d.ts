@@ -71,11 +71,11 @@ export interface GraphNode {
 }
 export interface OwnedGraphData {
     curations: Array<Curation>;
+    edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
-    edges: Array<GraphEdge>;
 }
 export interface CollectibleEdition {
     tokenId: NodeId;

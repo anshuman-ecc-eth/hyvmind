@@ -117,6 +117,7 @@ export const GraphData = IDL.Record({
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const OwnedGraphData = IDL.Record({
   'curations' : IDL.Vec(Curation),
+  'edges' : IDL.Vec(GraphEdge),
   'locations' : IDL.Vec(Location),
   'swarms' : IDL.Vec(Swarm),
   'lawTokens' : IDL.Vec(LawToken),
@@ -362,6 +363,7 @@ export const idlFactory = ({ IDL }) => {
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const OwnedGraphData = IDL.Record({
     'curations' : IDL.Vec(Curation),
+    'edges' : IDL.Vec(GraphEdge),
     'locations' : IDL.Vec(Location),
     'swarms' : IDL.Vec(Swarm),
     'lawTokens' : IDL.Vec(LawToken),
