@@ -52,6 +52,12 @@ Create Commands:
   Example:
     /i name="Interpretation 1" context="Analysis of Union" from="Union" to="territory"
 
+/sl name=<name> attached=<law-token-name>[,<law-token-name>] [content=<text>]
+  Create a Sublocation attached to one or more Law Tokens
+  Example:
+    /sl name="Sub-section A" attached="Union"
+    /sl name="Sub-section B" attached="Union,territory" content="Details here"
+
 Attribute Format:
   attr=key:value,key:value
   Supports typed tags: tag[type] where type is string, number, boolean, or date

@@ -34,6 +34,15 @@ export type MintCollectibleResult = {
     __kind__: "tokenNotFound";
     tokenNotFound: null;
 };
+export interface Sublocation {
+    id: NodeId;
+    originalTokenSequence: string;
+    title: string;
+    creator: Principal;
+    content: string;
+    timestamps: Timestamps;
+}
+export type Time = bigint;
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -41,7 +50,6 @@ export interface LawToken {
     timestamps: Timestamps;
     tokenLabel: string;
 }
-export type Time = bigint;
 export interface BuzzLeaderboardEntry {
     principal: Principal;
     score: BuzzScore;
@@ -74,6 +82,7 @@ export interface OwnedGraphData {
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
@@ -130,6 +139,7 @@ export interface GraphData {
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
@@ -189,6 +199,7 @@ export interface backendInterface {
     createCuration(name: string, jurisdiction: string): Promise<NodeId>;
     createInterpretationToken(title: string, context: string, fromTokenId: NodeId, fromRelationshipType: string, fromDirectionality: Directionality, toNodeId: NodeId, toRelationshipType: string, toDirectionality: Directionality, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
     createLocation(title: string, content: string, originalTokenSequence: string, customAttributes: Array<CustomAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
+    createSublocation(title: string, content: string, originalTokenSequence: string, parentLawTokenIds: Array<NodeId>): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;

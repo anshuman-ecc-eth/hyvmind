@@ -50,6 +50,7 @@ interface NodeTypeFilters {
   location: boolean;
   lawToken: boolean;
   interpretationToken: boolean;
+  sublocation: boolean;
 }
 
 interface GraphViewProps {
@@ -267,6 +268,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         location: true,
         lawToken: true,
         interpretationToken: true,
+        sublocation: true,
       };
     },
   );
@@ -609,6 +611,38 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       }
     });
 
+    // Add sublocations as independent nodes
+    if (graphData.sublocations) {
+      // biome-ignore lint/complexity/noForEach: imperative code
+      graphData.sublocations.forEach((sublocation) => {
+        if (!processedNodes.has(sublocation.id)) {
+          processedNodes.add(sublocation.id);
+          const unifiedPos = unifiedLayoutRef.current.nodes.get(sublocation.id);
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const randomRadius = 300;
+          const angle = Math.random() * 2 * Math.PI;
+          const layoutNode: LayoutNode = {
+            id: sublocation.id,
+            label: sublocation.title,
+            type: "sublocation",
+            level: 4,
+            x:
+              unifiedPos?.x ??
+              centerX + Math.cos(angle) * randomRadius * Math.random(),
+            y:
+              unifiedPos?.y ??
+              centerY + Math.sin(angle) * randomRadius * Math.random(),
+            upvotes: 0,
+            downvotes: 0,
+            opacity: 1,
+          };
+          layoutNodes.push(layoutNode);
+          newNodesMap.set(sublocation.id, layoutNode);
+        }
+      });
+    }
+
     // Add edges from graph data (including interpretation token edges)
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.edges.forEach((edge: GraphEdge) => {
@@ -833,6 +867,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         return colors.lawToken;
       case "interpretationToken":
         return colors.interpretationToken;
+      case "sublocation":
+        return isDark ? "#4DB6AC" : "#00897B";
       default:
         return isDark ? "#888888" : "#666666";
     }
@@ -2274,6 +2310,24 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
                     className="text-xs cursor-pointer select-none"
                   >
                     Interpretation Token
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="filter-sublocation"
+                    checked={nodeTypeFilters.sublocation}
+                    onCheckedChange={() => toggleNodeTypeFilter("sublocation")}
+                    className="data-[state=checked]:bg-accent data-[state=checked]:border-accent"
+                  />
+                  <div
+                    className="h-4 w-4 rounded-full"
+                    style={{ backgroundColor: getNodeColor("sublocation") }}
+                  />
+                  <label
+                    htmlFor="filter-sublocation"
+                    className="text-xs cursor-pointer select-none"
+                  >
+                    Sublocation
                   </label>
                 </div>
               </div>

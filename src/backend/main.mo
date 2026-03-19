@@ -56,11 +56,19 @@ actor {
     timestamps : Timestamps;
   };
 
-  // Not needed anymore but required for data migration
   type LawToken = {
     id : NodeId;
     tokenLabel : Text;
     parentLocationId : NodeId;
+    creator : Principal;
+    timestamps : Timestamps;
+  };
+
+  type Sublocation = {
+    id : NodeId;
+    title : Text;
+    content : Text;
+    originalTokenSequence : Text;
     creator : Principal;
     timestamps : Timestamps;
   };
@@ -160,6 +168,8 @@ actor {
   var swarmMap = Map.empty<NodeId, Swarm>();
   var locationMap = Map.empty<NodeId, Location>();
   var lawTokenMap = Map.empty<NodeId, LawToken>();
+  var sublocationMap = Map.empty<NodeId, Sublocation>();
+  var sublocationLawTokenRelations = Map.empty<NodeId, List.List<NodeId>>();
   var interpretationTokenMap = Map.empty<NodeId, InterpretationToken>();
   var membershipRequests = Map.empty<NodeId, List.List<SwarmMembership>>();
   var userProfiles = Map.empty<Principal, UserProfile>();
@@ -240,6 +250,7 @@ actor {
     swarms : [Swarm];
     locations : [Location];
     lawTokens : [LawToken];
+    sublocations : [Sublocation];
     interpretationTokens : [InterpretationToken];
     rootNodes : [GraphNode];
     edges : [GraphEdge];
@@ -251,6 +262,7 @@ actor {
     swarms : [Swarm];
     locations : [Location];
     lawTokens : [LawToken];
+    sublocations : [Sublocation];
     interpretationTokens : [InterpretationToken];
     edges : [GraphEdge];
   };
@@ -644,6 +656,70 @@ actor {
     id;
   };
 
+  public shared ({ caller }) func createSublocation(
+    title : Text,
+    content : Text,
+    originalTokenSequence : Text,
+    parentLawTokenIds : [NodeId]
+  ) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can create sublocations");
+    };
+
+    // Validate each parent law token exists and check swarm access
+    for (parentLawTokenId in parentLawTokenIds.values()) {
+      if (not lawTokenMap.containsKey(parentLawTokenId)) {
+        Runtime.trap("Parent law token does not exist");
+      };
+
+      // Authorization check: verify caller has access to the swarm this law token belongs to
+      let swarmId = getNodeSwarmId(parentLawTokenId);
+      switch (swarmId) {
+        case (null) { Runtime.trap("Cannot determine swarm for parent law token") };
+        case (?sid) {
+          if (not isSwarmCreatorOrMember(caller, sid)) {
+            Runtime.trap("Unauthorized: Only swarm creator or approved members can create sublocations attached to this law token");
+          };
+        };
+      };
+    };
+
+    let id = generateId("sublocation", title, caller);
+    let newSublocation = {
+      id;
+      title;
+      content;
+      originalTokenSequence;
+      creator = caller;
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+    sublocationMap.add(id, newSublocation);
+
+    for (parentLawTokenId in parentLawTokenIds.values()) {
+      let existingRelations = switch (sublocationLawTokenRelations.get(id)) {
+        case (null) { List.empty<NodeId>() };
+        case (?relations) { relations };
+      };
+      existingRelations.add(parentLawTokenId);
+      sublocationLawTokenRelations.add(id, existingRelations);
+
+      let existingLawTokenRelations = switch (locationLawTokenRelations.get(parentLawTokenId)) {
+        case (null) { List.empty<NodeId>() };
+        case (?relations) { relations };
+      };
+      existingLawTokenRelations.add(id);
+      locationLawTokenRelations.add(parentLawTokenId, existingLawTokenRelations);
+    };
+
+    let lawTokensCreated = createLawTokensForSublocation(newSublocation, caller);
+    updateBuzzScoreOnLawTokenCreation(caller, lawTokensCreated);
+
+    autoUpvoteNode(id, caller);
+    id;
+  };
+
   public shared ({ caller }) func createInterpretationToken(
     title : Text,
     context : Text,
@@ -760,6 +836,7 @@ actor {
   func isValidFromNode(nodeId : NodeId) : Bool {
     locationMap.containsKey(nodeId) or
     lawTokenMap.containsKey(nodeId) or
+    sublocationMap.containsKey(nodeId) or
     interpretationTokenMap.containsKey(nodeId)
   };
 
@@ -767,6 +844,7 @@ actor {
   func isValidToNode(nodeId : NodeId) : Bool {
     locationMap.containsKey(nodeId) or
     lawTokenMap.containsKey(nodeId) or
+    sublocationMap.containsKey(nodeId) or
     interpretationTokenMap.containsKey(nodeId)
   };
 
@@ -800,12 +878,40 @@ actor {
       case (null) {};
     };
 
+    switch (sublocationMap.get(nodeId)) {
+      case (?_sublocation) {
+        switch (sublocationLawTokenRelations.get(nodeId)) {
+          case (null) { return null };
+          case (?lawTokenIds) {
+            switch (lawTokenIds.first()) {
+              case (null) { return null };
+              case (?lawTokenId) {
+                switch (lawTokenMap.get(lawTokenId)) {
+                  case (?lawToken) {
+                    switch (locationMap.get(lawToken.parentLocationId)) {
+                      case (?location) { return ?location.parentSwarmId };
+                      case (null) { return null };
+                    };
+                  };
+                  case (null) { return null };
+                };
+              };
+            };
+          };
+        };
+      };
+      case (null) {};
+    };
+
     switch (interpretationTokenMap.get(nodeId)) {
       case (?interpretationToken) {
         if (locationMap.containsKey(interpretationToken.fromTokenId)) {
           return getNodeSwarmId(interpretationToken.fromTokenId);
         };
         if (lawTokenMap.containsKey(interpretationToken.fromTokenId)) {
+          return getNodeSwarmId(interpretationToken.fromTokenId);
+        };
+        if (sublocationMap.containsKey(interpretationToken.fromTokenId)) {
           return getNodeSwarmId(interpretationToken.fromTokenId);
         };
         if (interpretationTokenMap.containsKey(interpretationToken.fromTokenId)) {
@@ -816,6 +922,46 @@ actor {
     };
 
     null;
+  };
+
+  func createLawTokensForSublocation(sublocation : Sublocation, creator : Principal) : Nat {
+    let tokens = splitByCurlyBrackets(sublocation.content);
+
+    var tokensCreated : Nat = 0;
+
+    for (token in tokens.values()) {
+      let cleanToken = token.trim(#char ' ');
+
+      if (cleanToken.size() != 0) {
+        let newId = generateId("lawToken", cleanToken, creator);
+
+        let newLawToken = {
+          id = newId;
+          tokenLabel = cleanToken;
+          parentLocationId = sublocation.id;
+          creator;
+          timestamps = {
+            createdAt = Time.now();
+          };
+        };
+
+        lawTokenMap.add(newId, newLawToken);
+        autoUpvoteNode(newId, creator);
+        tokensCreated += 1;
+
+        let lawTokenId = newId;
+
+        let currentRelations = switch (locationLawTokenRelations.get(sublocation.id)) {
+          case (null) { List.empty<NodeId>() };
+          case (?relations) { relations };
+        };
+
+        currentRelations.add(lawTokenId);
+        locationLawTokenRelations.add(sublocation.id, currentRelations);
+      };
+    };
+
+    tokensCreated;
   };
 
   // VOTING OPERATIONS
@@ -943,6 +1089,7 @@ actor {
     swarmMap.containsKey(nodeId) or
     locationMap.containsKey(nodeId) or
     lawTokenMap.containsKey(nodeId) or
+    sublocationMap.containsKey(nodeId) or
     interpretationTokenMap.containsKey(nodeId)
   };
 
@@ -1131,6 +1278,8 @@ actor {
     swarmMap := Map.empty<NodeId, Swarm>();
     locationMap := Map.empty<NodeId, Location>();
     lawTokenMap := Map.empty<NodeId, LawToken>();
+    sublocationMap := Map.empty<NodeId, Sublocation>();
+    sublocationLawTokenRelations := Map.empty<NodeId, List.List<NodeId>>();
     interpretationTokenMap := Map.empty<NodeId, InterpretationToken>();
     membershipRequests := Map.empty<NodeId, List.List<SwarmMembership>>();
     locationLawTokenRelations := Map.empty<NodeId, List.List<NodeId>>();
@@ -1255,6 +1404,10 @@ actor {
     };
     switch (interpretationTokenMap.get(nodeId)) {
       case (?interpretationToken) { return ?interpretationToken.creator };
+      case (null) {};
+    };
+    switch (sublocationMap.get(nodeId)) {
+      case (?sublocation) { return ?sublocation.creator };
       case (null) {};
     };
     null;
@@ -1664,6 +1817,13 @@ actor {
       };
     };
 
+    let filteredSublocations = List.empty<Sublocation>();
+    for (sublocation in sublocationMap.values()) {
+      if (not archivedNodes.containsKey(sublocation.id)) {
+        filteredSublocations.add(sublocation);
+      };
+    };
+
     let filteredInterpretationTokens = List.empty<InterpretationToken>();
     for (interpretationToken in interpretationTokenMap.values()) {
       if (not archivedNodes.containsKey(interpretationToken.id)) {
@@ -1726,6 +1886,7 @@ actor {
       swarms = filteredSwarms.toArray();
       locations = filteredLocations.toArray();
       lawTokens = filteredLawTokens.toArray();
+      sublocations = filteredSublocations.toArray();
       interpretationTokens = filteredInterpretationTokens.toArray();
       rootNodes;
       edges = edges.toArray();
@@ -1766,6 +1927,13 @@ actor {
       };
     };
 
+    let ownedSublocations = List.empty<Sublocation>();
+    for (sublocation in sublocationMap.values()) {
+      if (sublocation.creator == caller and not archivedNodes.containsKey(sublocation.id)) {
+        ownedSublocations.add(sublocation);
+      };
+    };
+
     let ownedInterpretationTokens = List.empty<InterpretationToken>();
     for (interpretationToken in interpretationTokenMap.values()) {
       if (interpretationToken.creator == caller and not archivedNodes.containsKey(interpretationToken.id)) {
@@ -1789,6 +1957,7 @@ actor {
       swarms = ownedSwarms.toArray();
       locations = ownedLocations.toArray();
       lawTokens = ownedLawTokens.toArray();
+      sublocations = ownedSublocations.toArray();
       interpretationTokens = ownedInterpretationTokens.toArray();
       edges = ownedEdges.toArray();
     };

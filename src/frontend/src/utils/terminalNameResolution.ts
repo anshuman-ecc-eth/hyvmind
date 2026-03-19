@@ -4,6 +4,7 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
+  Sublocation,
   Swarm,
 } from "../backend";
 
@@ -124,6 +125,18 @@ export function resolveNodeReference(
     }
   }
 
+  if (validTypes.includes("sublocation") && graphData.sublocations) {
+    for (const sublocation of graphData.sublocations as Sublocation[]) {
+      if (sublocation.title.toLowerCase() === lowerRef) {
+        matches.push({
+          id: sublocation.id,
+          name: sublocation.title,
+          type: "Sublocation",
+        });
+      }
+    }
+  }
+
   if (matches.length === 0) {
     return { status: "not-found" };
   }
@@ -149,11 +162,29 @@ function getValidTypesForField(command: string, field: string): string[] {
   }
 
   if (command === "ont" && field === "name") {
-    return ["curation", "swarm", "location", "lawToken", "interpretationToken"];
+    return [
+      "curation",
+      "swarm",
+      "location",
+      "lawToken",
+      "interpretationToken",
+      "sublocation",
+    ];
+  }
+
+  if (command === "sl" && field === "attached") {
+    return ["lawToken"];
   }
 
   if (command === "archive" && field === "name") {
-    return ["curation", "swarm", "location", "lawToken", "interpretationToken"];
+    return [
+      "curation",
+      "swarm",
+      "location",
+      "lawToken",
+      "interpretationToken",
+      "sublocation",
+    ];
   }
 
   if (command === "filter") {
@@ -243,6 +274,19 @@ function findNodeById(
         id: interpretationToken.id,
         name: interpretationToken.title,
         type: "Interpretation Token",
+      };
+    }
+  }
+
+  if (validTypes.includes("sublocation") && graphData.sublocations) {
+    const sublocation = (graphData.sublocations as Sublocation[]).find(
+      (sl) => sl.id === id,
+    );
+    if (sublocation) {
+      return {
+        id: sublocation.id,
+        name: sublocation.title,
+        type: "Sublocation",
       };
     }
   }

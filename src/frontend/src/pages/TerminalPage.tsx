@@ -10,6 +10,7 @@ import {
   useCreateCuration,
   useCreateInterpretationToken,
   useCreateLocation,
+  useCreateSublocation,
   useCreateSwarm,
   useGetGraphData,
   useIsCallerAdmin,
@@ -124,6 +125,7 @@ export default function TerminalPage() {
   const createSwarm = useCreateSwarm();
   const createLocation = useCreateLocation();
   const createInterpretationToken = useCreateInterpretationToken();
+  const createSublocation = useCreateSublocation();
   const { data: graphData } = useGetGraphData();
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -1087,7 +1089,7 @@ export default function TerminalPage() {
     }
 
     // Handle create commands (c, s, l, i)
-    if (["c", "s", "l", "i"].includes(command)) {
+    if (["c", "s", "l", "i", "sl"].includes(command)) {
       if (!graphData) {
         addMessage("error", formatGraphNotLoadedError());
         setInput("");
@@ -1178,6 +1180,45 @@ export default function TerminalPage() {
       if (fields.from)
         fieldsToResolve.push({ field: "from", nodeField: "from" });
       if (fields.to) fieldsToResolve.push({ field: "to", nodeField: "to" });
+    }
+    if (command === "sl" && fields.attached) {
+      // attached is comma-separated names; resolve each individually
+      const attachedRaw = Array.isArray(fields.attached)
+        ? fields.attached[0]
+        : fields.attached;
+      if (attachedRaw) {
+        const names = attachedRaw
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        const resolvedIds: string[] = [];
+        for (const nameStr of names) {
+          const res = resolveNodeReference(
+            nameStr,
+            "sl",
+            "attached",
+            graphData,
+          );
+          if (res.status === "not-found") {
+            return {
+              fields: resolvedFields,
+              error: formatNodeNotFoundError(nameStr, "law token"),
+            };
+          }
+          if (res.status === "ambiguous") {
+            return {
+              fields: resolvedFields,
+              ambiguous: true,
+              ambiguousField: "attached",
+              candidates: res.candidates,
+            };
+          }
+          if (res.status === "resolved") {
+            resolvedIds.push(res.id);
+          }
+        }
+        resolvedFields.attached = resolvedIds.join(",");
+      }
     }
 
     for (const { field } of fieldsToResolve) {
@@ -1324,6 +1365,7 @@ export default function TerminalPage() {
         createSwarm,
         createLocation,
         createInterpretationToken,
+        createSublocation,
       );
 
       if (result.success) {

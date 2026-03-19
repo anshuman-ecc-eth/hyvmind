@@ -44,6 +44,7 @@ export interface GraphData {
   'edges' : Array<GraphEdge>,
   'locations' : Array<Location>,
   'swarms' : Array<Swarm>,
+  'sublocations' : Array<Sublocation>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
 }
@@ -112,8 +113,17 @@ export interface OwnedGraphData {
   'edges' : Array<GraphEdge>,
   'locations' : Array<Location>,
   'swarms' : Array<Swarm>,
+  'sublocations' : Array<Sublocation>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
+}
+export interface Sublocation {
+  'id' : NodeId,
+  'originalTokenSequence' : string,
+  'title' : string,
+  'creator' : Principal,
+  'content' : string,
+  'timestamps' : Timestamps,
 }
 export interface Swarm {
   'id' : NodeId,
@@ -167,6 +177,10 @@ export interface _SERVICE {
   >,
   'createLocation' : ActorMethod<
     [string, string, string, Array<CustomAttribute>, NodeId],
+    NodeId
+  >,
+  'createSublocation' : ActorMethod<
+    [string, string, string, Array<NodeId>],
     NodeId
   >,
   'createSwarm' : ActorMethod<[string, Array<Tag>, NodeId], NodeId>,

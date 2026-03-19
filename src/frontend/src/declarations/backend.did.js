@@ -84,6 +84,14 @@ export const Swarm = IDL.Record({
   'timestamps' : Timestamps,
   'parentCurationId' : NodeId,
 });
+export const Sublocation = IDL.Record({
+  'id' : NodeId,
+  'originalTokenSequence' : IDL.Text,
+  'title' : IDL.Text,
+  'creator' : IDL.Principal,
+  'content' : IDL.Text,
+  'timestamps' : Timestamps,
+});
 export const LawToken = IDL.Record({
   'id' : NodeId,
   'parentLocationId' : NodeId,
@@ -111,6 +119,7 @@ export const GraphData = IDL.Record({
   'edges' : IDL.Vec(GraphEdge),
   'locations' : IDL.Vec(Location),
   'swarms' : IDL.Vec(Swarm),
+  'sublocations' : IDL.Vec(Sublocation),
   'lawTokens' : IDL.Vec(LawToken),
   'interpretationTokens' : IDL.Vec(InterpretationToken),
 });
@@ -120,6 +129,7 @@ export const OwnedGraphData = IDL.Record({
   'edges' : IDL.Vec(GraphEdge),
   'locations' : IDL.Vec(Location),
   'swarms' : IDL.Vec(Swarm),
+  'sublocations' : IDL.Vec(Sublocation),
   'lawTokens' : IDL.Vec(LawToken),
   'interpretationTokens' : IDL.Vec(InterpretationToken),
 });
@@ -195,6 +205,11 @@ export const idlService = IDL.Service({
     ),
   'createLocation' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Vec(CustomAttribute), NodeId],
+      [NodeId],
+      [],
+    ),
+  'createSublocation' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Vec(NodeId)],
       [NodeId],
       [],
     ),
@@ -330,6 +345,14 @@ export const idlFactory = ({ IDL }) => {
     'timestamps' : Timestamps,
     'parentCurationId' : NodeId,
   });
+  const Sublocation = IDL.Record({
+    'id' : NodeId,
+    'originalTokenSequence' : IDL.Text,
+    'title' : IDL.Text,
+    'creator' : IDL.Principal,
+    'content' : IDL.Text,
+    'timestamps' : Timestamps,
+  });
   const LawToken = IDL.Record({
     'id' : NodeId,
     'parentLocationId' : NodeId,
@@ -357,6 +380,7 @@ export const idlFactory = ({ IDL }) => {
     'edges' : IDL.Vec(GraphEdge),
     'locations' : IDL.Vec(Location),
     'swarms' : IDL.Vec(Swarm),
+    'sublocations' : IDL.Vec(Sublocation),
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
@@ -366,6 +390,7 @@ export const idlFactory = ({ IDL }) => {
     'edges' : IDL.Vec(GraphEdge),
     'locations' : IDL.Vec(Location),
     'swarms' : IDL.Vec(Swarm),
+    'sublocations' : IDL.Vec(Sublocation),
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
@@ -438,6 +463,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createLocation' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Vec(CustomAttribute), NodeId],
+        [NodeId],
+        [],
+      ),
+    'createSublocation' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Vec(NodeId)],
         [NodeId],
         [],
       ),

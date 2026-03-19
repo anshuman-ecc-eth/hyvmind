@@ -17,6 +17,7 @@ import type {
   MintSettings,
   NodeId,
   OwnedGraphData,
+  Sublocation,
   Swarm,
   SwarmUpdate,
   Tag,
@@ -121,6 +122,7 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
     locations,
     lawTokens,
     interpretationTokens,
+    sublocations: owned.sublocations ?? [],
     rootNodes,
     edges,
   };
@@ -150,6 +152,7 @@ export function useGetGraphData() {
           locations: [],
           lawTokens: [],
           interpretationTokens: [],
+          sublocations: [],
           rootNodes: [],
           edges: [],
         };
@@ -174,6 +177,7 @@ export function useGetAllGraphData() {
           locations: [],
           lawTokens: [],
           interpretationTokens: [],
+          sublocations: [],
           rootNodes: [],
           edges: [],
         };
@@ -264,6 +268,37 @@ export function useCreateLocation() {
         originalTokenSequence,
         customAttributes,
         parentSwarmId,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
+    },
+  });
+}
+
+export function useCreateSublocation() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      title,
+      content,
+      originalTokenSequence,
+      parentLawTokenIds,
+    }: {
+      title: string;
+      content: string;
+      originalTokenSequence: string;
+      parentLawTokenIds: string[];
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.createSublocation(
+        title,
+        content,
+        originalTokenSequence,
+        parentLawTokenIds,
       );
     },
     onSuccess: () => {

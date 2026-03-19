@@ -4,6 +4,7 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
+  Sublocation,
   Swarm,
 } from "../backend";
 import { sanitizeToLocalName, truncateLabel } from "./ontologySanitize";
@@ -11,8 +12,20 @@ import { sanitizeToLocalName, truncateLabel } from "./ontologySanitize";
 interface NodeInfo {
   id: string;
   name: string;
-  type: "Curation" | "Swarm" | "Location" | "LawToken" | "InterpretationToken";
-  data: Curation | Swarm | Location | LawToken | InterpretationToken;
+  type:
+    | "Curation"
+    | "Swarm"
+    | "Location"
+    | "LawToken"
+    | "InterpretationToken"
+    | "Sublocation";
+  data:
+    | Curation
+    | Swarm
+    | Location
+    | LawToken
+    | InterpretationToken
+    | Sublocation;
 }
 
 /**
@@ -238,6 +251,20 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
         type: "InterpretationToken",
         data: interpretationToken,
       };
+    }
+  }
+
+  // Check sublocations
+  if (graphData.sublocations) {
+    for (const sublocation of graphData.sublocations as Sublocation[]) {
+      if (sublocation.id === nodeId) {
+        return {
+          id: nodeId,
+          name: sublocation.title,
+          type: "Sublocation",
+          data: sublocation,
+        };
+      }
     }
   }
 

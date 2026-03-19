@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { GraphNode, InterpretationToken } from "../backend";
+import type { GraphNode, InterpretationToken, Sublocation } from "../backend";
 import CreateNodeDialog from "../components/CreateNodeDialog";
 import FilterSortModal from "../components/FilterSortModal";
 import SchemaBuilderFilterModal from "../components/SchemaBuilderFilterModal";
@@ -534,6 +534,42 @@ export default function TreeView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sublocations Section */}
+      {graphData.sublocations && graphData.sublocations.length > 0 && (
+        <Card className="flex flex-col mt-4">
+          <CardHeader className="flex-shrink-0">
+            <CardTitle>Sublocations</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="max-h-64 px-6 pb-6">
+              <div className="space-y-2 pr-4">
+                {graphData.sublocations.map((sl: Sublocation) => (
+                  <div
+                    key={sl.id}
+                    className="flex flex-col gap-1 rounded-md p-3 hover:bg-muted transition-colors border border-border"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-muted text-foreground border-border text-xs"
+                      >
+                        sublocation
+                      </Badge>
+                      <span className="text-sm font-medium">{sl.title}</span>
+                    </div>
+                    {sl.content && (
+                      <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
+                        {sl.content}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Token Detail Modal */}
       {selectedToken && (

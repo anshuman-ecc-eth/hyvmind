@@ -312,6 +312,7 @@ export async function executeCommand(
   createSwarm: any,
   createLocation: any,
   createInterpretationToken: any,
+  createSublocation?: any,
 ): Promise<CommandResult> {
   switch (command) {
     case "c":
@@ -325,6 +326,8 @@ export async function executeCommand(
         fields,
         createInterpretationToken,
       );
+    case "sl":
+      return await executeSublocationCommand(fields, createSublocation);
     case "t":
       return {
         success: false,
@@ -336,6 +339,65 @@ export async function executeCommand(
         success: false,
         message: `Error: Unknown command /${command}. Type /help for available commands.`,
       };
+  }
+}
+
+async function executeSublocationCommand(
+  fields: Record<string, string | string[]>,
+  createSublocation: any,
+): Promise<CommandResult> {
+  if (!createSublocation) {
+    return {
+      success: false,
+      message: "Error: createSublocation not available.",
+    };
+  }
+
+  const name = getFieldValue(fields, "name");
+  const attachedRaw = getFieldValue(fields, "attached");
+  const content = getFieldValue(fields, "content") ?? "";
+
+  const missing: string[] = [];
+  if (!name || name.trim() === "") missing.push("name");
+  if (!attachedRaw || attachedRaw.trim() === "") missing.push("attached");
+
+  if (missing.length > 0) {
+    return {
+      success: false,
+      message: formatMissingFieldsError(
+        "Sublocation",
+        missing,
+        "/sl name=X attached=<law-token-name>",
+      ),
+    };
+  }
+
+  // Parse comma-separated law token names/IDs
+  const attachedNames = attachedRaw!
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  // For terminal, we pass the names as IDs — the caller resolves them before calling executeCommand
+  // If already resolved IDs are passed, they pass through
+  const parentLawTokenIds = attachedNames;
+
+  try {
+    const result = await createSublocation.mutateAsync({
+      title: name!.trim(),
+      content: content.trim(),
+      originalTokenSequence: content.trim(),
+      parentLawTokenIds,
+    });
+
+    return {
+      success: true,
+      message: formatSuccessMessage("Sublocation", name!.trim(), result),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: formatErrorMessage(error),
+    };
   }
 }
 

@@ -116,6 +116,15 @@ export type MintCollectibleResult = {
     __kind__: "tokenNotFound";
     tokenNotFound: null;
 };
+export interface Sublocation {
+    id: NodeId;
+    originalTokenSequence: string;
+    title: string;
+    creator: Principal;
+    content: string;
+    timestamps: Timestamps;
+}
+export type Time = bigint;
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -123,7 +132,6 @@ export interface LawToken {
     timestamps: Timestamps;
     tokenLabel: string;
 }
-export type Time = bigint;
 export interface BuzzLeaderboardEntry {
     principal: Principal;
     score: BuzzScore;
@@ -156,6 +164,7 @@ export interface OwnedGraphData {
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
@@ -212,6 +221,7 @@ export interface GraphData {
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
@@ -271,6 +281,7 @@ export interface backendInterface {
     createCuration(name: string, jurisdiction: string): Promise<NodeId>;
     createInterpretationToken(title: string, context: string, fromTokenId: NodeId, fromRelationshipType: string, fromDirectionality: Directionality, toNodeId: NodeId, toRelationshipType: string, toDirectionality: Directionality, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
     createLocation(title: string, content: string, originalTokenSequence: string, customAttributes: Array<CustomAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
+    createSublocation(title: string, content: string, originalTokenSequence: string, parentLawTokenIds: Array<NodeId>): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
@@ -302,7 +313,7 @@ export interface backendInterface {
     setMintSettings(settings: MintSettings): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
-import type { ApprovalStatus as _ApprovalStatus, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, CollectibleEdition as _CollectibleEdition, Curation as _Curation, CustomAttribute as _CustomAttribute, Directionality as _Directionality, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MembershipInfo as _MembershipInfo, MembershipStatus as _MembershipStatus, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, OwnedGraphData as _OwnedGraphData, Swarm as _Swarm, SwarmUpdate as _SwarmUpdate, SwarmUpdateStatus as _SwarmUpdateStatus, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { ApprovalStatus as _ApprovalStatus, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, CollectibleEdition as _CollectibleEdition, Curation as _Curation, CustomAttribute as _CustomAttribute, Directionality as _Directionality, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MembershipInfo as _MembershipInfo, MembershipStatus as _MembershipStatus, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, OwnedGraphData as _OwnedGraphData, Sublocation as _Sublocation, Swarm as _Swarm, SwarmUpdate as _SwarmUpdate, SwarmUpdateStatus as _SwarmUpdateStatus, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async approveJoinRequest(arg0: NodeId, arg1: Principal): Promise<void> {
@@ -386,6 +397,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createLocation(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async createSublocation(arg0: string, arg1: string, arg2: string, arg3: Array<NodeId>): Promise<NodeId> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createSublocation(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createSublocation(arg0, arg1, arg2, arg3);
             return result;
         }
     }
@@ -910,6 +935,7 @@ function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edges: Array<_GraphEdge>;
     locations: Array<_Location>;
     swarms: Array<_Swarm>;
+    sublocations: Array<_Sublocation>;
     lawTokens: Array<_LawToken>;
     interpretationTokens: Array<_InterpretationToken>;
 }): {
@@ -918,6 +944,7 @@ function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 } {
@@ -927,6 +954,7 @@ function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uin
         edges: value.edges,
         locations: value.locations,
         swarms: value.swarms,
+        sublocations: value.sublocations,
         lawTokens: value.lawTokens,
         interpretationTokens: from_candid_vec_n24(_uploadFile, _downloadFile, value.interpretationTokens)
     };
@@ -1002,6 +1030,7 @@ function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edges: Array<_GraphEdge>;
     locations: Array<_Location>;
     swarms: Array<_Swarm>;
+    sublocations: Array<_Sublocation>;
     lawTokens: Array<_LawToken>;
     interpretationTokens: Array<_InterpretationToken>;
 }): {
@@ -1009,6 +1038,7 @@ function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 } {
@@ -1017,6 +1047,7 @@ function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uin
         edges: value.edges,
         locations: value.locations,
         swarms: value.swarms,
+        sublocations: value.sublocations,
         lawTokens: value.lawTokens,
         interpretationTokens: from_candid_vec_n24(_uploadFile, _downloadFile, value.interpretationTokens)
     };

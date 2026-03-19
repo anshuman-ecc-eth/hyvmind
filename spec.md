@@ -1,67 +1,38 @@
-# Hyvmind — /debug Terminal Command
+# Hyvmind — Sublocation Feature (Backend Build A)
 
 ## Current State
-TerminalPage.tsx has a slash-command terminal with commands: /help, /clear, /find, /ont, /filter, /archive, and create commands (c, s, l, i, t). terminalMessages.ts provides formatted output helpers.
+The backend has: Curation, Swarm, Location, LawToken, InterpretationToken node types. No Sublocation type exists. `GraphData` and `OwnedGraphData` have no `sublocations` field. `getNodeSwarmId` handles 4 node types. `resetAllData` clears 10+ maps but has no sublocation maps. `createLawTokensForLocation` creates LawTokens from `{curly bracket}` content.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `formatDebugHelpText(isAdmin: boolean): string` in terminalMessages.ts — returns full debug help listing all 22 actions when isAdmin=true, or a short denial message when false
-- `formatDebugError(message: string): string` in terminalMessages.ts — returns a formatted error string prefixed with an error emoji
-- `handleDebug(action, fields)` async function in TerminalPage.tsx — admin-gated handler that dispatches to actor methods based on action, shows counts/summary then prompts Y/N for full JSON
-- `/debug` command routing in handleSubmit
-- Pending state handling for: Y/N JSON display prompt (`pendingDebugJson`) and reset confirmation (`debugResetPending`)
+- `Sublocation` type: `id, title, content, originalTokenSequence, creator, timestamps` (no parentSwarmId, no parentLawTokenId)
+- `sublocationMap: Map<NodeId, Sublocation>` storage
+- `sublocationLawTokenRelations: Map<NodeId, List<NodeId>>` storage (bidirectional: sublocation→lawTokenIds and lawToken→sublocationIds)
+- `createSublocation(title, content, originalTokenSequence, parentLawTokenIds: [NodeId])` public function
+- `createLawTokensForSublocation(sublocation, creator)` private function — same splitByCurlyBrackets pattern as createLawTokensForLocation
+- `sublocations` field to `GraphData` and `OwnedGraphData` types
+- Sublocation case in `getNodeSwarmId`: traverse attached LawToken → parentLocationId → Location → parentSwarmId
+- Sublocation cleanup in `resetAllData`
+- Sublocation filter + return in `getGraphData`
+- Sublocation filter + return in `getMyOwnedGraphData`
 
 ### Modify
-- `handleHelp()` in TerminalPage.tsx — append debug help section to output when caller is admin
-- useQueries import in TerminalPage.tsx — add `useIsCallerAdmin`, `useResetAllData`
-- terminalMessages import in TerminalPage.tsx — add `formatDebugHelpText`, `formatDebugError`
-- Hook instantiation block — add `const { data: isAdmin } = useIsCallerAdmin()` and `const resetAllData = useResetAllData()`
+- `GraphData` type — add `sublocations: [Sublocation]`
+- `OwnedGraphData` type — add `sublocations: [Sublocation]`
+- `getNodeSwarmId` — add Sublocation case
+- `resetAllData` — clear sublocationMap and sublocationLawTokenRelations
+- `getGraphData` — filter archived sublocations, include in return
+- `getMyOwnedGraphData` — filter owned sublocations, include in return
 
 ### Remove
-Nothing removed.
+- Nothing removed
 
 ## Implementation Plan
-
-### terminalMessages.ts
-Append two functions at the end:
-1. `formatDebugError(message)` — returns `❌ Debug error: ${message}`
-2. `formatDebugHelpText(isAdmin)` — if not admin returns denial string; if admin returns multi-line help listing all 22 actions with syntax and examples
-
-### TerminalPage.tsx
-1. Add `useIsCallerAdmin`, `useResetAllData` to useQueries import
-2. Add `formatDebugHelpText`, `formatDebugError` to terminalMessages import
-3. Add two state vars after `isArchiving` state: `pendingDebugJson: string | null` and `debugResetPending: boolean`
-4. Add hook instances after `queryClient`: `const { data: isAdmin } = useIsCallerAdmin()` and `const resetAllData = useResetAllData()`
-5. Modify `handleHelp` to conditionally append debug help when `isAdmin` is truthy
-6. Add `handleDebug(action, fields)` async function — checks `isAdmin`, checks `actor`, then switches on action calling actor methods directly. For simple boolean/scalar results, adds success message. For array/object results, adds summary count message then calls `setPendingDebugJson` and adds Y/N prompt. For `reset`, sets `debugResetPending` and adds confirmation prompt.
-7. In `handleSubmit`, immediately after `addMessage("command", input)` (before parseCommand), add:
-   - If `pendingDebugJson !== null`: handle Y/N answer, clear state, return
-   - If `debugResetPending`: handle "yes" confirmation (call `resetAllData.mutateAsync()`), clear state, return
-8. After the `archive` command handler (line 755), add `debug` command routing: extract `argument` as action, `fields` as params, call `await handleDebug(action, fields)`
-
-### 22 actions → actor method mapping
-1. ownedgraph → `actor.getMyOwnedGraphData()`
-2. allgraph → `actor.getGraphData()`
-3. archived → `actor.getArchivedNodeIds()`
-4. profile → `actor.getCallerUserProfile()`
-5. role → `actor.getCallerUserRole()`
-6. admin → `actor.isCallerAdmin()`
-7. approved → `actor.isCallerApproved()`
-8. approvals → `actor.listApprovals()`
-9. swarmsbycreator → `actor.getSwarmsByCreator()`
-10. leaderboard → `actor.getBuzzLeaderboard()`
-11. mybuzz → `actor.getMyBuzzBalance()` (divide by 10_000_000 for display)
-12. mintsets → `actor.getMintSettings()`
-13. swarm (requires swarmId) → `actor.getSwarmMembers(swarmId)`
-14. requests (requires swarmId) → `actor.getSwarmMembershipRequests(swarmId)`
-15. updates (requires swarmId) → `actor.getSwarmUpdatesForUser(swarmId)`
-16. unvoted (requires swarmId) → call `actor.getGraphData()`, filter locations by swarmId, collect their law tokens
-17. vote (requires nodeId) → `actor.getVoteData(nodeId)`
-18. editions (requires nodeId) → `actor.getCollectibleEditions(nodeId)`
-19. userprofile (requires user principal string) → `actor.getUserProfile(user)`
-20. userlawtokens → `actor.getMyOwnedGraphData()`, return `.lawTokens`
-21. userinterp → `actor.getMyOwnedGraphData()`, return `.interpretationTokens`
-22. reset → set `debugResetPending=true`, prompt "Type 'yes' to confirm reset:"
-
-BigInt values should be serialized to strings in JSON.stringify (replacer function). Missing required params should call `formatDebugError` and return early.
+1. Add `Sublocation` type after LawToken type (after line 66)
+2. Add sublocationMap and sublocationLawTokenRelations after archivedNodes map (after line 175)
+3. Add `sublocations` field to GraphData (after line 245) and OwnedGraphData (after line 255)
+4. Add `createSublocation` and `createLawTokensForSublocation` functions after `createLawTokensForLocation` (after line 1298)
+5. Add Sublocation case to `getNodeSwarmId` (after LawToken case, line ~801)
+6. Add sublocation cleanup to `resetAllData` (after line 1144)
+7. Add sublocation filtering and return to `getGraphData` and `getMyOwnedGraphData`

@@ -4,6 +4,7 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
+  Sublocation,
   Swarm,
 } from "../backend";
 import { CORE_ONTOLOGY_PREFIXES } from "./coreOntology";
@@ -22,8 +23,20 @@ function escapeTurtleLiteral(str: string): string {
 interface NodeInfo {
   id: string;
   name: string;
-  type: "Curation" | "Swarm" | "Location" | "LawToken" | "InterpretationToken";
-  data: Curation | Swarm | Location | LawToken | InterpretationToken;
+  type:
+    | "Curation"
+    | "Swarm"
+    | "Location"
+    | "LawToken"
+    | "InterpretationToken"
+    | "Sublocation";
+  data:
+    | Curation
+    | Swarm
+    | Location
+    | LawToken
+    | InterpretationToken
+    | Sublocation;
 }
 
 export function generateOntologyTurtle(
@@ -155,6 +168,20 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
     }
   }
 
+  // Check sublocations
+  if (graphData.sublocations) {
+    for (const sublocation of graphData.sublocations as Sublocation[]) {
+      if (sublocation.id === nodeId) {
+        return {
+          id: nodeId,
+          name: sublocation.title,
+          type: "Sublocation",
+          data: sublocation,
+        };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -248,6 +275,11 @@ function generateOutgoingTriples(
     case "LawToken": {
       const _lawToken = nodeInfo.data as LawToken;
 
+      break;
+    }
+
+    case "Sublocation": {
+      // Sublocations have no special literal properties beyond the defaults
       break;
     }
 
@@ -380,6 +412,11 @@ function generateClassTriples(
     case "LawToken": {
       const lawToken = nodeInfo.data as LawToken;
       referencedNodes.add(lawToken.parentLocationId);
+      break;
+    }
+
+    case "Sublocation": {
+      // Sublocations have no special literal properties beyond the defaults
       break;
     }
 
@@ -519,6 +556,11 @@ function generateIncomingTriples(
           `hm:${interpretationLocalName} hm:ToRelation hm:${localName} .`,
         );
       }
+      break;
+    }
+
+    case "Sublocation": {
+      // Sublocations have no special literal properties beyond the defaults
       break;
     }
 

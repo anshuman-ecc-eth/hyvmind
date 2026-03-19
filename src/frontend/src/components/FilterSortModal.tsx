@@ -40,7 +40,8 @@ type NodeType =
   | "swarm"
   | "location"
   | "lawToken"
-  | "interpretationToken";
+  | "interpretationToken"
+  | "sublocation";
 type SortOption = "alphabetical" | "creationDate" | "modificationDate";
 
 interface FlatNode {
@@ -458,6 +459,7 @@ export default function FilterSortModal({
                 <SelectItem value="interpretationToken">
                   Interpretation Token
                 </SelectItem>
+                <SelectItem value="sublocation">Sublocation</SelectItem>
               </SelectContent>
             </Select>
           </div>
