@@ -32,10 +32,10 @@ export function formatHelpText(): string {
 
 Create Commands:
 
-/c name=<name> juris=<ISO-3166-1-alpha-3>
+/c name=<name> juris=<ISO-3166-1-alpha-2>
   Create a Curation
   Example:
-    /c name="Indian Constitution" juris=IND
+    /c name="Indian Constitution" juris=IN
 
 /s name=<name> parent=<curation-name> [tags=<tag1,tag2>]
   Create a Swarm
@@ -60,7 +60,7 @@ Attribute Format:
 
 Notes:
   - Use quotes for names with spaces: name="My Node"
-  - Jurisdiction codes must be valid ISO 3166-1 alpha-3 (e.g., IND, USA, GBR)
+  - Jurisdiction codes must be valid ISO 3166-1 alpha-2 (e.g., IN, US, GB)
   - Directionality: none, uni (unidirectional), bi (bidirectional)
   - Archived nodes are hidden locally; use /find to check if a node exists`;
 }

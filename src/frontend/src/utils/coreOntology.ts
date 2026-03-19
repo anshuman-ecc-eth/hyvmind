@@ -120,7 +120,7 @@ hm:hasCustomAttribute rdf:type owl:DatatypeProperty ;
 
 hm:hasJurisdiction rdf:type owl:DatatypeProperty ;
     rdfs:label "has jurisdiction" ;
-    rdfs:comment "ISO 3166-1 alpha-3 country code" ;
+    rdfs:comment "ISO 3166-1 alpha-2 country code" ;
     rdfs:domain hm:Curation ;
     rdfs:range rdfs:Literal .
 
