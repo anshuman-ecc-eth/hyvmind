@@ -16,7 +16,6 @@ import type { GraphNode, InterpretationToken, Sublocation } from "../backend";
 import CreateNodeDialog from "../components/CreateNodeDialog";
 import FilterSortModal from "../components/FilterSortModal";
 import SchemaBuilderFilterModal from "../components/SchemaBuilderFilterModal";
-import SwarmMembershipButton from "../components/SwarmMembershipButton";
 import { useGetGraphData } from "../hooks/useQueries";
 
 interface TreeNodeProps {
@@ -168,9 +167,6 @@ function TreeNode({
               </span>
             )}
           </div>
-          {node.nodeType === "swarm" && (
-            <SwarmMembershipButton swarmId={node.id} />
-          )}
           {createConfig.show && createConfig.nodeType && (
             <CreateNodeDialog
               trigger={

@@ -43,6 +43,14 @@ export interface Sublocation {
     timestamps: Timestamps;
 }
 export type Time = bigint;
+export type NodeId = string;
+export interface VoteData {
+    upvotes: bigint;
+    downvotes: bigint;
+}
+export interface Timestamps {
+    createdAt: Time;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -50,19 +58,37 @@ export interface LawToken {
     timestamps: Timestamps;
     tokenLabel: string;
 }
-export interface BuzzLeaderboardEntry {
-    principal: Principal;
-    score: BuzzScore;
-    profileName?: string;
+export interface MintSettings {
+    numCopies: bigint;
 }
-export interface SwarmUpdate {
-    status: SwarmUpdateStatus;
-    tokenId: NodeId;
-    userId: Principal;
-    swarmId: NodeId;
-    tokenTitle: string;
-    creatorPrincipal: Principal;
-    timestamp: Time;
+export interface InterpretationToken {
+    id: NodeId;
+    title: string;
+    creator: Principal;
+    context: string;
+    customAttributes: Array<CustomAttribute>;
+    toRelationshipType: string;
+    toNodeId: NodeId;
+    fromDirectionality: Directionality;
+    timestamps: Timestamps;
+    fromTokenId: NodeId;
+    toDirectionality: Directionality;
+    fromRelationshipType: string;
+}
+export interface GraphEdge {
+    source: NodeId;
+    target: NodeId;
+}
+export interface Curation {
+    id: NodeId;
+    creator: Principal;
+    name: string;
+    timestamps: Timestamps;
+    jurisdiction: string;
+}
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
 }
 export type Tag = string;
 export interface MintCollectibleRequest {
@@ -76,6 +102,16 @@ export interface GraphNode {
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
+}
+export interface GraphData {
+    curations: Array<Curation>;
+    rootNodes: Array<GraphNode>;
+    edges: Array<GraphEdge>;
+    locations: Array<Location>;
+    swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
+    lawTokens: Array<LawToken>;
+    interpretationTokens: Array<InterpretationToken>;
 }
 export interface OwnedGraphData {
     curations: Array<Curation>;
@@ -92,56 +128,6 @@ export interface CollectibleEdition {
     owner: Principal;
     mintedAt: Time;
     tokenType: Variant_lawToken_interpretationToken;
-}
-export interface Curation {
-    id: NodeId;
-    creator: Principal;
-    name: string;
-    timestamps: Timestamps;
-    jurisdiction: string;
-}
-export interface InterpretationToken {
-    id: NodeId;
-    title: string;
-    creator: Principal;
-    context: string;
-    customAttributes: Array<CustomAttribute>;
-    toRelationshipType: string;
-    toNodeId: NodeId;
-    fromDirectionality: Directionality;
-    timestamps: Timestamps;
-    fromTokenId: NodeId;
-    toDirectionality: Directionality;
-    fromRelationshipType: string;
-}
-export type NodeId = string;
-export interface VoteData {
-    upvotes: bigint;
-    downvotes: bigint;
-}
-export interface Timestamps {
-    createdAt: Time;
-}
-export interface MintSettings {
-    numCopies: bigint;
-}
-export interface GraphEdge {
-    source: NodeId;
-    target: NodeId;
-}
-export interface UserApprovalInfo {
-    status: ApprovalStatus;
-    principal: Principal;
-}
-export interface GraphData {
-    curations: Array<Curation>;
-    rootNodes: Array<GraphNode>;
-    edges: Array<GraphEdge>;
-    locations: Array<Location>;
-    swarms: Array<Swarm>;
-    sublocations: Array<Sublocation>;
-    lawTokens: Array<LawToken>;
-    interpretationTokens: Array<InterpretationToken>;
 }
 export interface CustomAttribute {
     key: string;
@@ -160,11 +146,6 @@ export interface UserProfile {
     name: string;
     socialUrl?: string;
 }
-export interface MembershipInfo {
-    status: MembershipStatus;
-    principal: Principal;
-    profileName?: string;
-}
 export enum ApprovalStatus {
     pending = "pending",
     approved = "approved",
@@ -174,14 +155,6 @@ export enum Directionality {
     none = "none",
     bidirectional = "bidirectional",
     unidirectional = "unidirectional"
-}
-export enum MembershipStatus {
-    pending = "pending",
-    approved = "approved"
-}
-export enum SwarmUpdateStatus {
-    acted = "acted",
-    unread = "unread"
 }
 export enum UserRole {
     admin = "admin",
@@ -193,7 +166,6 @@ export enum Variant_lawToken_interpretationToken {
     interpretationToken = "interpretationToken"
 }
 export interface backendInterface {
-    approveJoinRequest(swarmId: NodeId, member: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCuration(name: string, jurisdiction: string): Promise<NodeId>;
@@ -203,7 +175,6 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
-    getBuzzLeaderboard(): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
@@ -212,19 +183,16 @@ export interface backendInterface {
     getMyBuzzBalance(): Promise<BuzzScore>;
     getMyOwnedGraphData(): Promise<OwnedGraphData>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
-    getSwarmMembershipRequests(swarmId: NodeId): Promise<Array<MembershipInfo>>;
-    getSwarmUpdatesForUser(swarmId: NodeId): Promise<Array<SwarmUpdate>>;
-    getSwarmsByCreator(): Promise<Array<Swarm>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVoteData(nodeId: NodeId): Promise<VoteData>;
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
+    joinSwarm(swarmId: NodeId): Promise<void>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     requestApproval(): Promise<void>;
-    requestToJoinSwarm(swarmId: NodeId): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;

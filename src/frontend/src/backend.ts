@@ -125,6 +125,14 @@ export interface Sublocation {
     timestamps: Timestamps;
 }
 export type Time = bigint;
+export type NodeId = string;
+export interface VoteData {
+    upvotes: bigint;
+    downvotes: bigint;
+}
+export interface Timestamps {
+    createdAt: Time;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -132,19 +140,37 @@ export interface LawToken {
     timestamps: Timestamps;
     tokenLabel: string;
 }
-export interface BuzzLeaderboardEntry {
-    principal: Principal;
-    score: BuzzScore;
-    profileName?: string;
+export interface MintSettings {
+    numCopies: bigint;
 }
-export interface SwarmUpdate {
-    status: SwarmUpdateStatus;
-    tokenId: NodeId;
-    userId: Principal;
-    swarmId: NodeId;
-    tokenTitle: string;
-    creatorPrincipal: Principal;
-    timestamp: Time;
+export interface InterpretationToken {
+    id: NodeId;
+    title: string;
+    creator: Principal;
+    context: string;
+    customAttributes: Array<CustomAttribute>;
+    toRelationshipType: string;
+    toNodeId: NodeId;
+    fromDirectionality: Directionality;
+    timestamps: Timestamps;
+    fromTokenId: NodeId;
+    toDirectionality: Directionality;
+    fromRelationshipType: string;
+}
+export interface GraphEdge {
+    source: NodeId;
+    target: NodeId;
+}
+export interface Curation {
+    id: NodeId;
+    creator: Principal;
+    name: string;
+    timestamps: Timestamps;
+    jurisdiction: string;
+}
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
 }
 export type Tag = string;
 export interface MintCollectibleRequest {
@@ -158,6 +184,16 @@ export interface GraphNode {
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
+}
+export interface GraphData {
+    curations: Array<Curation>;
+    rootNodes: Array<GraphNode>;
+    edges: Array<GraphEdge>;
+    locations: Array<Location>;
+    swarms: Array<Swarm>;
+    sublocations: Array<Sublocation>;
+    lawTokens: Array<LawToken>;
+    interpretationTokens: Array<InterpretationToken>;
 }
 export interface OwnedGraphData {
     curations: Array<Curation>;
@@ -174,56 +210,6 @@ export interface CollectibleEdition {
     owner: Principal;
     mintedAt: Time;
     tokenType: Variant_lawToken_interpretationToken;
-}
-export interface Curation {
-    id: NodeId;
-    creator: Principal;
-    name: string;
-    timestamps: Timestamps;
-    jurisdiction: string;
-}
-export interface InterpretationToken {
-    id: NodeId;
-    title: string;
-    creator: Principal;
-    context: string;
-    customAttributes: Array<CustomAttribute>;
-    toRelationshipType: string;
-    toNodeId: NodeId;
-    fromDirectionality: Directionality;
-    timestamps: Timestamps;
-    fromTokenId: NodeId;
-    toDirectionality: Directionality;
-    fromRelationshipType: string;
-}
-export type NodeId = string;
-export interface VoteData {
-    upvotes: bigint;
-    downvotes: bigint;
-}
-export interface Timestamps {
-    createdAt: Time;
-}
-export interface MintSettings {
-    numCopies: bigint;
-}
-export interface GraphEdge {
-    source: NodeId;
-    target: NodeId;
-}
-export interface UserApprovalInfo {
-    status: ApprovalStatus;
-    principal: Principal;
-}
-export interface GraphData {
-    curations: Array<Curation>;
-    rootNodes: Array<GraphNode>;
-    edges: Array<GraphEdge>;
-    locations: Array<Location>;
-    swarms: Array<Swarm>;
-    sublocations: Array<Sublocation>;
-    lawTokens: Array<LawToken>;
-    interpretationTokens: Array<InterpretationToken>;
 }
 export interface CustomAttribute {
     key: string;
@@ -242,11 +228,6 @@ export interface UserProfile {
     name: string;
     socialUrl?: string;
 }
-export interface MembershipInfo {
-    status: MembershipStatus;
-    principal: Principal;
-    profileName?: string;
-}
 export enum ApprovalStatus {
     pending = "pending",
     approved = "approved",
@@ -256,14 +237,6 @@ export enum Directionality {
     none = "none",
     bidirectional = "bidirectional",
     unidirectional = "unidirectional"
-}
-export enum MembershipStatus {
-    pending = "pending",
-    approved = "approved"
-}
-export enum SwarmUpdateStatus {
-    acted = "acted",
-    unread = "unread"
 }
 export enum UserRole {
     admin = "admin",
@@ -275,7 +248,6 @@ export enum Variant_lawToken_interpretationToken {
     interpretationToken = "interpretationToken"
 }
 export interface backendInterface {
-    approveJoinRequest(swarmId: NodeId, member: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCuration(name: string, jurisdiction: string): Promise<NodeId>;
@@ -285,7 +257,6 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
-    getBuzzLeaderboard(): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
@@ -294,42 +265,25 @@ export interface backendInterface {
     getMyBuzzBalance(): Promise<BuzzScore>;
     getMyOwnedGraphData(): Promise<OwnedGraphData>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
-    getSwarmMembershipRequests(swarmId: NodeId): Promise<Array<MembershipInfo>>;
-    getSwarmUpdatesForUser(swarmId: NodeId): Promise<Array<SwarmUpdate>>;
-    getSwarmsByCreator(): Promise<Array<Swarm>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVoteData(nodeId: NodeId): Promise<VoteData>;
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
+    joinSwarm(swarmId: NodeId): Promise<void>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     requestApproval(): Promise<void>;
-    requestToJoinSwarm(swarmId: NodeId): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
-import type { ApprovalStatus as _ApprovalStatus, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, CollectibleEdition as _CollectibleEdition, Curation as _Curation, CustomAttribute as _CustomAttribute, Directionality as _Directionality, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MembershipInfo as _MembershipInfo, MembershipStatus as _MembershipStatus, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, OwnedGraphData as _OwnedGraphData, Sublocation as _Sublocation, Swarm as _Swarm, SwarmUpdate as _SwarmUpdate, SwarmUpdateStatus as _SwarmUpdateStatus, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { ApprovalStatus as _ApprovalStatus, CollectibleEdition as _CollectibleEdition, Curation as _Curation, CustomAttribute as _CustomAttribute, Directionality as _Directionality, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, OwnedGraphData as _OwnedGraphData, Sublocation as _Sublocation, Swarm as _Swarm, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async approveJoinRequest(arg0: NodeId, arg1: Principal): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.approveJoinRequest(arg0, arg1);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.approveJoinRequest(arg0, arg1);
-            return result;
-        }
-    }
     async archiveNode(arg0: NodeId): Promise<void> {
         if (this.processError) {
             try {
@@ -456,74 +410,60 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getBuzzLeaderboard(): Promise<Array<BuzzLeaderboardEntry>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getBuzzLeaderboard();
-                return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getBuzzLeaderboard();
-            return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
-        }
-    }
     async getCallerUserProfile(): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n12(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n9(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n12(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n9(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCollectibleEditions(arg0: NodeId): Promise<Array<CollectibleEdition>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCollectibleEditions(arg0);
-                return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCollectibleEditions(arg0);
-            return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
         }
     }
     async getGraphData(): Promise<GraphData> {
         if (this.processError) {
             try {
                 const result = await this.actor.getGraphData();
-                return from_candid_GraphData_n18(this._uploadFile, this._downloadFile, result);
+                return from_candid_GraphData_n15(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getGraphData();
-            return from_candid_GraphData_n18(this._uploadFile, this._downloadFile, result);
+            return from_candid_GraphData_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMintSettings(): Promise<MintSettings> {
@@ -558,14 +498,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getMyOwnedGraphData();
-                return from_candid_OwnedGraphData_n29(this._uploadFile, this._downloadFile, result);
+                return from_candid_OwnedGraphData_n26(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMyOwnedGraphData();
-            return from_candid_OwnedGraphData_n29(this._uploadFile, this._downloadFile, result);
+            return from_candid_OwnedGraphData_n26(this._uploadFile, this._downloadFile, result);
         }
     }
     async getSwarmMembers(arg0: NodeId): Promise<Array<Principal>> {
@@ -582,60 +522,18 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getSwarmMembershipRequests(arg0: NodeId): Promise<Array<MembershipInfo>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getSwarmMembershipRequests(arg0);
-                return from_candid_vec_n31(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getSwarmMembershipRequests(arg0);
-            return from_candid_vec_n31(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getSwarmUpdatesForUser(arg0: NodeId): Promise<Array<SwarmUpdate>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getSwarmUpdatesForUser(arg0);
-                return from_candid_vec_n36(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getSwarmUpdatesForUser(arg0);
-            return from_candid_vec_n36(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getSwarmsByCreator(): Promise<Array<Swarm>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getSwarmsByCreator();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getSwarmsByCreator();
-            return result;
-        }
-    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
         }
     }
     async getVoteData(arg0: NodeId): Promise<VoteData> {
@@ -708,32 +606,46 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async joinSwarm(arg0: NodeId): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.joinSwarm(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.joinSwarm(arg0);
+            return result;
+        }
+    }
     async listApprovals(): Promise<Array<UserApprovalInfo>> {
         if (this.processError) {
             try {
                 const result = await this.actor.listApprovals();
-                return from_candid_vec_n41(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n28(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.listApprovals();
-            return from_candid_vec_n41(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n28(this._uploadFile, this._downloadFile, result);
         }
     }
     async mintCollectible(arg0: MintCollectibleRequest): Promise<MintCollectibleResult> {
         if (this.processError) {
             try {
-                const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n46(this._uploadFile, this._downloadFile, arg0));
-                return from_candid_MintCollectibleResult_n49(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n33(this._uploadFile, this._downloadFile, arg0));
+                return from_candid_MintCollectibleResult_n36(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n46(this._uploadFile, this._downloadFile, arg0));
-            return from_candid_MintCollectibleResult_n49(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n33(this._uploadFile, this._downloadFile, arg0));
+            return from_candid_MintCollectibleResult_n36(this._uploadFile, this._downloadFile, result);
         }
     }
     async requestApproval(): Promise<void> {
@@ -747,20 +659,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.requestApproval();
-            return result;
-        }
-    }
-    async requestToJoinSwarm(arg0: NodeId): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.requestToJoinSwarm(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.requestToJoinSwarm(arg0);
             return result;
         }
     }
@@ -781,28 +679,28 @@ export class Backend implements backendInterface {
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n51(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n38(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n51(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n38(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
     async setApproval(arg0: Principal, arg1: ApprovalStatus): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n53(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n40(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n53(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n40(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -835,76 +733,49 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_ApprovalStatus_n44(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ApprovalStatus): ApprovalStatus {
-    return from_candid_variant_n45(_uploadFile, _downloadFile, value);
+function from_candid_ApprovalStatus_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ApprovalStatus): ApprovalStatus {
+    return from_candid_variant_n32(_uploadFile, _downloadFile, value);
 }
-function from_candid_BuzzLeaderboardEntry_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BuzzLeaderboardEntry): BuzzLeaderboardEntry {
-    return from_candid_record_n7(_uploadFile, _downloadFile, value);
+function from_candid_CollectibleEdition_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CollectibleEdition): CollectibleEdition {
+    return from_candid_record_n13(_uploadFile, _downloadFile, value);
 }
-function from_candid_CollectibleEdition_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CollectibleEdition): CollectibleEdition {
+function from_candid_Directionality_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Directionality): Directionality {
+    return from_candid_variant_n25(_uploadFile, _downloadFile, value);
+}
+function from_candid_GraphData_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GraphData): GraphData {
     return from_candid_record_n16(_uploadFile, _downloadFile, value);
 }
-function from_candid_Directionality_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Directionality): Directionality {
-    return from_candid_variant_n28(_uploadFile, _downloadFile, value);
-}
-function from_candid_GraphData_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GraphData): GraphData {
+function from_candid_GraphNode_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GraphNode): GraphNode {
     return from_candid_record_n19(_uploadFile, _downloadFile, value);
 }
-function from_candid_GraphNode_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GraphNode): GraphNode {
-    return from_candid_record_n22(_uploadFile, _downloadFile, value);
+function from_candid_InterpretationToken_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _InterpretationToken): InterpretationToken {
+    return from_candid_record_n23(_uploadFile, _downloadFile, value);
 }
-function from_candid_InterpretationToken_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _InterpretationToken): InterpretationToken {
-    return from_candid_record_n26(_uploadFile, _downloadFile, value);
+function from_candid_MintCollectibleResult_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MintCollectibleResult): MintCollectibleResult {
+    return from_candid_variant_n37(_uploadFile, _downloadFile, value);
 }
-function from_candid_MembershipInfo_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MembershipInfo): MembershipInfo {
-    return from_candid_record_n33(_uploadFile, _downloadFile, value);
+function from_candid_OwnedGraphData_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _OwnedGraphData): OwnedGraphData {
+    return from_candid_record_n27(_uploadFile, _downloadFile, value);
 }
-function from_candid_MembershipStatus_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MembershipStatus): MembershipStatus {
-    return from_candid_variant_n35(_uploadFile, _downloadFile, value);
-}
-function from_candid_MintCollectibleResult_n49(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MintCollectibleResult): MintCollectibleResult {
-    return from_candid_variant_n50(_uploadFile, _downloadFile, value);
-}
-function from_candid_OwnedGraphData_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _OwnedGraphData): OwnedGraphData {
+function from_candid_UserApprovalInfo_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserApprovalInfo): UserApprovalInfo {
     return from_candid_record_n30(_uploadFile, _downloadFile, value);
 }
-function from_candid_SwarmUpdateStatus_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _SwarmUpdateStatus): SwarmUpdateStatus {
-    return from_candid_variant_n40(_uploadFile, _downloadFile, value);
+function from_candid_UserProfile_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserProfile): UserProfile {
+    return from_candid_record_n7(_uploadFile, _downloadFile, value);
 }
-function from_candid_SwarmUpdate_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _SwarmUpdate): SwarmUpdate {
-    return from_candid_record_n38(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n10(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserApprovalInfo_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserApprovalInfo): UserApprovalInfo {
-    return from_candid_record_n43(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserProfile_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserProfile): UserProfile {
-    return from_candid_record_n11(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserRole_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n13(_uploadFile, _downloadFile, value);
-}
-function from_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_NodeId]): NodeId | null {
+function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_NodeId]): NodeId | null {
     return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : from_candid_UserProfile_n6(_uploadFile, _downloadFile, value[0]);
 }
 function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
-    return value.length === 0 ? null : from_candid_UserProfile_n10(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    name: string;
-    socialUrl: [] | [string];
-}): {
-    name: string;
-    socialUrl?: string;
-} {
-    return {
-        name: value.name,
-        socialUrl: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.socialUrl))
-    };
-}
-function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     tokenId: _NodeId;
     editionNumber: bigint;
     owner: Principal;
@@ -926,10 +797,10 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
         editionNumber: value.editionNumber,
         owner: value.owner,
         mintedAt: value.mintedAt,
-        tokenType: from_candid_variant_n17(_uploadFile, _downloadFile, value.tokenType)
+        tokenType: from_candid_variant_n14(_uploadFile, _downloadFile, value.tokenType)
     };
 }
-function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     curations: Array<_Curation>;
     rootNodes: Array<_GraphNode>;
     edges: Array<_GraphEdge>;
@@ -950,16 +821,16 @@ function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         curations: value.curations,
-        rootNodes: from_candid_vec_n20(_uploadFile, _downloadFile, value.rootNodes),
+        rootNodes: from_candid_vec_n17(_uploadFile, _downloadFile, value.rootNodes),
         edges: value.edges,
         locations: value.locations,
         swarms: value.swarms,
         sublocations: value.sublocations,
         lawTokens: value.lawTokens,
-        interpretationTokens: from_candid_vec_n24(_uploadFile, _downloadFile, value.interpretationTokens)
+        interpretationTokens: from_candid_vec_n21(_uploadFile, _downloadFile, value.interpretationTokens)
     };
 }
-function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: _NodeId;
     children: Array<_GraphNode>;
     jurisdiction: [] | [string];
@@ -976,14 +847,14 @@ function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         id: value.id,
-        children: from_candid_vec_n20(_uploadFile, _downloadFile, value.children),
+        children: from_candid_vec_n17(_uploadFile, _downloadFile, value.children),
         jurisdiction: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.jurisdiction)),
-        parentId: record_opt_to_undefined(from_candid_opt_n23(_uploadFile, _downloadFile, value.parentId)),
+        parentId: record_opt_to_undefined(from_candid_opt_n20(_uploadFile, _downloadFile, value.parentId)),
         tokenLabel: value.tokenLabel,
         nodeType: value.nodeType
     };
 }
-function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: _NodeId;
     title: string;
     creator: Principal;
@@ -1018,14 +889,14 @@ function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uin
         customAttributes: value.customAttributes,
         toRelationshipType: value.toRelationshipType,
         toNodeId: value.toNodeId,
-        fromDirectionality: from_candid_Directionality_n27(_uploadFile, _downloadFile, value.fromDirectionality),
+        fromDirectionality: from_candid_Directionality_n24(_uploadFile, _downloadFile, value.fromDirectionality),
         timestamps: value.timestamps,
         fromTokenId: value.fromTokenId,
-        toDirectionality: from_candid_Directionality_n27(_uploadFile, _downloadFile, value.toDirectionality),
+        toDirectionality: from_candid_Directionality_n24(_uploadFile, _downloadFile, value.toDirectionality),
         fromRelationshipType: value.fromRelationshipType
     };
 }
-function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     curations: Array<_Curation>;
     edges: Array<_GraphEdge>;
     locations: Array<_Location>;
@@ -1049,52 +920,10 @@ function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uin
         swarms: value.swarms,
         sublocations: value.sublocations,
         lawTokens: value.lawTokens,
-        interpretationTokens: from_candid_vec_n24(_uploadFile, _downloadFile, value.interpretationTokens)
+        interpretationTokens: from_candid_vec_n21(_uploadFile, _downloadFile, value.interpretationTokens)
     };
 }
-function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    status: _MembershipStatus;
-    principal: Principal;
-    profileName: [] | [string];
-}): {
-    status: MembershipStatus;
-    principal: Principal;
-    profileName?: string;
-} {
-    return {
-        status: from_candid_MembershipStatus_n34(_uploadFile, _downloadFile, value.status),
-        principal: value.principal,
-        profileName: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.profileName))
-    };
-}
-function from_candid_record_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    status: _SwarmUpdateStatus;
-    tokenId: _NodeId;
-    userId: Principal;
-    swarmId: _NodeId;
-    tokenTitle: string;
-    creatorPrincipal: Principal;
-    timestamp: _Time;
-}): {
-    status: SwarmUpdateStatus;
-    tokenId: NodeId;
-    userId: Principal;
-    swarmId: NodeId;
-    tokenTitle: string;
-    creatorPrincipal: Principal;
-    timestamp: Time;
-} {
-    return {
-        status: from_candid_SwarmUpdateStatus_n39(_uploadFile, _downloadFile, value.status),
-        tokenId: value.tokenId,
-        userId: value.userId,
-        swarmId: value.swarmId,
-        tokenTitle: value.tokenTitle,
-        creatorPrincipal: value.creatorPrincipal,
-        timestamp: value.timestamp
-    };
-}
-function from_candid_record_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     status: _ApprovalStatus;
     principal: Principal;
 }): {
@@ -1102,26 +931,23 @@ function from_candid_record_n43(_uploadFile: (file: ExternalBlob) => Promise<Uin
     principal: Principal;
 } {
     return {
-        status: from_candid_ApprovalStatus_n44(_uploadFile, _downloadFile, value.status),
+        status: from_candid_ApprovalStatus_n31(_uploadFile, _downloadFile, value.status),
         principal: value.principal
     };
 }
 function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    principal: Principal;
-    score: _BuzzScore;
-    profileName: [] | [string];
+    name: string;
+    socialUrl: [] | [string];
 }): {
-    principal: Principal;
-    score: BuzzScore;
-    profileName?: string;
+    name: string;
+    socialUrl?: string;
 } {
     return {
-        principal: value.principal,
-        score: value.score,
-        profileName: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.profileName))
+        name: value.name,
+        socialUrl: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.socialUrl))
     };
 }
-function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -1130,14 +956,14 @@ function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     lawToken: null;
 } | {
     interpretationToken: null;
 }): Variant_lawToken_interpretationToken {
     return "lawToken" in value ? Variant_lawToken_interpretationToken.lawToken : "interpretationToken" in value ? Variant_lawToken_interpretationToken.interpretationToken : value;
 }
-function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     none: null;
 } | {
     bidirectional: null;
@@ -1146,21 +972,7 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): Directionality {
     return "none" in value ? Directionality.none : "bidirectional" in value ? Directionality.bidirectional : "unidirectional" in value ? Directionality.unidirectional : value;
 }
-function from_candid_variant_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    pending: null;
-} | {
-    approved: null;
-}): MembershipStatus {
-    return "pending" in value ? MembershipStatus.pending : "approved" in value ? MembershipStatus.approved : value;
-}
-function from_candid_variant_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    acted: null;
-} | {
-    unread: null;
-}): SwarmUpdateStatus {
-    return "acted" in value ? SwarmUpdateStatus.acted : "unread" in value ? SwarmUpdateStatus.unread : value;
-}
-function from_candid_variant_n45(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     pending: null;
 } | {
     approved: null;
@@ -1169,7 +981,7 @@ function from_candid_variant_n45(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): ApprovalStatus {
     return "pending" in value ? ApprovalStatus.pending : "approved" in value ? ApprovalStatus.approved : "rejected" in value ? ApprovalStatus.rejected : value;
 }
-function from_candid_variant_n50(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     editionLimitReached: null;
 } | {
     alreadyOwned: null;
@@ -1206,49 +1018,40 @@ function from_candid_variant_n50(_uploadFile: (file: ExternalBlob) => Promise<Ui
         insufficientFunds: value.insufficientFunds
     } : "success" in value ? {
         __kind__: "success",
-        success: from_candid_CollectibleEdition_n15(_uploadFile, _downloadFile, value.success)
+        success: from_candid_CollectibleEdition_n12(_uploadFile, _downloadFile, value.success)
     } : "tokenNotFound" in value ? {
         __kind__: "tokenNotFound",
         tokenNotFound: value.tokenNotFound
     } : value;
 }
-function from_candid_vec_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_CollectibleEdition>): Array<CollectibleEdition> {
-    return value.map((x)=>from_candid_CollectibleEdition_n15(_uploadFile, _downloadFile, x));
+function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_CollectibleEdition>): Array<CollectibleEdition> {
+    return value.map((x)=>from_candid_CollectibleEdition_n12(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GraphNode>): Array<GraphNode> {
-    return value.map((x)=>from_candid_GraphNode_n21(_uploadFile, _downloadFile, x));
+function from_candid_vec_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GraphNode>): Array<GraphNode> {
+    return value.map((x)=>from_candid_GraphNode_n18(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_InterpretationToken>): Array<InterpretationToken> {
-    return value.map((x)=>from_candid_InterpretationToken_n25(_uploadFile, _downloadFile, x));
+function from_candid_vec_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_InterpretationToken>): Array<InterpretationToken> {
+    return value.map((x)=>from_candid_InterpretationToken_n22(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_MembershipInfo>): Array<MembershipInfo> {
-    return value.map((x)=>from_candid_MembershipInfo_n32(_uploadFile, _downloadFile, x));
+function from_candid_vec_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserApprovalInfo>): Array<UserApprovalInfo> {
+    return value.map((x)=>from_candid_UserApprovalInfo_n29(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_SwarmUpdate>): Array<SwarmUpdate> {
-    return value.map((x)=>from_candid_SwarmUpdate_n37(_uploadFile, _downloadFile, x));
-}
-function from_candid_vec_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserApprovalInfo>): Array<UserApprovalInfo> {
-    return value.map((x)=>from_candid_UserApprovalInfo_n42(_uploadFile, _downloadFile, x));
-}
-function from_candid_vec_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_BuzzLeaderboardEntry>): Array<BuzzLeaderboardEntry> {
-    return value.map((x)=>from_candid_BuzzLeaderboardEntry_n6(_uploadFile, _downloadFile, x));
-}
-function to_candid_ApprovalStatus_n53(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
-    return to_candid_variant_n54(_uploadFile, _downloadFile, value);
+function to_candid_ApprovalStatus_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
+    return to_candid_variant_n41(_uploadFile, _downloadFile, value);
 }
 function to_candid_Directionality_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Directionality): _Directionality {
     return to_candid_variant_n4(_uploadFile, _downloadFile, value);
 }
-function to_candid_MintCollectibleRequest_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: MintCollectibleRequest): _MintCollectibleRequest {
-    return to_candid_record_n47(_uploadFile, _downloadFile, value);
+function to_candid_MintCollectibleRequest_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: MintCollectibleRequest): _MintCollectibleRequest {
+    return to_candid_record_n34(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n51(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
-    return to_candid_record_n52(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
+    return to_candid_record_n39(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_record_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     tokenId: NodeId;
     tokenType: Variant_lawToken_interpretationToken;
 }): {
@@ -1261,10 +1064,10 @@ function to_candid_record_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 } {
     return {
         tokenId: value.tokenId,
-        tokenType: to_candid_variant_n48(_uploadFile, _downloadFile, value.tokenType)
+        tokenType: to_candid_variant_n35(_uploadFile, _downloadFile, value.tokenType)
     };
 }
-function to_candid_record_n52(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     socialUrl?: string;
 }): {
@@ -1291,6 +1094,17 @@ function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         guest: null
     } : value;
 }
+function to_candid_variant_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Variant_lawToken_interpretationToken): {
+    lawToken: null;
+} | {
+    interpretationToken: null;
+} {
+    return value == Variant_lawToken_interpretationToken.lawToken ? {
+        lawToken: null
+    } : value == Variant_lawToken_interpretationToken.interpretationToken ? {
+        interpretationToken: null
+    } : value;
+}
 function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Directionality): {
     none: null;
 } | {
@@ -1306,18 +1120,7 @@ function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         unidirectional: null
     } : value;
 }
-function to_candid_variant_n48(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Variant_lawToken_interpretationToken): {
-    lawToken: null;
-} | {
-    interpretationToken: null;
-} {
-    return value == Variant_lawToken_interpretationToken.lawToken ? {
-        lawToken: null
-    } : value == Variant_lawToken_interpretationToken.interpretationToken ? {
-        interpretationToken: null
-    } : value;
-}
-function to_candid_variant_n54(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
+function to_candid_variant_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
     pending: null;
 } | {
     approved: null;

@@ -5,7 +5,6 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
-import SwarmMembershipManager from "./components/SwarmMembershipManager";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useGetArchivedNodeIds,

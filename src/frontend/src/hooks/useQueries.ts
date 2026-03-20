@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  BuzzLeaderboardEntry,
   BuzzScore,
   CollectibleEdition,
   Curation,
@@ -12,14 +11,12 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
-  MembershipInfo,
   MintCollectibleRequest,
   MintSettings,
   NodeId,
   OwnedGraphData,
   Sublocation,
   Swarm,
-  SwarmUpdate,
   Tag,
 } from "../backend";
 import { useActor } from "./useActor";
@@ -518,35 +515,16 @@ export function useAssignCallerUserRole() {
   });
 }
 
-export function useRequestToJoinSwarm() {
+export function useJoinSwarm() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (swarmId: string) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.requestToJoinSwarm(swarmId);
+      return actor.joinSwarm(swarmId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
-    },
-  });
-}
-
-export function useApproveJoinRequest() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      swarmId,
-      member,
-    }: { swarmId: string; member: any }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.approveJoinRequest(swarmId, member);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["swarmMembershipRequests"] });
       queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
     },
   });
@@ -565,19 +543,6 @@ export function useGetSwarmMembers(swarmId: string) {
   });
 }
 
-export function useGetSwarmMembershipRequests(swarmId: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<MembershipInfo[]>({
-    queryKey: ["swarmMembershipRequests", swarmId],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getSwarmMembershipRequests(swarmId);
-    },
-    enabled: !!actor && !isFetching && !!swarmId,
-  });
-}
-
 export function useGetSwarmsByCreator() {
   const { actor, isFetching } = useActor();
 
@@ -585,7 +550,7 @@ export function useGetSwarmsByCreator() {
     queryKey: ["swarmsByCreator"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getSwarmsByCreator();
+      return []; // method removed from backend
     },
     enabled: !!actor && !isFetching,
   });
@@ -594,11 +559,11 @@ export function useGetSwarmsByCreator() {
 export function useGetSwarmUpdatesForUser(swarmId: string) {
   const { actor, isFetching } = useActor();
 
-  return useQuery<SwarmUpdate[]>({
+  return useQuery<any[]>({
     queryKey: ["swarmUpdates", swarmId],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getSwarmUpdatesForUser(swarmId);
+      return []; // method removed from backend
     },
     enabled: !!actor && !isFetching && !!swarmId,
   });
@@ -684,11 +649,11 @@ export function useDownvoteNode() {
 export function useGetBuzzLeaderboard() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<BuzzLeaderboardEntry[]>({
+  return useQuery<any[]>({
     queryKey: ["buzzLeaderboard"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getBuzzLeaderboard();
+      return []; // method removed from backend
     },
     enabled: !!actor && !isFetching,
   });

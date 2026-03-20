@@ -168,7 +168,6 @@ Actions:
   mybuzz                  Get my BUZZ balance
   mintsets                Get mint settings
   swarm swarmId=<id>      Get swarm members
-  requests swarmId=<id>   Get swarm membership requests
   updates swarmId=<id>    Get swarm updates for user
   unvoted swarmId=<id>    Get unvoted tokens for swarm
   vote nodeId=<id>        Get vote data for node

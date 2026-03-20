@@ -1,11 +1,11 @@
 import type { CustomAttribute } from "@/backend";
 import CreateNodeDialog from "@/components/CreateNodeDialog";
 import LawTokenCard from "@/components/LawTokenCard";
-import PublishCollectibleModal from "@/components/PublishCollectibleModal";
+import SwarmJoinButton from "@/components/SwarmJoinButton";
 import { Button } from "@/components/ui/button";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
-import { useGetAllGraphData } from "@/hooks/useQueries";
-import { ArrowLeft, BookMarked, Plus } from "lucide-react";
+import { useGetAllGraphData, useGetSwarmMembers } from "@/hooks/useQueries";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 
 interface SwarmDetailViewProps {
@@ -20,7 +20,6 @@ export default function SwarmDetailView({
   const { data: graphData } = useGetAllGraphData();
   const { identity } = useInternetIdentity();
 
-  const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [locationDialogSide, setLocationDialogSide] = useState<
     "yes" | "no" | null
   >(null);
@@ -32,6 +31,9 @@ export default function SwarmDetailView({
 
   const locations =
     graphData?.locations.filter((l) => l.parentSwarmId === swarmId) || [];
+
+  const isQol = swarm?.tags.includes("question-of-law") ?? false;
+  const { data: members } = useGetSwarmMembers(swarmId);
 
   // Find all Yes/No locations by customAttribute side
   const yesLocations = locations.filter((l) =>
@@ -65,7 +67,6 @@ export default function SwarmDetailView({
 
   const sublocationsByLawTokenId: Record<string, typeof allSublocations> = {};
   for (const edge of edges) {
-    // edge.source = sublocationId, edge.target = lawTokenId
     if (sublocationIds.has(edge.source)) {
       const lawTokenId = edge.target;
       if (!sublocationsByLawTokenId[lawTokenId]) {
@@ -77,11 +78,6 @@ export default function SwarmDetailView({
   }
 
   const isAuthenticated = !!identity;
-
-  const isCreator =
-    isAuthenticated &&
-    !!swarm &&
-    swarm.creator.toString() === identity!.getPrincipal().toString();
 
   const prefillAttributesForSide = (side: "yes" | "no"): CustomAttribute[] => [
     { key: "side", value: side },
@@ -114,18 +110,14 @@ export default function SwarmDetailView({
           )}
         </div>
 
-        {/* Publish as Collectible — creator only */}
-        {isCreator && swarm && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0 gap-1.5 text-xs"
-            onClick={() => setPublishModalOpen(true)}
-            data-ocid="swarm_detail.publish_collectible.open_modal_button"
-          >
-            <BookMarked className="h-3.5 w-3.5" />
-            Publish as Collectible
-          </Button>
+        {/* Membership — QoL swarms only */}
+        {isQol && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground">
+              {members?.length ?? 0} members
+            </span>
+            <SwarmJoinButton swarmId={swarmId} />
+          </div>
         )}
       </div>
 
@@ -222,16 +214,6 @@ export default function SwarmDetailView({
             : undefined
         }
       />
-
-      {/* Publish as Collectible Modal */}
-      {swarm && (
-        <PublishCollectibleModal
-          open={publishModalOpen}
-          onOpenChange={setPublishModalOpen}
-          swarmName={swarm.name}
-          swarmTags={swarm.tags}
-        />
-      )}
     </div>
   );
 }

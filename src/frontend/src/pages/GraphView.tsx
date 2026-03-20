@@ -23,7 +23,6 @@ import {
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
-import SwarmMembershipButton from "../components/SwarmMembershipButton";
 import { useGetGraphData } from "../hooks/useQueries";
 
 interface LayoutNode {
@@ -2290,7 +2289,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
             {selectedSwarmNode && (
               <div className="pt-3 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">Membership</p>
-                <SwarmMembershipButton swarmId={selectedSwarmNode.id} />
               </div>
             )}
           </div>

@@ -25,12 +25,6 @@ export const CustomAttribute = IDL.Record({
   'value' : IDL.Text,
 });
 export const Tag = IDL.Text;
-export const BuzzScore = IDL.Int;
-export const BuzzLeaderboardEntry = IDL.Record({
-  'principal' : IDL.Principal,
-  'score' : BuzzScore,
-  'profileName' : IDL.Opt(IDL.Text),
-});
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'socialUrl' : IDL.Opt(IDL.Text),
@@ -124,6 +118,7 @@ export const GraphData = IDL.Record({
   'interpretationTokens' : IDL.Vec(InterpretationToken),
 });
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+export const BuzzScore = IDL.Int;
 export const OwnedGraphData = IDL.Record({
   'curations' : IDL.Vec(Curation),
   'edges' : IDL.Vec(GraphEdge),
@@ -132,28 +127,6 @@ export const OwnedGraphData = IDL.Record({
   'sublocations' : IDL.Vec(Sublocation),
   'lawTokens' : IDL.Vec(LawToken),
   'interpretationTokens' : IDL.Vec(InterpretationToken),
-});
-export const MembershipStatus = IDL.Variant({
-  'pending' : IDL.Null,
-  'approved' : IDL.Null,
-});
-export const MembershipInfo = IDL.Record({
-  'status' : MembershipStatus,
-  'principal' : IDL.Principal,
-  'profileName' : IDL.Opt(IDL.Text),
-});
-export const SwarmUpdateStatus = IDL.Variant({
-  'acted' : IDL.Null,
-  'unread' : IDL.Null,
-});
-export const SwarmUpdate = IDL.Record({
-  'status' : SwarmUpdateStatus,
-  'tokenId' : NodeId,
-  'userId' : IDL.Principal,
-  'swarmId' : NodeId,
-  'tokenTitle' : IDL.Text,
-  'creatorPrincipal' : IDL.Principal,
-  'timestamp' : Time,
 });
 export const VoteData = IDL.Record({
   'upvotes' : IDL.Nat,
@@ -184,7 +157,6 @@ export const MintCollectibleResult = IDL.Variant({
 });
 
 export const idlService = IDL.Service({
-  'approveJoinRequest' : IDL.Func([NodeId, IDL.Principal], [], []),
   'archiveNode' : IDL.Func([NodeId], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createCuration' : IDL.Func([IDL.Text, IDL.Text], [NodeId], []),
@@ -216,11 +188,6 @@ export const idlService = IDL.Service({
   'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
-  'getBuzzLeaderboard' : IDL.Func(
-      [],
-      [IDL.Vec(BuzzLeaderboardEntry)],
-      ['query'],
-    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCollectibleEditions' : IDL.Func(
@@ -233,17 +200,6 @@ export const idlService = IDL.Service({
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
   'getMyOwnedGraphData' : IDL.Func([], [OwnedGraphData], ['query']),
   'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
-  'getSwarmMembershipRequests' : IDL.Func(
-      [NodeId],
-      [IDL.Vec(MembershipInfo)],
-      ['query'],
-    ),
-  'getSwarmUpdatesForUser' : IDL.Func(
-      [NodeId],
-      [IDL.Vec(SwarmUpdate)],
-      ['query'],
-    ),
-  'getSwarmsByCreator' : IDL.Func([], [IDL.Vec(Swarm)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -254,6 +210,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
   'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+  'joinSwarm' : IDL.Func([NodeId], [], []),
   'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
   'mintCollectible' : IDL.Func(
       [MintCollectibleRequest],
@@ -261,7 +218,6 @@ export const idlService = IDL.Service({
       [],
     ),
   'requestApproval' : IDL.Func([], [], []),
-  'requestToJoinSwarm' : IDL.Func([NodeId], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
@@ -286,12 +242,6 @@ export const idlFactory = ({ IDL }) => {
   });
   const CustomAttribute = IDL.Record({ 'key' : IDL.Text, 'value' : IDL.Text });
   const Tag = IDL.Text;
-  const BuzzScore = IDL.Int;
-  const BuzzLeaderboardEntry = IDL.Record({
-    'principal' : IDL.Principal,
-    'score' : BuzzScore,
-    'profileName' : IDL.Opt(IDL.Text),
-  });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
     'socialUrl' : IDL.Opt(IDL.Text),
@@ -385,6 +335,7 @@ export const idlFactory = ({ IDL }) => {
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+  const BuzzScore = IDL.Int;
   const OwnedGraphData = IDL.Record({
     'curations' : IDL.Vec(Curation),
     'edges' : IDL.Vec(GraphEdge),
@@ -393,28 +344,6 @@ export const idlFactory = ({ IDL }) => {
     'sublocations' : IDL.Vec(Sublocation),
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
-  });
-  const MembershipStatus = IDL.Variant({
-    'pending' : IDL.Null,
-    'approved' : IDL.Null,
-  });
-  const MembershipInfo = IDL.Record({
-    'status' : MembershipStatus,
-    'principal' : IDL.Principal,
-    'profileName' : IDL.Opt(IDL.Text),
-  });
-  const SwarmUpdateStatus = IDL.Variant({
-    'acted' : IDL.Null,
-    'unread' : IDL.Null,
-  });
-  const SwarmUpdate = IDL.Record({
-    'status' : SwarmUpdateStatus,
-    'tokenId' : NodeId,
-    'userId' : IDL.Principal,
-    'swarmId' : NodeId,
-    'tokenTitle' : IDL.Text,
-    'creatorPrincipal' : IDL.Principal,
-    'timestamp' : Time,
   });
   const VoteData = IDL.Record({ 'upvotes' : IDL.Nat, 'downvotes' : IDL.Nat });
   const ApprovalStatus = IDL.Variant({
@@ -442,7 +371,6 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'approveJoinRequest' : IDL.Func([NodeId, IDL.Principal], [], []),
     'archiveNode' : IDL.Func([NodeId], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createCuration' : IDL.Func([IDL.Text, IDL.Text], [NodeId], []),
@@ -474,11 +402,6 @@ export const idlFactory = ({ IDL }) => {
     'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
-    'getBuzzLeaderboard' : IDL.Func(
-        [],
-        [IDL.Vec(BuzzLeaderboardEntry)],
-        ['query'],
-      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCollectibleEditions' : IDL.Func(
@@ -491,17 +414,6 @@ export const idlFactory = ({ IDL }) => {
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
     'getMyOwnedGraphData' : IDL.Func([], [OwnedGraphData], ['query']),
     'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
-    'getSwarmMembershipRequests' : IDL.Func(
-        [NodeId],
-        [IDL.Vec(MembershipInfo)],
-        ['query'],
-      ),
-    'getSwarmUpdatesForUser' : IDL.Func(
-        [NodeId],
-        [IDL.Vec(SwarmUpdate)],
-        ['query'],
-      ),
-    'getSwarmsByCreator' : IDL.Func([], [IDL.Vec(Swarm)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -512,6 +424,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
     'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+    'joinSwarm' : IDL.Func([NodeId], [], []),
     'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
     'mintCollectible' : IDL.Func(
         [MintCollectibleRequest],
@@ -519,7 +432,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'requestApproval' : IDL.Func([], [], []),
-    'requestToJoinSwarm' : IDL.Func([NodeId], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),

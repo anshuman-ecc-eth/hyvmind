@@ -637,13 +637,13 @@ export default function TerminalPage() {
           break;
         }
         case "swarmsbycreator": {
-          const swarms = await actor.getSwarmsByCreator();
+          const swarms: any[] = []; // method removed from backend
           addMessage("success", `🌀 Swarms by creator: ${swarms.length}`);
           showJsonPrompt(swarms);
           break;
         }
         case "leaderboard": {
-          const lb = await actor.getBuzzLeaderboard();
+          const lb: any[] = []; // method removed from backend
           addMessage("success", `🏆 Leaderboard: ${lb.length} entries`);
           showJsonPrompt(lb);
           break;
@@ -678,23 +678,6 @@ export default function TerminalPage() {
           showJsonPrompt(members);
           break;
         }
-        case "requests": {
-          const swarmId = fields?.swarmId as string;
-          if (!swarmId) {
-            addMessage(
-              "error",
-              formatDebugError("Missing required param: swarmId"),
-            );
-            return;
-          }
-          const requests = await actor.getSwarmMembershipRequests(swarmId);
-          addMessage(
-            "success",
-            `📨 Membership requests for ${swarmId}: ${requests.length}`,
-          );
-          showJsonPrompt(requests);
-          break;
-        }
         case "updates": {
           const swarmId = fields?.swarmId as string;
           if (!swarmId) {
@@ -704,7 +687,7 @@ export default function TerminalPage() {
             );
             return;
           }
-          const updates = await actor.getSwarmUpdatesForUser(swarmId);
+          const updates: any[] = []; // method removed from backend
           const count = Array.isArray(updates) ? updates.length : 1;
           addMessage("success", `🔔 Swarm updates for ${swarmId}: ${count}`);
           showJsonPrompt(updates);

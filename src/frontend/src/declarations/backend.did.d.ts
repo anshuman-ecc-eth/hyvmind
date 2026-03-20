@@ -13,11 +13,6 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type ApprovalStatus = { 'pending' : null } |
   { 'approved' : null } |
   { 'rejected' : null };
-export interface BuzzLeaderboardEntry {
-  'principal' : Principal,
-  'score' : BuzzScore,
-  'profileName' : [] | [string],
-}
 export type BuzzScore = bigint;
 export interface CollectibleEdition {
   'tokenId' : NodeId,
@@ -89,13 +84,6 @@ export interface Location {
   'parentSwarmId' : NodeId,
   'version' : bigint,
 }
-export interface MembershipInfo {
-  'status' : MembershipStatus,
-  'principal' : Principal,
-  'profileName' : [] | [string],
-}
-export type MembershipStatus = { 'pending' : null } |
-  { 'approved' : null };
 export interface MintCollectibleRequest {
   'tokenId' : NodeId,
   'tokenType' : { 'lawToken' : null } |
@@ -133,17 +121,6 @@ export interface Swarm {
   'timestamps' : Timestamps,
   'parentCurationId' : NodeId,
 }
-export interface SwarmUpdate {
-  'status' : SwarmUpdateStatus,
-  'tokenId' : NodeId,
-  'userId' : Principal,
-  'swarmId' : NodeId,
-  'tokenTitle' : string,
-  'creatorPrincipal' : Principal,
-  'timestamp' : Time,
-}
-export type SwarmUpdateStatus = { 'acted' : null } |
-  { 'unread' : null };
 export type Tag = string;
 export type Time = bigint;
 export interface Timestamps { 'createdAt' : Time }
@@ -157,7 +134,6 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface VoteData { 'upvotes' : bigint, 'downvotes' : bigint }
 export interface _SERVICE {
-  'approveJoinRequest' : ActorMethod<[NodeId, Principal], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createCuration' : ActorMethod<[string, string], NodeId>,
@@ -186,7 +162,6 @@ export interface _SERVICE {
   'createSwarm' : ActorMethod<[string, Array<Tag>, NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
-  'getBuzzLeaderboard' : ActorMethod<[], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCollectibleEditions' : ActorMethod<[NodeId], Array<CollectibleEdition>>,
@@ -195,22 +170,19 @@ export interface _SERVICE {
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getMyOwnedGraphData' : ActorMethod<[], OwnedGraphData>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
-  'getSwarmMembershipRequests' : ActorMethod<[NodeId], Array<MembershipInfo>>,
-  'getSwarmUpdatesForUser' : ActorMethod<[NodeId], Array<SwarmUpdate>>,
-  'getSwarmsByCreator' : ActorMethod<[], Array<Swarm>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
   'isNodeArchived' : ActorMethod<[NodeId], boolean>,
+  'joinSwarm' : ActorMethod<[NodeId], undefined>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'mintCollectible' : ActorMethod<
     [MintCollectibleRequest],
     MintCollectibleResult
   >,
   'requestApproval' : ActorMethod<[], undefined>,
-  'requestToJoinSwarm' : ActorMethod<[NodeId], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
