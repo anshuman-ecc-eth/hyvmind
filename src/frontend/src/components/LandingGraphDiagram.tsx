@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend";
 import { createActorWithConfig } from "../config";
 
@@ -49,6 +49,7 @@ export default function LandingGraphDiagram() {
   const [mounted, setMounted] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [resizeKey, setResizeKey] = useState(0);
   const { resolvedTheme } = useTheme();
 
   // State for data management
@@ -61,6 +62,47 @@ export default function LandingGraphDiagram() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Resize canvas to match container with high-DPI support
+  const resizeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set display size (CSS pixels)
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
+    // Set actual size in memory (scaled for high-DPI)
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // Scale context to match device pixel ratio
+    ctx.scale(dpr, dpr);
+  }, []);
+
+  // ResizeObserver: watch parent element for size changes
+  useEffect(() => {
+    if (!mounted || !canvasRef.current) return;
+
+    const parent = canvasRef.current.parentElement;
+    if (!parent) return;
+
+    const observer = new ResizeObserver(() => {
+      resizeCanvas();
+      setResizeKey((k) => k + 1);
+    });
+
+    observer.observe(parent);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [mounted, resizeCanvas]);
 
   // Load data with cache-first strategy
   useEffect(() => {
@@ -413,6 +455,7 @@ export default function LandingGraphDiagram() {
   }, [nodes, edges]);
 
   // Force-directed layout simulation with theme-aware background and hover highlighting
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resizeKey is an intentional re-run trigger
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || nodes.length === 0 || !mounted) return;
@@ -422,23 +465,7 @@ export default function LandingGraphDiagram() {
 
     let animationActive = true;
 
-    // Set canvas size to match container with high-DPI support
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-
-      // Set display size (CSS pixels)
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-
-      // Set actual size in memory (scaled for high-DPI)
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-
-      // Scale context to match device pixel ratio
-      ctx.scale(dpr, dpr);
-    };
-
+    // Initial resize on effect mount
     resizeCanvas();
 
     // Physics parameters
@@ -680,7 +707,16 @@ export default function LandingGraphDiagram() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [nodes, edges, hoveredNode, neighborMap, resolvedTheme, mounted]);
+  }, [
+    nodes,
+    edges,
+    hoveredNode,
+    neighborMap,
+    resolvedTheme,
+    mounted,
+    resizeKey,
+    resizeCanvas,
+  ]);
 
   // Mouse move handler for hover detection
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {

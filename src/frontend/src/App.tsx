@@ -131,7 +131,7 @@ export default function App() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex h-[100dvh] flex-col bg-background">
         <Header
           currentView={currentView === "swarm-detail" ? "swarms" : currentView}
           onViewChange={handleViewChange}
@@ -141,7 +141,7 @@ export default function App() {
 
         <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {!isAuthenticated ? (
-            <div className="h-full">
+            <div className="h-full min-h-0">
               <LandingGraphDiagram />
             </div>
           ) : (
