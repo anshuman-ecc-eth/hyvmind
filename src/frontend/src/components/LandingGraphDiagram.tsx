@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { AlertCircle, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend";
@@ -26,8 +24,8 @@ const NODE_TYPE_NAMES: Record<string, string> = {
   curation: "Curation",
   swarm: "Swarm",
   location: "Location",
-  lawToken: "Law Token",
-  interpretationToken: "Interpretation Token",
+  lawToken: "LawToken",
+  interpretationToken: "InterpToken",
 };
 
 // Cache configuration
@@ -762,92 +760,107 @@ export default function LandingGraphDiagram() {
 
   if (!mounted) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="w-full h-full flex items-center justify-center bg-background font-mono">
+        <span className="text-muted-foreground terminal-blink">Loading_</span>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading graph data...</div>
+      <div className="w-full h-full flex items-center justify-center bg-background font-mono">
+        <span className="text-muted-foreground terminal-blink">Loading_</span>
       </div>
     );
   }
 
   if (isError && !graphData) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-background p-8">
-        <AlertCircle className="w-12 h-12 text-destructive" />
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-background p-8 font-mono">
+        <span className="text-destructive font-bold">[ERROR]</span>
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">Failed to load graph</h3>
-          <p className="text-sm text-muted-foreground mb-4">{errorMessage}</p>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
+          <h3 className="text-sm font-semibold mb-2 font-mono">
+            failed to load graph
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4 font-mono">
+            {errorMessage}
+          </p>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="font-mono text-xs border border-dashed border-border px-3 py-1 hover:border-foreground hover:text-foreground text-muted-foreground bg-transparent transition-colors"
+            data-ocid="landing.retry.button"
+          >
+            [retry]
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full">
-      <canvas
-        ref={canvasRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onKeyDown={handleKeyDown}
-        className="w-full h-full cursor-pointer"
-        style={{ display: "block" }}
-        tabIndex={0}
-        aria-label="Interactive force-directed graph visualization"
-      />
+    <div
+      ref={containerRef}
+      className="relative w-full h-full flex flex-col border border-dashed border-border font-mono"
+      data-ocid="landing.canvas_target"
+    >
+      {/* Canvas area */}
+      <div className="relative flex-1 min-h-0">
+        <canvas
+          ref={canvasRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          onKeyDown={handleKeyDown}
+          className="w-full h-full cursor-pointer"
+          style={{ display: "block" }}
+          tabIndex={0}
+          aria-label="Interactive force-directed graph visualization"
+        />
 
-      {/* Tooltip */}
-      {hoveredNode && (
-        <div
-          ref={tooltipRef}
-          className="fixed z-50 px-3 py-2 text-sm bg-popover text-popover-foreground border border-border rounded-md shadow-md pointer-events-none"
-          style={{
-            left: tooltipPosition.x + 10,
-            top: tooltipPosition.y + 10,
-          }}
-        >
-          <div className="font-medium">{hoveredNode.nodeName}</div>
-          <div className="text-xs text-muted-foreground">
-            {NODE_TYPE_NAMES[hoveredNode.nodeType]}
+        {/* Tooltip */}
+        {hoveredNode && (
+          <div
+            ref={tooltipRef}
+            className="fixed z-50 px-3 py-2 text-xs bg-popover text-popover-foreground border border-dashed border-border shadow-md pointer-events-none font-mono"
+            style={{
+              left: tooltipPosition.x + 10,
+              top: tooltipPosition.y + 10,
+            }}
+          >
+            {hoveredNode.nodeName} [
+            {NODE_TYPE_NAMES[hoveredNode.nodeType] ?? hoveredNode.nodeType}]
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Refresh button */}
-      <Button
-        onClick={handleRefresh}
-        variant="outline"
-        size="icon"
-        className="absolute bottom-4 right-4 rounded-full shadow-lg"
-        disabled={isLoading}
-        aria-label="Refresh graph data"
-      >
-        <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-      </Button>
+        {/* Error banner (when using cached data with error) */}
+        {isError && graphData && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 px-4 py-1 text-xs bg-background border border-dashed border-destructive text-destructive font-mono flex items-center gap-2">
+            [ERROR] {errorMessage}
+          </div>
+        )}
+      </div>
 
-      {/* Cache indicator */}
-      {isFromCache && (
-        <div className="absolute top-4 right-4 px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md">
-          Cached data
+      {/* Terminal Status Bar */}
+      <div className="flex items-center justify-between px-3 py-1 border-t border-dashed border-border bg-background shrink-0">
+        <span className="font-mono text-xs text-muted-foreground">
+          {nodes.length} nodes · {edges.length} edges
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs text-muted-foreground">
+            {isFromCache ? "[CACHED]" : "[LIVE]"}
+          </span>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+            title="refresh"
+            data-ocid="landing.button"
+          >
+            {isLoading ? "[...]" : "[R]"}
+          </button>
         </div>
-      )}
-
-      {/* Error banner (when using cached data with error) */}
-      {isError && graphData && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 text-sm bg-destructive/10 text-destructive border border-destructive/20 rounded-md flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          {errorMessage}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

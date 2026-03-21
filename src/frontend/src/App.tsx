@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
+import TextGameModal from "./components/TextGameModal";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useGetArchivedNodeIds,
@@ -33,7 +34,13 @@ export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
   const [currentView, setCurrentView] = useState<ViewType>("graph");
   const [selectedSwarmId, setSelectedSwarmId] = useState<string | null>(null);
+  const [gameComplete, setGameComplete] = useState(false);
   const isAuthenticated = !!identity;
+
+  // Force dark mode permanently
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
 
   const {
     data: userProfile,
@@ -116,11 +123,11 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
         <div className="flex h-screen items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p className="text-muted-foreground">Initializing...</p>
+            <p className="text-muted-foreground font-mono">initializing_</p>
           </div>
         </div>
         <Toaster />
@@ -129,7 +136,7 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
       <div className="flex h-[100dvh] flex-col bg-background">
         <Header
           currentView={currentView === "swarm-detail" ? "swarms" : currentView}
@@ -140,8 +147,21 @@ export default function App() {
 
         <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {!isAuthenticated ? (
-            <div className="h-full min-h-0">
-              <LandingGraphDiagram />
+            <div className="h-full min-h-0 relative">
+              {/* Graph loads in background, hidden until game completes */}
+              <div
+                className="h-full"
+                style={{
+                  visibility: gameComplete ? "visible" : "hidden",
+                  pointerEvents: gameComplete ? "auto" : "none",
+                }}
+              >
+                <LandingGraphDiagram />
+              </div>
+              {/* Text game overlay */}
+              {!gameComplete && (
+                <TextGameModal onComplete={() => setGameComplete(true)} />
+              )}
             </div>
           ) : (
             <>

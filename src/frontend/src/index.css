@@ -4,36 +4,7 @@
 
 @layer base {
   :root {
-    /* Monochrome base colors using raw OKLCH triplets */
-    --background: 100% 0 0;
-    --foreground: 0% 0 0;
-    --card: 100% 0 0;
-    --card-foreground: 0% 0 0;
-    --popover: 100% 0 0;
-    --popover-foreground: 0% 0 0;
-    --primary: 0% 0 0;
-    --primary-foreground: 100% 0 0;
-    --secondary: 96% 0 0;
-    --secondary-foreground: 0% 0 0;
-    --muted: 96% 0 0;
-    --muted-foreground: 45% 0 0;
-    --accent: 96% 0 0;
-    --accent-foreground: 0% 0 0;
-    --destructive: 50% 0.2 25;
-    --destructive-foreground: 100% 0 0;
-    --border: 90% 0 0;
-    --input: 90% 0 0;
-    --ring: 0% 0 0;
-    --chart-1: 60% 0.15 150;
-    --chart-2: 65% 0.15 200;
-    --chart-3: 55% 0.15 100;
-    --chart-4: 70% 0.15 250;
-    --chart-5: 50% 0.15 50;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    /* Dark mode monochrome palette */
+    /* Dark mode monochrome palette — dark only, no light mode */
     --background: 0% 0 0;
     --foreground: 100% 0 0;
     --card: 0% 0 0;
@@ -58,6 +29,40 @@
     --chart-3: 55% 0.15 100;
     --chart-4: 70% 0.15 250;
     --chart-5: 50% 0.15 50;
+    --radius: 0px;
+    /* Terminal border variables */
+    --terminal-border: oklch(30% 0 0);
+    --terminal-border-muted: oklch(20% 0 0);
+  }
+
+  /* Keep .dark in sync for ThemeProvider */
+  .dark {
+    --background: 0% 0 0;
+    --foreground: 100% 0 0;
+    --card: 0% 0 0;
+    --card-foreground: 100% 0 0;
+    --popover: 5% 0 0;
+    --popover-foreground: 100% 0 0;
+    --primary: 100% 0 0;
+    --primary-foreground: 0% 0 0;
+    --secondary: 15% 0 0;
+    --secondary-foreground: 100% 0 0;
+    --muted: 15% 0 0;
+    --muted-foreground: 65% 0 0;
+    --accent: 15% 0 0;
+    --accent-foreground: 100% 0 0;
+    --destructive: 50% 0.2 25;
+    --destructive-foreground: 100% 0 0;
+    --border: 20% 0 0;
+    --input: 20% 0 0;
+    --ring: 100% 0 0;
+    --chart-1: 60% 0.15 150;
+    --chart-2: 65% 0.15 200;
+    --chart-3: 55% 0.15 100;
+    --chart-4: 70% 0.15 250;
+    --chart-5: 50% 0.15 50;
+    --terminal-border: oklch(30% 0 0);
+    --terminal-border-muted: oklch(20% 0 0);
   }
 }
 
@@ -66,19 +71,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
-  /* Monochrome cursor with accent on hover */
   .cursor-pointer {
     cursor: pointer;
   }
   .cursor-pointer:hover {
     cursor: pointer;
   }
+}
+
+/* Terminal blink animation */
+@keyframes terminal-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.terminal-blink {
+  animation: terminal-blink 1s step-end infinite;
 }
 
 /* Theme-adaptive scrollbar styling */
@@ -93,7 +112,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: oklch(var(--muted-foreground) / 0.3);
-  border-radius: 5px;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -121,7 +140,7 @@
   color: #000000;
   border: 1px solid #cccccc;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px
     rgba(0, 0, 0, 0.06);
 }

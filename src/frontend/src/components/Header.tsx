@@ -6,16 +6,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, Moon, Plus, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { Menu } from "lucide-react";
+import { useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { clearTreeCache } from "../hooks/useQueries";
 import CreateNodeDialog from "./CreateNodeDialog";
@@ -42,20 +35,13 @@ export default function Header({
   isAuthenticated,
   isLandingPage,
 }: HeaderProps) {
-  const { setTheme, resolvedTheme } = useTheme();
   const { login, clear, loginStatus } = useInternetIdentity();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleLogout = async () => {
     await clear();
-    // Clear tree cache on logout
     clearTreeCache();
     queryClient.clear();
   };
@@ -72,143 +58,63 @@ export default function Header({
     }
   };
 
-  // Use resolvedTheme for logo selection to handle system theme correctly
-  const currentTheme = mounted ? resolvedTheme : "dark";
+  const navItems: {
+    key: "graph" | "tree" | "terminal" | "swarms" | "collectibles" | "buzz";
+    label: string;
+  }[] = [
+    { key: "graph", label: "graph" },
+    { key: "tree", label: "list" },
+    { key: "terminal", label: "terminal" },
+    { key: "swarms", label: "swarms" },
+    { key: "collectibles", label: "collectibles" },
+    { key: "buzz", label: "leaderboard" },
+  ];
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="container mx-auto px-6 py-4">
+    <header className="border-b border-dashed border-border bg-background font-mono">
+      <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
-          {/* Logo and App Name */}
-          <div className="flex items-center gap-3">
+          {/* Image Logo */}
+          <div className="flex items-center">
             <img
-              src={
-                currentTheme === "dark"
-                  ? "/assets/hyvmind_logo white, transparent.png"
-                  : "/assets/hyvmind_logo black, transparent.png"
-              }
-              alt="Hyvmind Logo"
-              className="h-8 w-auto opacity-100"
-              style={{ opacity: 1 }}
+              src="/assets/uploads/ascii-logo-1.png"
+              alt="hyvmind"
+              className="h-8 object-contain"
             />
-            <span className="text-sm font-medium text-foreground">hyvmind</span>
           </div>
-
-          {/* Navigation Tabs (only for authenticated users) */}
-          {isAuthenticated && (
-            <nav className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("graph")}
-                className={`${
-                  currentView === "graph"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Graph
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("tree")}
-                className={`${
-                  currentView === "tree"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                List
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("terminal")}
-                className={`${
-                  currentView === "terminal"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Terminal
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("swarms")}
-                className={`${
-                  currentView === "swarms"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Swarms
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("collectibles")}
-                className={`${
-                  currentView === "collectibles"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Collectibles
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => onViewChange("buzz")}
-                className={`${
-                  currentView === "buzz"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Leaderboard
-              </Button>
-            </nav>
-          )}
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-2">
+            {/* Create Node button for authenticated users */}
             {isAuthenticated && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <CreateNodeDialog
-                      trigger={
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setCreateDialogOpen(true)}
-                          className="hover:bg-accent hover:text-accent-foreground"
-                        >
-                          <Plus className="h-5 w-5" />
-                        </Button>
-                      }
-                      open={createDialogOpen}
-                      onOpenChange={setCreateDialogOpen}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Create Node</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <CreateNodeDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCreateDialogOpen(true)}
+                    className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+                    data-ocid="header.open_modal_button"
+                  >
+                    [+]
+                  </Button>
+                }
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+              />
             )}
 
-            {/* Theme Toggle - Now visible on landing page and for authenticated users */}
-            {mounted && (
+            {/* Login button for unauthenticated users — left of hamburger */}
+            {!isAuthenticated && (
               <Button
                 variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setTheme(resolvedTheme === "dark" ? "light" : "dark")
-                }
-                className="hover:bg-accent hover:text-accent-foreground"
+                size="sm"
+                onClick={handleLogin}
+                disabled={loginStatus === "logging-in"}
+                className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+                data-ocid="header.login.button"
               >
-                {resolvedTheme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {loginStatus === "logging-in" ? "> logging in..." : "> login"}
               </Button>
             )}
 
@@ -217,43 +123,62 @@ export default function Header({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="hover:bg-accent hover:text-accent-foreground"
+                  size="sm"
+                  className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+                  data-ocid="header.open_modal_button"
                 >
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-popover text-popover-foreground border border-border"
+                className="bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none"
+                data-ocid="header.dropdown_menu"
               >
+                {/* Nav items — disabled when not authenticated */}
+                {navItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.key}
+                    onClick={() =>
+                      isAuthenticated ? onViewChange(item.key) : undefined
+                    }
+                    disabled={!isAuthenticated}
+                    className={`font-mono text-xs cursor-pointer ${
+                      isAuthenticated && currentView === item.key
+                        ? "text-foreground font-semibold"
+                        : isAuthenticated
+                          ? "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground opacity-40 cursor-not-allowed"
+                    }`}
+                    data-ocid={`header.${item.key}.link`}
+                  >
+                    {isAuthenticated && currentView === item.key
+                      ? `> [${item.label}]`
+                      : `[${item.label}]`}
+                  </DropdownMenuItem>
+                ))}
+
+                <DropdownMenuSeparator className="border-dashed" />
+
                 {!isAuthenticated ? (
                   <>
-                    <DropdownMenuItem
-                      onClick={handleLogin}
-                      disabled={loginStatus === "logging-in"}
-                      className="cursor-pointer"
-                    >
-                      {loginStatus === "logging-in" ? "Logging in..." : "Login"}
-                    </DropdownMenuItem>
                     {isLandingPage && (
                       <>
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() =>
                             window.open("https://app.cg/c/hyvmind/", "_blank")
                           }
-                          className="cursor-pointer"
+                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                         >
-                          Join Chat
+                          join chat
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             window.open("https://x.com/hyvmind_app", "_blank")
                           }
-                          className="cursor-pointer"
+                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                         >
-                          Keep Track
+                          keep track
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
@@ -262,9 +187,9 @@ export default function Header({
                               "_blank",
                             )
                           }
-                          className="cursor-pointer"
+                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                         >
-                          See Whitepaper
+                          see whitepaper
                         </DropdownMenuItem>
                       </>
                     )}
@@ -273,15 +198,17 @@ export default function Header({
                   <>
                     <DropdownMenuItem
                       onClick={() => setProfileSettingsOpen(true)}
-                      className="cursor-pointer"
+                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                      data-ocid="header.settings.link"
                     >
-                      Settings
+                      settings
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="cursor-pointer"
+                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                      data-ocid="header.logout.button"
                     >
-                      Logout
+                      logout
                     </DropdownMenuItem>
                   </>
                 )}

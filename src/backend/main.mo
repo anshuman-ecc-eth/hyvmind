@@ -954,13 +954,13 @@ actor {
 
         let lawTokenId = newId;
 
-        let currentRelations = switch (locationLawTokenRelations.get(sublocation.id)) {
+        let currentRelations = switch (sublocationLawTokenRelations.get(sublocation.id)) {
           case (null) { List.empty<NodeId>() };
           case (?relations) { relations };
         };
 
         currentRelations.add(lawTokenId);
-        locationLawTokenRelations.add(sublocation.id, currentRelations);
+        sublocationLawTokenRelations.add(sublocation.id, currentRelations);
       };
     };
 
@@ -1623,8 +1623,34 @@ actor {
   };
 
   func createLawTokensForLocation(location : Location, creator : Principal) : Nat {
-    // Implementation needed
-    0
+    let tokens = splitByCurlyBrackets(location.content);
+    var tokensCreated : Nat = 0;
+    for (token in tokens.values()) {
+      let cleanToken = token.trim(#char ' ');
+      if (cleanToken.size() != 0) {
+        let newId = generateId("lawToken", cleanToken, creator);
+        let newLawToken = {
+          id = newId;
+          tokenLabel = cleanToken;
+          parentLocationId = location.id;
+          creator;
+          timestamps = {
+            createdAt = Time.now();
+          };
+        };
+        lawTokenMap.add(newId, newLawToken);
+        autoUpvoteNode(newId, creator);
+        tokensCreated += 1;
+        let lawTokenId = newId;
+        let currentRelations = switch (locationLawTokenRelations.get(location.id)) {
+          case (null) { List.empty<NodeId>() };
+          case (?relations) { relations };
+        };
+        currentRelations.add(lawTokenId);
+        locationLawTokenRelations.add(location.id, currentRelations);
+      };
+    };
+    tokensCreated;
   };
 
   func updateBuzzScoreOnLawTokenCreation(creator : Principal, count : Nat) {
@@ -1636,8 +1662,24 @@ actor {
   };
 
   func splitByCurlyBrackets(content : Text) : [Text] {
-    // Implementation needed
-    []
+    var resultList = List.empty<Text>();
+    var collecting = false;
+    var current = "";
+    for (c in content.chars()) {
+      if (c == '{') {
+        collecting := true;
+        current := "";
+      } else if (c == '}') {
+        if (collecting) {
+          resultList.add(current);
+          collecting := false;
+          current := "";
+        };
+      } else if (collecting) {
+        current := current # Text.fromChar(c);
+      };
+    };
+    resultList.toArray();
   };
 
   func getNodeCreator(nodeId : NodeId) : ?Principal {
