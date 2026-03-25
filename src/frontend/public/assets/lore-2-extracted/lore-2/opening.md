@@ -1,0 +1,3 @@
+- (M) welcome to hyvmind
+	 - (P) [[play]] 
+	 - (P) [[explore]]

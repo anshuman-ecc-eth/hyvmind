@@ -1,0 +1,6 @@
+- (M) you must respect the law, except when
+- (M) it breaks a higher law...
+	- (P) [[constitution]]
+	- (P) [[contract]]
+	- (P) [[crime]]
+	- (P) [[conscience]]

@@ -1,0 +1,18 @@
+- (M) several decades before [[the event]], a series of [[debates]] took place
+- (M) eleven participants and their arguments stood out... 
+	- (P) [[the historian]]
+	- (P) [[the philosopher]]
+	- (P) [[the storyteller]] 
+	- (P) [[the logician]] 
+	- (P) [[the priest]] 
+	- (P) [[the lawyer]] 
+	- (P) [[the mathematician]] 
+	- (P) [[the leader]]
+	- (P) [[the artist]]
+	- (P) [[the labourer]]
+	- (P) [[the mediator]]
+- (M) before [[the three disagreements]], it was common practice to give each [[citizen]] two choices before a debate...
+	- (P) [[calculus of voices]] or remain [[silent]]
+- (M) a detailed list of the most urgent questions was drawn up 
+- (M) this practice continued, with minor and major [[interruptions]] for some years 
+- (M) before [[the first disagreement]] brought it to an abrupt halt
