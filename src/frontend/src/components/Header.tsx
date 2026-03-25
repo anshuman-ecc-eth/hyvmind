@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
@@ -33,7 +32,7 @@ export default function Header({
   currentView,
   onViewChange,
   isAuthenticated,
-  isLandingPage,
+  isLandingPage: _isLandingPage,
 }: HeaderProps) {
   const { login, clear, loginStatus } = useInternetIdentity();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -135,67 +134,54 @@ export default function Header({
                 className="bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none"
                 data-ocid="header.dropdown_menu"
               >
-                {/* Nav items — disabled when not authenticated */}
-                {navItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={() =>
-                      isAuthenticated ? onViewChange(item.key) : undefined
-                    }
-                    disabled={!isAuthenticated}
-                    className={`font-mono text-xs cursor-pointer ${
-                      isAuthenticated && currentView === item.key
-                        ? "text-foreground font-semibold"
-                        : isAuthenticated
-                          ? "text-muted-foreground hover:text-foreground"
-                          : "text-muted-foreground opacity-40 cursor-not-allowed"
-                    }`}
-                    data-ocid={`header.${item.key}.link`}
-                  >
-                    {isAuthenticated && currentView === item.key
-                      ? `> [${item.label}]`
-                      : `[${item.label}]`}
-                  </DropdownMenuItem>
-                ))}
-
-                <DropdownMenuSeparator className="border-dashed" />
-
                 {!isAuthenticated ? (
                   <>
-                    {isLandingPage && (
-                      <>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            window.open("https://app.cg/c/hyvmind/", "_blank")
-                          }
-                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                        >
-                          join chat
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            window.open("https://x.com/hyvmind_app", "_blank")
-                          }
-                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                        >
-                          keep track
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            window.open(
-                              "https://nodes.desci.com/dpid/969",
-                              "_blank",
-                            )
-                          }
-                          className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                        >
-                          see whitepaper
-                        </DropdownMenuItem>
-                      </>
-                    )}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        window.open("https://app.cg/c/hyvmind/", "_blank")
+                      }
+                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    >
+                      join chat
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        window.open("https://x.com/hyvmind_app", "_blank")
+                      }
+                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    >
+                      keep track
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        window.open(
+                          "https://nodes.desci.com/dpid/969",
+                          "_blank",
+                        )
+                      }
+                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    >
+                      see whitepaper
+                    </DropdownMenuItem>
                   </>
                 ) : (
                   <>
+                    {navItems.map((item) => (
+                      <DropdownMenuItem
+                        key={item.key}
+                        onClick={() => onViewChange(item.key)}
+                        className={`font-mono text-xs cursor-pointer ${
+                          currentView === item.key
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        data-ocid={`header.${item.key}.link`}
+                      >
+                        {currentView === item.key
+                          ? `> [${item.label}]`
+                          : `[${item.label}]`}
+                      </DropdownMenuItem>
+                    ))}
                     <DropdownMenuItem
                       onClick={() => setProfileSettingsOpen(true)}
                       className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"

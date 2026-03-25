@@ -1,6 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import CommandPalette from "./components/CommandPalette";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
@@ -35,12 +37,27 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>("graph");
   const [selectedSwarmId, setSelectedSwarmId] = useState<string | null>(null);
   const [gameComplete, setGameComplete] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isAuthenticated = !!identity;
 
   // Force dark mode permanently
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
+
+  // Keyboard shortcut: Ctrl+P / Cmd+P to open command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        if (isAuthenticated) {
+          setCommandPaletteOpen((prev) => !prev);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAuthenticated]);
 
   const {
     data: userProfile,
@@ -121,6 +138,14 @@ export default function App() {
     setCurrentView(view);
   };
 
+  const handleExecuteCommand = (command: string) => {
+    handleViewChange("terminal");
+    toast.info(`Terminal: ${command}`, {
+      description: "Complete the command in the terminal below.",
+      duration: 3000,
+    });
+  };
+
   if (isInitializing) {
     return (
       <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
@@ -191,6 +216,15 @@ export default function App() {
 
         {showProfileSetup && <ProfileSetupModal />}
         <Toaster />
+
+        {isAuthenticated && (
+          <CommandPalette
+            open={commandPaletteOpen}
+            onOpenChange={setCommandPaletteOpen}
+            onViewChange={(view) => handleViewChange(view as ViewType)}
+            onExecuteCommand={handleExecuteCommand}
+          />
+        )}
       </div>
     </ThemeProvider>
   );
