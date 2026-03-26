@@ -1393,13 +1393,7 @@ actor {
           case (null) {};
         };
         // For original swarms: creator or QoL member
-        if (swarm.creator == caller) {
-          return true;
-        };
-        if (not isQuestionOfLawSwarm(swarmId)) {
-          return false;
-        };
-        isSwarmMember(caller, swarmId);
+        swarm.creator == caller;
       };
     };
   };
