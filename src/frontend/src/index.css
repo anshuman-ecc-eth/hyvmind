@@ -119,6 +119,14 @@
   background: oklch(var(--muted-foreground) / 0.5);
 }
 
+/* Kill focus ring on cmdk command input */
+[cmdk-input],
+[cmdk-input]:focus,
+[cmdk-input]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Theme-independent Voronoi diagram styles */
 .voronoi-diagram-container {
   background: #ffffff !important;

@@ -76,7 +76,7 @@ export default function Header({
           {/* Image Logo */}
           <div className="flex items-center">
             <img
-              src="/assets/uploads/ascii-logo1-1.png"
+              src="/assets/uploads/megrim_transparent-019d290a-12e2-7228-bb6e-8eff24087d7a-1.png"
               alt="hyvmind"
               className="h-8 object-contain"
             />

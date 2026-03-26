@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import CommandPalette from "./components/CommandPalette";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
@@ -12,8 +11,8 @@ import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
+  useGetGraphData,
 } from "./hooks/useQueries";
-import { useGetGraphData } from "./hooks/useQueries";
 import BuzzLeaderboard from "./pages/BuzzLeaderboard";
 import CollectiblesView from "./pages/CollectiblesView";
 import GraphView from "./pages/GraphView";
@@ -138,14 +137,6 @@ export default function App() {
     setCurrentView(view);
   };
 
-  const handleExecuteCommand = (command: string) => {
-    handleViewChange("terminal");
-    toast.info(`Terminal: ${command}`, {
-      description: "Complete the command in the terminal below.",
-      duration: 3000,
-    });
-  };
-
   if (isInitializing) {
     return (
       <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
@@ -222,7 +213,6 @@ export default function App() {
             open={commandPaletteOpen}
             onOpenChange={setCommandPaletteOpen}
             onViewChange={(view) => handleViewChange(view as ViewType)}
-            onExecuteCommand={handleExecuteCommand}
           />
         )}
       </div>
