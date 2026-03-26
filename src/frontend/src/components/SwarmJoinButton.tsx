@@ -12,9 +12,13 @@ import {
 
 interface SwarmJoinButtonProps {
   swarmId: NodeId;
+  onNavigateToSwarm?: (swarmId: string) => void;
 }
 
-export default function SwarmJoinButton({ swarmId }: SwarmJoinButtonProps) {
+export default function SwarmJoinButton({
+  swarmId,
+  onNavigateToSwarm,
+}: SwarmJoinButtonProps) {
   const { identity } = useInternetIdentity();
   const { data: graphData } = useGetAllGraphData();
   const { data: members, isLoading: membersLoading } =
@@ -36,8 +40,11 @@ export default function SwarmJoinButton({ swarmId }: SwarmJoinButtonProps) {
 
   const handleJoin = async () => {
     try {
-      await joinSwarm.mutateAsync(swarmId);
-      toast.success("Joined swarm!");
+      const forkId = await joinSwarm.mutateAsync(swarmId);
+      toast.success("Joined — your fork is ready.");
+      if (onNavigateToSwarm && forkId) {
+        onNavigateToSwarm(forkId);
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";

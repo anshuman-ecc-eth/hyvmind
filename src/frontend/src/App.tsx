@@ -195,6 +195,7 @@ export default function App() {
                 <SwarmDetailView
                   swarmId={selectedSwarmId}
                   onBack={handleBackToSwarms}
+                  onSelectSwarm={handleSelectSwarm}
                 />
               )}
               {currentView === "buzz" && <BuzzLeaderboard />}

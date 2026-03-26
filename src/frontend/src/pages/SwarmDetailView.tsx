@@ -2,20 +2,27 @@ import type { CustomAttribute } from "@/backend";
 import CreateNodeDialog from "@/components/CreateNodeDialog";
 import LawTokenCard from "@/components/LawTokenCard";
 import SwarmJoinButton from "@/components/SwarmJoinButton";
+import SwarmPullButton from "@/components/SwarmPullButton";
 import { Button } from "@/components/ui/button";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
-import { useGetAllGraphData, useGetSwarmMembers } from "@/hooks/useQueries";
+import {
+  useGetAllGraphData,
+  useGetSwarmForks,
+  useGetSwarmMembers,
+} from "@/hooks/useQueries";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 
 interface SwarmDetailViewProps {
   swarmId: string;
   onBack: () => void;
+  onSelectSwarm?: (swarmId: string) => void;
 }
 
 export default function SwarmDetailView({
   swarmId,
   onBack,
+  onSelectSwarm,
 }: SwarmDetailViewProps) {
   const { data: graphData } = useGetAllGraphData();
   const { identity } = useInternetIdentity();
@@ -33,7 +40,15 @@ export default function SwarmDetailView({
     graphData?.locations.filter((l) => l.parentSwarmId === swarmId) || [];
 
   const isQol = swarm?.tags.includes("question-of-law") ?? false;
+  const isFork = !!swarm?.forkSource;
+  const forkSourceId = swarm?.forkSource;
   const { data: members } = useGetSwarmMembers(swarmId);
+  const { data: forks } = useGetSwarmForks(
+    !isFork && isQol ? swarmId : undefined,
+  );
+  const forkSourceSwarm = forkSourceId
+    ? graphData?.swarms.find((s) => s.id === forkSourceId)
+    : undefined;
 
   // Find all Yes/No locations by customAttribute side
   const yesLocations = locations.filter((l) =>
@@ -110,15 +125,37 @@ export default function SwarmDetailView({
           )}
         </div>
 
-        {/* Membership — QoL swarms only */}
-        {isQol && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground">
-              {members?.length ?? 0} members
-            </span>
-            <SwarmJoinButton swarmId={swarmId} />
-          </div>
-        )}
+        {/* Fork / membership info */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isFork ? (
+            <>
+              <span className="text-xs text-muted-foreground font-mono">
+                fork of:{" "}
+                <span className="text-foreground">
+                  {forkSourceSwarm?.name ?? forkSourceId}
+                </span>
+              </span>
+              <SwarmPullButton
+                swarmId={swarmId}
+                forkSourceId={forkSourceId!}
+                onNavigateToSwarm={onSelectSwarm}
+              />
+            </>
+          ) : isQol ? (
+            <>
+              <span className="text-xs text-muted-foreground">
+                {members?.length ?? 0} members
+                {(forks?.length ?? 0) > 0 && (
+                  <span className="ml-2">{forks!.length} forks</span>
+                )}
+              </span>
+              <SwarmJoinButton
+                swarmId={swarmId}
+                onNavigateToSwarm={onSelectSwarm}
+              />
+            </>
+          ) : null}
+        </div>
       </div>
 
       {/* Split panel */}

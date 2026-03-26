@@ -22,68 +22,10 @@ export interface CollectibleEdition {
   'tokenType' : { 'lawToken' : null } |
     { 'interpretationToken' : null },
 }
-export interface Curation {
-  'id' : NodeId,
-  'creator' : Principal,
-  'name' : string,
-  'timestamps' : Timestamps,
-  'jurisdiction' : string,
-}
 export interface CustomAttribute { 'key' : string, 'value' : string }
 export type Directionality = { 'none' : null } |
   { 'bidirectional' : null } |
   { 'unidirectional' : null };
-export interface GraphData {
-  'curations' : Array<Curation>,
-  'rootNodes' : Array<GraphNode>,
-  'edges' : Array<GraphEdge>,
-  'locations' : Array<Location>,
-  'swarms' : Array<Swarm>,
-  'sublocations' : Array<Sublocation>,
-  'lawTokens' : Array<LawToken>,
-  'interpretationTokens' : Array<InterpretationToken>,
-}
-export interface GraphEdge { 'source' : NodeId, 'target' : NodeId }
-export interface GraphNode {
-  'id' : NodeId,
-  'children' : Array<GraphNode>,
-  'jurisdiction' : [] | [string],
-  'parentId' : [] | [NodeId],
-  'tokenLabel' : string,
-  'nodeType' : string,
-}
-export interface InterpretationToken {
-  'id' : NodeId,
-  'title' : string,
-  'creator' : Principal,
-  'context' : string,
-  'customAttributes' : Array<CustomAttribute>,
-  'toRelationshipType' : string,
-  'toNodeId' : NodeId,
-  'fromDirectionality' : Directionality,
-  'timestamps' : Timestamps,
-  'fromTokenId' : NodeId,
-  'toDirectionality' : Directionality,
-  'fromRelationshipType' : string,
-}
-export interface LawToken {
-  'id' : NodeId,
-  'parentLocationId' : NodeId,
-  'creator' : Principal,
-  'timestamps' : Timestamps,
-  'tokenLabel' : string,
-}
-export interface Location {
-  'id' : NodeId,
-  'originalTokenSequence' : string,
-  'title' : string,
-  'creator' : Principal,
-  'content' : string,
-  'customAttributes' : Array<CustomAttribute>,
-  'timestamps' : Timestamps,
-  'parentSwarmId' : NodeId,
-  'version' : bigint,
-}
 export interface MintCollectibleRequest {
   'tokenId' : NodeId,
   'tokenType' : { 'lawToken' : null } |
@@ -96,30 +38,15 @@ export type MintCollectibleResult = { 'editionLimitReached' : null } |
   { 'tokenNotFound' : null };
 export interface MintSettings { 'numCopies' : bigint }
 export type NodeId = string;
-export interface OwnedGraphData {
-  'curations' : Array<Curation>,
-  'edges' : Array<GraphEdge>,
-  'locations' : Array<Location>,
-  'swarms' : Array<Swarm>,
-  'sublocations' : Array<Sublocation>,
-  'lawTokens' : Array<LawToken>,
-  'interpretationTokens' : Array<InterpretationToken>,
-}
-export interface Sublocation {
-  'id' : NodeId,
-  'originalTokenSequence' : string,
-  'title' : string,
-  'creator' : Principal,
-  'content' : string,
-  'timestamps' : Timestamps,
-}
 export interface Swarm {
   'id' : NodeId,
   'creator' : Principal,
   'name' : string,
   'tags' : Array<Tag>,
+  'forkSource' : [] | [NodeId],
   'timestamps' : Timestamps,
   'parentCurationId' : NodeId,
+  'forkPrincipal' : [] | [Principal],
 }
 export type Tag = string;
 export type Time = bigint;
@@ -165,23 +92,22 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCollectibleEditions' : ActorMethod<[NodeId], Array<CollectibleEdition>>,
-  'getGraphData' : ActorMethod<[], GraphData>,
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
-  'getMyOwnedGraphData' : ActorMethod<[], OwnedGraphData>,
-  'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
+  'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
   'isNodeArchived' : ActorMethod<[NodeId], boolean>,
-  'joinSwarm' : ActorMethod<[NodeId], undefined>,
+  'joinSwarm' : ActorMethod<[NodeId], NodeId>,
   'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'mintCollectible' : ActorMethod<
     [MintCollectibleRequest],
     MintCollectibleResult
   >,
+  'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,

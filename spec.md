@@ -1,38 +1,33 @@
-# Hyvmind
+# Hyvmind — QoL Swarm Forking System
 
 ## Current State
-
-The app has a full terminal page (`TerminalPage.tsx`) with slash-command execution, mutation hooks, and graph data access. Navigation between views is handled via `handleViewChange` in `App.tsx`. The `cmdk` library is already installed and used via `src/frontend/src/components/ui/command.tsx`.
+- `Swarm` type has no `forkSource` or `forkPrincipal` fields
+- `joinSwarm()` adds caller to `swarmMembers` and returns `async ()`
+- No fork concept, no "My Forks" curation, no `pullFromSwarm`, no `getSwarmForks`
+- `isSwarmCreatorOrMember()` grants write access to creator + QoL members
+- `getMyOwnedGraphData()` returns nodes where `creator == caller`
 
 ## Requested Changes (Diff)
 
 ### Add
-- `src/frontend/src/components/CommandPalette.tsx` — modal component using `CommandDialog`, `CommandInput`, `CommandList`, `CommandGroup`, `CommandItem` from `ui/command.tsx`. Two groups: Navigation and Terminal Commands. Accepts `open`, `onOpenChange`, `onViewChange`, `onExecuteCommand` props.
-- Keyboard shortcut listener in `App.tsx` — Ctrl+P / Cmd+P toggles `commandPaletteOpen` state, calls `event.preventDefault()`.
-- `handleExecuteCommand` in `App.tsx` — receives a raw command string (e.g. `/help`, `/find term`), executes it by routing through the terminal command handlers, shows a toast with the result. This requires adding the mutation hooks and graph data at the App.tsx level.
+- `forkSource : ?NodeId` and `forkPrincipal : ?Principal` fields to `Swarm` type
+- `ensureMyForksCuration(caller)` — finds or creates "My Forks" curation for caller, returns its NodeId
+- `deepCopySwarmContent(sourceSwarmId, targetSwarmId, caller)` — copies all locations, law tokens (via `{...}` extraction), sublocations, and interpretation tokens; each copy gets a fresh ID via `generateId()`; forker becomes creator; votes/collectibles not copied
+- `pullFromSwarm(targetSwarmId)` — checks membership, archives existing fork of target swarm, creates fresh fork
+- `getSwarmForks(swarmId)` — query returning all swarms where `forkSource == swarmId`
 
 ### Modify
-- `App.tsx` — add `commandPaletteOpen` state, keyboard listener effect, `handleExecuteCommand` handler, and render `<CommandPalette>` in the tree (only when authenticated).
+- `joinSwarm()` — keep existing `swarmMembers` add logic, ALSO call `ensureMyForksCuration`, create fork swarm record with `forkSource` and `forkPrincipal` set, call `deepCopySwarmContent`, return `async NodeId` (the fork's ID)
+- `isSwarmCreatorOrMember()` — for forks (`forkSource != null`), only grant access if `swarm.creator == caller`; original swarms unchanged
 
 ### Remove
-- Nothing.
+- Nothing removed
 
 ## Implementation Plan
-
-1. Create `CommandPalette.tsx`:
-   - Import `CommandDialog`, `CommandInput`, `CommandList`, `CommandEmpty`, `CommandGroup`, `CommandItem` from `@/components/ui/command`
-   - Props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `onViewChange: (view: ViewType) => void`, `onExecuteCommand: (command: string) => void`
-   - Navigation commands array: `{ id, label, view }` for graph, tree, terminal, swarms, collectibles, buzz
-   - Terminal commands array: `{ id, label, description, command }` for /help, /find, /ont, /filter, /c, /s, /l, /i, /archive
-   - On nav item select: call `onViewChange(item.view)` then `onOpenChange(false)`
-   - On terminal item select: call `onExecuteCommand(item.command)` then `onOpenChange(false)`
-   - Style: `font-mono`, dashed borders matching the app's dark terminal aesthetic
-
-2. Update `App.tsx`:
-   - Add `commandPaletteOpen` state
-   - Add `useEffect` for Ctrl+P / Cmd+P with `preventDefault`
-   - Add `handleExecuteCommand(command: string)` — parses the command string and shows a toast with the result. For simple read commands (help, find, filter, ont) it can navigate to terminal and pass the command as a pre-populated query. For write commands (c, s, l, i), executing silently requires the same mutation hooks used in TerminalPage — add `useCreateCuration`, `useCreateSwarm`, `useCreateLocation`, `useCreateInterpretationToken` at App.tsx level and call `executeCommand` from `terminalCommands.ts`. Show success/error via `toast()` from sonner.
-   - Render `<CommandPalette>` inside the authenticated section
-   - Import ViewType and expose it to CommandPalette
-
-3. The `ViewType` type is defined locally in `App.tsx` — CommandPalette.tsx should accept `view` as a string or define the same subset locally.
+1. Add `forkSource : ?NodeId` and `forkPrincipal : ?Principal` to `Swarm` type
+2. Implement `ensureMyForksCuration(caller : Principal) : NodeId`
+3. Implement `deepCopySwarmContent(sourceSwarmId : NodeId, targetSwarmId : NodeId, caller : Principal)` — processes in hierarchy order: locations → law tokens (from `{...}` patterns in location/sublocation content) → sublocations → interpretation tokens; maps old location IDs to new ones in a local buffer to wire parent references for law tokens and interpretation tokens
+4. Modify `joinSwarm()` to return `async NodeId`, add fork creation after existing membership logic
+5. Modify `isSwarmCreatorOrMember()` to check `forkSource` and restrict fork write access to fork creator only
+6. Add `pullFromSwarm(targetSwarmId : NodeId) : async NodeId`
+7. Add `getSwarmForks(swarmId : NodeId) : async [Swarm]` query

@@ -519,13 +519,45 @@ export function useJoinSwarm() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<string, Error, string>({
     mutationFn: async (swarmId: string) => {
       if (!actor) throw new Error("Actor not available");
       return actor.joinSwarm(swarmId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+    },
+  });
+}
+
+export function useGetSwarmForks(swarmId: string | undefined) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ["swarmForks", swarmId],
+    queryFn: async () => {
+      if (!actor || !swarmId) return [];
+      return actor.getSwarmForks(swarmId);
+    },
+    enabled: !!actor && !isFetching && !!swarmId,
+  });
+}
+
+export function usePullFromSwarm() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<string, Error, { targetSwarmId: string }>({
+    mutationFn: async ({ targetSwarmId }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.pullFromSwarm(targetSwarmId);
+    },
+    onSuccess: (_, { targetSwarmId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["swarmForks", targetSwarmId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
     },
   });
 }
