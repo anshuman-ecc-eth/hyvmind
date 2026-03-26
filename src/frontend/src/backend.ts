@@ -263,10 +263,10 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
-    getGraphData(): Promise<GraphData>;
+    getAllData(): Promise<GraphData>;
     getLeaderboard(): Promise<Array<{ principal: Principal; score: bigint }>>;
     getMintSettings(): Promise<MintSettings>;
-    getMyOwnedGraphData(): Promise<OwnedGraphData>;
+    getOwnedData(): Promise<OwnedGraphData>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
@@ -710,12 +710,12 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getGraphData(): Promise<GraphData> {
-        const result = await this.actor.getGraphData();
+    async getAllData(): Promise<GraphData> {
+        const result = await this.actor.getAllData();
         return result as unknown as GraphData;
     }
-    async getMyOwnedGraphData(): Promise<OwnedGraphData> {
-        const result = await this.actor.getMyOwnedGraphData();
+    async getOwnedData(): Promise<OwnedGraphData> {
+        const result = await this.actor.getOwnedData();
         return result as unknown as OwnedGraphData;
     }
     async getSwarmMembers(arg0: NodeId): Promise<Array<Principal>> {

@@ -9,7 +9,7 @@ import {
 import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Swarm } from "../backend";
-import { useGetGraphData } from "../hooks/useQueries";
+import { useGetOwnedData } from "../hooks/useQueries";
 import { CORE_ONTOLOGY_PREFIXES } from "../utils/coreOntology";
 
 // Core Ontology in Turtle syntax
@@ -109,7 +109,7 @@ hm:hasRelationshipType rdf:type owl:DatatypeProperty ;
     rdfs:range rdfs:Literal .`;
 
 export default function OntologiesView() {
-  const { data: graphData, isLoading } = useGetGraphData();
+  const { data: graphData, isLoading } = useGetOwnedData();
   const [coreOntologyOpen, setCoreOntologyOpen] = useState(true);
   const [swarmOntologiesOpen, setSwarmOntologiesOpen] = useState<
     Record<string, boolean>

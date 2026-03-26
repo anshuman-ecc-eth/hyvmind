@@ -8,13 +8,13 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
-import Migration "migration";
+
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import Runtime "mo:core/Runtime";
 
 // Apply any data migration necessary after code changes
-(with migration = Migration.run)
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -1350,13 +1350,6 @@ actor {
     if (isSwarmMember(caller, swarmId)) {
       Runtime.trap("Already a member");
     };
-    let members = switch (swarmMembers.get(swarmId)) {
-      case (null) { List.empty<Principal>() };
-      case (?existing) { existing };
-    };
-    members.add(caller);
-    swarmMembers.add(swarmId, members);
-
     // Create a personal fork
     let myForksCurationId = ensureMyForksCuration(caller);
     let forkId = generateId("swarm", swarm.name, caller);
@@ -1608,6 +1601,350 @@ actor {
 
   func generateId(nodeType : Text, name : Text, creator : Principal) : NodeId {
     nodeType # "-" # name # "-" # creator.toText() # "-" # Time.now().toText()
+  };
+
+
+  // ─── Graph Helper Functions ─────────────────────────────────────────────────
+
+  func createInterpretationTokenNodes(parentTokenId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (interpretationToken.fromTokenId == parentTokenId
+          and not archivedNodes.containsKey(interpretationToken.id)) {
+        let childNodes = createInterpretationTokenNodes(interpretationToken.id);
+        let node : GraphNode = {
+          id = interpretationToken.id;
+          nodeType = "interpretationToken";
+          tokenLabel = interpretationToken.title;
+          jurisdiction = null;
+          parentId = ?parentTokenId;
+          children = childNodes;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createLawTokenNodes(parentLocationId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (lawToken in lawTokenMap.values()) {
+      if (lawToken.parentLocationId == parentLocationId
+          and not archivedNodes.containsKey(lawToken.id)) {
+        let childNodes = createInterpretationTokenNodes(lawToken.id);
+        let node : GraphNode = {
+          id = lawToken.id;
+          nodeType = "lawToken";
+          tokenLabel = lawToken.tokenLabel;
+          jurisdiction = null;
+          parentId = ?parentLocationId;
+          children = childNodes;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createLocationNodes(parentSwarmId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (location in locationMap.values()) {
+      if (location.parentSwarmId == parentSwarmId
+          and not archivedNodes.containsKey(location.id)) {
+        let childNodes = createLawTokenNodes(location.id);
+        let node : GraphNode = {
+          id = location.id;
+          nodeType = "location";
+          tokenLabel = location.title;
+          jurisdiction = null;
+          parentId = ?parentSwarmId;
+          children = childNodes;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createSwarmNodes(parentCurationId : NodeId, _jurisdiction : Text) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (swarm in swarmMap.values()) {
+      if (swarm.parentCurationId == parentCurationId
+          and not archivedNodes.containsKey(swarm.id)) {
+        let childNodes = createLocationNodes(swarm.id);
+        let node : GraphNode = {
+          id = swarm.id;
+          nodeType = "swarm";
+          tokenLabel = swarm.name;
+          jurisdiction = null;
+          parentId = ?parentCurationId;
+          children = childNodes;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createGraphNodes() : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (curation in curationMap.values()) {
+      if (not archivedNodes.containsKey(curation.id)) {
+        let childNodes = createSwarmNodes(curation.id, curation.jurisdiction);
+        let node : GraphNode = {
+          id = curation.id;
+          nodeType = "curation";
+          tokenLabel = curation.name;
+          jurisdiction = ?curation.jurisdiction;
+          parentId = null;
+          children = childNodes;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createSwarmLinksFromLocationEdges() : [GraphEdge] {
+    let edges = List.empty<GraphEdge>();
+    for ((locationId, _lawTokenIds) in locationLawTokenRelations.entries()) {
+      if (not archivedNodes.containsKey(locationId)) {
+        switch (locationMap.get(locationId)) {
+          case (?location) {
+            if (not archivedNodes.containsKey(location.parentSwarmId)) {
+              edges.add({
+                source = location.parentSwarmId;
+                target = locationId;
+              });
+            };
+          };
+          case (null) {};
+        };
+      };
+    };
+    edges.toArray();
+  };
+
+  func createCurationLinksFromSwarmLinks() : [GraphEdge] {
+    let locationEdges = createSwarmLinksFromLocationEdges();
+    let edges = List.empty<GraphEdge>();
+    for (edge in locationEdges.vals()) {
+      let locationId = edge.target;
+      switch (locationMap.get(locationId)) {
+        case (?location) {
+          let swarmId = location.parentSwarmId;
+          if (not archivedNodes.containsKey(swarmId)) {
+            switch (swarmMap.get(swarmId)) {
+              case (?swarm) {
+                if (not archivedNodes.containsKey(swarm.parentCurationId)) {
+                  edges.add({
+                    source = swarm.parentCurationId;
+                    target = swarmId;
+                  });
+                };
+              };
+              case (null) {};
+            };
+          };
+        };
+        case (null) {};
+      };
+    };
+    edges.toArray();
+  };
+
+  // ─── getAllData: Public query for all non-archived graph data ────────────────
+
+  public query func getAllData() : async GraphData {
+    let filteredCurations = List.empty<Curation>();
+    for (curation in curationMap.values()) {
+      if (not archivedNodes.containsKey(curation.id)) {
+        filteredCurations.add(curation);
+      };
+    };
+    let filteredSwarms = List.empty<Swarm>();
+    for (swarm in swarmMap.values()) {
+      if (not archivedNodes.containsKey(swarm.id)) {
+        filteredSwarms.add(swarm);
+      };
+    };
+    let filteredLocations = List.empty<Location>();
+    for (location in locationMap.values()) {
+      if (not archivedNodes.containsKey(location.id)) {
+        filteredLocations.add(location);
+      };
+    };
+    let filteredLawTokens = List.empty<LawToken>();
+    for (lawToken in lawTokenMap.values()) {
+      if (not archivedNodes.containsKey(lawToken.id)) {
+        filteredLawTokens.add(lawToken);
+      };
+    };
+    let filteredSublocations = List.empty<Sublocation>();
+    for (sublocation in sublocationMap.values()) {
+      if (not archivedNodes.containsKey(sublocation.id)) {
+        filteredSublocations.add(sublocation);
+      };
+    };
+    let filteredInterpretationTokens = List.empty<InterpretationToken>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (not archivedNodes.containsKey(interpretationToken.id)) {
+        filteredInterpretationTokens.add(interpretationToken);
+      };
+    };
+    let rootNodes = createGraphNodes();
+    let edges = List.empty<GraphEdge>();
+    for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
+      if (not archivedNodes.containsKey(locationId)) {
+        for (lawTokenId in lawTokenIds.values()) {
+          if (not archivedNodes.containsKey(lawTokenId)) {
+            edges.add({ source = locationId; target = lawTokenId });
+          };
+        };
+      };
+    };
+    for ((sublocationId, lawTokenIds) in sublocationLawTokenRelations.entries()) {
+      if (not archivedNodes.containsKey(sublocationId)) {
+        for (lawTokenId in lawTokenIds.values()) {
+          if (not archivedNodes.containsKey(lawTokenId)) {
+            edges.add({ source = sublocationId; target = lawTokenId });
+          };
+        };
+      };
+    };
+    for ((fromTokenId, fromEdgesList) in interpretationTokenFromEdges.entries()) {
+      if (not archivedNodes.containsKey(fromTokenId)) {
+        for (edge in fromEdgesList.values()) {
+          if (not (archivedNodes.containsKey(edge.source) or archivedNodes.containsKey(edge.target))) {
+            edges.add(edge);
+          };
+        };
+      };
+    };
+    for ((interpretationTokenId, toEdgesList) in interpretationTokenToEdges.entries()) {
+      if (not archivedNodes.containsKey(interpretationTokenId)) {
+        for (edge in toEdgesList.values()) {
+          if (not (archivedNodes.containsKey(edge.source) or archivedNodes.containsKey(edge.target))) {
+            edges.add(edge);
+          };
+        };
+      };
+    };
+    for (edge in createSwarmLinksFromLocationEdges().vals()) {
+      edges.add(edge);
+    };
+    for (edge in createCurationLinksFromSwarmLinks().vals()) {
+      edges.add(edge);
+    };
+    {
+      curations = filteredCurations.toArray();
+      swarms = filteredSwarms.toArray();
+      locations = filteredLocations.toArray();
+      lawTokens = filteredLawTokens.toArray();
+      sublocations = filteredSublocations.toArray();
+      interpretationTokens = filteredInterpretationTokens.toArray();
+      rootNodes;
+      edges = edges.toArray();
+    };
+  };
+
+  // ─── getOwnedData: Caller-owned graph data ───────────────────────────────────
+
+  public query ({ caller }) func getOwnedData() : async OwnedGraphData {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can access their owned graph data");
+    };
+    let ownedCurations = List.empty<Curation>();
+    for (curation in curationMap.values()) {
+      if (curation.creator == caller and not archivedNodes.containsKey(curation.id)) {
+        ownedCurations.add(curation);
+      };
+    };
+    let ownedSwarms = List.empty<Swarm>();
+    for (swarm in swarmMap.values()) {
+      if (swarm.creator == caller and not archivedNodes.containsKey(swarm.id)) {
+        ownedSwarms.add(swarm);
+      };
+    };
+    let ownedLocations = List.empty<Location>();
+    for (location in locationMap.values()) {
+      if (location.creator == caller and not archivedNodes.containsKey(location.id)) {
+        ownedLocations.add(location);
+      };
+    };
+    let ownedLawTokens = List.empty<LawToken>();
+    for (lawToken in lawTokenMap.values()) {
+      if (lawToken.creator == caller and not archivedNodes.containsKey(lawToken.id)) {
+        ownedLawTokens.add(lawToken);
+      };
+    };
+    let ownedSublocations = List.empty<Sublocation>();
+    for (sublocation in sublocationMap.values()) {
+      if (sublocation.creator == caller and not archivedNodes.containsKey(sublocation.id)) {
+        ownedSublocations.add(sublocation);
+      };
+    };
+    let ownedInterpretationTokens = List.empty<InterpretationToken>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (interpretationToken.creator == caller and not archivedNodes.containsKey(interpretationToken.id)) {
+        ownedInterpretationTokens.add(interpretationToken);
+      };
+    };
+    let ownedLocationsArr = ownedLocations.toArray();
+    let ownedLawTokensArr = ownedLawTokens.toArray();
+    let ownedSublocationsArr = ownedSublocations.toArray();
+    let ownedEdges = List.empty<GraphEdge>();
+    for ((locationId, lawTokenIds) in locationLawTokenRelations.entries()) {
+      let locationOwned = ownedLocationsArr.find(func(loc : Location) : Bool { loc.id == locationId });
+      switch (locationOwned) {
+        case (?_) {
+          if (not archivedNodes.containsKey(locationId)) {
+            for (lawTokenId in lawTokenIds.values()) {
+              let tokenOwned = ownedLawTokensArr.find(func(lt : LawToken) : Bool { lt.id == lawTokenId });
+              switch (tokenOwned) {
+                case (?_) {
+                  if (not archivedNodes.containsKey(lawTokenId)) {
+                    ownedEdges.add({ source = locationId; target = lawTokenId });
+                  };
+                };
+                case (null) {};
+              };
+            };
+          };
+        };
+        case (null) {};
+      };
+    };
+    for ((sublocationId, lawTokenIds) in sublocationLawTokenRelations.entries()) {
+      let sublocationOwned = ownedSublocationsArr.find(func(sl : Sublocation) : Bool { sl.id == sublocationId });
+      switch (sublocationOwned) {
+        case (?_) {
+          if (not archivedNodes.containsKey(sublocationId)) {
+            for (lawTokenId in lawTokenIds.values()) {
+              let tokenOwned = ownedLawTokensArr.find(func(lt : LawToken) : Bool { lt.id == lawTokenId });
+              switch (tokenOwned) {
+                case (?_) {
+                  if (not archivedNodes.containsKey(lawTokenId)) {
+                    ownedEdges.add({ source = sublocationId; target = lawTokenId });
+                  };
+                };
+                case (null) {};
+              };
+            };
+          };
+        };
+        case (null) {};
+      };
+    };
+    {
+      curations = ownedCurations.toArray();
+      swarms = ownedSwarms.toArray();
+      locations = ownedLocations.toArray();
+      lawTokens = ownedLawTokens.toArray();
+      sublocations = ownedSublocations.toArray();
+      interpretationTokens = ownedInterpretationTokens.toArray();
+      edges = ownedEdges.toArray();
+    };
   };
 
   public shared ({ caller }) func resetAllData() : async () {

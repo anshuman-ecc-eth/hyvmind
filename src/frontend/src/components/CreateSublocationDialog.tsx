@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateSublocation, useGetAllGraphData } from "@/hooks/useQueries";
+import { useCreateSublocation, useGetAllData } from "@/hooks/useQueries";
 import { Link2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -25,7 +25,7 @@ export default function CreateSublocationDialog({
   onOpenChange,
   parentLawTokenId,
 }: CreateSublocationDialogProps) {
-  const { data: graphData } = useGetAllGraphData();
+  const { data: graphData } = useGetAllData();
   const createSublocation = useCreateSublocation();
 
   const [title, setTitle] = useState("");

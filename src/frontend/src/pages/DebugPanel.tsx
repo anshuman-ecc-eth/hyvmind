@@ -5,10 +5,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, ShieldAlert } from "lucide-react";
 import DataResetDialog from "../components/DataResetDialog";
-import { useGetGraphData, useIsCallerAdmin } from "../hooks/useQueries";
+import { useGetOwnedData, useIsCallerAdmin } from "../hooks/useQueries";
 
 export default function DebugPanel() {
-  const { data: graphData, isLoading } = useGetGraphData();
+  const { data: graphData, isLoading } = useGetOwnedData();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsCallerAdmin();
 
   if (isLoading || isAdminLoading) {

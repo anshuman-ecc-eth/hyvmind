@@ -180,11 +180,11 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
-    getGraphData(): Promise<GraphData>;
+    getAllData(): Promise<GraphData>;
     getLeaderboard(): Promise<Array<{ principal: Principal; score: bigint }>>;
     getMintSettings(): Promise<MintSettings>;
     getMyBuzzBalance(): Promise<BuzzScore>;
-    getMyOwnedGraphData(): Promise<OwnedGraphData>;
+    getOwnedData(): Promise<OwnedGraphData>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;

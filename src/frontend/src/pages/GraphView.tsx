@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
-  forceCenter,
-  forceCollide,
-  forceLink,
-  forceManyBody,
-  forceSimulation,
-} from "d3-force";
-import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
@@ -23,7 +16,7 @@ import {
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
-import { useGetGraphData } from "../hooks/useQueries";
+import { useGetOwnedData } from "../hooks/useQueries";
 
 interface LayoutNode {
   id: string;
@@ -223,7 +216,7 @@ function initializeUnifiedLayout(): UnifiedLayoutState {
 }
 
 export default function GraphView({ readOnly = false }: GraphViewProps) {
-  const { data: graphData, isLoading, error, isError } = useGetGraphData();
+  const { data: graphData, isLoading, error, isError } = useGetOwnedData();
 
   const { theme, resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -557,7 +550,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     ): LayoutNode[] => {
       if (layoutNodes.length === 0) return layoutNodes;
 
-      type SimNode = LayoutNode & { index?: number };
+      type SimNode = LayoutNode & { index?: number; vx?: number; vy?: number };
       const simNodes: SimNode[] = layoutNodes.map((n) => ({ ...n }));
       const nodeById = new Map(simNodes.map((n) => [n.id, n]));
 
@@ -569,21 +562,99 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           target: nodeById.get(l.target)!,
         }));
 
-      const simulation = forceSimulation<SimNode>(simNodes)
-        .force(
-          "link",
-          forceLink<SimNode, SimLink>(simLinks)
-            .distance(edgeDist)
-            .strength(0.5),
-        )
-        .force("charge", forceManyBody<SimNode>().strength(-300))
-        .force("center", forceCenter<SimNode>(centerX, centerY))
-        .force("collide", forceCollide<SimNode>(nodeSize * 1.5))
-        .alphaDecay(0.02)
-        .stop();
-
-      // Fire once and settle synchronously
-      simulation.tick(300);
+      // Inline force-directed layout (replaces d3-force dependency)
+      // Initialize positions randomly around center
+      for (const sn of simNodes) {
+        if (sn.x === undefined || sn.x === 0)
+          sn.x = centerX + (Math.random() - 0.5) * 200;
+        if (sn.y === undefined || sn.y === 0)
+          sn.y = centerY + (Math.random() - 0.5) * 200;
+      }
+      // Run force simulation ticks
+      const alpha0 = 1;
+      const alphaDecay = 0.02;
+      const velocityDecay = 0.6;
+      let alpha = alpha0;
+      for (let tick = 0; tick < 300; tick++) {
+        alpha *= 1 - alphaDecay;
+        if (alpha < 0.001) break;
+        // Many-body repulsion
+        for (let i = 0; i < simNodes.length; i++) {
+          for (let j = i + 1; j < simNodes.length; j++) {
+            const a = simNodes[i];
+            const b = simNodes[j];
+            const dx = (b.x ?? centerX) - (a.x ?? centerX);
+            const dy = (b.y ?? centerY) - (a.y ?? centerY);
+            const dist2 = dx * dx + dy * dy + 1;
+            const strength = (-300 * alpha) / dist2;
+            if (!a.vx) a.vx = 0;
+            if (!a.vy) a.vy = 0;
+            if (!b.vx) b.vx = 0;
+            if (!b.vy) b.vy = 0;
+            a.vx -= dx * strength;
+            a.vy -= dy * strength;
+            b.vx += dx * strength;
+            b.vy += dy * strength;
+          }
+        }
+        // Link forces
+        for (const link of simLinks) {
+          const s = link.source;
+          const t = link.target;
+          const dx = (t.x ?? centerX) - (s.x ?? centerX);
+          const dy = (t.y ?? centerY) - (s.y ?? centerY);
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const diff = ((dist - edgeDist) / dist) * 0.5 * alpha;
+          if (!s.vx) s.vx = 0;
+          if (!s.vy) s.vy = 0;
+          if (!t.vx) t.vx = 0;
+          if (!t.vy) t.vy = 0;
+          s.vx += dx * diff;
+          s.vy += dy * diff;
+          t.vx -= dx * diff;
+          t.vy -= dy * diff;
+        }
+        // Centering force
+        const cx =
+          simNodes.reduce((s, n) => s + (n.x ?? 0), 0) / (simNodes.length || 1);
+        const cy =
+          simNodes.reduce((s, n) => s + (n.y ?? 0), 0) / (simNodes.length || 1);
+        for (const sn of simNodes) {
+          if (!sn.vx) sn.vx = 0;
+          if (!sn.vy) sn.vy = 0;
+          sn.vx += (centerX - cx) * alpha;
+          sn.vy += (centerY - cy) * alpha;
+        }
+        // Collision avoidance
+        const collideRadius = nodeSize * 1.5;
+        for (let i = 0; i < simNodes.length; i++) {
+          for (let j = i + 1; j < simNodes.length; j++) {
+            const a = simNodes[i];
+            const b = simNodes[j];
+            const dx = (b.x ?? centerX) - (a.x ?? centerX);
+            const dy = (b.y ?? centerY) - (a.y ?? centerY);
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            if (dist < collideRadius * 2) {
+              const overlap = ((collideRadius * 2 - dist) / dist) * 0.5;
+              if (!a.vx) a.vx = 0;
+              if (!a.vy) a.vy = 0;
+              if (!b.vx) b.vx = 0;
+              if (!b.vy) b.vy = 0;
+              a.vx -= dx * overlap;
+              a.vy -= dy * overlap;
+              b.vx += dx * overlap;
+              b.vy += dy * overlap;
+            }
+          }
+        }
+        // Integrate
+        for (const sn of simNodes) {
+          sn.vx = (sn.vx ?? 0) * velocityDecay;
+          sn.vy = (sn.vy ?? 0) * velocityDecay;
+          sn.x = (sn.x ?? centerX) + sn.vx;
+          sn.y = (sn.y ?? centerY) + sn.vy;
+        }
+      }
 
       // Write final positions back
       for (const sn of simNodes) {

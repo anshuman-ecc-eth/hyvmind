@@ -6,7 +6,7 @@ import SwarmPullButton from "@/components/SwarmPullButton";
 import { Button } from "@/components/ui/button";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import {
-  useGetAllGraphData,
+  useGetAllData,
   useGetSwarmForks,
   useGetSwarmMembers,
 } from "@/hooks/useQueries";
@@ -24,7 +24,7 @@ export default function SwarmDetailView({
   onBack,
   onSelectSwarm,
 }: SwarmDetailViewProps) {
-  const { data: graphData } = useGetAllGraphData();
+  const { data: graphData } = useGetAllData();
   const { identity } = useInternetIdentity();
 
   const [locationDialogSide, setLocationDialogSide] = useState<

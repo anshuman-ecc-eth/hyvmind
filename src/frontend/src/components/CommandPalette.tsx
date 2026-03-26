@@ -15,7 +15,7 @@ import {
   useCreateLocation,
   useCreateSublocation,
   useCreateSwarm,
-  useGetGraphData,
+  useGetOwnedData,
 } from "../hooks/useQueries";
 import {
   handleArchiveCommand,
@@ -155,7 +155,7 @@ export default function CommandPalette({
   } | null>(null);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
 
-  const { data: graphData } = useGetGraphData();
+  const { data: graphData } = useGetOwnedData();
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const createCuration = useCreateCuration();

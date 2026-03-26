@@ -176,7 +176,7 @@ export default function VoronoiDiagram() {
           throw new Error("Failed to create anonymous actor");
         }
 
-        const freshData = await anonymousActor.getGraphData();
+        const freshData = await anonymousActor.getAllData();
 
         // Step 3: Store fresh data in cache
         try {
@@ -236,7 +236,7 @@ export default function VoronoiDiagram() {
         throw new Error("Failed to create anonymous actor");
       }
 
-      const freshData = await anonymousActor.getGraphData();
+      const freshData = await anonymousActor.getAllData();
 
       // Update cache
       try {

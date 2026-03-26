@@ -16,7 +16,7 @@ import type { GraphNode, InterpretationToken, Sublocation } from "../backend";
 import CreateNodeDialog from "../components/CreateNodeDialog";
 import FilterSortModal from "../components/FilterSortModal";
 import SchemaBuilderFilterModal from "../components/SchemaBuilderFilterModal";
-import { useGetGraphData } from "../hooks/useQueries";
+import { useGetOwnedData } from "../hooks/useQueries";
 
 interface TreeNodeProps {
   node: GraphNode;
@@ -289,7 +289,7 @@ function InterpretationTokenItem({
 }
 
 export default function TreeView() {
-  const { data: graphData, isLoading: graphLoading } = useGetGraphData();
+  const { data: graphData, isLoading: graphLoading } = useGetOwnedData();
   const [isExporting, setIsExporting] = useState(false);
   const [selectedToken, setSelectedToken] =
     useState<InterpretationToken | null>(null);

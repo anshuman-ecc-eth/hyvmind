@@ -37,8 +37,8 @@ import {
   useCreateInterpretationToken,
   useCreateLocation,
   useCreateSwarm,
-  useGetAllGraphData,
-  useGetGraphData,
+  useGetAllData,
+  useGetOwnedData,
 } from "@/hooks/useQueries";
 import {
   Check,
@@ -326,8 +326,8 @@ export default function CreateNodeDialog({
   );
   const [itAttributes, setItAttributes] = useState<CustomAttribute[]>([]);
 
-  const { data: ownedGraphData } = useGetGraphData();
-  const { data: allGraphData } = useGetAllGraphData();
+  const { data: ownedGraphData } = useGetOwnedData();
+  const { data: allGraphData } = useGetAllData();
 
   const createCuration = useCreateCuration();
   const createSwarm = useCreateSwarm();

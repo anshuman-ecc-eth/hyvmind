@@ -11,7 +11,7 @@ import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
-  useGetGraphData,
+  useGetOwnedData,
 } from "./hooks/useQueries";
 import BuzzLeaderboard from "./pages/BuzzLeaderboard";
 import CollectiblesView from "./pages/CollectiblesView";
@@ -72,7 +72,7 @@ export default function App() {
 
   // Silent cleanup: fetch archived node IDs once per login and persist hidden collectibles
   const { data: archivedNodeIds } = useGetArchivedNodeIds();
-  const { data: graphData } = useGetGraphData();
+  const { data: graphData } = useGetOwnedData();
   const cleanupRanRef = useRef<string | null>(null);
 
   useEffect(() => {

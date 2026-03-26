@@ -12,7 +12,7 @@ import {
   useCreateLocation,
   useCreateSublocation,
   useCreateSwarm,
-  useGetGraphData,
+  useGetOwnedData,
   useIsCallerAdmin,
   useResetAllData,
 } from "../hooks/useQueries";
@@ -126,7 +126,7 @@ export default function TerminalPage() {
   const createLocation = useCreateLocation();
   const createInterpretationToken = useCreateInterpretationToken();
   const createSublocation = useCreateSublocation();
-  const { data: graphData } = useGetGraphData();
+  const { data: graphData } = useGetOwnedData();
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsCallerAdmin();
@@ -583,7 +583,7 @@ export default function TerminalPage() {
     try {
       switch (action) {
         case "ownedgraph": {
-          const owned = await actor.getMyOwnedGraphData();
+          const owned = await actor.getOwnedData();
           addMessage(
             "success",
             `📊 Owned graph: ${owned.curations.length} curations, ${owned.swarms.length} swarms, ${owned.locations.length} locations, ${owned.lawTokens.length} law tokens, ${owned.interpretationTokens.length} interpretation tokens`,
@@ -592,7 +592,7 @@ export default function TerminalPage() {
           break;
         }
         case "allgraph": {
-          const data = await actor.getGraphData();
+          const data = await actor.getAllData();
           addMessage(
             "success",
             `📊 All graph: ${data.curations.length} curations, ${data.swarms.length} swarms, ${data.locations.length} locations, ${data.lawTokens.length} law tokens, ${data.interpretationTokens.length} interpretation tokens`,
@@ -702,7 +702,7 @@ export default function TerminalPage() {
             );
             return;
           }
-          const graphDataAll = await actor.getGraphData();
+          const graphDataAll = await actor.getAllData();
           const swarmLocations = graphDataAll.locations.filter(
             (l) => l.parentSwarmId === swarmId,
           );
@@ -763,7 +763,7 @@ export default function TerminalPage() {
           break;
         }
         case "userlawtokens": {
-          const ownedData = await actor.getMyOwnedGraphData();
+          const ownedData = await actor.getOwnedData();
           addMessage(
             "success",
             `⚖️ User law tokens: ${ownedData.lawTokens.length}`,
@@ -772,7 +772,7 @@ export default function TerminalPage() {
           break;
         }
         case "userinterp": {
-          const ownedData = await actor.getMyOwnedGraphData();
+          const ownedData = await actor.getOwnedData();
           addMessage(
             "success",
             `💡 User interpretation tokens: ${ownedData.interpretationTokens.length}`,

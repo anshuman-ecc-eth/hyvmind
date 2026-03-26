@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { NodeId } from "../backend";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
-  useGetAllGraphData,
+  useGetAllData,
   useGetSwarmMembers,
   useJoinSwarm,
 } from "../hooks/useQueries";
@@ -20,7 +20,7 @@ export default function SwarmJoinButton({
   onNavigateToSwarm,
 }: SwarmJoinButtonProps) {
   const { identity } = useInternetIdentity();
-  const { data: graphData } = useGetAllGraphData();
+  const { data: graphData } = useGetAllData();
   const { data: members, isLoading: membersLoading } =
     useGetSwarmMembers(swarmId);
   const joinSwarm = useJoinSwarm();

@@ -1,33 +1,35 @@
-# Hyvmind — QoL Swarm Forking System
+# Hyvmind - QOL Swarm Forking System
 
 ## Current State
-- `Swarm` type has no `forkSource` or `forkPrincipal` fields
-- `joinSwarm()` adds caller to `swarmMembers` and returns `async ()`
-- No fork concept, no "My Forks" curation, no `pullFromSwarm`, no `getSwarmForks`
-- `isSwarmCreatorOrMember()` grants write access to creator + QoL members
-- `getMyOwnedGraphData()` returns nodes where `creator == caller`
+- joinSwarm() creates a fork but also adds caller to original swarm's swarmMembers (bug)
+- No getAllData() or getOwnedData() backend functions exist
+- 7 graph helper functions missing
+- Frontend uses old hook names: useGetGraphData, useGetAllGraphData
+- Backend interface uses old names: getGraphData, getMyOwnedGraphData
 
 ## Requested Changes (Diff)
 
 ### Add
-- `forkSource : ?NodeId` and `forkPrincipal : ?Principal` fields to `Swarm` type
-- `ensureMyForksCuration(caller)` — finds or creates "My Forks" curation for caller, returns its NodeId
-- `deepCopySwarmContent(sourceSwarmId, targetSwarmId, caller)` — copies all locations, law tokens (via `{...}` extraction), sublocations, and interpretation tokens; each copy gets a fresh ID via `generateId()`; forker becomes creator; votes/collectibles not copied
-- `pullFromSwarm(targetSwarmId)` — checks membership, archives existing fork of target swarm, creates fresh fork
-- `getSwarmForks(swarmId)` — query returning all swarms where `forkSource == swarmId`
+- 7 graph helper functions in main.mo: createInterpretationTokenNodes, createLawTokenNodes, createLocationNodes, createSwarmNodes, createGraphNodes, createSwarmLinksFromLocationEdges, createCurationLinksFromSwarmLinks
+- getAllData() public query function returning all non-archived GraphData
+- getOwnedData() query function returning caller-owned OwnedGraphData
 
 ### Modify
-- `joinSwarm()` — keep existing `swarmMembers` add logic, ALSO call `ensureMyForksCuration`, create fork swarm record with `forkSource` and `forkPrincipal` set, call `deepCopySwarmContent`, return `async NodeId` (the fork's ID)
-- `isSwarmCreatorOrMember()` — for forks (`forkSource != null`), only grant access if `swarm.creator == caller`; original swarms unchanged
+- joinSwarm(): remove 6 lines that add caller to original swarm's swarmMembers
+- backend.ts: rename getGraphData→getAllData, getMyOwnedGraphData→getOwnedData
+- backend.d.ts: same renames
+- useQueries.ts: rename hooks useGetGraphData→useGetOwnedData, useGetAllGraphData→useGetAllData; update actor calls
+- All 14 frontend files that import the old hook names
+- VoronoiDiagram.tsx, LandingGraphDiagram.tsx: rename anonymousActor.getGraphData→getAllData
 
 ### Remove
-- Nothing removed
+- Nothing removed; old stubs replaced
 
 ## Implementation Plan
-1. Add `forkSource : ?NodeId` and `forkPrincipal : ?Principal` to `Swarm` type
-2. Implement `ensureMyForksCuration(caller : Principal) : NodeId`
-3. Implement `deepCopySwarmContent(sourceSwarmId : NodeId, targetSwarmId : NodeId, caller : Principal)` — processes in hierarchy order: locations → law tokens (from `{...}` patterns in location/sublocation content) → sublocations → interpretation tokens; maps old location IDs to new ones in a local buffer to wire parent references for law tokens and interpretation tokens
-4. Modify `joinSwarm()` to return `async NodeId`, add fork creation after existing membership logic
-5. Modify `isSwarmCreatorOrMember()` to check `forkSource` and restrict fork write access to fork creator only
-6. Add `pullFromSwarm(targetSwarmId : NodeId) : async NodeId`
-7. Add `getSwarmForks(swarmId : NodeId) : async [Swarm]` query
+1. Fix joinSwarm bug (done)
+2. Add 7 graph helper functions (done)
+3. Add getAllData() and getOwnedData() (done)
+4. Rename backend.ts and backend.d.ts function signatures (done)
+5. Rename hooks in useQueries.ts (done)
+6. Update all consuming frontend files (done)
+7. Validate and deploy

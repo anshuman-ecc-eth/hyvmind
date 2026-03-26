@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, MapPin, Scale } from "lucide-react";
-import { useGetAllGraphData } from "../hooks/useQueries";
+import { useGetAllData } from "../hooks/useQueries";
 
 const QUESTION_OF_LAW_TAG = "question-of-law";
 
@@ -20,7 +20,7 @@ function formatDate(timestamp: bigint): string {
 }
 
 export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
-  const { data: graphData, isLoading } = useGetAllGraphData();
+  const { data: graphData, isLoading } = useGetAllData();
 
   const questionOfLawSwarms = (graphData?.swarms ?? []).filter((swarm) =>
     swarm.tags.includes(QUESTION_OF_LAW_TAG),

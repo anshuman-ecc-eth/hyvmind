@@ -135,7 +135,7 @@ export function clearTreeCache() {
   }
 }
 
-export function useGetGraphData() {
+export function useGetOwnedData() {
   const { actor, isFetching } = useActor();
   const { identity } = useInternetIdentity();
 
@@ -153,7 +153,7 @@ export function useGetGraphData() {
           rootNodes: [],
           edges: [],
         };
-      const owned = await actor.getMyOwnedGraphData();
+      const owned = await actor.getOwnedData();
       return buildGraphDataFromOwned(owned);
     },
     enabled: !!actor && !isFetching,
@@ -161,7 +161,7 @@ export function useGetGraphData() {
 }
 
 // Fetches all graph data (not just owned) — used for the Swarms tab
-export function useGetAllGraphData() {
+export function useGetAllData() {
   const { actor, isFetching } = useActor();
 
   return useQuery<GraphData>({
@@ -178,7 +178,7 @@ export function useGetAllGraphData() {
           rootNodes: [],
           edges: [],
         };
-      return actor.getGraphData();
+      return actor.getAllData();
     },
     enabled: !!actor && !isFetching,
   });
@@ -610,7 +610,7 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
     queryFn: async () => {
       if (!actor || !identity)
         return { lawTokens: [], interpretationTokens: [] };
-      const graphData = await actor.getGraphData();
+      const graphData = await actor.getAllData();
       const swarmLocations = graphData.locations.filter(
         (l) => l.parentSwarmId === swarmId,
       );
@@ -807,7 +807,7 @@ export function useGetUserLawTokens() {
     ],
     queryFn: async () => {
       if (!actor) return [];
-      const owned = await actor.getMyOwnedGraphData();
+      const owned = await actor.getOwnedData();
       return owned.lawTokens;
     },
     enabled: !!actor && !isFetching && !!identity,
@@ -826,7 +826,7 @@ export function useGetUserInterpretationTokens() {
     ],
     queryFn: async () => {
       if (!actor) return [];
-      const owned = await actor.getMyOwnedGraphData();
+      const owned = await actor.getOwnedData();
       return owned.interpretationTokens;
     },
     enabled: !!actor && !isFetching && !!identity,
