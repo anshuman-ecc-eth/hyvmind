@@ -70,6 +70,34 @@ export default function App() {
   // Determine if we're showing the landing page (unauthenticated view)
   const isLandingPage = !isAuthenticated;
 
+  const handleCheckCondition = async (condition: string, input: string) => {
+    if (condition.toLowerCase().includes("principal")) {
+      try {
+        const { createActorWithConfig } = await import("./config");
+        const actor = await createActorWithConfig();
+        const leaderboard = await actor.getLeaderboard();
+        const trimmed = input.trim();
+        const match = leaderboard.find(
+          (entry) => entry.principal.toString() === trimmed,
+        );
+        if (match) {
+          let name = "agent";
+          try {
+            const profile = await actor.getUserProfile(match.principal);
+            if (profile?.name) name = profile.name;
+          } catch {
+            /* silent */
+          }
+          return { pass: true, data: { "profile name": name } };
+        }
+        return { pass: false };
+      } catch {
+        return { pass: false };
+      }
+    }
+    return { pass: false };
+  };
+
   // Silent cleanup: fetch archived node IDs once per login and persist hidden collectibles
   const { data: archivedNodeIds } = useGetArchivedNodeIds();
   const { data: graphData } = useGetOwnedData();
@@ -176,7 +204,10 @@ export default function App() {
               </div>
               {/* Text game overlay */}
               {!gameComplete && (
-                <TextGameModal onComplete={() => setGameComplete(true)} />
+                <TextGameModal
+                  onComplete={() => setGameComplete(true)}
+                  checkCondition={handleCheckCondition}
+                />
               )}
             </div>
           ) : (
