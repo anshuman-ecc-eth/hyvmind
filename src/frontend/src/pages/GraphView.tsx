@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
 import ForceGraph3D, {
   type ForceGraph3DHandle,
@@ -139,7 +139,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   const { theme, resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const forceGraphRef = useRef<ForceGraph3DHandle | null>(null);
-  const [selectedNode, _setSelectedNode] = useState<LayoutNode | null>(null);
+  const [selectedNode, setSelectedNode] = useState<LayoutNode | null>(null);
   const [nodes, setNodes] = useState<LayoutNode[]>([]);
   const [links, setLinks] = useState<LayoutLink[]>([]);
 
@@ -699,14 +699,20 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   }, [graphData, computeForceLayout, width, height]);
 
   // Filter nodes and links (only for main graph)
-  const filteredNodes = nodes.filter(
-    (node) => nodeTypeFilters[node.type as keyof NodeTypeFilters],
+  const filteredNodes = useMemo(
+    () =>
+      nodes.filter(
+        (node) => nodeTypeFilters[node.type as keyof NodeTypeFilters],
+      ),
+    [nodes, nodeTypeFilters],
   );
-  const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
-  const filteredLinks = links.filter(
-    (link) =>
-      filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
-  );
+  const filteredLinks = useMemo(() => {
+    const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
+    return links.filter(
+      (link) =>
+        filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
+    );
+  }, [links, filteredNodes]);
 
   const getNodeColor = (type: string) => {
     const currentTheme = resolvedTheme || theme || "light";
@@ -853,6 +859,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           filteredNodes={filteredNodes}
           filteredLinks={filteredLinks}
           dagMode="null"
+          onNodeClick={(node) => setSelectedNode(node)}
         />
       </div>
 
@@ -861,7 +868,17 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Node Details</h3>
-              <Badge variant="outline">{selectedNode.type}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{selectedNode.type}</Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setSelectedNode(null)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">ID</p>

@@ -162,7 +162,7 @@ importers:
         specifier: ~19.1.0
         version: 19.1.1(react@19.1.1)
       react-force-graph-3d:
-        specifier: ^1.29.1
+        specifier: '*'
         version: 1.29.1(react@19.1.1)
       react-hook-form:
         specifier: ^7.53.0
@@ -192,7 +192,7 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       three-spritetext:
-        specifier: ^1.10.0
+        specifier: '*'
         version: 1.10.0(three@0.176.0)
       vaul:
         specifier: ^1.1.2

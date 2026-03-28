@@ -1,4 +1,4 @@
-import {
+import React, {
   forwardRef,
   useCallback,
   useEffect,
@@ -38,6 +38,7 @@ interface ForceGraph3DProps {
   filteredNodes: LayoutNode[];
   filteredLinks: LayoutLink[];
   dagMode?: string;
+  onNodeClick?: (node: LayoutNode) => void;
 }
 
 export interface ForceGraph3DHandle {
@@ -108,8 +109,11 @@ function getPrunedData(
   return { nodes: prunedNodes, links: prunedLinks };
 }
 
-export const ForceGraph3D = forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(
-  function ForceGraph3D({ filteredNodes, filteredLinks, dagMode }, ref) {
+export const ForceGraph3D = React.memo(
+  forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(function ForceGraph3D(
+    { filteredNodes, filteredLinks, dagMode, onNodeClick },
+    ref,
+  ) {
     const graphRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -162,16 +166,24 @@ export const ForceGraph3D = forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(
       links: pruned.links.map((l) => ({ ...l })),
     };
 
-    const handleNodeClick = useCallback((node: any) => {
-      const distance = 40;
-      const distRatio =
-        1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
-      graphRef.current?.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-        { x: node.x, y: node.y, z: node.z },
-        1000,
-      );
-    }, []);
+    const handleNodeClick = useCallback(
+      (node: any) => {
+        const distance = 40;
+        const distRatio =
+          1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
+        graphRef.current?.cameraPosition(
+          {
+            x: node.x * distRatio,
+            y: node.y * distRatio,
+            z: node.z * distRatio,
+          },
+          { x: node.x, y: node.y, z: node.z },
+          1000,
+        );
+        onNodeClick?.(node as LayoutNode);
+      },
+      [onNodeClick],
+    );
 
     const handleNodeRightClick = useCallback((node: any) => {
       setCollapsedNodeIds((prev) => {
@@ -239,7 +251,7 @@ export const ForceGraph3D = forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(
         />
       </div>
     );
-  },
+  }),
 );
 
 export default ForceGraph3D;
