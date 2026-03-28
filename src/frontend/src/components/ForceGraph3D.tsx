@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 // @ts-ignore
 import ForceGraph3DLib from "react-force-graph-3d";
 // @ts-ignore
@@ -28,19 +35,13 @@ interface LayoutLink {
 }
 
 interface ForceGraph3DProps {
-  nodes: LayoutNode[];
-  links: LayoutLink[];
   filteredNodes: LayoutNode[];
   filteredLinks: LayoutLink[];
-  subgraphNodes: LayoutNode[];
-  subgraphLinks: LayoutLink[];
-  nodeSize: number;
-  edgeThickness: number;
-  theme: string | undefined;
-  resolvedTheme: string | undefined;
-  selectedNode: LayoutNode | null;
-  subgraphMode: boolean;
-  focusedNode: string | null;
+  dagMode?: string;
+}
+
+export interface ForceGraph3DHandle {
+  focusNode: (x: number, y: number, z: number) => void;
 }
 
 const NODE_COLORS: Record<string, string> = {
@@ -66,7 +67,6 @@ function getPrunedData(
   links: LayoutLink[],
   collapsedNodeIds: Set<string>,
 ): { nodes: LayoutNode[]; links: LayoutLink[] } {
-  // Build children map: parentId -> [childId]
   const nodeIds = new Set(nodes.map((n) => n.id));
   const childrenMap = new Map<string, string[]>();
   const hasIncoming = new Set<string>();
@@ -84,7 +84,6 @@ function getPrunedData(
 
   const roots = nodes.filter((n) => !hasIncoming.has(n.id));
 
-  // BFS: traverse children, stop expanding collapsed nodes
   const visibleIds = new Set<string>();
   const queue = roots.map((n) => n.id);
   while (queue.length > 0) {
@@ -109,132 +108,138 @@ function getPrunedData(
   return { nodes: prunedNodes, links: prunedLinks };
 }
 
-export function ForceGraph3D({
-  filteredNodes,
-  filteredLinks,
-  subgraphNodes,
-  subgraphLinks,
-  subgraphMode,
-}: ForceGraph3DProps) {
-  const graphRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
-    new Set(),
-  );
-
-  // ResizeObserver for container dimensions
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setDimensions({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
-      }
-    });
-    ro.observe(el);
-    setDimensions({ width: el.offsetWidth, height: el.offsetHeight });
-    return () => ro.disconnect();
-  }, []);
-
-  // Fit graph when subgraph mode changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      graphRef.current?.zoomToFit(1000, 50);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [subgraphMode]);
-
-  const activeNodes = subgraphMode ? subgraphNodes : filteredNodes;
-  const activeLinks = subgraphMode ? subgraphLinks : filteredLinks;
-
-  const pruned = getPrunedData(activeNodes, activeLinks, collapsedNodeIds);
-
-  const graphData = {
-    nodes: pruned.nodes.map((n) => ({ ...n, name: n.label, nodeType: n.type })),
-    links: pruned.links.map((l) => ({ ...l })),
-  };
-
-  const handleNodeClick = useCallback((node: any) => {
-    const distance = 40;
-    const distRatio =
-      1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
-    graphRef.current?.cameraPosition(
-      { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-      { x: node.x, y: node.y, z: node.z },
-      1000,
+export const ForceGraph3D = forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(
+  function ForceGraph3D({ filteredNodes, filteredLinks, dagMode }, ref) {
+    const graphRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+    const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
+      new Set(),
     );
-  }, []);
 
-  const handleNodeRightClick = useCallback((node: any) => {
-    setCollapsedNodeIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(node.id)) next.delete(node.id);
-      else next.add(node.id);
-      return next;
-    });
-  }, []);
+    // ResizeObserver for container dimensions
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const ro = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      });
+      ro.observe(el);
+      setDimensions({ width: el.offsetWidth, height: el.offsetHeight });
+      return () => ro.disconnect();
+    }, []);
 
-  const nodeColor = useCallback((node: any): string => {
-    return getNodeColor(node.nodeType ?? node.type);
-  }, []);
+    const focusNode = useCallback((x: number, y: number, z: number) => {
+      const distance = 40;
+      const distRatio = 1 + distance / Math.hypot(x ?? 1, y ?? 1, z ?? 1);
+      graphRef.current?.cameraPosition(
+        { x: x * distRatio, y: y * distRatio, z: z * distRatio },
+        { x, y, z },
+        1000,
+      );
+    }, []);
 
-  const linkColor = useCallback((_link: any): string => "#555555", []);
+    useImperativeHandle(ref, () => ({ focusNode }), [focusNode]);
 
-  const linkWidth = useCallback((link: any): number => {
-    return link.isInterpretationTokenEdge ? 2 : 1;
-  }, []);
+    const pruned = getPrunedData(
+      filteredNodes,
+      filteredLinks,
+      collapsedNodeIds,
+    );
 
-  const nodeThreeObject = useCallback(
-    (node: any) => {
-      const label = node.label ?? node.name ?? "";
-      const isCollapsed = collapsedNodeIds.has(node.id);
-      const sprite = new SpriteText(isCollapsed ? `${label} [+]` : label);
-      sprite.color = isCollapsed ? "#FFD700" : "rgba(255,255,255,0.85)";
-      sprite.textHeight = 3;
-      sprite.position.y = 8;
-      return sprite;
-    },
-    [collapsedNodeIds],
-  );
+    const graphData = {
+      nodes: pruned.nodes.map((n) => ({
+        ...n,
+        name: n.label,
+        nodeType: n.type,
+      })),
+      links: pruned.links.map((l) => ({ ...l })),
+    };
 
-  const linkLabel = useCallback((link: any): string => {
-    if (link.isInterpretationTokenEdge && link.relationType) {
-      return link.relationType;
-    }
-    return "";
-  }, []);
+    const handleNodeClick = useCallback((node: any) => {
+      const distance = 40;
+      const distRatio =
+        1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
+      graphRef.current?.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        { x: node.x, y: node.y, z: node.z },
+        1000,
+      );
+    }, []);
 
-  return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
-      <ForceGraph3DLib
-        ref={graphRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        graphData={graphData}
-        nodeLabel="name"
-        nodeColor={nodeColor}
-        nodeRelSize={4}
-        nodeResolution={16}
-        nodeOpacity={0.9}
-        nodeThreeObject={nodeThreeObject}
-        nodeThreeObjectExtend={true}
-        linkColor={linkColor}
-        linkWidth={linkWidth}
-        linkOpacity={0.3}
-        linkLabel={linkLabel}
-        backgroundColor="#0a0a0a"
-        showNavInfo={false}
-        onNodeClick={handleNodeClick}
-        onNodeRightClick={handleNodeRightClick}
-      />
-    </div>
-  );
-}
+    const handleNodeRightClick = useCallback((node: any) => {
+      setCollapsedNodeIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(node.id)) next.delete(node.id);
+        else next.add(node.id);
+        return next;
+      });
+    }, []);
+
+    const nodeColor = useCallback((node: any): string => {
+      return getNodeColor(node.nodeType ?? node.type);
+    }, []);
+
+    const linkColor = useCallback((_link: any): string => "#555555", []);
+
+    const linkWidth = useCallback((link: any): number => {
+      return link.isInterpretationTokenEdge ? 2 : 1;
+    }, []);
+
+    const nodeThreeObject = useCallback(
+      (node: any) => {
+        const label = node.label ?? node.name ?? "";
+        const isCollapsed = collapsedNodeIds.has(node.id);
+        const sprite = new SpriteText(isCollapsed ? `${label} [+]` : label);
+        sprite.color = isCollapsed ? "#FFD700" : "rgba(255,255,255,0.85)";
+        sprite.textHeight = 3;
+        sprite.position.y = 8;
+        return sprite;
+      },
+      [collapsedNodeIds],
+    );
+
+    const linkLabel = useCallback((link: any): string => {
+      if (link.isInterpretationTokenEdge && link.relationType) {
+        return link.relationType;
+      }
+      return "";
+    }, []);
+
+    return (
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+        <ForceGraph3DLib
+          ref={graphRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          graphData={graphData}
+          nodeLabel="name"
+          nodeColor={nodeColor}
+          nodeRelSize={4}
+          nodeResolution={16}
+          nodeOpacity={0.9}
+          nodeThreeObject={nodeThreeObject}
+          nodeThreeObjectExtend={true}
+          linkColor={linkColor}
+          linkWidth={linkWidth}
+          linkOpacity={0.3}
+          linkLabel={linkLabel}
+          backgroundColor="#0a0a0a"
+          showNavInfo={false}
+          dagMode={dagMode === "null" ? undefined : (dagMode as any)}
+          dagLevelDistance={100}
+          onNodeClick={handleNodeClick}
+          onNodeRightClick={handleNodeRightClick}
+        />
+      </div>
+    );
+  },
+);
 
 export default ForceGraph3D;

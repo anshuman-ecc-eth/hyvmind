@@ -2,21 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import {
-  AlertCircle,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Search,
-  X,
-} from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
-import ForceGraph3D from "../components/ForceGraph3D";
+import ForceGraph3D, {
+  type ForceGraph3DHandle,
+} from "../components/ForceGraph3D";
 import { useGetOwnedData } from "../hooks/useQueries";
 
 interface LayoutNode {
@@ -73,7 +65,7 @@ const RIGHT_PANEL_WIDTH = 352;
 const BOTTOM_PANEL_HEIGHT = 220;
 const FILL_RATIO = 0.8;
 
-const calculateAutoFitTransform = (
+const _calculateAutoFitTransform = (
   nodes: LayoutNode[],
   viewportWidth: number,
   viewportHeight: number,
@@ -146,8 +138,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
 
   const { theme, resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedNode, setSelectedNode] = useState<LayoutNode | null>(null);
-  const [focusedNode, _setFocusedNode] = useState<string | null>(null);
+  const forceGraphRef = useRef<ForceGraph3DHandle | null>(null);
+  const [selectedNode, _setSelectedNode] = useState<LayoutNode | null>(null);
   const [nodes, setNodes] = useState<LayoutNode[]>([]);
   const [links, setLinks] = useState<LayoutLink[]>([]);
 
@@ -156,84 +148,12 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     initializeUnifiedLayout(),
   );
 
-  const [pan, setPan] = useState(unifiedLayoutRef.current.pan);
-  const [zoom, setZoom] = useState(unifiedLayoutRef.current.zoom);
   const nodesMapRef = useRef<Map<string, LayoutNode>>(new Map());
-  // Subgraph viewport state
-  const [subgraphMode, setSubgraphMode] = useState(false);
-  const [subgraphCenterNode, setSubgraphCenterNode] =
-    useState<LayoutNode | null>(null);
-  const [subgraphDepth, setSubgraphDepth] = useState(1);
-  const [subgraphNodes, setSubgraphNodes] = useState<LayoutNode[]>([]);
-  const [subgraphLinks, setSubgraphLinks] = useState<LayoutLink[]>([]);
-
-  // Transition state - only for fade effects
-  const [fadeOpacity, setFadeOpacity] = useState(1);
-  const [_isAnimating, _setIsAnimating] = useState(false);
-
-  const _animateNodes = (
-    from: LayoutNode[],
-    to: LayoutNode[],
-    onComplete: () => void,
-  ) => {
-    const fromMap = new Map(from.map((n) => [n.id, n]));
-    const duration = 400;
-    const startTime = performance.now();
-    const easing = (t: number) => 1 - (1 - t) ** 3;
-    const animate = (currentTime: number) => {
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const eased = easing(progress);
-      const current = to.map((t) => {
-        const f = fromMap.get(t.id);
-        return {
-          ...t,
-          x: (f?.x ?? t.x) + (t.x - (f?.x ?? t.x)) * eased,
-          y: (f?.y ?? t.y) + (t.y - (f?.y ?? t.y)) * eased,
-        };
-      });
-      setSubgraphNodes(current);
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        onComplete();
-      }
-    };
-    requestAnimationFrame(animate);
-  };
-
-  // Subgraph selector search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchNodeType, _setSearchNodeType] = useState<string>("all");
-  const [searchResults, setSearchResults] = useState<LayoutNode[]>([]);
-  const [highlightedSearchIndex, setHighlightedSearchIndex] =
-    useState<number>(-1);
-
   // Panel collapse state
   const [isLegendsCollapsed, setIsLegendsCollapsed] = useState(() => {
     const saved = sessionStorage.getItem("graphViewLegendsCollapsed");
     return saved === "true";
   });
-  const [isControlsCollapsed, setIsControlsCollapsed] = useState(() => {
-    const saved = sessionStorage.getItem("graphViewControlsCollapsed");
-    return saved === "true";
-  });
-
-  // Visualization control state (for both main graph and subgraph)
-  const [nodeSize, setNodeSize] = useState(() => {
-    const saved = sessionStorage.getItem("graphViewNodeSize");
-    return saved ? Number.parseInt(saved, 10) : 20;
-  });
-
-  const [edgeThickness, setEdgeThickness] = useState(() => {
-    const saved = sessionStorage.getItem("graphViewEdgeThickness");
-    return saved ? Number.parseInt(saved, 10) : 2;
-  });
-
-  // Keyboard navigation state for subgraph
-  const [keyboardFocusedNodeId, setKeyboardFocusedNodeId] = useState<
-    string | null
-  >(null);
-
   const [nodeTypeFilters, setNodeTypeFilters] = useState<NodeTypeFilters>(
     () => {
       const saved = sessionStorage.getItem("graphViewFilters");
@@ -256,7 +176,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   );
 
   // Helper function to build hierarchical path for a node
-  const buildNodePath = useCallback(
+  const _buildNodePath = useCallback(
     (nodeId: string): string => {
       if (!graphData) return "";
 
@@ -397,22 +317,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   }, [isLegendsCollapsed]);
 
   useEffect(() => {
-    sessionStorage.setItem(
-      "graphViewControlsCollapsed",
-      isControlsCollapsed.toString(),
-    );
-  }, [isControlsCollapsed]);
-
-  // Save control settings to session storage
-  useEffect(() => {
-    sessionStorage.setItem("graphViewNodeSize", nodeSize.toString());
-  }, [nodeSize]);
-
-  useEffect(() => {
-    sessionStorage.setItem("graphViewEdgeThickness", edgeThickness.toString());
-  }, [edgeThickness]);
-
-  useEffect(() => {
     sessionStorage.setItem("graphViewFilters", JSON.stringify(nodeTypeFilters));
   }, [nodeTypeFilters]);
 
@@ -506,7 +410,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           sn.vy += (centerY - cy) * alpha;
         }
         // Collision avoidance
-        const collideRadius = nodeSize * 1.5;
+        const collideRadius = 20 * 1.5;
         for (let i = 0; i < simNodes.length; i++) {
           for (let j = i + 1; j < simNodes.length; j++) {
             const a = simNodes[i];
@@ -548,28 +452,9 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         return sn ? { ...n, x: sn.x, y: sn.y } : n;
       });
     },
-    [nodeSize, saveLayoutCache],
+    [saveLayoutCache],
   );
 
-  const computeSubgraphLayout = (
-    subNodes: LayoutNode[],
-    subLinks: LayoutLink[],
-    centerNode: LayoutNode,
-    edgeDist: number,
-  ) => {
-    const positioned = computeForceLayout(
-      subNodes,
-      subLinks,
-      centerNode.x,
-      centerNode.y,
-      edgeDist,
-    );
-    setSubgraphNodes(positioned);
-    for (const n of positioned) {
-      unifiedLayoutRef.current.nodes.set(n.id, { x: n.x, y: n.y });
-    }
-    saveLayoutCache();
-  };
   // Build nodes and links from graph data
   useEffect(() => {
     if (!graphData) return;
@@ -813,122 +698,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     setLinks(layoutLinks);
   }, [graphData, computeForceLayout, width, height]);
 
-  // Build subgraph when center node or depth changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: animateNodes is stable within render cycle
-  useEffect(() => {
-    if (!subgraphCenterNode || !subgraphMode) return;
-
-    const connectedNodeIds = new Set<string>();
-    const connectedLinks: LayoutLink[] = [];
-
-    // BFS to find nodes within depth
-    const queue: Array<{ id: string; depth: number }> = [
-      { id: subgraphCenterNode.id, depth: 0 },
-    ];
-    const visited = new Set<string>();
-
-    while (queue.length > 0) {
-      const { id, depth } = queue.shift()!;
-
-      if (visited.has(id) || depth > subgraphDepth) continue;
-      visited.add(id);
-      connectedNodeIds.add(id);
-
-      // Find connected nodes
-      // biome-ignore lint/complexity/noForEach: imperative code
-      links.forEach((link) => {
-        if (link.source === id && !visited.has(link.target)) {
-          queue.push({ id: link.target, depth: depth + 1 });
-          if (depth < subgraphDepth) {
-            connectedLinks.push(link);
-          }
-        }
-        if (link.target === id && !visited.has(link.source)) {
-          queue.push({ id: link.source, depth: depth + 1 });
-          if (depth < subgraphDepth) {
-            connectedLinks.push(link);
-          }
-        }
-      });
-    }
-
-    // Get raw positions from unified layout
-    const rawSubNodes = nodes
-      .filter((n) => connectedNodeIds.has(n.id))
-      .map((n) => {
-        const unifiedPos = unifiedLayoutRef.current.nodes.get(n.id);
-        return { ...n, x: unifiedPos?.x ?? n.x, y: unifiedPos?.y ?? n.y };
-      });
-
-    // Calculate auto-fit transform for usable viewport
-    const { scale, offsetX, offsetY } = calculateAutoFitTransform(
-      rawSubNodes,
-      width,
-      height,
-    );
-
-    // Apply transform to get fitted positions
-    const fittedSubNodes = rawSubNodes.map((node) => ({
-      ...node,
-      x: node.x * scale + offsetX,
-      y: node.y * scale + offsetY,
-    }));
-
-    // Set auto-fit positions immediately, then run force simulation from there (single animation)
-    setSubgraphNodes(fittedSubNodes);
-    setSubgraphLinks(connectedLinks);
-    const fittedCenterNode =
-      fittedSubNodes.find((n) => n.id === subgraphCenterNode.id) ??
-      fittedSubNodes[0];
-    if (fittedCenterNode) {
-      computeSubgraphLayout(
-        fittedSubNodes,
-        connectedLinks,
-        fittedCenterNode,
-        100,
-      );
-    }
-
-    // Reset zoom and pan for subgraph view
-    setZoom(1.0);
-    setPan({ x: 0, y: 0 });
-    unifiedLayoutRef.current.zoom = 1.0;
-    unifiedLayoutRef.current.pan = { x: 0, y: 0 };
-
-    // Set initial keyboard focus to center node when entering subgraph
-    if (rawSubNodes.length > 0) {
-      setKeyboardFocusedNodeId(subgraphCenterNode.id);
-    }
-  }, [
-    subgraphCenterNode,
-    subgraphDepth,
-    subgraphMode,
-    nodes,
-    links,
-    width,
-    height,
-  ]);
-
-  // Search functionality
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setHighlightedSearchIndex(-1);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = nodes.filter((node) => {
-      const matchesQuery = node.label.toLowerCase().includes(query);
-      const matchesType =
-        searchNodeType === "all" || node.type === searchNodeType;
-      return matchesQuery && matchesType;
-    });
-
-    setSearchResults(results.slice(0, 10)); // Limit to 10 results
-    setHighlightedSearchIndex(results.length > 0 ? 0 : -1);
-  }, [searchQuery, searchNodeType, nodes]);
-
   // Filter nodes and links (only for main graph)
   const filteredNodes = nodes.filter(
     (node) => nodeTypeFilters[node.type as keyof NodeTypeFilters],
@@ -985,7 +754,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     return isDark ? "#555555" : "#999999";
   };
 
-  const getConnectedNodes = (nodeId: string): Set<string> => {
+  const _getConnectedNodes = (nodeId: string): Set<string> => {
     const connected = new Set<string>();
     connected.add(nodeId);
 
@@ -1002,258 +771,11 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     return connected;
   };
 
-  const _isNodeConnected = (nodeId: string): boolean => {
-    if (!focusedNode) return true;
-    const connected = getConnectedNodes(focusedNode);
-    return connected.has(nodeId);
-  };
-
-  const _isLinkConnected = (link: LayoutLink): boolean => {
-    if (!focusedNode) return true;
-    return link.source === focusedNode || link.target === focusedNode;
-  };
-
-  // Compute viewport bounds with buffer margin for culling
-  // Viewport bounds check for off-screen node selections
-  const isNodeInViewport = useCallback(
-    (node: LayoutNode): boolean => {
-      if (!containerRef.current) return true;
-
-      const worldX = node.x * zoom + pan.x;
-      const worldY = node.y * zoom + pan.y;
-
-      const margin = 100; // Margin from viewport edges
-      return (
-        worldX >= margin &&
-        worldX <= width - margin &&
-        worldY >= margin &&
-        worldY <= height - margin
-      );
-    },
-    [zoom, pan, width, height],
-  );
-
-  // Smooth pan to bring off-screen node into view
-  const panToNode = useCallback(
-    (node: LayoutNode) => {
-      if (isNodeInViewport(node)) return;
-
-      const targetX = width / 2 - node.x * zoom;
-      const targetY = height / 2 - node.y * zoom;
-
-      // Smooth pan animation using requestAnimationFrame
-      const startPan = { ...pan };
-      const startTime = performance.now();
-      const duration = 500; // 500ms animation
-
-      const animate = (currentTime: number) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function for smooth animation
-        const easeProgress = 1 - (1 - progress) ** 3;
-
-        const newPan = {
-          x: startPan.x + (targetX - startPan.x) * easeProgress,
-          y: startPan.y + (targetY - startPan.y) * easeProgress,
-        };
-
-        setPan(newPan);
-        unifiedLayoutRef.current.pan = newPan;
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          saveLayoutCache();
-        }
-      };
-
-      requestAnimationFrame(animate);
-    },
-    [pan, zoom, width, height, isNodeInViewport, saveLayoutCache],
-  );
-
-  // Find nearest node in a given direction
-  const findNearestNodeInDirection = useCallback(
-    (
-      currentNodeId: string,
-      direction: "up" | "down" | "left" | "right",
-    ): LayoutNode | null => {
-      const currentNode = subgraphNodes.find((n) => n.id === currentNodeId);
-      if (!currentNode) return null;
-
-      let candidates: LayoutNode[] = [];
-
-      switch (direction) {
-        case "up":
-          candidates = subgraphNodes.filter((n) => n.y < currentNode.y);
-          break;
-        case "down":
-          candidates = subgraphNodes.filter((n) => n.y > currentNode.y);
-          break;
-        case "left":
-          candidates = subgraphNodes.filter((n) => n.x < currentNode.x);
-          break;
-        case "right":
-          candidates = subgraphNodes.filter((n) => n.x > currentNode.x);
-          break;
-      }
-
-      if (candidates.length === 0) return null;
-
-      // Find the nearest candidate based on direction
-      let nearest: LayoutNode | null = null;
-      let minDistance = Number.POSITIVE_INFINITY;
-
-      // biome-ignore lint/complexity/noForEach: imperative code
-      candidates.forEach((candidate) => {
-        let distance: number;
-
-        if (direction === "up" || direction === "down") {
-          // For vertical movement, prioritize y-axis distance
-          const dy = Math.abs(candidate.y - currentNode.y);
-          const dx = Math.abs(candidate.x - currentNode.x);
-          distance = dy + dx * 0.5; // Weight x-axis less
-        } else {
-          // For horizontal movement, prioritize x-axis distance
-          const dx = Math.abs(candidate.x - currentNode.x);
-          const dy = Math.abs(candidate.y - currentNode.y);
-          distance = dx + dy * 0.5; // Weight y-axis less
-        }
-
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearest = candidate;
-        }
-      });
-
-      return nearest;
-    },
-    [subgraphNodes],
-  );
-
-  // Keyboard navigation handler for subgraph
-  useEffect(() => {
-    if (!subgraphMode) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle arrow keys in subgraph mode
-      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key))
-        return;
-
-      e.preventDefault();
-
-      if (!keyboardFocusedNodeId) {
-        // If no node is focused, focus on center node
-        if (subgraphCenterNode) {
-          setKeyboardFocusedNodeId(subgraphCenterNode.id);
-          panToNode(subgraphCenterNode);
-        }
-        return;
-      }
-
-      let direction: "up" | "down" | "left" | "right";
-      switch (e.key) {
-        case "ArrowUp":
-          direction = "up";
-          break;
-        case "ArrowDown":
-          direction = "down";
-          break;
-        case "ArrowLeft":
-          direction = "left";
-          break;
-        case "ArrowRight":
-          direction = "right";
-          break;
-        default:
-          return;
-      }
-
-      const nextNode = findNearestNodeInDirection(
-        keyboardFocusedNodeId,
-        direction,
-      );
-      if (nextNode) {
-        setKeyboardFocusedNodeId(nextNode.id);
-        setSelectedNode(nextNode);
-        panToNode(nextNode);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    subgraphMode,
-    keyboardFocusedNodeId,
-    subgraphCenterNode,
-    findNearestNodeInDirection,
-    panToNode,
-  ]);
-
-  // Keyboard navigation handler for search results
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (searchResults.length === 0) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlightedSearchIndex((prev) =>
-        prev < searchResults.length - 1 ? prev + 1 : prev,
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightedSearchIndex((prev) => (prev > 0 ? prev - 1 : 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (
-        highlightedSearchIndex >= 0 &&
-        highlightedSearchIndex < searchResults.length
-      ) {
-        handleSearchResultClick(searchResults[highlightedSearchIndex]);
-      }
-    }
-  };
-
   const toggleNodeTypeFilter = (nodeType: keyof NodeTypeFilters) => {
     setNodeTypeFilters((prev) => ({
       ...prev,
       [nodeType]: !prev[nodeType],
     }));
-  };
-
-  const closeSubgraph = () => {
-    setFadeOpacity(0.3);
-    setTimeout(() => {
-      setSubgraphMode(false);
-      setSubgraphCenterNode(null);
-      setKeyboardFocusedNodeId(null);
-      setTimeout(() => {
-        setFadeOpacity(1);
-      }, 200);
-    }, 50);
-  };
-
-  const handleSearchResultClick = (node: LayoutNode) => {
-    setSubgraphCenterNode(node);
-    setSelectedNode(node);
-    setSearchQuery("");
-    setSearchResults([]);
-    setHighlightedSearchIndex(-1);
-
-    // Pan to node if off-screen
-    if (!isNodeInViewport(node)) {
-      panToNode(node);
-    }
-
-    // Start fade-out transition
-    setFadeOpacity(0.3);
-
-    setTimeout(() => {
-      setSubgraphMode(true);
-      setTimeout(() => {
-        setFadeOpacity(1);
-      }, 200);
-    }, 50);
   };
 
   if (isLoading) {
@@ -1314,9 +836,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     : null;
 
   const getNodeConnections = (nodeId: string) => {
-    const linksToUse = subgraphMode ? subgraphLinks : filteredLinks;
-    const incoming = linksToUse.filter((l) => l.target === nodeId).length;
-    const outgoing = linksToUse.filter((l) => l.source === nodeId).length;
+    const incoming = filteredLinks.filter((l) => l.target === nodeId).length;
+    const outgoing = filteredLinks.filter((l) => l.source === nodeId).length;
     return { incoming, outgoing, total: incoming + outgoing };
   };
 
@@ -1326,145 +847,14 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       className="relative h-[calc(100vh-8rem)] overflow-hidden bg-background"
     >
       {/* 3D Graph Scene */}
-      <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          opacity: fadeOpacity,
-          transition: "opacity 300ms ease-in-out",
-        }}
-      >
+      <div className="absolute inset-0 w-full h-full">
         <ForceGraph3D
-          nodes={nodes}
-          links={links}
+          ref={forceGraphRef}
           filteredNodes={filteredNodes}
           filteredLinks={filteredLinks}
-          subgraphNodes={subgraphNodes}
-          subgraphLinks={subgraphLinks}
-          nodeSize={nodeSize}
-          edgeThickness={edgeThickness}
-          theme={theme}
-          resolvedTheme={resolvedTheme}
-          selectedNode={selectedNode}
-          subgraphMode={subgraphMode}
-          focusedNode={focusedNode}
+          dagMode="null"
         />
       </div>
-
-      {/* Subgraph Selector Panel - with proper z-index and pointer-events */}
-      <Card className="absolute top-4 left-4 p-4 w-80 z-50 max-h-[calc(100vh-10rem)] overflow-y-auto pointer-events-auto">
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Subgraph Selector</h3>
-
-          {/* Search interface */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search nodes by name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className="pl-8 text-sm"
-              />
-            </div>
-
-            {/* Search results */}
-            {searchResults.length > 0 && (
-              <div className="border border-border rounded-md max-h-48 overflow-y-auto">
-                {searchResults.map((node, index) => {
-                  const hierarchicalPath = buildNodePath(node.id);
-                  return (
-                    <button
-                      type="button"
-                      key={node.id}
-                      onClick={() => handleSearchResultClick(node)}
-                      className={`w-full text-left px-3 py-2 transition-colors border-b border-border last:border-b-0 ${
-                        index === highlightedSearchIndex
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium truncate">
-                              {node.label}
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className="text-xs shrink-0"
-                            >
-                              {node.type}
-                            </Badge>
-                          </div>
-                          {hierarchicalPath && (
-                            <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {hierarchicalPath}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {subgraphMode && subgraphCenterNode ? (
-            <>
-              <div className="pt-3 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Center Node
-                </p>
-                <p className="text-sm font-medium">
-                  {subgraphCenterNode.label}
-                </p>
-                <Badge variant="outline" className="mt-1">
-                  {subgraphCenterNode.type}
-                </Badge>
-              </div>
-              <div>
-                <Label
-                  htmlFor="subgraph-depth"
-                  className="text-xs text-muted-foreground"
-                >
-                  Relationship Depth: {subgraphDepth}
-                </Label>
-                <Slider
-                  id="subgraph-depth"
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={[subgraphDepth]}
-                  onValueChange={(value) => setSubgraphDepth(value[0])}
-                  className="cursor-pointer mt-2"
-                />
-              </div>
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  Use arrow keys to navigate between nodes
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={closeSubgraph}
-                className="w-full hover:bg-accent hover:text-accent-foreground"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Exit Subgraph
-              </Button>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Search for a node or click any node on the graph to open its
-              subgraph view
-            </p>
-          )}
-        </div>
-      </Card>
 
       {selectedNode && !readOnly && (
         <Card className="absolute right-4 top-4 w-80 p-4 max-h-[calc(100vh-10rem)] overflow-y-auto z-50 pointer-events-auto">
@@ -1667,80 +1057,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
                 <p className="text-xs text-muted-foreground mt-1">
                   Dashed lines indicate interpretation token relationships
                 </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {!readOnly && (
-        <Card className="absolute bottom-4 right-4 p-4 w-72 transition-all duration-300 ease-in-out z-50 pointer-events-auto">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Visualization Controls</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
-                className="h-8 px-2 hover:bg-accent hover:text-accent-foreground"
-                aria-label={
-                  isControlsCollapsed
-                    ? "Expand controls panel"
-                    : "Collapse controls panel"
-                }
-                aria-expanded={!isControlsCollapsed}
-              >
-                {isControlsCollapsed ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <div
-              className="overflow-hidden transition-all duration-300 ease-in-out"
-              style={{
-                maxHeight: isControlsCollapsed ? "0" : "700px",
-                opacity: isControlsCollapsed ? 0 : 1,
-              }}
-            >
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="node-size"
-                    className="text-xs text-muted-foreground"
-                  >
-                    Node Size: {nodeSize}
-                  </Label>
-                  <Slider
-                    id="node-size"
-                    min={10}
-                    max={40}
-                    step={2}
-                    value={[nodeSize]}
-                    onValueChange={(value) => setNodeSize(value[0])}
-                    className="cursor-pointer"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edge-thickness"
-                    className="text-xs text-muted-foreground"
-                  >
-                    Edge Thickness: {edgeThickness}
-                  </Label>
-                  <Slider
-                    id="edge-thickness"
-                    min={1}
-                    max={6}
-                    step={1}
-                    value={[edgeThickness]}
-                    onValueChange={(value) => setEdgeThickness(value[0])}
-                    className="cursor-pointer"
-                  />
-                </div>
               </div>
             </div>
           </div>
