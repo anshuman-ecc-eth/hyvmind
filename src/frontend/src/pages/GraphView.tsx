@@ -16,6 +16,7 @@ import {
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
+import { GraphScene3D } from "../components/GraphScene3D";
 import { useGetOwnedData } from "../hooks/useQueries";
 
 interface LayoutNode {
@@ -65,81 +66,6 @@ interface UnifiedLayoutState {
   layoutComputed: boolean;
   nodeCount: number;
   edgeCount: number;
-}
-
-// Simple spatial index for hierarchical culling
-interface BoundingBox {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-}
-
-interface SpatialBucket {
-  nodes: LayoutNode[];
-  bounds: BoundingBox;
-}
-
-class SpatialIndex {
-  private bucketSize: number;
-  private buckets: Map<string, SpatialBucket>;
-
-  constructor(bucketSize = 200) {
-    this.bucketSize = bucketSize;
-    this.buckets = new Map();
-  }
-
-  private getBucketKey(x: number, y: number): string {
-    const bx = Math.floor(x / this.bucketSize);
-    const by = Math.floor(y / this.bucketSize);
-    return `${bx},${by}`;
-  }
-
-  clear() {
-    this.buckets.clear();
-  }
-
-  addNode(node: LayoutNode) {
-    const key = this.getBucketKey(node.x, node.y);
-
-    if (!this.buckets.has(key)) {
-      const bx = Math.floor(node.x / this.bucketSize);
-      const by = Math.floor(node.y / this.bucketSize);
-      this.buckets.set(key, {
-        nodes: [],
-        bounds: {
-          minX: bx * this.bucketSize,
-          minY: by * this.bucketSize,
-          maxX: (bx + 1) * this.bucketSize,
-          maxY: (by + 1) * this.bucketSize,
-        },
-      });
-    }
-
-    this.buckets.get(key)!.nodes.push(node);
-  }
-
-  queryViewport(viewport: BoundingBox): LayoutNode[] {
-    const visibleNodes: LayoutNode[] = [];
-    const minBucketX = Math.floor(viewport.minX / this.bucketSize);
-    const minBucketY = Math.floor(viewport.minY / this.bucketSize);
-    const maxBucketX = Math.floor(viewport.maxX / this.bucketSize);
-    const maxBucketY = Math.floor(viewport.maxY / this.bucketSize);
-
-    for (let bx = minBucketX; bx <= maxBucketX; bx++) {
-      for (let by = minBucketY; by <= maxBucketY; by++) {
-        const key = `${bx},${by}`;
-        const bucket = this.buckets.get(key);
-
-        if (bucket) {
-          // Add all nodes from buckets that intersect viewport
-          visibleNodes.push(...bucket.nodes);
-        }
-      }
-    }
-
-    return visibleNodes;
-  }
 }
 
 const LEFT_PANEL_WIDTH = 352;
@@ -219,17 +145,11 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   const { data: graphData, isLoading, error, isError } = useGetOwnedData();
 
   const { theme, resolvedTheme } = useTheme();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const subgraphCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<LayoutNode | null>(null);
   const [focusedNode, _setFocusedNode] = useState<string | null>(null);
   const [nodes, setNodes] = useState<LayoutNode[]>([]);
   const [links, setLinks] = useState<LayoutLink[]>([]);
-
-  // Spatial index for culling
-  const spatialIndexRef = useRef<SpatialIndex>(new SpatialIndex(200));
-  const subgraphSpatialIndexRef = useRef<SpatialIndex>(new SpatialIndex(200));
 
   // Unified layout state - shared between main graph and subgraph, persists across tab switches
   const unifiedLayoutRef = useRef<UnifiedLayoutState>(
@@ -237,12 +157,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   );
 
   const [pan, setPan] = useState(unifiedLayoutRef.current.pan);
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(unifiedLayoutRef.current.zoom);
   const nodesMapRef = useRef<Map<string, LayoutNode>>(new Map());
-  const animationFrameRef = useRef<number | null>(null);
-
   // Subgraph viewport state
   const [subgraphMode, setSubgraphMode] = useState(false);
   const [subgraphCenterNode, setSubgraphCenterNode] =
@@ -318,7 +234,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   });
 
   const [hoveredNode, setHoveredNode] = useState<LayoutNode | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Keyboard navigation state for subgraph
   const [keyboardFocusedNodeId, setKeyboardFocusedNodeId] = useState<
@@ -1029,26 +944,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     height,
   ]);
 
-  // Build spatial indices when nodes change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-  useEffect(() => {
-    // Build main graph spatial index
-    spatialIndexRef.current.clear();
-    // biome-ignore lint/complexity/noForEach: imperative code
-    filteredNodes.forEach((node) => {
-      spatialIndexRef.current.addNode(node);
-    });
-  }, [nodes, nodeTypeFilters]);
-
-  useEffect(() => {
-    // Build subgraph spatial index
-    subgraphSpatialIndexRef.current.clear();
-    // biome-ignore lint/complexity/noForEach: imperative code
-    subgraphNodes.forEach((node) => {
-      subgraphSpatialIndexRef.current.addNode(node);
-    });
-  }, [subgraphNodes]);
-
   // Search functionality
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -1119,7 +1014,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     }
   };
 
-  const getEdgeColor = () => {
+  const _getEdgeColor = () => {
     const currentTheme = resolvedTheme || theme || "light";
     const isDark = currentTheme === "dark";
     return isDark ? "#555555" : "#999999";
@@ -1142,113 +1037,22 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     return connected;
   };
 
-  const isNodeConnected = (nodeId: string): boolean => {
+  const _isNodeConnected = (nodeId: string): boolean => {
     if (!focusedNode) return true;
     const connected = getConnectedNodes(focusedNode);
     return connected.has(nodeId);
   };
 
-  const isLinkConnected = (link: LayoutLink): boolean => {
+  const _isLinkConnected = (link: LayoutLink): boolean => {
     if (!focusedNode) return true;
     return link.source === focusedNode || link.target === focusedNode;
   };
 
   // Compute viewport bounds with buffer margin for culling
-  const getViewportBounds = useCallback(
-    (bufferMargin = 100): BoundingBox => {
-      const minX = -pan.x / zoom - bufferMargin;
-      const minY = -pan.y / zoom - bufferMargin;
-      const maxX = (width - pan.x) / zoom + bufferMargin;
-      const maxY = (height - pan.y) / zoom + bufferMargin;
-
-      return { minX, minY, maxX, maxY };
-    },
-    [pan, zoom, width, height],
-  );
-
-  // Check if edge crosses viewport (for edges with endpoints outside viewport)
-  const edgeCrossesViewport = useCallback(
-    (
-      sourceNode: LayoutNode,
-      targetNode: LayoutNode,
-      viewport: BoundingBox,
-    ): boolean => {
-      // Check if line segment intersects viewport rectangle
-      const lineIntersectsRect = (
-        x1: number,
-        y1: number,
-        x2: number,
-        y2: number,
-        rectMinX: number,
-        rectMinY: number,
-        rectMaxX: number,
-        rectMaxY: number,
-      ): boolean => {
-        // Check if either endpoint is inside viewport
-        if (
-          (x1 >= rectMinX &&
-            x1 <= rectMaxX &&
-            y1 >= rectMinY &&
-            y1 <= rectMaxY) ||
-          (x2 >= rectMinX && x2 <= rectMaxX && y2 >= rectMinY && y2 <= rectMaxY)
-        ) {
-          return true;
-        }
-
-        // Check line-rectangle intersection using Cohen-Sutherland algorithm
-        const INSIDE = 0;
-        const LEFT = 1;
-        const RIGHT = 2;
-        const BOTTOM = 4;
-        const TOP = 8;
-
-        const computeCode = (x: number, y: number): number => {
-          let code = INSIDE;
-          if (x < rectMinX) code |= LEFT;
-          else if (x > rectMaxX) code |= RIGHT;
-          if (y < rectMinY) code |= BOTTOM;
-          else if (y > rectMaxY) code |= TOP;
-          return code;
-        };
-
-        let code1 = computeCode(x1, y1);
-        let code2 = computeCode(x2, y2);
-
-        while (true) {
-          if ((code1 | code2) === 0) {
-            // Both endpoints inside
-            return true;
-          }
-          if ((code1 & code2) !== 0) {
-            // Both endpoints on same side outside
-            return false;
-          }
-          // Line crosses viewport
-          return true;
-        }
-      };
-
-      return lineIntersectsRect(
-        sourceNode.x,
-        sourceNode.y,
-        targetNode.x,
-        targetNode.y,
-        viewport.minX,
-        viewport.minY,
-        viewport.maxX,
-        viewport.maxY,
-      );
-    },
-    [],
-  );
-
   // Viewport bounds check for off-screen node selections
   const isNodeInViewport = useCallback(
     (node: LayoutNode): boolean => {
-      const canvas = subgraphMode
-        ? subgraphCanvasRef.current
-        : canvasRef.current;
-      if (!canvas) return true;
+      if (!containerRef.current) return true;
 
       const worldX = node.x * zoom + pan.x;
       const worldY = node.y * zoom + pan.y;
@@ -1261,7 +1065,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         worldY <= height - margin
       );
     },
-    [zoom, pan, width, height, subgraphMode],
+    [zoom, pan, width, height],
   );
 
   // Smooth pan to bring off-screen node into view
@@ -1445,596 +1249,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     }
   };
 
-  // Canvas rendering function for main graph with hierarchical culling
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-  const renderCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size to full viewport
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
-
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-
-    // Apply transformations using unified layout state
-    ctx.save();
-    ctx.translate(pan.x, pan.y);
-    ctx.scale(zoom, zoom);
-
-    const edgeColor = getEdgeColor();
-
-    // Apply fade opacity
-    ctx.globalAlpha = fadeOpacity;
-
-    // Compute viewport bounds with buffer margin for culling
-    const viewport = getViewportBounds(150);
-
-    // Query visible nodes using spatial index
-    const visibleNodes = spatialIndexRef.current.queryViewport(viewport);
-    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
-
-    // Filter edges: include if both endpoints visible OR edge crosses viewport
-    const visibleLinks = filteredLinks.filter((link) => {
-      const sourceVisible = visibleNodeIds.has(link.source);
-      const targetVisible = visibleNodeIds.has(link.target);
-
-      // If both endpoints visible, include edge
-      if (sourceVisible && targetVisible) return true;
-
-      // If one or both endpoints outside viewport, check if edge crosses viewport
-      const sourceNode = filteredNodes.find((n) => n.id === link.source);
-      const targetNode = filteredNodes.find((n) => n.id === link.target);
-
-      if (sourceNode && targetNode) {
-        return edgeCrossesViewport(sourceNode, targetNode, viewport);
-      }
-
-      return false;
-    });
-
-    // Draw edges
-    // biome-ignore lint/complexity/noForEach: imperative code
-    visibleLinks.forEach((link) => {
-      const source = filteredNodes.find((n) => n.id === link.source);
-      const target = filteredNodes.find((n) => n.id === link.target);
-      if (!source || !target) return;
-
-      const isConnected = isLinkConnected(link);
-      const opacity = isConnected ? 0.85 : 0.15;
-
-      ctx.globalAlpha = opacity * fadeOpacity;
-      ctx.strokeStyle = edgeColor;
-      ctx.lineWidth = edgeThickness;
-
-      // Use dashed lines for interpretation token edges
-      if (link.isInterpretationTokenEdge) {
-        ctx.setLineDash([5, 5]);
-      } else {
-        ctx.setLineDash([]);
-      }
-
-      const sourceRadius = nodeSize - source.level * 2;
-      const targetRadius = nodeSize - target.level * 2;
-      const avgRadius = (sourceRadius + targetRadius) / 2;
-      const offset = 12;
-
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance > 0) {
-        const ux = dx / distance;
-        const uy = dy / distance;
-
-        const x1 = source.x + ux * (avgRadius + offset);
-        const y1 = source.y + uy * (avgRadius + offset);
-        const x2 = target.x - ux * (avgRadius + offset);
-        const y2 = target.y - uy * (avgRadius + offset);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        // Draw arrows for interpretation token edges
-        if (link.isInterpretationTokenEdge) {
-          let directionality: Directionality | undefined;
-
-          if (link.edgeType === "from") {
-            directionality = link.fromDirectionality;
-          } else if (link.edgeType === "to") {
-            directionality = link.toDirectionality;
-          }
-
-          const arrowSize = 8;
-          const angle = Math.atan2(dy, dx);
-
-          ctx.fillStyle = edgeColor;
-
-          // Draw target arrow (pointing to target)
-          if (
-            directionality === "unidirectional" ||
-            directionality === "bidirectional"
-          ) {
-            ctx.save();
-            ctx.translate(x2, y2);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-arrowSize, -arrowSize / 2);
-            ctx.lineTo(-arrowSize, arrowSize / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-
-          // Draw source arrow (pointing to source)
-          if (directionality === "bidirectional") {
-            ctx.save();
-            ctx.translate(x1, y1);
-            ctx.rotate(angle + Math.PI);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-arrowSize, -arrowSize / 2);
-            ctx.lineTo(-arrowSize, arrowSize / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-        }
-      }
-
-      // Reset line dash
-      ctx.setLineDash([]);
-    });
-
-    // Draw visible nodes only
-    // biome-ignore lint/complexity/noForEach: imperative code
-    visibleNodes.forEach((node) => {
-      const nodeRadius = nodeSize - node.level * 2;
-      const opacity = isNodeConnected(node.id) ? 1 : 0.2;
-
-      ctx.globalAlpha = opacity * fadeOpacity;
-
-      // Draw node circle
-      ctx.fillStyle = getNodeColor(node.type);
-      ctx.strokeStyle = getComputedStyle(document.documentElement)
-        .getPropertyValue("--background")
-        .trim();
-      ctx.lineWidth = 2;
-
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.stroke();
-
-      // Draw node label
-      const currentTheme = resolvedTheme || theme || "light";
-      const isDark = currentTheme === "dark";
-      ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-      ctx.font = "12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText(
-        node.label.substring(0, 15),
-        node.x,
-        node.y + nodeRadius + 5,
-      );
-    });
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }, [
-    filteredNodes,
-    filteredLinks,
-    pan,
-    zoom,
-    focusedNode,
-    theme,
-    resolvedTheme,
-    width,
-    height,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    getNodeColor,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    getEdgeColor,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    isNodeConnected,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    isLinkConnected,
-    nodeSize,
-    edgeThickness,
-    fadeOpacity,
-    getViewportBounds,
-    edgeCrossesViewport,
-  ]);
-
-  // Canvas rendering function for subgraph with hierarchical culling
-  const renderSubgraphCanvas = useCallback(() => {
-    const canvas = subgraphCanvasRef.current;
-    if (!canvas || !subgraphMode) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size to full viewport
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
-
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-
-    // Apply transformations using unified layout state
-    ctx.save();
-    ctx.translate(pan.x, pan.y);
-    ctx.scale(zoom, zoom);
-
-    const edgeColor = getEdgeColor();
-    const currentTheme = resolvedTheme || theme || "light";
-    const isDark = currentTheme === "dark";
-    const bgColor = isDark ? "#000000" : "#ffffff";
-    const accentColor = isDark ? "#FFD700" : "#B8860B";
-
-    // Apply fade opacity
-    ctx.globalAlpha = fadeOpacity;
-
-    // Compute viewport bounds with buffer margin for culling
-    const viewport = getViewportBounds(150);
-
-    // Query visible nodes using spatial index
-    const visibleNodes =
-      subgraphSpatialIndexRef.current.queryViewport(viewport);
-    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
-
-    // Filter edges: include if both endpoints visible OR edge crosses viewport
-    const visibleLinks = subgraphLinks.filter((link) => {
-      const sourceVisible = visibleNodeIds.has(link.source);
-      const targetVisible = visibleNodeIds.has(link.target);
-
-      // If both endpoints visible, include edge
-      if (sourceVisible && targetVisible) return true;
-
-      // If one or both endpoints outside viewport, check if edge crosses viewport
-      const sourceNode = subgraphNodes.find((n) => n.id === link.source);
-      const targetNode = subgraphNodes.find((n) => n.id === link.target);
-
-      if (sourceNode && targetNode) {
-        return edgeCrossesViewport(sourceNode, targetNode, viewport);
-      }
-
-      return false;
-    });
-
-    // Draw edges
-    // biome-ignore lint/complexity/noForEach: imperative code
-    visibleLinks.forEach((link) => {
-      const source = subgraphNodes.find((n) => n.id === link.source);
-      const target = subgraphNodes.find((n) => n.id === link.target);
-      if (!source || !target) return;
-
-      ctx.globalAlpha = 0.85 * fadeOpacity;
-      ctx.strokeStyle = edgeColor;
-      ctx.lineWidth = edgeThickness;
-
-      // Use dashed lines for interpretation token edges
-      if (link.isInterpretationTokenEdge) {
-        ctx.setLineDash([5, 5]);
-      } else {
-        ctx.setLineDash([]);
-      }
-
-      const sourceRadius = nodeSize - source.level * 2;
-      const targetRadius = nodeSize - target.level * 2;
-      const avgRadius = (sourceRadius + targetRadius) / 2;
-      const offset = 12;
-
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance > 0) {
-        const ux = dx / distance;
-        const uy = dy / distance;
-
-        const x1 = source.x + ux * (avgRadius + offset);
-        const y1 = source.y + uy * (avgRadius + offset);
-        const x2 = target.x - ux * (avgRadius + offset);
-        const y2 = target.y - uy * (avgRadius + offset);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        // Draw arrows for interpretation token edges
-        if (link.isInterpretationTokenEdge) {
-          let directionality: Directionality | undefined;
-
-          if (link.edgeType === "from") {
-            directionality = link.fromDirectionality;
-          } else if (link.edgeType === "to") {
-            directionality = link.toDirectionality;
-          }
-
-          const arrowSize = 8;
-          const angle = Math.atan2(dy, dx);
-
-          ctx.fillStyle = edgeColor;
-
-          // Draw target arrow (pointing to target)
-          if (
-            directionality === "unidirectional" ||
-            directionality === "bidirectional"
-          ) {
-            ctx.save();
-            ctx.translate(x2, y2);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-arrowSize, -arrowSize / 2);
-            ctx.lineTo(-arrowSize, arrowSize / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-
-          // Draw source arrow (pointing to source)
-          if (directionality === "bidirectional") {
-            ctx.save();
-            ctx.translate(x1, y1);
-            ctx.rotate(angle + Math.PI);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-arrowSize, -arrowSize / 2);
-            ctx.lineTo(-arrowSize, arrowSize / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-        }
-      }
-
-      // Reset line dash
-      ctx.setLineDash([]);
-    });
-
-    // Draw edge labels with canvas background (only for visible edges)
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // biome-ignore lint/complexity/noForEach: imperative code
-    visibleLinks.forEach((link) => {
-      if (!link.relationType) return;
-
-      const source = subgraphNodes.find((n) => n.id === link.source);
-      const target = subgraphNodes.find((n) => n.id === link.target);
-      if (!source || !target) return;
-
-      const midX = (source.x + target.x) / 2;
-      const midY = (source.y + target.y) / 2;
-
-      ctx.globalAlpha = 0.85 * fadeOpacity;
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(midX - 30, midY - 8, 60, 16);
-
-      ctx.fillStyle = isDark ? "#888888" : "#666666";
-      ctx.fillText(link.relationType, midX, midY);
-    });
-
-    // Draw visible nodes only
-    // biome-ignore lint/complexity/noForEach: imperative code
-    visibleNodes.forEach((node) => {
-      const nodeRadius = nodeSize - node.level * 2;
-      const isKeyboardFocused = node.id === keyboardFocusedNodeId;
-
-      ctx.globalAlpha = fadeOpacity;
-
-      // Draw keyboard focus halo
-      if (isKeyboardFocused) {
-        ctx.strokeStyle = accentColor;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, nodeRadius + 6, 0, 2 * Math.PI);
-        ctx.stroke();
-      }
-
-      // Draw node circle
-      ctx.fillStyle = getNodeColor(node.type);
-      ctx.strokeStyle = bgColor;
-      ctx.lineWidth = 2;
-
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.stroke();
-
-      // Draw node label
-      ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-      ctx.font = "12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText(
-        node.label.substring(0, 15),
-        node.x,
-        node.y + nodeRadius + 5,
-      );
-    });
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }, [
-    subgraphNodes,
-    subgraphLinks,
-    pan,
-    zoom,
-    nodeSize,
-    edgeThickness,
-    theme,
-    resolvedTheme,
-    width,
-    height,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    getNodeColor,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-    getEdgeColor,
-    subgraphMode,
-    fadeOpacity,
-    keyboardFocusedNodeId,
-    getViewportBounds,
-    edgeCrossesViewport,
-  ]);
-
-  // Render canvas on changes
-  useEffect(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    animationFrameRef.current = requestAnimationFrame(() => {
-      renderCanvas();
-      renderSubgraphCanvas();
-    });
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [renderCanvas, renderSubgraphCanvas]);
-
-  // Convert canvas coordinates to world coordinates
-  const canvasToWorld = useCallback(
-    (clientX: number, clientY: number) => {
-      const canvas = subgraphMode
-        ? subgraphCanvasRef.current
-        : canvasRef.current;
-      if (!canvas) return { x: 0, y: 0 };
-
-      const rect = canvas.getBoundingClientRect();
-      const canvasX = clientX - rect.left;
-      const canvasY = clientY - rect.top;
-
-      const worldX = (canvasX - pan.x) / zoom;
-      const worldY = (canvasY - pan.y) / zoom;
-
-      return { x: worldX, y: worldY };
-    },
-    [pan, zoom, subgraphMode],
-  );
-
-  // Find node at position
-  const findNodeAtPosition = useCallback(
-    (worldX: number, worldY: number, isSubgraph = false): LayoutNode | null => {
-      const nodesToSearch = isSubgraph ? subgraphNodes : filteredNodes;
-      const currentNodeSize = nodeSize;
-
-      for (const node of nodesToSearch) {
-        const nodeRadius = currentNodeSize - node.level * 2;
-        const dx = worldX - node.x;
-        const dy = worldY - node.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance <= nodeRadius) {
-          return node;
-        }
-      }
-      return null;
-    },
-    [filteredNodes, subgraphNodes, nodeSize],
-  );
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const world = canvasToWorld(e.clientX, e.clientY);
-    setMousePos({ x: e.clientX, y: e.clientY });
-
-    if (isPanning) {
-      const deltaX = e.clientX - panStart.x;
-      const deltaY = e.clientY - panStart.y;
-
-      const newPan = {
-        x: pan.x + deltaX,
-        y: pan.y + deltaY,
-      };
-
-      setPan(newPan);
-      unifiedLayoutRef.current.pan = newPan;
-      saveLayoutCache();
-
-      setPanStart({ x: e.clientX, y: e.clientY });
-    } else {
-      // Update hovered node
-      const node = findNodeAtPosition(world.x, world.y, subgraphMode);
-      setHoveredNode(node);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsPanning(false);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const world = canvasToWorld(e.clientX, e.clientY);
-    const node = findNodeAtPosition(world.x, world.y, subgraphMode);
-
-    if (node) {
-      if (subgraphMode) {
-        // Re-center on clicked node and check if off-screen
-        setSubgraphCenterNode(node);
-        setSelectedNode(node);
-        setKeyboardFocusedNodeId(node.id);
-
-        // Pan to node if off-screen
-        if (!isNodeInViewport(node)) {
-          panToNode(node);
-        }
-      } else {
-        // Enter subgraph mode with smooth fade transition
-        setSubgraphCenterNode(node);
-        setSelectedNode(node);
-
-        // Pan to node if off-screen before entering subgraph
-        if (!isNodeInViewport(node)) {
-          panToNode(node);
-        }
-
-        // Start fade-out transition
-        setFadeOpacity(0.3);
-
-        setTimeout(() => {
-          setSubgraphMode(true);
-          setTimeout(() => {
-            setFadeOpacity(1);
-          }, 200);
-        }, 50);
-      }
-    } else {
-      setIsPanning(true);
-      setPanStart({ x: e.clientX, y: e.clientY });
-    }
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(4, zoom * delta));
-    setZoom(newZoom);
-    unifiedLayoutRef.current.zoom = newZoom;
-    saveLayoutCache();
-  };
-
   const toggleNodeTypeFilter = (nodeType: keyof NodeTypeFilters) => {
     setNodeTypeFilters((prev) => ({
       ...prev,
@@ -2146,61 +1360,47 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       ref={containerRef}
       className="relative h-[calc(100vh-8rem)] overflow-hidden bg-background"
     >
-      {/* Main graph canvas - extended to full viewport width and height */}
+      {/* 3D Graph Scene */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          opacity: subgraphMode ? 0 : 1,
+          opacity: fadeOpacity,
           transition: "opacity 300ms ease-in-out",
         }}
       >
-        <canvas
-          ref={canvasRef}
-          className={subgraphMode ? "invisible" : "cursor-move"}
-          style={{ width: "100%", height: "100%" }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
+        <GraphScene3D
+          nodes={nodes}
+          links={links}
+          filteredNodes={filteredNodes}
+          filteredLinks={filteredLinks}
+          subgraphNodes={subgraphNodes}
+          subgraphLinks={subgraphLinks}
+          nodeSize={nodeSize}
+          edgeThickness={edgeThickness}
+          theme={theme}
+          resolvedTheme={resolvedTheme}
+          hoveredNode={hoveredNode}
+          selectedNode={selectedNode}
+          subgraphMode={subgraphMode}
+          focusedNode={focusedNode}
+          onNodeClick={(node) => {
+            if (subgraphMode) {
+              setSubgraphCenterNode(node);
+              setSelectedNode(node);
+              setKeyboardFocusedNodeId(node.id);
+            } else {
+              setSubgraphCenterNode(node);
+              setSelectedNode(node);
+              setFadeOpacity(0.3);
+              setTimeout(() => {
+                setSubgraphMode(true);
+                setTimeout(() => setFadeOpacity(1), 200);
+              }, 50);
+            }
+          }}
+          onNodeHover={(node) => setHoveredNode(node)}
         />
       </div>
-
-      {/* Subgraph viewport overlay - full viewport */}
-      {subgraphMode && (
-        <div
-          className="absolute inset-0 w-full h-full bg-background z-40"
-          style={{
-            opacity: 1,
-            transition: "opacity 300ms ease-in-out",
-          }}
-        >
-          <canvas
-            ref={subgraphCanvasRef}
-            className="cursor-move"
-            style={{ width: "100%", height: "100%" }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
-          />
-        </div>
-      )}
-
-      {hoveredNode?.originalTokenSequence && (
-        <div
-          className="absolute pointer-events-none bg-background border border-border rounded px-2 py-1 text-xs shadow-lg z-50"
-          style={{
-            left: mousePos.x + 10,
-            top: mousePos.y + 10,
-          }}
-        >
-          <p className="font-mono text-foreground">
-            {hoveredNode.originalTokenSequence}
-          </p>
-        </div>
-      )}
 
       {/* Subgraph Selector Panel - with proper z-index and pointer-events */}
       <Card className="absolute top-4 left-4 p-4 w-80 z-50 max-h-[calc(100vh-10rem)] overflow-y-auto pointer-events-auto">
