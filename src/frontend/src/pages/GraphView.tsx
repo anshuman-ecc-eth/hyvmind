@@ -456,6 +456,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   );
 
   // Build nodes and links from graph data
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs only when graphData changes; computeForceLayout/width/height are stable refs
   useEffect(() => {
     if (!graphData) return;
 
@@ -675,12 +676,13 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     // Performance safeguard: Skip layout if node/edge counts unchanged
     const currentNodeCount = layoutNodes.length;
     const currentEdgeCount = layoutLinks.length;
-    const countsUnchanged =
-      unifiedLayoutRef.current.nodeCount === currentNodeCount &&
-      unifiedLayoutRef.current.edgeCount === currentEdgeCount;
+    const topologyChanged =
+      !unifiedLayoutRef.current.layoutComputed ||
+      unifiedLayoutRef.current.nodeCount !== currentNodeCount ||
+      unifiedLayoutRef.current.edgeCount !== currentEdgeCount;
 
-    // Compute force layout on initial render or when graph topology changes
-    if (!unifiedLayoutRef.current.layoutComputed || !countsUnchanged) {
+    // Only run force simulation when topology actually changes
+    if (topologyChanged) {
       positionedNodes = computeForceLayout(
         layoutNodes,
         layoutLinks,
@@ -692,11 +694,13 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       unifiedLayoutRef.current.edgeCount = currentEdgeCount;
     }
 
+    // Always update state — fixes remount issue where React clears nodes[] on unmount
+    // but cached positions exist in unifiedLayoutRef. Without this, the graph stays
+    // blank after navigating away and back when topology hasn't changed.
     nodesMapRef.current = newNodesMap;
-
     setNodes(positionedNodes);
     setLinks(layoutLinks);
-  }, [graphData, computeForceLayout, width, height]);
+  }, [graphData]);
 
   // Filter nodes and links (only for main graph)
   const filteredNodes = useMemo(
