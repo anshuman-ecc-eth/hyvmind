@@ -224,10 +224,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     return saved ? Number.parseInt(saved, 10) : 20;
   });
 
-  const [edgeDistance, setEdgeDistance] = useState(() => {
-    const saved = sessionStorage.getItem("graphViewEdgeDistance");
-    return saved ? Number.parseInt(saved, 10) : 100;
-  });
   const [edgeThickness, setEdgeThickness] = useState(() => {
     const saved = sessionStorage.getItem("graphViewEdgeThickness");
     return saved ? Number.parseInt(saved, 10) : 2;
@@ -408,35 +404,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       isControlsCollapsed.toString(),
     );
   }, [isControlsCollapsed]);
-
-  // Re-run force layout when edgeDistance changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only edgeDistance triggers this
-  useEffect(() => {
-    if (nodes.length === 0) return;
-    const positioned = computeForceLayout(
-      nodes,
-      links,
-      width / 2,
-      height / 2,
-      edgeDistance,
-    );
-    setNodes(positioned);
-    if (subgraphMode && subgraphCenterNode) {
-      const subNodes = positioned.filter((n) =>
-        subgraphNodes.some((s) => s.id === n.id),
-      );
-      const centerNode =
-        subNodes.find((n) => n.id === subgraphCenterNode.id) ?? subNodes[0];
-      if (centerNode) {
-        computeSubgraphLayout(
-          subNodes,
-          subgraphLinks,
-          centerNode,
-          edgeDistance,
-        );
-      }
-    }
-  }, [edgeDistance]);
 
   // Save control settings to session storage
   useEffect(() => {
@@ -836,7 +803,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         layoutLinks,
         width / 2,
         height / 2,
-        edgeDistance,
+        100,
       );
       unifiedLayoutRef.current.nodeCount = currentNodeCount;
       unifiedLayoutRef.current.edgeCount = currentEdgeCount;
@@ -846,7 +813,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
 
     setNodes(positionedNodes);
     setLinks(layoutLinks);
-  }, [graphData, computeForceLayout, width, height, edgeDistance]);
+  }, [graphData, computeForceLayout, width, height]);
 
   // Build subgraph when center node or depth changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: animateNodes is stable within render cycle
@@ -920,7 +887,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         fittedSubNodes,
         connectedLinks,
         fittedCenterNode,
-        edgeDistance,
+        100,
       );
     }
 
@@ -1789,31 +1756,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
                     step={1}
                     value={[edgeThickness]}
                     onValueChange={(value) => setEdgeThickness(value[0])}
-                    className="cursor-pointer"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edge-distance"
-                    className="text-xs text-muted-foreground"
-                  >
-                    Edge Distance: {edgeDistance}
-                  </Label>
-                  <Slider
-                    id="edge-distance"
-                    min={50}
-                    max={300}
-                    step={5}
-                    value={[edgeDistance]}
-                    onValueChange={(value) => {
-                      const val = value[0];
-                      setEdgeDistance(val);
-                      sessionStorage.setItem(
-                        "graphViewEdgeDistance",
-                        val.toString(),
-                      );
-                    }}
                     className="cursor-pointer"
                   />
                 </div>

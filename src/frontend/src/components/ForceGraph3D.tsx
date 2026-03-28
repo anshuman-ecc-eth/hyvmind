@@ -159,14 +159,12 @@ export function ForceGraph3D({
   const nodeColor = useCallback(
     (node: any): string => {
       const baseColor = getNodeColor(node.nodeType ?? node.type);
-      if (hoveredId && node.id === hoveredId) return "#FFD700";
-      if (selectedNode && node.id === selectedNode.id) return "#FFD700";
       if (connected && !connected.has(node.id)) {
         return `${baseColor}33`;
       }
       return baseColor;
     },
-    [hoveredId, selectedNode, connected],
+    [connected],
   );
 
   const linkColor = useCallback(
@@ -188,7 +186,7 @@ export function ForceGraph3D({
 
   const nodeThreeObject = useCallback((node: any) => {
     const sprite = new SpriteText(node.label ?? node.name ?? "");
-    sprite.color = getNodeColor(node.nodeType ?? node.type);
+    sprite.color = "rgba(255,255,255,0.85)";
     sprite.textHeight = 3;
     sprite.position.y = 8;
     return sprite;
