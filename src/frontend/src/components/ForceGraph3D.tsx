@@ -38,12 +38,9 @@ interface ForceGraph3DProps {
   edgeThickness: number;
   theme: string | undefined;
   resolvedTheme: string | undefined;
-  hoveredNode: LayoutNode | null;
   selectedNode: LayoutNode | null;
   subgraphMode: boolean;
   focusedNode: string | null;
-  onNodeClick: (node: LayoutNode) => void;
-  onNodeHover: (node: LayoutNode | null) => void;
 }
 
 const NODE_COLORS: Record<string, string> = {
@@ -59,22 +56,72 @@ function getNodeColor(type: string): string {
   return NODE_COLORS[type] ?? "#9CA3AF";
 }
 
+/**
+ * Given a flat list of nodes and links, returns only the nodes/links
+ * reachable from root nodes (no incoming links) without traversing
+ * through collapsed nodes — matching vasturiano's expandable-nodes pattern.
+ */
+function getPrunedData(
+  nodes: LayoutNode[],
+  links: LayoutLink[],
+  collapsedNodeIds: Set<string>,
+): { nodes: LayoutNode[]; links: LayoutLink[] } {
+  // Build children map: parentId -> [childId]
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const childrenMap = new Map<string, string[]>();
+  const hasIncoming = new Set<string>();
+
+  for (const link of links) {
+    const src =
+      typeof link.source === "object" ? (link.source as any).id : link.source;
+    const tgt =
+      typeof link.target === "object" ? (link.target as any).id : link.target;
+    if (!nodeIds.has(src) || !nodeIds.has(tgt)) continue;
+    hasIncoming.add(tgt);
+    if (!childrenMap.has(src)) childrenMap.set(src, []);
+    childrenMap.get(src)!.push(tgt);
+  }
+
+  const roots = nodes.filter((n) => !hasIncoming.has(n.id));
+
+  // BFS: traverse children, stop expanding collapsed nodes
+  const visibleIds = new Set<string>();
+  const queue = roots.map((n) => n.id);
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (visibleIds.has(id)) continue;
+    visibleIds.add(id);
+    if (!collapsedNodeIds.has(id)) {
+      const children = childrenMap.get(id) ?? [];
+      for (const childId of children) {
+        if (!visibleIds.has(childId)) queue.push(childId);
+      }
+    }
+  }
+
+  const prunedNodes = nodes.filter((n) => visibleIds.has(n.id));
+  const prunedLinks = links.filter((l) => {
+    const src = typeof l.source === "object" ? (l.source as any).id : l.source;
+    const tgt = typeof l.target === "object" ? (l.target as any).id : l.target;
+    return visibleIds.has(src) && visibleIds.has(tgt);
+  });
+
+  return { nodes: prunedNodes, links: prunedLinks };
+}
+
 export function ForceGraph3D({
   filteredNodes,
   filteredLinks,
   subgraphNodes,
   subgraphLinks,
   subgraphMode,
-  selectedNode,
-  onNodeClick,
-  onNodeHover,
 }: ForceGraph3DProps) {
   const graphRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-
-  // Track hovered node id for highlighting
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // ResizeObserver for container dimensions
   useEffect(() => {
@@ -106,91 +153,55 @@ export function ForceGraph3D({
   const activeNodes = subgraphMode ? subgraphNodes : filteredNodes;
   const activeLinks = subgraphMode ? subgraphLinks : filteredLinks;
 
-  // Build connected node set for hover highlighting
-  const connectedIds = useCallback(
-    (nodeId: string): Set<string> => {
-      const set = new Set<string>([nodeId]);
-      for (const link of activeLinks) {
-        const src =
-          typeof link.source === "object"
-            ? (link.source as any).id
-            : link.source;
-        const tgt =
-          typeof link.target === "object"
-            ? (link.target as any).id
-            : link.target;
-        if (src === nodeId) set.add(tgt);
-        if (tgt === nodeId) set.add(src);
-      }
-      return set;
-    },
-    [activeLinks],
-  );
+  const pruned = getPrunedData(activeNodes, activeLinks, collapsedNodeIds);
 
   const graphData = {
-    nodes: activeNodes.map((n) => ({ ...n, name: n.label, nodeType: n.type })),
-    links: activeLinks.map((l) => ({ ...l })),
+    nodes: pruned.nodes.map((n) => ({ ...n, name: n.label, nodeType: n.type })),
+    links: pruned.links.map((l) => ({ ...l })),
   };
 
-  const handleNodeClick = useCallback(
-    (node: any) => {
-      graphRef.current?.centerAt(node.x, node.y, node.z, 1000);
-      graphRef.current?.zoom(5, 1000);
-      onNodeClick(node as LayoutNode);
-    },
-    [onNodeClick],
-  );
+  const handleNodeClick = useCallback((node: any) => {
+    const distance = 40;
+    const distRatio =
+      1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
+    graphRef.current?.cameraPosition(
+      { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+      { x: node.x, y: node.y, z: node.z },
+      1000,
+    );
+  }, []);
 
-  const handleNodeHover = useCallback(
-    (node: any) => {
-      const id = node ? node.id : null;
-      setHoveredId(id);
-      onNodeHover(node ? (node as LayoutNode) : null);
-    },
-    [onNodeHover],
-  );
+  const handleNodeRightClick = useCallback((node: any) => {
+    setCollapsedNodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(node.id)) next.delete(node.id);
+      else next.add(node.id);
+      return next;
+    });
+  }, []);
 
-  const connected = hoveredId
-    ? connectedIds(hoveredId)
-    : selectedNode
-      ? connectedIds(selectedNode.id)
-      : null;
+  const nodeColor = useCallback((node: any): string => {
+    return getNodeColor(node.nodeType ?? node.type);
+  }, []);
 
-  const nodeColor = useCallback(
-    (node: any): string => {
-      const baseColor = getNodeColor(node.nodeType ?? node.type);
-      if (connected && !connected.has(node.id)) {
-        return `${baseColor}33`;
-      }
-      return baseColor;
-    },
-    [connected],
-  );
-
-  const linkColor = useCallback(
-    (link: any): string => {
-      if (!connected) return "#555555";
-      const src =
-        typeof link.source === "object" ? link.source.id : link.source;
-      const tgt =
-        typeof link.target === "object" ? link.target.id : link.target;
-      if (connected.has(src) && connected.has(tgt)) return "#aaaaaa";
-      return "#333333";
-    },
-    [connected],
-  );
+  const linkColor = useCallback((_link: any): string => "#555555", []);
 
   const linkWidth = useCallback((link: any): number => {
     return link.isInterpretationTokenEdge ? 2 : 1;
   }, []);
 
-  const nodeThreeObject = useCallback((node: any) => {
-    const sprite = new SpriteText(node.label ?? node.name ?? "");
-    sprite.color = "rgba(255,255,255,0.85)";
-    sprite.textHeight = 3;
-    sprite.position.y = 8;
-    return sprite;
-  }, []);
+  const nodeThreeObject = useCallback(
+    (node: any) => {
+      const label = node.label ?? node.name ?? "";
+      const isCollapsed = collapsedNodeIds.has(node.id);
+      const sprite = new SpriteText(isCollapsed ? `${label} [+]` : label);
+      sprite.color = isCollapsed ? "#FFD700" : "rgba(255,255,255,0.85)";
+      sprite.textHeight = 3;
+      sprite.position.y = 8;
+      return sprite;
+    },
+    [collapsedNodeIds],
+  );
 
   const linkLabel = useCallback((link: any): string => {
     if (link.isInterpretationTokenEdge && link.relationType) {
@@ -220,7 +231,7 @@ export function ForceGraph3D({
         backgroundColor="#0a0a0a"
         showNavInfo={false}
         onNodeClick={handleNodeClick}
-        onNodeHover={handleNodeHover}
+        onNodeRightClick={handleNodeRightClick}
       />
     </div>
   );

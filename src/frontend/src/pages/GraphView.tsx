@@ -229,8 +229,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     return saved ? Number.parseInt(saved, 10) : 2;
   });
 
-  const [hoveredNode, setHoveredNode] = useState<LayoutNode | null>(null);
-
   // Keyboard navigation state for subgraph
   const [keyboardFocusedNodeId, setKeyboardFocusedNodeId] = useState<
     string | null
@@ -1346,26 +1344,9 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           edgeThickness={edgeThickness}
           theme={theme}
           resolvedTheme={resolvedTheme}
-          hoveredNode={hoveredNode}
           selectedNode={selectedNode}
           subgraphMode={subgraphMode}
           focusedNode={focusedNode}
-          onNodeClick={(node) => {
-            if (subgraphMode) {
-              setSubgraphCenterNode(node);
-              setSelectedNode(node);
-              setKeyboardFocusedNodeId(node.id);
-            } else {
-              setSubgraphCenterNode(node);
-              setSelectedNode(node);
-              setFadeOpacity(0.3);
-              setTimeout(() => {
-                setSubgraphMode(true);
-                setTimeout(() => setFadeOpacity(1), 200);
-              }, 50);
-            }
-          }}
-          onNodeHover={(node) => setHoveredNode(node)}
         />
       </div>
 
@@ -1680,7 +1661,8 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
               </div>
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-xs text-muted-foreground">
-                  Click node to open subgraph • Drag to pan • Scroll to zoom
+                  Left click to focus • Right click to expand/collapse • Drag to
+                  pan • Scroll to zoom
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Dashed lines indicate interpretation token relationships
