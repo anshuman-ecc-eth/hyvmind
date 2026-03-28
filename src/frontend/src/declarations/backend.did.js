@@ -42,6 +42,13 @@ export const CollectibleEdition = IDL.Record({
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const BuzzScore = IDL.Int;
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
+export const Curation = IDL.Record({
+  'id' : NodeId,
+  'name' : IDL.Text,
+  'creator' : IDL.Principal,
+  'jurisdiction' : IDL.Text,
+  'timestamps' : Timestamps,
+});
 export const Swarm = IDL.Record({
   'id' : NodeId,
   'creator' : IDL.Principal,
@@ -51,6 +58,78 @@ export const Swarm = IDL.Record({
   'timestamps' : Timestamps,
   'parentCurationId' : NodeId,
   'forkPrincipal' : IDL.Opt(IDL.Principal),
+});
+export const Location = IDL.Record({
+  'id' : NodeId,
+  'title' : IDL.Text,
+  'content' : IDL.Text,
+  'originalTokenSequence' : IDL.Text,
+  'customAttributes' : IDL.Vec(CustomAttribute),
+  'parentSwarmId' : NodeId,
+  'creator' : IDL.Principal,
+  'version' : IDL.Nat,
+  'timestamps' : Timestamps,
+});
+export const LawToken = IDL.Record({
+  'id' : NodeId,
+  'tokenLabel' : IDL.Text,
+  'parentLocationId' : NodeId,
+  'creator' : IDL.Principal,
+  'timestamps' : Timestamps,
+});
+export const Sublocation = IDL.Record({
+  'id' : NodeId,
+  'title' : IDL.Text,
+  'content' : IDL.Text,
+  'originalTokenSequence' : IDL.Text,
+  'creator' : IDL.Principal,
+  'timestamps' : Timestamps,
+});
+export const InterpretationToken = IDL.Record({
+  'id' : NodeId,
+  'title' : IDL.Text,
+  'context' : IDL.Text,
+  'fromTokenId' : NodeId,
+  'fromRelationshipType' : IDL.Text,
+  'fromDirectionality' : Directionality,
+  'toNodeId' : NodeId,
+  'toRelationshipType' : IDL.Text,
+  'toDirectionality' : Directionality,
+  'customAttributes' : IDL.Vec(CustomAttribute),
+  'creator' : IDL.Principal,
+  'timestamps' : Timestamps,
+});
+export const GraphNode = IDL.Rec();
+GraphNode.fill(IDL.Record({
+  'id' : NodeId,
+  'nodeType' : IDL.Text,
+  'tokenLabel' : IDL.Text,
+  'jurisdiction' : IDL.Opt(IDL.Text),
+  'parentId' : IDL.Opt(NodeId),
+  'children' : IDL.Vec(GraphNode),
+}));
+export const GraphEdge = IDL.Record({
+  'source' : NodeId,
+  'target' : NodeId,
+});
+export const GraphData = IDL.Record({
+  'curations' : IDL.Vec(Curation),
+  'swarms' : IDL.Vec(Swarm),
+  'locations' : IDL.Vec(Location),
+  'lawTokens' : IDL.Vec(LawToken),
+  'sublocations' : IDL.Vec(Sublocation),
+  'interpretationTokens' : IDL.Vec(InterpretationToken),
+  'rootNodes' : IDL.Vec(GraphNode),
+  'edges' : IDL.Vec(GraphEdge),
+});
+export const OwnedGraphData = IDL.Record({
+  'curations' : IDL.Vec(Curation),
+  'swarms' : IDL.Vec(Swarm),
+  'locations' : IDL.Vec(Location),
+  'lawTokens' : IDL.Vec(LawToken),
+  'sublocations' : IDL.Vec(Sublocation),
+  'interpretationTokens' : IDL.Vec(InterpretationToken),
+  'edges' : IDL.Vec(GraphEdge),
 });
 export const VoteData = IDL.Record({
   'upvotes' : IDL.Nat,
@@ -111,6 +190,7 @@ export const idlService = IDL.Service({
     ),
   'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
+  'getAllData' : IDL.Func([], [GraphData], ['query']),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -121,6 +201,7 @@ export const idlService = IDL.Service({
     ),
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+  'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
   'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -182,6 +263,13 @@ export const idlFactory = ({ IDL }) => {
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const BuzzScore = IDL.Int;
   const Timestamps = IDL.Record({ 'createdAt' : Time });
+  const Curation = IDL.Record({
+    'id' : NodeId,
+    'name' : IDL.Text,
+    'creator' : IDL.Principal,
+    'jurisdiction' : IDL.Text,
+    'timestamps' : Timestamps,
+  });
   const Swarm = IDL.Record({
     'id' : NodeId,
     'creator' : IDL.Principal,
@@ -191,6 +279,78 @@ export const idlFactory = ({ IDL }) => {
     'timestamps' : Timestamps,
     'parentCurationId' : NodeId,
     'forkPrincipal' : IDL.Opt(IDL.Principal),
+  });
+  const Location = IDL.Record({
+    'id' : NodeId,
+    'title' : IDL.Text,
+    'content' : IDL.Text,
+    'originalTokenSequence' : IDL.Text,
+    'customAttributes' : IDL.Vec(CustomAttribute),
+    'parentSwarmId' : NodeId,
+    'creator' : IDL.Principal,
+    'version' : IDL.Nat,
+    'timestamps' : Timestamps,
+  });
+  const LawToken = IDL.Record({
+    'id' : NodeId,
+    'tokenLabel' : IDL.Text,
+    'parentLocationId' : NodeId,
+    'creator' : IDL.Principal,
+    'timestamps' : Timestamps,
+  });
+  const Sublocation = IDL.Record({
+    'id' : NodeId,
+    'title' : IDL.Text,
+    'content' : IDL.Text,
+    'originalTokenSequence' : IDL.Text,
+    'creator' : IDL.Principal,
+    'timestamps' : Timestamps,
+  });
+  const InterpretationToken = IDL.Record({
+    'id' : NodeId,
+    'title' : IDL.Text,
+    'context' : IDL.Text,
+    'fromTokenId' : NodeId,
+    'fromRelationshipType' : IDL.Text,
+    'fromDirectionality' : Directionality,
+    'toNodeId' : NodeId,
+    'toRelationshipType' : IDL.Text,
+    'toDirectionality' : Directionality,
+    'customAttributes' : IDL.Vec(CustomAttribute),
+    'creator' : IDL.Principal,
+    'timestamps' : Timestamps,
+  });
+  const GraphNode = IDL.Rec();
+  GraphNode.fill(IDL.Record({
+    'id' : NodeId,
+    'nodeType' : IDL.Text,
+    'tokenLabel' : IDL.Text,
+    'jurisdiction' : IDL.Opt(IDL.Text),
+    'parentId' : IDL.Opt(NodeId),
+    'children' : IDL.Vec(GraphNode),
+  }));
+  const GraphEdge = IDL.Record({
+    'source' : NodeId,
+    'target' : NodeId,
+  });
+  const GraphData = IDL.Record({
+    'curations' : IDL.Vec(Curation),
+    'swarms' : IDL.Vec(Swarm),
+    'locations' : IDL.Vec(Location),
+    'lawTokens' : IDL.Vec(LawToken),
+    'sublocations' : IDL.Vec(Sublocation),
+    'interpretationTokens' : IDL.Vec(InterpretationToken),
+    'rootNodes' : IDL.Vec(GraphNode),
+    'edges' : IDL.Vec(GraphEdge),
+  });
+  const OwnedGraphData = IDL.Record({
+    'curations' : IDL.Vec(Curation),
+    'swarms' : IDL.Vec(Swarm),
+    'locations' : IDL.Vec(Location),
+    'lawTokens' : IDL.Vec(LawToken),
+    'sublocations' : IDL.Vec(Sublocation),
+    'interpretationTokens' : IDL.Vec(InterpretationToken),
+    'edges' : IDL.Vec(GraphEdge),
   });
   const VoteData = IDL.Record({ 'upvotes' : IDL.Nat, 'downvotes' : IDL.Nat });
   const ApprovalStatus = IDL.Variant({
@@ -248,6 +408,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createSwarm' : IDL.Func([IDL.Text, IDL.Vec(Tag), NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
+    'getAllData' : IDL.Func([], [GraphData], ['query']),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -258,6 +419,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+    'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
     'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
