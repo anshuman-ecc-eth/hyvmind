@@ -16,7 +16,7 @@ import {
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
-import { GraphScene3D } from "../components/GraphScene3D";
+import ForceGraph3D from "../components/ForceGraph3D";
 import { useGetOwnedData } from "../hooks/useQueries";
 
 interface LayoutNode {
@@ -1368,7 +1368,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           transition: "opacity 300ms ease-in-out",
         }}
       >
-        <GraphScene3D
+        <ForceGraph3D
           nodes={nodes}
           links={links}
           filteredNodes={filteredNodes}
