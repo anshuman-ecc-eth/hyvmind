@@ -38,13 +38,13 @@ interface ForceGraph3DProps {
   filteredNodes: LayoutNode[];
   filteredLinks: LayoutLink[];
   dagMode?: string;
-  onNodeClick?: (node: LayoutNode) => void;
 }
 
 export interface ForceGraph3DHandle {
   focusNode: (x: number, y: number, z: number) => void;
 }
 
+// Base type colors (dark mode)
 const NODE_COLORS: Record<string, string> = {
   curation: "#FF7043",
   swarm: "#42A5F5",
@@ -56,6 +56,31 @@ const NODE_COLORS: Record<string, string> = {
 
 function getNodeColor(type: string): string {
   return NODE_COLORS[type] ?? "#9CA3AF";
+}
+
+/**
+ * Brightens a hex color by blending it toward white by the given factor (0–1).
+ */
+function brightenColor(hex: string, factor: number): string {
+  const h = hex.replace("#", "");
+  const r = Number.parseInt(h.substring(0, 2), 16);
+  const g = Number.parseInt(h.substring(2, 4), 16);
+  const b = Number.parseInt(h.substring(4, 6), 16);
+  const br = Math.round(r + (255 - r) * factor);
+  const bg = Math.round(g + (255 - g) * factor);
+  const bb = Math.round(b + (255 - b) * factor);
+  return `rgb(${br},${bg},${bb})`;
+}
+
+/**
+ * Returns a dimmed rgba string for a hex color (for non-highlighted nodes).
+ */
+function dimColor(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = Number.parseInt(h.substring(0, 2), 16);
+  const g = Number.parseInt(h.substring(2, 4), 16);
+  const b = Number.parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},0.15)`;
 }
 
 /**
@@ -111,7 +136,7 @@ function getPrunedData(
 
 export const ForceGraph3D = React.memo(
   forwardRef<ForceGraph3DHandle, ForceGraph3DProps>(function ForceGraph3D(
-    { filteredNodes, filteredLinks, dagMode, onNodeClick },
+    { filteredNodes, filteredLinks, dagMode },
     ref,
   ) {
     const graphRef = useRef<any>(null);
@@ -120,6 +145,15 @@ export const ForceGraph3D = React.memo(
     const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
       new Set(),
     );
+
+    // Highlight state — use refs to avoid re-render feedback loops
+    const highlightNodesRef = useRef<Set<string>>(new Set());
+    const highlightLinksRef = useRef<Set<string>>(new Set());
+    const hoveredNodeRef = useRef<any>(null);
+
+    // Adjacency maps, rebuilt whenever pruned graph changes
+    const neighborsMapRef = useRef<Map<string, Set<string>>>(new Map());
+    const linkIdMapRef = useRef<Map<string, Set<string>>>(new Map());
 
     // ResizeObserver for container dimensions
     useEffect(() => {
@@ -157,33 +191,68 @@ export const ForceGraph3D = React.memo(
       collapsedNodeIds,
     );
 
-    const graphData = {
-      nodes: pruned.nodes.map((n) => ({
+    // Rebuild adjacency maps whenever pruned graph changes
+    const graphData = React.useMemo(() => {
+      const newNeighbors = new Map<string, Set<string>>();
+      const newLinkIds = new Map<string, Set<string>>();
+
+      const gNodes = pruned.nodes.map((n) => ({
         ...n,
         name: n.label,
         nodeType: n.type,
-      })),
-      links: pruned.links.map((l) => ({ ...l })),
-    };
+      }));
 
-    const handleNodeClick = useCallback(
-      (node: any) => {
-        const distance = 40;
-        const distRatio =
-          1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
-        graphRef.current?.cameraPosition(
-          {
-            x: node.x * distRatio,
-            y: node.y * distRatio,
-            z: node.z * distRatio,
-          },
-          { x: node.x, y: node.y, z: node.z },
-          1000,
-        );
-        onNodeClick?.(node as LayoutNode);
-      },
-      [onNodeClick],
-    );
+      const gLinks = pruned.links.map((l, i) => {
+        const src =
+          typeof l.source === "object" ? (l.source as any).id : l.source;
+        const tgt =
+          typeof l.target === "object" ? (l.target as any).id : l.target;
+        const linkId = `link-${i}-${src}-${tgt}`;
+
+        // Populate neighbor map
+        if (!newNeighbors.has(src)) newNeighbors.set(src, new Set());
+        if (!newNeighbors.has(tgt)) newNeighbors.set(tgt, new Set());
+        newNeighbors.get(src)!.add(tgt);
+        newNeighbors.get(tgt)!.add(src);
+
+        // Populate link id map (per node)
+        if (!newLinkIds.has(src)) newLinkIds.set(src, new Set());
+        if (!newLinkIds.has(tgt)) newLinkIds.set(tgt, new Set());
+        newLinkIds.get(src)!.add(linkId);
+        newLinkIds.get(tgt)!.add(linkId);
+
+        return { ...l, __id: linkId };
+      });
+
+      neighborsMapRef.current = newNeighbors;
+      linkIdMapRef.current = newLinkIds;
+
+      return { nodes: gNodes, links: gLinks };
+    }, [pruned]);
+
+    // Forces the library to re-evaluate node/link visual properties
+    const updateScene = useCallback(() => {
+      const g = graphRef.current;
+      if (!g) return;
+      g.nodeColor(g.nodeColor());
+      g.linkWidth(g.linkWidth());
+      g.linkDirectionalParticles(g.linkDirectionalParticles());
+    }, []);
+
+    const handleNodeClick = useCallback((node: any) => {
+      const distance = 40;
+      const distRatio =
+        1 + distance / Math.hypot(node.x ?? 1, node.y ?? 1, node.z ?? 1);
+      graphRef.current?.cameraPosition(
+        {
+          x: node.x * distRatio,
+          y: node.y * distRatio,
+          z: node.z * distRatio,
+        },
+        { x: node.x, y: node.y, z: node.z },
+        1000,
+      );
+    }, []);
 
     const handleNodeRightClick = useCallback((node: any) => {
       setCollapsedNodeIds((prev) => {
@@ -194,14 +263,84 @@ export const ForceGraph3D = React.memo(
       });
     }, []);
 
+    const handleNodeHover = useCallback(
+      (node: any) => {
+        // No change
+        if (node === hoveredNodeRef.current) return;
+        if (!node && hoveredNodeRef.current === null) return;
+
+        highlightNodesRef.current.clear();
+        highlightLinksRef.current.clear();
+
+        if (node) {
+          highlightNodesRef.current.add(node.id);
+          const neighbors = neighborsMapRef.current.get(node.id);
+          if (neighbors) {
+            for (const nId of neighbors) highlightNodesRef.current.add(nId);
+          }
+          const linkIds = linkIdMapRef.current.get(node.id);
+          if (linkIds) {
+            for (const lId of linkIds) highlightLinksRef.current.add(lId);
+          }
+        }
+
+        hoveredNodeRef.current = node || null;
+        updateScene();
+      },
+      [updateScene],
+    );
+
+    const handleLinkHover = useCallback(
+      (link: any) => {
+        highlightNodesRef.current.clear();
+        highlightLinksRef.current.clear();
+
+        if (link) {
+          highlightLinksRef.current.add(link.__id);
+          const src =
+            typeof link.source === "object" ? link.source.id : link.source;
+          const tgt =
+            typeof link.target === "object" ? link.target.id : link.target;
+          highlightNodesRef.current.add(src);
+          highlightNodesRef.current.add(tgt);
+        }
+
+        hoveredNodeRef.current = null;
+        updateScene();
+      },
+      [updateScene],
+    );
+
     const nodeColor = useCallback((node: any): string => {
-      return getNodeColor(node.nodeType ?? node.type);
+      const base = getNodeColor(node.nodeType ?? node.type);
+      const isHighlighting = highlightNodesRef.current.size > 0;
+      if (!isHighlighting) return base;
+
+      if (!highlightNodesRef.current.has(node.id)) {
+        return dimColor(base);
+      }
+      // Directly hovered node — brighten strongly toward white
+      if (hoveredNodeRef.current && hoveredNodeRef.current.id === node.id) {
+        return brightenColor(base, 0.75);
+      }
+      // Neighbor — brighten moderately
+      return brightenColor(base, 0.4);
     }, []);
 
-    const linkColor = useCallback((_link: any): string => "#555555", []);
+    const linkColor = useCallback((_link: any): string => {
+      const isHighlighting = highlightLinksRef.current.size > 0;
+      if (!isHighlighting) return "#555555";
+      return highlightLinksRef.current.has(_link.__id)
+        ? "#aaaaaa"
+        : "rgba(80,80,80,0.15)";
+    }, []);
 
     const linkWidth = useCallback((link: any): number => {
-      return link.isInterpretationTokenEdge ? 2 : 1;
+      return highlightLinksRef.current.has(link.__id) ? 3 : 1;
+    }, []);
+
+    const linkDirectionalParticles = useCallback((link: any): number => {
+      return highlightLinksRef.current.has(link.__id) ? 4 : 0;
     }, []);
 
     const nodeThreeObject = useCallback(
@@ -242,12 +381,16 @@ export const ForceGraph3D = React.memo(
           linkWidth={linkWidth}
           linkOpacity={0.3}
           linkLabel={linkLabel}
+          linkDirectionalParticles={linkDirectionalParticles}
+          linkDirectionalParticleWidth={4}
           backgroundColor="#0a0a0a"
           showNavInfo={false}
           dagMode={dagMode === "null" ? undefined : (dagMode as any)}
           dagLevelDistance={100}
           onNodeClick={handleNodeClick}
           onNodeRightClick={handleNodeRightClick}
+          onNodeHover={handleNodeHover}
+          onLinkHover={handleLinkHover}
         />
       </div>
     );
