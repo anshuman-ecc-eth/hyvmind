@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Directionality, GraphEdge, GraphNode } from "../backend";
 import ForceGraph3D, {
@@ -83,7 +82,6 @@ function initializeUnifiedLayout(): UnifiedLayoutState {
 export default function GraphView({ readOnly = false }: GraphViewProps) {
   const { data: graphData, isLoading, error, isError } = useGetOwnedData();
 
-  const { theme, resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const forceGraphRef = useRef<ForceGraph3DHandle | null>(null);
   const [nodes, setNodes] = useState<LayoutNode[]>([]);
@@ -477,10 +475,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   // All nodes/links pass through — no type filters
   const filteredNodes = useMemo(() => nodes, [nodes]);
   const filteredLinks = useMemo(() => links, [links]);
-
-  // theme/resolvedTheme kept for potential future use
-  const _theme = theme;
-  const _resolvedTheme = resolvedTheme;
 
   if (isLoading) {
     return (

@@ -151,6 +151,9 @@ export const ForceGraph3D = React.memo(
     const highlightLinksRef = useRef<Set<string>>(new Set());
     const hoveredNodeRef = useRef<any>(null);
 
+    // Debounce timeout ref for updateScene
+    const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Adjacency maps, rebuilt whenever pruned graph changes
     const neighborsMapRef = useRef<Map<string, Set<string>>>(new Map());
     const linkIdMapRef = useRef<Map<string, Set<string>>>(new Map());
@@ -170,7 +173,10 @@ export const ForceGraph3D = React.memo(
       });
       ro.observe(el);
       setDimensions({ width: el.offsetWidth, height: el.offsetHeight });
-      return () => ro.disconnect();
+      return () => {
+        ro.disconnect();
+        if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      };
     }, []);
 
     const focusNode = useCallback((x: number, y: number, z: number) => {
@@ -285,7 +291,8 @@ export const ForceGraph3D = React.memo(
         }
 
         hoveredNodeRef.current = node || null;
-        updateScene();
+        if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = setTimeout(updateScene, 16);
       },
       [updateScene],
     );
@@ -306,7 +313,8 @@ export const ForceGraph3D = React.memo(
         }
 
         hoveredNodeRef.current = null;
-        updateScene();
+        if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = setTimeout(updateScene, 16);
       },
       [updateScene],
     );
