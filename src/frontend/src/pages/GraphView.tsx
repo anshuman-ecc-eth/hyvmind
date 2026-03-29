@@ -711,12 +711,11 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       layoutLockRef.current = false;
     }
 
-    // Always update state — fixes remount issue where React clears nodes[] on unmount
-    // but cached positions exist in unifiedLayoutRef. Without this, the graph stays
-    // blank after navigating away and back when topology hasn't changed.
-    nodesMapRef.current = newNodesMap;
-    setNodes(positionedNodes);
-    setLinks(layoutLinks);
+    if (hasNewData) {
+      nodesMapRef.current = newNodesMap;
+      setNodes(positionedNodes);
+      setLinks(layoutLinks);
+    }
     prevGraphDataRef.current = {
       nodeCount: currentNodeCount,
       edgeCount: currentEdgeCount,

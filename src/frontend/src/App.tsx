@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 import CommandPalette from "./components/CommandPalette";
 import Footer from "./components/Footer";
@@ -21,6 +22,8 @@ import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
 import TreeView from "./pages/TreeView";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
+
+const MemoizedGraphView = React.memo(GraphView);
 
 type ViewType =
   | "graph"
@@ -213,7 +216,7 @@ export default function App() {
           ) : (
             <>
               {currentView === "graph" && (
-                <GraphView readOnly={false} usePublicData={false} />
+                <MemoizedGraphView readOnly={false} usePublicData={false} />
               )}
               {currentView === "tree" && <TreeView />}
               {currentView === "terminal" && <TerminalPage />}
