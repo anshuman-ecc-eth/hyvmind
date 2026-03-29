@@ -238,11 +238,7 @@ export const ForceGraph3D = React.memo(
 
     // Forces the library to re-evaluate node/link visual properties
     const updateScene = useCallback(() => {
-      const g = graphRef.current;
-      if (!g) return;
-      g.nodeColor(g.nodeColor());
-      g.linkWidth(g.linkWidth());
-      g.linkDirectionalParticles(g.linkDirectionalParticles());
+      graphRef.current?.refresh();
     }, []);
 
     const handleNodeClick = useCallback((node: any) => {
