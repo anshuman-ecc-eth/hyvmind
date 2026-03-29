@@ -149,6 +149,11 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
   );
 
   const nodesMapRef = useRef<Map<string, LayoutNode>>(new Map());
+  const layoutLockRef = useRef(true);
+  const prevGraphDataRef = useRef<{
+    nodeCount: number;
+    edgeCount: number;
+  } | null>(null);
   // Panel collapse state
   const [isLegendsCollapsed, setIsLegendsCollapsed] = useState(() => {
     const saved = sessionStorage.getItem("graphViewLegendsCollapsed");
@@ -676,13 +681,24 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     // Performance safeguard: Skip layout if node/edge counts unchanged
     const currentNodeCount = layoutNodes.length;
     const currentEdgeCount = layoutLinks.length;
+
+    // Layout lock: unlock only when new nodes/edges detected
+    const prevData = prevGraphDataRef.current;
+    const hasNewData =
+      !prevData ||
+      prevData.nodeCount !== currentNodeCount ||
+      prevData.edgeCount !== currentEdgeCount;
+    if (hasNewData) {
+      layoutLockRef.current = true;
+    }
+
     const topologyChanged =
       !unifiedLayoutRef.current.layoutComputed ||
       unifiedLayoutRef.current.nodeCount !== currentNodeCount ||
       unifiedLayoutRef.current.edgeCount !== currentEdgeCount;
 
-    // Only run force simulation when topology actually changes
-    if (topologyChanged) {
+    // Only run force simulation when topology actually changes AND lock is open
+    if (layoutLockRef.current && topologyChanged) {
       positionedNodes = computeForceLayout(
         layoutNodes,
         layoutLinks,
@@ -692,6 +708,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       );
       unifiedLayoutRef.current.nodeCount = currentNodeCount;
       unifiedLayoutRef.current.edgeCount = currentEdgeCount;
+      layoutLockRef.current = false;
     }
 
     // Always update state — fixes remount issue where React clears nodes[] on unmount
@@ -700,6 +717,10 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     nodesMapRef.current = newNodesMap;
     setNodes(positionedNodes);
     setLinks(layoutLinks);
+    prevGraphDataRef.current = {
+      nodeCount: currentNodeCount,
+      edgeCount: currentEdgeCount,
+    };
   }, [graphData]);
 
   // Filter nodes and links (only for main graph)
