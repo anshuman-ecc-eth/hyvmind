@@ -24,15 +24,21 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
   const { data: graphData, isLoading } = useGetAllData();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Original QoL swarms only (no forkSource)
-  const originalQolSwarms = (graphData?.swarms ?? []).filter(
-    (s) => s.tags.includes(QUESTION_OF_LAW_TAG) && !s.forkSource,
+  // All QoL swarms (both originals and forks)
+  const allQolSwarms = (graphData?.swarms ?? []).filter((s) =>
+    s.tags.includes(QUESTION_OF_LAW_TAG),
   );
 
-  // All swarms with a forkSource (forks)
-  const allSwarms = graphData?.swarms ?? [];
+  // Root swarms: forkSource is [] (Opt None in Candid)
+  const rootQolSwarms = allQolSwarms.filter(
+    (s) => !Array.isArray(s.forkSource) || s.forkSource.length === 0,
+  );
+
+  // Get direct forks of a given swarm ID
   const getForks = (parentId: string) =>
-    allSwarms.filter((s) => s.forkSource === parentId);
+    allQolSwarms.filter(
+      (s) => Array.isArray(s.forkSource) && s.forkSource[0] === parentId,
+    );
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,7 +84,7 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
     );
   }
 
-  if (originalQolSwarms.length === 0) {
+  if (rootQolSwarms.length === 0) {
     return (
       <div className="container mx-auto p-6 max-w-3xl">
         <div className="mb-6">
@@ -119,7 +125,7 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
       </div>
 
       <div className="space-y-3">
-        {originalQolSwarms.map((swarm, idx) => {
+        {rootQolSwarms.map((swarm, idx) => {
           const parentCuration = graphData?.curations.find(
             (c) => c.id === swarm.parentCurationId,
           );
