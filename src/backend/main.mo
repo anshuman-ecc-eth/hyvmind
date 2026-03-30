@@ -198,6 +198,7 @@ actor {
   let approvalState = UserApproval.initState(accessControlState);
   var existingAdmins : [Principal] = [];
   var archivedNodes = Map.empty<NodeId, ()>();
+  var forkPulledSourceNodes = Map.empty<NodeId, List.List<NodeId>>();
 
   // Store SwarmType (including which swarms are "question-of-law")
   var swarmTypeMap = Map.empty<NodeId, SwarmType>();
@@ -1333,7 +1334,14 @@ actor {
     };
   };
 
-  public shared ({ caller }) func joinSwarm(swarmId : NodeId) : async NodeId {
+  public query func getSwarmMembers(swarmId : NodeId) : async [Principal] {
+    switch (swarmMembers.get(swarmId)) {
+      case (null) { [] };
+      case (?members) { members.toArray() };
+    };
+  };
+
+  public shared ({ caller }) func joinSwarm(swarmId : NodeId) : async () {
     if (not isQuestionOfLawSwarm(swarmId)) {
       Runtime.trap("Only question-of-law swarms support membership");
     };
@@ -1350,7 +1358,40 @@ actor {
     if (isSwarmMember(caller, swarmId)) {
       Runtime.trap("Already a member");
     };
-    // Create a personal fork
+    // Add caller to swarmMembers
+    let existing = switch (swarmMembers.get(swarmId)) {
+      case (null) { List.empty<Principal>() };
+      case (?l) { l };
+    };
+    existing.add(caller);
+    swarmMembers.add(swarmId, existing);
+  };
+
+  public shared ({ caller }) func createSwarmFork(swarmId : NodeId) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can fork swarms");
+    };
+    if (not isQuestionOfLawSwarm(swarmId)) {
+      Runtime.trap("Only question-of-law swarms can be forked");
+    };
+    if (not isSwarmMember(caller, swarmId)) {
+      Runtime.trap("You must be a member to fork this swarm");
+    };
+    // Check for existing active fork
+    for ((_sid, s) in swarmMap.entries()) {
+      switch (s.forkSource) {
+        case (?src) {
+          if (src == swarmId and s.creator == caller and not archivedNodes.containsKey(s.id)) {
+            Runtime.trap("You already have an active fork of this swarm");
+          };
+        };
+        case (null) {};
+      };
+    };
+    let swarm = switch (swarmMap.get(swarmId)) {
+      case (null) { Runtime.trap("Swarm not found") };
+      case (?s) { s };
+    };
     let myForksCurationId = ensureMyForksCuration(caller);
     let forkId = generateId("swarm", swarm.name, caller);
     let forkSwarm = {
@@ -1365,10 +1406,61 @@ actor {
     };
     swarmMap.add(forkId, forkSwarm);
     swarmTypeMap.add(forkId, #questionOfLaw);
-
     deepCopySwarmContent(swarmId, forkId, caller);
 
+    // Record all source node IDs that were copied so pull knows what is new
+    let pulledIds = List.empty<NodeId>();
+    for ((_locId, loc) in locationMap.entries()) {
+      if (loc.parentSwarmId == swarmId) {
+        pulledIds.add(loc.id);
+        switch (locationLawTokenRelations.get(loc.id)) {
+          case (null) {};
+          case (?tokenIds) {
+            for (tid in tokenIds.values()) {
+              pulledIds.add(tid);
+            };
+          };
+        };
+      };
+    };
+    forkPulledSourceNodes.add(forkId, pulledIds);
+
     forkId;
+  };
+
+  public shared ({ caller }) func leaveSwarm(swarmId : NodeId) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can leave swarms");
+    };
+    if (not isSwarmMember(caller, swarmId)) {
+      Runtime.trap("You are not a member of this swarm");
+    };
+    switch (swarmMembers.get(swarmId)) {
+      case (null) {};
+      case (?members) {
+        let newMembers = List.empty<Principal>();
+        for (m in members.values()) {
+          if (m != caller) {
+            newMembers.add(m);
+          };
+        };
+        swarmMembers.add(swarmId, newMembers);
+      };
+    };
+  };
+
+  public query ({ caller }) func hasUserFork(swarmId : NodeId) : async Bool {
+    for ((_sid, s) in swarmMap.entries()) {
+      switch (s.forkSource) {
+        case (?src) {
+          if (src == swarmId and s.creator == caller and not archivedNodes.containsKey(s.id)) {
+            return true;
+          };
+        };
+        case (null) {};
+      };
+    };
+    false;
   };
 
   func countAdmins() : Nat {
@@ -1409,53 +1501,92 @@ actor {
       Runtime.trap("You must be a member to pull from this swarm");
     };
 
-    // Find and archive existing fork
+    // Find existing active fork
+    var maybeForkId : ?NodeId = null;
     for ((sid, s) in swarmMap.entries()) {
       switch (s.forkSource) {
         case (?src) {
-          if (src == targetSwarmId and s.creator == caller) {
-            // Archive all nodes in this fork
-            for ((locId, loc) in locationMap.entries()) {
-              if (loc.parentSwarmId == sid) {
-                archivedNodes.add(locId, ());
-                switch (locationLawTokenRelations.get(locId)) {
-                  case (null) {};
-                  case (?tids) {
-                    for (tid in tids.values()) {
-                      archivedNodes.add(tid, ());
-                    };
-                  };
-                };
-              };
-            };
-            archivedNodes.add(sid, ());
+          if (src == targetSwarmId and s.creator == caller and not archivedNodes.containsKey(sid)) {
+            maybeForkId := ?sid;
           };
         };
         case (null) {};
       };
     };
+    let activeForkId = switch (maybeForkId) {
+      case (null) { Runtime.trap("No active fork found. Create a fork first.") };
+      case (?id) { id };
+    };
 
-    // Create fresh fork
-    let swarm = switch (swarmMap.get(targetSwarmId)) {
-      case (null) { Runtime.trap("Swarm not found") };
-      case (?s) { s };
+    // Build set of already-pulled source node IDs
+    let alreadyPulled = switch (forkPulledSourceNodes.get(activeForkId)) {
+      case (null) { List.empty<NodeId>() };
+      case (?l) { l };
     };
-    let myForksCurationId = ensureMyForksCuration(caller);
-    let forkId = generateId("swarm", swarm.name, caller);
-    let forkSwarm = {
-      id = forkId;
-      name = swarm.name;
-      tags = swarm.tags;
-      parentCurationId = myForksCurationId;
-      creator = caller;
-      timestamps = { createdAt = Time.now(); };
-      forkSource = ?targetSwarmId;
-      forkPrincipal = ?caller;
+    let pulledSet = Map.empty<NodeId, ()>();
+    for (nodeId in alreadyPulled.values()) {
+      pulledSet.add(nodeId, ());
     };
-    swarmMap.add(forkId, forkSwarm);
-    swarmTypeMap.add(forkId, #questionOfLaw);
-    deepCopySwarmContent(targetSwarmId, forkId, caller);
-    forkId;
+
+    // Copy new locations from source not yet pulled
+    var newLocationIdMap = Map.empty<NodeId, NodeId>();
+    for ((_lid, loc) in locationMap.entries()) {
+      if (loc.parentSwarmId == targetSwarmId and not pulledSet.containsKey(loc.id)) {
+        let newLocId = generateId("location", loc.title, caller);
+        let newLoc = {
+          id = newLocId;
+          title = loc.title;
+          content = loc.content;
+          originalTokenSequence = loc.originalTokenSequence;
+          customAttributes = loc.customAttributes;
+          parentSwarmId = activeForkId;
+          creator = caller;
+          version = loc.version;
+          timestamps = { createdAt = Time.now(); };
+        };
+        locationMap.add(newLocId, newLoc);
+        newLocationIdMap.add(loc.id, newLocId);
+        alreadyPulled.add(loc.id);
+      };
+    };
+
+    // Copy law tokens for newly copied locations
+    for ((oldLocId, newLocId) in newLocationIdMap.entries()) {
+      switch (locationLawTokenRelations.get(oldLocId)) {
+        case (null) {};
+        case (?tokenIds) {
+          for (oldTokenId in tokenIds.values()) {
+            if (not pulledSet.containsKey(oldTokenId)) {
+              switch (lawTokenMap.get(oldTokenId)) {
+                case (null) {};
+                case (?token) {
+                  let newTokenId = generateId("lawToken", token.tokenLabel, caller);
+                  let newToken = {
+                    id = newTokenId;
+                    tokenLabel = token.tokenLabel;
+                    parentLocationId = newLocId;
+                    creator = caller;
+                    timestamps = { createdAt = Time.now(); };
+                  };
+                  lawTokenMap.add(newTokenId, newToken);
+                  let existing = switch (locationLawTokenRelations.get(newLocId)) {
+                    case (null) { List.empty<NodeId>() };
+                    case (?l) { l };
+                  };
+                  existing.add(newTokenId);
+                  locationLawTokenRelations.add(newLocId, existing);
+                  alreadyPulled.add(oldTokenId);
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    // Update tracking map
+    forkPulledSourceNodes.add(activeForkId, alreadyPulled);
+    activeForkId;
   };
 
   public query ({ caller }) func getSwarmForks(swarmId : NodeId) : async [Swarm] {
@@ -1955,5 +2086,6 @@ actor {
     swarmMembers := Map.empty<NodeId, List.List<Principal>>();
     swarmTypeMap := Map.empty<NodeId, SwarmType>();
     archivedNodes := Map.empty<NodeId, ()>();
+    forkPulledSourceNodes := Map.empty<NodeId, List.List<NodeId>>();
   };
 };

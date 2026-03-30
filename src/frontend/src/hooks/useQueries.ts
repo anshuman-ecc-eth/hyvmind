@@ -519,10 +519,10 @@ export function useJoinSwarm() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useMutation<string, Error, string>({
+  return useMutation<void, Error, string>({
     mutationFn: async (swarmId: string) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.joinSwarm(swarmId);
+      await actor.joinSwarm(swarmId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
@@ -572,6 +572,53 @@ export function useGetSwarmMembers(swarmId: string) {
       return actor.getSwarmMembers(swarmId);
     },
     enabled: !!actor && !isFetching && !!swarmId,
+  });
+}
+
+export function useCreateSwarmFork() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<string, Error, string>({
+    mutationFn: async (swarmId: string) => {
+      if (!actor) throw new Error("Actor not available");
+      return (actor as any).createSwarmFork(swarmId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["swarmForks"] });
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+      queryClient.invalidateQueries({ queryKey: ["hasFork"] });
+    },
+  });
+}
+
+export function useLeaveSwarm() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, string>({
+    mutationFn: async (swarmId: string) => {
+      if (!actor) throw new Error("Actor not available");
+      await (actor as any).leaveSwarm(swarmId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
+      queryClient.invalidateQueries({ queryKey: ["hasFork"] });
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+    },
+  });
+}
+
+export function useHasFork(swarmId: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ["hasFork", swarmId],
+    queryFn: async () => {
+      if (!actor) return false;
+      return (actor as any).hasUserFork(swarmId);
+    },
+    enabled: !!actor && !!swarmId && !isFetching,
   });
 }
 

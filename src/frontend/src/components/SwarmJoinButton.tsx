@@ -1,13 +1,15 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, UserPlus, Users } from "lucide-react";
+import { GitFork, Loader2, LogOut, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { NodeId } from "../backend";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  useCreateSwarmFork,
   useGetAllData,
   useGetSwarmMembers,
+  useHasFork,
   useJoinSwarm,
+  useLeaveSwarm,
 } from "../hooks/useQueries";
 
 interface SwarmJoinButtonProps {
@@ -23,7 +25,10 @@ export default function SwarmJoinButton({
   const { data: graphData } = useGetAllData();
   const { data: members, isLoading: membersLoading } =
     useGetSwarmMembers(swarmId);
+  const { data: hasFork, isLoading: hasForkLoading } = useHasFork(swarmId);
   const joinSwarm = useJoinSwarm();
+  const createSwarmFork = useCreateSwarmFork();
+  const leaveSwarm = useLeaveSwarm();
 
   if (!identity || !graphData) return null;
 
@@ -40,65 +45,140 @@ export default function SwarmJoinButton({
 
   const handleJoin = async () => {
     try {
-      const forkId = await joinSwarm.mutateAsync(swarmId);
-      toast.success("Joined — your fork is ready.");
+      await joinSwarm.mutateAsync(swarmId);
+      toast.success("Joined swarm.");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to join: ${errorMessage}`);
+    }
+  };
+
+  const handleFork = async () => {
+    try {
+      const forkId = await createSwarmFork.mutateAsync(swarmId);
+      toast.success("Fork created.");
       if (onNavigateToSwarm && forkId) {
         onNavigateToSwarm(forkId);
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      toast.error(`Failed to join swarm: ${errorMessage}`);
+      toast.error(`Failed to fork: ${errorMessage}`);
     }
   };
 
+  const handleLeave = async () => {
+    try {
+      await leaveSwarm.mutateAsync(swarmId);
+      toast.success("Left swarm.");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to leave: ${errorMessage}`);
+    }
+  };
+
+  // Creator badge
   if (isCreator) {
     return (
-      <Badge
-        variant="outline"
-        className="bg-muted text-foreground border-border"
-      >
-        <Users className="h-3 w-3 mr-1" />
-        Creator
-      </Badge>
+      <span className="font-mono text-xs border border-dashed border-border px-2 py-0.5 text-muted-foreground flex items-center gap-1">
+        <Users className="h-3 w-3" />
+        creator
+      </span>
     );
   }
 
-  if (membersLoading) {
+  // Loading state
+  if (membersLoading || hasForkLoading) {
     return (
-      <Badge variant="outline" className="bg-muted">
-        <Loader2 className="h-3 w-3 animate-spin" />
-      </Badge>
+      <span className="font-mono text-xs border border-dashed border-border px-2 py-0.5 text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin inline" />
+      </span>
     );
   }
 
-  if (isMember) {
+  // Non-member: show Join button
+  if (!isMember) {
     return (
-      <Badge
+      <Button
+        size="sm"
         variant="outline"
-        className="bg-muted text-foreground border-border"
+        onClick={handleJoin}
+        disabled={joinSwarm.isPending}
+        className="h-7 text-xs font-mono border-dashed"
+        data-ocid="swarm_detail.join.button"
       >
-        <Users className="h-3 w-3 mr-1" />
-        Member
-      </Badge>
+        {joinSwarm.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <>
+            <UserPlus className="h-3 w-3 mr-1" />
+            join
+          </>
+        )}
+      </Button>
     );
   }
 
+  // Member without fork: show Fork + Leave buttons
+  if (!hasFork) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleFork}
+          disabled={createSwarmFork.isPending}
+          className="h-7 text-xs font-mono border-dashed"
+          data-ocid="swarm_detail.fork.button"
+        >
+          {createSwarmFork.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <>
+              <GitFork className="h-3 w-3 mr-1" />
+              fork
+            </>
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleLeave}
+          disabled={leaveSwarm.isPending}
+          className="h-7 text-xs font-mono text-muted-foreground hover:text-destructive"
+          data-ocid="swarm_detail.leave.button"
+        >
+          {leaveSwarm.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <>
+              <LogOut className="h-3 w-3 mr-1" />
+              leave
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  // Member with fork: show Leave button only (Pull handled by SwarmPullButton)
   return (
     <Button
       size="sm"
-      variant="outline"
-      onClick={handleJoin}
-      disabled={joinSwarm.isPending}
-      className="h-7 text-xs hover:bg-accent hover:text-accent-foreground"
-      data-ocid="swarm_detail.join.button"
+      variant="ghost"
+      onClick={handleLeave}
+      disabled={leaveSwarm.isPending}
+      className="h-7 text-xs font-mono text-muted-foreground hover:text-destructive"
+      data-ocid="swarm_detail.leave.button"
     >
-      {joinSwarm.isPending ? (
+      {leaveSwarm.isPending ? (
         <Loader2 className="h-3 w-3 animate-spin" />
       ) : (
         <>
-          <UserPlus className="h-3 w-3 mr-1" />
-          Join
+          <LogOut className="h-3 w-3 mr-1" />
+          leave
         </>
       )}
     </Button>

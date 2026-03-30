@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import {
   useGetAllData,
+  useGetOwnedData,
   useGetSwarmForks,
   useGetSwarmMembers,
 } from "@/hooks/useQueries";
@@ -24,16 +25,22 @@ export default function SwarmDetailView({
   onBack,
   onSelectSwarm,
 }: SwarmDetailViewProps) {
-  const { data: graphData } = useGetAllData();
+  const { data: graphData } = useGetOwnedData();
+  // useGetAllData used for swarm metadata visible to all (members count, forks, etc.)
+  const { data: allGraphData } = useGetAllData();
   const { identity } = useInternetIdentity();
 
   const [locationDialogSide, setLocationDialogSide] = useState<
     "yes" | "no" | null
   >(null);
 
-  const swarm = graphData?.swarms.find((s) => s.id === swarmId);
+  // Prefer owned data for write operations; fall back to allGraphData for read
+  const swarm =
+    graphData?.swarms.find((s) => s.id === swarmId) ??
+    allGraphData?.swarms.find((s) => s.id === swarmId);
   const parentCuration = swarm
-    ? graphData?.curations.find((c) => c.id === swarm.parentCurationId)
+    ? (graphData?.curations.find((c) => c.id === swarm.parentCurationId) ??
+      allGraphData?.curations.find((c) => c.id === swarm.parentCurationId))
     : undefined;
 
   const locations =
@@ -47,7 +54,8 @@ export default function SwarmDetailView({
     !isFork && isQol ? swarmId : undefined,
   );
   const forkSourceSwarm = forkSourceId
-    ? graphData?.swarms.find((s) => s.id === forkSourceId)
+    ? (graphData?.swarms.find((s) => s.id === forkSourceId) ??
+      allGraphData?.swarms.find((s) => s.id === forkSourceId))
     : undefined;
 
   // Find all Yes/No locations by customAttribute side
