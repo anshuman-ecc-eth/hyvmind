@@ -1334,6 +1334,23 @@ actor {
     };
   };
 
+  // Traces forkSource chain to find the root QoL swarm ID (returns null if not QoL-related)
+  func getRootQolSwarmId(swarmId : NodeId) : ?NodeId {
+    switch (swarmMap.get(swarmId)) {
+      case (null) { null };
+      case (?s) {
+        switch (s.forkSource) {
+          case (null) {
+            if (isQuestionOfLawSwarm(swarmId)) { ?swarmId } else { null };
+          };
+          case (?src) {
+            getRootQolSwarmId(src);
+          };
+        };
+      };
+    };
+  };
+
   public query func getSwarmMembers(swarmId : NodeId) : async [Principal] {
     switch (swarmMembers.get(swarmId)) {
       case (null) { [] };
@@ -1371,13 +1388,20 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can fork swarms");
     };
-    if (not isQuestionOfLawSwarm(swarmId)) {
-      Runtime.trap("Only question-of-law swarms can be forked");
+    // Allow forking any QoL swarm or fork of a QoL swarm; trace back to root for membership check
+    let rootQolId = switch (getRootQolSwarmId(swarmId)) {
+      case (null) { Runtime.trap("Only question-of-law swarms can be forked") };
+      case (?id) { id };
     };
-    if (not isSwarmMember(caller, swarmId)) {
-      Runtime.trap("You must be a member to fork this swarm");
+    let rootSwarm = switch (swarmMap.get(rootQolId)) {
+      case (null) { Runtime.trap("Root swarm not found") };
+      case (?s) { s };
     };
-    // Check for existing active fork
+    // Must be creator of root OR member of root to fork any swarm in the lineage
+    if (rootSwarm.creator != caller and not isSwarmMember(caller, rootQolId)) {
+      Runtime.trap("You must be a member of the swarm to fork it");
+    };
+    // Check for existing active fork of this specific swarm
     for ((_sid, s) in swarmMap.entries()) {
       switch (s.forkSource) {
         case (?src) {
@@ -1418,6 +1442,36 @@ actor {
           case (?tokenIds) {
             for (tid in tokenIds.values()) {
               pulledIds.add(tid);
+              // Track sublocations linked to this law token
+              switch (locationLawTokenRelations.get(tid)) {
+                case (null) {};
+                case (?slIds) {
+                  for (slId in slIds.values()) {
+                    if (sublocationMap.containsKey(slId)) {
+                      pulledIds.add(slId);
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    // Track interpretation tokens from source swarm
+    for ((_itId, it) in interpretationTokenMap.entries()) {
+      if (it.creator == swarm.creator) {
+        // Include ITs that reference law tokens in this swarm
+        switch (lawTokenMap.get(it.fromTokenId)) {
+          case (null) {};
+          case (?lt) {
+            switch (locationMap.get(lt.parentLocationId)) {
+              case (null) {};
+              case (?loc) {
+                if (loc.parentSwarmId == swarmId) {
+                  pulledIds.add(it.id);
+                };
+              };
             };
           };
         };
@@ -1490,23 +1544,16 @@ actor {
     };
   };
 
-  public shared ({ caller }) func pullFromSwarm(targetSwarmId : NodeId) : async NodeId {
+  public shared ({ caller }) func pullFromSwarm(sourceSwarmId : NodeId) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can pull from swarms");
     };
-    if (not isQuestionOfLawSwarm(targetSwarmId)) {
-      Runtime.trap("Only question-of-law swarms can be pulled");
-    };
-    if (not isSwarmMember(caller, targetSwarmId)) {
-      Runtime.trap("You must be a member to pull from this swarm");
-    };
-
-    // Find existing active fork
+    // Find existing active fork by caller where forkSource == sourceSwarmId
     var maybeForkId : ?NodeId = null;
     for ((sid, s) in swarmMap.entries()) {
       switch (s.forkSource) {
         case (?src) {
-          if (src == targetSwarmId and s.creator == caller and not archivedNodes.containsKey(sid)) {
+          if (src == sourceSwarmId and s.creator == caller and not archivedNodes.containsKey(sid)) {
             maybeForkId := ?sid;
           };
         };
@@ -1529,9 +1576,10 @@ actor {
     };
 
     // Copy new locations from source not yet pulled
+    var newLawTokenIdMap = Map.empty<NodeId, NodeId>();
     var newLocationIdMap = Map.empty<NodeId, NodeId>();
     for ((_lid, loc) in locationMap.entries()) {
-      if (loc.parentSwarmId == targetSwarmId and not pulledSet.containsKey(loc.id)) {
+      if (loc.parentSwarmId == sourceSwarmId and not pulledSet.containsKey(loc.id)) {
         let newLocId = generateId("location", loc.title, caller);
         let newLoc = {
           id = newLocId;
@@ -1556,10 +1604,11 @@ actor {
         case (null) {};
         case (?tokenIds) {
           for (oldTokenId in tokenIds.values()) {
-            if (not pulledSet.containsKey(oldTokenId)) {
-              switch (lawTokenMap.get(oldTokenId)) {
-                case (null) {};
-                case (?token) {
+            // Only copy actual law tokens (not sublocation backlinks stored in same map)
+            switch (lawTokenMap.get(oldTokenId)) {
+              case (null) {};
+              case (?token) {
+                if (not pulledSet.containsKey(oldTokenId)) {
                   let newTokenId = generateId("lawToken", token.tokenLabel, caller);
                   let newToken = {
                     id = newTokenId;
@@ -1575,10 +1624,98 @@ actor {
                   };
                   existing.add(newTokenId);
                   locationLawTokenRelations.add(newLocId, existing);
+                  newLawTokenIdMap.add(oldTokenId, newTokenId);
                   alreadyPulled.add(oldTokenId);
                 };
               };
             };
+          };
+        };
+      };
+    };
+
+    // Copy sublocations linked to newly copied law tokens
+    for ((slId, sl) in sublocationMap.entries()) {
+      if (not pulledSet.containsKey(slId)) {
+        var linkedToNewToken = false;
+        switch (sublocationLawTokenRelations.get(slId)) {
+          case (null) {};
+          case (?linkedTokenIds) {
+            for (tid in linkedTokenIds.values()) {
+              if (newLawTokenIdMap.containsKey(tid)) {
+                linkedToNewToken := true;
+              };
+            };
+          };
+        };
+        if (linkedToNewToken) {
+          let newSlId = generateId("sublocation", sl.title, caller);
+          let newSl = {
+            id = newSlId;
+            title = sl.title;
+            content = sl.content;
+            originalTokenSequence = sl.originalTokenSequence;
+            creator = caller;
+            timestamps = { createdAt = Time.now(); };
+          };
+          sublocationMap.add(newSlId, newSl);
+          // Re-wire sublocation <-> law token relations using new IDs
+          switch (sublocationLawTokenRelations.get(slId)) {
+            case (null) {};
+            case (?linkedTokenIds) {
+              for (oldTid in linkedTokenIds.values()) {
+                switch (newLawTokenIdMap.get(oldTid)) {
+                  case (null) {};
+                  case (?newTid) {
+                    let slRels = switch (sublocationLawTokenRelations.get(newSlId)) {
+                      case (null) { List.empty<NodeId>() };
+                      case (?l) { l };
+                    };
+                    slRels.add(newTid);
+                    sublocationLawTokenRelations.add(newSlId, slRels);
+                    let ltRels = switch (locationLawTokenRelations.get(newTid)) {
+                      case (null) { List.empty<NodeId>() };
+                      case (?l) { l };
+                    };
+                    ltRels.add(newSlId);
+                    locationLawTokenRelations.add(newTid, ltRels);
+                  };
+                };
+              };
+            };
+          };
+          alreadyPulled.add(slId);
+        };
+      };
+    };
+
+    // Copy interpretation tokens referencing newly copied law tokens
+    for ((_itId, it) in interpretationTokenMap.entries()) {
+      if (not pulledSet.containsKey(it.id)) {
+        switch (newLawTokenIdMap.get(it.fromTokenId)) {
+          case (null) {};
+          case (?newFromId) {
+            let newToId = switch (newLawTokenIdMap.get(it.toNodeId)) {
+              case (?nid) { nid };
+              case (null) { it.toNodeId };
+            };
+            let newItId = generateId("interpretationToken", it.title, caller);
+            let newIt = {
+              id = newItId;
+              title = it.title;
+              context = it.context;
+              fromTokenId = newFromId;
+              fromRelationshipType = it.fromRelationshipType;
+              fromDirectionality = it.fromDirectionality;
+              toNodeId = newToId;
+              toRelationshipType = it.toRelationshipType;
+              toDirectionality = it.toDirectionality;
+              customAttributes = it.customAttributes;
+              creator = caller;
+              timestamps = { createdAt = Time.now(); };
+            };
+            interpretationTokenMap.add(newItId, newIt);
+            alreadyPulled.add(it.id);
           };
         };
       };

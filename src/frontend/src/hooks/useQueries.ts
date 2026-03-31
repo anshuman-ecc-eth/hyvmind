@@ -548,16 +548,17 @@ export function usePullFromSwarm() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useMutation<string, Error, { targetSwarmId: string }>({
-    mutationFn: async ({ targetSwarmId }) => {
+  return useMutation<string, Error, { sourceSwarmId: string }>({
+    mutationFn: async ({ sourceSwarmId }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.pullFromSwarm(targetSwarmId);
+      return actor.pullFromSwarm(sourceSwarmId);
     },
-    onSuccess: (_, { targetSwarmId }) => {
+    onSuccess: (_, { sourceSwarmId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["swarmForks", targetSwarmId],
+        queryKey: ["swarmForks", sourceSwarmId],
       });
       queryClient.invalidateQueries({ queryKey: ["graphData"] });
+      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
     },
   });
 }

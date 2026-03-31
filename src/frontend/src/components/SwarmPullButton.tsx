@@ -5,20 +5,20 @@ import { toast } from "sonner";
 
 interface SwarmPullButtonProps {
   swarmId: string;
-  forkSourceId: string;
+  sourceId: string;
   onNavigateToSwarm?: (swarmId: string) => void;
 }
 
 export default function SwarmPullButton({
-  forkSourceId,
+  sourceId,
   onNavigateToSwarm,
 }: SwarmPullButtonProps) {
   const pull = usePullFromSwarm();
 
   const handlePull = async () => {
     try {
-      const newForkId = await pull.mutateAsync({ targetSwarmId: forkSourceId });
-      toast.success("Fork refreshed from source.");
+      const newForkId = await pull.mutateAsync({ sourceSwarmId: sourceId });
+      toast.success("Fork updated from source.");
       if (onNavigateToSwarm && newForkId) {
         onNavigateToSwarm(newForkId);
       }

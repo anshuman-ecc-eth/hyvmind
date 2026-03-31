@@ -1,6 +1,9 @@
+import ForkCardActions from "@/components/ForkCardActions";
+import SwarmJoinButton from "@/components/SwarmJoinButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import { Calendar, GitFork, MapPin, Minus, Plus, Scale } from "lucide-react";
 import { useState } from "react";
 import { useGetAllData } from "../hooks/useQueries";
@@ -22,6 +25,7 @@ function formatDate(timestamp: bigint): string {
 
 export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
   const { data: graphData, isLoading } = useGetAllData();
+  const { identity } = useInternetIdentity();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // All QoL swarms (both originals and forks)
@@ -113,6 +117,8 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
     );
   }
 
+  const currentUser = identity?.getPrincipal().toString();
+
   return (
     <div className="container mx-auto p-6 max-w-3xl overflow-auto">
       <div className="mb-6">
@@ -131,6 +137,8 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
           );
           const forks = getForks(swarm.id);
           const isExpanded = expandedIds.has(swarm.id);
+          const isSwarmCreator =
+            !!currentUser && swarm.creator.toString() === currentUser;
 
           return (
             <div key={swarm.id} data-ocid={`swarms.item.${idx + 1}`}>
@@ -171,11 +179,27 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
                       {QUESTION_OF_LAW_TAG}
                     </Badge>
 
+                    {/* Join button for authenticated non-creators */}
+                    {identity && !isSwarmCreator && (
+                      <span
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="ml-auto"
+                      >
+                        <SwarmJoinButton
+                          swarmId={swarm.id}
+                          onNavigateToSwarm={onSelectSwarm}
+                        />
+                      </span>
+                    )}
+
                     {/* Fork toggle */}
                     {forks.length > 0 && (
                       <button
                         type="button"
-                        className="flex items-center gap-1 font-mono text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-1.5 py-0.5 ml-auto transition-colors"
+                        className={`flex items-center gap-1 font-mono text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-1.5 py-0.5 transition-colors ${
+                          identity && !isSwarmCreator ? "" : "ml-auto"
+                        }`}
                         onClick={(e) => toggleExpand(swarm.id, e)}
                         data-ocid={`swarms.item.${idx + 1}.toggle`}
                       >
@@ -198,6 +222,8 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
                     const forkCuration = graphData?.curations.find(
                       (c) => c.id === fork.parentCurationId,
                     );
+                    const isOwnFork =
+                      !!currentUser && fork.creator.toString() === currentUser;
                     return (
                       <Card
                         key={fork.id}
@@ -209,6 +235,11 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
                           <CardTitle className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors font-mono flex items-center gap-2">
                             <GitFork className="h-3 w-3 text-muted-foreground shrink-0" />
                             {fork.name}
+                            {isOwnFork && (
+                              <span className="text-xs text-muted-foreground font-normal ml-1">
+                                (yours)
+                              </span>
+                            )}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pb-3">
@@ -229,6 +260,21 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
                               <Calendar className="h-3 w-3" />
                               {formatDate(fork.timestamps.createdAt)}
                             </span>
+
+                            {/* Fork/Pull actions for authenticated members on others' forks */}
+                            {identity && !isOwnFork && (
+                              <span
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="ml-auto"
+                              >
+                                <ForkCardActions
+                                  forkId={fork.id}
+                                  originalSwarmId={swarm.id}
+                                  onNavigateToSwarm={onSelectSwarm}
+                                />
+                              </span>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
