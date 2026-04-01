@@ -1,4 +1,6 @@
+import { useAnimationFrame } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import ScrambleText from "./ScrambleText";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -24,7 +26,7 @@ type Segment =
       failTarget: string;
     };
 
-type Phase = "typing" | "waiting" | "paths" | "source" | "input";
+type Phase = "typing" | "scrambling" | "waiting" | "paths" | "source" | "input";
 
 interface HistoryEntry {
   file: string;
@@ -97,8 +99,6 @@ const GAME_FILES: Record<string, string> = {
 - (M) \u00a0
 - (M) anyone can generate plausible looking legal documents`,
 };
-
-const TYPEWRITER_DELAY = 30;
 
 // ── Parser ─────────────────────────────────────────────────────────────────────
 
@@ -313,6 +313,68 @@ function LoudspeakerIcon() {
   );
 }
 
+// ── TypewriterDisplay ─────────────────────────────────────────────────────────
+
+interface TypewriterDisplayProps {
+  text: string;
+  delayMs?: number;
+  onComplete: () => void;
+  cursor?: React.ReactNode;
+  className?: string;
+}
+
+function TypewriterDisplay({
+  text,
+  delayMs = 30,
+  onComplete,
+  cursor,
+  className,
+}: TypewriterDisplayProps) {
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const [displayText, setDisplayText] = useState("");
+  const charIndexRef = useRef(0);
+  const accumRef = useRef(0);
+  const doneRef = useRef(false);
+
+  // Reset when text changes — refs are intentionally reset here
+  // biome-ignore lint/correctness/useExhaustiveDependencies: text is the intentional trigger; refs are reset side effects
+  useEffect(() => {
+    charIndexRef.current = 0;
+    accumRef.current = 0;
+    doneRef.current = false;
+    setDisplayText("");
+  }, [text]);
+
+  useAnimationFrame((_, delta) => {
+    if (doneRef.current) return;
+    accumRef.current += delta;
+    if (accumRef.current >= delayMs) {
+      accumRef.current = 0;
+      const next = charIndexRef.current + 1;
+      charIndexRef.current = next;
+      setDisplayText(text.slice(0, next));
+      if (next >= text.length) {
+        doneRef.current = true;
+        onCompleteRef.current();
+      }
+    }
+  });
+
+  return (
+    <p
+      className={
+        className ??
+        "text-foreground text-base leading-relaxed tracking-wide text-center"
+      }
+    >
+      {displayText}
+      {cursor}
+    </p>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface TextGameModalProps {
@@ -334,7 +396,6 @@ export default function TextGameModal({
   checkConditionRef.current = checkCondition;
 
   const [phase, setPhase] = useState<Phase>("typing");
-  const [displayText, setDisplayText] = useState("");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -377,7 +438,6 @@ export default function TextGameModal({
     if (seg.type === "message" || seg.type === "input") {
       phaseRef.current = "typing";
       setPhase("typing");
-      setDisplayText("");
       setMessageKey((k) => k + 1);
     } else if (seg.type === "paths") {
       phaseRef.current = "paths";
@@ -492,11 +552,9 @@ export default function TextGameModal({
       if (p === "typing") {
         const seg = segmentsRef.current[segIdxRef.current];
         if (seg?.type === "message") {
-          setDisplayText(seg.text);
-          phaseRef.current = "waiting";
-          setPhase("waiting");
+          phaseRef.current = "scrambling";
+          setPhase("scrambling");
         } else if (seg?.type === "input") {
-          setDisplayText(seg.prompt);
           phaseRef.current = "input";
           setPhase("input");
         } else if (
@@ -506,6 +564,9 @@ export default function TextGameModal({
           phaseRef.current = "waiting";
           setPhase("waiting");
         }
+      } else if (p === "scrambling") {
+        phaseRef.current = "waiting";
+        setPhase("waiting");
       } else if (p === "waiting" || p === "source") {
         advanceRef.current();
       } else if (p === "paths") {
@@ -532,60 +593,6 @@ export default function TextGameModal({
     navigateRef.current("opening");
   }, []);
 
-  // Typewriter — handles message and input prompt
-  // biome-ignore lint/correctness/useExhaustiveDependencies: messageKey is an intentional trigger
-  useEffect(() => {
-    if (phaseRef.current !== "typing") return;
-    const seg = segmentsRef.current[segIdxRef.current];
-    if (seg?.type !== "message" && seg?.type !== "input") return;
-    const text = seg.type === "message" ? seg.text : seg.prompt;
-    const isInputSeg = seg.type === "input";
-
-    const DOTS = "...";
-    let charIndex = 0;
-    let dotPhase = text.startsWith(DOTS);
-    let dotCount = 0;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const tick = () => {
-      if (dotPhase) {
-        dotCount++;
-        setDisplayText(DOTS.slice(0, dotCount));
-        if (dotCount < 3) {
-          timer = setTimeout(tick, 333);
-        } else {
-          dotPhase = false;
-          charIndex = 3;
-          timer = setTimeout(tick, TYPEWRITER_DELAY);
-        }
-      } else {
-        charIndex++;
-        setDisplayText(text.slice(0, charIndex));
-        if (charIndex < text.length) {
-          timer = setTimeout(tick, TYPEWRITER_DELAY);
-        } else {
-          if (isInputSeg) {
-            phaseRef.current = "input";
-            setPhase("input");
-          } else {
-            phaseRef.current = "waiting";
-            setPhase("waiting");
-          }
-        }
-      }
-    };
-
-    if (dotPhase) {
-      dotCount = 1;
-      setDisplayText(".");
-      timer = setTimeout(tick, 333);
-    } else {
-      timer = setTimeout(tick, TYPEWRITER_DELAY);
-    }
-
-    return () => clearTimeout(timer);
-  }, [messageKey]);
-
   useEffect(() => {
     const handler = (e: KeyboardEvent) => keyHandlerRef.current(e);
     window.addEventListener("keydown", handler);
@@ -598,11 +605,9 @@ export default function TextGameModal({
 
     if (p === "typing") {
       if (seg?.type === "message") {
-        setDisplayText(seg.text);
-        phaseRef.current = "waiting";
-        setPhase("waiting");
+        phaseRef.current = "scrambling";
+        setPhase("scrambling");
       } else if (seg?.type === "input") {
-        setDisplayText(seg.prompt);
         phaseRef.current = "input";
         setPhase("input");
       } else if (
@@ -612,6 +617,9 @@ export default function TextGameModal({
         phaseRef.current = "waiting";
         setPhase("waiting");
       }
+    } else if (p === "scrambling") {
+      phaseRef.current = "waiting";
+      setPhase("waiting");
     } else if (p === "waiting" || p === "source") {
       advanceRef.current();
     }
@@ -656,6 +664,7 @@ export default function TextGameModal({
 
   void currentFile;
   void retraceRef;
+  void messageKey;
 
   const blinkingCursor = (
     <span
@@ -698,15 +707,41 @@ export default function TextGameModal({
           onClick={handleBackgroundClick}
         >
           <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-6">
-            {/* Typewriter phase — message or input prompt */}
-            {phase === "typing" &&
-              (currentSeg?.type === "message" ||
-                currentSeg?.type === "input") && (
-                <p className="text-foreground text-base leading-relaxed tracking-wide text-center">
-                  {renderMessageText(displayText, navigate)}
-                  {blinkingCursor}
-                </p>
-              )}
+            {/* Typing phase — message */}
+            {phase === "typing" && currentSeg?.type === "message" && (
+              <TypewriterDisplay
+                text={currentSeg.text}
+                onComplete={() => {
+                  phaseRef.current = "scrambling";
+                  setPhase("scrambling");
+                }}
+                cursor={blinkingCursor}
+              />
+            )}
+
+            {/* Typing phase — input prompt (no scramble) */}
+            {phase === "typing" && currentSeg?.type === "input" && (
+              <TypewriterDisplay
+                text={currentSeg.prompt}
+                onComplete={() => {
+                  phaseRef.current = "input";
+                  setPhase("input");
+                }}
+                cursor={blinkingCursor}
+              />
+            )}
+
+            {/* Scrambling phase */}
+            {phase === "scrambling" && currentSeg?.type === "message" && (
+              <ScrambleText
+                text={currentSeg.text}
+                onComplete={() => {
+                  phaseRef.current = "waiting";
+                  setPhase("waiting");
+                }}
+                cursor={blinkingCursor}
+              />
+            )}
 
             {/* Waiting phase — message */}
             {phase === "waiting" && currentSeg?.type === "message" && (
