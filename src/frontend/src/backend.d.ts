@@ -197,6 +197,9 @@ export interface backendInterface {
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     pullFromSwarm(targetSwarmId: NodeId): Promise<NodeId>;
+    createSwarmFork(swarmId: NodeId): Promise<NodeId>;
+    leaveSwarm(swarmId: NodeId): Promise<void>;
+    hasUserFork(swarmId: NodeId): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;

@@ -280,6 +280,9 @@ export interface backendInterface {
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     pullFromSwarm(targetSwarmId: NodeId): Promise<NodeId>;
+    createSwarmFork(swarmId: NodeId): Promise<NodeId>;
+    leaveSwarm(swarmId: NodeId): Promise<void>;
+    hasUserFork(swarmId: NodeId): Promise<boolean>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -639,6 +642,36 @@ export class Backend implements backendInterface {
             const result = await this.actor.pullFromSwarm(arg0);
             return result;
         }
+    }
+    async createSwarmFork(arg0: NodeId): Promise<NodeId> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createSwarmFork(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            const result = await this.actor.createSwarmFork(arg0);
+            return result;
+        }
+    }
+    async leaveSwarm(arg0: NodeId): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.leaveSwarm(arg0);
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            await this.actor.leaveSwarm(arg0);
+        }
+    }
+    async hasUserFork(arg0: NodeId): Promise<boolean> {
+        const result = await this.actor.hasUserFork(arg0);
+        return result;
     }
     async requestApproval(): Promise<void> {
         if (this.processError) {

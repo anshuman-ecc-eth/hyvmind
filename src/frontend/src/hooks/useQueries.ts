@@ -583,7 +583,7 @@ export function useCreateSwarmFork() {
   return useMutation<string, Error, string>({
     mutationFn: async (swarmId: string) => {
       if (!actor) throw new Error("Actor not available");
-      return (actor as any).createSwarmFork(swarmId);
+      return actor.createSwarmFork(swarmId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swarmForks"] });
@@ -600,7 +600,7 @@ export function useLeaveSwarm() {
   return useMutation<void, Error, string>({
     mutationFn: async (swarmId: string) => {
       if (!actor) throw new Error("Actor not available");
-      await (actor as any).leaveSwarm(swarmId);
+      await actor.leaveSwarm(swarmId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swarmMembers"] });
@@ -617,7 +617,7 @@ export function useHasFork(swarmId: string) {
     queryKey: ["hasFork", swarmId],
     queryFn: async () => {
       if (!actor) return false;
-      return (actor as any).hasUserFork(swarmId);
+      return actor.hasUserFork(swarmId);
     },
     enabled: !!actor && !!swarmId && !isFetching,
   });
