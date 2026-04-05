@@ -9,7 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Wallet, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Moon, Sun, Wallet, X } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -32,6 +34,7 @@ export default function ProfileSettingsModal({
   open,
   onOpenChange,
 }: ProfileSettingsModalProps) {
+  const { theme, setTheme } = useTheme();
   const { data: userProfile, isLoading: profileLoading } =
     useGetCallerUserProfile();
   const {
@@ -118,6 +121,8 @@ export default function ProfileSettingsModal({
       ? (Number(buzzBalance) / BUZZ_SCALE).toFixed(7)
       : "0.0000000";
 
+  const isLight = theme === "light";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
@@ -141,6 +146,37 @@ export default function ProfileSettingsModal({
                 mint settings.
               </DialogDescription>
             </DialogHeader>
+
+            {/* Appearance Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Appearance</h3>
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-3">
+                  {isLight ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">
+                      {isLight ? "Light Mode" : "Dark Mode"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle between light and dark theme
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={isLight}
+                  onCheckedChange={(checked) =>
+                    setTheme(checked ? "light" : "dark")
+                  }
+                  data-ocid="settings.switch"
+                />
+              </div>
+            </div>
+
+            <Separator />
 
             {/* Profile Section */}
             <div className="space-y-4">

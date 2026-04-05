@@ -6,7 +6,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { clearTreeCache } from "../hooks/useQueries";
@@ -38,6 +39,7 @@ export default function Header({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     await clear();
@@ -69,17 +71,18 @@ export default function Header({
     { key: "buzz", label: "leaderboard" },
   ];
 
+  const isDark = theme !== "light";
+  const logoSrc = isDark
+    ? "/assets/uploads/megrim_transparent-019d290a-12e2-7228-bb6e-8eff24087d7a-1.png"
+    : "/megrim_logo-converted-019d5bd0-4223-74c8-943c-3cff8144b1fc.webp";
+
   return (
     <header className="border-b border-dashed border-border bg-background font-mono">
       <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Image Logo */}
           <div className="flex items-center">
-            <img
-              src="/assets/uploads/megrim_transparent-019d290a-12e2-7228-bb6e-8eff24087d7a-1.png"
-              alt="hyvmind"
-              className="h-5 object-contain"
-            />
+            <img src={logoSrc} alt="hyvmind" className="h-5 object-contain" />
           </div>
 
           {/* Right Side Controls */}
@@ -102,6 +105,22 @@ export default function Header({
                 onOpenChange={setCreateDialogOpen}
               />
             )}
+
+            {/* Theme toggle button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+              aria-label="Toggle theme"
+              data-ocid="header.toggle"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
 
             {/* Login button for unauthenticated users — left of hamburger */}
             {!isAuthenticated && (

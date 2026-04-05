@@ -42,11 +42,6 @@ export default function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isAuthenticated = !!identity;
 
-  // Force dark mode permanently
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
-
   // Keyboard shortcut: Ctrl+P / Cmd+P to open command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -170,7 +165,12 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+        storageKey="hyvmind-theme"
+      >
         <div className="flex h-screen items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -183,7 +183,12 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      storageKey="hyvmind-theme"
+    >
       <div className="flex h-[100dvh] flex-col bg-background">
         <Header
           currentView={currentView === "swarm-detail" ? "swarms" : currentView}

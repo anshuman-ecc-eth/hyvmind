@@ -1,31 +1,32 @@
 # Hyvmind
 
 ## Current State
-The main 3D graph visualization uses `GraphScene3D.tsx` (344 lines) built with `@react-three/fiber`, isometric camera, `OrbitControls`, and manual node/edge rendering. `GraphView.tsx` manages all state: nodes, links, filtering, search, subgraph mode, keyboard navigation, and UI panels.
-
-Dependencies currently installed: `@react-three/fiber`, `@react-three/drei`, `three`. Missing: `react-force-graph-3d`, `three-spritetext`.
+- App is hard-locked to dark mode via `forcedTheme="dark"` on `ThemeProvider` and a `document.documentElement.classList.add("dark")` `useEffect` in `App.tsx`
+- `index.css` only defines dark-mode tokens in `:root` and `.dark` (identical); no `.light` class tokens exist
+- Header logo: single path to `megrim_transparent...png` (white text, transparent bg — dark mode only)
+- Light-mode logo available: `megrim_logo-converted-019d5bd0...webp` (dark text on white/transparent bg)
+- `ThemeProvider` from `next-themes` is already installed but unused for actual theme switching
+- Settings modal (`ProfileSettingsModal.tsx`) has no theme toggle
 
 ## Requested Changes (Diff)
 
 ### Add
-- `react-force-graph-3d` and `three-spritetext` to `package.json` dependencies
-- `src/frontend/src/components/ForceGraph3D.tsx` — new component wrapping `react-force-graph-3d` with:
-  - SpriteText labels (via `nodeThreeObject` + `nodeThreeObjectExtend`)
-  - Hover highlighting: hovered/selected node turns `#FFD700`, unconnected nodes/links dim
-  - Click-to-focus: `centerAt()` + `zoom()` on node click
-  - Fit-to-canvas: `zoomToFit()` triggered on subgraph mode transitions
-  - Existing color scheme: curation `#FF7043`, swarm `#42A5F5`, location `#66BB6A`, lawToken `#BA68C8`, interpretationToken `#FFB74D`, sublocation `#4DB6AC`
-  - Link labels for interpretation token edges
-  - Dark background `#0a0a0a`, `showNavInfo={false}`
+- Light theme CSS tokens in `index.css` under `.light` class: full inversion of dark palette (white bg → black text, dark bg → white bg, same monospace aesthetic)
+- Theme context/hook: `useTheme` from `next-themes` to read/toggle theme, persisted via `localStorage`
+- Theme toggle button in nav bar (always visible — sun/moon icon button next to existing controls)
+- Theme toggle in Settings modal (`ProfileSettingsModal.tsx`) — a section with label and toggle switch
 
 ### Modify
-- `src/frontend/src/pages/GraphView.tsx` — replace `GraphScene3D` import/usage with `ForceGraph3D`; pass `graphRef`; use `subgraphMode ? subgraphData : mainGraphData` for conditional graph data
+- `App.tsx`: Remove `forcedTheme="dark"` from `ThemeProvider`; remove `document.documentElement.classList.add("dark")` effect; set `defaultTheme="dark"` and `enableSystem={false}`
+- `Header.tsx`: Add theme toggle icon button; conditionally render dark or light logo based on current theme
+- `ProfileSettingsModal.tsx`: Add Appearance section with theme toggle
 
 ### Remove
-- `src/frontend/src/components/GraphScene3D.tsx` (replaced entirely by `ForceGraph3D.tsx`)
+- Hard-coded `forcedTheme="dark"` from `ThemeProvider` in `App.tsx`
+- Hard-coded `classList.add("dark")` useEffect in `App.tsx`
 
 ## Implementation Plan
-1. Add `react-force-graph-3d` and `three-spritetext` to `src/frontend/package.json`
-2. Create `ForceGraph3D.tsx` with all features described above
-3. Update `GraphView.tsx` to use `ForceGraph3D` instead of `GraphScene3D`
-4. Remove `GraphScene3D.tsx`
+1. Add `.light` CSS variable block in `index.css` — full inversion: `--background: 100% 0 0`, `--foreground: 0% 0 0`, light borders, etc.
+2. Modify `App.tsx`: remove forced dark mode, set `defaultTheme="dark"` with `enableSystem={false}` and `storageKey="hyvmind-theme"`
+3. Modify `Header.tsx`: import `useTheme` from `next-themes`; add sun/moon toggle button; switch logo src based on `theme === "light"`
+4. Modify `ProfileSettingsModal.tsx`: import `useTheme`; add Appearance section with a labeled toggle between dark/light

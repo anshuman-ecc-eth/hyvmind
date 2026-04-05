@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Dark mode monochrome palette — dark only, no light mode */
+    /* Dark mode monochrome palette — default */
     --background: 0% 0 0;
     --foreground: 100% 0 0;
     --card: 0% 0 0;
@@ -63,6 +63,36 @@
     --chart-5: 50% 0.15 50;
     --terminal-border: oklch(30% 0 0);
     --terminal-border-muted: oklch(20% 0 0);
+  }
+
+  /* Light mode — full inversion of dark palette */
+  .light {
+    --background: 100% 0 0;
+    --foreground: 0% 0 0;
+    --card: 98% 0 0;
+    --card-foreground: 0% 0 0;
+    --popover: 96% 0 0;
+    --popover-foreground: 0% 0 0;
+    --primary: 0% 0 0;
+    --primary-foreground: 100% 0 0;
+    --secondary: 92% 0 0;
+    --secondary-foreground: 0% 0 0;
+    --muted: 92% 0 0;
+    --muted-foreground: 40% 0 0;
+    --accent: 92% 0 0;
+    --accent-foreground: 0% 0 0;
+    --destructive: 50% 0.2 25;
+    --destructive-foreground: 100% 0 0;
+    --border: 80% 0 0;
+    --input: 80% 0 0;
+    --ring: 0% 0 0;
+    --chart-1: 60% 0.15 150;
+    --chart-2: 65% 0.15 200;
+    --chart-3: 55% 0.15 100;
+    --chart-4: 70% 0.15 250;
+    --chart-5: 50% 0.15 50;
+    --terminal-border: oklch(75% 0 0);
+    --terminal-border-muted: oklch(85% 0 0);
   }
 }
 
@@ -173,5 +203,24 @@
 }
 
 .dark .voronoi-tooltip-type {
+  color: #666666 !important;
+}
+
+/* Ensure light mode does NOT affect Voronoi container */
+.light .voronoi-diagram-container,
+.light .voronoi-canvas,
+.light .voronoi-loading,
+.light .voronoi-error,
+.light .voronoi-empty {
+  background: #ffffff !important;
+}
+
+.light .voronoi-tooltip-content {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #cccccc !important;
+}
+
+.light .voronoi-tooltip-type {
   color: #666666 !important;
 }
