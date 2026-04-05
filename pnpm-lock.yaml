@@ -255,8 +255,8 @@ importers:
 
 packages:
 
-  3d-force-graph@1.79.1:
-    resolution: {integrity: sha512-iscIVt4jWjJ11KEEswgOIOWk8Ew4EFKHRyERJXJ0ouycqzHCtWwb9E5imnxS5rYF1f1IESkFNAfB+h3EkU0Irw==}
+  3d-force-graph@1.80.0:
+    resolution: {integrity: sha512-tzI353gW1nXPpnC7VTa3JjMg+3cp77qOLUFO0vucPTfF+q5R6sQsNsIqVTbRIb7RSypn14nBa4yfkOe9ThxASw==}
     engines: {node: '>=12'}
 
   '@alloc/quick-lru@5.2.0':
@@ -2521,8 +2521,8 @@ packages:
   potpack@1.0.2:
     resolution: {integrity: sha512-choctRBIV9EMT9WGAZHn3V7t0Z2pMQyl0EZE6pFc/6ml3ssw7Dlf/oAOvFwjm1HVsqfQN8GfeFyJ+d8tRzqueQ==}
 
-  preact@10.29.0:
-    resolution: {integrity: sha512-wSAGyk2bYR1c7t3SZ3jHcM6xy0lcBcDel6lODcs9ME6Th++Dx2KU+6D3HD8wMMKGA8Wpw7OMd3/4RGzYRpzwRg==}
+  preact@10.29.1:
+    resolution: {integrity: sha512-gQCLc/vWroE8lIpleXtdJhTFDogTdZG9AjMUpVkDf2iTCNwYNWA+u16dL41TqUDJO4gm2IgrcMv3uTpjd4Pwmg==}
 
   promise-worker-transferable@1.0.4:
     resolution: {integrity: sha512-bN+0ehEnrXfxV2ZQvU2PetO0n4gqBD4ulq3MI1WOPLgr7/Mg9yRQkX5+0v1vagr74ZTsl7XtzlaYDo2EuCeYJw==}
@@ -2863,8 +2863,8 @@ packages:
   thenify@3.3.1:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
 
-  three-forcegraph@1.43.1:
-    resolution: {integrity: sha512-lQnYPLvR31gb91mF5xHhU0jPHJgBPw9QB23R6poCk8Tgvz8sQtq7wTxwClcPdfKCBbHXsb7FSqK06Osiu1kQ5A==}
+  three-forcegraph@1.43.2:
+    resolution: {integrity: sha512-KUlqDaWVsrYtKx0NVVi5M3NR46K5JQIiPEzZnTMvBq7EHVF2tJpWtgGiAT1mhaerrlJ7F4UGNS2rIVYHmVrzYw==}
     engines: {node: '>=12'}
     peerDependencies:
       three: '>=0.118.3'
@@ -2874,11 +2874,11 @@ packages:
     peerDependencies:
       three: '>= 0.159.0'
 
-  three-render-objects@1.40.5:
-    resolution: {integrity: sha512-iA+rYdal0tkond37YeXIvEMAxUFGxw1wU6+ce/GsuiOUKL+8zaxFXY7PTVft0F+Km50mbmtKQ24b2FdwSG3p3A==}
+  three-render-objects@1.41.1:
+    resolution: {integrity: sha512-0H7l7yREPVKfO3HL7RjPQ67T0phHgnyMeEc4ww/OCEfK6jbsm7psEcrR0SGFqGDyS/pDQTPi4DyPbS/xlHRJKw==}
     engines: {node: '>=12'}
     peerDependencies:
-      three: '>=0.168'
+      three: '>=0.179'
 
   three-spritetext@1.10.0:
     resolution: {integrity: sha512-t08iP1FCU1lQh8T5MmCpdijKgas8GDHJE0LqMGBuVu3xqMMpFnEZhTlih7FlxLPQizHIGoumUSpfOlY1GO/Tgg==}
@@ -2893,6 +2893,9 @@ packages:
 
   three@0.176.0:
     resolution: {integrity: sha512-PWRKYWQo23ojf9oZSlRGH8K09q7nRSWx6LY/HF/UUrMdYgN9i1e2OwJYHoQjwc6HF/4lvvYLC5YC1X8UJL2ZpA==}
+
+  three@0.183.2:
+    resolution: {integrity: sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==}
 
   throttle-debounce@3.0.1:
     resolution: {integrity: sha512-dTEWWNu6JmeVXY0ZYoPuH5cRIwc0MeGbJwah9KUNYSJwommQpCzTySTpEe8Gs1J23aeWEuAobe4Ag7EHVt/LOg==}
@@ -3087,13 +3090,13 @@ packages:
 
 snapshots:
 
-  3d-force-graph@1.79.1:
+  3d-force-graph@1.80.0:
     dependencies:
       accessor-fn: 1.5.3
       kapsule: 1.16.3
-      three: 0.176.0
-      three-forcegraph: 1.43.1(three@0.176.0)
-      three-render-objects: 1.40.5(three@0.176.0)
+      three: 0.183.2
+      three-forcegraph: 1.43.2(three@0.183.2)
+      three-render-objects: 1.41.1(three@0.183.2)
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -4858,7 +4861,7 @@ snapshots:
     dependencies:
       d3-selection: 3.0.0
       kapsule: 1.16.3
-      preact: 10.29.0
+      preact: 10.29.1
 
   foreground-child@3.3.1:
     dependencies:
@@ -5183,7 +5186,7 @@ snapshots:
 
   potpack@1.0.2: {}
 
-  preact@10.29.0: {}
+  preact@10.29.1: {}
 
   promise-worker-transferable@1.0.4:
     dependencies:
@@ -5231,7 +5234,7 @@ snapshots:
 
   react-force-graph-3d@1.29.1(react@19.1.1):
     dependencies:
-      3d-force-graph: 1.79.1
+      3d-force-graph: 1.80.0
       prop-types: 15.8.1
       react: 19.1.1
       react-kapsule: 2.5.7(react@19.1.1)
@@ -5592,7 +5595,7 @@ snapshots:
     dependencies:
       any-promise: 1.3.0
 
-  three-forcegraph@1.43.1(three@0.176.0):
+  three-forcegraph@1.43.2(three@0.183.2):
     dependencies:
       accessor-fn: 1.5.3
       d3-array: 3.2.4
@@ -5603,21 +5606,21 @@ snapshots:
       kapsule: 1.16.3
       ngraph.forcelayout: 3.3.1
       ngraph.graph: 20.1.2
-      three: 0.176.0
+      three: 0.183.2
       tinycolor2: 1.6.0
 
   three-mesh-bvh@0.8.3(three@0.176.0):
     dependencies:
       three: 0.176.0
 
-  three-render-objects@1.40.5(three@0.176.0):
+  three-render-objects@1.41.1(three@0.183.2):
     dependencies:
       '@tweenjs/tween.js': 23.1.3
       accessor-fn: 1.5.3
       float-tooltip: 1.7.5
       kapsule: 1.16.3
       polished: 4.3.1
-      three: 0.176.0
+      three: 0.183.2
 
   three-spritetext@1.10.0(three@0.176.0):
     dependencies:
@@ -5634,6 +5637,8 @@ snapshots:
       three: 0.176.0
 
   three@0.176.0: {}
+
+  three@0.183.2: {}
 
   throttle-debounce@3.0.1: {}
 

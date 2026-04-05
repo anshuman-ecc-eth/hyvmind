@@ -78,7 +78,7 @@ export default function Header({
             <img
               src="/assets/uploads/megrim_transparent-019d290a-12e2-7228-bb6e-8eff24087d7a-1.png"
               alt="hyvmind"
-              className="h-8 object-contain"
+              className="h-5 object-contain"
             />
           </div>
 

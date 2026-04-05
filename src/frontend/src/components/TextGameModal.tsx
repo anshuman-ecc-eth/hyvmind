@@ -401,7 +401,7 @@ export default function TextGameModal({
   const checkConditionRef = useRef(checkCondition);
   checkConditionRef.current = checkCondition;
 
-  const [phase, setPhase] = useState<Phase>("typing");
+  const [phase, setPhase] = useState<Phase>("scrambling");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -411,7 +411,7 @@ export default function TextGameModal({
   const [inputValue, setInputValue] = useState("");
   const [isCheckingCondition, setIsCheckingCondition] = useState(false);
 
-  const phaseRef = useRef<Phase>("typing");
+  const phaseRef = useRef<Phase>("scrambling");
   const segIdxRef = useRef(0);
   const segmentsRef = useRef<Segment[]>([]);
   const selectedActiveIdxRef = useRef(0);
@@ -444,7 +444,12 @@ export default function TextGameModal({
   };
 
   startSegRef.current = (seg: Segment) => {
-    if (seg.type === "message" || seg.type === "input") {
+    if (seg.type === "message") {
+      // Messages skip typing — go straight to scrambling
+      phaseRef.current = "scrambling";
+      setPhase("scrambling");
+      setMessageKey((k) => k + 1);
+    } else if (seg.type === "input") {
       phaseRef.current = "typing";
       setPhase("typing");
       setMessageKey((k) => k + 1);
@@ -577,11 +582,9 @@ export default function TextGameModal({
 
     if (e.key === "Enter") {
       if (p === "typing") {
+        // typing phase is now only used for input prompts
         const seg = segmentsRef.current[segIdxRef.current];
-        if (seg?.type === "message") {
-          phaseRef.current = "scrambling";
-          setPhase("scrambling");
-        } else if (seg?.type === "input") {
+        if (seg?.type === "input") {
           phaseRef.current = "input";
           setPhase("input");
         } else if (
@@ -631,10 +634,8 @@ export default function TextGameModal({
     const seg = segmentsRef.current[segIdxRef.current];
 
     if (p === "typing") {
-      if (seg?.type === "message") {
-        phaseRef.current = "scrambling";
-        setPhase("scrambling");
-      } else if (seg?.type === "input") {
+      // typing phase is now only used for input prompts
+      if (seg?.type === "input") {
         phaseRef.current = "input";
         setPhase("input");
       } else if (
@@ -734,19 +735,7 @@ export default function TextGameModal({
           onClick={handleBackgroundClick}
         >
           <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-6">
-            {/* Typing phase — message */}
-            {phase === "typing" && currentSeg?.type === "message" && (
-              <TypewriterDisplay
-                text={currentSeg.text}
-                onComplete={() => {
-                  phaseRef.current = "scrambling";
-                  setPhase("scrambling");
-                }}
-                cursor={blinkingCursor}
-              />
-            )}
-
-            {/* Typing phase — input prompt (no scramble) */}
+            {/* Typing phase — input prompt only (messages no longer use typing phase) */}
             {phase === "typing" && currentSeg?.type === "input" && (
               <TypewriterDisplay
                 text={currentSeg.prompt}
