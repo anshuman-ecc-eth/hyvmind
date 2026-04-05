@@ -73,8 +73,8 @@ export default function Header({
 
   const isDark = theme !== "light";
   const logoSrc = isDark
-    ? "/assets/uploads/megrim_transparent-019d290a-12e2-7228-bb6e-8eff24087d7a-1.png"
-    : "/megrim_logo-converted-019d5bd0-4223-74c8-943c-3cff8144b1fc.webp";
+    ? "/assets/hyvmind_logo white, transparent.png"
+    : "/assets/hyvmind_logo black, transparent.png";
 
   return (
     <header className="border-b border-dashed border-border bg-background font-mono">
@@ -106,7 +106,21 @@ export default function Header({
               />
             )}
 
-            {/* Theme toggle button */}
+            {/* Login button for unauthenticated users */}
+            {!isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogin}
+                disabled={loginStatus === "logging-in"}
+                className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+                data-ocid="header.login.button"
+              >
+                {loginStatus === "logging-in" ? "> logging in..." : "> login"}
+              </Button>
+            )}
+
+            {/* Theme toggle button — left of hamburger */}
             <Button
               variant="ghost"
               size="sm"
@@ -121,20 +135,6 @@ export default function Header({
                 <Moon className="h-4 w-4" />
               )}
             </Button>
-
-            {/* Login button for unauthenticated users — left of hamburger */}
-            {!isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogin}
-                disabled={loginStatus === "logging-in"}
-                className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
-                data-ocid="header.login.button"
-              >
-                {loginStatus === "logging-in" ? "> logging in..." : "> login"}
-              </Button>
-            )}
 
             {/* Hamburger Menu */}
             <DropdownMenu>

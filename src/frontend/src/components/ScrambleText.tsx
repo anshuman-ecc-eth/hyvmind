@@ -58,7 +58,7 @@ export default function ScrambleText({
   });
 
   return (
-    <p className="text-foreground text-base leading-relaxed tracking-wide text-center">
+    <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
       {displayChars.join("")}
       {cursor}
     </p>

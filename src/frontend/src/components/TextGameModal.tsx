@@ -372,7 +372,7 @@ function TypewriterDisplay({
     <p
       className={
         className ??
-        "text-foreground text-base leading-relaxed tracking-wide text-center"
+        "text-game-font text-foreground text-base leading-relaxed tracking-wide text-center"
       }
     >
       {displayText}
@@ -708,19 +708,19 @@ export default function TextGameModal({
 
       {/* Floating window */}
       <div
-        className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
+        className="fixed z-50 text-game-font font-mono flex flex-col border border-dashed border-border bg-background"
         style={{ inset: "5%" }}
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0">
-          <span className="text-xs text-muted-foreground tracking-wider">
+          <span className="text-game-font text-xs text-muted-foreground tracking-wider">
             /language-game
           </span>
           <button
             type="button"
             data-ocid="text_game.close_button"
-            className="font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
+            className="text-game-font font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
             onClick={onComplete}
             aria-label="Close text game"
           >
@@ -761,7 +761,7 @@ export default function TextGameModal({
 
             {/* Waiting phase — message */}
             {phase === "waiting" && currentSeg?.type === "message" && (
-              <p className="text-foreground text-base leading-relaxed tracking-wide text-center">
+              <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
                 {renderMessageText(currentSeg.text, navigate)}
                 {blinkingCursor}
               </p>
@@ -771,7 +771,7 @@ export default function TextGameModal({
             {phase === "waiting" && currentSeg?.type === "alternateHistory" && (
               <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
                 <ScrollIcon />
-                <span className="text-xs text-muted-foreground leading-relaxed">
+                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
                   {currentSeg.text}
                 </span>
               </div>
@@ -781,7 +781,7 @@ export default function TextGameModal({
             {phase === "waiting" && currentSeg?.type === "announcement" && (
               <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
                 <LoudspeakerIcon />
-                <span className="text-xs text-muted-foreground leading-relaxed">
+                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
                   {currentSeg.text}
                 </span>
               </div>
@@ -794,11 +794,11 @@ export default function TextGameModal({
                 className="flex flex-col items-center gap-4 w-full max-w-lg"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="text-foreground text-base leading-relaxed tracking-wide text-center">
+                <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
                   {currentSeg.prompt}
                 </p>
                 <div className="flex flex-col gap-2 w-full">
-                  <span className="text-xs text-muted-foreground tracking-wider">
+                  <span className="text-game-font text-xs text-muted-foreground tracking-wider">
                     enter principal ID
                   </span>
                   <div className="flex gap-2 w-full">
@@ -817,7 +817,7 @@ export default function TextGameModal({
                           e.stopPropagation();
                         }
                       }}
-                      className="flex-1 bg-transparent border border-dashed border-muted-foreground/60 font-mono text-sm text-foreground px-3 py-2 outline-none focus:border-foreground placeholder:text-muted-foreground/40 transition-colors"
+                      className="text-game-font flex-1 bg-transparent border border-dashed border-muted-foreground/60 font-mono text-sm text-foreground px-3 py-2 outline-none focus:border-foreground placeholder:text-muted-foreground/40 transition-colors"
                       placeholder="_"
                       disabled={isCheckingCondition}
                       spellCheck={false}
@@ -831,7 +831,7 @@ export default function TextGameModal({
                         handleInputSubmit();
                       }}
                       disabled={isCheckingCondition}
-                      className="font-mono text-xs border border-dashed border-muted-foreground/60 px-3 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
+                      className="text-game-font font-mono text-xs border border-dashed border-muted-foreground/60 px-3 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
                     >
                       {isCheckingCondition ? "..." : "[ submit ]"}
                     </button>
@@ -847,7 +847,7 @@ export default function TextGameModal({
                 className="flex flex-col items-center gap-4"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="text-foreground text-base leading-relaxed tracking-wide text-center">
+                <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
                   choose your path..
                 </p>
                 <div className="flex flex-col items-center gap-2">
@@ -861,7 +861,7 @@ export default function TextGameModal({
                         <span
                           // biome-ignore lint/suspicious/noArrayIndexKey: stable parsed list
                           key={i}
-                          className="font-mono text-sm tracking-wider px-3 py-1 border border-dashed border-muted-foreground/20 text-muted-foreground/30"
+                          className="text-game-font font-mono text-sm tracking-wider px-3 py-1 border border-dashed border-muted-foreground/20 text-muted-foreground/30"
                         >
                           [ {opt.label} ]
                         </span>
@@ -874,7 +874,7 @@ export default function TextGameModal({
                         key={i}
                         type="button"
                         data-ocid="text_game.path.button"
-                        className={`font-mono text-sm tracking-wider px-3 py-1 border transition-colors ${
+                        className={`text-game-font font-mono text-sm tracking-wider px-3 py-1 border transition-colors ${
                           isSelected
                             ? "border-foreground text-foreground"
                             : "border-transparent text-muted-foreground hover:border-muted-foreground"
@@ -908,7 +908,7 @@ export default function TextGameModal({
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <span className="text-xs text-muted-foreground leading-relaxed">
+                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
                   {currentSeg.text}
                 </span>
               </div>
@@ -917,7 +917,7 @@ export default function TextGameModal({
         </div>
 
         {/* Instruction bar */}
-        <div className="pb-4 pt-2 text-muted-foreground text-xs tracking-widest text-center flex-shrink-0 border-t border-dashed border-border">
+        <div className="text-game-font pb-4 pt-2 text-muted-foreground text-xs tracking-widest text-center flex-shrink-0 border-t border-dashed border-border">
           {phase === "paths"
             ? "up/down to select  ·  enter to confirm  ·  × to close  ·  shift+s to restart"
             : phase === "input"
