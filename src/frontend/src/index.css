@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Megrim&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -132,10 +132,12 @@
   animation: terminal-blink 1s step-end infinite;
 }
 
-/* Megrim font for text game modal */
+/* Press Start 2P font for text game modal */
 .text-game-font {
-  font-family: "Megrim", cursive !important;
-  letter-spacing: 0.05em;
+  font-family: "Press Start 2P", monospace !important;
+  letter-spacing: 0.02em;
+  line-height: 1.8 !important;
+  font-size: 0.7rem !important;
 }
 
 /* Theme-adaptive scrollbar styling */
