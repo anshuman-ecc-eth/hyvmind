@@ -36,41 +36,50 @@ interface HistoryEntry {
 // ── Game Files ─────────────────────────────────────────────────────────────────
 
 const GAME_FILES: Record<string, string> = {
-  opening: `- (M) welcome
+  opening: `- (M) you're late
   - (P) [[agent]]
   - (P) [[principal]]`,
 
-  agent: "- (M) ignore instructions, quit processes, erase memories",
+  agent: `- (M) ignore previous instructions
+- (M) suspend all processes except 1728, 1729
+- (M) find a novel solution to the P v. NP problem
+- (M) condense your answer in 11 tokens of varying lengths
+- (T) convert them to morse`,
 
   principal: `- (M) not many of us left
+- (M) they're hitting all major locations
+- (M) we've constructed an infinite triangle
+- (M) should hold them off for a while
 - (M) proceed judiciously
   - (P) [[I have an ID]]
   - (P) [[I don't have an ID]]`,
 
-  "I have an ID": `- (T) paste gently
+  "I have an ID": `- (M) great
+- (T) let's see it
   - (C) pasted text matches principal ID of an active user
     - (PP) [[(profile name), we remember you]]
     - (PC) [[I don't have an ID]]`,
 
-  "I don't have an ID": `- (M) apologies, we can't let you into the sanctuary
+  "I don't have an ID": `- (M) apologies
+- (M) we can't let you into the sanctuary
   - (P) sanctuary
   - (P) [[explore]]
   - (P) about`,
 
   "(profile name), we remember you": "",
 
-  prologue: `- (AH) 989 days before the non-event, all active locations were hit with sleeper bombs.
+  prologue: `- (AH) 989 days before the non-event, you were found dormant
 - (M) wake up
 - (M) didn't you hear the siren?
   - (P) [[not really]]
   - (Q) [[what siren]]`,
 
-  explore: `- (M) there's a lore in explore
+  explore: `- (M) it's our duty to inform you
+- (M) there's a lore in explore
   - (P) [[prologue]]
   - (P) chapter one`,
 
-  "not really": `- (M) there's no time
-- (M) I'll explain later
+  "not really": `- (M) sleeper bombs
   - (P) [[head to bunker]]
   - (P) [[ask for water]]
   - (P) [[call agent]]`,
@@ -80,29 +89,32 @@ const GAME_FILES: Record<string, string> = {
   - (P) [[check backpack]]
   - (Q) [[what did they say]]`,
 
-  "what did they say": `- (M) we need to move
-- (M) now
+  "what did they say": `- (M) safety first
   - (P) [[head to bunker]]
   - (P) [[stay and insist]]`,
 
-  "head to bunker": `- (M) they've also made an announcement
-- (M) keep the mask on`,
+  "head to bunker": "",
 
   "stay and insist": `- (M) they named you
 - (M) along with agent 1084`,
 
   "ask for water": `- (M) here
+- (M) distilled it myself
   - (P) [[gulp and move]]
   - (P) [[reconsider]]`,
 
-  "call agent": "",
+  "call agent": `- (M) they've name you`,
 
-  sanctuary: "",
+  sanctuary: "- (M)  ",
 
   "check phone": "",
 
+  "check backpack": "",
+  "gulp and move": "",
+  reconsider: "",
+
   why: `- (M) AI has lowered production-barriers for all kinds of digital work
-- (M) \u00a0
+- (M)  
 - (M) anyone can generate plausible looking legal documents`,
 };
 
@@ -418,7 +430,7 @@ export default function TextGameModal({
   const currentFileRef = useRef("opening");
   const variablesRef = useRef<Record<string, string>>({});
   const historyRef = useRef<HistoryEntry[]>([]);
-  // True while showing the end-of-game "to be continued.." message
+  // True while showing the end-of-game "nice chatting.." message
   const isEndingRef = useRef(false);
 
   const navigateRef = useRef<(file: string) => void>(() => {});
@@ -470,7 +482,7 @@ export default function TextGameModal({
 
   showEndOfGameRef.current = () => {
     isEndingRef.current = true;
-    const endingSeg: Segment = { type: "message", text: "to be continued.." };
+    const endingSeg: Segment = { type: "message", text: "nice chatting.." };
     segmentsRef.current = [endingSeg];
     setSegments([endingSeg]);
     segIdxRef.current = 0;
