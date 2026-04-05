@@ -44,8 +44,7 @@ const navCommands = [
   { id: "nav-tree", label: "Go to List", view: "tree" },
   { id: "nav-terminal", label: "Go to Terminal", view: "terminal" },
   { id: "nav-swarms", label: "Go to Swarms", view: "swarms" },
-  { id: "nav-collectibles", label: "Go to Collectibles", view: "collectibles" },
-  { id: "nav-buzz", label: "Go to Leaderboard", view: "buzz" },
+  { id: "nav-sources", label: "Go to Sources", view: "sources" },
 ];
 
 const terminalCommands = [

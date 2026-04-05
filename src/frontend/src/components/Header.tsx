@@ -15,15 +15,9 @@ import CreateNodeDialog from "./CreateNodeDialog";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
-  currentView:
-    | "graph"
-    | "tree"
-    | "terminal"
-    | "swarms"
-    | "buzz"
-    | "collectibles";
+  currentView: "graph" | "tree" | "terminal" | "swarms" | "sources";
   onViewChange: (
-    view: "graph" | "tree" | "terminal" | "swarms" | "buzz" | "collectibles",
+    view: "graph" | "tree" | "terminal" | "swarms" | "sources",
   ) => void;
   isAuthenticated: boolean;
   isLandingPage: boolean;
@@ -60,15 +54,14 @@ export default function Header({
   };
 
   const navItems: {
-    key: "graph" | "tree" | "terminal" | "swarms" | "collectibles" | "buzz";
+    key: "graph" | "tree" | "terminal" | "swarms" | "sources";
     label: string;
   }[] = [
     { key: "graph", label: "graph" },
     { key: "tree", label: "list" },
     { key: "terminal", label: "terminal" },
     { key: "swarms", label: "swarms" },
-    { key: "collectibles", label: "collectibles" },
-    { key: "buzz", label: "leaderboard" },
+    { key: "sources", label: "sources" },
   ];
 
   const isDark = theme !== "light";

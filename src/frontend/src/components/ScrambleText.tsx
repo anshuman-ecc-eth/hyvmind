@@ -29,13 +29,13 @@ export default function ScrambleText({
   onCompleteRef.current = onComplete;
 
   // Reset when text changes — refs are intentionally reset here
-  // biome-ignore lint/correctness/useExhaustiveDependencies: text is the intentional trigger; refs are reset side effects
   useEffect(() => {
     elapsedRef.current = 0;
     doneRef.current = false;
     setDisplayChars(
       Array.from(text).map((c) => (c === " " ? " " : randomChar())),
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   useAnimationFrame((_, delta) => {

@@ -14,9 +14,8 @@ import {
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
-import BuzzLeaderboard from "./pages/BuzzLeaderboard";
-import CollectiblesView from "./pages/CollectiblesView";
 import GraphView from "./pages/GraphView";
+import SourcesView from "./pages/SourcesView";
 import SwarmDetailView from "./pages/SwarmDetailView";
 import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
@@ -31,8 +30,7 @@ type ViewType =
   | "terminal"
   | "swarms"
   | "swarm-detail"
-  | "buzz"
-  | "collectibles";
+  | "sources";
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -237,8 +235,11 @@ export default function App() {
                   onSelectSwarm={handleSelectSwarm}
                 />
               )}
-              {currentView === "buzz" && <BuzzLeaderboard />}
-              {currentView === "collectibles" && <CollectiblesView />}
+              {currentView === "sources" && (
+                <div className="flex-1 min-h-0">
+                  <SourcesView />
+                </div>
+              )}
             </>
           )}
         </main>
