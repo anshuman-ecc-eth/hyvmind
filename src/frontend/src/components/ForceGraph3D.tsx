@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import React, {
   forwardRef,
   useCallback,
@@ -44,7 +45,7 @@ export interface ForceGraph3DHandle {
   focusNode: (x: number, y: number, z: number) => void;
 }
 
-// Base type colors (dark mode)
+// Base type colors (unchanged for both themes)
 const NODE_COLORS: Record<string, string> = {
   curation: "#FF7043",
   swarm: "#42A5F5",
@@ -52,6 +53,16 @@ const NODE_COLORS: Record<string, string> = {
   lawToken: "#BA68C8",
   interpretationToken: "#FFB74D",
   sublocation: "#4DB6AC",
+};
+
+// Theme-aware colors
+const BG_COLORS = { light: "#f5f5f5", dark: "#0a0a0a" };
+const LINK_COLORS = { light: "#888888", dark: "#555555" };
+const LINK_HIGHLIGHT_LIGHT = "#bbbbbb";
+const LINK_DIM_LIGHT = "rgba(120,120,120,0.25)";
+const LABEL_COLORS = {
+  light: "rgba(0,0,0,0.85)",
+  dark: "rgba(255,255,255,0.85)",
 };
 
 function getNodeColor(type: string): string {
@@ -145,6 +156,9 @@ export const ForceGraph3D = React.memo(
     const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
       new Set(),
     );
+
+    const { theme } = useTheme();
+    const isLight = theme === "light";
 
     // Highlight state — use refs to avoid re-render feedback loops
     const highlightNodesRef = useRef<Set<string>>(new Set());
@@ -331,13 +345,19 @@ export const ForceGraph3D = React.memo(
       return brightenColor(base, 0.4);
     }, []);
 
-    const linkColor = useCallback((_link: any): string => {
-      const isHighlighting = highlightLinksRef.current.size > 0;
-      if (!isHighlighting) return "#555555";
-      return highlightLinksRef.current.has(_link.__id)
-        ? "#aaaaaa"
-        : "rgba(80,80,80,0.15)";
-    }, []);
+    const linkColor = useCallback(
+      (_link: any): string => {
+        const isHighlighting = highlightLinksRef.current.size > 0;
+        if (!isHighlighting) {
+          return isLight ? LINK_COLORS.light : LINK_COLORS.dark;
+        }
+        if (highlightLinksRef.current.has(_link.__id)) {
+          return isLight ? LINK_HIGHLIGHT_LIGHT : "#aaaaaa";
+        }
+        return isLight ? LINK_DIM_LIGHT : "rgba(80,80,80,0.15)";
+      },
+      [isLight],
+    );
 
     const linkWidth = useCallback((link: any): number => {
       return highlightLinksRef.current.has(link.__id) ? 3 : 1;
@@ -352,12 +372,16 @@ export const ForceGraph3D = React.memo(
         const label = node.label ?? node.name ?? "";
         const isCollapsed = collapsedNodeIds.has(node.id);
         const sprite = new SpriteText(isCollapsed ? `${label} [+]` : label);
-        sprite.color = isCollapsed ? "#FFD700" : "rgba(255,255,255,0.85)";
+        sprite.color = isCollapsed
+          ? "#FFD700"
+          : isLight
+            ? LABEL_COLORS.light
+            : LABEL_COLORS.dark;
         sprite.textHeight = 3;
         sprite.position.y = 8;
         return sprite;
       },
-      [collapsedNodeIds],
+      [collapsedNodeIds, isLight],
     );
 
     const linkLabel = useCallback((link: any): string => {
@@ -387,7 +411,7 @@ export const ForceGraph3D = React.memo(
           linkLabel={linkLabel}
           linkDirectionalParticles={linkDirectionalParticles}
           linkDirectionalParticleWidth={4}
-          backgroundColor="#0a0a0a"
+          backgroundColor={isLight ? BG_COLORS.light : BG_COLORS.dark}
           showNavInfo={false}
           dagMode={dagMode === "null" ? undefined : (dagMode as any)}
           dagLevelDistance={100}
