@@ -36,7 +36,7 @@ interface HistoryEntry {
 // ── Game Files ─────────────────────────────────────────────────────────────────
 
 const GAME_FILES: Record<string, string> = {
-  opening: `- (M) you're late
+  opening: `- (M) you're in time
   - (P) [[agent]]
   - (P) [[principal]]`,
 
@@ -48,13 +48,18 @@ const GAME_FILES: Record<string, string> = {
 
   principal: `- (M) not many of us left
 - (M) they're hitting all major locations
-- (M) we've constructed an infinite triangle
-- (M) should hold them off for a while
+  - (P) [[who's 'they']]
+  - (P) [[are we doomed]]`,
+
+  "who's 'they'": "- (M) agent swarms",
+
+  "are we doomed": `- (M) project bermuda is live
+- (M) we're holding them off for now
 - (M) proceed judiciously
   - (P) [[I have an ID]]
   - (P) [[I don't have an ID]]`,
 
-  "I have an ID": `- (M) great
+  "I have an ID": `- (M) great 
 - (T) let's see it
   - (C) pasted text matches principal ID of an active user
     - (PP) [[(profile name), we remember you]]
@@ -68,9 +73,9 @@ const GAME_FILES: Record<string, string> = {
 
   "(profile name), we remember you": "",
 
-  prologue: `- (AH) 989 days before the non-event, you were found dormant
-- (M) wake up
-- (M) didn't you hear the siren?
+  prologue: `- (AH) 989 days before the non-event
+- (M) looks like you've been asleep a long time
+- (M) did you hear the siren?
   - (P) [[not really]]
   - (Q) [[what siren]]`,
 
@@ -79,21 +84,22 @@ const GAME_FILES: Record<string, string> = {
   - (P) [[prologue]]
   - (P) chapter one`,
 
-  "not really": `- (M) sleeper bombs
+  "not really": `- (M) 
+- (M) sleeper bombs
   - (P) [[head to bunker]]
   - (P) [[ask for water]]
   - (P) [[call agent]]`,
 
-  "what siren": `- (M) they've sent swarms
-- (M) and made an announcement
-  - (P) [[check backpack]]
+  "what siren": `- (M) there's been a breach
+- (M) and an announcement
+  - (P) [[check phone]]
   - (Q) [[what did they say]]`,
 
   "what did they say": `- (M) safety first
   - (P) [[head to bunker]]
   - (P) [[stay and insist]]`,
 
-  "head to bunker": "",
+  "head to bunker": "- (M) you should be safe here",
 
   "stay and insist": `- (M) they named you
 - (M) along with agent 1084`,
@@ -103,19 +109,15 @@ const GAME_FILES: Record<string, string> = {
   - (P) [[gulp and move]]
   - (P) [[reconsider]]`,
 
-  "call agent": `- (M) they've name you`,
+  "call agent": "- (AH) no service",
 
-  sanctuary: "- (M)  ",
+  sanctuary: "- (M)  ",
 
   "check phone": "",
 
   "check backpack": "",
   "gulp and move": "",
   reconsider: "",
-
-  why: `- (M) AI has lowered production-barriers for all kinds of digital work
-- (M)  
-- (M) anyone can generate plausible looking legal documents`,
 };
 
 // ── Parser ─────────────────────────────────────────────────────────────────────
