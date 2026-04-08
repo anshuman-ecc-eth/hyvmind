@@ -170,11 +170,32 @@ export default function App() {
         storageKey="hyvmind-theme"
       >
         <div className="flex h-screen items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p className="text-muted-foreground font-mono">initializing_</p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-foreground font-mono text-sm tracking-widest">
+              loading
+            </p>
+            <div className="font-mono text-foreground text-sm flex items-center gap-1">
+              <span className="text-muted-foreground">[</span>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "12ch",
+                  overflow: "hidden",
+                  animation: "terminal-load 2s steps(12, end) forwards",
+                }}
+              >
+                {"============"}
+              </span>
+              <span className="text-muted-foreground">]</span>
+            </div>
           </div>
         </div>
+        <style>{`
+          @keyframes terminal-load {
+            from { width: 0ch; }
+            to   { width: 12ch; }
+          }
+        `}</style>
         <Toaster />
       </ThemeProvider>
     );

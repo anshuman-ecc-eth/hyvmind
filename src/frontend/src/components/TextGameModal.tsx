@@ -463,13 +463,15 @@ export default function TextGameModal({
       } else if (e.key === "Enter") {
         if (selectedMenuIndex === 0) {
           setShowStartScreen(false);
+        } else if (selectedMenuIndex === 3) {
+          onComplete();
         }
-        // Indices 1 (About), 2 (Settings), 3 (Exit) are disabled — do nothing
+        // Indices 1 (About), 2 (Settings) are disabled — do nothing
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [showStartScreen, selectedMenuIndex]);
+  }, [showStartScreen, selectedMenuIndex, onComplete]);
 
   // Resolve a filename with variable substitution
   const resolveFileName = (rawFile: string): string => {
@@ -507,7 +509,7 @@ export default function TextGameModal({
 
   showEndOfGameRef.current = () => {
     isEndingRef.current = true;
-    const endingSeg: Segment = { type: "message", text: "nice chatting.." };
+    const endingSeg: Segment = { type: "message", text: "game not over" };
     segmentsRef.current = [endingSeg];
     setSegments([endingSeg]);
     segIdxRef.current = 0;
@@ -751,7 +753,17 @@ export default function TextGameModal({
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
-        <div className="flex items-center justify-end border-b border-dashed border-border px-3 py-1 flex-shrink-0">
+        <div className="flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0">
+          <span
+            className="text-foreground/50"
+            style={{
+              fontSize: "0.5rem",
+              letterSpacing: "0.3em",
+              fontFamily: '"Press Start 2P", monospace',
+            }}
+          >
+            (..in development)
+          </span>
           <button
             type="button"
             data-ocid="text_game.close_button"
@@ -771,7 +783,7 @@ export default function TextGameModal({
         >
           {showStartScreen ? (
             /* ── Start Screen ─────────────────────────────────────────────── */
-            <div className="flex flex-col items-center justify-center gap-8 w-full px-4 py-6 text-game-font">
+            <div className="flex flex-col items-center justify-center gap-8 w-full px-4 py-6 text-game-font relative">
               {/* Title block */}
               <div className="flex flex-col items-center gap-3">
                 <span
@@ -784,7 +796,7 @@ export default function TextGameModal({
                   className="text-foreground/50"
                   style={{ fontSize: "0.5rem", letterSpacing: "0.3em" }}
                 >
-                  LANGUAGE GAME v1.0
+                  A Language Game
                 </span>
               </div>
 
@@ -792,65 +804,49 @@ export default function TextGameModal({
               <div className="w-full max-w-xs border-t border-dashed border-foreground/30" />
 
               {/* Menu items */}
-              <div className="flex flex-col items-start gap-5 w-full max-w-[220px]">
-                <button
-                  type="button"
-                  data-ocid="text_game.start_button"
-                  className="text-game-font text-foreground flex items-center gap-3 hover:opacity-70 active:scale-95 transition-opacity"
-                  style={{ fontSize: "0.7rem" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowStartScreen(false);
-                  }}
-                >
-                  <span
-                    className={
-                      selectedMenuIndex === 0 ? "text-foreground" : "opacity-0"
-                    }
-                  >
-                    ►
-                  </span>
-                  <span>START</span>
-                </button>
-                <span
-                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  <span
-                    className={
-                      selectedMenuIndex === 1 ? "opacity-100" : "opacity-0"
-                    }
-                  >
-                    ►
-                  </span>
-                  <span>ABOUT</span>
-                </span>
-                <span
-                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  <span
-                    className={
-                      selectedMenuIndex === 2 ? "opacity-100" : "opacity-0"
-                    }
-                  >
-                    ►
-                  </span>
-                  <span>SETTINGS</span>
-                </span>
-                <span
-                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  <span
-                    className={
-                      selectedMenuIndex === 3 ? "opacity-100" : "opacity-0"
-                    }
-                  >
-                    ►
-                  </span>
-                  <span>EXIT</span>
-                </span>
+              <div className="flex flex-col items-center gap-5 w-full max-w-[220px]">
+                {(
+                  [
+                    { label: "START", idx: 0, active: true },
+                    { label: "ABOUT", idx: 1, active: false },
+                    { label: "SETTINGS", idx: 2, active: false },
+                    { label: "EXIT", idx: 3, active: true },
+                  ] as { label: string; idx: number; active: boolean }[]
+                ).map(({ label, idx, active }) =>
+                  active ? (
+                    <button
+                      key={label}
+                      type="button"
+                      data-ocid={`text_game.menu_${label.toLowerCase()}`}
+                      className="text-game-font text-foreground flex items-center justify-center gap-2 w-full hover:opacity-70 active:scale-95 transition-opacity"
+                      style={{ fontSize: "0.7rem" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (idx === 3) {
+                          onCompleteRef.current();
+                        } else {
+                          setShowStartScreen(false);
+                        }
+                      }}
+                    >
+                      <span className="w-[1ch] text-center flex-shrink-0">
+                        {selectedMenuIndex === idx ? "►" : "\u00a0"}
+                      </span>
+                      <span>{label}</span>
+                    </button>
+                  ) : (
+                    <span
+                      key={label}
+                      className="text-game-font text-foreground/30 flex items-center justify-center gap-2 w-full pointer-events-none select-none"
+                      style={{ fontSize: "0.7rem" }}
+                    >
+                      <span className="w-[1ch] text-center flex-shrink-0">
+                        {selectedMenuIndex === idx ? "►" : "\u00a0"}
+                      </span>
+                      <span>{label}</span>
+                    </span>
+                  ),
+                )}
               </div>
 
               {/* Bottom pixel divider */}
@@ -1042,17 +1038,6 @@ export default function TextGameModal({
             </div>
           )}{" "}
           {/* end showStartScreen ternary */}
-        </div>
-
-        {/* Instruction bar */}
-        <div className="text-game-font pb-4 pt-2 text-muted-foreground text-xs tracking-widest text-center flex-shrink-0 border-t border-dashed border-border">
-          {showStartScreen
-            ? "select option  ·  × to close"
-            : phase === "paths"
-              ? "up/down to select  ·  enter to confirm  ·  × to close  ·  shift+s to restart"
-              : phase === "input"
-                ? "type and press enter or submit  ·  × to close  ·  shift+s to restart"
-                : "tap or enter to continue  ·  × to close  ·  shift+s to restart"}
         </div>
       </div>
     </>
