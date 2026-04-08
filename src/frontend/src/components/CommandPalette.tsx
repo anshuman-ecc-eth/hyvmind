@@ -6,9 +6,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useActor } from "../hooks/useActor";
+import { createActor } from "../backend";
+import type { backendInterface } from "../backend";
 import {
   useCreateCuration,
   useCreateInterpretationToken,
@@ -155,7 +157,8 @@ export default function CommandPalette({
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0);
 
   const { data: graphData } = useGetOwnedData();
-  const { actor } = useActor();
+  const { actor: _rawActor } = useActor(createActor);
+  const actor = _rawActor as backendInterface | null;
   const queryClient = useQueryClient();
   const createCuration = useCreateCuration();
   const createSwarm = useCreateSwarm();

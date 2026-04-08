@@ -3,7 +3,7 @@ import SwarmJoinButton from "@/components/SwarmJoinButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useInternetIdentity } from "@/hooks/useInternetIdentity";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Calendar, GitFork, MapPin, Minus, Plus, Scale } from "lucide-react";
 import { useState } from "react";
 import { useGetAllData } from "../hooks/useQueries";

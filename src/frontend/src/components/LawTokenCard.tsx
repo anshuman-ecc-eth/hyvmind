@@ -1,10 +1,15 @@
-import type { LawToken, Location, Sublocation } from "@/backend";
+import type {
+  LawToken,
+  Location,
+  Sublocation,
+  backendInterface,
+} from "@/backend";
+import { createActor } from "@/backend";
 import CreateSublocationDialog from "@/components/CreateSublocationDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useActor } from "@/hooks/useActor";
-import { useInternetIdentity } from "@/hooks/useInternetIdentity";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, MapPin, Plus } from "lucide-react";
 import { useState } from "react";
@@ -16,7 +21,8 @@ interface LawTokenCardProps {
 }
 
 function useCreatorProfile(principal: string) {
-  const { actor, isFetching } = useActor();
+  const { actor: _rawActor, isFetching } = useActor(createActor);
+  const actor = _rawActor as backendInterface | null;
 
   return useQuery({
     queryKey: ["userProfile", principal],

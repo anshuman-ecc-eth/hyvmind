@@ -415,6 +415,8 @@ export default function TextGameModal({
   const checkConditionRef = useRef(checkCondition);
   checkConditionRef.current = checkCondition;
 
+  const [showStartScreen, setShowStartScreen] = useState(true);
+  const [selectedMenuIndex, setSelectedMenuIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("scrambling");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
@@ -447,6 +449,27 @@ export default function TextGameModal({
   useEffect(() => {
     variablesRef.current = variables;
   }, [variables]);
+
+  // Start screen keyboard navigation (arrow keys + enter)
+  useEffect(() => {
+    if (!showStartScreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedMenuIndex((i) => (i === 0 ? 3 : i - 1));
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedMenuIndex((i) => (i === 3 ? 0 : i + 1));
+      } else if (e.key === "Enter") {
+        if (selectedMenuIndex === 0) {
+          setShowStartScreen(false);
+        }
+        // Indices 1 (About), 2 (Settings), 3 (Exit) are disabled — do nothing
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showStartScreen, selectedMenuIndex]);
 
   // Resolve a filename with variable substitution
   const resolveFileName = (rawFile: string): string => {
@@ -632,10 +655,11 @@ export default function TextGameModal({
     }
   };
 
-  // Initial load
+  // Initial load — deferred until start screen is dismissed
   useEffect(() => {
+    if (showStartScreen) return;
     navigateRef.current("opening");
-  }, []);
+  }, [showStartScreen]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => keyHandlerRef.current(e);
@@ -727,10 +751,7 @@ export default function TextGameModal({
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
-        <div className="flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0">
-          <span className="text-game-font text-xs text-muted-foreground tracking-wider">
-            /language-game
-          </span>
+        <div className="flex items-center justify-end border-b border-dashed border-border px-3 py-1 flex-shrink-0">
           <button
             type="button"
             data-ocid="text_game.close_button"
@@ -746,197 +767,292 @@ export default function TextGameModal({
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via window listener */}
         <div
           className="flex-1 flex flex-col items-center justify-center cursor-pointer select-none overflow-hidden px-8 gap-6"
-          onClick={handleBackgroundClick}
+          onClick={showStartScreen ? undefined : handleBackgroundClick}
         >
-          <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-6">
-            {/* Typing phase — input prompt only (messages no longer use typing phase) */}
-            {phase === "typing" && currentSeg?.type === "input" && (
-              <TypewriterDisplay
-                text={currentSeg.prompt}
-                onComplete={() => {
-                  phaseRef.current = "input";
-                  setPhase("input");
-                }}
-                cursor={blinkingCursor}
-              />
-            )}
-
-            {/* Scrambling phase */}
-            {phase === "scrambling" && currentSeg?.type === "message" && (
-              <ScrambleText
-                text={currentSeg.text}
-                onComplete={() => {
-                  phaseRef.current = "waiting";
-                  setPhase("waiting");
-                }}
-                cursor={blinkingCursor}
-              />
-            )}
-
-            {/* Waiting phase — message */}
-            {phase === "waiting" && currentSeg?.type === "message" && (
-              <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
-                {renderMessageText(currentSeg.text, navigate)}
-                {blinkingCursor}
-              </p>
-            )}
-
-            {/* Waiting phase — Alternate History box */}
-            {phase === "waiting" && currentSeg?.type === "alternateHistory" && (
-              <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
-                <ScrollIcon />
-                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
-                  {currentSeg.text}
+          {showStartScreen ? (
+            /* ── Start Screen ─────────────────────────────────────────────── */
+            <div className="flex flex-col items-center justify-center gap-8 w-full px-4 py-6 text-game-font">
+              {/* Title block */}
+              <div className="flex flex-col items-center gap-3">
+                <span
+                  className="text-foreground tracking-widest"
+                  style={{ fontSize: "1.4rem" }}
+                >
+                  HYVMIND
+                </span>
+                <span
+                  className="text-foreground/50"
+                  style={{ fontSize: "0.5rem", letterSpacing: "0.3em" }}
+                >
+                  LANGUAGE GAME v1.0
                 </span>
               </div>
-            )}
 
-            {/* Waiting phase — Announcement box */}
-            {phase === "waiting" && currentSeg?.type === "announcement" && (
-              <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
-                <LoudspeakerIcon />
-                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
-                  {currentSeg.text}
-                </span>
-              </div>
-            )}
+              {/* Top pixel divider */}
+              <div className="w-full max-w-xs border-t border-dashed border-foreground/30" />
 
-            {/* Input phase */}
-            {phase === "input" && currentSeg?.type === "input" && (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: handled internally
-              <div
-                className="flex flex-col items-center gap-4 w-full max-w-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
-                  {currentSeg.prompt}
-                </p>
-                <div className="flex flex-col gap-2 w-full">
-                  <span className="text-game-font text-xs text-muted-foreground tracking-wider">
-                    enter principal ID
-                  </span>
-                  <div className="flex gap-2 w-full">
-                    <input
-                      data-ocid="text_game.input"
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !isCheckingCondition) {
-                          e.preventDefault();
-                          handleInputSubmit();
-                        }
-                        // Prevent arrow keys from triggering path nav
-                        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-                          e.stopPropagation();
-                        }
-                      }}
-                      className="text-game-font flex-1 bg-transparent border border-dashed border-muted-foreground/60 font-mono text-sm text-foreground px-3 py-2 outline-none focus:border-foreground placeholder:text-muted-foreground/40 transition-colors"
-                      placeholder="_"
-                      disabled={isCheckingCondition}
-                      spellCheck={false}
-                      autoComplete="off"
-                    />
-                    <button
-                      type="button"
-                      data-ocid="text_game.submit_button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleInputSubmit();
-                      }}
-                      disabled={isCheckingCondition}
-                      className="text-game-font font-mono text-xs border border-dashed border-muted-foreground/60 px-3 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
-                    >
-                      {isCheckingCondition ? "..." : "[ submit ]"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Paths */}
-            {phase === "paths" && pathsData && (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: arrow keys handled globally
-              <div
-                className="flex flex-col items-center gap-4"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
-                  choose your path..
-                </p>
-                <div className="flex flex-col items-center gap-2">
-                  {pathsData.options.map((opt, i) => {
-                    const activeIndex = activePaths.indexOf(opt);
-                    const isSelected =
-                      opt.active && activeIndex === selectedActiveIdx;
-
-                    if (!opt.active) {
-                      return (
-                        <span
-                          // biome-ignore lint/suspicious/noArrayIndexKey: stable parsed list
-                          key={i}
-                          className="text-game-font font-mono text-sm tracking-wider px-3 py-1 border border-dashed border-muted-foreground/20 text-muted-foreground/30"
-                        >
-                          [ {opt.label} ]
-                        </span>
-                      );
+              {/* Menu items */}
+              <div className="flex flex-col items-start gap-5 w-full max-w-[220px]">
+                <button
+                  type="button"
+                  data-ocid="text_game.start_button"
+                  className="text-game-font text-foreground flex items-center gap-3 hover:opacity-70 active:scale-95 transition-opacity"
+                  style={{ fontSize: "0.7rem" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowStartScreen(false);
+                  }}
+                >
+                  <span
+                    className={
+                      selectedMenuIndex === 0 ? "text-foreground" : "opacity-0"
                     }
+                  >
+                    ►
+                  </span>
+                  <span>START</span>
+                </button>
+                <span
+                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  <span
+                    className={
+                      selectedMenuIndex === 1 ? "opacity-100" : "opacity-0"
+                    }
+                  >
+                    ►
+                  </span>
+                  <span>ABOUT</span>
+                </span>
+                <span
+                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  <span
+                    className={
+                      selectedMenuIndex === 2 ? "opacity-100" : "opacity-0"
+                    }
+                  >
+                    ►
+                  </span>
+                  <span>SETTINGS</span>
+                </span>
+                <span
+                  className="text-game-font text-foreground/30 flex items-center gap-3 pointer-events-none select-none"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  <span
+                    className={
+                      selectedMenuIndex === 3 ? "opacity-100" : "opacity-0"
+                    }
+                  >
+                    ►
+                  </span>
+                  <span>EXIT</span>
+                </span>
+              </div>
 
-                    return (
+              {/* Bottom pixel divider */}
+              <div className="w-full max-w-xs border-t border-dashed border-foreground/30" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-6">
+              {/* Typing phase — input prompt only (messages no longer use typing phase) */}
+              {phase === "typing" && currentSeg?.type === "input" && (
+                <TypewriterDisplay
+                  text={currentSeg.prompt}
+                  onComplete={() => {
+                    phaseRef.current = "input";
+                    setPhase("input");
+                  }}
+                  cursor={blinkingCursor}
+                />
+              )}
+
+              {/* Scrambling phase */}
+              {phase === "scrambling" && currentSeg?.type === "message" && (
+                <ScrambleText
+                  text={currentSeg.text}
+                  onComplete={() => {
+                    phaseRef.current = "waiting";
+                    setPhase("waiting");
+                  }}
+                  cursor={blinkingCursor}
+                />
+              )}
+
+              {/* Waiting phase — message */}
+              {phase === "waiting" && currentSeg?.type === "message" && (
+                <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
+                  {renderMessageText(currentSeg.text, navigate)}
+                  {blinkingCursor}
+                </p>
+              )}
+
+              {/* Waiting phase — Alternate History box */}
+              {phase === "waiting" &&
+                currentSeg?.type === "alternateHistory" && (
+                  <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
+                    <ScrollIcon />
+                    <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
+                      {currentSeg.text}
+                    </span>
+                  </div>
+                )}
+
+              {/* Waiting phase — Announcement box */}
+              {phase === "waiting" && currentSeg?.type === "announcement" && (
+                <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
+                  <LoudspeakerIcon />
+                  <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
+                    {currentSeg.text}
+                  </span>
+                </div>
+              )}
+
+              {/* Input phase */}
+              {phase === "input" && currentSeg?.type === "input" && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: handled internally
+                <div
+                  className="flex flex-col items-center gap-4 w-full max-w-lg"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
+                    {currentSeg.prompt}
+                  </p>
+                  <div className="flex flex-col gap-2 w-full">
+                    <span className="text-game-font text-xs text-muted-foreground tracking-wider">
+                      enter principal ID
+                    </span>
+                    <div className="flex gap-2 w-full">
+                      <input
+                        data-ocid="text_game.input"
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !isCheckingCondition) {
+                            e.preventDefault();
+                            handleInputSubmit();
+                          }
+                          // Prevent arrow keys from triggering path nav
+                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                            e.stopPropagation();
+                          }
+                        }}
+                        className="text-game-font flex-1 bg-transparent border border-dashed border-muted-foreground/60 font-mono text-sm text-foreground px-3 py-2 outline-none focus:border-foreground placeholder:text-muted-foreground/40 transition-colors"
+                        placeholder="_"
+                        disabled={isCheckingCondition}
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
                       <button
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable parsed list
-                        key={i}
                         type="button"
-                        data-ocid="text_game.path.button"
-                        className={`text-game-font font-mono text-sm tracking-wider px-3 py-1 border transition-colors ${
-                          isSelected
-                            ? "border-foreground text-foreground"
-                            : "border-transparent text-muted-foreground hover:border-muted-foreground"
-                        }`}
+                        data-ocid="text_game.submit_button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          confirmPathRef.current(activeIndex);
+                          handleInputSubmit();
                         }}
+                        disabled={isCheckingCondition}
+                        className="text-game-font font-mono text-xs border border-dashed border-muted-foreground/60 px-3 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
                       >
-                        {isSelected ? `> [ ${opt.label} ]` : `[ ${opt.label} ]`}
+                        {isCheckingCondition ? "..." : "[ submit ]"}
                       </button>
-                    );
-                  })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Source */}
-            {phase === "source" && currentSeg?.type === "source" && (
-              <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
-                <svg
-                  className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+              {/* Paths */}
+              {phase === "paths" && pathsData && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: arrow keys handled globally
+                <div
+                  className="flex flex-col items-center gap-4"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-                <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
-                  {currentSeg.text}
-                </span>
-              </div>
-            )}
-          </div>
+                  <p className="text-game-font text-foreground text-base leading-relaxed tracking-wide text-center">
+                    choose your path..
+                  </p>
+                  <div className="flex flex-col items-center gap-2">
+                    {pathsData.options.map((opt, i) => {
+                      const activeIndex = activePaths.indexOf(opt);
+                      const isSelected =
+                        opt.active && activeIndex === selectedActiveIdx;
+
+                      if (!opt.active) {
+                        return (
+                          <span
+                            // biome-ignore lint/suspicious/noArrayIndexKey: stable parsed list
+                            key={i}
+                            className="text-game-font font-mono text-sm tracking-wider px-3 py-1 border border-dashed border-muted-foreground/20 text-muted-foreground/30"
+                          >
+                            [ {opt.label} ]
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <button
+                          // biome-ignore lint/suspicious/noArrayIndexKey: stable parsed list
+                          key={i}
+                          type="button"
+                          data-ocid="text_game.path.button"
+                          className={`text-game-font font-mono text-sm tracking-wider px-3 py-1 border transition-colors ${
+                            isSelected
+                              ? "border-foreground text-foreground"
+                              : "border-transparent text-muted-foreground hover:border-muted-foreground"
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmPathRef.current(activeIndex);
+                          }}
+                        >
+                          {isSelected
+                            ? `> [ ${opt.label} ]`
+                            : `[ ${opt.label} ]`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Source */}
+              {phase === "source" && currentSeg?.type === "source" && (
+                <div className="border border-dashed border-muted-foreground/40 px-4 py-3 flex flex-row items-start gap-3 max-w-lg w-full">
+                  <svg
+                    className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  <span className="text-game-font text-xs text-muted-foreground leading-relaxed">
+                    {currentSeg.text}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}{" "}
+          {/* end showStartScreen ternary */}
         </div>
 
         {/* Instruction bar */}
         <div className="text-game-font pb-4 pt-2 text-muted-foreground text-xs tracking-widest text-center flex-shrink-0 border-t border-dashed border-border">
-          {phase === "paths"
-            ? "up/down to select  ·  enter to confirm  ·  × to close  ·  shift+s to restart"
-            : phase === "input"
-              ? "type and press enter or submit  ·  × to close  ·  shift+s to restart"
-              : "tap or enter to continue  ·  × to close  ·  shift+s to restart"}
+          {showStartScreen
+            ? "select option  ·  × to close"
+            : phase === "paths"
+              ? "up/down to select  ·  enter to confirm  ·  × to close  ·  shift+s to restart"
+              : phase === "input"
+                ? "type and press enter or submit  ·  × to close  ·  shift+s to restart"
+                : "tap or enter to continue  ·  × to close  ·  shift+s to restart"}
         </div>
       </div>
     </>

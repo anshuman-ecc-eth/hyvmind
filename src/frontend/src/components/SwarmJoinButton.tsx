@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { GitFork, Loader2, LogOut, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { NodeId } from "../backend";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useCreateSwarmFork,
   useGetAllData,

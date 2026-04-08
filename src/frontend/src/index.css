@@ -131,6 +131,9 @@
 .terminal-blink {
   animation: terminal-blink 1s step-end infinite;
 }
+.press-start-blink {
+  animation: terminal-blink 1s step-end infinite;
+}
 
 /* Press Start 2P font for text game modal */
 .text-game-font {

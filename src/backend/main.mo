@@ -9,8 +9,9 @@ import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 
-import AccessControl "authorization/access-control";
-import UserApproval "user-approval/approval";
+import AccessControl "mo:caffeineai-authorization/access-control";
+import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
+import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
 
 // Apply any data migration necessary after code changes
@@ -196,6 +197,7 @@ actor {
   var interpretationTokenToEdges = Map.empty<NodeId, List.List<GraphEdge>>();
   let accessControlState = AccessControl.initState();
   let approvalState = UserApproval.initState(accessControlState);
+  include MixinAuthorization(accessControlState);
   var existingAdmins : [Principal] = [];
   var archivedNodes = Map.empty<NodeId, ()>();
   var forkPulledSourceNodes = Map.empty<NodeId, List.List<NodeId>>();
@@ -452,36 +454,6 @@ actor {
         existingAdmins := existingAdmins.concat([caller]);
       };
     };
-  };
-
-  public query ({ caller }) func getCallerUserRole() : async AccessControl.UserRole {
-    AccessControl.getUserRole(accessControlState, caller);
-  };
-
-  public shared ({ caller }) func assignCallerUserRole(user : Principal, role : AccessControl.UserRole) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
-      Runtime.trap("Unauthorized: Only admins can assign roles");
-    };
-
-    if (role == #admin) {
-      let numCurrentAdmins = countAdmins();
-      if (numCurrentAdmins >= 2) {
-        Runtime.trap("Admin limit reached—no additional admins can be added.");
-      };
-    };
-
-    AccessControl.assignRole(accessControlState, caller, user, role);
-
-    if (role == #admin) {
-      let userExists = existingAdmins.find(func(p : Principal) : Bool { Principal.equal(p, user) });
-      if (userExists == null) {
-        existingAdmins := existingAdmins.concat([user]);
-      };
-    };
-  };
-
-  public query ({ caller }) func isCallerAdmin() : async Bool {
-    AccessControl.isAdmin(accessControlState, caller);
   };
 
   // APPROVAL SYSTEM

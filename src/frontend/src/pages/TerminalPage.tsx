@@ -1,11 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import type { GraphData } from "../backend";
+import type { GraphData, backendInterface } from "../backend";
+import { createActor } from "../backend";
 import TerminalDisambiguationPicker from "../components/TerminalDisambiguationPicker";
 import TerminalOntologyOutput from "../components/TerminalOntologyOutput";
-import { useActor } from "../hooks/useActor";
 import {
   useCreateCuration,
   useCreateInterpretationToken,
@@ -127,7 +128,8 @@ export default function TerminalPage() {
   const createInterpretationToken = useCreateInterpretationToken();
   const createSublocation = useCreateSublocation();
   const { data: graphData } = useGetOwnedData();
-  const { actor } = useActor();
+  const { actor: _rawActor } = useActor(createActor);
+  const actor = _rawActor as backendInterface | null;
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsCallerAdmin();
   const resetAllData = useResetAllData();

@@ -1,0 +1,217 @@
+type VoteData = 
+ record {
+   downvotes: nat;
+   upvotes: nat;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = 
+ record {
+   name: text;
+   socialUrl: opt text;
+ };
+type UserApprovalInfo = 
+ record {
+   "principal": principal;
+   status: ApprovalStatus;
+ };
+type Timestamps = record {createdAt: Time;};
+type Time = int;
+type Tag = text;
+type Swarm = 
+ record {
+   creator: principal;
+   forkPrincipal: opt principal;
+   forkSource: opt NodeId;
+   id: NodeId;
+   name: text;
+   parentCurationId: NodeId;
+   tags: vec Tag;
+   timestamps: Timestamps;
+ };
+type Sublocation = 
+ record {
+   content: text;
+   creator: principal;
+   id: NodeId;
+   originalTokenSequence: text;
+   timestamps: Timestamps;
+   title: text;
+ };
+type OwnedGraphData = 
+ record {
+   curations: vec Curation;
+   edges: vec GraphEdge;
+   interpretationTokens: vec InterpretationToken;
+   lawTokens: vec LawToken;
+   locations: vec Location;
+   sublocations: vec Sublocation;
+   swarms: vec Swarm;
+ };
+type NodeId = text;
+type MintSettings = record {numCopies: nat;};
+type MintCollectibleResult = 
+ variant {
+   alreadyOwned;
+   editionLimitReached;
+   insufficientFunds;
+   success: CollectibleEdition;
+   tokenNotFound;
+ };
+type MintCollectibleRequest = 
+ record {
+   tokenId: NodeId;
+   tokenType: variant {
+                interpretationToken;
+                lawToken;
+              };
+ };
+type Location = 
+ record {
+   content: text;
+   creator: principal;
+   customAttributes: vec CustomAttribute;
+   id: NodeId;
+   originalTokenSequence: text;
+   parentSwarmId: NodeId;
+   timestamps: Timestamps;
+   title: text;
+   version: nat;
+ };
+type LawToken = 
+ record {
+   creator: principal;
+   id: NodeId;
+   parentLocationId: NodeId;
+   timestamps: Timestamps;
+   tokenLabel: text;
+ };
+type InterpretationToken = 
+ record {
+   context: text;
+   creator: principal;
+   customAttributes: vec CustomAttribute;
+   fromDirectionality: Directionality;
+   fromRelationshipType: text;
+   fromTokenId: NodeId;
+   id: NodeId;
+   timestamps: Timestamps;
+   title: text;
+   toDirectionality: Directionality;
+   toNodeId: NodeId;
+   toRelationshipType: text;
+ };
+type GraphNode = 
+ record {
+   children: vec GraphNode;
+   id: NodeId;
+   jurisdiction: opt text;
+   nodeType: text;
+   parentId: opt NodeId;
+   tokenLabel: text;
+ };
+type GraphEdge = 
+ record {
+   source: NodeId;
+   target: NodeId;
+ };
+type GraphData = 
+ record {
+   curations: vec Curation;
+   edges: vec GraphEdge;
+   interpretationTokens: vec InterpretationToken;
+   lawTokens: vec LawToken;
+   locations: vec Location;
+   rootNodes: vec GraphNode;
+   sublocations: vec Sublocation;
+   swarms: vec Swarm;
+ };
+type Directionality = 
+ variant {
+   bidirectional;
+   none;
+   unidirectional;
+ };
+type CustomAttribute = 
+ record {
+   key: text;
+   value: text;
+ };
+type Curation = 
+ record {
+   creator: principal;
+   id: NodeId;
+   jurisdiction: text;
+   name: text;
+   timestamps: Timestamps;
+ };
+type CollectibleEdition = 
+ record {
+   editionNumber: nat;
+   mintedAt: Time;
+   owner: principal;
+   tokenId: NodeId;
+   tokenType: variant {
+                interpretationToken;
+                lawToken;
+              };
+ };
+type BuzzScore = int;
+type ApprovalStatus = 
+ variant {
+   approved;
+   pending;
+   rejected;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  archiveNode: (nodeId: NodeId) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  createCuration: (name: text, jurisdiction: text) -> (NodeId);
+  createInterpretationToken: (title: text, context: text, fromTokenId:
+   NodeId, fromRelationshipType: text, fromDirectionality: Directionality,
+   toNodeId: NodeId, toRelationshipType: text, toDirectionality:
+   Directionality, customAttributes: vec CustomAttribute) -> (NodeId);
+  createLocation: (title: text, content: text, originalTokenSequence: 
+   text, customAttributes: vec CustomAttribute, parentSwarmId: NodeId) ->
+   (NodeId);
+  createSublocation: (title: text, content: text, originalTokenSequence:
+   text, parentLawTokenIds: vec NodeId) -> (NodeId);
+  createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId) ->
+   (NodeId);
+  createSwarmFork: (swarmId: NodeId) -> (NodeId);
+  downvoteNode: (nodeId: NodeId) -> ();
+  getAllData: () -> (GraphData) query;
+  getArchivedNodeIds: () -> (vec NodeId) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getCollectibleEditions: (tokenId: NodeId) -> (vec CollectibleEdition) query;
+  getMintSettings: () -> (MintSettings) query;
+  getMyBuzzBalance: () -> (BuzzScore) query;
+  getOwnedData: () -> (OwnedGraphData) query;
+  getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
+  getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  getVoteData: (nodeId: NodeId) -> (VoteData) query;
+  hasUserFork: (swarmId: NodeId) -> (bool) query;
+  initializeAccessControl: () -> ();
+  isCallerAdmin: () -> (bool) query;
+  isCallerApproved: () -> (bool) query;
+  isNodeArchived: (nodeId: NodeId) -> (bool) query;
+  joinSwarm: (swarmId: NodeId) -> ();
+  leaveSwarm: (swarmId: NodeId) -> ();
+  listApprovals: () -> (vec UserApprovalInfo) query;
+  mintCollectible: (request: MintCollectibleRequest) ->
+   (MintCollectibleResult);
+  pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
+  requestApproval: () -> ();
+  resetAllData: () -> ();
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  setApproval: (user: principal, status: ApprovalStatus) -> ();
+  setMintSettings: (settings: MintSettings) -> ();
+  upvoteNode: (nodeId: NodeId) -> ();
+}

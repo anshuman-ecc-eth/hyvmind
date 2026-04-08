@@ -2,8 +2,8 @@ import type { CustomAttribute } from "@/backend";
 import CreateNodeDialog from "@/components/CreateNodeDialog";
 import LawTokenCard from "@/components/LawTokenCard";
 import { Button } from "@/components/ui/button";
-import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import { useGetAllData, useGetOwnedData } from "@/hooks/useQueries";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { ArrowLeft, Lock, Plus } from "lucide-react";
 import { useState } from "react";
 

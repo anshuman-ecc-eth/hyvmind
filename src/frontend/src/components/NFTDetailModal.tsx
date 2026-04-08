@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { AlertCircle, CheckCircle2, Loader2, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +16,6 @@ import type {
   LawToken,
 } from "../backend";
 import { Variant_lawToken_interpretationToken } from "../backend";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useGetCollectibleEditions,
   useGetMintSettings,

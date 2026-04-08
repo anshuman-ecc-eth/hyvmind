@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { InterpretationToken, LawToken } from "../backend";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useGetCollectibleEditions,
   useGetUserInterpretationTokens,

@@ -1,14 +1,16 @@
 import { Toaster } from "@/components/ui/sonner";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { ThemeProvider } from "next-themes";
 import React from "react";
 import { useEffect, useRef, useState } from "react";
+import { createActor } from "./backend";
+import type { backendInterface } from "./backend";
 import CommandPalette from "./components/CommandPalette";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
 import TextGameModal from "./components/TextGameModal";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
@@ -69,24 +71,22 @@ export default function App() {
   const handleCheckCondition = async (condition: string, input: string) => {
     if (condition.toLowerCase().includes("principal")) {
       try {
-        const { createActorWithConfig } = await import("./config");
-        const actor = await createActorWithConfig();
-        const leaderboard = await actor.getLeaderboard();
-        const trimmed = input.trim();
-        const match = leaderboard.find(
-          (entry) => entry.principal.toString() === trimmed,
+        const { createActorWithConfig } = await import(
+          "@caffeineai/core-infrastructure"
         );
-        if (match) {
-          let name = "agent";
-          try {
-            const profile = await actor.getUserProfile(match.principal);
-            if (profile?.name) name = profile.name;
-          } catch {
-            /* silent */
-          }
+        const actor = (await createActorWithConfig(
+          createActor as Parameters<typeof createActorWithConfig>[0],
+        )) as backendInterface;
+        const { Principal } = await import("@icp-sdk/core/principal");
+        const trimmed = input.trim();
+        try {
+          const principal = Principal.fromText(trimmed);
+          const profile = await actor.getUserProfile(principal);
+          const name = profile?.name ?? "agent";
           return { pass: true, data: { "profile name": name } };
+        } catch {
+          return { pass: false };
         }
-        return { pass: false };
       } catch {
         return { pass: false };
       }

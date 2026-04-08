@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import {
   useCreateSwarmFork,
   useGetAllData,
@@ -7,6 +6,7 @@ import {
   useHasFork,
   usePullFromSwarm,
 } from "@/hooks/useQueries";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { GitFork, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 

@@ -1,4 +1,5 @@
-import type { CustomAttribute, Location } from "@/backend";
+import type { CustomAttribute, Location, backendInterface } from "@/backend";
+import { createActor } from "@/backend";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useActor } from "@/hooks/useActor";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -30,7 +31,8 @@ export default function CreateLawTokenDialog({
   parentLocation,
   side,
 }: CreateLawTokenDialogProps) {
-  const { actor } = useActor();
+  const { actor: _rawActor } = useActor(createActor);
+  const actor = _rawActor as backendInterface | null;
   const queryClient = useQueryClient();
 
   const [meaning, setMeaning] = useState("");

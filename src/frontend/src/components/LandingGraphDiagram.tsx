@@ -1,7 +1,8 @@
+import { createActorWithConfig } from "@caffeineai/core-infrastructure";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GraphData } from "../backend";
-import { createActorWithConfig } from "../config";
+import type { GraphData, backendInterface } from "../backend";
+import { createActor } from "../backend";
 
 interface Node {
   id: string;
@@ -146,7 +147,9 @@ export default function LandingGraphDiagram() {
         }
 
         // Step 2: Cache is invalid or doesn't exist, fetch fresh data
-        const anonymousActor = await createActorWithConfig();
+        const anonymousActor = (await createActorWithConfig(
+          createActor as Parameters<typeof createActorWithConfig>[0],
+        )) as backendInterface;
         if (!anonymousActor) {
           throw new Error("Failed to create anonymous actor");
         }
@@ -206,7 +209,9 @@ export default function LandingGraphDiagram() {
     setIsError(false);
 
     try {
-      const anonymousActor = await createActorWithConfig();
+      const anonymousActor = (await createActorWithConfig(
+        createActor as Parameters<typeof createActorWithConfig>[0],
+      )) as backendInterface;
       if (!anonymousActor) {
         throw new Error("Failed to create anonymous actor");
       }

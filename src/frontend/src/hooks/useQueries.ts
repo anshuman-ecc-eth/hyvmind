@@ -1,3 +1,4 @@
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   BuzzScore,
@@ -18,9 +19,21 @@ import type {
   Sublocation,
   Swarm,
   Tag,
+  backendInterface,
 } from "../backend";
-import { useActor } from "./useActor";
-import { useInternetIdentity } from "./useInternetIdentity";
+import { createActor } from "../backend";
+
+// Typed wrapper to get a properly-typed backend actor
+function useBackendActor(): {
+  actor: backendInterface | null;
+  isFetching: boolean;
+} {
+  const result = useActor(createActor as Parameters<typeof useActor>[0]);
+  return {
+    actor: result.actor as backendInterface | null,
+    isFetching: result.isFetching,
+  };
+}
 
 // Build a GraphData-compatible object from OwnedGraphData by constructing
 // rootNodes and edges client-side from the flat owned arrays.
@@ -136,7 +149,7 @@ export function clearTreeCache() {
 }
 
 export function useGetOwnedData() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   return useQuery<GraphData>({
@@ -162,7 +175,7 @@ export function useGetOwnedData() {
 
 // Fetches all graph data (not just owned) — used for the Swarms tab
 export function useGetAllData() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<GraphData>({
     queryKey: ["allGraphData"],
@@ -185,7 +198,7 @@ export function useGetAllData() {
 }
 
 export function useGetArchivedNodeIds() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   return useQuery<NodeId[]>({
@@ -202,7 +215,7 @@ export function useGetArchivedNodeIds() {
 }
 
 export function useCreateCuration() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -221,7 +234,7 @@ export function useCreateCuration() {
 }
 
 export function useCreateSwarm() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -241,7 +254,7 @@ export function useCreateSwarm() {
 }
 
 export function useCreateLocation() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -275,7 +288,7 @@ export function useCreateLocation() {
 }
 
 export function useCreateSublocation() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -306,7 +319,7 @@ export function useCreateSublocation() {
 }
 
 export function useCreateInterpretationToken() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -352,7 +365,7 @@ export function useCreateInterpretationToken() {
 }
 
 export function useCreateLawTokenForLocation() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -384,7 +397,7 @@ export function useCreateLawTokenForLocation() {
 }
 
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useBackendActor();
 
   const query = useQuery({
     queryKey: ["currentUserProfile"],
@@ -404,7 +417,7 @@ export function useGetCallerUserProfile() {
 }
 
 export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -419,7 +432,7 @@ export function useSaveCallerUserProfile() {
 }
 
 export function useGetCallerUserRole() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["callerUserRole"],
@@ -432,7 +445,7 @@ export function useGetCallerUserRole() {
 }
 
 export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["isCallerAdmin"],
@@ -445,7 +458,7 @@ export function useIsCallerAdmin() {
 }
 
 export function useIsCallerApproved() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["isCallerApproved"],
@@ -458,7 +471,7 @@ export function useIsCallerApproved() {
 }
 
 export function useRequestApproval() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -473,7 +486,7 @@ export function useRequestApproval() {
 }
 
 export function useListApprovals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["listApprovals"],
@@ -486,7 +499,7 @@ export function useListApprovals() {
 }
 
 export function useSetApproval() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -501,7 +514,7 @@ export function useSetApproval() {
 }
 
 export function useAssignCallerUserRole() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -516,7 +529,7 @@ export function useAssignCallerUserRole() {
 }
 
 export function useJoinSwarm() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, string>({
@@ -532,7 +545,7 @@ export function useJoinSwarm() {
 }
 
 export function useGetSwarmForks(swarmId: string | undefined) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["swarmForks", swarmId],
@@ -545,7 +558,7 @@ export function useGetSwarmForks(swarmId: string | undefined) {
 }
 
 export function usePullFromSwarm() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation<string, Error, { sourceSwarmId: string }>({
@@ -564,7 +577,7 @@ export function usePullFromSwarm() {
 }
 
 export function useGetSwarmMembers(swarmId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<any[]>({
     queryKey: ["swarmMembers", swarmId],
@@ -577,7 +590,7 @@ export function useGetSwarmMembers(swarmId: string) {
 }
 
 export function useCreateSwarmFork() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation<string, Error, string>({
@@ -594,7 +607,7 @@ export function useCreateSwarmFork() {
 }
 
 export function useLeaveSwarm() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, string>({
@@ -611,7 +624,7 @@ export function useLeaveSwarm() {
 }
 
 export function useHasFork(swarmId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<boolean>({
     queryKey: ["hasFork", swarmId],
@@ -624,7 +637,7 @@ export function useHasFork(swarmId: string) {
 }
 
 export function useGetSwarmsByCreator() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<Swarm[]>({
     queryKey: ["swarmsByCreator"],
@@ -637,7 +650,7 @@ export function useGetSwarmsByCreator() {
 }
 
 export function useGetSwarmUpdatesForUser(swarmId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<any[]>({
     queryKey: ["swarmUpdates", swarmId],
@@ -650,7 +663,7 @@ export function useGetSwarmUpdatesForUser(swarmId: string) {
 }
 
 export function useGetUnvotedTokensForSwarm(swarmId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   return useQuery({
@@ -680,7 +693,7 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
 }
 
 export function useGetVoteData(nodeId: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["voteData", nodeId],
@@ -693,7 +706,7 @@ export function useGetVoteData(nodeId: string) {
 }
 
 export function useUpvoteNode() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -710,7 +723,7 @@ export function useUpvoteNode() {
 }
 
 export function useDownvoteNode() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -727,7 +740,7 @@ export function useDownvoteNode() {
 }
 
 export function useGetBuzzLeaderboard() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<any[]>({
     queryKey: ["buzzLeaderboard"],
@@ -740,7 +753,7 @@ export function useGetBuzzLeaderboard() {
 }
 
 export function useGetMyBuzzBalance() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<BuzzScore>({
     queryKey: ["myBuzzBalance"],
@@ -753,7 +766,7 @@ export function useGetMyBuzzBalance() {
 }
 
 export function useGetMintSettings() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<MintSettings>({
     queryKey: ["mintSettings"],
@@ -766,7 +779,7 @@ export function useGetMintSettings() {
 }
 
 export function useSetMintSettings() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -781,7 +794,7 @@ export function useSetMintSettings() {
 }
 
 export function useMintCollectible() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -797,7 +810,7 @@ export function useMintCollectible() {
 }
 
 export function useGetCollectibleEditions(tokenId: string | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<CollectibleEdition[]>({
     queryKey: ["collectibleEditions", tokenId],
@@ -810,7 +823,7 @@ export function useGetCollectibleEditions(tokenId: string | null) {
 }
 
 export function useArchiveNode() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -827,7 +840,7 @@ export function useArchiveNode() {
 }
 
 export function useGetUserProfile(userPrincipal: string | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery({
     queryKey: ["userProfile", userPrincipal],
@@ -845,7 +858,7 @@ export function useGetUserProfile(userPrincipal: string | null) {
 
 // Returns law tokens owned by the current caller (from their owned graph data)
 export function useGetUserLawTokens() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   return useQuery<LawToken[]>({
@@ -864,7 +877,7 @@ export function useGetUserLawTokens() {
 
 // Returns interpretation tokens owned by the current caller (from their owned graph data)
 export function useGetUserInterpretationTokens() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   return useQuery<InterpretationToken[]>({
@@ -883,7 +896,7 @@ export function useGetUserInterpretationTokens() {
 
 // Resets all application data (admin only)
 export function useResetAllData() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({

@@ -5,11 +5,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { clearTreeCache } from "../hooks/useQueries";
 import CreateNodeDialog from "./CreateNodeDialog";
 import ProfileSettingsModal from "./ProfileSettingsModal";
