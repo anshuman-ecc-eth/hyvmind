@@ -2,8 +2,10 @@ export type NodeType =
   | "curation"
   | "swarm"
   | "location"
-  | "lawToken"
-  | "interpretationToken";
+  | "lawEntity"
+  | "lawRelation"
+  | "interpEntity"
+  | "interpRelation";
 
 export interface SourceNode {
   id: string;
@@ -16,11 +18,13 @@ export interface SourceNode {
   from?: string;
   to?: string;
   parentId?: string;
+  attributes?: Record<string, string>;
 }
 
 export interface Edge {
   source: string;
   target: string;
+  label?: string;
 }
 
 export interface SourceGraph {

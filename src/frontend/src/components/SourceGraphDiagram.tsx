@@ -1,6 +1,6 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { SourceGraph } from "../types/sourceGraph";
+import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -20,6 +20,7 @@ interface CanvasNode {
 interface CanvasEdge {
   source: string;
   target: string;
+  label?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,13 +68,18 @@ interface SourceGraphDiagramProps {
   graph: SourceGraph;
   width?: number;
   height?: number;
+  onNodeClick?: (node: SourceNode) => void;
 }
 
-export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
+export default function SourceGraphDiagram({
+  graph,
+  onNodeClick,
+}: SourceGraphDiagramProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<CanvasNode | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<CanvasEdge | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [resizeKey, setResizeKey] = useState(0);
   const { resolvedTheme } = useTheme();
@@ -126,7 +132,7 @@ export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
 
     const canvasEdges: CanvasEdge[] = graph.edges
       .filter((e) => nodeIdSet.has(e.source) && nodeIdSet.has(e.target))
-      .map((e) => ({ source: e.source, target: e.target }));
+      .map((e) => ({ source: e.source, target: e.target, label: e.label }));
 
     return { nodes: canvasNodes, edges: canvasEdges };
   }, [graph]);
@@ -324,6 +330,21 @@ export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
         }
       }
 
+      // Edge label for hovered edge
+      if (hoveredEdge?.label) {
+        const s = nodeMap.get(hoveredEdge.source);
+        const t = nodeMap.get(hoveredEdge.target);
+        if (s && t) {
+          const mx = (s.x + t.x) / 2;
+          const my = (s.y + t.y) / 2 + 4;
+          ctx.font = "10px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillStyle = "rgba(150,200,255,0.9)";
+          ctx.fillText(hoveredEdge.label, mx, my);
+        }
+      }
+
       animationFrameRef.current = requestAnimationFrame(simulate);
     };
 
@@ -338,12 +359,54 @@ export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
     nodes,
     edges,
     hoveredNode,
+    hoveredEdge,
     neighborMap,
     resolvedTheme,
     mounted,
     resizeKey,
     resizeCanvas,
   ]);
+
+  // Shared hit-detection helper
+  const findNodeAt = useCallback(
+    (mx: number, my: number): CanvasNode | null => {
+      for (const n of nodes) {
+        const dx = mx - n.x;
+        const dy = my - n.y;
+        if (dx * dx + dy * dy <= n.radius * n.radius) return n;
+      }
+      return null;
+    },
+    [nodes],
+  );
+
+  // Edge proximity detection (point-to-segment distance)
+  const findEdgeAt = useCallback(
+    (mx: number, my: number): CanvasEdge | null => {
+      const THRESHOLD = 8;
+      const nodeMap = new Map<string, CanvasNode>();
+      for (const n of nodes) nodeMap.set(n.id, n);
+      for (const e of edges) {
+        const s = nodeMap.get(e.source);
+        const t = nodeMap.get(e.target);
+        if (!s || !t) continue;
+        const dx = t.x - s.x;
+        const dy = t.y - s.y;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) continue;
+        const t_ = Math.max(
+          0,
+          Math.min(1, ((mx - s.x) * dx + (my - s.y) * dy) / lenSq),
+        );
+        const nearX = s.x + t_ * dx;
+        const nearY = s.y + t_ * dy;
+        const distSq = (mx - nearX) ** 2 + (my - nearY) ** 2;
+        if (distSq <= THRESHOLD * THRESHOLD) return e;
+      }
+      return null;
+    },
+    [nodes, edges],
+  );
 
   // Mouse handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -352,20 +415,33 @@ export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    let found: CanvasNode | null = null;
-    for (const n of nodes) {
-      const dx = mx - n.x;
-      const dy = my - n.y;
-      if (dx * dx + dy * dy <= n.radius * n.radius) {
-        found = n;
-        break;
-      }
+    const foundNode = findNodeAt(mx, my);
+    setHoveredNode(foundNode);
+    if (foundNode) {
+      setTooltipPosition({ x: e.clientX, y: e.clientY });
+      setHoveredEdge(null);
+    } else {
+      setHoveredEdge(findEdgeAt(mx, my));
     }
-    setHoveredNode(found);
-    if (found) setTooltipPosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseLeave = () => setHoveredNode(null);
+  const handleMouseLeave = () => {
+    setHoveredNode(null);
+    setHoveredEdge(null);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onNodeClick) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const foundCanvasNode = findNodeAt(mx, my);
+    if (!foundCanvasNode) return;
+    const sourceNode = graph.nodes.find((n) => n.id === foundCanvasNode.id);
+    if (sourceNode) onNodeClick(sourceNode);
+  };
 
   if (!mounted) {
     return (
@@ -382,6 +458,11 @@ export default function SourceGraphDiagram({ graph }: SourceGraphDiagramProps) {
           ref={canvasRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
+          onClick={handleClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ")
+              handleClick(e as unknown as React.MouseEvent<HTMLCanvasElement>);
+          }}
           className="w-full h-full cursor-pointer"
           style={{ display: "block" }}
           tabIndex={0}

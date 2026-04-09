@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from "react";
+import NodeDetailsModal from "../components/NodeDetailsModal";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import useSourceGraphs from "../hooks/useSourceGraphs";
-import type { SourceGraph } from "../types/sourceGraph";
+import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
 
 export default function SourcesView() {
-  const { graphs, activeGraphId, saveGraph, deleteGraph, setActiveGraph } =
-    useSourceGraphs();
+  const {
+    graphs,
+    activeGraphId,
+    saveGraph,
+    deleteGraph,
+    setActiveGraph,
+    updateNode,
+  } = useSourceGraphs();
   const [view, setView] = useState<"list" | "graph">("list");
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-dismiss error after 5 seconds
@@ -87,6 +95,17 @@ export default function SourcesView() {
     setView("list");
   };
 
+  const handleNodeClick = (node: SourceNode) => {
+    setSelectedNode(node);
+  };
+
+  const handleNodeSave = (nodeId: string, updates: Partial<SourceNode>) => {
+    if (activeGraphId) {
+      updateNode(activeGraphId, nodeId, updates);
+    }
+    setSelectedNode(null);
+  };
+
   const formatDate = (ts: number) => {
     return new Date(ts).toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -118,8 +137,21 @@ export default function SourcesView() {
 
         {/* Graph canvas */}
         <div className="flex-1 min-h-0">
-          <SourceGraphDiagram graph={activeGraph} />
+          <SourceGraphDiagram
+            graph={activeGraph}
+            onNodeClick={handleNodeClick}
+          />
         </div>
+
+        {/* Node details modal */}
+        {selectedNode && (
+          <NodeDetailsModal
+            node={selectedNode}
+            graph={activeGraph}
+            onSave={handleNodeSave}
+            onClose={() => setSelectedNode(null)}
+          />
+        )}
       </div>
     );
   }

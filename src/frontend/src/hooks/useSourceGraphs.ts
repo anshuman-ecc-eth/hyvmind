@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SourceGraph, SourceGraphsStore } from "../types/sourceGraph";
+import type {
+  SourceGraph,
+  SourceGraphsStore,
+  SourceNode,
+} from "../types/sourceGraph";
 
 const STORAGE_KEY = "source_graphs";
 
@@ -69,6 +73,29 @@ export default function useSourceGraphs() {
     });
   }, []);
 
+  const updateNode = useCallback(
+    (graphId: string, nodeId: string, updates: Partial<SourceNode>) => {
+      setStore((prev) => {
+        const next: SourceGraphsStore = {
+          ...prev,
+          graphs: prev.graphs.map((g) =>
+            g.id !== graphId
+              ? g
+              : {
+                  ...g,
+                  nodes: g.nodes.map((n) =>
+                    n.id !== nodeId ? n : { ...n, ...updates },
+                  ),
+                },
+          ),
+        };
+        saveToStorage(next);
+        return next;
+      });
+    },
+    [],
+  );
+
   const loadGraphs = useCallback((): SourceGraph[] => {
     const current = loadFromStorage();
     setStore(current);
@@ -82,5 +109,6 @@ export default function useSourceGraphs() {
     saveGraph,
     deleteGraph,
     setActiveGraph,
+    updateNode,
   };
 }

@@ -29,10 +29,15 @@ function stripFrontmatter(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").trim();
 }
 
-/** Extract [[wikilink]] targets from text */
+/** Extract the first [[wikilink]] target from a string */
+function extractWikilink(text: string): string | undefined {
+  const m = text.match(/\[\[([^\]]+)\]\]/);
+  return m ? m[1].trim() : undefined;
+}
+
+/** Extract all [[wikilink]] targets from text */
 function extractWikilinks(text: string): string[] {
-  const matches = [...text.matchAll(/\[\[([^\]]+)\]\]/g)];
-  return matches.map((m) => m[1].trim());
+  return [...text.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1].trim());
 }
 
 /** Read a text file from the zip, returning empty string if not found */
@@ -60,6 +65,48 @@ async function readAttributes(
   return result;
 }
 
+/**
+ * Reserved frontmatter keys — excluded from node.attributes.
+ * Everything else is treated as a custom attribute.
+ */
+const RESERVED_KEYS = new Set([
+  "type",
+  "id",
+  "name",
+  "title",
+  "from",
+  "to",
+  "label",
+  "jurisdiction",
+  "tags",
+  "source",
+  "content",
+  "tokenLabel",
+]);
+
+/** Extract non-reserved frontmatter keys as custom attributes */
+function extractCustomAttributes(
+  fm: Record<string, string>,
+): Record<string, string> | undefined {
+  const attrs: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fm)) {
+    if (!RESERVED_KEYS.has(k)) attrs[k] = v;
+  }
+  return Object.keys(attrs).length > 0 ? attrs : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Pending relation descriptor (lr / ir files deferred to second pass)
+// ---------------------------------------------------------------------------
+
+interface PendingRelation {
+  type: "lr" | "ir";
+  fromRaw: string | undefined; // raw wikilink text or undefined
+  toRaw: string | undefined;
+  label: string | undefined;
+  body: string; // markdown body (fallback wikilink source)
+}
+
 // ---------------------------------------------------------------------------
 // Main parser
 // ---------------------------------------------------------------------------
@@ -68,7 +115,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
   const zip = await JSZip.loadAsync(file);
 
   const nodes: SourceNode[] = [];
-  const edges: Edge[] = [];
+  // Relations are collected here only after all nodes exist (two-pass)
+  const pendingRelations: PendingRelation[] = [];
 
   // Collect all paths once
   const allPaths = Object.keys(zip.files);
@@ -133,7 +181,6 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       parentId: curationNode.id,
     };
     nodes.push(swarmNode);
-    edges.push({ source: curationNode.id, target: swarmNode.id });
 
     // Find third-level folders (locations)
     const locationFolders = new Set<string>();
@@ -158,9 +205,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         parentId: swarmNode.id,
       };
       nodes.push(locationNode);
-      edges.push({ source: swarmNode.id, target: locationNode.id });
 
-      // Find markdown files inside the location folder (tokens)
+      // Find markdown files inside the location folder
       const tokenFiles = allPaths.filter((p) => {
         if (!p.startsWith(locationPrefix)) return false;
         const remainder = p.slice(locationPrefix.length);
@@ -179,59 +225,87 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           .slice(locationPrefix.length)
           .replace(/\.md$/, "");
 
-        if (tokenType === "lt") {
-          // Law Token
-          const ltNode: SourceNode = {
+        if (tokenType === "le") {
+          // Law Entity → becomes a node
+          const leNode: SourceNode = {
             id: genId(),
-            name: fm.tokenLabel ?? filename,
-            nodeType: "lawToken",
-            content: body,
+            name: fm.name ?? fm.title ?? filename,
+            nodeType: "lawEntity",
+            content: body || undefined,
             parentId: locationNode.id,
+            attributes: extractCustomAttributes(fm),
           };
-          nodes.push(ltNode);
-          edges.push({ source: locationNode.id, target: ltNode.id });
-        } else if (tokenType === "it") {
-          // Interpretation Token
-          const wikilinks = extractWikilinks(
-            body + (fm.from ?? "") + (fm.to ?? ""),
-          );
-          const fromLink = fm.from
-            ? extractWikilinks(fm.from)[0]
-            : wikilinks[0];
-          const toLink = fm.to ? extractWikilinks(fm.to)[0] : wikilinks[1];
-
-          const itNode: SourceNode = {
+          nodes.push(leNode);
+        } else if (tokenType === "ie") {
+          // Interpretation Entity → becomes a node
+          const ieNode: SourceNode = {
             id: genId(),
-            name: fm.title ?? filename,
-            nodeType: "interpretationToken",
-            content: body,
-            from: fromLink,
-            to: toLink,
+            name: fm.name ?? fm.title ?? filename,
+            nodeType: "interpEntity",
+            content: body || undefined,
             parentId: locationNode.id,
+            attributes: extractCustomAttributes(fm),
           };
-          nodes.push(itNode);
-          edges.push({ source: locationNode.id, target: itNode.id });
-
-          // Add from/to edges by name resolution (best-effort)
-          if (fromLink) {
-            const fromNode = nodes.find(
-              (n) => n.name === fromLink && n.nodeType === "lawToken",
-            );
-            if (fromNode) {
-              edges.push({ source: itNode.id, target: fromNode.id });
-            }
-          }
-          if (toLink) {
-            const toNode = nodes.find(
-              (n) => n.name === toLink && n.nodeType === "lawToken",
-            );
-            if (toNode) {
-              edges.push({ source: itNode.id, target: toNode.id });
-            }
-          }
+          nodes.push(ieNode);
+        } else if (tokenType === "lr" || tokenType === "ir") {
+          // Relation types → defer edge creation until all nodes are collected
+          pendingRelations.push({
+            type: tokenType,
+            fromRaw: fm.from,
+            toRaw: fm.to,
+            label: fm.label || undefined,
+            body,
+          });
         }
+        // Any other type is silently skipped
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // PASS 2: Build hierarchy edges + resolve lr/ir relation edges
+  // ---------------------------------------------------------------------------
+
+  // Build a name→node lookup (last writer wins for duplicates)
+  const nodeByName = new Map<string, SourceNode>();
+  for (const n of nodes) {
+    nodeByName.set(n.name, n);
+  }
+
+  // Hierarchy edges derived from parentId
+  const edges: Edge[] = [];
+  for (const node of nodes) {
+    if (node.parentId) {
+      edges.push({ source: node.parentId, target: node.id });
+    }
+  }
+
+  // Resolve pending lr/ir relations
+  for (const rel of pendingRelations) {
+    // Resolve "from" — prefer frontmatter, fall back to first wikilink in body
+    const fromName =
+      rel.fromRaw !== undefined
+        ? extractWikilink(rel.fromRaw)
+        : extractWikilinks(rel.body)[0];
+
+    // Resolve "to" — prefer frontmatter, fall back to second wikilink in body
+    const toName =
+      rel.toRaw !== undefined
+        ? extractWikilink(rel.toRaw)
+        : extractWikilinks(rel.body)[1];
+
+    if (!fromName || !toName) continue; // skip: cannot determine endpoints
+
+    const fromNode = nodeByName.get(fromName);
+    const toNode = nodeByName.get(toName);
+
+    if (!fromNode || !toNode) continue; // skip: unresolvable references
+
+    edges.push({
+      source: fromNode.id,
+      target: toNode.id,
+      label: rel.label,
+    });
   }
 
   return {
