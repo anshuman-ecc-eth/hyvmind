@@ -762,7 +762,7 @@ export default function TextGameModal({
               fontFamily: '"Press Start 2P", monospace',
             }}
           >
-            (..in development)
+            in (uneven) development
           </span>
           <button
             type="button"

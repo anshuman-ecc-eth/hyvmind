@@ -1,108 +1,274 @@
-import { ArrowLeft, RefreshCw } from "lucide-react";
-import { useState } from "react";
-
-interface Source {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-}
-
-const SOURCES: Source[] = [
-  {
-    id: "indiacode",
-    title: "India Code",
-    description: "Browse Central and State Acts",
-    url: "https://www.indiacode.nic.in/",
-  },
-  {
-    id: "constitution",
-    title: "Constitution of India",
-    description: "Read the Indian Constitution",
-    url: "https://www.constitutionofindia.net/read/",
-  },
-];
+import { useEffect, useRef, useState } from "react";
+import SourceGraphDiagram from "../components/SourceGraphDiagram";
+import useSourceGraphs from "../hooks/useSourceGraphs";
+import type { SourceGraph } from "../types/sourceGraph";
+import { parseSourceGraphZip } from "../utils/sourceGraphParser";
 
 export default function SourcesView() {
-  const [selectedSource, setSelectedSource] = useState<Source | null>(null);
-  const [iframeKey, setIframeKey] = useState(0);
+  const { graphs, activeGraphId, saveGraph, deleteGraph, setActiveGraph } =
+    useSourceGraphs();
+  const [view, setView] = useState<"list" | "graph">("list");
+  const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (selectedSource !== null) {
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 5000);
+    return () => clearTimeout(t);
+  }, [error]);
+
+  const activeGraph = graphs.find((g) => g.id === activeGraphId) ?? null;
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so the same file can be re-imported
+    e.target.value = "";
+
+    setImporting(true);
+    setError(null);
+
+    try {
+      const graph = await parseSourceGraphZip(file);
+
+      // Deduplicate name: append timestamp if name already exists
+      const nameExists = graphs.some((g) => g.name === graph.name);
+      if (nameExists) {
+        graph.name = `${graph.name} (${Date.now()})`;
+      }
+
+      saveGraph(graph);
+      setActiveGraph(graph.id);
+      setView("graph");
+    } catch (err) {
+      const msg =
+        err instanceof DOMException && err.name === "QuotaExceededError"
+          ? "Storage full. Delete an existing graph to free up space."
+          : err instanceof Error
+            ? err.message
+            : "Failed to import ZIP file.";
+      setError(msg);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleView = (graph: SourceGraph) => {
+    setActiveGraph(graph.id);
+    setView("graph");
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmDeleteId) return;
+    if (confirmDeleteId === activeGraphId) {
+      setActiveGraph(null);
+      setView("list");
+    }
+    deleteGraph(confirmDeleteId);
+    setConfirmDeleteId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setConfirmDeleteId(null);
+  };
+
+  const handleBackToList = () => {
+    setView("list");
+  };
+
+  const formatDate = (ts: number) => {
+    return new Date(ts).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // Graph view
+  if (view === "graph" && activeGraph) {
     return (
-      <div className="flex h-full flex-col">
-        {/* Iframe header */}
-        <div className="flex items-center gap-3 border-b border-dashed border-border bg-background px-4 py-2 font-mono">
+      <div className="flex flex-col h-full font-mono">
+        {/* Graph header */}
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-background shrink-0">
           <button
             type="button"
-            onClick={() => setSelectedSource(null)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            data-ocid="sources.back_button"
+            onClick={handleBackToList}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            data-ocid="sources.back_to_list"
           >
-            <ArrowLeft className="h-3 w-3" />
-            back
+            ← back to list
           </button>
-          <span className="text-xs text-muted-foreground">|</span>
-          <span className="text-xs text-foreground">
-            {selectedSource.title}
+          <span className="text-xs text-border">|</span>
+          <span className="text-xs text-foreground">{activeGraph.name}</span>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {activeGraph.nodes.length} nodes
           </span>
-          <span className="text-xs text-muted-foreground truncate">
-            {selectedSource.url}
-          </span>
-          <div className="ml-auto">
-            <button
-              type="button"
-              onClick={() => setIframeKey((k) => k + 1)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Reload"
-              data-ocid="sources.reload_button"
-            >
-              <RefreshCw className="h-3 w-3" />
-              reload
-            </button>
-          </div>
         </div>
-        {/* Iframe */}
-        <iframe
-          key={iframeKey}
-          src={selectedSource.url}
-          title={selectedSource.title}
-          className="flex-1 w-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-        />
+
+        {/* Graph canvas */}
+        <div className="flex-1 min-h-0">
+          <SourceGraphDiagram graph={activeGraph} />
+        </div>
       </div>
     );
   }
 
+  // List view
   return (
     <div className="h-full overflow-auto p-6 font-mono">
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-foreground mb-1">sources</h2>
-        <p className="text-xs text-muted-foreground">
-          browse whitelisted legal reference sources
-        </p>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={handleFileChange}
+        data-ocid="sources.file_input"
+        aria-label="Import ZIP file"
+      />
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-1">
+            source graphs
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            import zip files to create custom source graphs
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleImportClick}
+          disabled={importing}
+          className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-ocid="sources.import_button"
+        >
+          {importing ? "parsing..." : "[import graph]"}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SOURCES.map((source) => (
+      {/* Error banner */}
+      {error && (
+        <div
+          className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+          data-ocid="sources.error_message"
+          role="alert"
+        >
+          [ERROR] {error}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {graphs.length === 0 && !importing && (
+        <div
+          className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border"
+          data-ocid="sources.empty_state"
+        >
+          <p className="text-xs text-muted-foreground mb-3">
+            no source graphs yet.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            import a zip file to get started.
+          </p>
           <button
-            key={source.id}
             type="button"
-            onClick={() => setSelectedSource(source)}
-            className="group text-left border border-dashed border-border bg-background p-4 hover:border-foreground hover:bg-accent transition-colors"
-            data-ocid={`sources.card.${source.id}`}
+            onClick={handleImportClick}
+            className="mt-5 text-xs border border-dashed border-border px-4 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+            data-ocid="sources.empty_import_button"
           >
-            <div className="mb-2 text-xs font-semibold text-foreground group-hover:text-accent-foreground">
-              [{source.title}]
-            </div>
-            <div className="text-xs text-muted-foreground group-hover:text-foreground mb-3">
-              {source.description}
-            </div>
-            <div className="text-xs text-muted-foreground truncate opacity-60">
-              {source.url}
-            </div>
+            [import graph]
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Graph list */}
+      {graphs.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {graphs.map((graph) => (
+            <div
+              key={graph.id}
+              className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
+              data-ocid={`sources.graph_row.${graph.id}`}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-foreground truncate">{graph.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
+                  {graph.edges.length} edges
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleView(graph)}
+                  className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+                  data-ocid={`sources.view_button.${graph.id}`}
+                >
+                  [view]
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRequest(graph.id)}
+                  className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  data-ocid={`sources.delete_button.${graph.id}`}
+                >
+                  [delete]
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {confirmDeleteId && (
+        <dialog
+          open
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm m-0 w-full h-full max-w-none max-h-none border-0 p-0"
+          aria-label="Confirm deletion"
+          data-ocid="sources.confirm_delete_dialog"
+          onClose={handleDeleteCancel}
+        >
+          <div className="border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono">
+            <p className="text-sm text-foreground mb-2">delete graph?</p>
+            <p className="text-xs text-muted-foreground mb-6">
+              {graphs.find((g) => g.id === confirmDeleteId)?.name ?? ""}
+              <br />
+              this action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                data-ocid="sources.confirm_delete_yes"
+              >
+                [delete]
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+                data-ocid="sources.confirm_delete_cancel"
+              >
+                [cancel]
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }
