@@ -170,32 +170,30 @@ export default function App() {
         storageKey="hyvmind-theme"
       >
         <div className="flex h-screen items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-foreground font-mono text-sm tracking-widest">
-              loading
-            </p>
-            <div className="font-mono text-foreground text-sm flex items-center gap-1">
-              <span className="text-muted-foreground">[</span>
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "12ch",
-                  overflow: "hidden",
-                  animation: "terminal-load 2s steps(12, end) forwards",
-                }}
-              >
-                {"============"}
-              </span>
-              <span className="text-muted-foreground">]</span>
+          <div className="text-game-font flex flex-col items-center justify-center gap-4">
+            <span
+              className="text-foreground/70"
+              style={{ fontSize: "0.6rem", letterSpacing: "0.2em" }}
+            >
+              LOADING
+            </span>
+            <div className="flex gap-[2px]">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: positional loading blocks
+                  key={i}
+                  className="text-foreground"
+                  style={{
+                    fontSize: "0.55rem",
+                    animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                  }}
+                >
+                  █
+                </span>
+              ))}
             </div>
           </div>
         </div>
-        <style>{`
-          @keyframes terminal-load {
-            from { width: 0ch; }
-            to   { width: 12ch; }
-          }
-        `}</style>
         <Toaster />
       </ThemeProvider>
     );

@@ -1,6 +1,146 @@
 import { useAnimationFrame } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ScrambleText from "./ScrambleText";
+import TetrisGame from "./TetrisGame";
+
+// ── Start Screen ───────────────────────────────────────────────────────────────
+
+const MENU_ITEMS = ["START", "ABOUT", "SETTINGS", "EXIT"] as const;
+type MenuItem = (typeof MENU_ITEMS)[number];
+const ACTIVE_ITEMS: MenuItem[] = ["START", "EXIT"];
+
+interface StartScreenProps {
+  onStart: () => void;
+  onExit: () => void;
+}
+
+function StartScreen({ onStart, onExit }: StartScreenProps) {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        setSelectedIdx(
+          (prev) => (prev - 1 + ACTIVE_ITEMS.length) % ACTIVE_ITEMS.length,
+        );
+      } else if (e.key === "ArrowDown") {
+        setSelectedIdx((prev) => (prev + 1) % ACTIVE_ITEMS.length);
+      } else if (e.key === "Enter") {
+        const chosen = ACTIVE_ITEMS[selectedIdx];
+        if (chosen === "START") onStart();
+        else if (chosen === "EXIT") onExit();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, onStart, onExit]);
+
+  // Map ACTIVE_ITEMS index back to full MENU_ITEMS index for display
+  const activeItemForMenu = (item: MenuItem) => ACTIVE_ITEMS.indexOf(item);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+      {/* Title */}
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="text-foreground tracking-widest"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            display: "flex",
+            alignItems: "center",
+          }}
+          aria-label="HYVMIND"
+        >
+          {"HYVMIND".split("").map((letter) =>
+            letter === "Y" ? (
+              <span
+                key={letter}
+                style={{
+                  fontSize: "2.5rem",
+                  verticalAlign: "middle",
+                  lineHeight: 1,
+                }}
+              >
+                {letter}
+              </span>
+            ) : (
+              <span
+                key={letter}
+                style={{
+                  fontSize: "2rem",
+                  verticalAlign: "middle",
+                  lineHeight: 1,
+                }}
+              >
+                {letter}
+              </span>
+            ),
+          )}
+        </div>
+        <p
+          className="text-muted-foreground text-center"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          A Language Game
+        </p>
+      </div>
+
+      {/* Menu */}
+      <div className="flex flex-col items-center gap-3">
+        {MENU_ITEMS.map((item) => {
+          const isActive = ACTIVE_ITEMS.includes(item);
+          const activeIdx = activeItemForMenu(item);
+          const isSelected = isActive && activeIdx === selectedIdx;
+
+          if (!isActive) {
+            return (
+              <span
+                key={item}
+                className="text-foreground/30 pointer-events-none"
+                style={{
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                {"  "}
+                {item}
+              </span>
+            );
+          }
+
+          return (
+            <button
+              key={item}
+              type="button"
+              data-ocid={`text_game.start_screen.${item.toLowerCase()}`}
+              className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65rem",
+                letterSpacing: "0.2em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+              onClick={() => {
+                if (item === "START") onStart();
+                else if (item === "EXIT") onExit();
+              }}
+            >
+              {isSelected ? `> ${item}` : `  ${item}`}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -415,8 +555,11 @@ export default function TextGameModal({
   const checkConditionRef = useRef(checkCondition);
   checkConditionRef.current = checkCondition;
 
-  const [showStartScreen, setShowStartScreen] = useState(true);
-  const [selectedMenuIndex, setSelectedMenuIndex] = useState(0);
+  const [gameMode, setGameMode] = useState<"start" | "tetris" | "narrative">(
+    "start",
+  );
+  const [tetrisFinished, setTetrisFinished] = useState(false);
+  const [collectedText, setCollectedText] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>("scrambling");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
@@ -450,28 +593,16 @@ export default function TextGameModal({
     variablesRef.current = variables;
   }, [variables]);
 
-  // Start screen keyboard navigation (arrow keys + enter)
-  useEffect(() => {
-    if (!showStartScreen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedMenuIndex((i) => (i === 0 ? 3 : i - 1));
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedMenuIndex((i) => (i === 3 ? 0 : i + 1));
-      } else if (e.key === "Enter") {
-        if (selectedMenuIndex === 0) {
-          setShowStartScreen(false);
-        } else if (selectedMenuIndex === 3) {
-          onComplete();
-        }
-        // Indices 1 (About), 2 (Settings) are disabled — do nothing
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [showStartScreen, selectedMenuIndex, onComplete]);
+  // ── handleTetrisGameOver ───────────────────────────────────────────────────
+  const handleTetrisGameOver = useCallback((_score: number, text: string[]) => {
+    setCollectedText(text);
+    setTetrisFinished(true);
+    setVariables((prev) => ({ ...prev, collectedText: JSON.stringify(text) }));
+    setTimeout(() => {
+      setGameMode("narrative");
+      navigateRef.current("opening");
+    }, 2000);
+  }, []);
 
   // Resolve a filename with variable substitution
   const resolveFileName = (rawFile: string): string => {
@@ -603,6 +734,9 @@ export default function TextGameModal({
   };
 
   keyHandlerRef.current = (e: KeyboardEvent) => {
+    // When the start screen is showing, let StartScreen's own handler take over
+    if (gameMode === "start") return;
+
     if (e.shiftKey && e.key === "X") {
       onCompleteRef.current();
       return;
@@ -613,7 +747,9 @@ export default function TextGameModal({
       setVariables({});
       variablesRef.current = {};
       setInputValue("");
-      navigateRef.current("opening");
+      setGameMode("start");
+      setTetrisFinished(false);
+      setCollectedText([]);
       return;
     }
 
@@ -657,12 +793,7 @@ export default function TextGameModal({
     }
   };
 
-  // Initial load — deferred until start screen is dismissed
-  useEffect(() => {
-    if (showStartScreen) return;
-    navigateRef.current("opening");
-  }, [showStartScreen]);
-
+  // Keyboard global handler (narrative only — not active during Tetris)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => keyHandlerRef.current(e);
     window.addEventListener("keydown", handler);
@@ -733,6 +864,8 @@ export default function TextGameModal({
   void currentFile;
   void retraceRef;
   void messageKey;
+  void tetrisFinished;
+  void collectedText;
 
   const blinkingCursor = (
     <span
@@ -776,83 +909,20 @@ export default function TextGameModal({
         </div>
 
         {/* Game content */}
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via window listener */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center cursor-pointer select-none overflow-hidden px-8 gap-6"
-          onClick={showStartScreen ? undefined : handleBackgroundClick}
-        >
-          {showStartScreen ? (
-            /* ── Start Screen ─────────────────────────────────────────────── */
-            <div className="flex flex-col items-center justify-center gap-8 w-full px-4 py-6 text-game-font relative">
-              {/* Title block */}
-              <div className="flex flex-col items-center gap-3">
-                <span
-                  className="text-foreground tracking-widest"
-                  style={{ fontSize: "1.4rem" }}
-                >
-                  HYVMIND
-                </span>
-                <span
-                  className="text-foreground/50"
-                  style={{ fontSize: "0.5rem", letterSpacing: "0.3em" }}
-                >
-                  A Language Game
-                </span>
-              </div>
-
-              {/* Top pixel divider */}
-              <div className="w-full max-w-xs border-t border-dashed border-foreground/30" />
-
-              {/* Menu items */}
-              <div className="flex flex-col items-center gap-5 w-full max-w-[220px]">
-                {(
-                  [
-                    { label: "START", idx: 0, active: true },
-                    { label: "ABOUT", idx: 1, active: false },
-                    { label: "SETTINGS", idx: 2, active: false },
-                    { label: "EXIT", idx: 3, active: true },
-                  ] as { label: string; idx: number; active: boolean }[]
-                ).map(({ label, idx, active }) =>
-                  active ? (
-                    <button
-                      key={label}
-                      type="button"
-                      data-ocid={`text_game.menu_${label.toLowerCase()}`}
-                      className="text-game-font text-foreground flex items-center justify-center gap-2 w-full hover:opacity-70 active:scale-95 transition-opacity"
-                      style={{ fontSize: "0.7rem" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (idx === 3) {
-                          onCompleteRef.current();
-                        } else {
-                          setShowStartScreen(false);
-                        }
-                      }}
-                    >
-                      <span className="w-[1ch] text-center flex-shrink-0">
-                        {selectedMenuIndex === idx ? "►" : "\u00a0"}
-                      </span>
-                      <span>{label}</span>
-                    </button>
-                  ) : (
-                    <span
-                      key={label}
-                      className="text-game-font text-foreground/30 flex items-center justify-center gap-2 w-full pointer-events-none select-none"
-                      style={{ fontSize: "0.7rem" }}
-                    >
-                      <span className="w-[1ch] text-center flex-shrink-0">
-                        {selectedMenuIndex === idx ? "►" : "\u00a0"}
-                      </span>
-                      <span>{label}</span>
-                    </span>
-                  ),
-                )}
-              </div>
-
-              {/* Bottom pixel divider */}
-              <div className="w-full max-w-xs border-t border-dashed border-foreground/30" />
-            </div>
-          ) : (
+        {gameMode === "start" ? (
+          <StartScreen
+            onStart={() => setGameMode("tetris")}
+            onExit={() => onCompleteRef.current()}
+          />
+        ) : gameMode === "tetris" ? (
+          <TetrisGame onGameOver={handleTetrisGameOver} />
+        ) : (
+          /* ── Narrative ──────────────────────────────────────────────── */
+          // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via window listener
+          <div
+            className="flex-1 flex flex-col items-center justify-center cursor-pointer select-none overflow-hidden px-8 gap-6"
+            onClick={handleBackgroundClick}
+          >
             <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-6">
               {/* Typing phase — input prompt only (messages no longer use typing phase) */}
               {phase === "typing" && currentSeg?.type === "input" && (
@@ -1036,9 +1106,8 @@ export default function TextGameModal({
                 </div>
               )}
             </div>
-          )}{" "}
-          {/* end showStartScreen ternary */}
-        </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -118,6 +118,19 @@
   }
 }
 
+/* Mobile Tetris controls — hidden on desktop (fine pointer devices) */
+.mobile-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+@media (hover: hover) {
+  .mobile-controls {
+    display: none;
+  }
+}
+
 /* Terminal blink animation */
 @keyframes terminal-blink {
   0%,
