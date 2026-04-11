@@ -5,10 +5,6 @@ import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function genId(): string {
-  return crypto.randomUUID();
-}
-
 /** Parse minimal YAML-ish frontmatter (key: value lines only) */
 function parseFrontmatter(text: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -143,7 +139,6 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
   // ---------- Curation node ----------
   const curationAttrs = await readAttributes(zip, curationPrefix);
   const curationNode: SourceNode = {
-    id: genId(),
     name: curationFolderName,
     nodeType: "curation",
     jurisdiction: curationAttrs.jurisdiction,
@@ -174,11 +169,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       : undefined;
 
     const swarmNode: SourceNode = {
-      id: genId(),
       name: swarmName,
       nodeType: "swarm",
       tags,
-      parentId: curationNode.id,
+      parentName: curationFolderName,
     };
     nodes.push(swarmNode);
 
@@ -198,11 +192,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       const locationAttrs = await readAttributes(zip, locationPrefix);
 
       const locationNode: SourceNode = {
-        id: genId(),
         name: locationName,
         nodeType: "location",
         source: locationAttrs.source,
-        parentId: swarmNode.id,
+        parentName: swarmName,
       };
       nodes.push(locationNode);
 
@@ -226,24 +219,22 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           .replace(/\.md$/, "");
 
         if (tokenType === "le") {
-          // Law Entity → becomes a node
+          // Law Entity → becomes a node; filename is the identifier
           const leNode: SourceNode = {
-            id: genId(),
-            name: fm.name ?? fm.title ?? filename,
+            name: filename,
             nodeType: "lawEntity",
             content: body || undefined,
-            parentId: locationNode.id,
+            parentName: locationName,
             attributes: extractCustomAttributes(fm),
           };
           nodes.push(leNode);
         } else if (tokenType === "ie") {
-          // Interpretation Entity → becomes a node
+          // Interpretation Entity → becomes a node; filename is the identifier
           const ieNode: SourceNode = {
-            id: genId(),
-            name: fm.name ?? fm.title ?? filename,
+            name: filename,
             nodeType: "interpEntity",
             content: body || undefined,
-            parentId: locationNode.id,
+            parentName: locationName,
             attributes: extractCustomAttributes(fm),
           };
           nodes.push(ieNode);
@@ -266,21 +257,15 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
   // PASS 2: Build hierarchy edges + resolve lr/ir relation edges
   // ---------------------------------------------------------------------------
 
-  // Build a name→node lookup (last writer wins for duplicates)
-  const nodeByName = new Map<string, SourceNode>();
-  for (const n of nodes) {
-    nodeByName.set(n.name, n);
-  }
-
-  // Hierarchy edges derived from parentId
+  // Hierarchy edges derived from parentName (filename-based)
   const edges: Edge[] = [];
   for (const node of nodes) {
-    if (node.parentId) {
-      edges.push({ source: node.parentId, target: node.id });
+    if (node.parentName) {
+      edges.push({ source: node.parentName, target: node.name });
     }
   }
 
-  // Resolve pending lr/ir relations
+  // Resolve pending lr/ir relations using filenames directly
   for (const rel of pendingRelations) {
     // Resolve "from" — prefer frontmatter, fall back to first wikilink in body
     const fromName =
@@ -296,20 +281,16 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
     if (!fromName || !toName) continue; // skip: cannot determine endpoints
 
-    const fromNode = nodeByName.get(fromName);
-    const toNode = nodeByName.get(toName);
-
-    if (!fromNode || !toNode) continue; // skip: unresolvable references
-
+    // Use filenames directly — no node.id lookup needed
     edges.push({
-      source: fromNode.id,
-      target: toNode.id,
+      source: fromName,
+      target: toName,
       label: rel.label,
     });
   }
 
   return {
-    id: genId(),
+    id: crypto.randomUUID(),
     name: curationFolderName,
     nodes,
     edges,

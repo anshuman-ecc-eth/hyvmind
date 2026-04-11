@@ -8,7 +8,6 @@ export type NodeType =
   | "interpRelation";
 
 export interface SourceNode {
-  id: string;
   name: string;
   nodeType: NodeType;
   jurisdiction?: string;
@@ -17,7 +16,7 @@ export interface SourceNode {
   content?: string;
   from?: string;
   to?: string;
-  parentId?: string;
+  parentName?: string;
   attributes?: Record<string, string>;
 }
 

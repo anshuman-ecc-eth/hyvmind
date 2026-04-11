@@ -8,7 +8,7 @@ import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 interface NodeDetailsModalProps {
   node: SourceNode;
   graph: SourceGraph;
-  onSave: (nodeId: string, updates: Partial<SourceNode>) => void;
+  onSave: (nodeName: string, updates: Partial<SourceNode>) => void;
   onClose: () => void;
 }
 
@@ -39,31 +39,30 @@ const RELATION_TYPES = new Set(["lawRelation", "interpRelation"]);
 // ---------------------------------------------------------------------------
 
 function resolveNodeName(
-  id: string | undefined,
+  name: string | undefined,
   nodes: SourceNode[],
 ): string | null {
-  if (!id) return null;
-  return nodes.find((n) => n.id === id)?.name ?? id;
+  if (!name) return null;
+  return nodes.find((n) => n.name === name)?.name ?? name;
 }
 
 function buildInheritedAttributes(
   node: SourceNode,
   nodeMap: Map<string, SourceNode>,
 ): Record<string, string> {
-  // Walk ancestor chain; closer ancestors take priority (we collect bottom-up
-  // then reverse so closer entries overwrite further ones).
+  // Walk ancestor chain via parentName; closer ancestors take priority
   const chain: Record<string, string>[] = [];
-  let currentId = node.parentId;
+  let currentName = node.parentName;
   const visited = new Set<string>();
 
-  while (currentId && !visited.has(currentId)) {
-    visited.add(currentId);
-    const ancestor = nodeMap.get(currentId);
+  while (currentName && !visited.has(currentName)) {
+    visited.add(currentName);
+    const ancestor = nodeMap.get(currentName);
     if (!ancestor) break;
     if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
       chain.push(ancestor.attributes);
     }
-    currentId = ancestor.parentId;
+    currentName = ancestor.parentName;
   }
 
   // Merge: later entries (closer ancestors) override earlier (further ancestors)
@@ -98,7 +97,7 @@ export default function NodeDetailsModal({
   // New rows added in this session (both key + value editable)
   const [newRows, setNewRows] = useState<AttributeRow[]>([]);
 
-  const nodeMap = useRef(new Map(graph.nodes.map((n) => [n.id, n])));
+  const nodeMap = useRef(new Map(graph.nodes.map((n) => [n.name, n])));
 
   const inheritedAttributes = buildInheritedAttributes(node, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
@@ -164,7 +163,7 @@ export default function NodeDetailsModal({
     for (const row of newRows) {
       if (row.key.trim()) merged[row.key.trim()] = row.value;
     }
-    onSave(node.id, { name: editedName, attributes: merged });
+    onSave(node.name, { name: editedName, attributes: merged });
     onClose();
   };
 

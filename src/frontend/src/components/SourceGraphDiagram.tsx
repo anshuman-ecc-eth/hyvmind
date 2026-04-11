@@ -7,7 +7,7 @@ import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 // ---------------------------------------------------------------------------
 
 interface CanvasNode {
-  id: string;
+  name: string;
   x: number;
   y: number;
   vx: number;
@@ -118,9 +118,9 @@ export default function SourceGraphDiagram({
   // Build canvas nodes and edges from SourceGraph
   const { nodes, edges } = useMemo(() => {
     const canvasNodes: CanvasNode[] = graph.nodes.map((n) => ({
-      id: n.id,
-      x: seededRandom(`${n.id}_x`) * 800 + 100,
-      y: seededRandom(`${n.id}_y`) * 600 + 100,
+      name: n.name,
+      x: seededRandom(`${n.name}_x`) * 800 + 100,
+      y: seededRandom(`${n.name}_y`) * 600 + 100,
       vx: 0,
       vy: 0,
       nodeType: n.nodeType,
@@ -128,11 +128,12 @@ export default function SourceGraphDiagram({
       radius: NODE_RADIUS[n.nodeType] ?? 6,
     }));
 
-    const nodeIdSet = new Set(canvasNodes.map((n) => n.id));
-
-    const canvasEdges: CanvasEdge[] = graph.edges
-      .filter((e) => nodeIdSet.has(e.source) && nodeIdSet.has(e.target))
-      .map((e) => ({ source: e.source, target: e.target, label: e.label }));
+    // No filtering — edges use filename strings that directly match node names
+    const canvasEdges: CanvasEdge[] = graph.edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      label: e.label,
+    }));
 
     return { nodes: canvasNodes, edges: canvasEdges };
   }, [graph]);
@@ -141,7 +142,7 @@ export default function SourceGraphDiagram({
   const neighborMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
     // biome-ignore lint/complexity/noForEach: canvas imperative code
-    nodes.forEach((n) => map.set(n.id, new Set()));
+    nodes.forEach((n) => map.set(n.name, new Set()));
     // biome-ignore lint/complexity/noForEach: canvas imperative code
     edges.forEach((e) => {
       map.get(e.source)?.add(e.target);
@@ -168,7 +169,7 @@ export default function SourceGraphDiagram({
 
     const nodeMap = new Map<string, CanvasNode>();
     // biome-ignore lint/complexity/noForEach: canvas imperative code
-    nodes.forEach((n) => nodeMap.set(n.id, n));
+    nodes.forEach((n) => nodeMap.set(n.name, n));
 
     const simulate = () => {
       if (!active) return;
@@ -199,8 +200,8 @@ export default function SourceGraphDiagram({
         // biome-ignore lint/complexity/noForEach: canvas imperative code
         edges.forEach((e) => {
           let other: CanvasNode | undefined;
-          if (e.source === a.id) other = nodeMap.get(e.target);
-          else if (e.target === a.id) other = nodeMap.get(e.source);
+          if (e.source === a.name) other = nodeMap.get(e.target);
+          else if (e.target === a.name) other = nodeMap.get(e.source);
           if (other) {
             a.vx += (other.x - a.x) * ATTRACTION;
             a.vy += (other.y - a.y) * ATTRACTION;
@@ -247,14 +248,14 @@ export default function SourceGraphDiagram({
       const highlightedEdges = new Set<string>();
 
       if (hoveredNode) {
-        highlightedNodes.add(hoveredNode.id);
-        const neighbors = neighborMap.get(hoveredNode.id);
+        highlightedNodes.add(hoveredNode.name);
+        const neighbors = neighborMap.get(hoveredNode.name);
         if (neighbors) {
           // biome-ignore lint/complexity/noForEach: canvas imperative code
-          neighbors.forEach((nid) => {
-            highlightedNodes.add(nid);
-            highlightedEdges.add(`${hoveredNode.id}-${nid}`);
-            highlightedEdges.add(`${nid}-${hoveredNode.id}`);
+          neighbors.forEach((nname) => {
+            highlightedNodes.add(nname);
+            highlightedEdges.add(`${hoveredNode.name}-${nname}`);
+            highlightedEdges.add(`${nname}-${hoveredNode.name}`);
           });
         }
       }
@@ -294,8 +295,8 @@ export default function SourceGraphDiagram({
       // Nodes
       // biome-ignore lint/complexity/noForEach: canvas imperative code
       nodes.forEach((n) => {
-        const isHighlighted = highlightedNodes.has(n.id);
-        const isHovered = hoveredNode?.id === n.id;
+        const isHighlighted = highlightedNodes.has(n.name);
+        const isHovered = hoveredNode?.name === n.name;
         ctx.globalAlpha = hoveredNode && !isHighlighted ? 0.3 : 1.0;
         const r = n.radius * (isHovered ? 1.15 : 1.0);
         ctx.fillStyle = isHighlighted ? HIGHLIGHT_COLOR : GRAPH_GREY;
@@ -310,15 +311,15 @@ export default function SourceGraphDiagram({
 
       // Labels for hovered neighbors
       if (hoveredNode) {
-        const neighbors = neighborMap.get(hoveredNode.id);
+        const neighbors = neighborMap.get(hoveredNode.name);
         if (neighbors) {
           ctx.font = "12px monospace";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillStyle = isDark ? "#ffffff" : "#000000";
           // biome-ignore lint/complexity/noForEach: canvas imperative code
-          neighbors.forEach((nid) => {
-            const nn = nodeMap.get(nid);
+          neighbors.forEach((nname) => {
+            const nn = nodeMap.get(nname);
             if (nn) ctx.fillText(nn.nodeName, nn.x, nn.y - nn.radius - 8);
           });
           // Also label the hovered node itself
@@ -385,7 +386,7 @@ export default function SourceGraphDiagram({
     (mx: number, my: number): CanvasEdge | null => {
       const THRESHOLD = 8;
       const nodeMap = new Map<string, CanvasNode>();
-      for (const n of nodes) nodeMap.set(n.id, n);
+      for (const n of nodes) nodeMap.set(n.name, n);
       for (const e of edges) {
         const s = nodeMap.get(e.source);
         const t = nodeMap.get(e.target);
@@ -439,7 +440,7 @@ export default function SourceGraphDiagram({
     const my = e.clientY - rect.top;
     const foundCanvasNode = findNodeAt(mx, my);
     if (!foundCanvasNode) return;
-    const sourceNode = graph.nodes.find((n) => n.id === foundCanvasNode.id);
+    const sourceNode = graph.nodes.find((n) => n.name === foundCanvasNode.name);
     if (sourceNode) onNodeClick(sourceNode);
   };
 

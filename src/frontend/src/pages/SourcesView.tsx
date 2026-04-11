@@ -99,9 +99,9 @@ export default function SourcesView() {
     setSelectedNode(node);
   };
 
-  const handleNodeSave = (nodeId: string, updates: Partial<SourceNode>) => {
+  const handleNodeSave = (nodeName: string, updates: Partial<SourceNode>) => {
     if (activeGraphId) {
-      updateNode(activeGraphId, nodeId, updates);
+      updateNode(activeGraphId, nodeName, updates);
     }
     setSelectedNode(null);
   };
