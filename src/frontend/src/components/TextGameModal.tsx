@@ -1,7 +1,6 @@
 import { useAnimationFrame } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ScrambleText from "./ScrambleText";
-import TetrisGame from "./TetrisGame";
 
 // ── Start Screen ───────────────────────────────────────────────────────────────
 
@@ -555,11 +554,7 @@ export default function TextGameModal({
   const checkConditionRef = useRef(checkCondition);
   checkConditionRef.current = checkCondition;
 
-  const [gameMode, setGameMode] = useState<"start" | "tetris" | "narrative">(
-    "start",
-  );
-  const [tetrisFinished, setTetrisFinished] = useState(false);
-  const [collectedText, setCollectedText] = useState<string[]>([]);
+  const [showStartScreen, setShowStartScreen] = useState(true);
   const [phase, setPhase] = useState<Phase>("scrambling");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
@@ -592,17 +587,6 @@ export default function TextGameModal({
   useEffect(() => {
     variablesRef.current = variables;
   }, [variables]);
-
-  // ── handleTetrisGameOver ───────────────────────────────────────────────────
-  const handleTetrisGameOver = useCallback((_score: number, text: string[]) => {
-    setCollectedText(text);
-    setTetrisFinished(true);
-    setVariables((prev) => ({ ...prev, collectedText: JSON.stringify(text) }));
-    setTimeout(() => {
-      setGameMode("narrative");
-      navigateRef.current("opening");
-    }, 2000);
-  }, []);
 
   // Resolve a filename with variable substitution
   const resolveFileName = (rawFile: string): string => {
@@ -735,7 +719,7 @@ export default function TextGameModal({
 
   keyHandlerRef.current = (e: KeyboardEvent) => {
     // When the start screen is showing, let StartScreen's own handler take over
-    if (gameMode === "start") return;
+    if (showStartScreen) return;
 
     if (e.shiftKey && e.key === "X") {
       onCompleteRef.current();
@@ -747,9 +731,7 @@ export default function TextGameModal({
       setVariables({});
       variablesRef.current = {};
       setInputValue("");
-      setGameMode("start");
-      setTetrisFinished(false);
-      setCollectedText([]);
+      setShowStartScreen(true);
       return;
     }
 
@@ -864,8 +846,6 @@ export default function TextGameModal({
   void currentFile;
   void retraceRef;
   void messageKey;
-  void tetrisFinished;
-  void collectedText;
 
   const blinkingCursor = (
     <span
@@ -909,13 +889,14 @@ export default function TextGameModal({
         </div>
 
         {/* Game content */}
-        {gameMode === "start" ? (
+        {showStartScreen ? (
           <StartScreen
-            onStart={() => setGameMode("tetris")}
+            onStart={() => {
+              setShowStartScreen(false);
+              navigateRef.current("opening");
+            }}
             onExit={() => onCompleteRef.current()}
           />
-        ) : gameMode === "tetris" ? (
-          <TetrisGame onGameOver={handleTetrisGameOver} />
         ) : (
           /* ── Narrative ──────────────────────────────────────────────── */
           // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via window listener
