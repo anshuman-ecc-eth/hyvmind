@@ -23,6 +23,7 @@ export interface Edge {
   source: string;
   target: string;
   label?: string;
+  bidirectional?: boolean;
 }
 
 export interface SourceGraph {

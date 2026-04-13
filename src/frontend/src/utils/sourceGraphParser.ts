@@ -81,6 +81,17 @@ function extractSublocation(name: string): {
   return { sublocation: null, cleanName: name };
 }
 
+/**
+ * Extract all law entity references from content.
+ * Finds all {EntityName} patterns in the text.
+ * Example: "See {ContractA} and {ContractB}" → ["ContractA", "ContractB"]
+ */
+function extractLawEntityReferences(content: string): string[] {
+  const matches = content.match(/\{([^}]+)\}/g);
+  if (!matches) return [];
+  return matches.map((m) => m.slice(1, -1));
+}
+
 // ---------------------------------------------------------------------------
 // Cumulative attribute inheritance
 // ---------------------------------------------------------------------------
@@ -266,6 +277,11 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           });
         }
 
+        // Build set of all clean lawEntity names in this location (for cross-reference matching)
+        const lawEntityNamesInLocation = new Set<string>(
+          lawEntityParsed.map((e) => e.cleanName),
+        );
+
         // Step 2: Create sublocation nodes (one per unique sublocation prefix)
         for (const sublocation of uniqueSublocations) {
           nodes.push({
@@ -347,6 +363,30 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             };
             nodes.push(interpNode);
             edges.push({ source: entry.cleanName, target: filename });
+
+            // Cross-reference logic: only for context.md files
+            const isContextFile = filename.toLowerCase() === "context";
+            const references = isContextFile
+              ? extractLawEntityReferences(body)
+              : [];
+            const uniqueRefs = [...new Set(references)];
+
+            for (const ref of uniqueRefs) {
+              if (!lawEntityNamesInLocation.has(ref)) continue; // no match, skip
+
+              if (ref === entry.cleanName) {
+                // Self-reference: mark the existing parent edge as bidirectional
+                const existingEdgeIndex = edges.findIndex(
+                  (e) => e.source === entry.cleanName && e.target === filename,
+                );
+                if (existingEdgeIndex !== -1) {
+                  edges[existingEdgeIndex].bidirectional = true;
+                }
+              } else {
+                // Cross-reference to another lawEntity in this location
+                edges.push({ source: filename, target: ref });
+              }
+            }
           }
         }
       }
