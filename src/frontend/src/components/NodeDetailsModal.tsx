@@ -26,7 +26,6 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   curation: "Curation",
   swarm: "Swarm",
   location: "Location",
-  sublocation: "Sublocation",
   lawEntity: "Law Entity",
   interpEntity: "Interp. Entity",
 };

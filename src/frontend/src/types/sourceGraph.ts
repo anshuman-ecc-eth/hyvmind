@@ -2,7 +2,6 @@ export type NodeType =
   | "curation"
   | "swarm"
   | "location"
-  | "sublocation"
   | "lawEntity"
   | "interpEntity";
 

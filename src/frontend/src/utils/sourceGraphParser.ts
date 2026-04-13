@@ -63,25 +63,6 @@ export function extractCustomAttributes(
 }
 
 /**
- * Extract sublocation prefix from a name wrapped in circular parentheses.
- * Example: "(US-Federal)ContractA" → { sublocation: "US-Federal", cleanName: "ContractA" }
- * Example: "PlainName" → { sublocation: null, cleanName: "PlainName" }
- * Edge cases:
- *   - "()" prefix: treated as no sublocation (empty group requires 1+ chars)
- *   - "(A(B))Name": not matched (regex excludes both `(` and `)` from inner group)
- */
-function extractSublocation(name: string): {
-  sublocation: string | null;
-  cleanName: string;
-} {
-  const match = name.match(/^\(([^()]+)\)(.+)$/);
-  if (match) {
-    return { sublocation: match[1], cleanName: match[2] };
-  }
-  return { sublocation: null, cleanName: name };
-}
-
-/**
  * Extract all law entity references from content.
  * Finds all {EntityName} patterns in the text.
  * Example: "See {ContractA} and {ContractB}" → ["ContractA", "ContractB"]
@@ -222,6 +203,25 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         }
       }
 
+      // -----------------------------------------------------------------------
+      // Swarm-wide pre-pass: collect all lawEntity folder names across every
+      // location in this swarm so cross-references can match any lawEntity
+      // regardless of which location it belongs to.
+      // -----------------------------------------------------------------------
+      const swarmWideLawEntityNames = new Set<string>();
+      for (const locName of locationFolders) {
+        const locPrefix = `${swarmPath}/${locName}/`;
+        for (const p of allPaths) {
+          if (!p.startsWith(locPrefix)) continue;
+          const remainder = p.slice(locPrefix.length);
+          const parts = remainder.split("/");
+          // Level 4 subfolders only (not .md files at this level)
+          if (parts.length >= 2 && parts[0] && !parts[0].startsWith("_")) {
+            swarmWideLawEntityNames.add(parts[0]);
+          }
+        }
+      }
+
       for (const locationName of locationFolders) {
         const locationPath = `${swarmPath}/${locationName}`;
         const locationAttrs = await getInheritedAttributes(zip, locationPath);
@@ -238,8 +238,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
         // -------------------------------------------------------------------
         // Level 4: lawEntity folders — direct SUBFOLDER children of each location
-        // With sublocation extraction: folders named "(prefix)Name" create a
-        // shared sublocation node for each unique prefix.
+        // Raw folder names are used as-is (no stripping of parenthesized prefixes).
         // -------------------------------------------------------------------
         const locationPrefix = `${locationPath}/`;
         const lawEntityFolders = new Set<string>();
@@ -254,58 +253,31 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           }
         }
 
-        // Step 1: Collect and parse all lawEntity names
-        const uniqueSublocations = new Set<string>();
-        const lawEntityParsed: Array<{
-          originalName: string;
-          sublocation: string | null;
-          cleanName: string;
-          folderPath: string;
-        }> = [];
-
+        // Collect lawEntity entries: name = raw folder name, folderPath for traversal
+        const lawEntityList: Array<{ name: string; folderPath: string }> = [];
         for (const lawEntityName of lawEntityFolders) {
-          const lawEntityFolder = `${locationPrefix}${lawEntityName}/`;
-          const { sublocation, cleanName } = extractSublocation(lawEntityName);
-          if (sublocation) {
-            uniqueSublocations.add(sublocation);
-          }
-          lawEntityParsed.push({
-            originalName: lawEntityName,
-            sublocation,
-            cleanName,
-            folderPath: lawEntityFolder,
+          lawEntityList.push({
+            name: lawEntityName,
+            folderPath: `${locationPrefix}${lawEntityName}/`,
           });
         }
 
-        // Step 2: Create sublocation nodes (one per unique sublocation prefix)
-        for (const sublocation of uniqueSublocations) {
-          nodes.push({
-            name: sublocation,
-            nodeType: "sublocation",
-            parentName: locationName,
-            jurisdiction: locationAttrs.jurisdiction,
-            attributes: extractCustomAttributes(locationAttrs),
-          });
-          edges.push({ source: locationName, target: sublocation });
-        }
-
-        // Step 3: Create lawEntity nodes with stripped names + Level 5 interpEntity
-        for (const entry of lawEntityParsed) {
+        // Create lawEntity nodes + Level 5 interpEntity files
+        for (const entry of lawEntityList) {
           const lawEntityFolder = entry.folderPath;
-          const parentOfLawEntity = entry.sublocation ?? locationName;
           const lawEntityAttrs = await getInheritedAttributes(
             zip,
             lawEntityFolder,
           );
 
           nodes.push({
-            name: entry.cleanName,
+            name: entry.name,
             nodeType: "lawEntity",
-            parentName: parentOfLawEntity,
+            parentName: locationName,
             jurisdiction: lawEntityAttrs.jurisdiction,
             attributes: extractCustomAttributes(lawEntityAttrs),
           });
-          edges.push({ source: parentOfLawEntity, target: entry.cleanName });
+          edges.push({ source: locationName, target: entry.name });
 
           // -----------------------------------------------------------------
           // Level 5: interpEntity .md files — direct .md files inside lawEntity
@@ -350,43 +322,42 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               name: filename,
               nodeType: "interpEntity",
               content: body || undefined,
-              parentName: entry.cleanName,
+              parentName: entry.name,
               attributes:
                 mergedAttrs && Object.keys(mergedAttrs).length > 0
                   ? mergedAttrs
                   : undefined,
             };
             nodes.push(interpNode);
-            edges.push({ source: entry.cleanName, target: filename });
+            // Parent → child edge (may become bidirectional below for self-references)
+            edges.push({ source: entry.name, target: filename });
 
-            // Cross-reference logic: only for context.md files
-            const isContextFile = filename.toLowerCase() === "context";
-            const references = isContextFile
-              ? extractLawEntityReferences(body)
-              : [];
+            // -----------------------------------------------------------------
+            // Cross-reference logic: applies to ALL .md files (not just context.md)
+            // Matches against swarm-wide lawEntity names.
+            // -----------------------------------------------------------------
+            const references = extractLawEntityReferences(body);
             const uniqueRefs = [...new Set(references)];
 
             for (const ref of uniqueRefs) {
-              // Match reference against lawEntityParsed entries (contains both cleanName and originalName)
-              const matchedEntry = lawEntityParsed.find(
-                (e) => e.cleanName === ref || e.originalName === ref,
-              );
+              if (!swarmWideLawEntityNames.has(ref)) continue;
 
-              if (!matchedEntry) continue;
-
-              const targetName = matchedEntry.cleanName;
-
-              if (targetName === entry.cleanName) {
-                // Self-reference: make edge bidirectional
+              if (ref === entry.name) {
+                // Self-reference: mark the parent→child edge as bidirectional
                 const existingEdgeIndex = edges.findIndex(
-                  (e) => e.source === entry.cleanName && e.target === filename,
+                  (e) => e.source === entry.name && e.target === filename,
                 );
                 if (existingEdgeIndex !== -1) {
                   edges[existingEdgeIndex].bidirectional = true;
                 }
               } else {
-                // Cross-reference to another lawEntity
-                edges.push({ source: filename, target: targetName });
+                // Cross-reference to another lawEntity — avoid duplicates
+                const alreadyExists = edges.some(
+                  (e) => e.source === filename && e.target === ref,
+                );
+                if (!alreadyExists) {
+                  edges.push({ source: filename, target: ref });
+                }
               }
             }
           }
