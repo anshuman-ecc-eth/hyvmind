@@ -26,25 +26,14 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   curation: "Curation",
   swarm: "Swarm",
   location: "Location",
+  sublocation: "Sublocation",
   lawEntity: "Law Entity",
-  lawRelation: "Law Relation",
   interpEntity: "Interp. Entity",
-  interpRelation: "Interp. Relation",
 };
-
-const RELATION_TYPES = new Set(["lawRelation", "interpRelation"]);
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function resolveNodeName(
-  name: string | undefined,
-  nodes: SourceNode[],
-): string | null {
-  if (!name) return null;
-  return nodes.find((n) => n.name === name)?.name ?? name;
-}
 
 function buildInheritedAttributes(
   node: SourceNode,
@@ -101,10 +90,6 @@ export default function NodeDetailsModal({
 
   const inheritedAttributes = buildInheritedAttributes(node, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
-
-  const isRelation = RELATION_TYPES.has(node.nodeType);
-  const fromName = isRelation ? resolveNodeName(node.from, graph.nodes) : null;
-  const toName = isRelation ? resolveNodeName(node.to, graph.nodes) : null;
 
   // Trap focus inside modal
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -238,37 +223,6 @@ export default function NodeDetailsModal({
               data-ocid="node-name-input"
             />
           </div>
-
-          {/* Relation from/to — only for relation types */}
-          {isRelation && (
-            <div className="space-y-1 border border-dashed border-border p-2">
-              <div className="text-xs text-muted-foreground mb-1">relation</div>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-xs text-muted-foreground w-8 shrink-0">
-                  from:
-                </span>
-                <span className="text-foreground truncate min-w-0">
-                  {fromName ?? (
-                    <span className="text-muted-foreground italic">
-                      (unresolved)
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-xs text-muted-foreground w-8 shrink-0">
-                  to:
-                </span>
-                <span className="text-foreground truncate min-w-0">
-                  {toName ?? (
-                    <span className="text-muted-foreground italic">
-                      (unresolved)
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Own Attributes */}
           <div className="space-y-2">

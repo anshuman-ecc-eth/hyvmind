@@ -62,6 +62,25 @@ export function extractCustomAttributes(
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
+/**
+ * Extract sublocation prefix from a name wrapped in circular parentheses.
+ * Example: "(US-Federal)ContractA" → { sublocation: "US-Federal", cleanName: "ContractA" }
+ * Example: "PlainName" → { sublocation: null, cleanName: "PlainName" }
+ * Edge cases:
+ *   - "()" prefix: treated as no sublocation (empty group requires 1+ chars)
+ *   - "(A(B))Name": not matched (regex excludes both `(` and `)` from inner group)
+ */
+function extractSublocation(name: string): {
+  sublocation: string | null;
+  cleanName: string;
+} {
+  const match = name.match(/^\(([^()]+)\)(.+)$/);
+  if (match) {
+    return { sublocation: match[1], cleanName: match[2] };
+  }
+  return { sublocation: null, cleanName: name };
+}
+
 // ---------------------------------------------------------------------------
 // Cumulative attribute inheritance
 // ---------------------------------------------------------------------------
@@ -208,6 +227,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
         // -------------------------------------------------------------------
         // Level 4: lawEntity folders — direct SUBFOLDER children of each location
+        // With sublocation extraction: folders named "(prefix)Name" create a
+        // shared sublocation node for each unique prefix.
         // -------------------------------------------------------------------
         const locationPrefix = `${locationPath}/`;
         const lawEntityFolders = new Set<string>();
@@ -222,30 +243,65 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           }
         }
 
+        // Step 1: Collect and parse all lawEntity names
+        const uniqueSublocations = new Set<string>();
+        const lawEntityParsed: Array<{
+          originalName: string;
+          sublocation: string | null;
+          cleanName: string;
+          folderPath: string;
+        }> = [];
+
         for (const lawEntityName of lawEntityFolders) {
-          const lawEntityPath = `${locationPath}/${lawEntityName}`;
+          const lawEntityFolder = `${locationPrefix}${lawEntityName}/`;
+          const { sublocation, cleanName } = extractSublocation(lawEntityName);
+          if (sublocation) {
+            uniqueSublocations.add(sublocation);
+          }
+          lawEntityParsed.push({
+            originalName: lawEntityName,
+            sublocation,
+            cleanName,
+            folderPath: lawEntityFolder,
+          });
+        }
+
+        // Step 2: Create sublocation nodes (one per unique sublocation prefix)
+        for (const sublocation of uniqueSublocations) {
+          nodes.push({
+            name: sublocation,
+            nodeType: "sublocation",
+            parentName: locationName,
+            jurisdiction: locationAttrs.jurisdiction,
+            attributes: extractCustomAttributes(locationAttrs),
+          });
+          edges.push({ source: locationName, target: sublocation });
+        }
+
+        // Step 3: Create lawEntity nodes with stripped names + Level 5 interpEntity
+        for (const entry of lawEntityParsed) {
+          const lawEntityFolder = entry.folderPath;
+          const parentOfLawEntity = entry.sublocation ?? locationName;
           const lawEntityAttrs = await getInheritedAttributes(
             zip,
-            lawEntityPath,
+            lawEntityFolder,
           );
 
-          const lawEntityNode: SourceNode = {
-            name: lawEntityName,
+          nodes.push({
+            name: entry.cleanName,
             nodeType: "lawEntity",
-            parentName: locationName,
+            parentName: parentOfLawEntity,
+            jurisdiction: lawEntityAttrs.jurisdiction,
             attributes: extractCustomAttributes(lawEntityAttrs),
-          };
-          nodes.push(lawEntityNode);
-          edges.push({ source: locationName, target: lawEntityName });
+          });
+          edges.push({ source: parentOfLawEntity, target: entry.cleanName });
 
           // -----------------------------------------------------------------
           // Level 5: interpEntity .md files — direct .md files inside lawEntity
           // -----------------------------------------------------------------
-          const lawEntityPrefix = `${lawEntityPath}/`;
-
           const interpFiles = allPaths.filter((p) => {
-            if (!p.startsWith(lawEntityPrefix)) return false;
-            const remainder = p.slice(lawEntityPrefix.length);
+            if (!p.startsWith(lawEntityFolder)) return false;
+            const remainder = p.slice(lawEntityFolder.length);
             // Direct .md file only (no sub-folders), not starting with _
             return (
               remainder.endsWith(".md") &&
@@ -262,13 +318,13 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const fm = parseFrontmatter(raw);
             const body = stripFrontmatter(raw);
             const filename = interpPath
-              .slice(lawEntityPrefix.length)
+              .slice(lawEntityFolder.length)
               .replace(/\.md$/, "");
 
             // Inherited attributes merged with file-level frontmatter custom attrs
             const inheritedAttrs = await getInheritedAttributes(
               zip,
-              lawEntityPath,
+              lawEntityFolder,
             );
             const fileCustomAttrs = extractCustomAttributes(fm);
             const mergedAttrs =
@@ -283,14 +339,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               name: filename,
               nodeType: "interpEntity",
               content: body || undefined,
-              parentName: lawEntityName,
+              parentName: entry.cleanName,
               attributes:
                 mergedAttrs && Object.keys(mergedAttrs).length > 0
                   ? mergedAttrs
                   : undefined,
             };
             nodes.push(interpNode);
-            edges.push({ source: lawEntityName, target: filename });
+            edges.push({ source: entry.cleanName, target: filename });
           }
         }
       }

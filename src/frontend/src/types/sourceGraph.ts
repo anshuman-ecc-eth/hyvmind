@@ -2,10 +2,9 @@ export type NodeType =
   | "curation"
   | "swarm"
   | "location"
+  | "sublocation"
   | "lawEntity"
-  | "lawRelation"
-  | "interpEntity"
-  | "interpRelation";
+  | "interpEntity";
 
 export interface SourceNode {
   name: string;

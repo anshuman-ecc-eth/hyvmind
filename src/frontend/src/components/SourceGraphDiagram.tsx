@@ -38,10 +38,9 @@ const NODE_COLORS: Record<string, string> = {
   curation: "#4a9eff",
   swarm: "#ff7f50",
   location: "#90EE90",
+  sublocation: "#9b59b6",
   lawEntity: "#FFD700",
-  lawRelation: "#aaaaaa",
   interpEntity: "#DA70D6",
-  interpRelation: "#aaaaaa",
 };
 
 const BG_DARK = "#0a0a0a";
