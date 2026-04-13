@@ -135,8 +135,8 @@ export default function SourcesView() {
           </span>
         </div>
 
-        {/* Graph canvas */}
-        <div className="flex-1 min-h-0">
+        {/* Graph canvas — flex-1 + min-h-0 lets force-graph measure a real height */}
+        <div className="flex-1 min-h-0 h-full">
           <SourceGraphDiagram
             graph={activeGraph}
             onNodeClick={handleNodeClick}

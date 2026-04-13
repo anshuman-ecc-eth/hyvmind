@@ -75,6 +75,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.2.1",
+    "force-graph": "^1.51.2",
     "input-otp": "^1.4.1",
     "jszip": "^3.10.1",
     "lucide-react": "0.511.0",
