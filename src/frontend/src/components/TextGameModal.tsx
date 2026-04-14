@@ -141,10 +141,7 @@ interface HistoryEntry {
 // ── Game Files ─────────────────────────────────────────────────────────────────
 
 const GAME_FILES: Record<string, string> = {
-  opening: "- (M) welcome",
-
-  second:
-    "- (M) please follow dr. chen\n- (P) [[1917]]\n- (P) [[1919]]\n- (P) [[1928]]",
+  opening: "- (M) welcome\n- (P) [[1917]]\n- (P) [[1919]]\n- (P) [[1928]]",
 
   "1917": "- (M) russia 1917",
   "1919": "- (M) italy 1919",
@@ -530,11 +527,6 @@ export default function TextGameModal({
   };
 
   showEndOfGameRef.current = () => {
-    // Reaching end of "opening" auto-navigates to "second"
-    if (currentFileRef.current === "opening") {
-      navigateRef.current("second");
-      return;
-    }
     // Reaching end of "1917" or "russia1917" loads the Petrograd 1917 iframe
     if (
       currentFileRef.current === "1917" ||
