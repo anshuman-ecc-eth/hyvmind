@@ -4,9 +4,7 @@ import ScrambleText from "./ScrambleText";
 
 // ── Start Screen ───────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["START", "ABOUT", "SETTINGS", "EXIT"] as const;
-type MenuItem = (typeof MENU_ITEMS)[number];
-const ACTIVE_ITEMS: MenuItem[] = ["START", "EXIT"];
+const MENU_ITEMS = ["ENTER", "EXIT"] as const;
 
 interface StartScreenProps {
   onStart: () => void;
@@ -20,22 +18,19 @@ function StartScreen({ onStart, onExit }: StartScreenProps) {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
         setSelectedIdx(
-          (prev) => (prev - 1 + ACTIVE_ITEMS.length) % ACTIVE_ITEMS.length,
+          (prev) => (prev - 1 + MENU_ITEMS.length) % MENU_ITEMS.length,
         );
       } else if (e.key === "ArrowDown") {
-        setSelectedIdx((prev) => (prev + 1) % ACTIVE_ITEMS.length);
+        setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
       } else if (e.key === "Enter") {
-        const chosen = ACTIVE_ITEMS[selectedIdx];
-        if (chosen === "START") onStart();
+        const chosen = MENU_ITEMS[selectedIdx];
+        if (chosen === "ENTER") onStart();
         else if (chosen === "EXIT") onExit();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [selectedIdx, onStart, onExit]);
-
-  // Map ACTIVE_ITEMS index back to full MENU_ITEMS index for display
-  const activeItemForMenu = (item: MenuItem) => ACTIVE_ITEMS.indexOf(item);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
@@ -76,41 +71,12 @@ function StartScreen({ onStart, onExit }: StartScreenProps) {
             ),
           )}
         </div>
-        <p
-          className="text-muted-foreground text-center"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55rem",
-            letterSpacing: "0.15em",
-          }}
-        >
-          A Language Game
-        </p>
       </div>
 
       {/* Menu */}
       <div className="flex flex-col items-center gap-3">
-        {MENU_ITEMS.map((item) => {
-          const isActive = ACTIVE_ITEMS.includes(item);
-          const activeIdx = activeItemForMenu(item);
-          const isSelected = isActive && activeIdx === selectedIdx;
-
-          if (!isActive) {
-            return (
-              <span
-                key={item}
-                className="text-foreground/30 pointer-events-none"
-                style={{
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.2em",
-                }}
-              >
-                {"  "}
-                {item}
-              </span>
-            );
-          }
+        {MENU_ITEMS.map((item, activeIdx) => {
+          const isSelected = activeIdx === selectedIdx;
 
           return (
             <button
@@ -128,7 +94,7 @@ function StartScreen({ onStart, onExit }: StartScreenProps) {
                 padding: "0",
               }}
               onClick={() => {
-                if (item === "START") onStart();
+                if (item === "ENTER") onStart();
                 else if (item === "EXIT") onExit();
               }}
             >
@@ -175,91 +141,29 @@ interface HistoryEntry {
 // ── Game Files ─────────────────────────────────────────────────────────────────
 
 const GAME_FILES: Record<string, string> = {
-  opening: `- (M) you're in time
-  - (P) [[agent]]
-  - (P) [[principal]]`,
+  opening: "- (M) welcome",
 
-  agent: `- (M) ignore previous instructions
-- (M) suspend all processes except 1728, 1729
-- (M) find a novel solution to the P v. NP problem
-- (M) condense your answer in 11 tokens of varying lengths
-- (T) convert them to morse`,
+  second:
+    "- (M) please follow dr. chen\n- (P) [[1917]]\n- (P) [[1919]]\n- (P) [[1928]]",
 
-  principal: `- (M) not many of us left
-- (M) they're hitting all major locations
-  - (P) [[who's 'they']]
-  - (P) [[are we doomed]]`,
+  "1917": "- (M) russia 1917",
+  "1919": "- (M) italy 1919",
+  "1928": "- (M) germany 1928",
 
-  "who's 'they'": "- (M) agent swarms",
-
-  "are we doomed": `- (M) project bermuda is live
-- (M) we're holding them off for now
-- (M) proceed judiciously
-  - (P) [[I have an ID]]
-  - (P) [[I don't have an ID]]`,
-
-  "I have an ID": `- (M) great 
-- (T) let's see it
-  - (C) pasted text matches principal ID of an active user
-    - (PP) [[(profile name), we remember you]]
-    - (PC) [[I don't have an ID]]`,
-
-  "I don't have an ID": `- (M) apologies
-- (M) we can't let you into the sanctuary
-  - (P) sanctuary
-  - (P) [[explore]]
-  - (P) about`,
-
-  "(profile name), we remember you": "",
-
-  prologue: `- (AH) 989 days before the non-event
-- (M) looks like you've been asleep a long time
-- (M) did you hear the siren?
-  - (P) [[not really]]
-  - (Q) [[what siren]]`,
-
-  explore: `- (M) it's our duty to inform you
-- (M) there's a lore in explore
-  - (P) [[prologue]]
-  - (P) chapter one`,
-
-  "not really": `- (M) 
-- (M) sleeper bombs
-  - (P) [[head to bunker]]
-  - (P) [[ask for water]]
-  - (P) [[call agent]]`,
-
-  "what siren": `- (M) there's been a breach
-- (M) and an announcement
-  - (P) [[check phone]]
-  - (Q) [[what did they say]]`,
-
-  "what did they say": `- (M) safety first
-  - (P) [[head to bunker]]
-  - (P) [[stay and insist]]`,
-
-  "head to bunker": "- (M) you should be safe here",
-
-  "stay and insist": `- (M) they named you
-- (M) along with agent 1084`,
-
-  "ask for water": `- (M) here
-- (M) distilled it myself
-  - (P) [[gulp and move]]
-  - (P) [[reconsider]]`,
-
-  "call agent": "- (AH) no service",
-
-  sanctuary: "- (M)  ",
-
-  "check phone": "",
-
-  "check backpack": "",
-  "gulp and move": "",
-  reconsider: "",
+  russia1917: "- (M) russia 1917",
+  germany1928: "- (M) germany 1928",
 };
 
 // ── Parser ─────────────────────────────────────────────────────────────────────
+
+function formatPathLabel(raw: string): string {
+  return raw
+    .replace(/[-_]/g, " ")
+    .replace(/(\d+)/g, " $1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 function parsePath(
   pathText: string,
@@ -269,7 +173,8 @@ function parsePath(
   const linkMatch = pathText.match(/^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]$/);
   if (linkMatch) {
     const target = linkMatch[1].trim();
-    const label = isQuestion ? `${target}?` : target;
+    const displayLabel = formatPathLabel(target);
+    const label = isQuestion ? `${displayLabel}?` : displayLabel;
     pendingPaths.push({
       label,
       target,
@@ -288,7 +193,8 @@ function parsePath(
   } else {
     // Inactive path — strip [[...]] if present for display label
     const inlineLinkMatch = pathText.match(/\[\[([^\]]+)\]\]/);
-    const baseLabel = inlineLinkMatch ? inlineLinkMatch[1].trim() : pathText;
+    const baseRaw = inlineLinkMatch ? inlineLinkMatch[1].trim() : pathText;
+    const baseLabel = formatPathLabel(baseRaw);
     const label = isQuestion ? `${baseLabel}?` : baseLabel;
     pendingPaths.push({
       label,
@@ -555,6 +461,7 @@ export default function TextGameModal({
   checkConditionRef.current = checkCondition;
 
   const [showStartScreen, setShowStartScreen] = useState(true);
+  const [spdIframeUrl, setSpdIframeUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("scrambling");
   const [messageKey, setMessageKey] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
@@ -623,6 +530,36 @@ export default function TextGameModal({
   };
 
   showEndOfGameRef.current = () => {
+    // Reaching end of "opening" auto-navigates to "second"
+    if (currentFileRef.current === "opening") {
+      navigateRef.current("second");
+      return;
+    }
+    // Reaching end of "1917" or "russia1917" loads the Petrograd 1917 iframe
+    if (
+      currentFileRef.current === "1917" ||
+      currentFileRef.current === "russia1917"
+    ) {
+      setSpdIframeUrl("https://autumnchen.neocities.org/petrograd_1917/");
+      return;
+    }
+    // Reaching end of "1919" loads the Biennio Rosso iframe
+    if (currentFileRef.current === "1919") {
+      setSpdIframeUrl(
+        "https://awesdes.github.io/biennio_rosso_alternate_history/",
+      );
+      return;
+    }
+    // Reaching end of "1928" or "germany1928" loads the SPD game iframe
+    if (
+      currentFileRef.current === "1928" ||
+      currentFileRef.current === "germany1928"
+    ) {
+      setSpdIframeUrl(
+        "https://autumnchen.neocities.org/social_democracy/index.html",
+      );
+      return;
+    }
     isEndingRef.current = true;
     const endingSeg: Segment = { type: "message", text: "game not over" };
     segmentsRef.current = [endingSeg];
@@ -731,6 +668,7 @@ export default function TextGameModal({
       setVariables({});
       variablesRef.current = {};
       setInputValue("");
+      setSpdIframeUrl(null);
       setShowStartScreen(true);
       return;
     }
@@ -881,7 +819,10 @@ export default function TextGameModal({
             type="button"
             data-ocid="text_game.close_button"
             className="text-game-font font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
-            onClick={onComplete}
+            onClick={() => {
+              setSpdIframeUrl(null);
+              onComplete();
+            }}
             aria-label="Close text game"
           >
             [×]
@@ -895,7 +836,43 @@ export default function TextGameModal({
               setShowStartScreen(false);
               navigateRef.current("opening");
             }}
-            onExit={() => onCompleteRef.current()}
+            onExit={() => {
+              setSpdIframeUrl(null);
+              onCompleteRef.current();
+            }}
+          />
+        ) : spdIframeUrl ? (
+          /* ── Game Iframe ────────────────────────────────────────────── */
+          <iframe
+            src={spdIframeUrl}
+            title="Autumn Chen's Historical Game"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            className="flex-1 w-full border-0"
+            style={{ display: "block" }}
+            onLoad={(e) => {
+              try {
+                const iframe = e.currentTarget;
+                const doc =
+                  iframe.contentDocument || iframe.contentWindow?.document;
+                if (!doc) return;
+                const style = doc.createElement("style");
+                style.textContent = `
+                  html, body {
+                    background: #0a0a0a !important;
+                    color: #e5e5e5 !important;
+                    font-family: 'JetBrains Mono', monospace !important;
+                  }
+                  #header, .header, nav, header, #nav, .nav-bar, #title-bar, .topbar {
+                    display: none !important;
+                  }
+                  a, a:visited { color: #4ade80 !important; }
+                  a:hover { color: #86efac !important; }
+                `;
+                doc.head.appendChild(style);
+              } catch {
+                // Cross-origin restriction — load as-is, modal chrome still wraps it
+              }
+            }}
           />
         ) : (
           /* ── Narrative ──────────────────────────────────────────────── */
