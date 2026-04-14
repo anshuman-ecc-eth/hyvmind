@@ -329,8 +329,6 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
                   : undefined,
             };
             nodes.push(interpNode);
-            // Parent → child edge (may become bidirectional below for self-references)
-            edges.push({ source: entry.name, target: filename });
 
             // -----------------------------------------------------------------
             // Cross-reference logic: applies to ALL .md files (not just context.md)
@@ -339,25 +337,25 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const references = extractLawEntityReferences(body);
             const uniqueRefs = [...new Set(references)];
 
+            // Determine bidirectionality upfront before creating the edge
+            const hasSelfReference = uniqueRefs.some(
+              (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name,
+            );
+            edges.push({
+              source: entry.name,
+              target: filename,
+              bidirectional: hasSelfReference,
+            });
+
             for (const ref of uniqueRefs) {
               if (!swarmWideLawEntityNames.has(ref)) continue;
-
-              if (ref === entry.name) {
-                // Self-reference: mark the parent→child edge as bidirectional
-                const existingEdgeIndex = edges.findIndex(
-                  (e) => e.source === entry.name && e.target === filename,
-                );
-                if (existingEdgeIndex !== -1) {
-                  edges[existingEdgeIndex].bidirectional = true;
-                }
-              } else {
-                // Cross-reference to another lawEntity — avoid duplicates
-                const alreadyExists = edges.some(
-                  (e) => e.source === filename && e.target === ref,
-                );
-                if (!alreadyExists) {
-                  edges.push({ source: filename, target: ref });
-                }
+              if (ref === entry.name) continue;
+              // Cross-reference to another lawEntity — avoid duplicates
+              const alreadyExists = edges.some(
+                (e) => e.source === filename && e.target === ref,
+              );
+              if (!alreadyExists) {
+                edges.push({ source: filename, target: ref });
               }
             }
           }
