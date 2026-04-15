@@ -73,6 +73,18 @@ function extractLawEntityReferences(content: string): string[] {
   return matches.map((m) => m.slice(1, -1).trim());
 }
 
+/**
+ * Extract all interp entity references from content.
+ * Finds all {{filename}} patterns (double curly brackets) in the text.
+ * Example: "See {{interp1}} and {{ interp2 }}" → ["interp1", "interp2"]
+ * Empty strings after trim are filtered out.
+ */
+function extractInterpEntityReferences(content: string): string[] {
+  const matches = content.match(/\{\{([^}]+)\}\}/g);
+  if (!matches) return [];
+  return matches.map((m) => m.slice(2, -2).trim()).filter((s) => s.length > 0);
+}
+
 // ---------------------------------------------------------------------------
 // Cumulative attribute inheritance
 // ---------------------------------------------------------------------------
@@ -207,8 +219,11 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       // Swarm-wide pre-pass: collect all lawEntity folder names across every
       // location in this swarm so cross-references can match any lawEntity
       // regardless of which location it belongs to.
+      // Also collect all interpEntity filenames (without .md extension) across
+      // the entire swarm for double curly bracket {{filename}} linking.
       // -----------------------------------------------------------------------
       const swarmWideLawEntityNames = new Set<string>();
+      const allInterpFilenames = new Set<string>();
       for (const locName of locationFolders) {
         const locPrefix = `${swarmPath}/${locName}/`;
         for (const p of allPaths) {
@@ -218,6 +233,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           // Level 4 subfolders only (not .md files at this level)
           if (parts.length >= 2 && parts[0] && !parts[0].startsWith("_")) {
             swarmWideLawEntityNames.add(parts[0]);
+            // Level 5: .md files directly inside each lawEntity folder
+            if (
+              parts.length === 2 &&
+              parts[1].endsWith(".md") &&
+              !parts[1].startsWith("_")
+            ) {
+              allInterpFilenames.add(parts[1].replace(/\.md$/, ""));
+            }
           }
         }
       }
@@ -351,6 +374,28 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               if (!swarmWideLawEntityNames.has(ref)) continue;
               if (ref === entry.name) continue;
               // Cross-reference to another lawEntity — avoid duplicates
+              const alreadyExists = edges.some(
+                (e) => e.source === filename && e.target === ref,
+              );
+              if (!alreadyExists) {
+                edges.push({ source: filename, target: ref });
+              }
+            }
+
+            // -----------------------------------------------------------------
+            // Double curly bracket cross-references: {{filename}} links this
+            // interpEntity to other interpEntities anywhere in the swarm.
+            // Self-references and invalid references are silently ignored.
+            // -----------------------------------------------------------------
+            const interpRefs = extractInterpEntityReferences(body);
+            const uniqueInterpRefs = [...new Set(interpRefs)];
+
+            for (const ref of uniqueInterpRefs) {
+              // Skip self-references
+              if (ref === filename) continue;
+              // Skip references to filenames not found anywhere in the swarm
+              if (!allInterpFilenames.has(ref)) continue;
+              // Avoid duplicate edges
               const alreadyExists = edges.some(
                 (e) => e.source === filename && e.target === ref,
               );
