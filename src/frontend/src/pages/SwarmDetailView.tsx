@@ -1,11 +1,9 @@
 import type { CustomAttribute } from "@/backend";
-import CreateNodeDialog from "@/components/CreateNodeDialog";
 import LawTokenCard from "@/components/LawTokenCard";
 import { Button } from "@/components/ui/button";
 import { useGetAllData, useGetOwnedData } from "@/hooks/useQueries";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
-import { ArrowLeft, Lock, Plus } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Lock } from "lucide-react";
 
 interface SwarmDetailViewProps {
   swarmId: string;
@@ -21,10 +19,6 @@ export default function SwarmDetailView({
   const { data: allGraphData } = useGetAllData();
   const { identity } = useInternetIdentity();
 
-  const [locationDialogSide, setLocationDialogSide] = useState<
-    "yes" | "no" | null
-  >(null);
-
   // Swarm from owned data (creator can see/write)
   const swarm =
     graphData?.swarms.find((s) => s.id === swarmId) ??
@@ -36,7 +30,6 @@ export default function SwarmDetailView({
     : undefined;
 
   // Fix isFork: Candid Opt deserialises as [] (None) or ["id"] (Some)
-  // backend.d.ts types forkSource as optional string, but runtime value is [] | [string]
   const forkSourceRaw = swarm?.forkSource as unknown;
   const isFork =
     Array.isArray(forkSourceRaw) && (forkSourceRaw as string[]).length > 0;
@@ -80,26 +73,6 @@ export default function SwarmDetailView({
     noLocationIds.includes(lt.parentLocationId),
   );
 
-  // Sublocation lookup: lawTokenId → Sublocation[]
-  const allSublocations = graphData?.sublocations ?? [];
-  const edges = graphData?.edges ?? [];
-  const sublocationIds = new Set(allSublocations.map((sl) => sl.id));
-  const sublocationsByLawTokenId: Record<string, typeof allSublocations> = {};
-  for (const edge of edges) {
-    if (sublocationIds.has(edge.source)) {
-      const lawTokenId = edge.target;
-      if (!sublocationsByLawTokenId[lawTokenId]) {
-        sublocationsByLawTokenId[lawTokenId] = [];
-      }
-      const sl = allSublocations.find((s) => s.id === edge.source);
-      if (sl) sublocationsByLawTokenId[lawTokenId].push(sl);
-    }
-  }
-
-  const prefillAttributesForSide = (side: "yes" | "no"): CustomAttribute[] => [
-    { key: "side", value: side },
-  ];
-
   // Non-creator: show empty workspace state
   if (!isCreator) {
     return (
@@ -127,9 +100,9 @@ export default function SwarmDetailView({
             You haven't created any questions of law yet.
           </p>
           <p className="text-xs text-muted-foreground mt-2 font-mono">
-            Use the terminal to create a swarm with the{" "}
-            <span className="text-foreground">question-of-law</span> tag, or
-            join a swarm and fork it from the Swarms tab.
+            Publish a source graph from the{" "}
+            <span className="text-foreground">Sources</span> tab, or join a
+            swarm and fork it from the Swarms tab.
           </p>
         </div>
       </div>
@@ -178,18 +151,8 @@ export default function SwarmDetailView({
       <div className="flex flex-1 min-h-0 divide-x divide-border">
         {/* Yes panel */}
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+          <div className="flex items-center px-4 py-2 border-b border-border">
             <span className="text-sm text-foreground">Yes</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              onClick={() => setLocationDialogSide("yes")}
-              title="Add location to Yes"
-              data-ocid="swarm_detail.yes.add.button"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {yesLawTokens.length === 0 ? (
@@ -205,7 +168,7 @@ export default function SwarmDetailView({
                   key={lt.id}
                   lawToken={lt}
                   locations={locations}
-                  sublocations={sublocationsByLawTokenId[lt.id] ?? []}
+                  sublocations={[]}
                 />
               ))
             )}
@@ -214,18 +177,8 @@ export default function SwarmDetailView({
 
         {/* No panel */}
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+          <div className="flex items-center px-4 py-2 border-b border-border">
             <span className="text-sm text-foreground">No</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              onClick={() => setLocationDialogSide("no")}
-              title="Add location to No"
-              data-ocid="swarm_detail.no.add.button"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {noLawTokens.length === 0 ? (
@@ -241,28 +194,13 @@ export default function SwarmDetailView({
                   key={lt.id}
                   lawToken={lt}
                   locations={locations}
-                  sublocations={sublocationsByLawTokenId[lt.id] ?? []}
+                  sublocations={[]}
                 />
               ))
             )}
           </div>
         </div>
       </div>
-
-      {/* Create Location Dialog — pre-filled with side attribute */}
-      <CreateNodeDialog
-        defaultNodeType="location"
-        defaultParentId={swarmId}
-        open={locationDialogSide !== null}
-        onOpenChange={(open) => {
-          if (!open) setLocationDialogSide(null);
-        }}
-        prefillCustomAttributes={
-          locationDialogSide !== null
-            ? prefillAttributesForSide(locationDialogSide)
-            : undefined
-        }
-      />
     </div>
   );
 }

@@ -8,12 +8,10 @@ import {
   Download,
   Link2,
   Loader2,
-  Plus,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { GraphNode, InterpretationToken, Sublocation } from "../backend";
-import CreateNodeDialog from "../components/CreateNodeDialog";
+import type { GraphNode, InterpretationToken } from "../backend";
 import FilterSortModal from "../components/FilterSortModal";
 import SchemaBuilderFilterModal from "../components/SchemaBuilderFilterModal";
 import { useGetOwnedData } from "../hooks/useQueries";
@@ -36,7 +34,6 @@ function TreeNode({
   curationNameMap,
 }: TreeNodeProps) {
   const [expanded, setExpanded] = useState(level < 2);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const hasChildren = node.children.length > 0;
   const isSharedLawToken =
     node.nodeType === "lawToken" && sharedLawTokenIds.has(node.id);
@@ -52,42 +49,17 @@ function TreeNode({
       : null;
 
   const getNodeColor = (type: string) => {
-    // Monochrome badge styling
     switch (type) {
       case "curation":
-        return "bg-muted text-foreground border-border";
       case "swarm":
-        return "bg-muted text-foreground border-border";
       case "location":
-        return "bg-muted text-foreground border-border";
       case "lawToken":
-        return "bg-muted text-foreground border-border";
       case "interpretationToken":
         return "bg-muted text-foreground border-border";
       default:
         return "bg-muted text-muted-foreground";
     }
   };
-
-  // Determine if this node type should show a create button
-  const getCreateConfig = () => {
-    switch (node.nodeType) {
-      case "curation":
-        return { show: true, nodeType: "swarm" as const, parentId: node.id };
-      case "swarm":
-        return { show: true, nodeType: "location" as const, parentId: node.id };
-      case "lawToken":
-        return {
-          show: true,
-          nodeType: "interpretationToken" as const,
-          parentId: node.id,
-        };
-      default:
-        return { show: false, nodeType: null, parentId: null };
-    }
-  };
-
-  const createConfig = getCreateConfig();
 
   return (
     <div className="space-y-1">
@@ -167,27 +139,6 @@ function TreeNode({
               </span>
             )}
           </div>
-          {createConfig.show && createConfig.nodeType && (
-            <CreateNodeDialog
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 rounded-full hover:bg-accent hover:text-accent-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCreateDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              }
-              defaultNodeType={createConfig.nodeType}
-              defaultParentId={createConfig.parentId || undefined}
-              open={createDialogOpen}
-              onOpenChange={setCreateDialogOpen}
-            />
-          )}
         </div>
 
         {lawTokenSequence && (
@@ -221,15 +172,11 @@ function TreeNode({
 
 interface InterpretationTokenItemProps {
   token: InterpretationToken;
-  fromNodeName: string;
-  toNodeName: string;
   onOpenModal: () => void;
 }
 
 function InterpretationTokenItem({
   token,
-  fromNodeName,
-  toNodeName,
   onOpenModal,
 }: InterpretationTokenItemProps) {
   return (
@@ -237,6 +184,9 @@ function InterpretationTokenItem({
       className="flex flex-col gap-2 rounded-md p-3 hover:bg-muted transition-colors cursor-pointer border border-border"
       onClick={onOpenModal}
       onKeyDown={(e) => e.key === "Enter" && onOpenModal()}
+      // biome-ignore lint/a11y/useSemanticElements: preserving layout structure
+      role="button"
+      tabIndex={0}
     >
       <div className="flex items-center gap-2 flex-wrap">
         <Badge
@@ -247,29 +197,6 @@ function InterpretationTokenItem({
         </Badge>
         <span className="text-sm font-medium">{token.title}</span>
       </div>
-
-      <div className="text-xs text-muted-foreground space-y-1 ml-2">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">From:</span>
-          <span>{fromNodeName}</span>
-          <Badge variant="outline" className="text-xs">
-            {token.fromRelationshipType}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-medium">To:</span>
-          <span>{toNodeName}</span>
-          <Badge variant="outline" className="text-xs">
-            {token.toRelationshipType}
-          </Badge>
-        </div>
-      </div>
-
-      {token.context && (
-        <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
-          {token.context}
-        </div>
-      )}
 
       {token.customAttributes.length > 0 && (
         <div className="flex flex-wrap gap-1 ml-2">
@@ -387,7 +314,8 @@ export default function TreeView() {
         <Card className="w-96">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">
-              No nodes yet. Create your first curation to get started!
+              No nodes yet. Publish a source graph from the Sources tab to get
+              started.
             </p>
           </CardContent>
         </Card>
@@ -414,10 +342,10 @@ export default function TreeView() {
   const locationLawTokenSequenceMap = new Map<string, string>();
   // biome-ignore lint/complexity/noForEach: imperative code
   graphData.locations.forEach((location) => {
-    if (location.originalTokenSequence) {
+    if ((location as any).originalTokenSequence) {
       locationLawTokenSequenceMap.set(
         location.id,
-        location.originalTokenSequence,
+        (location as any).originalTokenSequence,
       );
     }
   });
@@ -510,17 +438,14 @@ export default function TreeView() {
               <div className="space-y-2 pr-4">
                 {graphData.interpretationTokens.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    No interpretation tokens yet. Create one to get started!
+                    No interpretation tokens yet. Publish a source graph to get
+                    started.
                   </div>
                 ) : (
                   graphData.interpretationTokens.map((token) => (
                     <InterpretationTokenItem
                       key={token.id}
                       token={token}
-                      fromNodeName={
-                        nodeNameMap.get(token.fromTokenId) || "Unknown"
-                      }
-                      toNodeName={nodeNameMap.get(token.toNodeId) || "Unknown"}
                       onOpenModal={() => handleOpenTokenModal(token)}
                     />
                   ))
@@ -530,42 +455,6 @@ export default function TreeView() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Sublocations Section */}
-      {graphData.sublocations && graphData.sublocations.length > 0 && (
-        <Card className="flex flex-col mt-4">
-          <CardHeader className="flex-shrink-0">
-            <CardTitle>Sublocations</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="max-h-64 px-6 pb-6">
-              <div className="space-y-2 pr-4">
-                {graphData.sublocations.map((sl: Sublocation) => (
-                  <div
-                    key={sl.id}
-                    className="flex flex-col gap-1 rounded-md p-3 hover:bg-muted transition-colors border border-border"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className="bg-muted text-foreground border-border text-xs"
-                      >
-                        sublocation
-                      </Badge>
-                      <span className="text-sm font-medium">{sl.title}</span>
-                    </div>
-                    {sl.content && (
-                      <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
-                        {sl.content}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Token Detail Modal */}
       {selectedToken && (
@@ -587,45 +476,6 @@ export default function TreeView() {
               <CardTitle>{selectedToken.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Context</h3>
-                <p className="text-sm text-muted-foreground">
-                  {selectedToken.context}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">From Node</h3>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
-                      {nodeNameMap.get(selectedToken.fromTokenId) || "Unknown"}
-                    </p>
-                    <Badge variant="outline" className="text-xs">
-                      {selectedToken.fromRelationshipType}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">
-                      Directionality: {selectedToken.fromDirectionality}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium mb-2">To Node</h3>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
-                      {nodeNameMap.get(selectedToken.toNodeId) || "Unknown"}
-                    </p>
-                    <Badge variant="outline" className="text-xs">
-                      {selectedToken.toRelationshipType}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">
-                      Directionality: {selectedToken.toDirectionality}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {selectedToken.customAttributes.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium mb-2">

@@ -8,19 +8,11 @@ import { createActor } from "../backend";
 import TerminalDisambiguationPicker from "../components/TerminalDisambiguationPicker";
 import TerminalOntologyOutput from "../components/TerminalOntologyOutput";
 import {
-  useCreateCuration,
-  useCreateInterpretationToken,
-  useCreateLocation,
-  useCreateSublocation,
-  useCreateSwarm,
   useGetOwnedData,
   useIsCallerAdmin,
   useResetAllData,
 } from "../hooks/useQueries";
-import {
-  executeArchiveCommand,
-  executeCommand,
-} from "../utils/terminalCommands";
+import { executeArchiveCommand } from "../utils/terminalCommands";
 import {
   formatArchiveMissingNameError,
   formatDebugError,
@@ -122,11 +114,6 @@ export default function TerminalPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const createCuration = useCreateCuration();
-  const createSwarm = useCreateSwarm();
-  const createLocation = useCreateLocation();
-  const createInterpretationToken = useCreateInterpretationToken();
-  const createSublocation = useCreateSublocation();
   const { data: graphData } = useGetOwnedData();
   const { actor: _rawActor } = useActor(createActor);
   const actor = _rawActor as backendInterface | null;
@@ -268,31 +255,10 @@ export default function TerminalPage() {
           .toLowerCase()
           .includes(searchTerm.toLowerCase())
       ) {
-        const fromNode =
-          graphData.locations.find(
-            (l) => l.id === interpretationToken.fromTokenId,
-          ) ||
-          graphData.lawTokens.find(
-            (lt) => lt.id === interpretationToken.fromTokenId,
-          ) ||
-          graphData.interpretationTokens.find(
-            (it) => it.id === interpretationToken.fromTokenId,
-          );
-
-        let parentContext: string | undefined;
-        if (fromNode) {
-          if ("title" in fromNode) {
-            parentContext = fromNode.title;
-          } else if ("tokenLabel" in fromNode) {
-            parentContext = fromNode.tokenLabel;
-          }
-        }
-
         matches.push({
           id: interpretationToken.id,
           type: "Interpretation Token",
           name: interpretationToken.title,
-          parentContext,
         });
       }
     }
@@ -639,13 +605,13 @@ export default function TerminalPage() {
           break;
         }
         case "swarmsbycreator": {
-          const swarms: any[] = []; // method removed from backend
+          const swarms: unknown[] = [];
           addMessage("success", `🌀 Swarms by creator: ${swarms.length}`);
           showJsonPrompt(swarms);
           break;
         }
         case "leaderboard": {
-          const lb: any[] = []; // method removed from backend
+          const lb: unknown[] = [];
           addMessage("success", `🏆 Leaderboard: ${lb.length} entries`);
           showJsonPrompt(lb);
           break;
@@ -689,9 +655,11 @@ export default function TerminalPage() {
             );
             return;
           }
-          const updates: any[] = []; // method removed from backend
-          const count = Array.isArray(updates) ? updates.length : 1;
-          addMessage("success", `🔔 Swarm updates for ${swarmId}: ${count}`);
+          const updates: unknown[] = [];
+          addMessage(
+            "success",
+            `🔔 Swarm updates for ${swarmId}: ${Array.isArray(updates) ? updates.length : 1}`,
+          );
           showJsonPrompt(updates);
           break;
         }
@@ -1073,65 +1041,6 @@ export default function TerminalPage() {
       return;
     }
 
-    // Handle create commands (c, s, l, i)
-    if (["c", "s", "l", "i", "sl"].includes(command)) {
-      if (!graphData) {
-        addMessage("error", formatGraphNotLoadedError());
-        setInput("");
-        return;
-      }
-
-      const resolvedFields = await resolveFieldsWithNames(
-        command,
-        fields || {},
-        graphData,
-      );
-
-      if (resolvedFields.ambiguous) {
-        setPendingExecution({
-          command,
-          fields: fields || {},
-          ambiguousField: resolvedFields.ambiguousField!,
-          candidates: resolvedFields.candidates!,
-          originalInput: input,
-        });
-        setSelectedCandidateIndex(0);
-        setInput("");
-        return;
-      }
-
-      if (resolvedFields.error) {
-        addMessage("error", resolvedFields.error);
-        setInput("");
-        return;
-      }
-
-      try {
-        const result = await executeCommand(
-          command,
-          resolvedFields.fields,
-          createCuration,
-          createSwarm,
-          createLocation,
-          createInterpretationToken,
-        );
-
-        if (result.success) {
-          addMessage("success", result.message);
-        } else {
-          addMessage("error", result.message);
-        }
-      } catch (error) {
-        addMessage(
-          "error",
-          `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-
-      setInput("");
-      return;
-    }
-
     addMessage(
       "error",
       `Error: Unknown command /${command}. Type /help for available commands.`,
@@ -1139,109 +1048,10 @@ export default function TerminalPage() {
     setInput("");
   };
 
-  const resolveFieldsWithNames = async (
-    command: string,
-    fields: Record<string, string | string[]>,
-    graphData: GraphData,
-  ): Promise<{
-    fields: Record<string, string | string[]>;
-    ambiguous?: boolean;
-    ambiguousField?: string;
-    candidates?: ResolvedNode[];
-    error?: string;
-  }> => {
-    const resolvedFields = { ...fields };
-
-    // Determine which fields need name resolution
-    const fieldsToResolve: Array<{ field: string; nodeField: string }> = [];
-
-    if (command === "s" && fields.parent) {
-      fieldsToResolve.push({ field: "parent", nodeField: "parent" });
-    }
-    if (command === "l" && fields.parent) {
-      fieldsToResolve.push({ field: "parent", nodeField: "parent" });
-    }
-    if (command === "i") {
-      if (fields.from)
-        fieldsToResolve.push({ field: "from", nodeField: "from" });
-      if (fields.to) fieldsToResolve.push({ field: "to", nodeField: "to" });
-    }
-    if (command === "sl" && fields.attached) {
-      // attached is comma-separated names; resolve each individually
-      const attachedRaw = Array.isArray(fields.attached)
-        ? fields.attached[0]
-        : fields.attached;
-      if (attachedRaw) {
-        const names = attachedRaw
-          .split(",")
-          .map((s: string) => s.trim())
-          .filter(Boolean);
-        const resolvedIds: string[] = [];
-        for (const nameStr of names) {
-          const res = resolveNodeReference(
-            nameStr,
-            "sl",
-            "attached",
-            graphData,
-          );
-          if (res.status === "not-found") {
-            return {
-              fields: resolvedFields,
-              error: formatNodeNotFoundError(nameStr, "law token"),
-            };
-          }
-          if (res.status === "ambiguous") {
-            return {
-              fields: resolvedFields,
-              ambiguous: true,
-              ambiguousField: "attached",
-              candidates: res.candidates,
-            };
-          }
-          if (res.status === "resolved") {
-            resolvedIds.push(res.id);
-          }
-        }
-        resolvedFields.attached = resolvedIds.join(",");
-      }
-    }
-
-    for (const { field } of fieldsToResolve) {
-      const value = Array.isArray(fields[field])
-        ? (fields[field] as string[])[0]
-        : (fields[field] as string);
-      if (!value) continue;
-
-      const resolution = resolveNodeReference(value, command, field, graphData);
-
-      if (resolution.status === "not-found") {
-        return {
-          fields: resolvedFields,
-          error: formatNodeNotFoundError(value, field),
-        };
-      }
-
-      if (resolution.status === "ambiguous") {
-        return {
-          fields: resolvedFields,
-          ambiguous: true,
-          ambiguousField: field,
-          candidates: resolution.candidates,
-        };
-      }
-
-      if (resolution.status === "resolved") {
-        resolvedFields[field] = resolution.id;
-      }
-    }
-
-    return { fields: resolvedFields };
-  };
-
   const handleDisambiguationConfirm = async (selectedNode: ResolvedNode) => {
     if (!pendingExecution) return;
 
-    const { command, fields, ambiguousField, originalInput } = pendingExecution;
+    const { command, fields, ambiguousField } = pendingExecution;
     setPendingExecution(null);
 
     // Handle /archive disambiguation
@@ -1312,58 +1122,10 @@ export default function TerminalPage() {
       return;
     }
 
-    // Handle create command disambiguation
-    if (!graphData) return;
-
-    const resolvedFields = { ...fields };
-    resolvedFields[ambiguousField] = selectedNode.id;
-
-    // Check if there are more ambiguous fields
-    const furtherResolved = await resolveFieldsWithNames(
-      command,
-      resolvedFields,
-      graphData,
-    );
-
-    if (furtherResolved.ambiguous) {
-      setPendingExecution({
-        command,
-        fields: resolvedFields,
-        ambiguousField: furtherResolved.ambiguousField!,
-        candidates: furtherResolved.candidates!,
-        originalInput,
-      });
-      setSelectedCandidateIndex(0);
-      return;
-    }
-
-    if (furtherResolved.error) {
-      addMessage("error", furtherResolved.error);
-      return;
-    }
-
-    try {
-      const result = await executeCommand(
-        command,
-        furtherResolved.fields,
-        createCuration,
-        createSwarm,
-        createLocation,
-        createInterpretationToken,
-        createSublocation,
-      );
-
-      if (result.success) {
-        addMessage("success", result.message);
-      } else {
-        addMessage("error", result.message);
-      }
-    } catch (error) {
-      addMessage(
-        "error",
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    }
+    // Unknown create command disambiguation — should no longer occur
+    addMessage("error", `Unknown disambiguation for command: ${command}`);
+    // suppress unused variable warning
+    void ambiguousField;
   };
 
   const handleDisambiguationCancel = () => {

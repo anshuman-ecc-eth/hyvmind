@@ -11,7 +11,6 @@ import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { clearTreeCache } from "../hooks/useQueries";
-import CreateNodeDialog from "./CreateNodeDialog";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
@@ -30,7 +29,6 @@ export default function Header({
   isLandingPage: _isLandingPage,
 }: HeaderProps) {
   const { login, clear, loginStatus } = useInternetIdentity();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -80,25 +78,6 @@ export default function Header({
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-2">
-            {/* Create Node button for authenticated users */}
-            {isAuthenticated && (
-              <CreateNodeDialog
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCreateDialogOpen(true)}
-                    className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
-                    data-ocid="header.open_modal_button"
-                  >
-                    [+]
-                  </Button>
-                }
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-              />
-            )}
-
             {/* Login button for unauthenticated users */}
             {!isAuthenticated && (
               <Button

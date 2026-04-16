@@ -4,10 +4,7 @@ import type {
   BuzzScore,
   CollectibleEdition,
   Curation,
-  CustomAttribute,
-  Directionality,
   GraphData,
-  GraphEdge,
   GraphNode,
   InterpretationToken,
   LawToken,
@@ -16,9 +13,7 @@ import type {
   MintSettings,
   NodeId,
   OwnedGraphData,
-  Sublocation,
   Swarm,
-  Tag,
   backendInterface,
 } from "../backend";
 import { createActor } from "../backend";
@@ -41,46 +36,30 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
   const { curations, swarms, locations, lawTokens, interpretationTokens } =
     owned;
 
-  const edges: GraphEdge[] = [];
-
-  if (owned.edges && owned.edges.length > 0) {
-    for (const edge of owned.edges) {
-      edges.push(edge);
-    }
-  } else {
-    for (const lawToken of lawTokens) {
-      edges.push({ source: lawToken.parentLocationId, target: lawToken.id });
-    }
-  }
-  for (const location of locations) {
-    edges.push({ source: location.parentSwarmId, target: location.id });
-  }
-  for (const swarm of swarms) {
-    edges.push({ source: swarm.parentCurationId, target: swarm.id });
-  }
-  for (const it of interpretationTokens) {
-    edges.push({ source: it.fromTokenId, target: it.id });
-    edges.push({ source: it.id, target: it.toNodeId });
-  }
+  // Use edges from backend if available, otherwise build hierarchy edges
+  const edges =
+    owned.edges && owned.edges.length > 0
+      ? [...owned.edges]
+      : [
+          ...lawTokens.map((lt) => ({
+            source: lt.parentLocationId,
+            target: lt.id,
+          })),
+          ...locations.map((loc) => ({
+            source: loc.parentSwarmId,
+            target: loc.id,
+          })),
+          ...swarms.map((s) => ({ source: s.parentCurationId, target: s.id })),
+        ];
 
   function buildLawTokenNode(lt: LawToken): GraphNode {
-    const children: GraphNode[] = interpretationTokens
-      .filter((it) => it.fromTokenId === lt.id)
-      .map((it) => ({
-        id: it.id,
-        nodeType: "interpretationToken",
-        tokenLabel: it.title,
-        jurisdiction: undefined,
-        parentId: lt.id,
-        children: [],
-      }));
     return {
       id: lt.id,
       nodeType: "lawToken",
       tokenLabel: lt.tokenLabel,
       jurisdiction: undefined,
       parentId: lt.parentLocationId,
-      children,
+      children: [],
     };
   }
 
@@ -132,7 +111,7 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
     locations,
     lawTokens,
     interpretationTokens,
-    sublocations: owned.sublocations ?? [],
+    sublocations: (owned as any).sublocations ?? [],
     rootNodes,
     edges,
   };
@@ -173,7 +152,7 @@ export function useGetOwnedData() {
   });
 }
 
-// Fetches all graph data (not just owned) — used for the Swarms tab
+// Fetches all graph data (not just owned) — used for GraphView and Swarms tab
 export function useGetAllData() {
   const { actor, isFetching } = useBackendActor();
 
@@ -211,188 +190,6 @@ export function useGetArchivedNodeIds() {
       return actor.getArchivedNodeIds();
     },
     enabled: !!actor && !isFetching && !!identity,
-  });
-}
-
-export function useCreateCuration() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      name,
-      jurisdiction,
-    }: { name: string; jurisdiction: string }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createCuration(name, jurisdiction);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
-}
-
-export function useCreateSwarm() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      name,
-      tags,
-      parentCurationId,
-    }: { name: string; tags: Tag[]; parentCurationId: string }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createSwarm(name, tags, parentCurationId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
-}
-
-export function useCreateLocation() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      title,
-      content,
-      originalTokenSequence,
-      customAttributes,
-      parentSwarmId,
-    }: {
-      title: string;
-      content: string;
-      originalTokenSequence: string;
-      customAttributes: CustomAttribute[];
-      parentSwarmId: string;
-    }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createLocation(
-        title,
-        content,
-        originalTokenSequence,
-        customAttributes,
-        parentSwarmId,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
-}
-
-export function useCreateSublocation() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      title,
-      content,
-      originalTokenSequence,
-      parentLawTokenIds,
-    }: {
-      title: string;
-      content: string;
-      originalTokenSequence: string;
-      parentLawTokenIds: string[];
-    }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createSublocation(
-        title,
-        content,
-        originalTokenSequence,
-        parentLawTokenIds,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
-}
-
-export function useCreateInterpretationToken() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      title,
-      context,
-      fromTokenId,
-      fromRelationshipType,
-      fromDirectionality,
-      toNodeId,
-      toRelationshipType,
-      toDirectionality,
-      customAttributes,
-    }: {
-      title: string;
-      context: string;
-      fromTokenId: string;
-      fromRelationshipType: string;
-      fromDirectionality: Directionality;
-      toNodeId: string;
-      toRelationshipType: string;
-      toDirectionality: Directionality;
-      customAttributes: CustomAttribute[];
-    }) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createInterpretationToken(
-        title,
-        context,
-        fromTokenId,
-        fromRelationshipType,
-        fromDirectionality,
-        toNodeId,
-        toRelationshipType,
-        toDirectionality,
-        customAttributes,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
-}
-
-export function useCreateLawTokenForLocation() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      meaning,
-      customAttributes,
-      parentLocationId,
-    }: {
-      meaning: string;
-      customAttributes: CustomAttribute[];
-      parentLocationId: string;
-    }) => {
-      if (!actor) throw new Error("Actor not available");
-      const trimmedMeaning = meaning.trim();
-      const wrappedContent = `{${trimmedMeaning}}`;
-      return actor.createLocation(
-        trimmedMeaning.slice(0, 80),
-        wrappedContent,
-        wrappedContent,
-        customAttributes,
-        parentLocationId,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
   });
 }
 
@@ -643,7 +440,7 @@ export function useGetSwarmsByCreator() {
     queryKey: ["swarmsByCreator"],
     queryFn: async () => {
       if (!actor) return [];
-      return []; // method removed from backend
+      return [];
     },
     enabled: !!actor && !isFetching,
   });
@@ -656,7 +453,7 @@ export function useGetSwarmUpdatesForUser(swarmId: string) {
     queryKey: ["swarmUpdates", swarmId],
     queryFn: async () => {
       if (!actor) return [];
-      return []; // method removed from backend
+      return [];
     },
     enabled: !!actor && !isFetching && !!swarmId,
   });
@@ -681,7 +478,9 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
       );
       const lawTokenIds = new Set(swarmLawTokens.map((lt) => lt.id));
       const swarmInterpTokens = graphData.interpretationTokens.filter(
-        (it) => lawTokenIds.has(it.fromTokenId) || lawTokenIds.has(it.toNodeId),
+        (it) =>
+          lawTokenIds.has((it as any).fromTokenId) ||
+          lawTokenIds.has((it as any).toNodeId),
       );
       return {
         lawTokens: swarmLawTokens,
@@ -746,7 +545,7 @@ export function useGetBuzzLeaderboard() {
     queryKey: ["buzzLeaderboard"],
     queryFn: async () => {
       if (!actor) return [];
-      return []; // method removed from backend
+      return [];
     },
     enabled: !!actor && !isFetching,
   });
@@ -856,7 +655,6 @@ export function useGetUserProfile(userPrincipal: string | null) {
   });
 }
 
-// Returns law tokens owned by the current caller (from their owned graph data)
 export function useGetUserLawTokens() {
   const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
@@ -875,7 +673,6 @@ export function useGetUserLawTokens() {
   });
 }
 
-// Returns interpretation tokens owned by the current caller (from their owned graph data)
 export function useGetUserInterpretationTokens() {
   const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
@@ -906,6 +703,30 @@ export function useResetAllData() {
     },
     onSuccess: () => {
       queryClient.clear();
+    },
+  });
+}
+
+// Publish source graph to backend
+// Uses dynamic actor call since publishSourceGraph may not be in compiled bindings yet
+export function usePublishSourceGraph() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: unknown) => {
+      if (!actor) throw new Error("Actor not available");
+      const actorAny = actor as any;
+      if (typeof actorAny.publishSourceGraph !== "function") {
+        throw new Error(
+          "publishSourceGraph is not available on the backend yet. Deploy the updated backend first.",
+        );
+      }
+      return actorAny.publishSourceGraph(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
     },
   });
 }

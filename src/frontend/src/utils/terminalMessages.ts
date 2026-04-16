@@ -30,44 +30,9 @@ export function formatHelpText(): string {
     /archive name="Article 1"
     /archive name=lawtoken123
 
-Create Commands:
-
-/c name=<name> juris=<ISO-3166-1-alpha-2>
-  Create a Curation
-  Example:
-    /c name="Indian Constitution" juris=IN
-
-/s name=<name> parent=<curation-name> [tags=<tag1,tag2>]
-  Create a Swarm
-  Example:
-    /s name="Constitutional Law" parent="Indian Constitution" tags=law,constitution
-
-/l name=<name> parent=<swarm-name> content=<text> [tokens={a}{b}{c}] [attr=<key:value,key:value>]
-  Create a Location
-  Example:
-    /l name="Article 1" parent="Constitutional Law" content="The Union and its territory" tokens={Union}{territory}
-
-/i name=<name> context=<text> from=<node-name> to=<node-name> [fromrel=<type>] [torel=<type>] [fromdir=<none|uni|bi>] [todir=<none|uni|bi>] [attr=<key:value,key:value>]
-  Create an Interpretation Token
-  Example:
-    /i name="Interpretation 1" context="Analysis of Union" from="Union" to="territory"
-
-/sl name=<name> attached=<law-token-name>[,<law-token-name>] [content=<text>]
-  Create a Sublocation attached to one or more Law Tokens
-  Example:
-    /sl name="Sub-section A" attached="Union"
-    /sl name="Sub-section B" attached="Union,territory" content="Details here"
-
-Attribute Format:
-  attr=key:value,key:value
-  Supports typed tags: tag[type] where type is string, number, boolean, or date
-  Example:
-    attr=category:legal,year[number]:2024,active[boolean]:true,date[date]:2024-01-01
-
 Notes:
   - Use quotes for names with spaces: name="My Node"
-  - Jurisdiction codes must be valid ISO 3166-1 alpha-2 (e.g., IN, US, GB)
-  - Directionality: none, uni (unidirectional), bi (bidirectional)
+  - To create nodes, publish a source graph from the Sources tab
   - Archived nodes are hidden locally; use /find to check if a node exists`;
 }
 

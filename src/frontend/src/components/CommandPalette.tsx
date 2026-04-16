@@ -11,21 +11,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend";
-import {
-  useCreateCuration,
-  useCreateInterpretationToken,
-  useCreateLocation,
-  useCreateSublocation,
-  useCreateSwarm,
-  useGetOwnedData,
-} from "../hooks/useQueries";
+import { useGetOwnedData } from "../hooks/useQueries";
 import {
   handleArchiveCommand,
   handleFilterCommand,
   handleFindCommand,
   handleOntCommand,
 } from "../utils/commandPaletteHandlers";
-import { executeCommand } from "../utils/terminalCommands";
 import {
   formatGraphNotLoadedError,
   formatHelpText,
@@ -75,30 +67,6 @@ const terminalCommands = [
     command: "/filter name=",
   },
   {
-    id: "cmd-c",
-    label: "/c name=<name>",
-    description: "Create a curation",
-    command: "/c name=",
-  },
-  {
-    id: "cmd-s",
-    label: "/s name=<name>",
-    description: "Create a swarm",
-    command: "/s name=",
-  },
-  {
-    id: "cmd-l",
-    label: "/l name=<name>",
-    description: "Create a location",
-    command: "/l name=",
-  },
-  {
-    id: "cmd-i",
-    label: "/i name=<name>",
-    description: "Create an interpretation token",
-    command: "/i name=",
-  },
-  {
     id: "cmd-archive",
     label: "/archive name=<node>",
     description: "Archive a node",
@@ -113,26 +81,6 @@ function getFieldStr(
   const v = fields[key];
   if (Array.isArray(v)) return v[0] || "";
   return v || "";
-}
-
-function getFieldsThatNeedResolution(
-  command: string,
-  fields: Record<string, string | string[]>,
-): Record<string, string> {
-  const result: Record<string, string> = {};
-  if (command === "s" || command === "l") {
-    const parent = getFieldStr(fields, "parent");
-    if (parent) result.parent = parent;
-  } else if (command === "i") {
-    const from = getFieldStr(fields, "from");
-    const to = getFieldStr(fields, "to");
-    if (from) result.from = from;
-    if (to) result.to = to;
-  } else if (command === "sl") {
-    const attached = getFieldStr(fields, "attached");
-    if (attached) result.attached = attached;
-  }
-  return result;
 }
 
 export default function CommandPalette({
@@ -160,11 +108,6 @@ export default function CommandPalette({
   const { actor: _rawActor } = useActor(createActor);
   const actor = _rawActor as backendInterface | null;
   const queryClient = useQueryClient();
-  const createCuration = useCreateCuration();
-  const createSwarm = useCreateSwarm();
-  const createLocation = useCreateLocation();
-  const createInterpretationToken = useCreateInterpretationToken();
-  const createSublocation = useCreateSublocation();
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -298,63 +241,6 @@ export default function CommandPalette({
           setSelectedCandidateIndex(0);
         } else {
           setCommandOutput(archiveResult);
-        }
-        break;
-      }
-
-      case "c":
-      case "s":
-      case "l":
-      case "i":
-      case "sl": {
-        if (!graphData) {
-          setCommandOutput({
-            success: false,
-            message: formatGraphNotLoadedError(),
-          });
-          break;
-        }
-        const needsResolution = getFieldsThatNeedResolution(command, fields);
-        let resolvedFields = { ...fields };
-        let disambNeeded = false;
-
-        for (const [field, value] of Object.entries(needsResolution)) {
-          const res = resolveNodeReference(value, command, field, graphData);
-          if (res.status === "ambiguous") {
-            setPendingDisambiguation({
-              candidates: res.candidates,
-              command,
-              fields: resolvedFields,
-              argument: field,
-              disambField: field,
-            });
-            setSelectedCandidateIndex(0);
-            disambNeeded = true;
-            break;
-          }
-          if (res.status === "resolved") {
-            resolvedFields = { ...resolvedFields, [field]: res.id };
-          } else if (res.status === "not-found") {
-            setCommandOutput({
-              success: false,
-              message: `Error: Node "${value}" not found.`,
-            });
-            setIsExecuting(false);
-            return;
-          }
-        }
-
-        if (!disambNeeded) {
-          const result = await executeCommand(
-            command,
-            resolvedFields,
-            createCuration,
-            createSwarm,
-            createLocation,
-            createInterpretationToken,
-            createSublocation,
-          );
-          setCommandOutput(result);
         }
         break;
       }

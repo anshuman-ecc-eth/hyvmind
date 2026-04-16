@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import NodeDetailsModal from "../components/NodeDetailsModal";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
+import { usePublishGraph } from "../hooks/usePublishGraph";
 import useSourceGraphs from "../hooks/useSourceGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
@@ -14,19 +15,39 @@ export default function SourcesView() {
     setActiveGraph,
     updateNode,
   } = useSourceGraphs();
+  const {
+    publish,
+    isPublishing,
+    error: publishError,
+    reset: resetPublish,
+  } = usePublishGraph();
   const [view, setView] = useState<"list" | "graph">("list");
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
+  const [publishingGraphId, setPublishingGraphId] = useState<string | null>(
+    null,
+  );
+  const [publishSuccessId, setPublishSuccessId] = useState<string | null>(null);
+  const [publishLocalError, setPublishLocalError] = useState<string | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-dismiss error after 5 seconds
+  // Auto-dismiss import error after 5 seconds
   useEffect(() => {
     if (!error) return;
     const t = setTimeout(() => setError(null), 5000);
     return () => clearTimeout(t);
   }, [error]);
+
+  // Auto-dismiss publish success after 4 seconds
+  useEffect(() => {
+    if (!publishSuccessId) return;
+    const t = setTimeout(() => setPublishSuccessId(null), 4000);
+    return () => clearTimeout(t);
+  }, [publishSuccessId]);
 
   const activeGraph = graphs.find((g) => g.id === activeGraphId) ?? null;
 
@@ -37,7 +58,6 @@ export default function SourcesView() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset input so the same file can be re-imported
     e.target.value = "";
 
     setImporting(true);
@@ -46,7 +66,6 @@ export default function SourcesView() {
     try {
       const graph = await parseSourceGraphZip(file);
 
-      // Deduplicate name: append timestamp if name already exists
       const nameExists = graphs.some((g) => g.name === graph.name);
       if (nameExists) {
         graph.name = `${graph.name} (${Date.now()})`;
@@ -106,6 +125,22 @@ export default function SourcesView() {
     setSelectedNode(null);
   };
 
+  const handlePublish = async (graph: SourceGraph) => {
+    setPublishingGraphId(graph.id);
+    setPublishLocalError(null);
+    setPublishSuccessId(null);
+    resetPublish();
+    try {
+      await publish(graph);
+      setPublishSuccessId(graph.id);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Publish failed.";
+      setPublishLocalError(msg);
+    } finally {
+      setPublishingGraphId(null);
+    }
+  };
+
   const formatDate = (ts: number) => {
     return new Date(ts).toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -135,7 +170,7 @@ export default function SourcesView() {
           </span>
         </div>
 
-        {/* Graph canvas — flex-1 + min-h-0 lets force-graph measure a real height */}
+        {/* Graph canvas */}
         <div className="flex-1 min-h-0 h-full">
           <SourceGraphDiagram
             graph={activeGraph}
@@ -177,7 +212,7 @@ export default function SourcesView() {
             source graphs
           </h2>
           <p className="text-xs text-muted-foreground">
-            import zip files to create custom source graphs
+            import zip files and publish to create backend graph data
           </p>
         </div>
         <button
@@ -191,7 +226,7 @@ export default function SourcesView() {
         </button>
       </div>
 
-      {/* Error banner */}
+      {/* Import error banner */}
       {error && (
         <div
           className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
@@ -199,6 +234,17 @@ export default function SourcesView() {
           role="alert"
         >
           [ERROR] {error}
+        </div>
+      )}
+
+      {/* Publish error banner */}
+      {(publishLocalError || publishError) && (
+        <div
+          className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+          data-ocid="sources.publish_error_state"
+          role="alert"
+        >
+          [PUBLISH ERROR] {publishLocalError ?? publishError}
         </div>
       )}
 
@@ -240,6 +286,14 @@ export default function SourcesView() {
                   {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
                   {graph.edges.length} edges
                 </p>
+                {publishSuccessId === graph.id && (
+                  <p
+                    className="text-xs text-green-500 mt-0.5"
+                    data-ocid={`sources.publish_success_state.${graph.id}`}
+                  >
+                    ✓ published to backend
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
@@ -249,6 +303,17 @@ export default function SourcesView() {
                   data-ocid={`sources.view_button.${graph.id}`}
                 >
                   [view]
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePublish(graph)}
+                  disabled={isPublishing && publishingGraphId === graph.id}
+                  className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-ocid={`sources.publish_button.${graph.id}`}
+                >
+                  {isPublishing && publishingGraphId === graph.id
+                    ? "publishing..."
+                    : "[publish]"}
                 </button>
                 <button
                   type="button"
