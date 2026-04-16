@@ -13,11 +13,11 @@ import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
+
 
 // Apply any data migration necessary after code changes
 
-(with migration = Migration.run)
+
 actor {
   // Type Aliases
   type NodeId = Text;

@@ -343,6 +343,14 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         };
         layoutNodes.push(layoutNode);
         newNodesMap.set(interpretationToken.id, layoutNode);
+        if (interpretationToken.parentLawTokenId) {
+          layoutLinks.push({
+            source: interpretationToken.parentLawTokenId,
+            target: interpretationToken.id,
+            edgeLabel: "",
+            bidirectional: false,
+          });
+        }
       }
     });
 

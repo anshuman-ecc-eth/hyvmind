@@ -45,11 +45,11 @@ export interface ForceGraph3DHandle {
 
 // Base type colors (unchanged for both themes)
 const NODE_COLORS: Record<string, string> = {
-  curation: "#FF7043",
-  swarm: "#42A5F5",
-  location: "#66BB6A",
-  lawToken: "#BA68C8",
-  interpretationToken: "#FFB74D",
+  curation: "#4a9eff",
+  swarm: "#ff7f50",
+  location: "#90EE90",
+  lawToken: "#FFD700",
+  interpretationToken: "#DA70D6",
 };
 
 // Theme-aware colors
@@ -404,7 +404,8 @@ export const ForceGraph3D = React.memo(
           linkOpacity={0.3}
           linkLabel={linkLabel}
           linkDirectionalParticles={linkDirectionalParticles}
-          linkDirectionalParticleWidth={4}
+          linkDirectionalParticleWidth={1.5}
+          linkDirectionalParticleSpeed={0.01}
           backgroundColor={isLight ? BG_COLORS.light : BG_COLORS.dark}
           showNavInfo={false}
           dagMode={dagMode === "null" ? undefined : (dagMode as any)}

@@ -1,22 +1,12 @@
-// Version: 3.0.0
+// Version: 1.0.0
 type ApprovalStatus__575141016 = {#approved; #pending; #rejected};
-type ApprovalStatus__641045796 = {#approved; #pending; #rejected};
 type BuzzScore__18805602 = Int;
-type BuzzScore__203958707 = Int;
 type CollectibleEdition__303213557 =
   {
     editionNumber : Nat;
     mintedAt : Time__900049286;
     owner : Principal;
     tokenId : NodeId__811092033;
-    tokenType : {#interpretationToken; #lawToken}
-  };
-type CollectibleEdition__672074643 =
-  {
-    editionNumber : Nat;
-    mintedAt : Time__900049286;
-    owner : Principal;
-    tokenId : NodeId__968231965;
     tokenType : {#interpretationToken; #lawToken}
   };
 type Curation__572080379 =
@@ -28,21 +18,9 @@ type Curation__572080379 =
     timestamps : Timestamps__70525832
   };
 type CustomAttribute__1065319323 = {key : Text; value : Text};
-type CustomAttribute__82563220 = {key : Text; value : Text};
 type Data__791452850<K, V> =
   {var count : Nat__490723111; kvs : [var ?(K, V)]};
-type Directionality__115703356 = {#bidirectional; #none; #unidirectional};
 type Directionality__289700614 = {#bidirectional; #none; #unidirectional};
-type ForkedSwarm__172936546 =
-  {
-    forkPrincipal : ?Principal;
-    forkSource : ?NodeId__968231965;
-    id : NodeId__968231965;
-    name : Text;
-    parentCurationId : NodeId__968231965;
-    tags : [Tag__238789133];
-    timestamps : Timestamps__378717705
-  };
 type ForkedSwarm__273475596 =
   {
     forkPrincipal : ?Principal;
@@ -97,81 +75,13 @@ type Map__158565046<K, V> = Map__297112838<K, V>;
 type Map__297112838<K, V> =
   {var root : Node__46230540<K, V>; var size : Nat__490723111};
 type Map__605269027<K, V> = Map__158565046<K, V>;
-type MembershipStatus__112571576 = {#approved; #pending};
 type MembershipStatus__611793685 = {#approved; #pending};
 type MintSettings__157171564 = {numCopies : Nat};
-type MintSettings__330184191 = {numCopies : Nat};
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type NodeId__811092033 = Text;
-type NodeId__968231965 = Text;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-type OldCuration__1066320036 =
-  {
-    creator : Principal;
-    id : NodeId__968231965;
-    jurisdiction : Text;
-    name : Text;
-    timestamps : Timestamps__378717705
-  };
-type OldGraphEdge__406397889 =
-  {source : NodeId__968231965; target : NodeId__968231965};
-type OldInterpretationToken__601791729 =
-  {
-    context : Text;
-    creator : Principal;
-    customAttributes : [CustomAttribute__82563220];
-    fromDirectionality : Directionality__115703356;
-    fromRelationshipType : Text;
-    fromTokenId : NodeId__968231965;
-    id : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    title : Text;
-    toDirectionality : Directionality__115703356;
-    toNodeId : NodeId__968231965;
-    toRelationshipType : Text
-  };
-type OldLawToken__93648794 =
-  {
-    creator : Principal;
-    id : NodeId__968231965;
-    parentLocationId : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    tokenLabel : Text
-  };
-type OldLocation__97846908 =
-  {
-    content : Text;
-    creator : Principal;
-    customAttributes : [CustomAttribute__82563220];
-    id : NodeId__968231965;
-    originalTokenSequence : Text;
-    parentSwarmId : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    title : Text;
-    version : Nat
-  };
-type OldSublocation__677367643 =
-  {
-    content : Text;
-    creator : Principal;
-    id : NodeId__968231965;
-    originalTokenSequence : Text;
-    timestamps : Timestamps__378717705;
-    title : Text
-  };
-type OldSwarm__289266322 =
-  {
-    creator : Principal;
-    forkPrincipal : ?Principal;
-    forkSource : ?NodeId__968231965;
-    id : NodeId__968231965;
-    name : Text;
-    parentCurationId : NodeId__968231965;
-    tags : [Tag__238789133];
-    timestamps : Timestamps__378717705
-  };
 type SourceGraphEdge__199036688 =
   {
     directionality : Directionality__289700614;
@@ -179,32 +89,14 @@ type SourceGraphEdge__199036688 =
     source : NodeId__811092033;
     target : NodeId__811092033
   };
-type SwarmMembership__227131956 =
-  {
-    member : Principal;
-    status : MembershipStatus__112571576;
-    swarmId : NodeId__968231965
-  };
 type SwarmMembership__922615051 =
   {
     member : Principal;
     status : MembershipStatus__611793685;
     swarmId : NodeId__811092033
   };
-type SwarmType__296645234 = {#questionOfLaw; #regular};
 type SwarmType__61973625 = {#questionOfLaw; #regular};
-type SwarmUpdateStatus__414910592 = {#acted; #unread};
 type SwarmUpdateStatus__823053011 = {#acted; #unread};
-type SwarmUpdate__256807310 =
-  {
-    creatorPrincipal : Principal;
-    status : SwarmUpdateStatus__414910592;
-    swarmId : NodeId__968231965;
-    timestamp : Time__900049286;
-    tokenId : NodeId__968231965;
-    tokenTitle : Text;
-    userId : Principal
-  };
 type SwarmUpdate__265901166 =
   {
     creatorPrincipal : Principal;
@@ -227,79 +119,15 @@ type Swarm__147277083 =
     tags : [Tag__973970575];
     timestamps : Timestamps__70525832
   };
-type Tag__238789133 = Text;
 type Tag__973970575 = Text;
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
-type Timestamps__378717705 = {createdAt : Time__900049286};
 type Timestamps__70525832 = {createdAt : Time__900049286};
-type UserProfile__315128327 = {name : Text; socialUrl : ?Text};
 type UserProfile__491224006 = {name : Text; socialUrl : ?Text};
 type UserRole__1054455867 = {#admin; #guest; #user};
-type UserRole__717262347 = {#admin; #guest; #user};
 type UserVoteTracking__294729650 = {votedNodes : Map__605269027<Text, Bool>};
-type UserVoteTracking__695542462 = {votedNodes : Map__605269027<Text, Bool>};
-type VoteData__1035890791 = {downvotes : Nat; upvotes : Nat};
 type VoteData__617051593 = {downvotes : Nat; upvotes : Nat};
-actor ({
-  in accessControlState :
-    {
-      var adminAssigned : Bool;
-      userRoles : Map__605269027<Principal, UserRole__717262347>
-    };
-  in approvalState :
-    {
-      var approvalStatus :
-        Map__605269027<Principal, ApprovalStatus__641045796>
-    };
-  in var archivedNodes : Map__605269027<NodeId__968231965, ()>;
-  in var buzzScores : Map__605269027<Principal, BuzzScore__203958707>;
-  in collectibleEditionsMap :
-    Map__605269027<NodeId__968231965,
-                    List__415060402<CollectibleEdition__672074643>>;
-  in collectibleSupplyMap : Map__605269027<NodeId__968231965, Nat>;
-  in var curationMap :
-    Map__605269027<NodeId__968231965, OldCuration__1066320036>;
-  in var existingAdmins : [Principal];
-  in var forkPulledSourceNodes :
-    Map__605269027<NodeId__968231965, List__415060402<NodeId__968231965>>;
-  in var forkedSwarmMap :
-    Map__605269027<NodeId__968231965, ForkedSwarm__172936546>;
-  in var interpretationTokenFromEdges :
-    Map__605269027<NodeId__968231965,
-                    List__415060402<OldGraphEdge__406397889>>;
-  in var interpretationTokenMap :
-    Map__605269027<NodeId__968231965, OldInterpretationToken__601791729>;
-  in var interpretationTokenToEdges :
-    Map__605269027<NodeId__968231965,
-                    List__415060402<OldGraphEdge__406397889>>;
-  in var lawTokenMap :
-    Map__605269027<NodeId__968231965, OldLawToken__93648794>;
-  in var locationLawTokenRelations :
-    Map__605269027<NodeId__968231965, List__415060402<NodeId__968231965>>;
-  in var locationMap :
-    Map__605269027<NodeId__968231965, OldLocation__97846908>;
-  in var membershipRequests :
-    Map__605269027<NodeId__968231965,
-                    List__415060402<SwarmMembership__227131956>>;
-  in mintSettingsMap : Map__605269027<Principal, MintSettings__330184191>;
-  in var sublocationLawTokenRelations :
-    Map__605269027<NodeId__968231965, List__415060402<NodeId__968231965>>;
-  in var sublocationMap :
-    Map__605269027<NodeId__968231965, OldSublocation__677367643>;
-  in var swarmMap : Map__605269027<NodeId__968231965, OldSwarm__289266322>;
-  in var swarmMembers :
-    Map__605269027<NodeId__968231965, List__415060402<Principal>>;
-  in var swarmTypeMap :
-    Map__605269027<NodeId__968231965, SwarmType__296645234>;
-  in var swarmUpdates :
-    Map__605269027<Principal, List__415060402<SwarmUpdate__256807310>>;
-  in var userProfiles : Map__605269027<Principal, UserProfile__315128327>;
-  in userVoteTracking :
-    Map__605269027<Principal, UserVoteTracking__695542462>;
-  in voteData : Map__605269027<Text, VoteData__1035890791>;
-  in var voteDataMap : Map__605269027<Text, VoteData__1035890791>
-}, {
+actor {
   stable accessControlState :
     {
       var adminAssigned : Bool;
@@ -425,4 +253,4 @@ actor ({
       var root : Node__46230540<Text, VoteData__617051593>;
       var size : Nat__490723111
     }
-}) ;
+};
