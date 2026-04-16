@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@caffeineai/core-infrastructure": "~0.1.0",
+    "@chenglou/pretext": "^0.0.5",
     "@dfinity/agent": "~3.3.0",
     "@dfinity/auth-client": "~3.3.0",
     "@dfinity/candid": "~3.3.0",
@@ -73,6 +74,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "crisp-game-lib": "^1.5.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.2.1",
     "force-graph": "^1.51.2",

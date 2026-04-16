@@ -21,6 +21,9 @@ importers:
       '@caffeineai/core-infrastructure':
         specifier: ~0.1.0
         version: 0.1.0(@dfinity/agent@3.3.1(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/principal@3.3.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/identity-secp256k1@3.3.1(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/principal@3.3.1)(@noble/curves@1.9.7)(@noble/hashes@1.8.0))(@dfinity/identity@3.3.1(@dfinity/agent@3.3.1(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/principal@3.3.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/principal@3.3.1)(@noble/curves@1.9.7)(@noble/hashes@1.8.0))(@dfinity/principal@3.3.1)
+      '@chenglou/pretext':
+        specifier: ^0.0.5
+        version: 0.0.5
       '@dfinity/agent':
         specifier: ~3.3.0
         version: 3.3.1(@dfinity/candid@3.3.1(@dfinity/principal@3.3.1))(@dfinity/principal@3.3.1)(@noble/hashes@1.8.0)
@@ -144,6 +147,9 @@ importers:
       cmdk:
         specifier: ^1.0.0
         version: 1.1.1(@types/react-dom@19.1.11(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.1.5(react@19.1.5))(react@19.1.5)
+      crisp-game-lib:
+        specifier: ^1.5.0
+        version: 1.5.0
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
@@ -431,6 +437,9 @@ packages:
 
   '@caffeineai/object-storage@0.1.0':
     resolution: {integrity: sha512-9/dDy/8Wx5djN7JIzy232m2nzK5G0PNjZAod0VFph3RwCHsi9A/tVt8YhcTNF9ULIABhYcxuLlWA8He3WWMaHw==}
+
+  '@chenglou/pretext@0.0.5':
+    resolution: {integrity: sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg==}
 
   '@date-fns/tz@1.4.1':
     resolution: {integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==}
@@ -1958,6 +1967,9 @@ packages:
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
+  crisp-game-lib@1.5.0:
+    resolution: {integrity: sha512-idAiii1s6yCgvcsCms0esOjFzD2dh5bGT4kpQTUzS13XfUJ7dwDbd7fWv9k9IA4O4l3detyDO1THgefJQ4ngCA==}
+
   cross-env@7.0.3:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
     engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
@@ -3352,6 +3364,8 @@ snapshots:
       - '@dfinity/identity'
       - '@dfinity/identity-secp256k1'
       - '@dfinity/principal'
+
+  '@chenglou/pretext@0.0.5': {}
 
   '@date-fns/tz@1.4.1': {}
 
@@ -4762,6 +4776,8 @@ snapshots:
       toggle-selection: 1.0.6
 
   core-util-is@1.0.3: {}
+
+  crisp-game-lib@1.5.0: {}
 
   cross-env@7.0.3:
     dependencies:
