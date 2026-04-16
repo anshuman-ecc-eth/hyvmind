@@ -1,6 +1,5 @@
 import { useAnimationFrame } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import GameCanvas from "./GameCanvas";
 import ScrambleText from "./ScrambleText";
 
 // ── Start Screen ───────────────────────────────────────────────────────────────
@@ -208,10 +207,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setGameStarted(true);
   }, []);
 
+  // handleGameOver kept for a future postMessage bridge; iframe doesn't call it
   const handleGameOver = useCallback((score: number) => {
     setLastScore(score);
     setGameStarted(false);
   }, []);
+  void handleGameOver;
 
   const handleExit = useCallback(() => {
     onCompleteRef.current();
@@ -253,7 +254,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
         {/* Game content */}
         {gameStarted ? (
-          <GameCanvas onGameOver={handleGameOver} />
+          <iframe
+            src="https://abagames.github.io/crisp-game-lib-games/?rwheel="
+            allow="autoplay"
+            className="w-full h-full border-0"
+            title="R Wheel"
+          />
         ) : (
           <StartScreen
             onStart={handleStart}
