@@ -9,14 +9,11 @@ export interface None {
 export type Option<T> = Some<T> | None;
 export interface Location {
     id: NodeId;
-    originalTokenSequence: string;
     title: string;
     creator: Principal;
-    content: string;
     customAttributes: Array<CustomAttribute>;
     timestamps: Timestamps;
     parentSwarmId: NodeId;
-    version: bigint;
 }
 export type MintCollectibleResult = {
     __kind__: "editionLimitReached";
@@ -34,91 +31,40 @@ export type MintCollectibleResult = {
     __kind__: "tokenNotFound";
     tokenNotFound: null;
 };
-export interface Sublocation {
-    id: NodeId;
-    originalTokenSequence: string;
-    title: string;
-    creator: Principal;
-    content: string;
-    timestamps: Timestamps;
-}
-export type Time = bigint;
-export type NodeId = string;
-export interface VoteData {
-    upvotes: bigint;
-    downvotes: bigint;
-}
-export interface Timestamps {
-    createdAt: Time;
-}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
     creator: Principal;
+    customAttributes: Array<CustomAttribute>;
     timestamps: Timestamps;
     tokenLabel: string;
 }
-export interface MintSettings {
-    numCopies: bigint;
-}
-export interface InterpretationToken {
-    id: NodeId;
-    title: string;
-    creator: Principal;
-    context: string;
-    customAttributes: Array<CustomAttribute>;
-    toRelationshipType: string;
-    toNodeId: NodeId;
-    fromDirectionality: Directionality;
-    timestamps: Timestamps;
-    fromTokenId: NodeId;
-    toDirectionality: Directionality;
-    fromRelationshipType: string;
-}
-export interface GraphEdge {
-    source: NodeId;
-    target: NodeId;
-}
-export interface Curation {
-    id: NodeId;
-    creator: Principal;
-    name: string;
-    timestamps: Timestamps;
-    jurisdiction: string;
-}
-export interface UserApprovalInfo {
-    status: ApprovalStatus;
-    principal: Principal;
-}
+export type Time = bigint;
 export type Tag = string;
+export interface SourceGraphEdgeInput {
+    sourceName: string;
+    bidirectional: boolean;
+    targetName: string;
+    edgeLabel: string;
+}
 export interface MintCollectibleRequest {
     tokenId: NodeId;
     tokenType: Variant_lawToken_interpretationToken;
 }
 export interface GraphNode {
     id: NodeId;
+    customAttributes: Array<CustomAttribute>;
     children: Array<GraphNode>;
     jurisdiction?: string;
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
 }
-export interface GraphData {
-    curations: Array<Curation>;
-    rootNodes: Array<GraphNode>;
-    edges: Array<GraphEdge>;
-    locations: Array<Location>;
-    swarms: Array<Swarm>;
-    sublocations: Array<Sublocation>;
-    lawTokens: Array<LawToken>;
-    interpretationTokens: Array<InterpretationToken>;
-}
 export interface OwnedGraphData {
     curations: Array<Curation>;
     edges: Array<GraphEdge>;
     locations: Array<Location>;
     swarms: Array<Swarm>;
-    sublocations: Array<Sublocation>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
@@ -129,6 +75,65 @@ export interface CollectibleEdition {
     mintedAt: Time;
     tokenType: Variant_lawToken_interpretationToken;
 }
+export interface Curation {
+    id: NodeId;
+    creator: Principal;
+    customAttributes: Array<CustomAttribute>;
+    name: string;
+    timestamps: Timestamps;
+}
+export interface InterpretationToken {
+    id: NodeId;
+    title: string;
+    creator: Principal;
+    content: string;
+    customAttributes: Array<CustomAttribute>;
+    timestamps: Timestamps;
+    parentLawTokenId: NodeId;
+}
+export interface PublishSourceGraphInput {
+    edges: Array<SourceGraphEdgeInput>;
+    nodes: Array<SourceGraphNodeInput>;
+}
+export interface SourceGraphNodeInput {
+    content?: string;
+    name: string;
+    tags: Array<string>;
+    jurisdiction?: string;
+    attributes: Array<CustomAttribute>;
+    parentName?: string;
+    nodeType: string;
+}
+export type NodeId = string;
+export interface VoteData {
+    upvotes: bigint;
+    downvotes: bigint;
+}
+export interface Timestamps {
+    createdAt: Time;
+}
+export interface MintSettings {
+    numCopies: bigint;
+}
+export interface GraphEdge {
+    source: NodeId;
+    directionality: Directionality;
+    target: NodeId;
+    edgeLabel: string;
+}
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
+}
+export interface GraphData {
+    curations: Array<Curation>;
+    rootNodes: Array<GraphNode>;
+    edges: Array<GraphEdge>;
+    locations: Array<Location>;
+    swarms: Array<Swarm>;
+    lawTokens: Array<LawToken>;
+    interpretationTokens: Array<InterpretationToken>;
+}
 export interface CustomAttribute {
     key: string;
     value: string;
@@ -136,6 +141,7 @@ export interface CustomAttribute {
 export interface Swarm {
     id: NodeId;
     creator: Principal;
+    customAttributes: Array<CustomAttribute>;
     name: string;
     tags: Array<Tag>;
     forkSource?: NodeId;
@@ -143,6 +149,18 @@ export interface Swarm {
     parentCurationId: NodeId;
     forkPrincipal?: Principal;
 }
+export type PublishResult = {
+    __kind__: "noChanges";
+    noChanges: null;
+} | {
+    __kind__: "error";
+    error: string;
+} | {
+    __kind__: "success";
+    success: {
+        message: string;
+    };
+};
 export type BuzzScore = bigint;
 export interface UserProfile {
     name: string;
@@ -170,11 +188,10 @@ export enum Variant_lawToken_interpretationToken {
 export interface backendInterface {
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createCuration(name: string, jurisdiction: string): Promise<NodeId>;
-    createInterpretationToken(title: string, context: string, fromTokenId: NodeId, fromRelationshipType: string, fromDirectionality: Directionality, toNodeId: NodeId, toRelationshipType: string, toDirectionality: Directionality, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
-    createLocation(title: string, content: string, originalTokenSequence: string, customAttributes: Array<CustomAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
-    createSublocation(title: string, content: string, originalTokenSequence: string, parentLawTokenIds: Array<NodeId>): Promise<NodeId>;
-    createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId): Promise<NodeId>;
+    createCuration(name: string, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
+    createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
+    createLocation(title: string, customAttributes: Array<CustomAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
+    createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<CustomAttribute>): Promise<NodeId>;
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getAllData(): Promise<GraphData>;
@@ -198,6 +215,7 @@ export interface backendInterface {
     leaveSwarm(swarmId: NodeId): Promise<void>;
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
+    publishSourceGraph(input: PublishSourceGraphInput): Promise<PublishResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;

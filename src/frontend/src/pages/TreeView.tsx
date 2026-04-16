@@ -338,17 +338,8 @@ export default function TreeView() {
     }
   });
 
-  // Build a map of location ID to original law token sequence
+  // Build a map of location ID to original law token sequence (legacy, no-op)
   const locationLawTokenSequenceMap = new Map<string, string>();
-  // biome-ignore lint/complexity/noForEach: imperative code
-  graphData.locations.forEach((location) => {
-    if ((location as any).originalTokenSequence) {
-      locationLawTokenSequenceMap.set(
-        location.id,
-        (location as any).originalTokenSequence,
-      );
-    }
-  });
 
   // Identify shared law tokens (law tokens with multiple locations)
   const sharedLawTokenIds = new Set<string>();

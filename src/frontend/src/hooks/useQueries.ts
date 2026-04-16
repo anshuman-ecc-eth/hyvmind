@@ -31,26 +31,13 @@ function useBackendActor(): {
 }
 
 // Build a GraphData-compatible object from OwnedGraphData by constructing
-// rootNodes and edges client-side from the flat owned arrays.
+// rootNodes client-side from the flat owned arrays. Edges come directly from backend.
 function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
   const { curations, swarms, locations, lawTokens, interpretationTokens } =
     owned;
 
-  // Use edges from backend if available, otherwise build hierarchy edges
-  const edges =
-    owned.edges && owned.edges.length > 0
-      ? [...owned.edges]
-      : [
-          ...lawTokens.map((lt) => ({
-            source: lt.parentLocationId,
-            target: lt.id,
-          })),
-          ...locations.map((loc) => ({
-            source: loc.parentSwarmId,
-            target: loc.id,
-          })),
-          ...swarms.map((s) => ({ source: s.parentCurationId, target: s.id })),
-        ];
+  // Use edges directly from backend — no client-side fallback construction
+  const edges = owned.edges ? [...owned.edges] : [];
 
   function buildLawTokenNode(lt: LawToken): GraphNode {
     return {
@@ -60,6 +47,7 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
       jurisdiction: undefined,
       parentId: lt.parentLocationId,
       children: [],
+      customAttributes: lt.customAttributes,
     };
   }
 
@@ -74,6 +62,7 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
       jurisdiction: undefined,
       parentId: loc.parentSwarmId,
       children,
+      customAttributes: loc.customAttributes,
     };
   }
 
@@ -88,6 +77,7 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
       jurisdiction: undefined,
       parentId: swarm.parentCurationId,
       children,
+      customAttributes: swarm.customAttributes,
     };
   }
 
@@ -99,9 +89,10 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
       id: curation.id,
       nodeType: "curation",
       tokenLabel: curation.name,
-      jurisdiction: curation.jurisdiction,
+      jurisdiction: undefined,
       parentId: undefined,
       children,
+      customAttributes: curation.customAttributes,
     };
   });
 
@@ -111,7 +102,6 @@ function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
     locations,
     lawTokens,
     interpretationTokens,
-    sublocations: (owned as any).sublocations ?? [],
     rootNodes,
     edges,
   };
@@ -141,7 +131,6 @@ export function useGetOwnedData() {
           locations: [],
           lawTokens: [],
           interpretationTokens: [],
-          sublocations: [],
           rootNodes: [],
           edges: [],
         };
@@ -166,7 +155,6 @@ export function useGetAllData() {
           locations: [],
           lawTokens: [],
           interpretationTokens: [],
-          sublocations: [],
           rootNodes: [],
           edges: [],
         };
@@ -477,10 +465,8 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
         locationIds.has(lt.parentLocationId),
       );
       const lawTokenIds = new Set(swarmLawTokens.map((lt) => lt.id));
-      const swarmInterpTokens = graphData.interpretationTokens.filter(
-        (it) =>
-          lawTokenIds.has((it as any).fromTokenId) ||
-          lawTokenIds.has((it as any).toNodeId),
+      const swarmInterpTokens = graphData.interpretationTokens.filter((it) =>
+        lawTokenIds.has(it.parentLawTokenId),
       );
       return {
         lawTokens: swarmLawTokens,
@@ -708,21 +694,16 @@ export function useResetAllData() {
 }
 
 // Publish source graph to backend
-// Uses dynamic actor call since publishSourceGraph may not be in compiled bindings yet
 export function usePublishSourceGraph() {
   const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: unknown) => {
+    mutationFn: async (
+      input: Parameters<backendInterface["publishSourceGraph"]>[0],
+    ) => {
       if (!actor) throw new Error("Actor not available");
-      const actorAny = actor as any;
-      if (typeof actorAny.publishSourceGraph !== "function") {
-        throw new Error(
-          "publishSourceGraph is not available on the backend yet. Deploy the updated backend first.",
-        );
-      }
-      return actorAny.publishSourceGraph(input);
+      return actor.publishSourceGraph(input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["graphData"] });

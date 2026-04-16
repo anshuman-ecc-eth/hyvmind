@@ -27,13 +27,12 @@ export default function DebugPanel() {
     );
   }
 
-  // Build a map of law token ID to all locations that reference it
+  // Build a map of law token ID to all locations that reference it via edges
   const lawTokenToLocations = new Map<string, string[]>();
   // biome-ignore lint/complexity/noForEach: imperative code
   graphData.edges.forEach((edge) => {
     const location = graphData.locations.find((a) => a.id === edge.source);
     const lawToken = graphData.lawTokens.find((t) => t.id === edge.target);
-
     if (location && lawToken) {
       if (!lawTokenToLocations.has(lawToken.id)) {
         lawTokenToLocations.set(lawToken.id, []);
@@ -50,8 +49,7 @@ export default function DebugPanel() {
             <div>
               <CardTitle>Debug Panel</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Total Edges: {graphData.edges.length} (including shared law
-                token relationships and interpretation token connections)
+                Total Edges: {graphData.edges.length} (source graph edges)
               </p>
             </div>
             {isAdmin && <DataResetDialog />}
@@ -129,6 +127,26 @@ export default function DebugPanel() {
                               {curation.creator.toString()}
                             </p>
                           </div>
+                          {curation.customAttributes.length > 0 && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                Custom Attributes
+                              </p>
+                              <div className="space-y-1 mt-1">
+                                {curation.customAttributes.map((attr) => (
+                                  <div
+                                    key={`${attr.key}-${attr.value}`}
+                                    className="text-xs bg-muted p-2 rounded border border-border"
+                                  >
+                                    <span className="font-semibold">
+                                      {attr.key}:
+                                    </span>{" "}
+                                    {attr.value}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))
@@ -158,7 +176,9 @@ export default function DebugPanel() {
                             <p className="text-sm font-mono">{swarm.id}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Tag</p>
+                            <p className="text-xs text-muted-foreground">
+                              Tags
+                            </p>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {swarm.tags.length > 0 ? (
                                 swarm.tags.map((tag) => (
@@ -193,6 +213,26 @@ export default function DebugPanel() {
                               {swarm.creator.toString()}
                             </p>
                           </div>
+                          {swarm.customAttributes.length > 0 && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                Custom Attributes
+                              </p>
+                              <div className="space-y-1 mt-1">
+                                {swarm.customAttributes.map((attr) => (
+                                  <div
+                                    key={`${attr.key}-${attr.value}`}
+                                    className="text-xs bg-muted p-2 rounded border border-border"
+                                  >
+                                    <span className="font-semibold">
+                                      {attr.key}:
+                                    </span>{" "}
+                                    {attr.value}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))
@@ -210,7 +250,6 @@ export default function DebugPanel() {
                     </p>
                   ) : (
                     graphData.locations.map((location) => {
-                      // Find all law tokens linked to this location
                       const linkedLawTokens = graphData.edges
                         .filter((edge) => edge.source === location.id)
                         .map((edge) =>
@@ -231,22 +270,6 @@ export default function DebugPanel() {
                                 ID
                               </p>
                               <p className="text-sm font-mono">{location.id}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Content
-                              </p>
-                              <p className="text-sm">
-                                {location.content || "No content"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Original Law Token Sequence
-                              </p>
-                              <p className="text-sm font-mono">
-                                {location.originalTokenSequence || "None"}
-                              </p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">
@@ -282,7 +305,7 @@ export default function DebugPanel() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">
-                                Linked Law Tokens
+                                Linked Law Tokens (via edges)
                               </p>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {linkedLawTokens.length > 0 ? (
@@ -376,31 +399,29 @@ export default function DebugPanel() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">
-                                Parent Location (Primary)
+                                Parent Location
                               </p>
                               <p className="text-sm font-mono">
                                 {lawToken.parentLocationId}
                               </p>
                             </div>
-                            {isShared && (
+                            {lawToken.customAttributes.length > 0 && (
                               <div>
                                 <p className="text-xs text-muted-foreground">
-                                  All Linked Locations
+                                  Custom Attributes
                                 </p>
                                 <div className="space-y-1 mt-1">
-                                  {linkedLocations.map((locationId) => {
-                                    const location = graphData.locations.find(
-                                      (a) => a.id === locationId,
-                                    );
-                                    return (
-                                      <div
-                                        key={locationId}
-                                        className="text-xs font-mono bg-muted p-1 rounded border border-border"
-                                      >
-                                        {location?.title || locationId}
-                                      </div>
-                                    );
-                                  })}
+                                  {lawToken.customAttributes.map((attr) => (
+                                    <div
+                                      key={`${attr.key}-${attr.value}`}
+                                      className="text-xs bg-muted p-2 rounded border border-border"
+                                    >
+                                      <span className="font-semibold">
+                                        {attr.key}:
+                                      </span>{" "}
+                                      {attr.value}
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
@@ -434,7 +455,6 @@ export default function DebugPanel() {
                   ) : (
                     graphData.interpretationTokens.map(
                       (interpretationToken) => {
-                        // Count incoming and outgoing connections
                         const incomingCount = graphData.edges.filter(
                           (e) => e.target === interpretationToken.id,
                         ).length;
@@ -460,53 +480,23 @@ export default function DebugPanel() {
                               </div>
                               <div>
                                 <p className="text-xs text-muted-foreground">
-                                  Context
+                                  Content
                                 </p>
                                 <p className="text-sm">
-                                  {interpretationToken.context || "No context"}
+                                  {interpretationToken.content || "No content"}
                                 </p>
                               </div>
                               <div>
                                 <p className="text-xs text-muted-foreground">
-                                  From Token
+                                  Parent Law Token
                                 </p>
                                 <p className="text-sm font-mono">
-                                  {interpretationToken.fromTokenId}
+                                  {interpretationToken.parentLawTokenId}
                                 </p>
                               </div>
                               <div>
                                 <p className="text-xs text-muted-foreground">
-                                  From Relationship Type
-                                </p>
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-muted text-foreground border-border"
-                                >
-                                  {interpretationToken.fromRelationshipType}
-                                </Badge>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">
-                                  To Node
-                                </p>
-                                <p className="text-sm font-mono">
-                                  {interpretationToken.toNodeId}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">
-                                  To Relationship Type
-                                </p>
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-muted text-foreground border-border"
-                                >
-                                  {interpretationToken.toRelationshipType}
-                                </Badge>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">
-                                  Connections
+                                  Connections (source edges)
                                 </p>
                                 <div className="flex gap-2 text-sm">
                                   <span>In: {incomingCount}</span>

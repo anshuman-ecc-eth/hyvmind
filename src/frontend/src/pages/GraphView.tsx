@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Directionality, GraphEdge, GraphNode } from "../backend";
+import type { GraphEdge, GraphNode } from "../backend";
+import { Directionality } from "../backend";
 import ForceGraph3D, {
   type ForceGraph3DHandle,
 } from "../components/ForceGraph3D";
-import { useGetOwnedData } from "../hooks/useQueries";
+import { useGetAllData } from "../hooks/useQueries";
 
 interface LayoutNode {
   id: string;
@@ -17,7 +18,6 @@ interface LayoutNode {
   y: number;
   upvotes: number;
   downvotes: number;
-  originalTokenSequence?: string;
   curationId?: string;
   swarmId?: string;
   opacity?: number;
@@ -26,11 +26,8 @@ interface LayoutNode {
 interface LayoutLink {
   source: string;
   target: string;
-  relationType?: string;
-  fromDirectionality?: Directionality;
-  toDirectionality?: Directionality;
-  isInterpretationTokenEdge?: boolean;
-  edgeType?: "from" | "to";
+  edgeLabel: string;
+  bidirectional: boolean;
 }
 
 interface GraphViewProps {
@@ -80,7 +77,7 @@ function initializeUnifiedLayout(): UnifiedLayoutState {
 }
 
 export default function GraphView({ readOnly = false }: GraphViewProps) {
-  const { data: graphData, isLoading, error, isError } = useGetOwnedData();
+  const { data: graphData, isLoading, error, isError } = useGetAllData();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const forceGraphRef = useRef<ForceGraph3DHandle | null>(null);
@@ -257,12 +254,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       if (processedNodes.has(node.id)) return;
       processedNodes.add(node.id);
 
-      let originalTokenSequence: string | undefined;
-      if (node.nodeType === "location") {
-        const location = graphData.locations.find((l) => l.id === node.id);
-        originalTokenSequence = location?.originalTokenSequence;
-      }
-
       const unifiedPos = unifiedLayoutRef.current.nodes.get(node.id);
       const centerX = width / 2;
       const centerY = height / 2;
@@ -282,7 +273,6 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           centerY + Math.sin(angle) * randomRadius * Math.random(),
         upvotes: 0,
         downvotes: 0,
-        originalTokenSequence,
         curationId: node.nodeType === "curation" ? node.id : curationId,
         swarmId: node.nodeType === "swarm" ? node.id : swarmId,
         opacity: 1,
@@ -303,7 +293,12 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
             child.nodeType === "interpretationToken"
           )
         ) {
-          layoutLinks.push({ source: node.id, target: child.id });
+          layoutLinks.push({
+            source: node.id,
+            target: child.id,
+            edgeLabel: "",
+            bidirectional: false,
+          });
         }
         if (child.nodeType !== "interpretationToken") {
           processNode(child, level + 1, newCurationId, newSwarmId);
@@ -314,6 +309,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.rootNodes.forEach((root) => processNode(root, 0));
 
+    // Add interpretation token nodes (using parentLawTokenId for hierarchy placement)
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.interpretationTokens.forEach((interpretationToken) => {
       if (!processedNodes.has(interpretationToken.id)) {
@@ -326,7 +322,9 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         const randomRadius = 350;
         const angle = Math.random() * 2 * Math.PI;
         let level = 4;
-        const originNode = newNodesMap.get(interpretationToken.fromTokenId);
+        const originNode = newNodesMap.get(
+          interpretationToken.parentLawTokenId,
+        );
         if (originNode) level = originNode.level + 1;
         const layoutNode: LayoutNode = {
           id: interpretationToken.id,
@@ -348,37 +346,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       }
     });
 
-    if (graphData.sublocations) {
-      // biome-ignore lint/complexity/noForEach: imperative code
-      graphData.sublocations.forEach((sublocation) => {
-        if (!processedNodes.has(sublocation.id)) {
-          processedNodes.add(sublocation.id);
-          const unifiedPos = unifiedLayoutRef.current.nodes.get(sublocation.id);
-          const centerX = width / 2;
-          const centerY = height / 2;
-          const randomRadius = 300;
-          const angle = Math.random() * 2 * Math.PI;
-          const layoutNode: LayoutNode = {
-            id: sublocation.id,
-            label: sublocation.title,
-            type: "sublocation",
-            level: 4,
-            x:
-              unifiedPos?.x ??
-              centerX + Math.cos(angle) * randomRadius * Math.random(),
-            y:
-              unifiedPos?.y ??
-              centerY + Math.sin(angle) * randomRadius * Math.random(),
-            upvotes: 0,
-            downvotes: 0,
-            opacity: 1,
-          };
-          layoutNodes.push(layoutNode);
-          newNodesMap.set(sublocation.id, layoutNode);
-        }
-      });
-    }
-
+    // Add edges from backend — these are the canonical source, no client-side enrichment needed
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.edges.forEach((edge: GraphEdge) => {
       const sourceExists = layoutNodes.some((n) => n.id === edge.source);
@@ -388,42 +356,11 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           (link) => link.source === edge.source && link.target === edge.target,
         );
         if (!edgeExists) {
-          let relationType: string | undefined;
-          let fromDirectionality: Directionality | undefined;
-          let toDirectionality: Directionality | undefined;
-          let isInterpretationTokenEdge = false;
-          let edgeType: "from" | "to" | undefined;
-
-          const interpretationTokenFrom = graphData.interpretationTokens.find(
-            (interp) =>
-              interp.fromTokenId === edge.source && interp.id === edge.target,
-          );
-          if (interpretationTokenFrom) {
-            relationType = interpretationTokenFrom.fromRelationshipType;
-            fromDirectionality = interpretationTokenFrom.fromDirectionality;
-            isInterpretationTokenEdge = true;
-            edgeType = "from";
-          }
-
-          const interpretationTokenTo = graphData.interpretationTokens.find(
-            (interp) =>
-              interp.id === edge.source && interp.toNodeId === edge.target,
-          );
-          if (interpretationTokenTo) {
-            relationType = interpretationTokenTo.toRelationshipType;
-            toDirectionality = interpretationTokenTo.toDirectionality;
-            isInterpretationTokenEdge = true;
-            edgeType = "to";
-          }
-
           layoutLinks.push({
             source: edge.source,
             target: edge.target,
-            relationType,
-            fromDirectionality,
-            toDirectionality,
-            isInterpretationTokenEdge,
-            edgeType,
+            edgeLabel: edge.edgeLabel,
+            bidirectional: edge.directionality === Directionality.bidirectional,
           });
         }
       }
@@ -517,7 +454,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           <p className="text-muted-foreground">
             {readOnly
               ? "No data available yet. Log in to start building your knowledge graph!"
-              : "No nodes yet. Create your first curation to get started!"}
+              : "No nodes yet. Publish a source graph from the Sources tab to get started!"}
           </p>
         </div>
       </div>

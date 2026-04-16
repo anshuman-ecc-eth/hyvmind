@@ -4,7 +4,6 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
-  Sublocation,
   Swarm,
 } from "../backend";
 import { sanitizeToLocalName, truncateLabel } from "./ontologySanitize";
@@ -12,25 +11,13 @@ import { sanitizeToLocalName, truncateLabel } from "./ontologySanitize";
 interface NodeInfo {
   id: string;
   name: string;
-  type:
-    | "Curation"
-    | "Swarm"
-    | "Location"
-    | "LawToken"
-    | "InterpretationToken"
-    | "Sublocation";
-  data:
-    | Curation
-    | Swarm
-    | Location
-    | LawToken
-    | InterpretationToken
-    | Sublocation;
+  type: "Curation" | "Swarm" | "Location" | "LawToken" | "InterpretationToken";
+  data: Curation | Swarm | Location | LawToken | InterpretationToken;
 }
 
 /**
  * Generate a compact Mermaid flowchart diagram for a node's ontology context
- * Focuses on parent/child (hm:hasChild / hm:hasParent) and interpretation (hm:FromRelation / hm:ToRelation) relationships
+ * Focuses on parent/child (hm:hasChild / hm:hasParent) relationships
  * All connectors use solid lines (no dashed lines)
  */
 export function generateOntologyMermaid(
@@ -47,14 +34,11 @@ export function generateOntologyMermaid(
     const localName = sanitizeToLocalName(nodeInfo.name);
     const shortLabel = truncateLabel(nodeInfo.name, 18);
 
-    // Use flowchart LR for compact horizontal layout
     lines.push("flowchart LR");
 
-    // Add the main node with type styling
     const nodeStyle = getNodeStyle(nodeInfo.type);
     lines.push(`    ${localName}["${shortLabel}"]${nodeStyle}`);
 
-    // Track added nodes to avoid duplicates
     const addedNodes = new Set<string>([localName]);
 
     // Add parent relationship (if not Curation)
@@ -72,15 +56,13 @@ export function generateOntologyMermaid(
           addedNodes.add(parentLocalName);
         }
 
-        // Parent -> Child with hasChild label (solid line)
         lines.push(`    ${parentLocalName} -->|hasChild| ${localName}`);
       }
     }
 
-    // Add child relationships (for Curation, Swarm, Location, LawToken - not InterpretationToken)
+    // Add child relationships
     if (nodeInfo.type !== "InterpretationToken") {
       const children = getChildNodes(nodeInfo, graphData);
-      // Limit to 2 children for compactness
       const limitedChildren = children.slice(0, 2);
 
       for (const child of limitedChildren) {
@@ -95,100 +77,30 @@ export function generateOntologyMermaid(
           addedNodes.add(childLocalName);
         }
 
-        // Parent -> Child with hasChild label (solid line)
         lines.push(`    ${localName} -->|hasChild| ${childLocalName}`);
       }
     }
 
-    // Add interpretation relationships (for Location, LawToken, InterpretationToken)
-    if (
-      nodeInfo.type === "Location" ||
-      nodeInfo.type === "LawToken" ||
-      nodeInfo.type === "InterpretationToken"
-    ) {
-      // Outgoing interpretations (where this node is the "from" node)
-      const outgoingInterpretations = graphData.interpretationTokens.filter(
-        (it) => it.fromTokenId === nodeInfo.id,
-      );
-
-      // Limit to 1 interpretation for compactness
-      const limitedOutgoing = outgoingInterpretations.slice(0, 1);
-
-      for (const interpretation of limitedOutgoing) {
-        const interpretationLocalName = sanitizeToLocalName(
-          interpretation.title,
-        );
-        const interpretationShortLabel = truncateLabel(
-          interpretation.title,
-          18,
-        );
-
-        if (!addedNodes.has(interpretationLocalName)) {
-          lines.push(
-            `    ${interpretationLocalName}{"${interpretationShortLabel}"}`,
-          );
-          addedNodes.add(interpretationLocalName);
-        }
-
-        // From node -> Interpretation (solid line with FromRelation label)
-        lines.push(
-          `    ${localName} -->|FromRelation| ${interpretationLocalName}`,
-        );
-
-        // Interpretation -> To node
-        const toNode = findNode(interpretation.toNodeId, graphData);
-        if (toNode) {
-          const toLocalName = sanitizeToLocalName(toNode.name);
-          const toShortLabel = truncateLabel(toNode.name, 18);
-          const toStyle = getNodeStyle(toNode.type);
-
-          if (!addedNodes.has(toLocalName)) {
-            lines.push(`    ${toLocalName}["${toShortLabel}"]${toStyle}`);
-            addedNodes.add(toLocalName);
-          }
-
-          // Interpretation -> To node (solid line with ToRelation label)
-          lines.push(
-            `    ${interpretationLocalName} -->|ToRelation| ${toLocalName}`,
-          );
-        }
-      }
-    }
-
-    // If InterpretationToken, show its from and to connections
+    // If InterpretationToken, show its parent law token connection
     if (nodeInfo.type === "InterpretationToken") {
       const interpretation = nodeInfo.data as InterpretationToken;
+      const parentLawToken = findNode(
+        interpretation.parentLawTokenId,
+        graphData,
+      );
+      if (parentLawToken) {
+        const parentLocalName = sanitizeToLocalName(parentLawToken.name);
+        const parentShortLabel = truncateLabel(parentLawToken.name, 18);
+        const parentStyle = getNodeStyle(parentLawToken.type);
 
-      // From node
-      const fromNode = findNode(interpretation.fromTokenId, graphData);
-      if (fromNode) {
-        const fromLocalName = sanitizeToLocalName(fromNode.name);
-        const fromShortLabel = truncateLabel(fromNode.name, 18);
-        const fromStyle = getNodeStyle(fromNode.type);
-
-        if (!addedNodes.has(fromLocalName)) {
-          lines.push(`    ${fromLocalName}["${fromShortLabel}"]${fromStyle}`);
-          addedNodes.add(fromLocalName);
+        if (!addedNodes.has(parentLocalName)) {
+          lines.push(
+            `    ${parentLocalName}["${parentShortLabel}"]${parentStyle}`,
+          );
+          addedNodes.add(parentLocalName);
         }
 
-        // From -> Interpretation (solid line with FromRelation label)
-        lines.push(`    ${fromLocalName} -->|FromRelation| ${localName}`);
-      }
-
-      // To node
-      const toNode = findNode(interpretation.toNodeId, graphData);
-      if (toNode) {
-        const toLocalName = sanitizeToLocalName(toNode.name);
-        const toShortLabel = truncateLabel(toNode.name, 18);
-        const toStyle = getNodeStyle(toNode.type);
-
-        if (!addedNodes.has(toLocalName)) {
-          lines.push(`    ${toLocalName}["${toShortLabel}"]${toStyle}`);
-          addedNodes.add(toLocalName);
-        }
-
-        // Interpretation -> To (solid line with ToRelation label)
-        lines.push(`    ${localName} -->|ToRelation| ${toLocalName}`);
+        lines.push(`    ${parentLocalName} -->|hasChild| ${localName}`);
       }
     }
 
@@ -199,7 +111,6 @@ export function generateOntologyMermaid(
 }
 
 function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
-  // Check curations
   for (const curation of graphData.curations) {
     if (curation.id === nodeId) {
       return {
@@ -210,15 +121,11 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check swarms
   for (const swarm of graphData.swarms) {
     if (swarm.id === nodeId) {
       return { id: nodeId, name: swarm.name, type: "Swarm", data: swarm };
     }
   }
-
-  // Check locations
   for (const location of graphData.locations) {
     if (location.id === nodeId) {
       return {
@@ -229,8 +136,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check law tokens
   for (const lawToken of graphData.lawTokens) {
     if (lawToken.id === nodeId) {
       return {
@@ -241,8 +146,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check interpretation tokens
   for (const interpretationToken of graphData.interpretationTokens) {
     if (interpretationToken.id === nodeId) {
       return {
@@ -253,21 +156,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check sublocations
-  if (graphData.sublocations) {
-    for (const sublocation of graphData.sublocations as Sublocation[]) {
-      if (sublocation.id === nodeId) {
-        return {
-          id: nodeId,
-          name: sublocation.title,
-          type: "Sublocation",
-          data: sublocation,
-        };
-      }
-    }
-  }
-
   return null;
 }
 
@@ -323,7 +211,7 @@ function getParentNode(
 
     case "InterpretationToken": {
       const interpretation = nodeInfo.data as InterpretationToken;
-      return findNode(interpretation.fromTokenId, graphData);
+      return findNode(interpretation.parentLawTokenId, graphData);
     }
 
     default:
@@ -380,20 +268,25 @@ function getChildNodes(nodeInfo: NodeInfo, graphData: GraphData): NodeInfo[] {
       break;
     }
 
-    case "LawToken":
-      // Law tokens don't have hierarchical children (interpretations are shown separately)
+    case "LawToken": {
+      const childInterpTokens = graphData.interpretationTokens.filter(
+        (it) => it.parentLawTokenId === nodeInfo.id,
+      );
+      for (const it of childInterpTokens) {
+        children.push({
+          id: it.id,
+          name: it.title,
+          type: "InterpretationToken",
+          data: it,
+        });
+      }
       break;
-
-    case "InterpretationToken":
-      // Interpretation tokens don't have hierarchical children
-      break;
+    }
   }
 
   return children;
 }
 
 function getNodeStyle(_type: string): string {
-  // Return empty string for default rectangular nodes
-  // Interpretation tokens use diamond shape in the main rendering
   return "";
 }

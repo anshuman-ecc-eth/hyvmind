@@ -121,11 +121,7 @@ export default function App() {
       }
 
       for (const it of graphData.interpretationTokens) {
-        if (
-          archivedSet.has(it.id) ||
-          archivedSet.has(it.fromTokenId) ||
-          archivedSet.has(it.toNodeId)
-        ) {
+        if (archivedSet.has(it.id) || archivedSet.has(it.parentLawTokenId)) {
           hiddenIds.add(it.id);
         }
       }

@@ -21,7 +21,6 @@ interface LayoutNode {
   y: number;
   upvotes: number;
   downvotes: number;
-  originalTokenSequence?: string;
   curationId?: string;
   swarmId?: string;
   opacity?: number;
@@ -30,9 +29,8 @@ interface LayoutNode {
 interface LayoutLink {
   source: string;
   target: string;
-  relationType?: string;
-  isInterpretationTokenEdge?: boolean;
-  edgeType?: "from" | "to";
+  edgeLabel: string;
+  bidirectional: boolean;
 }
 
 interface ForceGraph3DProps {
@@ -52,7 +50,6 @@ const NODE_COLORS: Record<string, string> = {
   location: "#66BB6A",
   lawToken: "#BA68C8",
   interpretationToken: "#FFB74D",
-  sublocation: "#4DB6AC",
 };
 
 // Theme-aware colors
@@ -385,10 +382,7 @@ export const ForceGraph3D = React.memo(
     );
 
     const linkLabel = useCallback((link: any): string => {
-      if (link.isInterpretationTokenEdge && link.relationType) {
-        return link.relationType;
-      }
-      return "";
+      return link.edgeLabel || "";
     }, []);
 
     return (

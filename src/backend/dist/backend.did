@@ -25,6 +25,7 @@ type Tag = text;
 type Swarm = 
  record {
    creator: principal;
+   customAttributes: vec CustomAttribute;
    forkPrincipal: opt principal;
    forkSource: opt NodeId;
    id: NodeId;
@@ -33,14 +34,33 @@ type Swarm =
    tags: vec Tag;
    timestamps: Timestamps;
  };
-type Sublocation = 
+type SourceGraphNodeInput = 
  record {
-   content: text;
-   creator: principal;
-   id: NodeId;
-   originalTokenSequence: text;
-   timestamps: Timestamps;
-   title: text;
+   attributes: vec CustomAttribute;
+   content: opt text;
+   jurisdiction: opt text;
+   name: text;
+   nodeType: text;
+   parentName: opt text;
+   tags: vec text;
+ };
+type SourceGraphEdgeInput = 
+ record {
+   bidirectional: bool;
+   edgeLabel: text;
+   sourceName: text;
+   targetName: text;
+ };
+type PublishSourceGraphInput = 
+ record {
+   edges: vec SourceGraphEdgeInput;
+   nodes: vec SourceGraphNodeInput;
+ };
+type PublishResult = 
+ variant {
+   error: text;
+   noChanges;
+   success: record {message: text;};
  };
 type OwnedGraphData = 
  record {
@@ -49,7 +69,6 @@ type OwnedGraphData =
    interpretationTokens: vec InterpretationToken;
    lawTokens: vec LawToken;
    locations: vec Location;
-   sublocations: vec Sublocation;
    swarms: vec Swarm;
  };
 type NodeId = text;
@@ -72,19 +91,17 @@ type MintCollectibleRequest =
  };
 type Location = 
  record {
-   content: text;
    creator: principal;
    customAttributes: vec CustomAttribute;
    id: NodeId;
-   originalTokenSequence: text;
    parentSwarmId: NodeId;
    timestamps: Timestamps;
    title: text;
-   version: nat;
  };
 type LawToken = 
  record {
    creator: principal;
+   customAttributes: vec CustomAttribute;
    id: NodeId;
    parentLocationId: NodeId;
    timestamps: Timestamps;
@@ -92,22 +109,18 @@ type LawToken =
  };
 type InterpretationToken = 
  record {
-   context: text;
+   content: text;
    creator: principal;
    customAttributes: vec CustomAttribute;
-   fromDirectionality: Directionality;
-   fromRelationshipType: text;
-   fromTokenId: NodeId;
    id: NodeId;
+   parentLawTokenId: NodeId;
    timestamps: Timestamps;
    title: text;
-   toDirectionality: Directionality;
-   toNodeId: NodeId;
-   toRelationshipType: text;
  };
 type GraphNode = 
  record {
    children: vec GraphNode;
+   customAttributes: vec CustomAttribute;
    id: NodeId;
    jurisdiction: opt text;
    nodeType: text;
@@ -116,6 +129,8 @@ type GraphNode =
  };
 type GraphEdge = 
  record {
+   directionality: Directionality;
+   edgeLabel: text;
    source: NodeId;
    target: NodeId;
  };
@@ -127,7 +142,6 @@ type GraphData =
    lawTokens: vec LawToken;
    locations: vec Location;
    rootNodes: vec GraphNode;
-   sublocations: vec Sublocation;
    swarms: vec Swarm;
  };
 type Directionality = 
@@ -144,8 +158,8 @@ type CustomAttribute =
 type Curation = 
  record {
    creator: principal;
+   customAttributes: vec CustomAttribute;
    id: NodeId;
-   jurisdiction: text;
    name: text;
    timestamps: Timestamps;
  };
@@ -171,18 +185,14 @@ service : {
   _initializeAccessControl: () -> ();
   archiveNode: (nodeId: NodeId) -> ();
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
-  createCuration: (name: text, jurisdiction: text) -> (NodeId);
-  createInterpretationToken: (title: text, context: text, fromTokenId:
-   NodeId, fromRelationshipType: text, fromDirectionality: Directionality,
-   toNodeId: NodeId, toRelationshipType: text, toDirectionality:
-   Directionality, customAttributes: vec CustomAttribute) -> (NodeId);
-  createLocation: (title: text, content: text, originalTokenSequence: 
-   text, customAttributes: vec CustomAttribute, parentSwarmId: NodeId) ->
+  createCuration: (name: text, customAttributes: vec CustomAttribute) ->
    (NodeId);
-  createSublocation: (title: text, content: text, originalTokenSequence:
-   text, parentLawTokenIds: vec NodeId) -> (NodeId);
-  createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId) ->
-   (NodeId);
+  createInterpretationToken: (title: text, content: text, parentLawTokenId:
+   NodeId, customAttributes: vec CustomAttribute) -> (NodeId);
+  createLocation: (title: text, customAttributes: vec CustomAttribute,
+   parentSwarmId: NodeId) -> (NodeId);
+  createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId,
+   customAttributes: vec CustomAttribute) -> (NodeId);
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
   getAllData: () -> (GraphData) query;
@@ -207,6 +217,7 @@ service : {
   listApprovals: () -> (vec UserApprovalInfo) query;
   mintCollectible: (request: MintCollectibleRequest) ->
    (MintCollectibleResult);
+  publishSourceGraph: (input: PublishSourceGraphInput) -> (PublishResult);
   pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
   requestApproval: () -> ();
   resetAllData: () -> ();

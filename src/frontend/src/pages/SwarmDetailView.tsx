@@ -164,12 +164,7 @@ export default function SwarmDetailView({
               </p>
             ) : (
               yesLawTokens.map((lt) => (
-                <LawTokenCard
-                  key={lt.id}
-                  lawToken={lt}
-                  locations={locations}
-                  sublocations={[]}
-                />
+                <LawTokenCard key={lt.id} lawToken={lt} locations={locations} />
               ))
             )}
           </div>
@@ -190,12 +185,7 @@ export default function SwarmDetailView({
               </p>
             ) : (
               noLawTokens.map((lt) => (
-                <LawTokenCard
-                  key={lt.id}
-                  lawToken={lt}
-                  locations={locations}
-                  sublocations={[]}
-                />
+                <LawTokenCard key={lt.id} lawToken={lt} locations={locations} />
               ))
             )}
           </div>

@@ -82,12 +82,6 @@ export function handleFindCommand(
     if (it.title.toLowerCase().includes(lower))
       matches.push({ id: it.id, type: "Interpretation Token", name: it.title });
   }
-  if (graphData.sublocations) {
-    for (const sl of graphData.sublocations as any[]) {
-      if (sl.title.toLowerCase().includes(lower))
-        matches.push({ id: sl.id, type: "Sublocation", name: sl.title });
-    }
-  }
 
   if (matches.length === 0)
     return { success: false, message: formatNoMatchesFound(searchTerm) };
@@ -283,10 +277,6 @@ function findNodeById(
   for (const it of graphData.interpretationTokens)
     if (it.id === nodeId)
       return { id: it.id, name: it.title, type: "Interpretation Token" };
-  if (graphData.sublocations)
-    for (const sl of graphData.sublocations as any[])
-      if (sl.id === nodeId)
-        return { id: sl.id, name: sl.title, type: "Sublocation" };
   return null;
 }
 

@@ -4,7 +4,6 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
-  Sublocation,
   Swarm,
 } from "../backend";
 
@@ -31,18 +30,14 @@ export function resolveNodeReference(
     return { status: "graph-not-loaded" };
   }
 
-  // Normalize command identifier (strip leading forward slash if present)
   const normalizedCommand = command.startsWith("/")
     ? command.substring(1)
     : command;
 
-  // Determine which node types are valid for this field
   const validTypes = getValidTypesForField(normalizedCommand, field);
 
-  // Try to find matching nodes
   const matches: ResolvedNode[] = [];
 
-  // Check if reference is a literal ID (passthrough for most commands except 'ont' and 'filter')
   if (normalizedCommand !== "ont" && normalizedCommand !== "filter") {
     const nodeById = findNodeById(reference, graphData, validTypes);
     if (nodeById) {
@@ -50,7 +45,6 @@ export function resolveNodeReference(
     }
   }
 
-  // Search by name (case-insensitive)
   const lowerRef = reference.toLowerCase();
 
   if (validTypes.includes("curation")) {
@@ -125,18 +119,6 @@ export function resolveNodeReference(
     }
   }
 
-  if (validTypes.includes("sublocation") && graphData.sublocations) {
-    for (const sublocation of graphData.sublocations as Sublocation[]) {
-      if (sublocation.title.toLowerCase() === lowerRef) {
-        matches.push({
-          id: sublocation.id,
-          name: sublocation.title,
-          type: "Sublocation",
-        });
-      }
-    }
-  }
-
   if (matches.length === 0) {
     return { status: "not-found" };
   }
@@ -162,29 +144,11 @@ function getValidTypesForField(command: string, field: string): string[] {
   }
 
   if (command === "ont" && field === "name") {
-    return [
-      "curation",
-      "swarm",
-      "location",
-      "lawToken",
-      "interpretationToken",
-      "sublocation",
-    ];
-  }
-
-  if (command === "sl" && field === "attached") {
-    return ["lawToken"];
+    return ["curation", "swarm", "location", "lawToken", "interpretationToken"];
   }
 
   if (command === "archive" && field === "name") {
-    return [
-      "curation",
-      "swarm",
-      "location",
-      "lawToken",
-      "interpretationToken",
-      "sublocation",
-    ];
+    return ["curation", "swarm", "location", "lawToken", "interpretationToken"];
   }
 
   if (command === "filter") {
@@ -278,18 +242,8 @@ function findNodeById(
     }
   }
 
-  if (validTypes.includes("sublocation") && graphData.sublocations) {
-    const sublocation = (graphData.sublocations as Sublocation[]).find(
-      (sl) => sl.id === id,
-    );
-    if (sublocation) {
-      return {
-        id: sublocation.id,
-        name: sublocation.title,
-        type: "Sublocation",
-      };
-    }
-  }
-
   return null;
 }
+
+// Keep type exports for compatibility — Sublocation is no longer used
+export type { Curation, Swarm, Location, LawToken, InterpretationToken };

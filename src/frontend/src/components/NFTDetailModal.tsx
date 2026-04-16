@@ -272,10 +272,10 @@ export default function NFTDetailModal({
 
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground mb-1">
-                    Context
+                    Content
                   </dt>
                   <dd className="text-sm">
-                    {(token as InterpretationToken).context}
+                    {(token as InterpretationToken).content}
                   </dd>
                 </div>
               </>

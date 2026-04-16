@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -32,19 +25,17 @@ interface SchemaBuilderFilterModalProps {
   onOpenTokenModal: (token: InterpretationToken) => void;
 }
 
-type SortOption = "name" | "creationDate" | "contextLength";
+type SortOption = "name" | "creationDate" | "contentLength";
 
 interface InterpretationTokenItemProps {
   token: InterpretationToken;
-  fromNodeName: string;
-  toNodeName: string;
+  parentLawTokenName: string;
   onOpenModal: () => void;
 }
 
 function InterpretationTokenItem({
   token,
-  fromNodeName,
-  toNodeName,
+  parentLawTokenName,
   onOpenModal,
 }: InterpretationTokenItemProps) {
   return (
@@ -65,24 +56,14 @@ function InterpretationTokenItem({
 
       <div className="text-xs text-muted-foreground space-y-1 ml-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium">From:</span>
-          <span>{fromNodeName}</span>
-          <Badge variant="outline" className="text-xs">
-            {token.fromRelationshipType}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-medium">To:</span>
-          <span>{toNodeName}</span>
-          <Badge variant="outline" className="text-xs">
-            {token.toRelationshipType}
-          </Badge>
+          <span className="font-medium">Parent Law Token:</span>
+          <span>{parentLawTokenName}</span>
         </div>
       </div>
 
-      {token.context && (
+      {token.content && (
         <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
-          {token.context}
+          {token.content}
         </div>
       )}
 
@@ -111,10 +92,7 @@ export default function SchemaBuilderFilterModal({
   const [open, setOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>("name");
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [selectedFromNodes, setSelectedFromNodes] = useState<Set<string>>(
-    new Set(),
-  );
-  const [selectedToNodes, setSelectedToNodes] = useState<Set<string>>(
+  const [selectedParentNodes, setSelectedParentNodes] = useState<Set<string>>(
     new Set(),
   );
 
@@ -123,8 +101,7 @@ export default function SchemaBuilderFilterModal({
     if (newOpen) {
       setSortOption("name");
       setSelectedTags(new Set());
-      setSelectedFromNodes(new Set());
-      setSelectedToNodes(new Set());
+      setSelectedParentNodes(new Set());
     }
     setOpen(newOpen);
   };
@@ -132,8 +109,7 @@ export default function SchemaBuilderFilterModal({
   const handleResetFilters = () => {
     setSortOption("name");
     setSelectedTags(new Set());
-    setSelectedFromNodes(new Set());
-    setSelectedToNodes(new Set());
+    setSelectedParentNodes(new Set());
   };
 
   const handleTagToggle = (tag: string) => {
@@ -146,31 +122,20 @@ export default function SchemaBuilderFilterModal({
     setSelectedTags(newTags);
   };
 
-  const handleFromNodeToggle = (nodeId: string) => {
-    const newNodes = new Set(selectedFromNodes);
+  const handleParentNodeToggle = (nodeId: string) => {
+    const newNodes = new Set(selectedParentNodes);
     if (newNodes.has(nodeId)) {
       newNodes.delete(nodeId);
     } else {
       newNodes.add(nodeId);
     }
-    setSelectedFromNodes(newNodes);
+    setSelectedParentNodes(newNodes);
   };
 
-  const handleToNodeToggle = (nodeId: string) => {
-    const newNodes = new Set(selectedToNodes);
-    if (newNodes.has(nodeId)) {
-      newNodes.delete(nodeId);
-    } else {
-      newNodes.add(nodeId);
-    }
-    setSelectedToNodes(newNodes);
-  };
-
-  // Extract all unique tags and node connections
-  const { allTags, allFromNodes, allToNodes } = useMemo(() => {
+  // Extract all unique tags and parent law tokens
+  const { allTags, allParentNodes } = useMemo(() => {
     const tags = new Set<string>();
-    const fromNodes = new Map<string, string>();
-    const toNodes = new Map<string, string>();
+    const parentNodes = new Map<string, string>();
 
     // biome-ignore lint/complexity/noForEach: imperative code
     interpretationTokens.forEach((token) => {
@@ -184,19 +149,15 @@ export default function SchemaBuilderFilterModal({
         }
       });
 
-      fromNodes.set(
-        token.fromTokenId,
-        nodeNameMap.get(token.fromTokenId) || "Unknown",
+      parentNodes.set(
+        token.parentLawTokenId,
+        nodeNameMap.get(token.parentLawTokenId) || "Unknown",
       );
-      toNodes.set(token.toNodeId, nodeNameMap.get(token.toNodeId) || "Unknown");
     });
 
     return {
       allTags: Array.from(tags).sort(),
-      allFromNodes: Array.from(fromNodes.entries()).sort((a, b) =>
-        a[1].localeCompare(b[1]),
-      ),
-      allToNodes: Array.from(toNodes.entries()).sort((a, b) =>
+      allParentNodes: Array.from(parentNodes.entries()).sort((a, b) =>
         a[1].localeCompare(b[1]),
       ),
     };
@@ -222,17 +183,10 @@ export default function SchemaBuilderFilterModal({
       });
     }
 
-    // Apply from node filter
-    if (selectedFromNodes.size > 0) {
+    // Apply parent node filter
+    if (selectedParentNodes.size > 0) {
       filtered = filtered.filter((token) =>
-        selectedFromNodes.has(token.fromTokenId),
-      );
-    }
-
-    // Apply to node filter
-    if (selectedToNodes.size > 0) {
-      filtered = filtered.filter((token) =>
-        selectedToNodes.has(token.toNodeId),
+        selectedParentNodes.has(token.parentLawTokenId),
       );
     }
 
@@ -242,23 +196,16 @@ export default function SchemaBuilderFilterModal({
         case "name":
           return a.title.localeCompare(b.title);
         case "creationDate":
-          // Assuming newer tokens have higher IDs (timestamp-based)
           return b.id.localeCompare(a.id);
-        case "contextLength":
-          return (b.context?.length || 0) - (a.context?.length || 0);
+        case "contentLength":
+          return (b.content?.length || 0) - (a.content?.length || 0);
         default:
           return 0;
       }
     });
 
     return sorted;
-  }, [
-    interpretationTokens,
-    selectedTags,
-    selectedFromNodes,
-    selectedToNodes,
-    sortOption,
-  ]);
+  }, [interpretationTokens, selectedTags, selectedParentNodes, sortOption]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -320,12 +267,12 @@ export default function SchemaBuilderFilterModal({
                 Creation Date
               </Button>
               <Button
-                variant={sortOption === "contextLength" ? "default" : "outline"}
+                variant={sortOption === "contentLength" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSortOption("contextLength")}
+                onClick={() => setSortOption("contentLength")}
                 className="hover:bg-accent hover:text-accent-foreground"
               >
-                Context Length
+                Content Length
               </Button>
             </div>
           </div>
@@ -366,54 +313,23 @@ export default function SchemaBuilderFilterModal({
         <div className="flex-shrink-0 pb-4 border-b">
           <div className="space-y-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Filter by From Node
+              Filter by Parent Law Token
             </span>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {allFromNodes.length === 0 ? (
+              {allParentNodes.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  No from nodes available
+                  No parent law tokens available
                 </p>
               ) : (
-                allFromNodes.map(([nodeId, nodeName]) => (
+                allParentNodes.map(([nodeId, nodeName]) => (
                   <div key={nodeId} className="flex items-center gap-2">
                     <Checkbox
-                      id={`from-${nodeId}`}
-                      checked={selectedFromNodes.has(nodeId)}
-                      onCheckedChange={() => handleFromNodeToggle(nodeId)}
+                      id={`parent-${nodeId}`}
+                      checked={selectedParentNodes.has(nodeId)}
+                      onCheckedChange={() => handleParentNodeToggle(nodeId)}
                     />
                     <label
-                      htmlFor={`from-${nodeId}`}
-                      className="text-sm cursor-pointer hover:text-accent-foreground"
-                    >
-                      {nodeName}
-                    </label>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 pb-4 border-b">
-          <div className="space-y-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Filter by To Node
-            </span>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {allToNodes.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No to nodes available
-                </p>
-              ) : (
-                allToNodes.map(([nodeId, nodeName]) => (
-                  <div key={nodeId} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`to-${nodeId}`}
-                      checked={selectedToNodes.has(nodeId)}
-                      onCheckedChange={() => handleToNodeToggle(nodeId)}
-                    />
-                    <label
-                      htmlFor={`to-${nodeId}`}
+                      htmlFor={`parent-${nodeId}`}
                       className="text-sm cursor-pointer hover:text-accent-foreground"
                     >
                       {nodeName}
@@ -442,10 +358,9 @@ export default function SchemaBuilderFilterModal({
                     <InterpretationTokenItem
                       key={token.id}
                       token={token}
-                      fromNodeName={
-                        nodeNameMap.get(token.fromTokenId) || "Unknown"
+                      parentLawTokenName={
+                        nodeNameMap.get(token.parentLawTokenId) || "Unknown"
                       }
-                      toNodeName={nodeNameMap.get(token.toNodeId) || "Unknown"}
                       onOpenModal={() => {
                         setOpen(false);
                         onOpenTokenModal(token);

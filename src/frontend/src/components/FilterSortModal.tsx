@@ -40,8 +40,7 @@ type NodeType =
   | "swarm"
   | "location"
   | "lawToken"
-  | "interpretationToken"
-  | "sublocation";
+  | "interpretationToken";
 type SortOption = "alphabetical" | "creationDate" | "modificationDate";
 
 interface FlatNode {
@@ -255,7 +254,6 @@ export default function FilterSortModal({
         id: curation.id,
         nodeType: "curation",
         tokenLabel: curation.name,
-        jurisdiction: curation.jurisdiction,
         createdAt: Date.now(),
       });
     }
@@ -301,7 +299,7 @@ export default function FilterSortModal({
         id: token.id,
         nodeType: "interpretationToken",
         tokenLabel: token.title,
-        parentId: token.fromTokenId,
+        parentId: token.parentLawTokenId,
         attributes: token.customAttributes,
         createdAt: Date.now(),
       });
@@ -459,7 +457,6 @@ export default function FilterSortModal({
                 <SelectItem value="interpretationToken">
                   Interpretation Token
                 </SelectItem>
-                <SelectItem value="sublocation">Sublocation</SelectItem>
               </SelectContent>
             </Select>
           </div>

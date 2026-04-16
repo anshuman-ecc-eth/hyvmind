@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
-import { Calendar, GitFork, MapPin, Minus, Plus, Scale } from "lucide-react";
+import { Calendar, GitFork, Minus, Plus, Scale } from "lucide-react";
 import { useState } from "react";
 import { useGetAllData } from "../hooks/useQueries";
 
@@ -155,18 +155,10 @@ export default function SwarmsView({ onSelectSwarm }: SwarmsViewProps) {
                 <CardContent>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                     {parentCuration && (
-                      <>
-                        <span className="flex items-center gap-1 font-mono">
-                          <Scale className="h-3 w-3" />
-                          {parentCuration.name}
-                        </span>
-                        {parentCuration.jurisdiction && (
-                          <span className="flex items-center gap-1 font-mono">
-                            <MapPin className="h-3 w-3" />
-                            {parentCuration.jurisdiction}
-                          </span>
-                        )}
-                      </>
+                      <span className="flex items-center gap-1 font-mono">
+                        <Scale className="h-3 w-3" />
+                        {parentCuration.name}
+                      </span>
                     )}
                     <span className="flex items-center gap-1 font-mono">
                       <Calendar className="h-3 w-3" />

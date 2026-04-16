@@ -1,21 +1,13 @@
-import type {
-  LawToken,
-  Location,
-  Sublocation,
-  backendInterface,
-} from "@/backend";
+import type { LawToken, Location, backendInterface } from "@/backend";
 import { createActor } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, MapPin } from "lucide-react";
-import { useState } from "react";
 
 interface LawTokenCardProps {
   lawToken: LawToken;
   locations?: Location[];
-  sublocations?: Sublocation[];
 }
 
 function useCreatorProfile(principal: string) {
@@ -54,12 +46,9 @@ function shortenPrincipal(principal: string): string {
 export default function LawTokenCard({
   lawToken,
   locations,
-  sublocations = [],
 }: LawTokenCardProps) {
   const creatorPrincipal = lawToken.creator.toString();
   const { data: profile } = useCreatorProfile(creatorPrincipal);
-
-  const [sublocExpanded, setSublocExpanded] = useState(false);
 
   const displayName = profile?.name ?? shortenPrincipal(creatorPrincipal);
   const parentLocation = locations?.find(
@@ -70,8 +59,6 @@ export default function LawTokenCard({
     ? `${parentLocation.title} · ${lawToken.tokenLabel}`
     : lawToken.tokenLabel;
 
-  const hasSublocs = sublocations.length > 0;
-
   return (
     <Card className="border border-border bg-card shadow-none">
       <CardContent className="p-3 space-y-2">
@@ -79,6 +66,21 @@ export default function LawTokenCard({
         <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
           {contentLabel}
         </p>
+
+        {/* Custom attributes */}
+        {lawToken.customAttributes.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {lawToken.customAttributes.map((attr) => (
+              <Badge
+                key={`${attr.key}-${attr.value}`}
+                variant="secondary"
+                className="text-xs"
+              >
+                {attr.key}: {attr.value}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         {/* Footer: creator + timestamp */}
         <div className="flex items-center justify-between pt-1 border-t border-border/50">
@@ -89,49 +91,6 @@ export default function LawTokenCard({
             {formatTimestamp(lawToken.timestamps.createdAt)}
           </span>
         </div>
-
-        {/* Sublocations section (read-only) */}
-        {hasSublocs && (
-          <div className="pt-1 border-t border-border/50 space-y-1.5">
-            <button
-              type="button"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left"
-              onClick={() => setSublocExpanded((v) => !v)}
-              data-ocid="law_token.subloc.toggle"
-            >
-              {sublocExpanded ? (
-                <ChevronDown className="h-3 w-3" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
-              )}
-              <MapPin className="h-3 w-3" />
-              <span>
-                {sublocations.length} sublocation
-                {sublocations.length !== 1 ? "s" : ""}
-              </span>
-            </button>
-
-            {sublocExpanded && (
-              <div className="space-y-1.5 pl-2">
-                {sublocations.map((sl) => (
-                  <div
-                    key={sl.id}
-                    className="rounded-sm border border-border/60 bg-muted/40 px-2.5 py-1.5"
-                  >
-                    <p className="text-xs font-medium text-foreground">
-                      {sl.title}
-                    </p>
-                    {sl.content && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {sl.content}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

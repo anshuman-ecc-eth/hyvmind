@@ -25,9 +25,9 @@ export interface CollectibleEdition {
 export interface Curation {
   'id' : NodeId,
   'creator' : Principal,
+  'customAttributes' : Array<CustomAttribute>,
   'name' : string,
   'timestamps' : Timestamps,
-  'jurisdiction' : string,
 }
 export interface CustomAttribute { 'key' : string, 'value' : string }
 export type Directionality = { 'none' : null } |
@@ -39,13 +39,18 @@ export interface GraphData {
   'edges' : Array<GraphEdge>,
   'locations' : Array<Location>,
   'swarms' : Array<Swarm>,
-  'sublocations' : Array<Sublocation>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
 }
-export interface GraphEdge { 'source' : NodeId, 'target' : NodeId }
+export interface GraphEdge {
+  'source' : NodeId,
+  'directionality' : Directionality,
+  'target' : NodeId,
+  'edgeLabel' : string,
+}
 export interface GraphNode {
   'id' : NodeId,
+  'customAttributes' : Array<CustomAttribute>,
   'children' : Array<GraphNode>,
   'jurisdiction' : [] | [string],
   'parentId' : [] | [NodeId],
@@ -56,33 +61,26 @@ export interface InterpretationToken {
   'id' : NodeId,
   'title' : string,
   'creator' : Principal,
-  'context' : string,
+  'content' : string,
   'customAttributes' : Array<CustomAttribute>,
-  'toRelationshipType' : string,
-  'toNodeId' : NodeId,
-  'fromDirectionality' : Directionality,
   'timestamps' : Timestamps,
-  'fromTokenId' : NodeId,
-  'toDirectionality' : Directionality,
-  'fromRelationshipType' : string,
+  'parentLawTokenId' : NodeId,
 }
 export interface LawToken {
   'id' : NodeId,
   'parentLocationId' : NodeId,
   'creator' : Principal,
+  'customAttributes' : Array<CustomAttribute>,
   'timestamps' : Timestamps,
   'tokenLabel' : string,
 }
 export interface Location {
   'id' : NodeId,
-  'originalTokenSequence' : string,
   'title' : string,
   'creator' : Principal,
-  'content' : string,
   'customAttributes' : Array<CustomAttribute>,
   'timestamps' : Timestamps,
   'parentSwarmId' : NodeId,
-  'version' : bigint,
 }
 export interface MintCollectibleRequest {
   'tokenId' : NodeId,
@@ -101,21 +99,35 @@ export interface OwnedGraphData {
   'edges' : Array<GraphEdge>,
   'locations' : Array<Location>,
   'swarms' : Array<Swarm>,
-  'sublocations' : Array<Sublocation>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
 }
-export interface Sublocation {
-  'id' : NodeId,
-  'originalTokenSequence' : string,
-  'title' : string,
-  'creator' : Principal,
-  'content' : string,
-  'timestamps' : Timestamps,
+export type PublishResult = { 'noChanges' : null } |
+  { 'error' : string } |
+  { 'success' : { 'message' : string } };
+export interface PublishSourceGraphInput {
+  'edges' : Array<SourceGraphEdgeInput>,
+  'nodes' : Array<SourceGraphNodeInput>,
+}
+export interface SourceGraphEdgeInput {
+  'sourceName' : string,
+  'bidirectional' : boolean,
+  'targetName' : string,
+  'edgeLabel' : string,
+}
+export interface SourceGraphNodeInput {
+  'content' : [] | [string],
+  'name' : string,
+  'tags' : Array<string>,
+  'jurisdiction' : [] | [string],
+  'attributes' : Array<CustomAttribute>,
+  'parentName' : [] | [string],
+  'nodeType' : string,
 }
 export interface Swarm {
   'id' : NodeId,
   'creator' : Principal,
+  'customAttributes' : Array<CustomAttribute>,
   'name' : string,
   'tags' : Array<Tag>,
   'forkSource' : [] | [NodeId],
@@ -139,30 +151,19 @@ export interface _SERVICE {
   '_initializeAccessControl' : ActorMethod<[], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createCuration' : ActorMethod<[string, string], NodeId>,
+  'createCuration' : ActorMethod<[string, Array<CustomAttribute>], NodeId>,
   'createInterpretationToken' : ActorMethod<
-    [
-      string,
-      string,
-      NodeId,
-      string,
-      Directionality,
-      NodeId,
-      string,
-      Directionality,
-      Array<CustomAttribute>,
-    ],
+    [string, string, NodeId, Array<CustomAttribute>],
     NodeId
   >,
   'createLocation' : ActorMethod<
-    [string, string, string, Array<CustomAttribute>, NodeId],
+    [string, Array<CustomAttribute>, NodeId],
     NodeId
   >,
-  'createSublocation' : ActorMethod<
-    [string, string, string, Array<NodeId>],
+  'createSwarm' : ActorMethod<
+    [string, Array<Tag>, NodeId, Array<CustomAttribute>],
     NodeId
   >,
-  'createSwarm' : ActorMethod<[string, Array<Tag>, NodeId], NodeId>,
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
   'getAllData' : ActorMethod<[], GraphData>,
@@ -189,6 +190,7 @@ export interface _SERVICE {
     [MintCollectibleRequest],
     MintCollectibleResult
   >,
+  'publishSourceGraph' : ActorMethod<[PublishSourceGraphInput], PublishResult>,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,

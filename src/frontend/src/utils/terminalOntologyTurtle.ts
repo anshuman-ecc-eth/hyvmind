@@ -4,7 +4,6 @@ import type {
   InterpretationToken,
   LawToken,
   Location,
-  Sublocation,
   Swarm,
 } from "../backend";
 import { CORE_ONTOLOGY_PREFIXES } from "./coreOntology";
@@ -23,20 +22,8 @@ function escapeTurtleLiteral(str: string): string {
 interface NodeInfo {
   id: string;
   name: string;
-  type:
-    | "Curation"
-    | "Swarm"
-    | "Location"
-    | "LawToken"
-    | "InterpretationToken"
-    | "Sublocation";
-  data:
-    | Curation
-    | Swarm
-    | Location
-    | LawToken
-    | InterpretationToken
-    | Sublocation;
+  type: "Curation" | "Swarm" | "Location" | "LawToken" | "InterpretationToken";
+  data: Curation | Swarm | Location | LawToken | InterpretationToken;
 }
 
 export function generateOntologyTurtle(
@@ -113,7 +100,6 @@ export function generateOntologyTurtle(
 }
 
 function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
-  // Check curations
   for (const curation of graphData.curations) {
     if (curation.id === nodeId) {
       return {
@@ -124,15 +110,11 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check swarms
   for (const swarm of graphData.swarms) {
     if (swarm.id === nodeId) {
       return { id: nodeId, name: swarm.name, type: "Swarm", data: swarm };
     }
   }
-
-  // Check locations
   for (const location of graphData.locations) {
     if (location.id === nodeId) {
       return {
@@ -143,8 +125,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check law tokens
   for (const lawToken of graphData.lawTokens) {
     if (lawToken.id === nodeId) {
       return {
@@ -155,8 +135,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check interpretation tokens
   for (const interpretationToken of graphData.interpretationTokens) {
     if (interpretationToken.id === nodeId) {
       return {
@@ -167,21 +145,6 @@ function findNode(nodeId: string, graphData: GraphData): NodeInfo | null {
       };
     }
   }
-
-  // Check sublocations
-  if (graphData.sublocations) {
-    for (const sublocation of graphData.sublocations as Sublocation[]) {
-      if (sublocation.id === nodeId) {
-        return {
-          id: nodeId,
-          name: sublocation.title,
-          type: "Sublocation",
-          data: sublocation,
-        };
-      }
-    }
-  }
-
   return null;
 }
 
@@ -206,120 +169,77 @@ function getXsdDatatype(type: string): string {
     case "date":
       return "xsd:date";
     default:
-      return "xsd:string"; // fallback
+      return "xsd:string";
   }
 }
 
 // Generate outgoing triples (where this node is the subject) - ONLY literal/attribute properties
 function generateOutgoingTriples(
   nodeInfo: NodeInfo,
-  graphData: GraphData,
+  _graphData: GraphData,
   _localName: string,
 ): string[] {
   const triples: string[] = [];
 
-  // Add label (only hm:label, no rdfs:label)
   triples.push(`hm:label "${escapeTurtleLiteral(nodeInfo.name)}"`);
-
-  // Add node ID
   triples.push(`hm:hasNodeId "${escapeTurtleLiteral(nodeInfo.id)}"`);
 
-  // Add createdBy (creator principal)
   const creator = (nodeInfo.data as any).creator;
   if (creator) {
     triples.push(`hm:createdBy "${creator.toString()}"`);
   }
 
-  // Add createdAt (timestamp)
   const timestamps = (nodeInfo.data as any).timestamps;
   if (timestamps?.createdAt) {
     const date = new Date(Number(timestamps.createdAt) / 1_000_000);
     triples.push(`hm:createdAt "${date.toISOString()}"^^xsd:dateTime`);
   }
 
-  // Add type-specific outgoing properties (ONLY literals, NO node references)
   switch (nodeInfo.type) {
-    case "Curation": {
-      const curation = nodeInfo.data as Curation;
-      triples.push(`hm:hasJurisdiction "${curation.jurisdiction}"`);
-      // hasChild relationships moved to Relations section
-      break;
-    }
-
     case "Swarm": {
       const swarm = nodeInfo.data as Swarm;
-
-      // Add tags with typed XSD literals
       for (const tag of swarm.tags) {
         const { value, type } = parseTagAnnotation(tag);
         const xsdType = getXsdDatatype(type);
         triples.push(`hm:hasTag "${escapeTurtleLiteral(value)}"^^${xsdType}`);
       }
-      // hasChild relationships moved to Relations section
       break;
     }
 
     case "Location": {
       const location = nodeInfo.data as Location;
-
-      // Add custom attributes
       for (const attr of location.customAttributes) {
         triples.push(
           `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
         );
       }
-      // hasChild relationships moved to Relations section
       break;
     }
 
     case "LawToken": {
-      const _lawToken = nodeInfo.data as LawToken;
-
-      break;
-    }
-
-    case "Sublocation": {
-      // Sublocations have no special literal properties beyond the defaults
+      const lawToken = nodeInfo.data as LawToken;
+      for (const attr of lawToken.customAttributes) {
+        triples.push(
+          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
+        );
+      }
       break;
     }
 
     case "InterpretationToken": {
       const interpretation = nodeInfo.data as InterpretationToken;
 
-      // Add context
-      if (interpretation.context) {
+      if (interpretation.content) {
         triples.push(
-          `hm:hasContext "${escapeTurtleLiteral(interpretation.context)}"`,
+          `hm:hasContent "${escapeTurtleLiteral(interpretation.content)}"`,
         );
       }
 
-      // Add FromRelation (from relationship)
-      const fromNode = findNode(interpretation.fromTokenId, graphData);
-      if (fromNode) {
-        const fromLocalName = sanitizeToLocalName(fromNode.name);
-        triples.push(`hm:FromRelation hm:${fromLocalName}`);
-        triples.push(
-          `hm:hasFromRelationshipType "${escapeTurtleLiteral(interpretation.fromRelationshipType)}"`,
-        );
-        triples.push(
-          `hm:hasFromDirectionality "${interpretation.fromDirectionality}"`,
-        );
-      }
+      // Parent law token reference
+      triples.push(
+        `hm:hasParentLawTokenId "${escapeTurtleLiteral(interpretation.parentLawTokenId)}"`,
+      );
 
-      // Add ToRelation (to relationship)
-      const toNode = findNode(interpretation.toNodeId, graphData);
-      if (toNode) {
-        const toLocalName = sanitizeToLocalName(toNode.name);
-        triples.push(`hm:ToRelation hm:${toLocalName}`);
-        triples.push(
-          `hm:hasToRelationshipType "${escapeTurtleLiteral(interpretation.toRelationshipType)}"`,
-        );
-        triples.push(
-          `hm:hasToDirectionality "${interpretation.toDirectionality}"`,
-        );
-      }
-
-      // Add custom attributes
       for (const attr of interpretation.customAttributes) {
         triples.push(
           `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
@@ -342,7 +262,6 @@ function generateOutgoingRelationTriples(
 
   switch (nodeInfo.type) {
     case "Curation": {
-      // Add hasChild relationships to swarms
       const childSwarms = graphData.swarms.filter(
         (s) => s.parentCurationId === nodeInfo.id,
       );
@@ -354,7 +273,6 @@ function generateOutgoingRelationTriples(
     }
 
     case "Swarm": {
-      // Add hasChild relationships to locations
       const childLocations = graphData.locations.filter(
         (l) => l.parentSwarmId === nodeInfo.id,
       );
@@ -366,13 +284,23 @@ function generateOutgoingRelationTriples(
     }
 
     case "Location": {
-      // Add hasChild relationships to law tokens
       const childLawTokens = graphData.lawTokens.filter(
         (lt) => lt.parentLocationId === nodeInfo.id,
       );
       for (const lawToken of childLawTokens) {
         const lawTokenLocalName = sanitizeToLocalName(lawToken.tokenLabel);
         triples.push(`hm:${localName} hm:hasChild hm:${lawTokenLocalName} .`);
+      }
+      break;
+    }
+
+    case "LawToken": {
+      const childInterpTokens = graphData.interpretationTokens.filter(
+        (it) => it.parentLawTokenId === nodeInfo.id,
+      );
+      for (const it of childInterpTokens) {
+        const itLocalName = sanitizeToLocalName(it.title);
+        triples.push(`hm:${localName} hm:hasChild hm:${itLocalName} .`);
       }
       break;
     }
@@ -389,79 +317,64 @@ function generateClassTriples(
 ): string[] {
   const triples: string[] = [];
 
-  // Add rdf:type for the selected node
   triples.push(`hm:${localName} rdf:type hm:${nodeInfo.type} .`);
 
-  // Collect all referenced parent and child nodes
   const referencedNodes = new Set<string>();
 
-  // Add parent node if exists
   switch (nodeInfo.type) {
     case "Swarm": {
       const swarm = nodeInfo.data as Swarm;
       referencedNodes.add(swarm.parentCurationId);
       break;
     }
-
     case "Location": {
       const location = nodeInfo.data as Location;
       referencedNodes.add(location.parentSwarmId);
       break;
     }
-
     case "LawToken": {
       const lawToken = nodeInfo.data as LawToken;
       referencedNodes.add(lawToken.parentLocationId);
       break;
     }
-
-    case "Sublocation": {
-      // Sublocations have no special literal properties beyond the defaults
-      break;
-    }
-
     case "InterpretationToken": {
       const interpretation = nodeInfo.data as InterpretationToken;
-      referencedNodes.add(interpretation.fromTokenId);
-      referencedNodes.add(interpretation.toNodeId);
+      referencedNodes.add(interpretation.parentLawTokenId);
       break;
     }
   }
 
-  // Add child nodes
   switch (nodeInfo.type) {
     case "Curation": {
       const childSwarms = graphData.swarms.filter(
         (s) => s.parentCurationId === nodeInfo.id,
       );
-      for (const swarm of childSwarms) {
-        referencedNodes.add(swarm.id);
-      }
+      for (const swarm of childSwarms) referencedNodes.add(swarm.id);
       break;
     }
-
     case "Swarm": {
       const childLocations = graphData.locations.filter(
         (l) => l.parentSwarmId === nodeInfo.id,
       );
-      for (const location of childLocations) {
-        referencedNodes.add(location.id);
-      }
+      for (const location of childLocations) referencedNodes.add(location.id);
       break;
     }
-
     case "Location": {
       const childLawTokens = graphData.lawTokens.filter(
         (lt) => lt.parentLocationId === nodeInfo.id,
       );
-      for (const lawToken of childLawTokens) {
-        referencedNodes.add(lawToken.id);
-      }
+      for (const lawToken of childLawTokens) referencedNodes.add(lawToken.id);
+      break;
+    }
+    case "LawToken": {
+      const childInterpTokens = graphData.interpretationTokens.filter(
+        (it) => it.parentLawTokenId === nodeInfo.id,
+      );
+      for (const it of childInterpTokens) referencedNodes.add(it.id);
       break;
     }
   }
 
-  // Generate rdf:type triples for all referenced nodes
   for (const refNodeId of referencedNodes) {
     const refNode = findNode(refNodeId, graphData);
     if (refNode) {
@@ -481,16 +394,12 @@ function generateIncomingTriples(
 ): string[] {
   const triples: string[] = [];
 
-  // Find all nodes that reference this node
   switch (nodeInfo.type) {
     case "Curation":
-      // No incoming relationships for Curation (it's the root)
       break;
 
     case "Swarm": {
       const swarm = nodeInfo.data as Swarm;
-
-      // Find parent curation (hasParent relationship)
       const parentCuration = graphData.curations.find(
         (c) => c.id === swarm.parentCurationId,
       );
@@ -504,8 +413,6 @@ function generateIncomingTriples(
 
     case "Location": {
       const location = nodeInfo.data as Location;
-
-      // Find parent swarm (hasParent relationship)
       const parentSwarm = graphData.swarms.find(
         (s) => s.id === location.parentSwarmId,
       );
@@ -514,26 +421,11 @@ function generateIncomingTriples(
         triples.push(`hm:${localName} hm:hasParent hm:${parentLocalName} .`);
         triples.push(`hm:${parentLocalName} hm:hasChild hm:${localName} .`);
       }
-
-      // Find interpretation tokens that target this location (ToRelation)
-      const incomingInterpretations = graphData.interpretationTokens.filter(
-        (it) => it.toNodeId === nodeInfo.id,
-      );
-      for (const interpretation of incomingInterpretations) {
-        const interpretationLocalName = sanitizeToLocalName(
-          interpretation.title,
-        );
-        triples.push(
-          `hm:${interpretationLocalName} hm:ToRelation hm:${localName} .`,
-        );
-      }
       break;
     }
 
     case "LawToken": {
       const lawToken = nodeInfo.data as LawToken;
-
-      // Find parent location (hasParent relationship)
       const parentLocation = graphData.locations.find(
         (l) => l.id === lawToken.parentLocationId,
       );
@@ -542,47 +434,19 @@ function generateIncomingTriples(
         triples.push(`hm:${localName} hm:hasParent hm:${parentLocalName} .`);
         triples.push(`hm:${parentLocalName} hm:hasChild hm:${localName} .`);
       }
-
-      // Find interpretation tokens that target this law token (ToRelation)
-      const lawTokenIncomingInterpretations =
-        graphData.interpretationTokens.filter(
-          (it) => it.toNodeId === nodeInfo.id,
-        );
-      for (const interpretation of lawTokenIncomingInterpretations) {
-        const interpretationLocalName = sanitizeToLocalName(
-          interpretation.title,
-        );
-        triples.push(
-          `hm:${interpretationLocalName} hm:ToRelation hm:${localName} .`,
-        );
-      }
-      break;
-    }
-
-    case "Sublocation": {
-      // Sublocations have no special literal properties beyond the defaults
       break;
     }
 
     case "InterpretationToken": {
       const interpretation = nodeInfo.data as InterpretationToken;
-
-      // Find the "from" node that has this interpretation (FromRelation)
-      const fromNode = findNode(interpretation.fromTokenId, graphData);
-      if (fromNode) {
-        const fromLocalName = sanitizeToLocalName(fromNode.name);
-        triples.push(`hm:${localName} hm:FromRelation hm:${fromLocalName} .`);
-      }
-
-      // Find interpretation tokens that target this interpretation token (ToRelation)
-      const interpretationIncoming = graphData.interpretationTokens.filter(
-        (it) => it.toNodeId === nodeInfo.id,
+      const parentLawToken = findNode(
+        interpretation.parentLawTokenId,
+        graphData,
       );
-      for (const incomingInterpretation of interpretationIncoming) {
-        const incomingLocalName = sanitizeToLocalName(
-          incomingInterpretation.title,
-        );
-        triples.push(`hm:${incomingLocalName} hm:ToRelation hm:${localName} .`);
+      if (parentLawToken) {
+        const parentLocalName = sanitizeToLocalName(parentLawToken.name);
+        triples.push(`hm:${localName} hm:hasParent hm:${parentLocalName} .`);
+        triples.push(`hm:${parentLocalName} hm:hasChild hm:${localName} .`);
       }
       break;
     }
