@@ -1,10 +1,32 @@
-import { useAnimationFrame } from "motion/react";
+import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import ScrambleText from "./ScrambleText";
 
-// ── Start Screen ───────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 const MENU_ITEMS = ["ENTER", "EXIT"] as const;
+
+const MESSAGES = [
+  "welcome, fellow researcher",
+  "this is an especially difficult time for us",
+  "the world expects us to run in opposite directions",
+] as const;
+
+const EXIT_MESSAGE = "game not over";
+
+const SCRAMBLE_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type MessagePhase = "idle" | "messages" | "game" | "exit";
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function randomChar(): string {
+  return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+}
+
+// ── Start Screen ───────────────────────────────────────────────────────────────
 
 interface StartScreenProps {
   onStart: () => void;
@@ -121,70 +143,176 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
   );
 }
 
-// ── TypewriterDisplay (kept for potential future use) ─────────────────────────
+// ── ScrambleDisplay ────────────────────────────────────────────────────────────
 
-interface TypewriterDisplayProps {
-  text: string;
-  delayMs?: number;
+interface ScrambleDisplayProps {
+  target: string;
+  /** ms per scramble tick per character position */
+  tickMs?: number;
+  /** total ms to reveal all characters */
+  revealDurationMs?: number;
   onComplete: () => void;
-  cursor?: React.ReactNode;
-  className?: string;
+  scrambleDone: boolean;
+  onAdvance?: () => void;
 }
 
-function TypewriterDisplay({
-  text,
-  delayMs = 30,
+function ScrambleDisplay({
+  target,
+  tickMs = 50,
+  revealDurationMs = 1000,
   onComplete,
-  cursor,
-  className,
-}: TypewriterDisplayProps) {
+  scrambleDone,
+  onAdvance,
+}: ScrambleDisplayProps) {
+  const [display, setDisplay] = useState<string[]>(() =>
+    Array.from({ length: target.length }, () => randomChar()),
+  );
+  const lockedRef = useRef<boolean[]>(new Array(target.length).fill(false));
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const [displayText, setDisplayText] = useState("");
-  const charIndexRef = useRef(0);
-  const accumRef = useRef(0);
-  const doneRef = useRef(false);
+  // Blinking cursor state — only active after scramble is done
+  const [cursorVisible, setCursorVisible] = useState(false);
+  const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: text is the intentional trigger; refs are reset side effects
+  // Start/stop cursor based on scrambleDone
   useEffect(() => {
-    charIndexRef.current = 0;
-    accumRef.current = 0;
-    doneRef.current = false;
-    setDisplayText("");
-  }, [text]);
-
-  useAnimationFrame((_, delta) => {
-    if (doneRef.current) return;
-    accumRef.current += delta;
-    if (accumRef.current >= delayMs) {
-      accumRef.current = 0;
-      const next = charIndexRef.current + 1;
-      charIndexRef.current = next;
-      setDisplayText(text.slice(0, next));
-      if (next >= text.length) {
-        doneRef.current = true;
-        onCompleteRef.current();
+    if (scrambleDone) {
+      setCursorVisible(true);
+      cursorIntervalRef.current = setInterval(() => {
+        setCursorVisible((v) => !v);
+      }, 500);
+    } else {
+      setCursorVisible(false);
+      if (cursorIntervalRef.current) {
+        clearInterval(cursorIntervalRef.current);
+        cursorIntervalRef.current = null;
       }
     }
-  });
+    return () => {
+      if (cursorIntervalRef.current) {
+        clearInterval(cursorIntervalRef.current);
+        cursorIntervalRef.current = null;
+      }
+    };
+  }, [scrambleDone]);
+
+  // On each new target: reset locked state and display
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset
+  useEffect(() => {
+    lockedRef.current = new Array(target.length).fill(false);
+    setDisplay(Array.from({ length: target.length }, () => randomChar()));
+  }, [target]);
+
+  // RAF loop: randomly cycle unlocked characters
+  useEffect(() => {
+    let lastTick = performance.now();
+    let raf: number;
+
+    function loop(now: number) {
+      const delta = now - lastTick;
+      if (delta >= tickMs) {
+        lastTick = now;
+        setDisplay((prev) => {
+          const next = [...prev];
+          for (let i = 0; i < target.length; i++) {
+            if (!lockedRef.current[i]) next[i] = randomChar();
+          }
+          return next;
+        });
+      }
+      raf = requestAnimationFrame(loop);
+    }
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [target, tickMs]);
+
+  // Progressive lock-in per character
+  useEffect(() => {
+    if (target.length === 0) {
+      onCompleteRef.current();
+      return;
+    }
+    const msPerChar = revealDurationMs / target.length;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    for (let i = 0; i < target.length; i++) {
+      timers.push(
+        setTimeout(() => {
+          lockedRef.current[i] = true;
+          setDisplay((prev) => {
+            const next = [...prev];
+            next[i] = target[i];
+            return next;
+          });
+          if (i === target.length - 1) {
+            onCompleteRef.current();
+          }
+        }, i * msPerChar),
+      );
+    }
+
+    return () => {
+      for (const t of timers) clearTimeout(t);
+    };
+  }, [target, revealDurationMs]);
+
+  const handleAdvance = useCallback(() => {
+    if (!scrambleDone) return;
+    // Stop cursor immediately on advance
+    if (cursorIntervalRef.current) {
+      clearInterval(cursorIntervalRef.current);
+      cursorIntervalRef.current = null;
+    }
+    setCursorVisible(false);
+    onAdvance?.();
+  }, [scrambleDone, onAdvance]);
 
   return (
-    <p
-      className={
-        className ??
-        "text-game-font text-foreground text-base leading-relaxed tracking-wide text-center"
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-6 px-8 select-none cursor-pointer"
+      onClick={scrambleDone ? handleAdvance : undefined}
+      onKeyDown={
+        scrambleDone
+          ? (e) => {
+              if (e.key !== "Tab") handleAdvance();
+            }
+          : undefined
       }
+      // biome-ignore lint/a11y/useSemanticElements: intentional overlay
+      role="button"
+      tabIndex={0}
+      aria-label="Advance message"
+      data-ocid="text_game.message_display"
     >
-      {displayText}
-      {cursor}
-    </p>
+      <p
+        className="text-foreground text-center leading-relaxed"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7rem",
+          letterSpacing: "0.05em",
+          lineHeight: "2",
+          maxWidth: "80%",
+        }}
+      >
+        {display.join("")}
+        {scrambleDone && (
+          <span
+            aria-hidden="true"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              opacity: cursorVisible ? 1 : 0,
+              marginLeft: "2px",
+            }}
+          >
+            █
+          </span>
+        )}
+      </p>
+    </div>
   );
 }
-
-// Keep ScrambleText in scope so the import doesn't error
-void ScrambleText;
-void TypewriterDisplay;
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -200,23 +328,102 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const [gameStarted, setGameStarted] = useState(false);
-  const [lastScore, setLastScore] = useState<number | null>(null);
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === "light";
 
-  const handleStart = useCallback(() => {
-    setGameStarted(true);
-  }, []);
+  const [lastScore] = useState<number | null>(null);
 
-  // handleGameOver kept for a future postMessage bridge; iframe doesn't call it
-  const handleGameOver = useCallback((score: number) => {
-    setLastScore(score);
-    setGameStarted(false);
-  }, []);
-  void handleGameOver;
+  // Phase state
+  const [messagePhase, setMessagePhase] = useState<MessagePhase>("idle");
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [scrambleComplete, setScrambleComplete] = useState(false);
+
+  // Game phase
+  const [gameReadyForExit, setGameReadyForExit] = useState(false);
+  const gameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Exit phase: track whether scramble is done (used to trigger auto-close)
+  const exitScrambleCompleteRef = useRef(false);
+
+  // Exit phase scramble done state (for cursor)
+  const [exitScrambleDone, setExitScrambleDone] = useState(false);
 
   const handleExit = useCallback(() => {
     onCompleteRef.current();
   }, []);
+
+  // ── Phase: idle → messages ─────────────────────────────────────────────────
+
+  const handleStart = useCallback(() => {
+    setMessagePhase("messages");
+    setCurrentMessageIndex(0);
+    setScrambleComplete(false);
+  }, []);
+
+  // ── Phase: messages — advance to next or to game ───────────────────────────
+
+  const handleAdvanceMessage = useCallback(() => {
+    if (!scrambleComplete) return;
+    const nextIndex = currentMessageIndex + 1;
+    if (nextIndex < MESSAGES.length) {
+      setCurrentMessageIndex(nextIndex);
+      setScrambleComplete(false);
+    } else {
+      // All messages done → start game
+      setMessagePhase("game");
+      setGameReadyForExit(false);
+      gameTimerRef.current = setTimeout(() => {
+        setGameReadyForExit(true);
+      }, 5000);
+    }
+  }, [scrambleComplete, currentMessageIndex]);
+
+  // Keyboard listener for message phase
+  useEffect(() => {
+    if (messagePhase !== "messages") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Tab") return;
+      handleAdvanceMessage();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [messagePhase, handleAdvanceMessage]);
+
+  // ── Phase: game → exit ─────────────────────────────────────────────────────
+
+  const handleGameClick = useCallback(() => {
+    if (!gameReadyForExit) return;
+    if (gameTimerRef.current) clearTimeout(gameTimerRef.current);
+    setMessagePhase("exit");
+    setExitScrambleDone(false);
+    exitScrambleCompleteRef.current = false;
+  }, [gameReadyForExit]);
+
+  // ── Phase: exit → close ────────────────────────────────────────────────────
+
+  const handleExitScrambleComplete = useCallback(() => {
+    exitScrambleCompleteRef.current = true;
+    setExitScrambleDone(true);
+    setTimeout(() => {
+      onCompleteRef.current();
+    }, 2500);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (gameTimerRef.current) clearTimeout(gameTimerRef.current);
+    };
+  }, []);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const currentTarget =
+    messagePhase === "messages"
+      ? MESSAGES[currentMessageIndex]
+      : messagePhase === "exit"
+        ? EXIT_MESSAGE
+        : "";
 
   return (
     <>
@@ -225,7 +432,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
       {/* Floating window */}
       <div
-        className="fixed z-50 text-game-font font-mono flex flex-col border border-dashed border-border bg-background"
+        className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
         style={{ inset: "5%" }}
         data-ocid="text_game.modal"
       >
@@ -244,7 +451,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <button
             type="button"
             data-ocid="text_game.close_button"
-            className="text-game-font font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
+            className="font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
             onClick={() => onComplete()}
             aria-label="Close text game"
           >
@@ -252,19 +459,68 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </button>
         </div>
 
-        {/* Game content */}
-        {gameStarted ? (
-          <iframe
-            src="https://abagames.github.io/crisp-game-lib-games/?rwheel="
-            allow="autoplay"
-            className="w-full h-full border-0"
-            title="R Wheel"
-          />
-        ) : (
+        {/* ── Idle: Start Screen ── */}
+        {messagePhase === "idle" && (
           <StartScreen
             onStart={handleStart}
             onExit={handleExit}
             lastScore={lastScore}
+          />
+        )}
+
+        {/* ── Messages phase ── */}
+        {messagePhase === "messages" && (
+          <ScrambleDisplay
+            key={currentMessageIndex}
+            target={currentTarget}
+            revealDurationMs={1000}
+            tickMs={50}
+            onComplete={() => setScrambleComplete(true)}
+            scrambleDone={scrambleComplete}
+            onAdvance={handleAdvanceMessage}
+          />
+        )}
+
+        {/* ── Game phase ── */}
+        {messagePhase === "game" && (
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            <div
+              className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
+            >
+              <iframe
+                src="/assets/rebirth.html"
+                allow="autoplay"
+                className="w-full h-full border-0"
+                title="Rebirth"
+                data-ocid="text_game.game_iframe"
+              />
+            </div>
+
+            {/* Transparent click-catcher overlay — active after 5s */}
+            <div
+              className="absolute inset-0 transition-opacity duration-700"
+              style={{ pointerEvents: gameReadyForExit ? "auto" : "none" }}
+              onClick={handleGameClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") handleGameClick();
+              }}
+              // biome-ignore lint/a11y/useSemanticElements: transparent click-catcher overlay
+              role="button"
+              tabIndex={gameReadyForExit ? 0 : -1}
+              aria-label="Exit game"
+              data-ocid="text_game.game_exit_overlay"
+            />
+          </div>
+        )}
+
+        {/* ── Exit phase ── */}
+        {messagePhase === "exit" && (
+          <ScrambleDisplay
+            target={EXIT_MESSAGE}
+            revealDurationMs={1000}
+            tickMs={50}
+            onComplete={handleExitScrambleComplete}
+            scrambleDone={exitScrambleDone}
           />
         )}
       </div>
