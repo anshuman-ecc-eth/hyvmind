@@ -61,21 +61,17 @@ function InterpretationTokenItem({
         </div>
       </div>
 
-      {token.content && (
+      {token.contentVersions?.[0]?.content && (
         <div className="text-xs text-muted-foreground ml-2 line-clamp-2">
-          {token.content}
+          {token.contentVersions[0].content}
         </div>
       )}
 
       {token.customAttributes.length > 0 && (
         <div className="flex flex-wrap gap-1 ml-2">
           {token.customAttributes.map((attr) => (
-            <Badge
-              key={`${attr.key}-${attr.value}`}
-              variant="secondary"
-              className="text-xs"
-            >
-              {attr.key}: {attr.value}
+            <Badge key={attr.key} variant="secondary" className="text-xs">
+              {attr.key}: {attr.weightedValues.map((wv) => wv.value).join(", ")}
             </Badge>
           ))}
         </div>
@@ -145,7 +141,8 @@ export default function SchemaBuilderFilterModal({
           attr.key.toLowerCase() === "tag" ||
           attr.key.toLowerCase() === "tags"
         ) {
-          tags.add(attr.value);
+          // biome-ignore lint/complexity/noForEach: imperative code
+          attr.weightedValues.forEach((wv) => tags.add(wv.value));
         }
       });
 
@@ -176,7 +173,7 @@ export default function SchemaBuilderFilterModal({
               attr.key.toLowerCase() === "tag" ||
               attr.key.toLowerCase() === "tags",
           )
-          .map((attr) => attr.value);
+          .flatMap((attr) => attr.weightedValues.map((wv) => wv.value));
         return Array.from(selectedTags).every((selectedTag) =>
           tokenTags.includes(selectedTag),
         );
@@ -198,7 +195,10 @@ export default function SchemaBuilderFilterModal({
         case "creationDate":
           return b.id.localeCompare(a.id);
         case "contentLength":
-          return (b.content?.length || 0) - (a.content?.length || 0);
+          return (
+            (b.contentVersions?.[0]?.content?.length ?? 0) -
+            (a.contentVersions?.[0]?.content?.length ?? 0)
+          );
         default:
           return 0;
       }

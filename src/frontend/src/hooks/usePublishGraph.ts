@@ -1,23 +1,31 @@
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { PublishResult } from "../backend";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend";
-import type { SourceGraph } from "../types/sourceGraph";
+import type { PublishedNodeInfo, SourceGraph } from "../types/sourceGraph";
+import { usePublishMappings } from "./usePublishMappings";
 
-// Convert SourceGraph to the input format expected by publishSourceGraph
-function sourceGraphToInput(graph: SourceGraph) {
+export type PublishCommitResult =
+  | { type: "success"; nodeMappings: [string, string][]; message: string }
+  | {
+      type: "error";
+      message: string;
+      failedAt: { nodeType: string; name: string } | null;
+    };
+
+// Exported so usePublishPreview can import it
+export function sourceGraphToInput(graph: SourceGraph) {
   const nodes = graph.nodes.map((node) => ({
     name: node.name,
     nodeType: node.nodeType,
-    jurisdiction: node.jurisdiction ? node.jurisdiction : undefined,
+    jurisdiction: node.jurisdiction ?? undefined,
     tags: node.tags ?? [],
     content: node.content ?? undefined,
-    parentName: node.parentName ? node.parentName : undefined,
-    attributes: Object.entries(node.attributes ?? {}).map(([key, value]) => ({
-      key,
-      value,
-    })),
+    parentName: node.parentName ?? undefined,
+    attributes: Object.entries(node.attributes ?? {}).map(
+      ([key, value]) => [key, [value]] as [string, string[]],
+    ),
   }));
 
   const edges = graph.edges.map((edge) => ({
@@ -34,27 +42,88 @@ export function usePublishGraph() {
   const { actor: _rawActor } = useActor(createActor);
   const actor = _rawActor as backendInterface | null;
   const queryClient = useQueryClient();
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<PublishCommitResult | null>(
+    null,
+  );
+  const { getMappingsObject, saveMappings, getMappings } = usePublishMappings();
 
-  const mutation = useMutation<PublishResult, Error, SourceGraph>({
-    mutationFn: async (graph: SourceGraph) => {
-      if (!actor) throw new Error("Actor not available");
+  async function commit(
+    graph: SourceGraph,
+    isUpdate: boolean,
+  ): Promise<PublishCommitResult> {
+    if (!actor) throw new Error("Actor not available");
+    setIsPublishing(true);
+    setError(null);
+
+    try {
+      const mappingsObj = getMappingsObject(graph.id);
+      const existingMappings: [string, string][] = Object.entries(mappingsObj);
       const input = sourceGraphToInput(graph);
-      return actor.publishSourceGraph(input);
-    },
-    onSuccess: (result) => {
-      if (result.__kind__ === "error") {
-        // Don't invalidate on error — data is unchanged
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
-    },
-  });
+      const rawResult = await actor.commitPublishSourceGraph(
+        input,
+        existingMappings,
+      );
 
-  return {
-    publish: mutation.mutateAsync,
-    isPublishing: mutation.isPending,
-    error: mutation.error?.message ?? null,
-    reset: mutation.reset,
-  };
+      let result: PublishCommitResult;
+
+      if (rawResult.__kind__ === "success") {
+        result = {
+          type: "success",
+          nodeMappings: rawResult.success.nodeMappings,
+          message: rawResult.success.message,
+        };
+
+        const newMappings: PublishedNodeInfo[] =
+          rawResult.success.nodeMappings.map(([localName, backendId]) => ({
+            localName,
+            backendId,
+            nodeType:
+              graph.nodes.find((n) => n.name === localName)?.nodeType ??
+              "unknown",
+            publishedAt: Date.now(),
+          }));
+
+        if (!isUpdate) {
+          saveMappings(graph.id, newMappings);
+        } else {
+          const existing = getMappings(graph.id);
+          const merged = [
+            ...existing.filter(
+              (e) => !newMappings.find((n) => n.localName === e.localName),
+            ),
+            ...newMappings,
+          ];
+          saveMappings(graph.id, merged);
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["graphData"] });
+        queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
+      } else {
+        result = {
+          type: "error",
+          message: rawResult.error.message,
+          failedAt: rawResult.error.failedAt ?? null,
+        };
+        setError(rawResult.error.message);
+      }
+
+      setLastResult(result);
+      return result;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      throw e;
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
+  function reset() {
+    setError(null);
+    setLastResult(null);
+  }
+
+  return { commit, isPublishing, error, lastResult, reset };
 }

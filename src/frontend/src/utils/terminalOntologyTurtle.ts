@@ -209,8 +209,9 @@ function generateOutgoingTriples(
     case "Location": {
       const location = nodeInfo.data as Location;
       for (const attr of location.customAttributes) {
+        const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
+          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`,
         );
       }
       break;
@@ -219,8 +220,9 @@ function generateOutgoingTriples(
     case "LawToken": {
       const lawToken = nodeInfo.data as LawToken;
       for (const attr of lawToken.customAttributes) {
+        const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
+          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`,
         );
       }
       break;
@@ -229,10 +231,9 @@ function generateOutgoingTriples(
     case "InterpretationToken": {
       const interpretation = nodeInfo.data as InterpretationToken;
 
-      if (interpretation.content) {
-        triples.push(
-          `hm:hasContent "${escapeTurtleLiteral(interpretation.content)}"`,
-        );
+      const latestContent = interpretation.contentVersions?.[0]?.content;
+      if (latestContent) {
+        triples.push(`hm:hasContent "${escapeTurtleLiteral(latestContent)}"`);
       }
 
       // Parent law token reference
@@ -241,8 +242,9 @@ function generateOutgoingTriples(
       );
 
       for (const attr of interpretation.customAttributes) {
+        const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(attr.value)}"`,
+          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`,
         );
       }
       break;

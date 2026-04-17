@@ -1,3 +1,13 @@
+type WeightedValue = 
+ record {
+   value: text;
+   weight: nat;
+ };
+type WeightedAttribute = 
+ record {
+   key: text;
+   weightedValues: vec WeightedValue;
+ };
 type VoteData = 
  record {
    downvotes: nat;
@@ -25,7 +35,7 @@ type Tag = text;
 type Swarm = 
  record {
    creator: principal;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    forkPrincipal: opt principal;
    forkSource: opt NodeId;
    id: NodeId;
@@ -36,7 +46,10 @@ type Swarm =
  };
 type SourceGraphNodeInput = 
  record {
-   attributes: vec CustomAttribute;
+   attributes: vec record {
+                     text;
+                     vec text;
+                   };
    content: opt text;
    jurisdiction: opt text;
    name: text;
@@ -62,6 +75,36 @@ type PublishResult =
    noChanges;
    success: record {message: text;};
  };
+type PublishPreviewResult = 
+ record {
+   edgeOperations: vec EdgeOperation;
+   nodeOperations: vec NodeOperation;
+   summary:
+    record {
+      edgesToCreate: nat;
+      edgesToUpdate: nat;
+      nodesToCreate: nat;
+      nodesToUpdate: nat;
+    };
+ };
+type PublishCommitResult = 
+ variant {
+   error:
+    record {
+      failedAt: opt record {
+                      name: text;
+                      nodeType: text;
+                    };
+      message: text;
+    };
+   success: record {
+              message: text;
+              nodeMappings: vec record {
+                                  text;
+                                  NodeId;
+                                };
+            };
+ };
 type OwnedGraphData = 
  record {
    curations: vec Curation;
@@ -70,6 +113,21 @@ type OwnedGraphData =
    lawTokens: vec LawToken;
    locations: vec Location;
    swarms: vec Swarm;
+ };
+type NodeOperation = 
+ record {
+   action: variant {
+             create;
+             update: vec AttributeChange;
+           };
+   attributes: vec record {
+                     text;
+                     vec text;
+                   };
+   backendId: opt NodeId;
+   localName: text;
+   nodeType: text;
+   parentName: opt text;
  };
 type NodeId = text;
 type MintSettings = record {numCopies: nat;};
@@ -92,7 +150,7 @@ type MintCollectibleRequest =
 type Location = 
  record {
    creator: principal;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    id: NodeId;
    parentSwarmId: NodeId;
    timestamps: Timestamps;
@@ -101,7 +159,7 @@ type Location =
 type LawToken = 
  record {
    creator: principal;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    id: NodeId;
    parentLocationId: NodeId;
    timestamps: Timestamps;
@@ -109,9 +167,9 @@ type LawToken =
  };
 type InterpretationToken = 
  record {
-   content: text;
+   contentVersions: vec ContentVersion;
    creator: principal;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    id: NodeId;
    parentLawTokenId: NodeId;
    timestamps: Timestamps;
@@ -120,7 +178,7 @@ type InterpretationToken =
 type GraphNode = 
  record {
    children: vec GraphNode;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    id: NodeId;
    jurisdiction: opt text;
    nodeType: text;
@@ -144,24 +202,38 @@ type GraphData =
    rootNodes: vec GraphNode;
    swarms: vec Swarm;
  };
+type EdgeOperation = 
+ record {
+   action: variant {
+             create;
+             update: record {newLabels: vec text;};
+           };
+   bidirectional: bool;
+   labels: vec text;
+   sourceId: opt NodeId;
+   sourceName: text;
+   targetId: opt NodeId;
+   targetName: text;
+ };
 type Directionality = 
  variant {
    bidirectional;
    none;
    unidirectional;
  };
-type CustomAttribute = 
- record {
-   key: text;
-   value: text;
- };
 type Curation = 
  record {
    creator: principal;
-   customAttributes: vec CustomAttribute;
+   customAttributes: vec WeightedAttribute;
    id: NodeId;
    name: text;
    timestamps: Timestamps;
+ };
+type ContentVersion = 
+ record {
+   content: text;
+   contributor: principal;
+   timestamp: Time;
  };
 type CollectibleEdition = 
  record {
@@ -175,6 +247,12 @@ type CollectibleEdition =
               };
  };
 type BuzzScore = int;
+type AttributeChange = 
+ record {
+   key: text;
+   newValues: vec text;
+   oldValues: vec WeightedValue;
+ };
 type ApprovalStatus = 
  variant {
    approved;
@@ -185,14 +263,19 @@ service : {
   _initializeAccessControl: () -> ();
   archiveNode: (nodeId: NodeId) -> ();
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
-  createCuration: (name: text, customAttributes: vec CustomAttribute) ->
+  commitPublishSourceGraph: (input: PublishSourceGraphInput,
+   existingMappings: vec record {
+                           text;
+                           NodeId;
+                         }) -> (PublishCommitResult);
+  createCuration: (name: text, customAttributes: vec WeightedAttribute) ->
    (NodeId);
   createInterpretationToken: (title: text, content: text, parentLawTokenId:
-   NodeId, customAttributes: vec CustomAttribute) -> (NodeId);
-  createLocation: (title: text, customAttributes: vec CustomAttribute,
+   NodeId, customAttributes: vec WeightedAttribute) -> (NodeId);
+  createLocation: (title: text, customAttributes: vec WeightedAttribute,
    parentSwarmId: NodeId) -> (NodeId);
   createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId,
-   customAttributes: vec CustomAttribute) -> (NodeId);
+   customAttributes: vec WeightedAttribute) -> (NodeId);
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
   getAllData: () -> (GraphData) query;
@@ -217,6 +300,11 @@ service : {
   listApprovals: () -> (vec UserApprovalInfo) query;
   mintCollectible: (request: MintCollectibleRequest) ->
    (MintCollectibleResult);
+  previewPublishSourceGraph: (input: PublishSourceGraphInput,
+   existingMappings: vec record {
+                           text;
+                           NodeId;
+                         }) -> (PublishPreviewResult);
   publishSourceGraph: (input: PublishSourceGraphInput) -> (PublishResult);
   pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
   requestApproval: () -> ();

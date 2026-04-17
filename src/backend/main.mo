@@ -14,17 +14,34 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
 
+import Migration "migration";
 
 // Apply any data migration necessary after code changes
 
-
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
   type Directionality = { #none; #unidirectional; #bidirectional };
   type Tag = Text;
-  type CustomAttribute = { key : Text; value : Text };
   type BuzzScore = Int;
+
+  // Weighted types for deduplication
+  type WeightedValue = {
+    value : Text;
+    weight : Nat;
+  };
+
+  type WeightedAttribute = {
+    key : Text;
+    weightedValues : [WeightedValue];
+  };
+
+  type ContentVersion = {
+    content : Text;
+    contributor : Principal;
+    timestamp : Time.Time;
+  };
 
   // Node Types
   type Timestamps = {
@@ -35,7 +52,7 @@ actor {
     id : NodeId;
     name : Text;
     creator : Principal;
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
     timestamps : Timestamps;
   };
 
@@ -45,7 +62,7 @@ actor {
     tags : [Tag];
     parentCurationId : NodeId;
     creator : Principal;
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
     timestamps : Timestamps;
     forkSource : ?NodeId;
     forkPrincipal : ?Principal;
@@ -54,7 +71,7 @@ actor {
   type Location = {
     id : NodeId;
     title : Text;
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
     parentSwarmId : NodeId;
     creator : Principal;
     timestamps : Timestamps;
@@ -65,16 +82,16 @@ actor {
     tokenLabel : Text;
     parentLocationId : NodeId;
     creator : Principal;
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
     timestamps : Timestamps;
   };
 
   type InterpretationToken = {
     id : NodeId;
     title : Text;
-    content : Text;
+    contentVersions : [ContentVersion];
     parentLawTokenId : NodeId;
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
     creator : Principal;
     timestamps : Timestamps;
   };
@@ -169,7 +186,7 @@ actor {
     jurisdiction : ?Text;
     parentId : ?NodeId;
     children : [GraphNode];
-    customAttributes : [CustomAttribute];
+    customAttributes : [WeightedAttribute];
   };
 
   type GraphEdge = {
@@ -199,14 +216,15 @@ actor {
     edges : [GraphEdge];
   };
 
-  // New types for source graph publishing
+  // Source graph edge with weighted labels
   type SourceGraphEdge = {
     source : NodeId;
     target : NodeId;
-    edgeLabel : Text;
+    weightedLabels : [WeightedValue];
     directionality : Directionality;
   };
 
+  // Input types for publishing
   type SourceGraphNodeInput = {
     name : Text;
     nodeType : Text;
@@ -214,7 +232,7 @@ actor {
     tags : [Text];
     content : ?Text;
     parentName : ?Text;
-    attributes : [CustomAttribute];
+    attributes : [(Text, [Text])];
   };
 
   type SourceGraphEdgeInput = {
@@ -233,6 +251,54 @@ actor {
     #success : { message : Text };
     #noChanges;
     #error : Text;
+  };
+
+  // Preview and commit types
+  type AttributeChange = {
+    key : Text;
+    oldValues : [WeightedValue];
+    newValues : [Text];
+  };
+
+  type NodeOperation = {
+    nodeType : Text;
+    localName : Text;
+    backendId : ?NodeId;
+    parentName : ?Text;
+    action : { #create; #update : [AttributeChange] };
+    attributes : [(Text, [Text])];
+  };
+
+  type EdgeOperation = {
+    sourceName : Text;
+    targetName : Text;
+    sourceId : ?NodeId;
+    targetId : ?NodeId;
+    action : { #create; #update : { newLabels : [Text] } };
+    labels : [Text];
+    bidirectional : Bool;
+  };
+
+  type PublishPreviewResult = {
+    nodeOperations : [NodeOperation];
+    edgeOperations : [EdgeOperation];
+    summary : {
+      nodesToCreate : Nat;
+      nodesToUpdate : Nat;
+      edgesToCreate : Nat;
+      edgesToUpdate : Nat;
+    };
+  };
+
+  type PublishCommitResult = {
+    #success : {
+      nodeMappings : [(Text, NodeId)];
+      message : Text;
+    };
+    #error : {
+      message : Text;
+      failedAt : ?{ nodeType : Text; name : Text };
+    };
   };
 
   // Backend State
@@ -261,7 +327,7 @@ actor {
   // Store SwarmType (including which swarms are "question-of-law")
   var swarmTypeMap = Map.empty<NodeId, SwarmType>();
 
-  // New explicit edge storage for source graph edges
+  // New explicit edge storage for source graph edges (weighted labels)
   var sourceEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
 
   type SwarmType = {
@@ -616,7 +682,7 @@ actor {
           let newIt = {
             id = newItId;
             title = it.title;
-            content = it.content;
+            contentVersions = it.contentVersions;
             parentLawTokenId = newParentLawTokenId;
             customAttributes = it.customAttributes;
             creator = caller;
@@ -633,7 +699,7 @@ actor {
                   case (?nid) { nid };
                   case (null) { edge.target };
                 };
-                newEdges.add({ source = newItId; target = newTarget; edgeLabel = edge.edgeLabel; directionality = edge.directionality });
+                newEdges.add({ source = newItId; target = newTarget; weightedLabels = edge.weightedLabels; directionality = edge.directionality });
               };
               sourceEdges.add(newItId, newEdges);
             };
@@ -643,7 +709,7 @@ actor {
     };
   };
 
-  public shared ({ caller }) func createCuration(name : Text, customAttributes : [CustomAttribute]) : async NodeId {
+  public shared ({ caller }) func createCuration(name : Text, customAttributes : [WeightedAttribute]) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can create curations");
     };
@@ -663,7 +729,7 @@ actor {
     id;
   };
 
-  public shared ({ caller }) func createSwarm(name : Text, tags : [Tag], parentCurationId : NodeId, customAttributes : [CustomAttribute]) : async NodeId {
+  public shared ({ caller }) func createSwarm(name : Text, tags : [Tag], parentCurationId : NodeId, customAttributes : [WeightedAttribute]) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can create swarms");
     };
@@ -705,7 +771,7 @@ actor {
 
   public shared ({ caller }) func createLocation(
     title : Text,
-    customAttributes : [CustomAttribute],
+    customAttributes : [WeightedAttribute],
     parentSwarmId : NodeId
   ) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -759,7 +825,7 @@ actor {
     title : Text,
     content : Text,
     parentLawTokenId : NodeId,
-    customAttributes : [CustomAttribute]
+    customAttributes : [WeightedAttribute]
   ) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can create interpretation tokens");
@@ -773,7 +839,7 @@ actor {
     let newInterpretationToken = {
       id;
       title;
-      content;
+      contentVersions = [{ content; contributor = caller; timestamp = Time.now() }];
       parentLawTokenId;
       customAttributes;
       creator = caller;
@@ -1292,7 +1358,7 @@ actor {
             let newIt = {
               id = newItId;
               title = it.title;
-              content = it.content;
+              contentVersions = it.contentVersions;
               parentLawTokenId = newParentLawTokenId;
               customAttributes = it.customAttributes;
               creator = caller;
@@ -1310,7 +1376,7 @@ actor {
                     case (?nid) { nid };
                     case (null) { edge.target };
                   };
-                  newEdges.add({ source = newItId; target = newTarget; edgeLabel = edge.edgeLabel; directionality = edge.directionality });
+                  newEdges.add({ source = newItId; target = newTarget; weightedLabels = edge.weightedLabels; directionality = edge.directionality });
                 };
                 sourceEdges.add(newItId, newEdges);
               };
@@ -1404,7 +1470,950 @@ actor {
     nodeType # "-" # name # "-" # creator.toText() # "-" # Time.now().toText()
   };
 
-  // ─── publishSourceGraph: Single entry point for creating graph data ──────────
+  // ─── Helper: aggregate weightedLabels into single edgeLabel for display ───────
+  func aggregateWeightedLabels(weightedLabels : [WeightedValue]) : Text {
+    if (weightedLabels.size() == 0) { return "" };
+    // Return the label with the highest weight; on tie return first
+    var bestLabel = weightedLabels[0].value;
+    var bestWeight = weightedLabels[0].weight;
+    for (wv in weightedLabels.values()) {
+      if (wv.weight > bestWeight) {
+        bestLabel := wv.value;
+        bestWeight := wv.weight;
+      };
+    };
+    bestLabel;
+  };
+
+  // ─── Helper: mergeWeightedAttributes ─────────────────────────────────────────
+  func mergeWeightedAttributes(existing : [WeightedAttribute], newAttributes : [(Text, [Text])]) : [WeightedAttribute] {
+    // Build mutable map: key -> (value -> weight)
+    let keyMap = Map.empty<Text, Map.Map<Text, Nat>>();
+    for (wa in existing.values()) {
+      let valueMap = Map.empty<Text, Nat>();
+      for (wv in wa.weightedValues.values()) {
+        valueMap.add(wv.value, wv.weight);
+      };
+      keyMap.add(wa.key, valueMap);
+    };
+
+    for ((key, values) in newAttributes.values()) {
+      switch (keyMap.get(key)) {
+        case (?valueMap) {
+          // Key exists — increment weights or add new values
+          for (v in values.values()) {
+            switch (valueMap.get(v)) {
+              case (?w) { valueMap.add(v, w + 1) };
+              case (null) { valueMap.add(v, 1) };
+            };
+          };
+        };
+        case (null) {
+          // New key
+          let valueMap = Map.empty<Text, Nat>();
+          for (v in values.values()) {
+            valueMap.add(v, 1);
+          };
+          keyMap.add(key, valueMap);
+        };
+      };
+    };
+
+    // Convert back to [WeightedAttribute]
+    let result = List.empty<WeightedAttribute>();
+    for ((key, valueMap) in keyMap.entries()) {
+      let wvList = List.empty<WeightedValue>();
+      for ((v, w) in valueMap.entries()) {
+        wvList.add({ value = v; weight = w });
+      };
+      result.add({ key; weightedValues = wvList.toArray() });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: mergeEdgeLabels ──────────────────────────────────────────────────
+  func mergeEdgeLabels(existing : [WeightedValue], newLabels : [Text]) : [WeightedValue] {
+    let labelMap = Map.empty<Text, Nat>();
+    for (wv in existing.values()) {
+      labelMap.add(wv.value, wv.weight);
+    };
+    for (lbl in newLabels.values()) {
+      switch (labelMap.get(lbl)) {
+        case (?w) { labelMap.add(lbl, w + 1) };
+        case (null) { labelMap.add(lbl, 1) };
+      };
+    };
+    let result = List.empty<WeightedValue>();
+    for ((v, w) in labelMap.entries()) {
+      result.add({ value = v; weight = w });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: appendContentVersion ────────────────────────────────────────────
+  func appendContentVersion(existing : [ContentVersion], newContent : Text, contributor : Principal) : [ContentVersion] {
+    let newVersion : ContentVersion = {
+      content = newContent;
+      contributor;
+      timestamp = Time.now();
+    };
+    existing.concat([newVersion]);
+  };
+
+  // ─── Helper: convert [(Text,[Text])] attributes to [WeightedAttribute] at weight=1
+  func attributesToWeighted(attributes : [(Text, [Text])]) : [WeightedAttribute] {
+    let result = List.empty<WeightedAttribute>();
+    for ((key, values) in attributes.values()) {
+      let wvList = List.empty<WeightedValue>();
+      for (v in values.values()) {
+        wvList.add({ value = v; weight = 1 });
+      };
+      result.add({ key; weightedValues = wvList.toArray() });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: compute attribute changes for preview ───────────────────────────
+  func computeAttributeChanges(existing : [WeightedAttribute], newAttributes : [(Text, [Text])]) : [AttributeChange] {
+    let changes = List.empty<AttributeChange>();
+    let existingKeyMap = Map.empty<Text, [WeightedValue]>();
+    for (wa in existing.values()) {
+      existingKeyMap.add(wa.key, wa.weightedValues);
+    };
+    for ((key, values) in newAttributes.values()) {
+      let oldValues = switch (existingKeyMap.get(key)) {
+        case (?wvs) { wvs };
+        case (null) { [] };
+      };
+      changes.add({ key; oldValues; newValues = values });
+    };
+    changes.toArray();
+  };
+
+  // ─── Internal preview logic (no state mutation) ───────────────────────────────
+  func previewLogic(
+    caller : Principal,
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : PublishPreviewResult {
+    let nodeOps = List.empty<NodeOperation>();
+    let edgeOps = List.empty<EdgeOperation>();
+    var nodesToCreate : Nat = 0;
+    var nodesToUpdate : Nat = 0;
+    var edgesToCreate : Nat = 0;
+    var edgesToUpdate : Nat = 0;
+
+    // Build name -> NodeId from existingMappings
+    let nameToId = Map.empty<Text, NodeId>();
+    for ((name, id) in existingMappings.values()) {
+      nameToId.add(name, id);
+    };
+
+    // Build node input lookup for hierarchy checks
+    let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
+    for (node in input.nodes.values()) {
+      nodeInputMap.add(node.name, node);
+    };
+
+    // Separate nodes by type
+    let curationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" });
+    let swarmNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "swarm" });
+    let locationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "location" });
+    let lawEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "lawEntity" });
+    let interpEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "interpEntity" });
+
+    // Process curations
+    for (node in curationNodes.values()) {
+      var foundId : ?NodeId = null;
+      var foundCuration : ?Curation = null;
+      for ((id, curation) in curationMap.entries()) {
+        if (curation.name == node.name) {
+          foundId := ?id;
+          foundCuration := ?curation;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          let changes = switch (foundCuration) {
+            case (?c) { computeAttributeChanges(c.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          nodeOps.add({
+            nodeType = "curation";
+            localName = node.name;
+            backendId = ?existingId;
+            parentName = null;
+            action = #update(changes);
+            attributes = node.attributes;
+          });
+          nodesToUpdate += 1;
+        };
+        case (null) {
+          nodeOps.add({
+            nodeType = "curation";
+            localName = node.name;
+            backendId = null;
+            parentName = null;
+            action = #create;
+            attributes = node.attributes;
+          });
+          nodesToCreate += 1;
+          // Use a placeholder ID for downstream resolution in preview
+          nameToId.add(node.name, "preview-" # node.name);
+        };
+      };
+    };
+
+    // Process swarms
+    for (node in swarmNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentId = switch (nameToId.get(parentName)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundSwarm : ?Swarm = null;
+      for ((id, swarm) in swarmMap.entries()) {
+        if (swarm.name == node.name and swarm.parentCurationId == parentId) {
+          foundId := ?id;
+          foundSwarm := ?swarm;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          let changes = switch (foundSwarm) {
+            case (?s) { computeAttributeChanges(s.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          nodeOps.add({
+            nodeType = "swarm";
+            localName = node.name;
+            backendId = ?existingId;
+            parentName = node.parentName;
+            action = #update(changes);
+            attributes = node.attributes;
+          });
+          nodesToUpdate += 1;
+        };
+        case (null) {
+          nodeOps.add({
+            nodeType = "swarm";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+            attributes = node.attributes;
+          });
+          nodesToCreate += 1;
+          nameToId.add(node.name, "preview-" # node.name);
+        };
+      };
+    };
+
+    // Process locations
+    for (node in locationNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentId = switch (nameToId.get(parentName)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundLocation : ?Location = null;
+      for ((id, location) in locationMap.entries()) {
+        if (location.title == node.name and location.parentSwarmId == parentId) {
+          foundId := ?id;
+          foundLocation := ?location;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          let changes = switch (foundLocation) {
+            case (?l) { computeAttributeChanges(l.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          nodeOps.add({
+            nodeType = "location";
+            localName = node.name;
+            backendId = ?existingId;
+            parentName = node.parentName;
+            action = #update(changes);
+            attributes = node.attributes;
+          });
+          nodesToUpdate += 1;
+        };
+        case (null) {
+          nodeOps.add({
+            nodeType = "location";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+            attributes = node.attributes;
+          });
+          nodesToCreate += 1;
+          nameToId.add(node.name, "preview-" # node.name);
+        };
+      };
+    };
+
+    // Process law entities
+    for (node in lawEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentId = switch (nameToId.get(parentName)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundLawToken : ?LawToken = null;
+      for ((id, lt) in lawTokenMap.entries()) {
+        if (lt.tokenLabel == node.name and lt.parentLocationId == parentId) {
+          foundId := ?id;
+          foundLawToken := ?lt;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          let changes = switch (foundLawToken) {
+            case (?lt) { computeAttributeChanges(lt.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          nodeOps.add({
+            nodeType = "lawEntity";
+            localName = node.name;
+            backendId = ?existingId;
+            parentName = node.parentName;
+            action = #update(changes);
+            attributes = node.attributes;
+          });
+          nodesToUpdate += 1;
+        };
+        case (null) {
+          nodeOps.add({
+            nodeType = "lawEntity";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+            attributes = node.attributes;
+          });
+          nodesToCreate += 1;
+          nameToId.add(node.name, "preview-" # node.name);
+        };
+      };
+    };
+
+    // Process interpretation entities
+    for (node in interpEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentId = switch (nameToId.get(parentName)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundIt : ?InterpretationToken = null;
+      for ((id, it) in interpretationTokenMap.entries()) {
+        if (it.title == node.name and it.parentLawTokenId == parentId) {
+          foundId := ?id;
+          foundIt := ?it;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          let changes = switch (foundIt) {
+            case (?it) { computeAttributeChanges(it.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          nodeOps.add({
+            nodeType = "interpEntity";
+            localName = node.name;
+            backendId = ?existingId;
+            parentName = node.parentName;
+            action = #update(changes);
+            attributes = node.attributes;
+          });
+          nodesToUpdate += 1;
+        };
+        case (null) {
+          nodeOps.add({
+            nodeType = "interpEntity";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+            attributes = node.attributes;
+          });
+          nodesToCreate += 1;
+          nameToId.add(node.name, "preview-" # node.name);
+        };
+      };
+    };
+
+    // Process edges
+    for (edge in input.edges.values()) {
+      let sourceId = switch (nameToId.get(edge.sourceName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      let targetId = switch (nameToId.get(edge.targetName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      if (sourceId != "" and targetId != "") {
+        let isHierarchyEdge = switch (nodeInputMap.get(edge.targetName)) {
+          case (null) { false };
+          case (?targetNode) {
+            switch (targetNode.parentName) {
+              case (null) { false };
+              case (?pn) { pn == edge.sourceName };
+            };
+          };
+        };
+        if (not isHierarchyEdge) {
+          // Check if edge already exists
+          var existingEdge : ?SourceGraphEdge = null;
+          switch (sourceEdges.get(sourceId)) {
+            case (null) {};
+            case (?edgeList) {
+              existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
+            };
+          };
+          switch (existingEdge) {
+            case (?_existing) {
+              edgeOps.add({
+                sourceName = edge.sourceName;
+                targetName = edge.targetName;
+                sourceId = ?sourceId;
+                targetId = ?targetId;
+                action = #update({ newLabels = [edge.edgeLabel] });
+                labels = [edge.edgeLabel];
+                bidirectional = edge.bidirectional;
+              });
+              edgesToUpdate += 1;
+            };
+            case (null) {
+              edgeOps.add({
+                sourceName = edge.sourceName;
+                targetName = edge.targetName;
+                sourceId = ?sourceId;
+                targetId = ?targetId;
+                action = #create;
+                labels = [edge.edgeLabel];
+                bidirectional = edge.bidirectional;
+              });
+              edgesToCreate += 1;
+            };
+          };
+        };
+      };
+    };
+
+    {
+      nodeOperations = nodeOps.toArray();
+      edgeOperations = edgeOps.toArray();
+      summary = {
+        nodesToCreate;
+        nodesToUpdate;
+        edgesToCreate;
+        edgesToUpdate;
+      };
+    };
+  };
+
+  // ─── previewPublishSourceGraph: Read-only preview ────────────────────────────
+
+  public shared ({ caller }) func previewPublishSourceGraph(
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : async PublishPreviewResult {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can preview publish");
+    };
+    previewLogic(caller, input, existingMappings);
+  };
+
+  // ─── commitPublishSourceGraph: Atomic commit with rollback ───────────────────
+
+  public shared ({ caller }) func commitPublishSourceGraph(
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : async PublishCommitResult {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      return #error({ message = "Not authorized"; failedAt = null });
+    };
+    if (input.nodes.size() == 0) {
+      return #error({ message = "Empty graph"; failedAt = null });
+    };
+
+    // Validate node types
+    for (node in input.nodes.values()) {
+      if (node.nodeType != "curation" and node.nodeType != "swarm" and
+          node.nodeType != "location" and node.nodeType != "lawEntity" and
+          node.nodeType != "interpEntity") {
+        return #error({ message = "Invalid node type: " # node.nodeType; failedAt = null });
+      };
+    };
+
+    // Staging buffers
+    let stagingCurations = Map.empty<NodeId, Curation>();
+    let stagingSwarms = Map.empty<NodeId, Swarm>();
+    let stagingLocations = Map.empty<NodeId, Location>();
+    let stagingLawTokens = Map.empty<NodeId, LawToken>();
+    let stagingInterpTokens = Map.empty<NodeId, InterpretationToken>();
+    let stagingEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
+
+    // Track node mappings for result
+    let nodeMappings = List.empty<(Text, NodeId)>();
+
+    // Build name -> NodeId from existingMappings + build as we go
+    let nameToId = Map.empty<Text, NodeId>();
+    for ((name, id) in existingMappings.values()) {
+      nameToId.add(name, id);
+    };
+
+    // Build node input lookup
+    let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
+    for (node in input.nodes.values()) {
+      nodeInputMap.add(node.name, node);
+    };
+
+    let curationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" });
+    let swarmNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "swarm" });
+    let locationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "location" });
+    let lawEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "lawEntity" });
+    let interpEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "interpEntity" });
+
+    // Process curations
+    for (node in curationNodes.values()) {
+      var foundId : ?NodeId = null;
+      var foundCuration : ?Curation = null;
+      for ((id, curation) in curationMap.entries()) {
+        if (curation.name == node.name) {
+          foundId := ?id;
+          foundCuration := ?curation;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          // Update existing: merge attributes
+          let mergedAttrs = switch (foundCuration) {
+            case (?c) { mergeWeightedAttributes(c.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedCuration = switch (foundCuration) {
+            case (?c) { { c with customAttributes = mergedAttrs } };
+            case (null) {
+              return #error({ message = "Curation disappeared during staging"; failedAt = ?{ nodeType = "curation"; name = node.name } });
+            };
+          };
+          stagingCurations.add(existingId, updatedCuration);
+          nameToId.add(node.name, existingId);
+          nodeMappings.add((node.name, existingId));
+        };
+        case (null) {
+          // Create new
+          let newId = generateId("curation", node.name, caller);
+          let newCuration : Curation = {
+            id = newId;
+            name = node.name;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingCurations.add(newId, newCuration);
+          nameToId.add(node.name, newId);
+          nodeMappings.add((node.name, newId));
+        };
+      };
+    };
+
+    // Process swarms
+    for (node in swarmNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentCurationId = switch (nameToId.get(parentName)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      // Look in both real map and staging
+      var foundId : ?NodeId = null;
+      var foundSwarm : ?Swarm = null;
+      for ((id, swarm) in swarmMap.entries()) {
+        if (swarm.name == node.name and swarm.parentCurationId == parentCurationId) {
+          foundId := ?id;
+          foundSwarm := ?swarm;
+        };
+      };
+      if (foundId == null) {
+        for ((id, swarm) in stagingSwarms.entries()) {
+          if (swarm.name == node.name and swarm.parentCurationId == parentCurationId) {
+            foundId := ?id;
+            foundSwarm := ?swarm;
+          };
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundSwarm) {
+            case (?s) { mergeWeightedAttributes(s.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedSwarm = switch (foundSwarm) {
+            case (?s) { { s with customAttributes = mergedAttrs } };
+            case (null) {
+              return #error({ message = "Swarm disappeared during staging"; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+            };
+          };
+          stagingSwarms.add(existingId, updatedSwarm);
+          nameToId.add(node.name, existingId);
+          nodeMappings.add((node.name, existingId));
+        };
+        case (null) {
+          let isQuestionOfLaw = node.tags.any(func(tag : Text) : Bool { tag == "question-of-law" });
+          let newId = generateId("swarm", node.name, caller);
+          let newSwarm : Swarm = {
+            id = newId;
+            name = node.name;
+            tags = node.tags;
+            parentCurationId;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            timestamps = { createdAt = Time.now(); };
+            forkSource = null;
+            forkPrincipal = null;
+          };
+          stagingSwarms.add(newId, newSwarm);
+          nameToId.add(node.name, newId);
+          nodeMappings.add((node.name, newId));
+        };
+      };
+    };
+
+    // Process locations
+    for (node in locationNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentSwarmId = switch (nameToId.get(parentName)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      var foundId : ?NodeId = null;
+      var foundLocation : ?Location = null;
+      for ((id, location) in locationMap.entries()) {
+        if (location.title == node.name and location.parentSwarmId == parentSwarmId) {
+          foundId := ?id;
+          foundLocation := ?location;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundLocation) {
+            case (?l) { mergeWeightedAttributes(l.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedLocation = switch (foundLocation) {
+            case (?l) { { l with customAttributes = mergedAttrs } };
+            case (null) {
+              return #error({ message = "Location disappeared during staging"; failedAt = ?{ nodeType = "location"; name = node.name } });
+            };
+          };
+          stagingLocations.add(existingId, updatedLocation);
+          nameToId.add(node.name, existingId);
+          nodeMappings.add((node.name, existingId));
+        };
+        case (null) {
+          let newId = generateId("location", node.name, caller);
+          let newLocation : Location = {
+            id = newId;
+            title = node.name;
+            customAttributes = attributesToWeighted(node.attributes);
+            parentSwarmId;
+            creator = caller;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingLocations.add(newId, newLocation);
+          nameToId.add(node.name, newId);
+          nodeMappings.add((node.name, newId));
+        };
+      };
+    };
+
+    // Process law entities
+    for (node in lawEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentLocationId = switch (nameToId.get(parentName)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      var foundId : ?NodeId = null;
+      var foundLawToken : ?LawToken = null;
+      for ((id, lt) in lawTokenMap.entries()) {
+        if (lt.tokenLabel == node.name and lt.parentLocationId == parentLocationId) {
+          foundId := ?id;
+          foundLawToken := ?lt;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundLawToken) {
+            case (?lt) { mergeWeightedAttributes(lt.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedLt = switch (foundLawToken) {
+            case (?lt) { { lt with customAttributes = mergedAttrs } };
+            case (null) {
+              return #error({ message = "LawToken disappeared during staging"; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+            };
+          };
+          stagingLawTokens.add(existingId, updatedLt);
+          nameToId.add(node.name, existingId);
+          nodeMappings.add((node.name, existingId));
+        };
+        case (null) {
+          let newId = generateId("lawToken", node.name, caller);
+          let newLawToken : LawToken = {
+            id = newId;
+            tokenLabel = node.name;
+            parentLocationId;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingLawTokens.add(newId, newLawToken);
+          nameToId.add(node.name, newId);
+          nodeMappings.add((node.name, newId));
+        };
+      };
+    };
+
+    // Process interpretation entities
+    for (node in interpEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentLawTokenId = switch (nameToId.get(parentName)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+      let newContent = switch (node.content) { case (?c) { c }; case (null) { "" } };
+
+      var foundId : ?NodeId = null;
+      var foundIt : ?InterpretationToken = null;
+      for ((id, it) in interpretationTokenMap.entries()) {
+        if (it.title == node.name and it.parentLawTokenId == parentLawTokenId) {
+          foundId := ?id;
+          foundIt := ?it;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundIt) {
+            case (?it) { mergeWeightedAttributes(it.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let newVersions = switch (foundIt) {
+            case (?it) { appendContentVersion(it.contentVersions, newContent, caller) };
+            case (null) { [{ content = newContent; contributor = caller; timestamp = Time.now() }] };
+          };
+          let updatedIt = switch (foundIt) {
+            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions } };
+            case (null) {
+              return #error({ message = "InterpToken disappeared during staging"; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+            };
+          };
+          stagingInterpTokens.add(existingId, updatedIt);
+          nameToId.add(node.name, existingId);
+          nodeMappings.add((node.name, existingId));
+        };
+        case (null) {
+          let newId = generateId("interpretationToken", node.name, caller);
+          let newIt : InterpretationToken = {
+            id = newId;
+            title = node.name;
+            contentVersions = [{ content = newContent; contributor = caller; timestamp = Time.now() }];
+            parentLawTokenId;
+            customAttributes = attributesToWeighted(node.attributes);
+            creator = caller;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingInterpTokens.add(newId, newIt);
+          nameToId.add(node.name, newId);
+          nodeMappings.add((node.name, newId));
+        };
+      };
+    };
+
+    // Process source graph edges
+    for (edge in input.edges.values()) {
+      let sourceId = switch (nameToId.get(edge.sourceName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      let targetId = switch (nameToId.get(edge.targetName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      if (sourceId != "" and targetId != "") {
+        let isHierarchyEdge = switch (nodeInputMap.get(edge.targetName)) {
+          case (null) { false };
+          case (?targetNode) {
+            switch (targetNode.parentName) {
+              case (null) { false };
+              case (?pn) { pn == edge.sourceName };
+            };
+          };
+        };
+        if (not isHierarchyEdge) {
+          let directionality : Directionality = if (edge.bidirectional) { #bidirectional } else { #unidirectional };
+          // Check existing edges (real map + staging)
+          var existingEdge : ?SourceGraphEdge = null;
+          switch (sourceEdges.get(sourceId)) {
+            case (null) {};
+            case (?edgeList) {
+              existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
+            };
+          };
+          if (existingEdge == null) {
+            switch (stagingEdges.get(sourceId)) {
+              case (null) {};
+              case (?edgeList) {
+                existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
+              };
+            };
+          };
+
+          switch (existingEdge) {
+            case (?existing) {
+              // Merge labels
+              let mergedLabels = mergeEdgeLabels(existing.weightedLabels, [edge.edgeLabel]);
+              let updatedEdge : SourceGraphEdge = { existing with weightedLabels = mergedLabels };
+              // Remove old, add updated to staging
+              let edgeList = switch (stagingEdges.get(sourceId)) {
+                case (null) {
+                  // Copy from real map
+                  switch (sourceEdges.get(sourceId)) {
+                    case (null) { List.empty<SourceGraphEdge>() };
+                    case (?l) { l.clone() };
+                  };
+                };
+                case (?l) { l };
+              };
+              // Update the matching edge in place
+              edgeList.mapInPlace(func(e : SourceGraphEdge) : SourceGraphEdge {
+                if (e.target == targetId) { updatedEdge } else { e }
+              });
+              stagingEdges.add(sourceId, edgeList);
+            };
+            case (null) {
+              // New edge
+              let newEdge : SourceGraphEdge = {
+                source = sourceId;
+                target = targetId;
+                weightedLabels = [{ value = edge.edgeLabel; weight = 1 }];
+                directionality;
+              };
+              let edgeList = switch (stagingEdges.get(sourceId)) {
+                case (null) {
+                  switch (sourceEdges.get(sourceId)) {
+                    case (null) { List.empty<SourceGraphEdge>() };
+                    case (?l) { l.clone() };
+                  };
+                };
+                case (?l) { l };
+              };
+              edgeList.add(newEdge);
+              stagingEdges.add(sourceId, edgeList);
+            };
+          };
+        };
+      };
+    };
+
+    // ── All staging succeeded — commit to real maps ──────────────────────────
+    for ((id, curation) in stagingCurations.entries()) {
+      curationMap.add(id, curation);
+    };
+    for ((id, swarm) in stagingSwarms.entries()) {
+      swarmMap.add(id, swarm);
+      // Update swarm type for new swarms
+      if (not swarmMap.containsKey(id)) {
+        let isQoL = swarm.tags.any(func(tag : Text) : Bool { tag == "question-of-law" });
+        swarmTypeMap.add(id, if (isQoL) { #questionOfLaw } else { #regular });
+      };
+    };
+    for ((id, location) in stagingLocations.entries()) {
+      locationMap.add(id, location);
+    };
+    for ((id, lt) in stagingLawTokens.entries()) {
+      lawTokenMap.add(id, lt);
+    };
+    for ((id, it) in stagingInterpTokens.entries()) {
+      interpretationTokenMap.add(id, it);
+    };
+    for ((id, edgeList) in stagingEdges.entries()) {
+      sourceEdges.add(id, edgeList);
+    };
+
+    // Auto-upvote new nodes (all new swarms in staging not in original map)
+    for ((id, swarm) in stagingSwarms.entries()) {
+      autoUpvoteNode(id, caller);
+    };
+
+    #success({
+      nodeMappings = nodeMappings.toArray();
+      message = "Published successfully";
+    });
+  };
+
+  // ─── publishSourceGraph: Delegates to commitPublishSourceGraph ────────────────
+  // @deprecated: Use previewPublishSourceGraph + commitPublishSourceGraph instead
 
   public shared ({ caller }) func publishSourceGraph(input : PublishSourceGraphInput) : async PublishResult {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -1457,7 +2466,7 @@ actor {
             id = newId;
             name = node.name;
             creator = caller;
-            customAttributes = node.attributes;
+            customAttributes = attributesToWeighted(node.attributes);
             timestamps = { createdAt = Time.now(); };
           };
           curationMap.add(newId, newCuration);
@@ -1495,7 +2504,7 @@ actor {
             tags = node.tags;
             parentCurationId;
             creator = caller;
-            customAttributes = node.attributes;
+            customAttributes = attributesToWeighted(node.attributes);
             timestamps = { createdAt = Time.now(); };
             forkSource = null;
             forkPrincipal = null;
@@ -1534,7 +2543,7 @@ actor {
           let newLocation = {
             id = newId;
             title = node.name;
-            customAttributes = node.attributes;
+            customAttributes = attributesToWeighted(node.attributes);
             parentSwarmId;
             creator = caller;
             timestamps = { createdAt = Time.now(); };
@@ -1562,7 +2571,7 @@ actor {
         tokenLabel = node.name;
         parentLocationId;
         creator = caller;
-        customAttributes = node.attributes;
+        customAttributes = attributesToWeighted(node.attributes);
         timestamps = { createdAt = Time.now(); };
       };
       lawTokenMap.add(newId, newLawToken);
@@ -1581,12 +2590,13 @@ actor {
         case (?pid) { pid };
       };
       let newId = generateId("interpretationToken", node.name, caller);
+      let contentText = switch (node.content) { case (?c) { c }; case (null) { "" } };
       let newIt = {
         id = newId;
         title = node.name;
-        content = switch (node.content) { case (?c) { c }; case (null) { "" } };
+        contentVersions = [{ content = contentText; contributor = caller; timestamp = Time.now() }];
         parentLawTokenId;
-        customAttributes = node.attributes;
+        customAttributes = attributesToWeighted(node.attributes);
         creator = caller;
         timestamps = { createdAt = Time.now(); };
       };
@@ -1621,7 +2631,7 @@ actor {
           let newEdge : SourceGraphEdge = {
             source = sourceId;
             target = targetId;
-            edgeLabel = edge.edgeLabel;
+            weightedLabels = [{ value = edge.edgeLabel; weight = 1 }];
             directionality;
           };
           let existingList = switch (sourceEdges.get(sourceId)) {
@@ -1792,14 +2802,14 @@ actor {
       };
     };
 
-    // Source graph edges
+    // Source graph edges — aggregate weighted labels to single edgeLabel
     for ((_sourceId, edgeList) in sourceEdges.entries()) {
       for (edge in edgeList.values()) {
         if (not archivedNodes.containsKey(edge.source) and not archivedNodes.containsKey(edge.target)) {
           edges.add({
             source = edge.source;
             target = edge.target;
-            edgeLabel = edge.edgeLabel;
+            edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
             directionality = edge.directionality;
           });
         };
@@ -1894,7 +2904,7 @@ actor {
             ownedEdges.add({
               source = edge.source;
               target = edge.target;
-              edgeLabel = edge.edgeLabel;
+              edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
               directionality = edge.directionality;
             });
           };

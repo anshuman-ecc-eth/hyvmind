@@ -13,6 +13,11 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type ApprovalStatus = { 'pending' : null } |
   { 'approved' : null } |
   { 'rejected' : null };
+export interface AttributeChange {
+  'key' : string,
+  'newValues' : Array<string>,
+  'oldValues' : Array<WeightedValue>,
+}
 export type BuzzScore = bigint;
 export interface CollectibleEdition {
   'tokenId' : NodeId,
@@ -22,17 +27,31 @@ export interface CollectibleEdition {
   'tokenType' : { 'lawToken' : null } |
     { 'interpretationToken' : null },
 }
+export interface ContentVersion {
+  'content' : string,
+  'timestamp' : Time,
+  'contributor' : Principal,
+}
 export interface Curation {
   'id' : NodeId,
   'creator' : Principal,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'name' : string,
   'timestamps' : Timestamps,
 }
-export interface CustomAttribute { 'key' : string, 'value' : string }
 export type Directionality = { 'none' : null } |
   { 'bidirectional' : null } |
   { 'unidirectional' : null };
+export interface EdgeOperation {
+  'action' : { 'create' : null } |
+    { 'update' : { 'newLabels' : Array<string> } },
+  'labels' : Array<string>,
+  'sourceId' : [] | [NodeId],
+  'sourceName' : string,
+  'bidirectional' : boolean,
+  'targetName' : string,
+  'targetId' : [] | [NodeId],
+}
 export interface GraphData {
   'curations' : Array<Curation>,
   'rootNodes' : Array<GraphNode>,
@@ -50,7 +69,7 @@ export interface GraphEdge {
 }
 export interface GraphNode {
   'id' : NodeId,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'children' : Array<GraphNode>,
   'jurisdiction' : [] | [string],
   'parentId' : [] | [NodeId],
@@ -61,16 +80,16 @@ export interface InterpretationToken {
   'id' : NodeId,
   'title' : string,
   'creator' : Principal,
-  'content' : string,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
+  'contentVersions' : Array<ContentVersion>,
   'parentLawTokenId' : NodeId,
 }
 export interface LawToken {
   'id' : NodeId,
   'parentLocationId' : NodeId,
   'creator' : Principal,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
   'tokenLabel' : string,
 }
@@ -78,7 +97,7 @@ export interface Location {
   'id' : NodeId,
   'title' : string,
   'creator' : Principal,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
   'parentSwarmId' : NodeId,
 }
@@ -94,6 +113,15 @@ export type MintCollectibleResult = { 'editionLimitReached' : null } |
   { 'tokenNotFound' : null };
 export interface MintSettings { 'numCopies' : bigint }
 export type NodeId = string;
+export interface NodeOperation {
+  'localName' : string,
+  'action' : { 'create' : null } |
+    { 'update' : Array<AttributeChange> },
+  'attributes' : Array<[string, Array<string>]>,
+  'backendId' : [] | [NodeId],
+  'parentName' : [] | [string],
+  'nodeType' : string,
+}
 export interface OwnedGraphData {
   'curations' : Array<Curation>,
   'edges' : Array<GraphEdge>,
@@ -101,6 +129,25 @@ export interface OwnedGraphData {
   'swarms' : Array<Swarm>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
+}
+export type PublishCommitResult = {
+    'error' : {
+      'message' : string,
+      'failedAt' : [] | [{ 'name' : string, 'nodeType' : string }],
+    }
+  } |
+  {
+    'success' : { 'message' : string, 'nodeMappings' : Array<[string, NodeId]> }
+  };
+export interface PublishPreviewResult {
+  'summary' : {
+    'edgesToCreate' : bigint,
+    'edgesToUpdate' : bigint,
+    'nodesToCreate' : bigint,
+    'nodesToUpdate' : bigint,
+  },
+  'edgeOperations' : Array<EdgeOperation>,
+  'nodeOperations' : Array<NodeOperation>,
 }
 export type PublishResult = { 'noChanges' : null } |
   { 'error' : string } |
@@ -120,14 +167,14 @@ export interface SourceGraphNodeInput {
   'name' : string,
   'tags' : Array<string>,
   'jurisdiction' : [] | [string],
-  'attributes' : Array<CustomAttribute>,
+  'attributes' : Array<[string, Array<string>]>,
   'parentName' : [] | [string],
   'nodeType' : string,
 }
 export interface Swarm {
   'id' : NodeId,
   'creator' : Principal,
-  'customAttributes' : Array<CustomAttribute>,
+  'customAttributes' : Array<WeightedAttribute>,
   'name' : string,
   'tags' : Array<Tag>,
   'forkSource' : [] | [NodeId],
@@ -147,21 +194,30 @@ export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
 export interface VoteData { 'upvotes' : bigint, 'downvotes' : bigint }
+export interface WeightedAttribute {
+  'key' : string,
+  'weightedValues' : Array<WeightedValue>,
+}
+export interface WeightedValue { 'weight' : bigint, 'value' : string }
 export interface _SERVICE {
   '_initializeAccessControl' : ActorMethod<[], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createCuration' : ActorMethod<[string, Array<CustomAttribute>], NodeId>,
+  'commitPublishSourceGraph' : ActorMethod<
+    [PublishSourceGraphInput, Array<[string, NodeId]>],
+    PublishCommitResult
+  >,
+  'createCuration' : ActorMethod<[string, Array<WeightedAttribute>], NodeId>,
   'createInterpretationToken' : ActorMethod<
-    [string, string, NodeId, Array<CustomAttribute>],
+    [string, string, NodeId, Array<WeightedAttribute>],
     NodeId
   >,
   'createLocation' : ActorMethod<
-    [string, Array<CustomAttribute>, NodeId],
+    [string, Array<WeightedAttribute>, NodeId],
     NodeId
   >,
   'createSwarm' : ActorMethod<
-    [string, Array<Tag>, NodeId, Array<CustomAttribute>],
+    [string, Array<Tag>, NodeId, Array<WeightedAttribute>],
     NodeId
   >,
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
@@ -189,6 +245,10 @@ export interface _SERVICE {
   'mintCollectible' : ActorMethod<
     [MintCollectibleRequest],
     MintCollectibleResult
+  >,
+  'previewPublishSourceGraph' : ActorMethod<
+    [PublishSourceGraphInput, Array<[string, NodeId]>],
+    PublishPreviewResult
   >,
   'publishSourceGraph' : ActorMethod<[PublishSourceGraphInput], PublishResult>,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,

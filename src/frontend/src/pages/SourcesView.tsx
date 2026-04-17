@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import NodeDetailsModal from "../components/NodeDetailsModal";
+import PublishConfirmDialog from "../components/PublishConfirmDialog";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import { usePublishGraph } from "../hooks/usePublishGraph";
+import { usePublishMappings } from "../hooks/usePublishMappings";
+import { usePublishPreview } from "../hooks/usePublishPreview";
 import useSourceGraphs from "../hooks/useSourceGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
@@ -15,24 +18,26 @@ export default function SourcesView() {
     setActiveGraph,
     updateNode,
   } = useSourceGraphs();
+
+  const { commit, isPublishing } = usePublishGraph();
   const {
-    publish,
-    isPublishing,
-    error: publishError,
-    reset: resetPublish,
-  } = usePublishGraph();
+    preview,
+    previewResult,
+    isLoading: isPreviewLoading,
+    error: previewError,
+    invalidateCache,
+  } = usePublishPreview();
+  const { isPublished, getMappings } = usePublishMappings();
+
   const [view, setView] = useState<"list" | "graph">("list");
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
-  const [publishingGraphId, setPublishingGraphId] = useState<string | null>(
-    null,
-  );
-  const [publishSuccessId, setPublishSuccessId] = useState<string | null>(null);
-  const [publishLocalError, setPublishLocalError] = useState<string | null>(
-    null,
-  );
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [previewGraph, setPreviewGraph] = useState<SourceGraph | null>(null);
+  const [commitError, setCommitError] = useState<string | null>(null);
+  const [commitSuccessId, setCommitSuccessId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-dismiss import error after 5 seconds
@@ -42,12 +47,12 @@ export default function SourcesView() {
     return () => clearTimeout(t);
   }, [error]);
 
-  // Auto-dismiss publish success after 4 seconds
+  // Auto-dismiss success after 4 seconds
   useEffect(() => {
-    if (!publishSuccessId) return;
-    const t = setTimeout(() => setPublishSuccessId(null), 4000);
+    if (!commitSuccessId) return;
+    const t = setTimeout(() => setCommitSuccessId(null), 4000);
     return () => clearTimeout(t);
-  }, [publishSuccessId]);
+  }, [commitSuccessId]);
 
   const activeGraph = graphs.find((g) => g.id === activeGraphId) ?? null;
 
@@ -126,18 +131,32 @@ export default function SourcesView() {
   };
 
   const handlePublish = async (graph: SourceGraph) => {
-    setPublishingGraphId(graph.id);
-    setPublishLocalError(null);
-    setPublishSuccessId(null);
-    resetPublish();
+    setPreviewGraph(graph);
+    setCommitError(null);
+    invalidateCache();
     try {
-      await publish(graph);
-      setPublishSuccessId(graph.id);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Publish failed.";
-      setPublishLocalError(msg);
-    } finally {
-      setPublishingGraphId(null);
+      await preview(graph);
+      setIsDialogOpen(true);
+    } catch {
+      // error is visible via previewError state in the banner
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!previewGraph) return;
+    const isUpdate = isPublished(previewGraph.id);
+    setCommitError(null);
+    try {
+      const result = await commit(previewGraph, isUpdate);
+      if (result.type === "success") {
+        setIsDialogOpen(false);
+        setCommitSuccessId(previewGraph.id);
+        setPreviewGraph(null);
+      } else {
+        setCommitError(result.message);
+      }
+    } catch (e) {
+      setCommitError(e instanceof Error ? e.message : "Publish failed.");
     }
   };
 
@@ -147,6 +166,15 @@ export default function SourcesView() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const getPublishedDate = (graphId: string): string | null => {
+    const mappings = getMappings(graphId);
+    if (mappings.length === 0) return null;
+    const latest = mappings.reduce((a, b) =>
+      a.publishedAt > b.publishedAt ? a : b,
+    );
+    return formatDate(latest.publishedAt);
   };
 
   // Graph view
@@ -237,14 +265,14 @@ export default function SourcesView() {
         </div>
       )}
 
-      {/* Publish error banner */}
-      {(publishLocalError || publishError) && (
+      {/* Preview/commit error banner */}
+      {(commitError || previewError) && (
         <div
           className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
           data-ocid="sources.publish_error_state"
           role="alert"
         >
-          [PUBLISH ERROR] {publishLocalError ?? publishError}
+          [PUBLISH ERROR] {commitError ?? previewError}
         </div>
       )}
 
@@ -274,58 +302,71 @@ export default function SourcesView() {
       {/* Graph list */}
       {graphs.length > 0 && (
         <div className="flex flex-col gap-2">
-          {graphs.map((graph) => (
-            <div
-              key={graph.id}
-              className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
-              data-ocid={`sources.graph_row.${graph.id}`}
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-foreground truncate">{graph.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
-                  {graph.edges.length} edges
-                </p>
-                {publishSuccessId === graph.id && (
-                  <p
-                    className="text-xs text-green-500 mt-0.5"
-                    data-ocid={`sources.publish_success_state.${graph.id}`}
-                  >
-                    ✓ published to backend
+          {graphs.map((graph) => {
+            const published = isPublished(graph.id);
+            const publishedDate = published ? getPublishedDate(graph.id) : null;
+            return (
+              <div
+                key={graph.id}
+                className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
+                data-ocid={`sources.graph_row.${graph.id}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-foreground truncate">
+                    {graph.name}
                   </p>
-                )}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
+                    {graph.edges.length} edges
+                  </p>
+                  {published && publishedDate && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      published {publishedDate}
+                    </p>
+                  )}
+                  {commitSuccessId === graph.id && (
+                    <p
+                      className="text-xs text-green-500 mt-0.5"
+                      data-ocid={`sources.publish_success_state.${graph.id}`}
+                    >
+                      ✓ {published ? "updated" : "published"} to backend
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleView(graph)}
+                    className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+                    data-ocid={`sources.view_button.${graph.id}`}
+                  >
+                    [view]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePublish(graph)}
+                    disabled={isPublishing || isPreviewLoading}
+                    className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-ocid={`sources.publish_button.${graph.id}`}
+                  >
+                    {isPreviewLoading && previewGraph?.id === graph.id
+                      ? "previewing..."
+                      : published
+                        ? "[update]"
+                        : "[publish]"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRequest(graph.id)}
+                    className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    data-ocid={`sources.delete_button.${graph.id}`}
+                  >
+                    [delete]
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleView(graph)}
-                  className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
-                  data-ocid={`sources.view_button.${graph.id}`}
-                >
-                  [view]
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePublish(graph)}
-                  disabled={isPublishing && publishingGraphId === graph.id}
-                  className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  data-ocid={`sources.publish_button.${graph.id}`}
-                >
-                  {isPublishing && publishingGraphId === graph.id
-                    ? "publishing..."
-                    : "[publish]"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteRequest(graph.id)}
-                  className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                  data-ocid={`sources.delete_button.${graph.id}`}
-                >
-                  [delete]
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -365,6 +406,22 @@ export default function SourcesView() {
             </div>
           </div>
         </dialog>
+      )}
+
+      {/* Publish confirm dialog */}
+      {previewResult && (
+        <PublishConfirmDialog
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setPreviewGraph(null);
+          }}
+          onConfirm={handleConfirm}
+          previewResult={previewResult}
+          graphName={previewGraph?.name ?? ""}
+          isPublished={previewGraph ? isPublished(previewGraph.id) : false}
+          isLoading={isPublishing || isPreviewLoading}
+        />
       )}
     </div>
   );

@@ -52,7 +52,7 @@ interface FlatNode {
   createdAt?: number;
   modifiedAt?: number;
   tags?: string[];
-  attributes?: Array<{ key: string; value: string }>;
+  attributes?: Array<{ key: string; values: string[] }>;
   parentCurationName?: string;
   lawTokenSequence?: string;
   isSharedLawToken?: boolean;
@@ -210,7 +210,9 @@ export default function FilterSortModal({
           if (!valuesByKey.has(attr.key)) {
             valuesByKey.set(attr.key, new Set());
           }
-          valuesByKey.get(attr.key)!.add(attr.value);
+          for (const wv of attr.weightedValues) {
+            valuesByKey.get(attr.key)!.add(wv.value);
+          }
         }
       }
 
@@ -220,7 +222,9 @@ export default function FilterSortModal({
           if (!valuesByKey.has(attr.key)) {
             valuesByKey.set(attr.key, new Set());
           }
-          valuesByKey.get(attr.key)!.add(attr.value);
+          for (const wv of attr.weightedValues) {
+            valuesByKey.get(attr.key)!.add(wv.value);
+          }
         }
       }
 
@@ -277,7 +281,10 @@ export default function FilterSortModal({
         nodeType: "location",
         tokenLabel: location.title,
         parentId: location.parentSwarmId,
-        attributes: location.customAttributes,
+        attributes: location.customAttributes.map((a) => ({
+          key: a.key,
+          values: a.weightedValues.map((wv) => wv.value),
+        })),
         createdAt: Date.now(),
       });
     }
@@ -300,7 +307,10 @@ export default function FilterSortModal({
         nodeType: "interpretationToken",
         tokenLabel: token.title,
         parentId: token.parentLawTokenId,
-        attributes: token.customAttributes,
+        attributes: token.customAttributes.map((a) => ({
+          key: a.key,
+          values: a.weightedValues.map((wv) => wv.value),
+        })),
         createdAt: Date.now(),
       });
     }
@@ -330,7 +340,8 @@ export default function FilterSortModal({
       filtered = filtered.filter((node) => {
         if (!node.attributes) return false;
         return node.attributes.some(
-          (attr) => attr.key === attributeKey && attr.value === attributeValue,
+          (attr) =>
+            attr.key === attributeKey && attr.values.includes(attributeValue),
         );
       });
     }

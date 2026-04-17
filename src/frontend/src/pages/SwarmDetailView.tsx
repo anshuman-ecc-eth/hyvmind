@@ -1,4 +1,4 @@
-import type { CustomAttribute } from "@/backend";
+import type { WeightedAttribute } from "@/backend";
 import LawTokenCard from "@/components/LawTokenCard";
 import { Button } from "@/components/ui/button";
 import { useGetAllData, useGetOwnedData } from "@/hooks/useQueries";
@@ -52,14 +52,16 @@ export default function SwarmDetailView({
   // Find Yes/No locations by customAttribute side
   const yesLocations = locations.filter((l) =>
     l.customAttributes?.some(
-      (attr: CustomAttribute) =>
-        attr.key === "side" && attr.value.toLowerCase() === "yes",
+      (attr: WeightedAttribute) =>
+        attr.key === "side" &&
+        attr.weightedValues.some((wv) => wv.value.toLowerCase() === "yes"),
     ),
   );
   const noLocations = locations.filter((l) =>
     l.customAttributes?.some(
-      (attr: CustomAttribute) =>
-        attr.key === "side" && attr.value.toLowerCase() === "no",
+      (attr: WeightedAttribute) =>
+        attr.key === "side" &&
+        attr.weightedValues.some((wv) => wv.value.toLowerCase() === "no"),
     ),
   );
 

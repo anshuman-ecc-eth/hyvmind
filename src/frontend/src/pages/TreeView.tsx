@@ -201,12 +201,8 @@ function InterpretationTokenItem({
       {token.customAttributes.length > 0 && (
         <div className="flex flex-wrap gap-1 ml-2">
           {token.customAttributes.map((attr) => (
-            <Badge
-              key={`${attr.key}-${attr.value}`}
-              variant="secondary"
-              className="text-xs"
-            >
-              {attr.key}: {attr.value}
+            <Badge key={attr.key} variant="secondary" className="text-xs">
+              {attr.key}: {attr.weightedValues.map((wv) => wv.value).join(", ")}
             </Badge>
           ))}
         </div>
@@ -475,11 +471,12 @@ export default function TreeView() {
                   <div className="flex flex-wrap gap-2">
                     {selectedToken.customAttributes.map((attr) => (
                       <Badge
-                        key={`${attr.key}-${attr.value}`}
+                        key={attr.key}
                         variant="secondary"
                         className="text-xs"
                       >
-                        {attr.key}: {attr.value}
+                        {attr.key}:{" "}
+                        {attr.weightedValues.map((wv) => wv.value).join(", ")}
                       </Badge>
                     ))}
                   </div>

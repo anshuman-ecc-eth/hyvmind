@@ -135,13 +135,15 @@ export default function DebugPanel() {
                               <div className="space-y-1 mt-1">
                                 {curation.customAttributes.map((attr) => (
                                   <div
-                                    key={`${attr.key}-${attr.value}`}
+                                    key={attr.key}
                                     className="text-xs bg-muted p-2 rounded border border-border"
                                   >
                                     <span className="font-semibold">
                                       {attr.key}:
                                     </span>{" "}
-                                    {attr.value}
+                                    {attr.weightedValues
+                                      .map((wv) => wv.value)
+                                      .join(", ")}
                                   </div>
                                 ))}
                               </div>
@@ -221,13 +223,15 @@ export default function DebugPanel() {
                               <div className="space-y-1 mt-1">
                                 {swarm.customAttributes.map((attr) => (
                                   <div
-                                    key={`${attr.key}-${attr.value}`}
+                                    key={attr.key}
                                     className="text-xs bg-muted p-2 rounded border border-border"
                                   >
                                     <span className="font-semibold">
                                       {attr.key}:
                                     </span>{" "}
-                                    {attr.value}
+                                    {attr.weightedValues
+                                      .map((wv) => wv.value)
+                                      .join(", ")}
                                   </div>
                                 ))}
                               </div>
@@ -279,13 +283,15 @@ export default function DebugPanel() {
                                 {location.customAttributes.length > 0 ? (
                                   location.customAttributes.map((attr) => (
                                     <div
-                                      key={`${attr.key}-${attr.value}`}
+                                      key={attr.key}
                                       className="text-xs bg-muted p-2 rounded border border-border"
                                     >
                                       <span className="font-semibold">
                                         {attr.key}:
                                       </span>{" "}
-                                      {attr.value}
+                                      {attr.weightedValues
+                                        .map((wv) => wv.value)
+                                        .join(", ")}
                                     </div>
                                   ))
                                 ) : (
@@ -413,13 +419,15 @@ export default function DebugPanel() {
                                 <div className="space-y-1 mt-1">
                                   {lawToken.customAttributes.map((attr) => (
                                     <div
-                                      key={`${attr.key}-${attr.value}`}
+                                      key={attr.key}
                                       className="text-xs bg-muted p-2 rounded border border-border"
                                     >
                                       <span className="font-semibold">
                                         {attr.key}:
                                       </span>{" "}
-                                      {attr.value}
+                                      {attr.weightedValues
+                                        .map((wv) => wv.value)
+                                        .join(", ")}
                                     </div>
                                   ))}
                                 </div>
@@ -483,7 +491,8 @@ export default function DebugPanel() {
                                   Content
                                 </p>
                                 <p className="text-sm">
-                                  {interpretationToken.content || "No content"}
+                                  {interpretationToken.contentVersions?.[0]
+                                    ?.content ?? "No content"}
                                 </p>
                               </div>
                               <div>
@@ -516,13 +525,15 @@ export default function DebugPanel() {
                                     interpretationToken.customAttributes.map(
                                       (attr) => (
                                         <div
-                                          key={`${attr.key}-${attr.value}`}
+                                          key={attr.key}
                                           className="text-xs bg-muted p-2 rounded border border-border"
                                         >
                                           <span className="font-semibold">
                                             {attr.key}:
                                           </span>{" "}
-                                          {attr.value}
+                                          {attr.weightedValues
+                                            .map((wv) => wv.value)
+                                            .join(", ")}
                                         </div>
                                       ),
                                     )

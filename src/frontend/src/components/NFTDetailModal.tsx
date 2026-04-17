@@ -275,7 +275,8 @@ export default function NFTDetailModal({
                     Content
                   </dt>
                   <dd className="text-sm">
-                    {(token as InterpretationToken).content}
+                    {(token as InterpretationToken).contentVersions?.[0]
+                      ?.content ?? "No content"}
                   </dd>
                 </div>
               </>

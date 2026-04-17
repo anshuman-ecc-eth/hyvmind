@@ -71,12 +71,9 @@ export default function LawTokenCard({
         {lawToken.customAttributes.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {lawToken.customAttributes.map((attr) => (
-              <Badge
-                key={`${attr.key}-${attr.value}`}
-                variant="secondary"
-                className="text-xs"
-              >
-                {attr.key}: {attr.value}
+              <Badge key={attr.key} variant="secondary" className="text-xs">
+                {attr.key}:{" "}
+                {attr.weightedValues.map((wv) => wv.value).join(", ")}
               </Badge>
             ))}
           </div>
