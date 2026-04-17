@@ -221,6 +221,9 @@ function update() {
       play("explosion");
       color("red");
       text("X", 100, d.pos.y);
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'rebirth-game-over' }, '*');
+      }
       end();
     }
   });

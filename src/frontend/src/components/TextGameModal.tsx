@@ -5,25 +5,67 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const MENU_ITEMS = ["ENTER", "EXIT"] as const;
 
-const MESSAGES = [
-  "welcome, fellow researcher",
-  "this is an especially difficult time for us",
-  "the world expects us to run in opposite directions",
-] as const;
-
-const EXIT_MESSAGE = "game not over";
+const CONTENT = {
+  intro: [
+    "welcome, fellow researcher",
+    "these are trying times",
+    "the world expects us to run in opposite directions",
+  ],
+  postGame1: "clearly, it's not easy",
+  choices: [
+    "why are we running in opposite directions?",
+    "what's the point of this?",
+  ],
+  choice1Path: [
+    "our best researchers have found the root cause",
+    "broken incentive structures",
+    "its kinda obvious when you think about it",
+    "those yellow diamonds had no business being on two different sides",
+  ],
+  choice2Path: "well, to fix broken incentive structures",
+  outro: ["reach yes but overreach not, we must", "game not over"],
+};
 
 const SCRAMBLE_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type MessagePhase = "idle" | "messages" | "game" | "exit";
+type Phase =
+  | { type: "idle" }
+  | { type: "intro"; step: number }
+  | { type: "game1" }
+  | { type: "postGame1" }
+  | { type: "choices"; selected: 0 | 1 }
+  | { type: "choice1"; step: number }
+  | { type: "choice2" }
+  | { type: "game2" }
+  | { type: "outro"; step: number }
+  | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function randomChar(): string {
   return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+}
+
+function getCurrentMessage(phase: Phase): string {
+  switch (phase.type) {
+    case "intro":
+      return CONTENT.intro[phase.step];
+    case "postGame1":
+      return CONTENT.postGame1;
+    case "choice1":
+      return CONTENT.choice1Path[phase.step];
+    case "choice2":
+      return CONTENT.choice2Path;
+    case "outro":
+      return CONTENT.outro[phase.step];
+    case "finalExit":
+      return CONTENT.outro[1]; // "game not over"
+    default:
+      return "";
+  }
 }
 
 // ── Start Screen ───────────────────────────────────────────────────────────────
@@ -135,6 +177,73 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
               }}
             >
               {isSelected ? `> ${item}` : `  ${item}`}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Choice Menu ────────────────────────────────────────────────────────────────
+
+interface ChoiceMenuProps {
+  options: string[];
+  selected: 0 | 1;
+  onSelect: (i: 0 | 1) => void;
+  onConfirm: (i: number) => void;
+}
+
+function ChoiceMenu({
+  options,
+  selected,
+  onSelect,
+  onConfirm,
+}: ChoiceMenuProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        onSelect(selected === 1 ? 0 : 0);
+      } else if (e.key === "ArrowDown") {
+        onSelect(selected === 0 ? 1 : 1);
+      } else if (e.key === "Enter") {
+        onConfirm(selected);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selected, onSelect, onConfirm]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 select-none px-8">
+      <div
+        className="flex flex-col items-start gap-4"
+        style={{ maxWidth: "80%" }}
+      >
+        {options.map((option, idx) => {
+          const isSelected = idx === selected;
+          return (
+            <button
+              key={option}
+              type="button"
+              data-ocid={`text_game.choice.${idx}`}
+              className={`text-left transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.05em",
+                lineHeight: "2",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+              onClick={() => {
+                onSelect(idx as 0 | 1);
+                onConfirm(idx);
+              }}
+            >
+              {isSelected ? `> ${option}` : `  ${option}`}
             </button>
           );
         })}
@@ -334,96 +443,180 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [lastScore] = useState<number | null>(null);
 
   // Phase state
-  const [messagePhase, setMessagePhase] = useState<MessagePhase>("idle");
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [phase, setPhase] = useState<Phase>({ type: "idle" });
   const [scrambleComplete, setScrambleComplete] = useState(false);
-
-  // Game phase
-  const [gameReadyForExit, setGameReadyForExit] = useState(false);
-  const gameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Exit phase: track whether scramble is done (used to trigger auto-close)
-  const exitScrambleCompleteRef = useRef(false);
-
-  // Exit phase scramble done state (for cursor)
-  const [exitScrambleDone, setExitScrambleDone] = useState(false);
 
   const handleExit = useCallback(() => {
     onCompleteRef.current();
   }, []);
 
-  // ── Phase: idle → messages ─────────────────────────────────────────────────
+  // ── Phase: idle → intro ────────────────────────────────────────────────────
 
   const handleStart = useCallback(() => {
-    setMessagePhase("messages");
-    setCurrentMessageIndex(0);
+    setPhase({ type: "intro", step: 0 });
     setScrambleComplete(false);
   }, []);
 
-  // ── Phase: messages — advance to next or to game ───────────────────────────
+  // ── Game completion via postMessage ────────────────────────────────────────
 
-  const handleAdvanceMessage = useCallback(() => {
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "rebirth-game-over") {
+        setPhase({ type: "postGame1" });
+        setScrambleComplete(false);
+      } else if (e.data?.type === "squarebar-game-over") {
+        setPhase({ type: "outro", step: 0 });
+        setScrambleComplete(false);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  // ── Unified advance handler ────────────────────────────────────────────────
+
+  const handleAdvance = useCallback(() => {
     if (!scrambleComplete) return;
-    const nextIndex = currentMessageIndex + 1;
-    if (nextIndex < MESSAGES.length) {
-      setCurrentMessageIndex(nextIndex);
+    switch (phase.type) {
+      case "intro":
+        if (phase.step < 2) {
+          setPhase({ type: "intro", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "game1" });
+        }
+        break;
+      case "postGame1":
+        setPhase({ type: "choices", selected: 0 });
+        break;
+      case "choice1":
+        if (phase.step < 3) {
+          setPhase({ type: "choice1", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "game2" });
+        }
+        break;
+      case "choice2":
+        setPhase({ type: "game2" });
+        break;
+      case "outro":
+        if (phase.step === 0) {
+          setPhase({ type: "outro", step: 1 });
+          setScrambleComplete(false);
+        }
+        break;
+    }
+  }, [phase, scrambleComplete]);
+
+  // ── Choice confirmation handler ────────────────────────────────────────────
+
+  const handleChoiceConfirm = useCallback((index: number) => {
+    if (index === 0) {
+      setPhase({ type: "choice1", step: 0 });
       setScrambleComplete(false);
     } else {
-      // All messages done → start game
-      setMessagePhase("game");
-      setGameReadyForExit(false);
-      gameTimerRef.current = setTimeout(() => {
-        setGameReadyForExit(true);
-      }, 5000);
+      setPhase({ type: "choice2" });
+      setScrambleComplete(false);
     }
-  }, [scrambleComplete, currentMessageIndex]);
+  }, []);
 
-  // Keyboard listener for message phase
+  // ── Keyboard listener for text phases ─────────────────────────────────────
+
   useEffect(() => {
-    if (messagePhase !== "messages") return;
+    const textPhases = ["intro", "postGame1", "choice1", "choice2", "outro"];
+    if (!textPhases.includes(phase.type)) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Tab") return;
-      handleAdvanceMessage();
+      handleAdvance();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [messagePhase, handleAdvanceMessage]);
-
-  // ── Phase: game → exit ─────────────────────────────────────────────────────
-
-  const handleGameClick = useCallback(() => {
-    if (!gameReadyForExit) return;
-    if (gameTimerRef.current) clearTimeout(gameTimerRef.current);
-    setMessagePhase("exit");
-    setExitScrambleDone(false);
-    exitScrambleCompleteRef.current = false;
-  }, [gameReadyForExit]);
-
-  // ── Phase: exit → close ────────────────────────────────────────────────────
-
-  const handleExitScrambleComplete = useCallback(() => {
-    exitScrambleCompleteRef.current = true;
-    setExitScrambleDone(true);
-    setTimeout(() => {
-      onCompleteRef.current();
-    }, 2500);
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (gameTimerRef.current) clearTimeout(gameTimerRef.current);
-    };
-  }, []);
+  }, [phase.type, handleAdvance]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const currentTarget =
-    messagePhase === "messages"
-      ? MESSAGES[currentMessageIndex]
-      : messagePhase === "exit"
-        ? EXIT_MESSAGE
-        : "";
+  const renderContent = () => {
+    switch (phase.type) {
+      case "idle":
+        return (
+          <StartScreen
+            onStart={handleStart}
+            onExit={handleExit}
+            lastScore={lastScore}
+          />
+        );
+
+      case "intro":
+      case "postGame1":
+      case "choice1":
+      case "choice2":
+      case "outro": {
+        const isFinalMessage = phase.type === "outro" && phase.step === 1;
+        return (
+          <ScrambleDisplay
+            key={`${phase.type}-${phase.type === "intro" ? phase.step : phase.type === "choice1" ? phase.step : phase.type === "outro" ? phase.step : phase.type}`}
+            target={getCurrentMessage(phase)}
+            revealDurationMs={1000}
+            tickMs={50}
+            onComplete={
+              isFinalMessage
+                ? () => onCompleteRef.current()
+                : () => setScrambleComplete(true)
+            }
+            scrambleDone={scrambleComplete}
+            onAdvance={isFinalMessage ? undefined : handleAdvance}
+          />
+        );
+      }
+
+      case "choices":
+        return (
+          <ChoiceMenu
+            options={CONTENT.choices}
+            selected={phase.selected}
+            onSelect={(i) =>
+              setPhase({ type: "choices", selected: i as 0 | 1 })
+            }
+            onConfirm={handleChoiceConfirm}
+          />
+        );
+
+      case "game1":
+        return (
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            <div
+              className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
+            >
+              <iframe
+                src="/assets/rebirth.html"
+                allow="autoplay"
+                className="w-full h-full border-0"
+                title="Rebirth"
+                data-ocid="text_game.game1_iframe"
+              />
+            </div>
+          </div>
+        );
+
+      case "game2":
+        return (
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            <div
+              className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
+            >
+              <iframe
+                src="/assets/squarebar.html"
+                allow="autoplay"
+                className="w-full h-full border-0"
+                title="Square Bar"
+                data-ocid="text_game.game2_iframe"
+              />
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <>
@@ -459,70 +652,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </button>
         </div>
 
-        {/* ── Idle: Start Screen ── */}
-        {messagePhase === "idle" && (
-          <StartScreen
-            onStart={handleStart}
-            onExit={handleExit}
-            lastScore={lastScore}
-          />
-        )}
-
-        {/* ── Messages phase ── */}
-        {messagePhase === "messages" && (
-          <ScrambleDisplay
-            key={currentMessageIndex}
-            target={currentTarget}
-            revealDurationMs={1000}
-            tickMs={50}
-            onComplete={() => setScrambleComplete(true)}
-            scrambleDone={scrambleComplete}
-            onAdvance={handleAdvanceMessage}
-          />
-        )}
-
-        {/* ── Game phase ── */}
-        {messagePhase === "game" && (
-          <div className="flex-1 relative flex flex-col overflow-hidden">
-            <div
-              className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
-            >
-              <iframe
-                src="/assets/rebirth.html"
-                allow="autoplay"
-                className="w-full h-full border-0"
-                title="Rebirth"
-                data-ocid="text_game.game_iframe"
-              />
-            </div>
-
-            {/* Transparent click-catcher overlay — active after 5s */}
-            <div
-              className="absolute inset-0 transition-opacity duration-700"
-              style={{ pointerEvents: gameReadyForExit ? "auto" : "none" }}
-              onClick={handleGameClick}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") handleGameClick();
-              }}
-              // biome-ignore lint/a11y/useSemanticElements: transparent click-catcher overlay
-              role="button"
-              tabIndex={gameReadyForExit ? 0 : -1}
-              aria-label="Exit game"
-              data-ocid="text_game.game_exit_overlay"
-            />
-          </div>
-        )}
-
-        {/* ── Exit phase ── */}
-        {messagePhase === "exit" && (
-          <ScrambleDisplay
-            target={EXIT_MESSAGE}
-            revealDurationMs={1000}
-            tickMs={50}
-            onComplete={handleExitScrambleComplete}
-            scrambleDone={exitScrambleDone}
-          />
-        )}
+        {renderContent()}
       </div>
     </>
   );
