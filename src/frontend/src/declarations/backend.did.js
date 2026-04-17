@@ -203,6 +203,7 @@ export const AttributeChange = IDL.Record({
   'key' : IDL.Text,
   'newValues' : IDL.Vec(IDL.Text),
   'oldValues' : IDL.Vec(WeightedValue),
+  'newWeightedValues' : IDL.Vec(WeightedValue),
 });
 export const NodeOperation = IDL.Record({
   'localName' : IDL.Text,
@@ -506,6 +507,7 @@ export const idlFactory = ({ IDL }) => {
     'key' : IDL.Text,
     'newValues' : IDL.Vec(IDL.Text),
     'oldValues' : IDL.Vec(WeightedValue),
+    'newWeightedValues' : IDL.Vec(WeightedValue),
   });
   const NodeOperation = IDL.Record({
     'localName' : IDL.Text,

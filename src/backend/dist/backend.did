@@ -251,6 +251,7 @@ type AttributeChange =
  record {
    key: text;
    newValues: vec text;
+   newWeightedValues: vec WeightedValue;
    oldValues: vec WeightedValue;
  };
 type ApprovalStatus = 

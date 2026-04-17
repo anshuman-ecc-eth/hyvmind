@@ -17,6 +17,7 @@ export interface AttributeChange {
   'key' : string,
   'newValues' : Array<string>,
   'oldValues' : Array<WeightedValue>,
+  'newWeightedValues' : Array<WeightedValue>,
 }
 export type BuzzScore = bigint;
 export interface CollectibleEdition {

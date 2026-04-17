@@ -31,6 +31,10 @@ function mapNodeOperation(raw: BackendNodeOperation): NodeOperation {
         value: wv.value,
         weight: Number(wv.weight),
       })),
+      newWeightedValues: c.newWeightedValues?.map((wv) => ({
+        value: wv.value,
+        weight: Number(wv.weight),
+      })),
     }));
   } else {
     action = "create";

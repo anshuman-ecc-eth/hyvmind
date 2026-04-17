@@ -58,6 +58,7 @@ export interface AttributeChange {
     key: string;
     newValues: Array<string>;
     oldValues: Array<WeightedValue>;
+    newWeightedValues: Array<WeightedValue>;
 }
 export type Tag = string;
 export interface SourceGraphEdgeInput {

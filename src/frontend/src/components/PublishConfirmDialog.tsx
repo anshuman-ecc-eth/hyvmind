@@ -37,11 +37,19 @@ function AttributeChangesView({ changes }: { changes: AttributeChange[] }) {
       {changes.map((c) => (
         <div key={c.key} className="text-[10px]">
           <span className="text-muted-foreground">{c.key}: </span>
-          <span className="text-destructive line-through">
+          <span className="text-muted-foreground">
             {c.oldValues.map((v) => `${v.value}(×${v.weight})`).join(", ")}
           </span>
           {" → "}
-          <span className="text-green-400">{c.newValues.join(", ")}</span>
+          {c.newWeightedValues && c.newWeightedValues.length > 0 ? (
+            <span className="text-green-400">
+              {c.newWeightedValues
+                .map((v) => `${v.value}(×${v.weight})`)
+                .join(", ")}
+            </span>
+          ) : (
+            <span className="text-green-400">{c.newValues.join(", ")}</span>
+          )}
         </div>
       ))}
     </div>

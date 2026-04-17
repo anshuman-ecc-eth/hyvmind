@@ -14,11 +14,11 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
 
-import Migration "migration";
+
 
 // Apply any data migration necessary after code changes
 
-(with migration = Migration.run)
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -258,6 +258,7 @@ actor {
     key : Text;
     oldValues : [WeightedValue];
     newValues : [Text];
+    newWeightedValues : [WeightedValue];
   };
 
   type NodeOperation = {
@@ -1573,6 +1574,32 @@ actor {
     result.toArray();
   };
 
+  // ─── Helper: compute final weighted values for a single key after merge ──────
+  func computeNewWeightedValuesForKey(existing : [WeightedAttribute], key : Text, newValues : [Text]) : [WeightedValue] {
+    // Find existing weighted values for this key
+    var existingWvs : [WeightedValue] = [];
+    for (wa in existing.values()) {
+      if (wa.key == key) { existingWvs := wa.weightedValues };
+    };
+    // Simulate the merge for this key
+    let resultMap = Map.empty<Text, Nat>();
+    for (wv in existingWvs.values()) {
+      resultMap.add(wv.value, wv.weight);
+    };
+    for (v in newValues.values()) {
+      let currentWeight = switch (resultMap.get(v)) {
+        case (?w) { w };
+        case (null) { 0 };
+      };
+      resultMap.add(v, currentWeight + 1);
+    };
+    let result = List.empty<WeightedValue>();
+    for ((value, weight) in resultMap.entries()) {
+      result.add({ value; weight });
+    };
+    result.toArray();
+  };
+
   // ─── Helper: compute attribute changes for preview ───────────────────────────
   func computeAttributeChanges(existing : [WeightedAttribute], newAttributes : [(Text, [Text])]) : [AttributeChange] {
     let changes = List.empty<AttributeChange>();
@@ -1585,12 +1612,57 @@ actor {
         case (?wvs) { wvs };
         case (null) { [] };
       };
-      changes.add({ key; oldValues; newValues = values });
+      let newWeightedValues = computeNewWeightedValuesForKey(existing, key, values);
+      changes.add({ key; oldValues; newValues = values; newWeightedValues });
     };
     changes.toArray();
   };
 
-  // ─── Internal preview logic (no state mutation) ───────────────────────────────
+  // ─── Helper: build full hierarchical path ────────────────────────────────────
+  func buildFullPath(parentPath : ?Text, name : Text) : Text {
+    switch (parentPath) {
+      case (null) { name };
+      case (?p) { p # "@" # name };
+    };
+  };
+
+  // ─── Helper: scope-aware edge target resolution ───────────────────────────────
+  // Tries: exact match → parent scope → walk up hierarchy
+  func resolveEdgeTarget(targetName : Text, sourceFullPath : Text, nameToId : Map.Map<Text, NodeId>) : ?NodeId {
+    // 1. Exact match
+    switch (nameToId.get(targetName)) {
+      case (?id) { return ?id };
+      case (null) {};
+    };
+    // 2. Split source path into segments and walk up
+    let segIter = sourceFullPath.split(#char '@');
+    let segments = List.empty<Text>();
+    for (seg in segIter) {
+      segments.add(seg);
+    };
+    let allSegs = segments.toArray();
+    // Try from parent (n-1 segments) up to root (1 segment)
+    var level = allSegs.size();
+    // level represents how many leading segments to join as the scope prefix
+    // We want to try from the direct parent scope down to the root
+    while (level > 0) {
+      level -= 1;
+      var path = allSegs[0];
+      var i = 1;
+      while (i < level) {
+        path := path # "@" # allSegs[i];
+        i += 1;
+      };
+      let candidateKey = if (level == 0) { targetName } else { path # "@" # targetName };
+      if (candidateKey != targetName) {
+        switch (nameToId.get(candidateKey)) {
+          case (?id) { return ?id };
+          case (null) {};
+        };
+      };
+    };
+    null
+  };
   func previewLogic(
     caller : Principal,
     input : PublishSourceGraphInput,
@@ -1609,6 +1681,9 @@ actor {
       nameToId.add(name, id);
     };
 
+    // Track simple name -> full path for scope-aware edge resolution
+    let simpleToFullPath = Map.empty<Text, Text>();
+
     // Build node input lookup for hierarchy checks
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
@@ -1624,6 +1699,7 @@ actor {
 
     // Process curations
     for (node in curationNodes.values()) {
+      let fullPath = buildFullPath(null, node.name);
       var foundId : ?NodeId = null;
       var foundCuration : ?Curation = null;
       for ((id, curation) in curationMap.entries()) {
@@ -1635,6 +1711,8 @@ actor {
       switch (foundId) {
         case (?existingId) {
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           let changes = switch (foundCuration) {
             case (?c) { computeAttributeChanges(c.customAttributes, node.attributes) };
             case (null) { [] };
@@ -1650,6 +1728,10 @@ actor {
           nodesToUpdate += 1;
         };
         case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeOps.add({
             nodeType = "curation";
             localName = node.name;
@@ -1659,8 +1741,6 @@ actor {
             attributes = node.attributes;
           });
           nodesToCreate += 1;
-          // Use a placeholder ID for downstream resolution in preview
-          nameToId.add(node.name, "preview-" # node.name);
         };
       };
     };
@@ -1671,6 +1751,11 @@ actor {
         case (null) { "" };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentId = switch (nameToId.get(parentName)) {
         case (null) { "" };
         case (?pid) { pid };
@@ -1686,6 +1771,8 @@ actor {
       switch (foundId) {
         case (?existingId) {
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           let changes = switch (foundSwarm) {
             case (?s) { computeAttributeChanges(s.customAttributes, node.attributes) };
             case (null) { [] };
@@ -1701,6 +1788,10 @@ actor {
           nodesToUpdate += 1;
         };
         case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeOps.add({
             nodeType = "swarm";
             localName = node.name;
@@ -1710,7 +1801,6 @@ actor {
             attributes = node.attributes;
           });
           nodesToCreate += 1;
-          nameToId.add(node.name, "preview-" # node.name);
         };
       };
     };
@@ -1721,6 +1811,11 @@ actor {
         case (null) { "" };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentId = switch (nameToId.get(parentName)) {
         case (null) { "" };
         case (?pid) { pid };
@@ -1736,6 +1831,8 @@ actor {
       switch (foundId) {
         case (?existingId) {
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           let changes = switch (foundLocation) {
             case (?l) { computeAttributeChanges(l.customAttributes, node.attributes) };
             case (null) { [] };
@@ -1751,6 +1848,10 @@ actor {
           nodesToUpdate += 1;
         };
         case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeOps.add({
             nodeType = "location";
             localName = node.name;
@@ -1760,7 +1861,6 @@ actor {
             attributes = node.attributes;
           });
           nodesToCreate += 1;
-          nameToId.add(node.name, "preview-" # node.name);
         };
       };
     };
@@ -1771,6 +1871,11 @@ actor {
         case (null) { "" };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentId = switch (nameToId.get(parentName)) {
         case (null) { "" };
         case (?pid) { pid };
@@ -1786,6 +1891,8 @@ actor {
       switch (foundId) {
         case (?existingId) {
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           let changes = switch (foundLawToken) {
             case (?lt) { computeAttributeChanges(lt.customAttributes, node.attributes) };
             case (null) { [] };
@@ -1801,6 +1908,10 @@ actor {
           nodesToUpdate += 1;
         };
         case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeOps.add({
             nodeType = "lawEntity";
             localName = node.name;
@@ -1810,7 +1921,6 @@ actor {
             attributes = node.attributes;
           });
           nodesToCreate += 1;
-          nameToId.add(node.name, "preview-" # node.name);
         };
       };
     };
@@ -1821,6 +1931,11 @@ actor {
         case (null) { "" };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentId = switch (nameToId.get(parentName)) {
         case (null) { "" };
         case (?pid) { pid };
@@ -1836,6 +1951,8 @@ actor {
       switch (foundId) {
         case (?existingId) {
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           let changes = switch (foundIt) {
             case (?it) { computeAttributeChanges(it.customAttributes, node.attributes) };
             case (null) { [] };
@@ -1851,6 +1968,10 @@ actor {
           nodesToUpdate += 1;
         };
         case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeOps.add({
             nodeType = "interpEntity";
             localName = node.name;
@@ -1860,18 +1981,22 @@ actor {
             attributes = node.attributes;
           });
           nodesToCreate += 1;
-          nameToId.add(node.name, "preview-" # node.name);
         };
       };
     };
 
-    // Process edges
+    // Process edges with scope-aware target resolution
     for (edge in input.edges.values()) {
       let sourceId = switch (nameToId.get(edge.sourceName)) {
         case (null) { "" };
         case (?id) { id };
       };
-      let targetId = switch (nameToId.get(edge.targetName)) {
+      // Scope-aware target resolution
+      let sourceFullPath = switch (simpleToFullPath.get(edge.sourceName)) {
+        case (?fp) { fp };
+        case (null) { edge.sourceName };
+      };
+      let targetId = switch (resolveEdgeTarget(edge.targetName, sourceFullPath, nameToId)) {
         case (null) { "" };
         case (?id) { id };
       };
@@ -1987,6 +2112,9 @@ actor {
       nameToId.add(name, id);
     };
 
+    // Track simple name -> full path for scope-aware edge resolution
+    let simpleToFullPath = Map.empty<Text, Text>();
+
     // Build node input lookup
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
@@ -2001,6 +2129,7 @@ actor {
 
     // Process curations
     for (node in curationNodes.values()) {
+      let fullPath = buildFullPath(null, node.name);
       var foundId : ?NodeId = null;
       var foundCuration : ?Curation = null;
       for ((id, curation) in curationMap.entries()) {
@@ -2024,6 +2153,8 @@ actor {
           };
           stagingCurations.add(existingId, updatedCuration);
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
@@ -2038,6 +2169,8 @@ actor {
           };
           stagingCurations.add(newId, newCuration);
           nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, newId));
         };
       };
@@ -2051,6 +2184,11 @@ actor {
         };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentCurationId = switch (nameToId.get(parentName)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
@@ -2090,10 +2228,11 @@ actor {
           };
           stagingSwarms.add(existingId, updatedSwarm);
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
-          let isQuestionOfLaw = node.tags.any(func(tag : Text) : Bool { tag == "question-of-law" });
           let newId = generateId("swarm", node.name, caller);
           let newSwarm : Swarm = {
             id = newId;
@@ -2108,6 +2247,8 @@ actor {
           };
           stagingSwarms.add(newId, newSwarm);
           nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, newId));
         };
       };
@@ -2121,6 +2262,11 @@ actor {
         };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentSwarmId = switch (nameToId.get(parentName)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
@@ -2151,6 +2297,8 @@ actor {
           };
           stagingLocations.add(existingId, updatedLocation);
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
@@ -2165,6 +2313,8 @@ actor {
           };
           stagingLocations.add(newId, newLocation);
           nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, newId));
         };
       };
@@ -2178,6 +2328,11 @@ actor {
         };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentLocationId = switch (nameToId.get(parentName)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
@@ -2208,6 +2363,8 @@ actor {
           };
           stagingLawTokens.add(existingId, updatedLt);
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
@@ -2222,6 +2379,8 @@ actor {
           };
           stagingLawTokens.add(newId, newLawToken);
           nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, newId));
         };
       };
@@ -2235,6 +2394,11 @@ actor {
         };
         case (?pn) { pn };
       };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentLawTokenId = switch (nameToId.get(parentName)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
@@ -2270,6 +2434,8 @@ actor {
           };
           stagingInterpTokens.add(existingId, updatedIt);
           nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
@@ -2285,18 +2451,25 @@ actor {
           };
           stagingInterpTokens.add(newId, newIt);
           nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
           nodeMappings.add((node.name, newId));
         };
       };
     };
 
-    // Process source graph edges
+    // Process source graph edges with scope-aware target resolution
     for (edge in input.edges.values()) {
       let sourceId = switch (nameToId.get(edge.sourceName)) {
         case (null) { "" };
         case (?id) { id };
       };
-      let targetId = switch (nameToId.get(edge.targetName)) {
+      // Scope-aware target resolution
+      let sourceFullPath = switch (simpleToFullPath.get(edge.sourceName)) {
+        case (?fp) { fp };
+        case (null) { edge.sourceName };
+      };
+      let targetId = switch (resolveEdgeTarget(edge.targetName, sourceFullPath, nameToId)) {
         case (null) { "" };
         case (?id) { id };
       };

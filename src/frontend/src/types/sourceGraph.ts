@@ -55,6 +55,7 @@ export interface AttributeChange {
   key: string;
   oldValues: WeightedValue[];
   newValues: string[];
+  newWeightedValues?: WeightedValue[];
 }
 
 export interface NodeOperation {
