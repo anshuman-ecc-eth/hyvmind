@@ -87,6 +87,9 @@ options = {
   isDrawingScoreFront: true,
   seed: 2000,
 };
+const urlParams = new URLSearchParams(window.location.search);
+const bgmOff = urlParams.get('bgm') === 'off';
+if (bgmOff) { options.isPlayingBgm = false; }
 
 /** @type {{x: number, vx: number, world: -1 | 1}[]} */
 let tracks;
@@ -222,7 +225,7 @@ function update() {
       color("red");
       text("X", 100, d.pos.y);
       if (window.parent !== window) {
-        window.parent.postMessage({ type: 'rebirth-game-over' }, '*');
+        window.parent.postMessage({ type: 'rebirth-game-over', score: score }, '*');
       }
       end();
     }

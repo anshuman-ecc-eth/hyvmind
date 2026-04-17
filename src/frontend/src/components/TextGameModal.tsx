@@ -3,27 +3,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["ENTER", "EXIT"] as const;
+const MENU_ITEMS = ["ENTER", "SETTINGS", "HI-SCORES", "EXIT"] as const;
 
 const CONTENT = {
   intro: [
     "welcome, fellow researcher",
     "these are trying times",
-    "the world expects us to run in opposite directions",
+    "the world is making us run in opposite directions",
   ],
-  postGame1: "clearly, it's not easy",
-  choices: [
-    "why are we running in opposite directions?",
-    "what's the point of this?",
-  ],
+  postGame1: ["clearly, it's not easy"],
+  choices: ["why opposite directions?", "what's the point?"],
   choice1Path: [
-    "our best researchers have found the root cause",
-    "broken incentive structures",
-    "its kinda obvious when you think about it",
-    "those yellow diamonds had no business being on two different sides",
+    "exactly, we're wondering too",
+    "those yellow diamonds shouldn't be on opposite sides",
+    "our investigations suggest two contradictory forces",
   ],
-  choice2Path: "well, to fix broken incentive structures",
-  outro: ["reach yes but overreach not, we must", "game not over"],
+  choice2Path: ["for now, survive as long as possible", "the points will come"],
+  preOutro: [
+    "sometimes the forces cancel out and we get a moment's break",
+    "but chaos is never far behind",
+  ],
+  outro: ["game not over"],
 };
 
 const SCRAMBLE_CHARS =
@@ -31,15 +31,32 @@ const SCRAMBLE_CHARS =
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+type MusicMode = "on" | "off" | "override";
+
+interface GameSettings {
+  skipMessages: boolean;
+  music: MusicMode;
+}
+
+interface LeaderboardEntry {
+  name: string;
+  score: number;
+  date: string;
+}
+
 type Phase =
   | { type: "idle" }
+  | { type: "settings" }
+  | { type: "leaderboard" }
+  | { type: "nameEntry"; score: number }
   | { type: "intro"; step: number }
   | { type: "game1" }
-  | { type: "postGame1" }
+  | { type: "postGame1"; step: number }
   | { type: "choices"; selected: 0 | 1 }
   | { type: "choice1"; step: number }
-  | { type: "choice2" }
+  | { type: "choice2"; step: number }
   | { type: "game2" }
+  | { type: "preOutro"; step: number }
   | { type: "outro"; step: number }
   | { type: "finalExit" };
 
@@ -54,29 +71,321 @@ function getCurrentMessage(phase: Phase): string {
     case "intro":
       return CONTENT.intro[phase.step];
     case "postGame1":
-      return CONTENT.postGame1;
+      return CONTENT.postGame1[phase.step];
     case "choice1":
       return CONTENT.choice1Path[phase.step];
     case "choice2":
-      return CONTENT.choice2Path;
+      return CONTENT.choice2Path[phase.step];
+    case "preOutro":
+      return CONTENT.preOutro[phase.step];
     case "outro":
       return CONTENT.outro[phase.step];
-    case "finalExit":
-      return CONTENT.outro[1]; // "game not over"
     default:
       return "";
   }
+}
+
+// ── Settings Screen ────────────────────────────────────────────────────────────
+
+interface SettingsScreenProps {
+  settings: GameSettings;
+  onUpdateSettings: (settings: GameSettings) => void;
+  onBack: () => void;
+}
+
+function SettingsScreen({
+  settings,
+  onUpdateSettings,
+  onBack,
+}: SettingsScreenProps) {
+  const SETTINGS_ITEMS = ["skipMessages", "music", "back"] as const;
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        setSelectedIdx(
+          (prev) => (prev - 1 + SETTINGS_ITEMS.length) % SETTINGS_ITEMS.length,
+        );
+      } else if (e.key === "ArrowDown") {
+        setSelectedIdx((prev) => (prev + 1) % SETTINGS_ITEMS.length);
+      } else if (e.key === "Enter") {
+        const item = SETTINGS_ITEMS[selectedIdx];
+        if (item === "back") {
+          onBack();
+        } else if (item === "skipMessages") {
+          onUpdateSettings({
+            ...settings,
+            skipMessages: !settings.skipMessages,
+          });
+        } else if (item === "music") {
+          const values: MusicMode[] = ["on", "off", "override"];
+          const currentIdx = values.indexOf(settings.music);
+          const nextIdx = (currentIdx + 1) % values.length;
+          onUpdateSettings({ ...settings, music: values[nextIdx] });
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, settings, onUpdateSettings, onBack, SETTINGS_ITEMS]);
+
+  const rows: {
+    key: (typeof SETTINGS_ITEMS)[number];
+    label: string;
+    value?: string;
+  }[] = [
+    {
+      key: "skipMessages",
+      label: "SKIP MESSAGES",
+      value: settings.skipMessages ? "ON" : "OFF",
+    },
+    { key: "music", label: "MUSIC", value: settings.music.toUpperCase() },
+    { key: "back", label: "BACK" },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+      <div
+        className="text-foreground tracking-widest"
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
+      >
+        SETTINGS
+      </div>
+      <div className="flex flex-col items-start gap-4">
+        {rows.map((row, idx) => {
+          const isSelected = idx === selectedIdx;
+          return (
+            <button
+              key={row.key}
+              type="button"
+              data-ocid={`text_game.settings.${row.key}`}
+              className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.15em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+              onClick={() => {
+                setSelectedIdx(idx);
+                if (row.key === "back") {
+                  onBack();
+                } else if (row.key === "skipMessages") {
+                  onUpdateSettings({
+                    ...settings,
+                    skipMessages: !settings.skipMessages,
+                  });
+                } else if (row.key === "music") {
+                  const values: MusicMode[] = ["on", "off", "override"];
+                  const currentIdx = values.indexOf(settings.music);
+                  onUpdateSettings({
+                    ...settings,
+                    music: values[(currentIdx + 1) % values.length],
+                  });
+                }
+              }}
+            >
+              {isSelected ? "> " : "  "}
+              {row.label}
+              {row.value !== undefined ? ` [${row.value}]` : ""}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Leaderboard Screen ─────────────────────────────────────────────────────────
+
+interface LeaderboardScreenProps {
+  leaderboard: LeaderboardEntry[];
+  onBack: () => void;
+}
+
+function LeaderboardScreen({ leaderboard, onBack }: LeaderboardScreenProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter") onBack();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+      <div
+        className="text-foreground tracking-widest"
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
+      >
+        HIGH SCORES
+      </div>
+      <div
+        className="flex flex-col items-start gap-4"
+        style={{ minWidth: "220px" }}
+      >
+        {leaderboard.length === 0 ? (
+          <div
+            className="text-muted-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.55rem",
+              letterSpacing: "0.1em",
+            }}
+          >
+            NO SCORES YET
+          </div>
+        ) : (
+          leaderboard.map((entry, idx) => (
+            <div
+              key={entry.date}
+              data-ocid={`text_game.leaderboard.item.${idx + 1}`}
+              className="text-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.1em",
+                display: "flex",
+                gap: "1rem",
+              }}
+            >
+              <span className="text-muted-foreground">{idx + 1}.</span>
+              <span style={{ minWidth: "80px" }}>{entry.name}</span>
+              <span>{entry.score}</span>
+            </div>
+          ))
+        )}
+      </div>
+      <button
+        type="button"
+        data-ocid="text_game.leaderboard.back_button"
+        className="text-foreground transition-colors hover:text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.6rem",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+        }}
+        onClick={onBack}
+      >
+        {"> BACK"}
+      </button>
+    </div>
+  );
+}
+
+// ── Name Entry Screen ──────────────────────────────────────────────────────────
+
+interface NameEntryScreenProps {
+  score: number;
+  onSubmit: (name: string) => void;
+}
+
+function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && name.length > 0) {
+        onSubmit(name.toUpperCase());
+      } else if (e.key === "Backspace") {
+        setName((prev) => prev.slice(0, -1));
+      } else if (
+        e.key.length === 1 &&
+        /^[a-zA-Z0-9]$/.test(e.key) &&
+        name.length < 10
+      ) {
+        setName((prev) => (prev + e.key).toUpperCase());
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [name, onSubmit]);
+
+  const paddedName = name.padEnd(10, "_");
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+      <div
+        className="text-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.8rem",
+          letterSpacing: "0.1em",
+        }}
+      >
+        NEW HIGH SCORE!
+      </div>
+      <div
+        className="text-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1.2rem",
+        }}
+      >
+        {score}
+      </div>
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="text-muted-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          ENTER NAME:
+        </div>
+        <div
+          className="text-foreground"
+          data-ocid="text_game.name_entry.input"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.65rem",
+            letterSpacing: "0.1em",
+          }}
+        >
+          {`> ${paddedName}`}
+        </div>
+      </div>
+      <div
+        className="text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.45rem",
+          letterSpacing: "0.15em",
+        }}
+      >
+        PRESS ENTER TO SAVE
+      </div>
+    </div>
+  );
 }
 
 // ── Start Screen ───────────────────────────────────────────────────────────────
 
 interface StartScreenProps {
   onStart: () => void;
+  onSettings: () => void;
+  onHiScores: () => void;
   onExit: () => void;
-  lastScore: number | null;
+  leaderboard: LeaderboardEntry[];
 }
 
-function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
+function StartScreen({
+  onStart,
+  onSettings,
+  onHiScores,
+  onExit,
+  leaderboard,
+}: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   useEffect(() => {
@@ -90,12 +399,17 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
       } else if (e.key === "Enter") {
         const chosen = MENU_ITEMS[selectedIdx];
         if (chosen === "ENTER") onStart();
+        else if (chosen === "SETTINGS") onSettings();
+        else if (chosen === "HI-SCORES") onHiScores();
         else if (chosen === "EXIT") onExit();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedIdx, onStart, onExit]);
+  }, [selectedIdx, onStart, onSettings, onHiScores, onExit]);
+
+  // Show top score under title if leaderboard has entries
+  const topScore = leaderboard.length > 0 ? leaderboard[0] : null;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
@@ -138,8 +452,8 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
         </div>
       </div>
 
-      {/* Last score */}
-      {lastScore !== null && (
+      {/* Top score */}
+      {topScore !== null && (
         <div
           className="text-muted-foreground"
           style={{
@@ -148,7 +462,7 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
             letterSpacing: "0.15em",
           }}
         >
-          last score: {lastScore}
+          best: {topScore.name} {topScore.score}
         </div>
       )}
 
@@ -160,7 +474,7 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
             <button
               key={item}
               type="button"
-              data-ocid={`text_game.start_screen.${item.toLowerCase()}`}
+              data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
               className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               style={{
                 fontFamily: '"Press Start 2P", monospace',
@@ -173,6 +487,8 @@ function StartScreen({ onStart, onExit, lastScore }: StartScreenProps) {
               }}
               onClick={() => {
                 if (item === "ENTER") onStart();
+                else if (item === "SETTINGS") onSettings();
+                else if (item === "HI-SCORES") onHiScores();
                 else if (item === "EXIT") onExit();
               }}
             >
@@ -203,9 +519,9 @@ function ChoiceMenu({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
-        onSelect(selected === 1 ? 0 : 0);
+        onSelect(0);
       } else if (e.key === "ArrowDown") {
-        onSelect(selected === 0 ? 1 : 1);
+        onSelect(1);
       } else if (e.key === "Enter") {
         onConfirm(selected);
       }
@@ -440,38 +756,150 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
 
-  const [lastScore] = useState<number | null>(null);
-
   // Phase state
   const [phase, setPhase] = useState<Phase>({ type: "idle" });
   const [scrambleComplete, setScrambleComplete] = useState(false);
+
+  // Settings (persisted)
+  const [settings, setSettings] = useState<GameSettings>(() => {
+    const saved = localStorage.getItem("hyvmind_textgame_settings");
+    return saved
+      ? (JSON.parse(saved) as GameSettings)
+      : { skipMessages: false, music: "on" };
+  });
+
+  // Leaderboard (persisted)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
+    const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
+    return saved ? (JSON.parse(saved) as LeaderboardEntry[]) : [];
+  });
+
+  // Game scores for this session
+  const [gameScores, setGameScores] = useState({ game1: 0, game2: 0 });
+
+  // Override audio (island-puzzle-mystery.ogg)
+  const [overrideAudio] = useState<HTMLAudioElement | null>(() => {
+    const audio = new Audio("/assets/island-puzzle-mystery.ogg");
+    audio.loop = true;
+    return audio;
+  });
+
+  // Pending score awaiting name entry
+  const [pendingScore, setPendingScore] = useState<number | null>(null);
+
+  // ── Persist settings & leaderboard ────────────────────────────────────────
+
+  useEffect(() => {
+    localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
+  }, [settings]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "hyvmind_textgame_leaderboard",
+      JSON.stringify(leaderboard),
+    );
+  }, [leaderboard]);
+
+  // ── Audio cleanup ──────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      if (overrideAudio) {
+        overrideAudio.pause();
+        overrideAudio.currentTime = 0;
+      }
+    };
+  }, [overrideAudio]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleExit = useCallback(() => {
     onCompleteRef.current();
   }, []);
 
-  // ── Phase: idle → intro ────────────────────────────────────────────────────
+  const handleOpenSettings = useCallback(() => {
+    setPhase({ type: "settings" });
+  }, []);
+
+  const handleOpenLeaderboard = useCallback(() => {
+    setPhase({ type: "leaderboard" });
+  }, []);
+
+  const handleCloseSubScreen = useCallback(() => {
+    setPhase({ type: "idle" });
+  }, []);
+
+  const handleNameSubmit = useCallback(
+    (name: string) => {
+      if (pendingScore !== null) {
+        const newEntry: LeaderboardEntry = {
+          name,
+          score: pendingScore,
+          date: new Date().toISOString(),
+        };
+        setLeaderboard((prev) =>
+          [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 3),
+        );
+        setPendingScore(null);
+      }
+      setPhase({ type: "idle" });
+    },
+    [pendingScore],
+  );
+
+  // ── Phase: idle → intro (or game1 if skipMessages) ────────────────────────
 
   const handleStart = useCallback(() => {
-    setPhase({ type: "intro", step: 0 });
+    if (settings.skipMessages) {
+      setPhase({ type: "game1" });
+      if (settings.music === "override" && overrideAudio) {
+        overrideAudio.play().catch(() => {});
+      }
+    } else {
+      setPhase({ type: "intro", step: 0 });
+    }
     setScrambleComplete(false);
-  }, []);
+    setGameScores({ game1: 0, game2: 0 });
+  }, [settings, overrideAudio]);
 
   // ── Game completion via postMessage ────────────────────────────────────────
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === "rebirth-game-over") {
-        setPhase({ type: "postGame1" });
-        setScrambleComplete(false);
+        const score1 = (e.data.score as number) || 0;
+        setGameScores((prev) => ({ ...prev, game1: score1 }));
+        if (settings.skipMessages) {
+          setPhase({ type: "game2" });
+        } else {
+          setPhase({ type: "postGame1", step: 0 });
+          setScrambleComplete(false);
+        }
       } else if (e.data?.type === "squarebar-game-over") {
-        setPhase({ type: "outro", step: 0 });
-        setScrambleComplete(false);
+        const score2 = (e.data.score as number) || 0;
+        const totalScore = gameScores.game1 + score2;
+        setGameScores((prev) => ({ ...prev, game2: score2 }));
+
+        const qualifies =
+          leaderboard.length < 3 ||
+          totalScore > leaderboard[leaderboard.length - 1].score;
+
+        if (qualifies) {
+          setPendingScore(totalScore);
+          if (overrideAudio) overrideAudio.pause();
+          setPhase({ type: "nameEntry", score: totalScore });
+        } else if (settings.skipMessages) {
+          if (overrideAudio) overrideAudio.pause();
+          onCompleteRef.current();
+        } else {
+          setPhase({ type: "preOutro", step: 0 });
+          setScrambleComplete(false);
+        }
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [settings, overrideAudio, gameScores.game1, leaderboard]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -479,7 +907,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     if (!scrambleComplete) return;
     switch (phase.type) {
       case "intro":
-        if (phase.step < 2) {
+        if (phase.step < CONTENT.intro.length - 1) {
           setPhase({ type: "intro", step: phase.step + 1 });
           setScrambleComplete(false);
         } else {
@@ -487,10 +915,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         }
         break;
       case "postGame1":
-        setPhase({ type: "choices", selected: 0 });
+        if (phase.step < CONTENT.postGame1.length - 1) {
+          setPhase({ type: "postGame1", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "choices", selected: 0 });
+        }
         break;
       case "choice1":
-        if (phase.step < 3) {
+        if (phase.step < CONTENT.choice1Path.length - 1) {
           setPhase({ type: "choice1", step: phase.step + 1 });
           setScrambleComplete(false);
         } else {
@@ -498,13 +931,24 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         }
         break;
       case "choice2":
-        setPhase({ type: "game2" });
+        if (phase.step < CONTENT.choice2Path.length - 1) {
+          setPhase({ type: "choice2", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "game2" });
+        }
         break;
-      case "outro":
-        if (phase.step === 0) {
-          setPhase({ type: "outro", step: 1 });
+      case "preOutro":
+        if (phase.step < CONTENT.preOutro.length - 1) {
+          setPhase({ type: "preOutro", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "outro", step: 0 });
           setScrambleComplete(false);
         }
+        break;
+      case "outro":
+        // outro is just "game not over" — auto-closes after scramble
         break;
     }
   }, [phase, scrambleComplete]);
@@ -516,7 +960,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       setPhase({ type: "choice1", step: 0 });
       setScrambleComplete(false);
     } else {
-      setPhase({ type: "choice2" });
+      setPhase({ type: "choice2", step: 0 });
       setScrambleComplete(false);
     }
   }, []);
@@ -524,7 +968,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Keyboard listener for text phases ─────────────────────────────────────
 
   useEffect(() => {
-    const textPhases = ["intro", "postGame1", "choice1", "choice2", "outro"];
+    const textPhases = [
+      "intro",
+      "postGame1",
+      "choice1",
+      "choice2",
+      "preOutro",
+      "outro",
+    ];
     if (!textPhases.includes(phase.type)) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Tab") return;
@@ -536,36 +987,72 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const bgmParam = settings.music === "on" ? "" : "?bgm=off";
+
   const renderContent = () => {
     switch (phase.type) {
       case "idle":
         return (
           <StartScreen
             onStart={handleStart}
+            onSettings={handleOpenSettings}
+            onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
-            lastScore={lastScore}
+            leaderboard={leaderboard}
           />
+        );
+
+      case "settings":
+        return (
+          <SettingsScreen
+            settings={settings}
+            onUpdateSettings={setSettings}
+            onBack={handleCloseSubScreen}
+          />
+        );
+
+      case "leaderboard":
+        return (
+          <LeaderboardScreen
+            leaderboard={leaderboard}
+            onBack={handleCloseSubScreen}
+          />
+        );
+
+      case "nameEntry":
+        return (
+          <NameEntryScreen score={phase.score} onSubmit={handleNameSubmit} />
         );
 
       case "intro":
       case "postGame1":
       case "choice1":
       case "choice2":
-      case "outro": {
-        const isFinalMessage = phase.type === "outro" && phase.step === 1;
+      case "preOutro": {
         return (
           <ScrambleDisplay
-            key={`${phase.type}-${phase.type === "intro" ? phase.step : phase.type === "choice1" ? phase.step : phase.type === "outro" ? phase.step : phase.type}`}
+            key={`${phase.type}-${"step" in phase ? phase.step : 0}`}
             target={getCurrentMessage(phase)}
             revealDurationMs={1000}
             tickMs={50}
-            onComplete={
-              isFinalMessage
-                ? () => onCompleteRef.current()
-                : () => setScrambleComplete(true)
-            }
+            onComplete={() => setScrambleComplete(true)}
             scrambleDone={scrambleComplete}
-            onAdvance={isFinalMessage ? undefined : handleAdvance}
+            onAdvance={handleAdvance}
+          />
+        );
+      }
+
+      case "outro": {
+        // "game not over" — auto-closes when scramble finishes
+        return (
+          <ScrambleDisplay
+            key="outro-0"
+            target={CONTENT.outro[0]}
+            revealDurationMs={1000}
+            tickMs={50}
+            onComplete={() => onCompleteRef.current()}
+            scrambleDone={scrambleComplete}
+            onAdvance={undefined}
           />
         );
       }
@@ -589,7 +1076,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
             >
               <iframe
-                src="/assets/rebirth.html"
+                src={`/assets/rebirth.html${bgmParam}`}
                 allow="autoplay"
                 className="w-full h-full border-0"
                 title="Rebirth"
@@ -606,7 +1093,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
             >
               <iframe
-                src="/assets/squarebar.html"
+                src={`/assets/squarebar.html${bgmParam}`}
                 allow="autoplay"
                 className="w-full h-full border-0"
                 title="Square Bar"
@@ -615,6 +1102,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             </div>
           </div>
         );
+
+      default:
+        return null;
     }
   };
 

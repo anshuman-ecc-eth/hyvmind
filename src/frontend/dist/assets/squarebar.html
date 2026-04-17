@@ -31,6 +31,9 @@ options = {
   isDrawingScoreFront: true,
   seed: 3,
 };
+const urlParams = new URLSearchParams(window.location.search);
+const bgmOff = urlParams.get('bgm') === 'off';
+if (bgmOff) { options.isPlayingBgm = false; }
 
 /**
  * @type {{
@@ -166,7 +169,7 @@ function update() {
       if (isChased) {
         play("explosion");
         if (window.parent !== window) {
-          window.parent.postMessage({ type: 'squarebar-game-over' }, '*');
+          window.parent.postMessage({ type: 'squarebar-game-over', score: score }, '*');
         }
         end();
       } else {
@@ -207,7 +210,7 @@ function update() {
         if (i.size === 4) {
           play("explosion");
           if (window.parent !== window) {
-            window.parent.postMessage({ type: 'squarebar-game-over' }, '*');
+            window.parent.postMessage({ type: 'squarebar-game-over', score: score }, '*');
           }
           end();
         }
