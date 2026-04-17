@@ -1627,14 +1627,9 @@ actor {
   };
 
   // ─── Helper: scope-aware edge target resolution ───────────────────────────────
-  // Tries: exact match → parent scope → walk up hierarchy
+  // Tries: hierarchical scope walk first → simple name fallback
   func resolveEdgeTarget(targetName : Text, sourceFullPath : Text, nameToId : Map.Map<Text, NodeId>) : ?NodeId {
-    // 1. Exact match
-    switch (nameToId.get(targetName)) {
-      case (?id) { return ?id };
-      case (null) {};
-    };
-    // 2. Split source path into segments and walk up
+    // 1. Split source path into segments and walk up hierarchy first
     let segIter = sourceFullPath.split(#char '@');
     let segments = List.empty<Text>();
     for (seg in segIter) {
@@ -1660,6 +1655,11 @@ actor {
           case (null) {};
         };
       };
+    };
+    // 2. Simple name fallback
+    switch (nameToId.get(targetName)) {
+      case (?id) { return ?id };
+      case (null) {};
     };
     null
   };
@@ -1756,7 +1756,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentId = switch (nameToId.get(parentName)) {
+      let parentId = switch (nameToId.get(parentFullPath)) {
         case (null) { "" };
         case (?pid) { pid };
       };
@@ -1816,7 +1816,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentId = switch (nameToId.get(parentName)) {
+      let parentId = switch (nameToId.get(parentFullPath)) {
         case (null) { "" };
         case (?pid) { pid };
       };
@@ -1876,7 +1876,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentId = switch (nameToId.get(parentName)) {
+      let parentId = switch (nameToId.get(parentFullPath)) {
         case (null) { "" };
         case (?pid) { pid };
       };
@@ -1936,7 +1936,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentId = switch (nameToId.get(parentName)) {
+      let parentId = switch (nameToId.get(parentFullPath)) {
         case (null) { "" };
         case (?pid) { pid };
       };
@@ -2189,7 +2189,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentCurationId = switch (nameToId.get(parentName)) {
+      let parentCurationId = switch (nameToId.get(parentFullPath)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
         };
@@ -2267,7 +2267,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentSwarmId = switch (nameToId.get(parentName)) {
+      let parentSwarmId = switch (nameToId.get(parentFullPath)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
         };
@@ -2333,7 +2333,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentLocationId = switch (nameToId.get(parentName)) {
+      let parentLocationId = switch (nameToId.get(parentFullPath)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
         };
@@ -2399,7 +2399,7 @@ actor {
         case (null) { parentName };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
-      let parentLawTokenId = switch (nameToId.get(parentName)) {
+      let parentLawTokenId = switch (nameToId.get(parentFullPath)) {
         case (null) {
           return #error({ message = "Cannot resolve parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
         };
