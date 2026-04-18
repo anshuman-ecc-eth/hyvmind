@@ -800,7 +800,23 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     );
   }, [leaderboard]);
 
-  // ── Audio cleanup ──────────────────────────────────────────────────────────
+  // ── Override audio: play/pause based on music setting ─────────────────────
+  // The component is only mounted when the modal is open, so we just need to
+  // react to settings.music changes. Start/stop immediately on every change.
+
+  useEffect(() => {
+    if (!overrideAudio) return;
+    if (settings.music === "override") {
+      overrideAudio.play().catch(() => {
+        // Autoplay may be blocked; silently ignore
+      });
+    } else {
+      overrideAudio.pause();
+      overrideAudio.currentTime = 0;
+    }
+  }, [settings.music, overrideAudio]);
+
+  // ── Audio cleanup on unmount ───────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
@@ -814,8 +830,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleExit = useCallback(() => {
+    if (overrideAudio) {
+      overrideAudio.pause();
+      overrideAudio.currentTime = 0;
+    }
     onCompleteRef.current();
-  }, []);
+  }, [overrideAudio]);
 
   const handleOpenSettings = useCallback(() => {
     setPhase({ type: "settings" });
@@ -852,15 +872,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const handleStart = useCallback(() => {
     if (settings.skipMessages) {
       setPhase({ type: "game1" });
-      if (settings.music === "override" && overrideAudio) {
-        overrideAudio.play().catch(() => {});
-      }
     } else {
       setPhase({ type: "intro", step: 0 });
     }
     setScrambleComplete(false);
     setGameScores({ game1: 0, game2: 0 });
-  }, [settings, overrideAudio]);
+  }, [settings.skipMessages]);
 
   // ── Game completion via postMessage ────────────────────────────────────────
 
@@ -886,10 +903,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
         if (qualifies) {
           setPendingScore(totalScore);
-          if (overrideAudio) overrideAudio.pause();
           setPhase({ type: "nameEntry", score: totalScore });
         } else if (settings.skipMessages) {
-          if (overrideAudio) overrideAudio.pause();
           onCompleteRef.current();
         } else {
           setPhase({ type: "preOutro", step: 0 });
@@ -899,7 +914,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, overrideAudio, gameScores.game1, leaderboard]);
+  }, [settings, gameScores.game1, leaderboard]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -987,7 +1002,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const bgmParam = settings.music === "on" ? "" : "?bgm=off";
+  const bgmParam =
+    settings.music === "override"
+      ? "?bgm=off&se=off"
+      : settings.music === "off"
+        ? "?bgm=off"
+        : "";
 
   const renderContent = () => {
     switch (phase.type) {
@@ -1135,7 +1155,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             type="button"
             data-ocid="text_game.close_button"
             className="font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
-            onClick={() => onComplete()}
+            onClick={() => {
+              if (overrideAudio) {
+                overrideAudio.pause();
+                overrideAudio.currentTime = 0;
+              }
+              onComplete();
+            }}
             aria-label="Close text game"
           >
             [×]

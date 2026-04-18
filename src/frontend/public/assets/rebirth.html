@@ -83,6 +83,7 @@ options = {
   theme: "dark",
   viewSize: { x: 200, y: 60 },
   isPlayingBgm: true,
+  isPlayingSe: true,
   isReplayEnabled: true,
   isDrawingScoreFront: true,
   seed: 2000,
@@ -90,6 +91,8 @@ options = {
 const urlParams = new URLSearchParams(window.location.search);
 const bgmOff = urlParams.get('bgm') === 'off';
 if (bgmOff) { options.isPlayingBgm = false; }
+const seOff = urlParams.get('se') === 'off';
+if (seOff) { options.isPlayingSe = false; }
 
 /** @type {{x: number, vx: number, world: -1 | 1}[]} */
 let tracks;

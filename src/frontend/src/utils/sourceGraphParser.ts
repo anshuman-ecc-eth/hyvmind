@@ -225,7 +225,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       // Also collect all interpEntity filenames (without .md extension) across
       // the entire swarm for double curly bracket {{filename}} linking.
       // -----------------------------------------------------------------------
-      const swarmWideLawEntityNames = new Set<string>();
+      const swarmWideLawEntityNames = new Map<string, string>();
       const allInterpFilenames = new Map<string, string>(); // maps bare filename → full @-path
       for (const locName of locationFolders) {
         const locPrefix = `${swarmPath}/${locName}/`;
@@ -235,7 +235,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           const parts = remainder.split("/");
           // Level 4 subfolders only (not .md files at this level)
           if (parts.length >= 2 && parts[0] && !parts[0].startsWith("_")) {
-            swarmWideLawEntityNames.add(parts[0]);
+            const fullLawPath = `${curationName}@${swarmName}@${locName}@${parts[0]}`;
+            swarmWideLawEntityNames.set(parts[0], fullLawPath);
             // Level 5: .md files directly inside each lawEntity folder
             if (
               parts.length === 2 &&
@@ -249,6 +250,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           }
         }
       }
+      console.log(
+        "🟡 [PARSER] swarmWideLawEntityNames Map:",
+        JSON.stringify([...swarmWideLawEntityNames.entries()]),
+      );
+      console.log(
+        "🟡 [PARSER] allInterpFilenames Map:",
+        JSON.stringify([...allInterpFilenames.entries()]),
+      );
 
       for (const locationName of locationFolders) {
         const locationPath = `${swarmPath}/${locationName}`;
@@ -384,15 +393,25 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               bidirectional: hasSelfReference,
             });
 
+            console.log("🟡 [PARSER] Processing lawEntity refs:", uniqueRefs);
             for (const ref of uniqueRefs) {
-              if (!swarmWideLawEntityNames.has(ref)) continue;
+              const refFullPath = swarmWideLawEntityNames.get(ref);
+              console.log(
+                `🟡 [PARSER]   ref="${ref}" -> fullPath=${refFullPath ?? "UNDEFINED"}`,
+              );
+              if (!refFullPath) {
+                console.warn(
+                  `🟡 [PARSER] WARNING: Could not resolve lawEntity ref "${ref}" to full path, skipping edge`,
+                );
+                continue;
+              }
               if (ref === entry.name) continue;
               // Cross-reference to another lawEntity — avoid duplicates
               const alreadyExists = edges.some(
-                (e) => e.source === fullInterpPath && e.target === ref,
+                (e) => e.source === fullInterpPath && e.target === refFullPath,
               );
               if (!alreadyExists) {
-                edges.push({ source: fullInterpPath, target: ref });
+                edges.push({ source: fullInterpPath, target: refFullPath });
               }
             }
 
@@ -404,13 +423,24 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const interpRefs = extractInterpEntityReferences(body);
             const uniqueInterpRefs = [...new Set(interpRefs)];
 
+            console.log(
+              "🟡 [PARSER] Processing interp refs:",
+              uniqueInterpRefs,
+            );
             for (const ref of uniqueInterpRefs) {
               // Skip self-references
               if (ref === filename) continue;
-              // Skip references to filenames not found anywhere in the swarm
-              if (!allInterpFilenames.has(ref)) continue;
+              const refFullPath = allInterpFilenames.get(ref);
+              console.log(
+                `🟡 [PARSER]   ref="{{${ref}}}" -> fullPath=${refFullPath ?? "UNDEFINED"}`,
+              );
+              if (!refFullPath) {
+                console.warn(
+                  `🟡 [PARSER] WARNING: Could not resolve interp ref "${ref}" to full path, skipping edge`,
+                );
+                continue;
+              }
               // Avoid duplicate edges
-              const refFullPath = allInterpFilenames.get(ref) ?? ref;
               const alreadyExists = edges.some(
                 (e) => e.source === fullInterpPath && e.target === refFullPath,
               );
@@ -423,6 +453,23 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       }
     }
   }
+
+  console.log("🟢 [PARSER] Total nodes:", nodes.length);
+  console.log("🟢 [PARSER] Total edges:", edges.length);
+  console.log("🟢 [PARSER] All edges:", JSON.stringify(edges, null, 2));
+  // Group edges by source to see if duplicates are present
+  const edgesBySource = edges.reduce(
+    (acc, e) => {
+      acc[e.source] = acc[e.source] || [];
+      acc[e.source].push(e.target);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+  console.log(
+    "🟢 [PARSER] Edges by source:",
+    JSON.stringify(edgesBySource, null, 2),
+  );
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,

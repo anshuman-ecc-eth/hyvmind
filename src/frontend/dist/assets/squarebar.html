@@ -27,6 +27,7 @@ characters = [];
 options = {
   theme: "dark",
   isPlayingBgm: true,
+  isPlayingSe: true,
   isReplayEnabled: true,
   isDrawingScoreFront: true,
   seed: 3,
@@ -34,6 +35,8 @@ options = {
 const urlParams = new URLSearchParams(window.location.search);
 const bgmOff = urlParams.get('bgm') === 'off';
 if (bgmOff) { options.isPlayingBgm = false; }
+const seOff = urlParams.get('se') === 'off';
+if (seOff) { options.isPlayingSe = false; }
 
 /**
  * @type {{

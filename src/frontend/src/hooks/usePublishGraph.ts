@@ -60,7 +60,22 @@ export function usePublishGraph() {
     try {
       const mappingsObj = getMappingsObject(graph.id);
       const existingMappings: [string, string][] = Object.entries(mappingsObj);
+      console.log("🔵 [PUBLISH] commit() called");
+      console.log("🔵 [PUBLISH] graph.nodes count:", graph.nodes.length);
+      console.log("🔵 [PUBLISH] graph.edges count:", graph.edges.length);
+      console.log(
+        "🔵 [PUBLISH] full edges:",
+        JSON.stringify(graph.edges, null, 2),
+      );
+      console.log("🔵 [PUBLISH] isUpdate:", isUpdate);
+      console.log("🔵 [PUBLISH] existingMappings:", existingMappings);
       const input = sourceGraphToInput(graph);
+      console.log("🔵 [PUBLISH] input.nodes count:", input.nodes.length);
+      console.log("🔵 [PUBLISH] input.edges count:", input.edges.length);
+      console.log(
+        "🔵 [PUBLISH] full input.edges:",
+        JSON.stringify(input.edges, null, 2),
+      );
       const rawResult = await actor.commitPublishSourceGraph(
         input,
         existingMappings,
