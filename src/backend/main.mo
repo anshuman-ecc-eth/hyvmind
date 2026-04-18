@@ -226,6 +226,7 @@ actor {
 
   // Input types for publishing
   type SourceGraphNodeInput = {
+    id : ?Text;
     name : Text;
     nodeType : Text;
     jurisdiction : ?Text;
@@ -1687,6 +1688,8 @@ actor {
     // Build node input lookup for hierarchy checks
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
+      let mapKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+      nodeInputMap.add(mapKey, node);
       nodeInputMap.add(node.name, node);
     };
 
@@ -2132,6 +2135,8 @@ actor {
     // Build node input lookup
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
+      let mapKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+      nodeInputMap.add(mapKey, node);
       nodeInputMap.add(node.name, node);
     };
 
@@ -2636,6 +2641,8 @@ actor {
     // Build name -> SourceGraphNodeInput lookup
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
+      let mapKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+      nodeInputMap.add(mapKey, node);
       nodeInputMap.add(node.name, node);
     };
 

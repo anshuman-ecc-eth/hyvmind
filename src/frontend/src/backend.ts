@@ -228,6 +228,7 @@ export interface WeightedAttribute {
     weightedValues: Array<WeightedValue>;
 }
 export interface SourceGraphNodeInput {
+    id?: string;
     content?: string;
     name: string;
     tags: Array<string>;
@@ -1580,6 +1581,7 @@ function to_candid_record_n62(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     };
 }
 function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id?: string;
     content?: string;
     name: string;
     tags: Array<string>;
@@ -1588,6 +1590,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     parentName?: string;
     nodeType: string;
 }): {
+    id: [] | [string];
     content: [] | [string];
     name: string;
     tags: Array<string>;
@@ -1597,6 +1600,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     nodeType: string;
 } {
     return {
+        id: value.id ? candid_some(value.id) : candid_none(),
         content: value.content ? candid_some(value.content) : candid_none(),
         name: value.name,
         tags: value.tags,

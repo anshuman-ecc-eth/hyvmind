@@ -22,6 +22,7 @@ export const SourceGraphEdgeInput = IDL.Record({
   'edgeLabel' : IDL.Text,
 });
 export const SourceGraphNodeInput = IDL.Record({
+  'id' : IDL.Opt(IDL.Text),
   'content' : IDL.Opt(IDL.Text),
   'name' : IDL.Text,
   'tags' : IDL.Vec(IDL.Text),
@@ -332,6 +333,7 @@ export const idlFactory = ({ IDL }) => {
     'edgeLabel' : IDL.Text,
   });
   const SourceGraphNodeInput = IDL.Record({
+    'id' : IDL.Opt(IDL.Text),
     'content' : IDL.Opt(IDL.Text),
     'name' : IDL.Text,
     'tags' : IDL.Vec(IDL.Text),

@@ -164,6 +164,7 @@ export interface SourceGraphEdgeInput {
   'edgeLabel' : string,
 }
 export interface SourceGraphNodeInput {
+  'id' : [] | [string],
   'content' : [] | [string],
   'name' : string,
   'tags' : Array<string>,

@@ -146,6 +146,7 @@ export interface WeightedAttribute {
     weightedValues: Array<WeightedValue>;
 }
 export interface SourceGraphNodeInput {
+    id?: string;
     content?: string;
     name: string;
     tags: Array<string>;

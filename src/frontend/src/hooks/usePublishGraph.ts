@@ -17,6 +17,7 @@ export type PublishCommitResult =
 // Exported so usePublishPreview can import it
 export function sourceGraphToInput(graph: SourceGraph) {
   const nodes = graph.nodes.map((node) => ({
+    id: node.id ?? undefined,
     name: node.name,
     nodeType: node.nodeType,
     jurisdiction: node.jurisdiction ?? undefined,

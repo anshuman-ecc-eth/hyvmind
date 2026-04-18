@@ -51,6 +51,7 @@ type SourceGraphNodeInput =
                      vec text;
                    };
    content: opt text;
+   id: opt text;
    jurisdiction: opt text;
    name: text;
    nodeType: text;
