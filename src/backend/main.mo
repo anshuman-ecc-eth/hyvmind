@@ -2174,6 +2174,13 @@ actor {
           nameToId.add(node.name, existingId);
           nameToId.add(fullPath, existingId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeMappings.add((node.name, existingId));
         };
         case (null) {
@@ -2190,6 +2197,13 @@ actor {
           nameToId.add(node.name, newId);
           nameToId.add(fullPath, newId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeMappings.add((node.name, newId));
         };
       };
@@ -2249,6 +2263,13 @@ actor {
           nameToId.add(node.name, existingId);
           nameToId.add(fullPath, existingId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, existingId));
         };
@@ -2269,6 +2290,13 @@ actor {
           nameToId.add(node.name, newId);
           nameToId.add(fullPath, newId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, newId));
         };
@@ -2320,6 +2348,13 @@ actor {
           nameToId.add(node.name, existingId);
           nameToId.add(fullPath, existingId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, existingId));
         };
@@ -2337,6 +2372,13 @@ actor {
           nameToId.add(node.name, newId);
           nameToId.add(fullPath, newId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, newId));
         };
@@ -2388,6 +2430,13 @@ actor {
           nameToId.add(node.name, existingId);
           nameToId.add(fullPath, existingId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, existingId));
         };
@@ -2405,6 +2454,13 @@ actor {
           nameToId.add(node.name, newId);
           nameToId.add(fullPath, newId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, newId));
         };
@@ -2461,6 +2517,13 @@ actor {
           nameToId.add(node.name, existingId);
           nameToId.add(fullPath, existingId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, existingId));
         };
@@ -2479,6 +2542,13 @@ actor {
           nameToId.add(node.name, newId);
           nameToId.add(fullPath, newId);
           simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
           nodeInputMap.add(fullPath, node);
           nodeMappings.add((node.name, newId));
         };
