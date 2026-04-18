@@ -85,35 +85,9 @@ export function SourceGraphDiagram({
 
   // Transform SourceGraph → force-graph data
   const graphData = useMemo(() => {
-    // Build full @-separated path for each node, matching the format used by edges.
-    // SourceNode.parentName is the bare parent name, so we chain upward using
-    // a map of bare name → full path built in parent-first traversal order.
-    // Since nodes are pushed in traversal order (curation → swarm → location → …),
-    // each node's parent already has an entry in the map when we reach the node.
-    const nameToFullPath = new Map<string, string>();
-
-    for (const n of graph.nodes) {
-      let fullPath: string;
-      if (!n.parentName) {
-        // curation — no parent
-        fullPath = n.name;
-      } else {
-        const parentFull = nameToFullPath.get(n.parentName);
-        fullPath = parentFull
-          ? `${parentFull}@${n.name}`
-          : `${n.parentName}@${n.name}`;
-      }
-      // Bare name → full path (last write wins for same-named nodes, which is
-      // acceptable here — same-named siblings use the same display label anyway)
-      nameToFullPath.set(n.name, fullPath);
-      // Also key by full path for exact-match lookups
-      nameToFullPath.set(fullPath, fullPath);
-    }
-
     const nodes: FGNode[] = graph.nodes.map((n) => {
-      const fullPath = nameToFullPath.get(n.name) ?? n.name;
       return {
-        id: fullPath,
+        id: n.id ?? n.name,
         name: n.name,
         nodeType: n.nodeType,
         jurisdiction: n.jurisdiction,

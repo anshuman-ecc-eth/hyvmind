@@ -6,6 +6,7 @@ export type NodeType =
   | "interpEntity";
 
 export interface SourceNode {
+  id?: string;
   name: string;
   nodeType: NodeType;
   jurisdiction?: string;

@@ -155,6 +155,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
     const curationAttrs = await getInheritedAttributes(zip, curationPath);
 
     const curationNode: SourceNode = {
+      id: curationName,
       name: curationName,
       nodeType: "curation",
       jurisdiction: curationAttrs.jurisdiction,
@@ -191,6 +192,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         : undefined;
 
       const swarmNode: SourceNode = {
+        id: `${curationName}@${swarmName}`,
         name: swarmName,
         nodeType: "swarm",
         tags,
@@ -264,6 +266,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         const locationAttrs = await getInheritedAttributes(zip, locationPath);
 
         const locationNode: SourceNode = {
+          id: `${curationName}@${swarmName}@${locationName}`,
           name: locationName,
           nodeType: "location",
           source: locationAttrs.source,
@@ -311,6 +314,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           );
 
           nodes.push({
+            id: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
             name: entry.name,
             nodeType: "lawEntity",
             parentName: locationName,
@@ -361,7 +365,13 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
                   }
                 : undefined;
 
+            // Compute full @-separated path early — used for node id and edge creation
+            const fullInterpPath = interpPath
+              .replace(/\//g, "@")
+              .replace(/\.md$/, "");
+
             const interpNode: SourceNode = {
+              id: fullInterpPath,
               name: filename,
               nodeType: "interpEntity",
               content: body || undefined,
@@ -384,12 +394,9 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const hasSelfReference = uniqueRefs.some(
               (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name,
             );
-            const fullInterpPath = interpPath
-              .replace(/\//g, "@")
-              .replace(/\.md$/, "");
             edges.push({
-              source: fullInterpPath,
-              target: filename,
+              source: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
+              target: fullInterpPath,
               bidirectional: hasSelfReference,
             });
 
