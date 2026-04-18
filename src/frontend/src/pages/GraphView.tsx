@@ -385,15 +385,12 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       }
     });
 
-    // Add edges from backend — resolve full-path source/target to backend UUIDs
+    // Add edges from backend — edge.source and edge.target are raw backend UUIDs
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.edges.forEach((edge: GraphEdge) => {
-      const sourceId = fullPathToId.get(edge.source);
-      const targetId = fullPathToId.get(edge.target);
-      if (!sourceId || !targetId) {
-        console.warn(
-          `[GraphView] Cannot resolve edge: source="${edge.source}" → ${sourceId ?? "NOT FOUND"}, target="${edge.target}" → ${targetId ?? "NOT FOUND"}`,
-        );
+      const sourceId = edge.source;
+      const targetId = edge.target;
+      if (!newNodesMap.has(sourceId) || !newNodesMap.has(targetId)) {
         return;
       }
       const edgeExists = layoutLinks.some(
