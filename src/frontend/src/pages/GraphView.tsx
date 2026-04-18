@@ -245,14 +245,25 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     const processedNodes = new Set<string>();
     const newNodesMap = new Map<string, LayoutNode>();
 
+    // Map full @-separated hierarchical path → backend UUID.
+    // Built alongside processNode so every resolved edge can find its endpoints.
+    const fullPathToId = new Map<string, string>();
+
     const processNode = (
       node: GraphNode,
       level: number,
       curationId?: string,
       swarmId?: string,
+      parentFullPath?: string,
     ) => {
       if (processedNodes.has(node.id)) return;
       processedNodes.add(node.id);
+
+      // Build this node's full hierarchical path using tokenLabel as path component
+      const nodeFullPath = parentFullPath
+        ? `${parentFullPath}@${node.tokenLabel}`
+        : node.tokenLabel;
+      fullPathToId.set(nodeFullPath, node.id);
 
       const unifiedPos = unifiedLayoutRef.current.nodes.get(node.id);
       const centerX = width / 2;
@@ -301,7 +312,13 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
           });
         }
         if (child.nodeType !== "interpretationToken") {
-          processNode(child, level + 1, newCurationId, newSwarmId);
+          processNode(
+            child,
+            level + 1,
+            newCurationId,
+            newSwarmId,
+            nodeFullPath,
+          );
         }
       });
     };
@@ -310,6 +327,7 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
     graphData.rootNodes.forEach((root) => processNode(root, 0));
 
     // Add interpretation token nodes (using parentLawTokenId for hierarchy placement)
+    // Also register their full paths for edge resolution.
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.interpretationTokens.forEach((interpretationToken) => {
       if (!processedNodes.has(interpretationToken.id)) {
@@ -343,6 +361,19 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
         };
         layoutNodes.push(layoutNode);
         newNodesMap.set(interpretationToken.id, layoutNode);
+
+        // Register full path for this interp token so backend edges resolve correctly.
+        // Find parent law token's full path, then append this title.
+        for (const [path, id] of fullPathToId.entries()) {
+          if (id === interpretationToken.parentLawTokenId) {
+            fullPathToId.set(
+              `${path}@${interpretationToken.title}`,
+              interpretationToken.id,
+            );
+            break;
+          }
+        }
+
         if (interpretationToken.parentLawTokenId) {
           layoutLinks.push({
             source: interpretationToken.parentLawTokenId,
@@ -354,23 +385,27 @@ export default function GraphView({ readOnly = false }: GraphViewProps) {
       }
     });
 
-    // Add edges from backend — these are the canonical source, no client-side enrichment needed
+    // Add edges from backend — resolve full-path source/target to backend UUIDs
     // biome-ignore lint/complexity/noForEach: imperative code
     graphData.edges.forEach((edge: GraphEdge) => {
-      const sourceExists = layoutNodes.some((n) => n.id === edge.source);
-      const targetExists = layoutNodes.some((n) => n.id === edge.target);
-      if (sourceExists && targetExists) {
-        const edgeExists = layoutLinks.some(
-          (link) => link.source === edge.source && link.target === edge.target,
+      const sourceId = fullPathToId.get(edge.source);
+      const targetId = fullPathToId.get(edge.target);
+      if (!sourceId || !targetId) {
+        console.warn(
+          `[GraphView] Cannot resolve edge: source="${edge.source}" → ${sourceId ?? "NOT FOUND"}, target="${edge.target}" → ${targetId ?? "NOT FOUND"}`,
         );
-        if (!edgeExists) {
-          layoutLinks.push({
-            source: edge.source,
-            target: edge.target,
-            edgeLabel: edge.edgeLabel,
-            bidirectional: edge.directionality === Directionality.bidirectional,
-          });
-        }
+        return;
+      }
+      const edgeExists = layoutLinks.some(
+        (link) => link.source === sourceId && link.target === targetId,
+      );
+      if (!edgeExists) {
+        layoutLinks.push({
+          source: sourceId,
+          target: targetId,
+          edgeLabel: edge.edgeLabel,
+          bidirectional: edge.directionality === Directionality.bidirectional,
+        });
       }
     });
 

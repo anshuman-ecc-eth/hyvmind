@@ -198,7 +198,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         attributes: extractCustomAttributes(swarmAttrs),
       };
       nodes.push(swarmNode);
-      edges.push({ source: curationName, target: swarmName });
+      edges.push({
+        source: curationName,
+        target: `${curationName}@${swarmName}`,
+      });
 
       // ---------------------------------------------------------------------
       // Level 3: location folders — direct children of each swarm folder
@@ -223,7 +226,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       // the entire swarm for double curly bracket {{filename}} linking.
       // -----------------------------------------------------------------------
       const swarmWideLawEntityNames = new Set<string>();
-      const allInterpFilenames = new Set<string>();
+      const allInterpFilenames = new Map<string, string>(); // maps bare filename → full @-path
       for (const locName of locationFolders) {
         const locPrefix = `${swarmPath}/${locName}/`;
         for (const p of allPaths) {
@@ -239,7 +242,9 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               parts[1].endsWith(".md") &&
               !parts[1].startsWith("_")
             ) {
-              allInterpFilenames.add(parts[1].replace(/\.md$/, ""));
+              const bareName = parts[1].replace(/\.md$/, "");
+              const fullPath = `${curationName}@${swarmName}@${locName}@${parts[0]}@${bareName}`;
+              allInterpFilenames.set(bareName, fullPath);
             }
           }
         }
@@ -257,7 +262,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           attributes: extractCustomAttributes(locationAttrs),
         };
         nodes.push(locationNode);
-        edges.push({ source: swarmName, target: locationName });
+        edges.push({
+          source: `${curationName}@${swarmName}`,
+          target: `${curationName}@${swarmName}@${locationName}`,
+        });
 
         // -------------------------------------------------------------------
         // Level 4: lawEntity folders — direct SUBFOLDER children of each location
@@ -300,7 +308,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             jurisdiction: lawEntityAttrs.jurisdiction,
             attributes: extractCustomAttributes(lawEntityAttrs),
           });
-          edges.push({ source: locationName, target: entry.name });
+          edges.push({
+            source: `${curationName}@${swarmName}@${locationName}`,
+            target: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
+          });
 
           // -----------------------------------------------------------------
           // Level 5: interpEntity .md files — direct .md files inside lawEntity
@@ -364,8 +375,11 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const hasSelfReference = uniqueRefs.some(
               (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name,
             );
+            const fullInterpPath = interpPath
+              .replace(/\//g, "@")
+              .replace(/\.md$/, "");
             edges.push({
-              source: entry.name,
+              source: fullInterpPath,
               target: filename,
               bidirectional: hasSelfReference,
             });
@@ -375,10 +389,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               if (ref === entry.name) continue;
               // Cross-reference to another lawEntity — avoid duplicates
               const alreadyExists = edges.some(
-                (e) => e.source === filename && e.target === ref,
+                (e) => e.source === fullInterpPath && e.target === ref,
               );
               if (!alreadyExists) {
-                edges.push({ source: filename, target: ref });
+                edges.push({ source: fullInterpPath, target: ref });
               }
             }
 
@@ -396,11 +410,12 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               // Skip references to filenames not found anywhere in the swarm
               if (!allInterpFilenames.has(ref)) continue;
               // Avoid duplicate edges
+              const refFullPath = allInterpFilenames.get(ref) ?? ref;
               const alreadyExists = edges.some(
-                (e) => e.source === filename && e.target === ref,
+                (e) => e.source === fullInterpPath && e.target === refFullPath,
               );
               if (!alreadyExists) {
-                edges.push({ source: filename, target: ref });
+                edges.push({ source: fullInterpPath, target: refFullPath });
               }
             }
           }

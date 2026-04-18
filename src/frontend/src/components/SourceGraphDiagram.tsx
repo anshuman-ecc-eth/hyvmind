@@ -85,25 +85,53 @@ export function SourceGraphDiagram({
 
   // Transform SourceGraph → force-graph data
   const graphData = useMemo(() => {
-    const nodes: FGNode[] = graph.nodes.map((n) => ({
-      id: n.name,
-      name: n.name,
-      nodeType: n.nodeType,
-      jurisdiction: n.jurisdiction,
-      tags: n.tags,
-      source: n.source,
-      content: n.content,
-      from: n.from,
-      to: n.to,
-      parentName: n.parentName,
-      attributes: n.attributes,
-    }));
+    // Build full @-separated path for each node, matching the format used by edges.
+    // SourceNode.parentName is the bare parent name, so we chain upward using
+    // a map of bare name → full path built in parent-first traversal order.
+    // Since nodes are pushed in traversal order (curation → swarm → location → …),
+    // each node's parent already has an entry in the map when we reach the node.
+    const nameToFullPath = new Map<string, string>();
 
-    const nodeNames = new Set(nodes.map((n) => n.id));
+    for (const n of graph.nodes) {
+      let fullPath: string;
+      if (!n.parentName) {
+        // curation — no parent
+        fullPath = n.name;
+      } else {
+        const parentFull = nameToFullPath.get(n.parentName);
+        fullPath = parentFull
+          ? `${parentFull}@${n.name}`
+          : `${n.parentName}@${n.name}`;
+      }
+      // Bare name → full path (last write wins for same-named nodes, which is
+      // acceptable here — same-named siblings use the same display label anyway)
+      nameToFullPath.set(n.name, fullPath);
+      // Also key by full path for exact-match lookups
+      nameToFullPath.set(fullPath, fullPath);
+    }
+
+    const nodes: FGNode[] = graph.nodes.map((n) => {
+      const fullPath = nameToFullPath.get(n.name) ?? n.name;
+      return {
+        id: fullPath,
+        name: n.name,
+        nodeType: n.nodeType,
+        jurisdiction: n.jurisdiction,
+        tags: n.tags,
+        source: n.source,
+        content: n.content,
+        from: n.from,
+        to: n.to,
+        parentName: n.parentName,
+        attributes: n.attributes,
+      };
+    });
+
+    const nodeFullPaths = new Set(nodes.map((n) => n.id));
 
     const links: FGLink[] = graph.edges
       .filter((e) => {
-        const ok = nodeNames.has(e.source) && nodeNames.has(e.target);
+        const ok = nodeFullPaths.has(e.source) && nodeFullPaths.has(e.target);
         if (!ok) {
           console.warn(
             `[SourceGraph] Dropping edge: source="${e.source}" target="${e.target}" — one or both not found in nodes.`,
