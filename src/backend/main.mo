@@ -2401,7 +2401,7 @@ actor {
           nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
-          let newId = generateId("swarm", node.name, caller);
+          let newId = fullPath;
           let newSwarm : Swarm = {
             id = newId;
             name = node.name;
@@ -2493,7 +2493,7 @@ actor {
           nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
-          let newId = generateId("location", node.name, caller);
+          let newId = fullPath;
           let newLocation : Location = {
             id = newId;
             title = node.name;
@@ -2582,7 +2582,7 @@ actor {
           nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
-          let newId = generateId("lawToken", node.name, caller);
+          let newId = fullPath;
           let newLawToken : LawToken = {
             id = newId;
             tokenLabel = node.name;
@@ -2676,7 +2676,7 @@ actor {
           nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
-          let newId = generateId("interpretationToken", node.name, caller);
+          let newId = fullPath;
           let newIt : InterpretationToken = {
             id = newId;
             title = node.name;
