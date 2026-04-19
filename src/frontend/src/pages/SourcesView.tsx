@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import FilterPanel from "../components/FilterPanel";
 import NodeDetailsModal from "../components/NodeDetailsModal";
 import PublishConfirmDialog from "../components/PublishConfirmDialog";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
@@ -8,6 +9,34 @@ import { usePublishPreview } from "../hooks/usePublishPreview";
 import useSourceGraphs from "../hooks/useSourceGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
+
+// ---------------------------------------------------------------------------
+// Filter state shape
+// ---------------------------------------------------------------------------
+
+const ALL_NODE_TYPES = new Set([
+  "curation",
+  "swarm",
+  "location",
+  "lawEntity",
+  "interpEntity",
+]);
+
+interface FilterState {
+  searchText: string;
+  visibleNodeTypes: Set<string>;
+  isCollapsed: boolean;
+}
+
+const defaultFilterState = (): FilterState => ({
+  searchText: "",
+  visibleNodeTypes: new Set(ALL_NODE_TYPES),
+  isCollapsed: false,
+});
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export default function SourcesView() {
   const {
@@ -40,6 +69,65 @@ export default function SourcesView() {
   const [commitSuccessId, setCommitSuccessId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ---------------------------------------------------------------------------
+  // Filter state — per-graph persistence via ref
+  // ---------------------------------------------------------------------------
+  const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
+  const [filterState, setFilterState] = useState<FilterState>(
+    defaultFilterState(),
+  );
+
+  // Keep a ref that always reflects the latest filter state so we can save it
+  // on graph change without adding filterState to the effect deps
+  const filterStateRef = useRef(filterState);
+  useEffect(() => {
+    filterStateRef.current = filterState;
+  }, [filterState]);
+
+  // Persist/restore filter state when active graph changes
+  const prevGraphIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prevId = prevGraphIdRef.current;
+    const nextId = activeGraphId ?? null;
+
+    // Save current filter state for the graph we're leaving
+    if (prevId !== null) {
+      filterStatesRef.current.set(prevId, filterStateRef.current);
+    }
+
+    // Load saved state for the new graph (or defaults)
+    if (nextId !== null) {
+      const saved = filterStatesRef.current.get(nextId);
+      setFilterState(saved ?? defaultFilterState());
+    } else {
+      setFilterState(defaultFilterState());
+    }
+
+    prevGraphIdRef.current = nextId;
+  }, [activeGraphId]);
+
+  // ---------------------------------------------------------------------------
+  // Fit-to-visible — expose via callback that SourceGraphDiagram populates
+  // ---------------------------------------------------------------------------
+  const fitFnRef = useRef<(() => void) | null>(null);
+
+  const handleFitToVisible = () => {
+    fitFnRef.current?.();
+  };
+
+  const handleFitRegister = (fn: () => void) => {
+    fitFnRef.current = fn;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Memoize activeGraph to stabilize object reference
+  // ---------------------------------------------------------------------------
+  const activeGraph = useMemo(
+    () => graphs.find((g) => g.id === activeGraphId) ?? null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [graphs, activeGraphId],
+  );
+
   // Auto-dismiss import error after 5 seconds
   useEffect(() => {
     if (!error) return;
@@ -53,8 +141,6 @@ export default function SourcesView() {
     const t = setTimeout(() => setCommitSuccessId(null), 4000);
     return () => clearTimeout(t);
   }, [commitSuccessId]);
-
-  const activeGraph = graphs.find((g) => g.id === activeGraphId) ?? null;
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -116,6 +202,10 @@ export default function SourcesView() {
   };
 
   const handleBackToList = () => {
+    // Save filter state before leaving graph view
+    if (activeGraphId) {
+      filterStatesRef.current.set(activeGraphId, filterStateRef.current);
+    }
     setView("list");
   };
 
@@ -177,7 +267,24 @@ export default function SourcesView() {
     return formatDate(latest.publishedAt);
   };
 
+  // Compute visible node count for FilterPanel
+  const visibleNodeCount = useMemo(() => {
+    if (!activeGraph) return 0;
+    const search = filterState.searchText.trim().toLowerCase();
+    const types = filterState.visibleNodeTypes;
+    const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
+    const noSearch = search.length === 0;
+    if (allTypesVisible && noSearch) return activeGraph.nodes.length;
+    return activeGraph.nodes.filter((n) => {
+      const typeOk = allTypesVisible || types.has(n.nodeType);
+      const searchOk = noSearch || n.name.toLowerCase().includes(search);
+      return typeOk && searchOk;
+    }).length;
+  }, [activeGraph, filterState.searchText, filterState.visibleNodeTypes]);
+
+  // ---------------------------------------------------------------------------
   // Graph view
+  // ---------------------------------------------------------------------------
   if (view === "graph" && activeGraph) {
     return (
       <div className="flex flex-col h-full font-mono">
@@ -198,12 +305,38 @@ export default function SourcesView() {
           </span>
         </div>
 
-        {/* Graph canvas */}
-        <div className="flex-1 min-h-0 h-full">
-          <SourceGraphDiagram
-            graph={activeGraph}
-            graphId={activeGraph.id}
-            onNodeClick={handleNodeClick}
+        {/* Graph canvas + filter panel */}
+        <div className="flex flex-1 min-h-0 h-full">
+          <div className="flex-1 min-w-0 min-h-0">
+            <SourceGraphDiagram
+              graph={activeGraph}
+              graphId={activeGraph.id}
+              onNodeClick={handleNodeClick}
+              searchText={filterState.searchText}
+              visibleNodeTypes={filterState.visibleNodeTypes}
+              onFitToVisible={handleFitRegister}
+            />
+          </div>
+          <FilterPanel
+            searchText={filterState.searchText}
+            onSearchChange={(text) =>
+              setFilterState((prev) => ({ ...prev, searchText: text }))
+            }
+            visibleNodeTypes={filterState.visibleNodeTypes}
+            onNodeTypesChange={(types) =>
+              setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
+            }
+            totalNodes={activeGraph.nodes.length}
+            visibleNodes={visibleNodeCount}
+            onReset={() => setFilterState(defaultFilterState())}
+            onFitToVisible={handleFitToVisible}
+            isCollapsed={filterState.isCollapsed}
+            onToggleCollapsed={() =>
+              setFilterState((prev) => ({
+                ...prev,
+                isCollapsed: !prev.isCollapsed,
+              }))
+            }
           />
         </div>
 
@@ -220,7 +353,9 @@ export default function SourcesView() {
     );
   }
 
+  // ---------------------------------------------------------------------------
   // List view
+  // ---------------------------------------------------------------------------
   return (
     <div className="h-full overflow-auto p-6 font-mono">
       {/* Hidden file input */}

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend.d";
+import FilterPanel from "../components/FilterPanel";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import type {
@@ -12,6 +13,30 @@ import {
 } from "../hooks/usePublicGraphs";
 import type { SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
+
+// ---------------------------------------------------------------------------
+// Filter state
+// ---------------------------------------------------------------------------
+
+const ALL_NODE_TYPES = new Set([
+  "curation",
+  "swarm",
+  "location",
+  "lawEntity",
+  "interpEntity",
+]);
+
+interface FilterState {
+  searchText: string;
+  visibleNodeTypes: Set<string>;
+  isCollapsed: boolean;
+}
+
+const defaultFilterState = (): FilterState => ({
+  searchText: "",
+  visibleNodeTypes: new Set(ALL_NODE_TYPES),
+  isCollapsed: false,
+});
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -168,17 +193,80 @@ interface GraphDetailProps {
   selectedId: string;
   graphs: PublishedSourceGraphMeta[];
   onBack: () => void;
+  filterStatesRef: React.MutableRefObject<Map<string, FilterState>>;
 }
 
-function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
+function GraphDetail({
+  selectedId,
+  graphs,
+  onBack,
+  filterStatesRef,
+}: GraphDetailProps) {
   const { data: graphData, isLoading } = usePublishedSourceGraph(selectedId);
   const meta = graphs.find((g) => g.id === selectedId);
   const graphName = meta?.name ?? "Graph";
   const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
 
-  const convertedGraph = graphData
-    ? graphDataToSourceGraph(graphData as GraphData, graphName, selectedId)
-    : null;
+  // Memoize converted graph to stabilize object reference
+  const convertedGraph = useMemo(
+    () =>
+      graphData
+        ? graphDataToSourceGraph(graphData as GraphData, graphName, selectedId)
+        : null,
+    // graphName changes when meta loads but selectedId is the real cache key
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [graphData, graphName, selectedId],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Filter state — per-graph persistence
+  // ---------------------------------------------------------------------------
+  const [filterState, setFilterState] = useState<FilterState>(() => {
+    return filterStatesRef.current.get(selectedId) ?? defaultFilterState();
+  });
+
+  // Keep ref always current for saving on unmount / id change
+  const filterStateRef = useRef(filterState);
+  useEffect(() => {
+    filterStateRef.current = filterState;
+  }, [filterState]);
+
+  // Save state on unmount
+  useEffect(() => {
+    const ref = filterStatesRef;
+    const id = selectedId;
+    return () => {
+      ref.current.set(id, filterStateRef.current);
+    };
+  }, [selectedId, filterStatesRef]);
+
+  // ---------------------------------------------------------------------------
+  // Fit-to-visible
+  // ---------------------------------------------------------------------------
+  const fitFnRef = useRef<(() => void) | null>(null);
+  const handleFitToVisible = () => {
+    fitFnRef.current?.();
+  };
+  const handleFitRegister = (fn: () => void) => {
+    fitFnRef.current = fn;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Visible node count for FilterPanel
+  // ---------------------------------------------------------------------------
+  const visibleNodeCount = useMemo(() => {
+    if (!convertedGraph) return 0;
+    const search = filterState.searchText.trim().toLowerCase();
+    const types = filterState.visibleNodeTypes;
+    const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
+    const noSearch = search.length === 0;
+    if (allTypesVisible && noSearch) return convertedGraph.nodes.length;
+    return convertedGraph.nodes.filter((n) => {
+      const typeOk = allTypesVisible || types.has(n.nodeType);
+      const searchOk = noSearch || n.name.toLowerCase().includes(search);
+      return typeOk && searchOk;
+    }).length;
+  }, [convertedGraph, filterState.searchText, filterState.visibleNodeTypes]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -199,11 +287,37 @@ function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
       {isLoading && <Spinner />}
 
       {!isLoading && convertedGraph && (
-        <div className="flex-1 min-h-0">
-          <SourceGraphDiagram
-            graph={convertedGraph}
-            graphId={selectedId}
-            onNodeClick={setSelectedNode}
+        <div className="flex flex-1 min-h-0">
+          <div className="flex-1 min-w-0 min-h-0">
+            <SourceGraphDiagram
+              graph={convertedGraph}
+              graphId={selectedId}
+              onNodeClick={setSelectedNode}
+              searchText={filterState.searchText}
+              visibleNodeTypes={filterState.visibleNodeTypes}
+              onFitToVisible={handleFitRegister}
+            />
+          </div>
+          <FilterPanel
+            searchText={filterState.searchText}
+            onSearchChange={(text) =>
+              setFilterState((prev) => ({ ...prev, searchText: text }))
+            }
+            visibleNodeTypes={filterState.visibleNodeTypes}
+            onNodeTypesChange={(types) =>
+              setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
+            }
+            totalNodes={convertedGraph.nodes.length}
+            visibleNodes={visibleNodeCount}
+            onReset={() => setFilterState(defaultFilterState())}
+            onFitToVisible={handleFitToVisible}
+            isCollapsed={filterState.isCollapsed}
+            onToggleCollapsed={() =>
+              setFilterState((prev) => ({
+                ...prev,
+                isCollapsed: !prev.isCollapsed,
+              }))
+            }
           />
         </div>
       )}
@@ -241,6 +355,9 @@ export default function PublicGraphView({
   const [expandedCreators, setExpandedCreators] = useState<Set<string>>(
     new Set(),
   );
+
+  // Per-graph filter state persistence — survives navigation between graphs
+  const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
 
   const toggleCreator = (name: string) => {
     setExpandedCreators((prev) => {
@@ -287,6 +404,7 @@ export default function PublicGraphView({
         selectedId={selectedGraphId}
         graphs={graphs}
         onBack={() => setSelectedGraphId(null)}
+        filterStatesRef={filterStatesRef}
       />
     );
   }
