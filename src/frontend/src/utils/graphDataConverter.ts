@@ -51,6 +51,58 @@ function isBidirectional(directionality: GraphEdge["directionality"]): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Hierarchy edge generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates hierarchy edges from parent-child node relationships.
+ * Produces unidirectional edges flowing from parent to child for all four
+ * hierarchy levels: curation→swarm, swarm→location, location→lawToken,
+ * lawToken→interpToken.
+ */
+function generateHierarchyEdges(data: GraphData): Edge[] {
+  const hierarchyEdges: Edge[] = [];
+
+  for (const swarm of data.swarms) {
+    hierarchyEdges.push({
+      source: swarm.parentCurationId,
+      target: swarm.id,
+      label: undefined,
+      bidirectional: false,
+    });
+  }
+
+  for (const location of data.locations) {
+    hierarchyEdges.push({
+      source: location.parentSwarmId,
+      target: location.id,
+      label: undefined,
+      bidirectional: false,
+    });
+  }
+
+  for (const lawToken of data.lawTokens) {
+    hierarchyEdges.push({
+      source: lawToken.parentLocationId,
+      target: lawToken.id,
+      label: undefined,
+      bidirectional: false,
+    });
+  }
+
+  for (const interpToken of data.interpretationTokens) {
+    hierarchyEdges.push({
+      source: interpToken.parentLawTokenId,
+      target: interpToken.id,
+      label: undefined,
+      bidirectional: false,
+    });
+  }
+
+  return hierarchyEdges;
+}
+
+// ---------------------------------------------------------------------------
 // Main converter
 // ---------------------------------------------------------------------------
 
@@ -127,17 +179,25 @@ export function graphDataToSourceGraph(
   }));
 
   // ------------------------------------------------------------------
+  // Generate hierarchy edges from parent-child relationships
+  // ------------------------------------------------------------------
+  const hierarchyEdges = generateHierarchyEdges(data);
+
+  // ------------------------------------------------------------------
   // Convert edges — source/target are backend NodeIds (UUIDs); map to names
   // for SourceGraphDiagram which matches edges against node.id
   // ------------------------------------------------------------------
-  const edges: Edge[] = data.edges.map((e) => ({
-    // Use the UUID directly — SourceGraphDiagram matches node.id, and nodes
-    // above are created with id = backend UUID.
-    source: e.source,
-    target: e.target,
-    label: e.edgeLabel || undefined,
-    bidirectional: isBidirectional(e.directionality),
-  }));
+  const edges: Edge[] = [
+    ...hierarchyEdges,
+    ...data.edges.map((e) => ({
+      // Use the UUID directly — SourceGraphDiagram matches node.id, and nodes
+      // above are created with id = backend UUID.
+      source: e.source,
+      target: e.target,
+      label: e.edgeLabel || undefined,
+      bidirectional: isBidirectional(e.directionality),
+    })),
+  ];
 
   // ------------------------------------------------------------------
   // Assemble result
