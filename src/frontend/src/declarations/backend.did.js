@@ -159,6 +159,13 @@ export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'socialUrl' : IDL.Opt(IDL.Text),
 });
+export const ChatChannelSummary = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'isSubchannel' : IDL.Bool,
+  'unreadCount' : IDL.Nat,
+  'parentCuration' : IDL.Opt(IDL.Text),
+});
 export const CollectibleEdition = IDL.Record({
   'tokenId' : NodeId,
   'editionNumber' : IDL.Nat,
@@ -168,6 +175,12 @@ export const CollectibleEdition = IDL.Record({
     'lawToken' : IDL.Null,
     'interpretationToken' : IDL.Null,
   }),
+});
+export const ChatMessage = IDL.Record({
+  'text' : IDL.Text,
+  'sender' : IDL.Principal,
+  'timestamp' : IDL.Int,
+  'senderName' : IDL.Text,
 });
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const BuzzScore = IDL.Int;
@@ -291,10 +304,16 @@ export const idlService = IDL.Service({
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
   'getCollectibleEditions' : IDL.Func(
       [NodeId],
       [IDL.Vec(CollectibleEdition)],
       ['query'],
+    ),
+  'getMessages' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
+      [],
     ),
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
@@ -339,6 +358,11 @@ export const idlService = IDL.Service({
   'requestApproval' : IDL.Func([], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'sendMessage' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setMintSettings' : IDL.Func([MintSettings], [], []),
   'upvoteNode' : IDL.Func([NodeId], [], []),
@@ -495,6 +519,13 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'socialUrl' : IDL.Opt(IDL.Text),
   });
+  const ChatChannelSummary = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'isSubchannel' : IDL.Bool,
+    'unreadCount' : IDL.Nat,
+    'parentCuration' : IDL.Opt(IDL.Text),
+  });
   const CollectibleEdition = IDL.Record({
     'tokenId' : NodeId,
     'editionNumber' : IDL.Nat,
@@ -504,6 +535,12 @@ export const idlFactory = ({ IDL }) => {
       'lawToken' : IDL.Null,
       'interpretationToken' : IDL.Null,
     }),
+  });
+  const ChatMessage = IDL.Record({
+    'text' : IDL.Text,
+    'sender' : IDL.Principal,
+    'timestamp' : IDL.Int,
+    'senderName' : IDL.Text,
   });
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const BuzzScore = IDL.Int;
@@ -624,10 +661,16 @@ export const idlFactory = ({ IDL }) => {
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
     'getCollectibleEditions' : IDL.Func(
         [NodeId],
         [IDL.Vec(CollectibleEdition)],
         ['query'],
+      ),
+    'getMessages' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
+        [],
       ),
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
@@ -672,6 +715,11 @@ export const idlFactory = ({ IDL }) => {
     'requestApproval' : IDL.Func([], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'sendMessage' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setMintSettings' : IDL.Func([MintSettings], [], []),
     'upvoteNode' : IDL.Func([NodeId], [], []),

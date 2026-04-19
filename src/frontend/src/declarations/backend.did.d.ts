@@ -20,6 +20,19 @@ export interface AttributeChange {
   'newWeightedValues' : Array<WeightedValue>,
 }
 export type BuzzScore = bigint;
+export interface ChatChannelSummary {
+  'id' : string,
+  'name' : string,
+  'isSubchannel' : boolean,
+  'unreadCount' : bigint,
+  'parentCuration' : [] | [string],
+}
+export interface ChatMessage {
+  'text' : string,
+  'sender' : Principal,
+  'timestamp' : bigint,
+  'senderName' : string,
+}
 export interface CollectibleEdition {
   'tokenId' : NodeId,
   'editionNumber' : bigint,
@@ -253,7 +266,13 @@ export interface _SERVICE {
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getChannels' : ActorMethod<[], Array<ChatChannelSummary>>,
   'getCollectibleEditions' : ActorMethod<[NodeId], Array<CollectibleEdition>>,
+  'getMessages' : ActorMethod<
+    [string],
+    { 'ok' : Array<ChatMessage> } |
+      { 'err' : string }
+  >,
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getOwnedData' : ActorMethod<[], OwnedGraphData>,
@@ -283,6 +302,11 @@ export interface _SERVICE {
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendMessage' : ActorMethod<
+    [string, string],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setMintSettings' : ActorMethod<[MintSettings], undefined>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,

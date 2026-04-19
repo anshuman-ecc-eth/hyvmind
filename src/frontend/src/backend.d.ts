@@ -40,6 +40,13 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
+export interface ChatChannelSummary {
+    id: string;
+    name: string;
+    isSubchannel: boolean;
+    unreadCount: bigint;
+    parentCuration?: string;
+}
 export interface PublishedSourceGraphMeta {
     id: string;
     creator: Principal;
@@ -138,6 +145,12 @@ export interface CollectibleEdition {
     owner: Principal;
     mintedAt: Time;
     tokenType: Variant_lawToken_interpretationToken;
+}
+export interface ChatMessage {
+    text: string;
+    sender: Principal;
+    timestamp: bigint;
+    senderName: string;
 }
 export interface Curation {
     id: NodeId;
@@ -291,7 +304,15 @@ export interface backendInterface {
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getChannels(): Promise<Array<ChatChannelSummary>>;
     getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
+    getMessages(channelId: string): Promise<{
+        __kind__: "ok";
+        ok: Array<ChatMessage>;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     getMintSettings(): Promise<MintSettings>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getOwnedData(): Promise<OwnedGraphData>;
@@ -315,6 +336,13 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    sendMessage(channelId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;

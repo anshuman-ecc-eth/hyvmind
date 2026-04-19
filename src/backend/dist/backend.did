@@ -268,6 +268,21 @@ type CollectibleEdition =
                 lawToken;
               };
  };
+type ChatMessage = 
+ record {
+   sender: principal;
+   senderName: text;
+   "text": text;
+   timestamp: int;
+ };
+type ChatChannelSummary = 
+ record {
+   id: text;
+   isSubchannel: bool;
+   name: text;
+   parentCuration: opt text;
+   unreadCount: nat;
+ };
 type BuzzScore = int;
 type AttributeChange = 
  record {
@@ -306,7 +321,13 @@ service : {
   getArchivedNodeIds: () -> (vec NodeId) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
+  getChannels: () -> (vec ChatChannelSummary) query;
   getCollectibleEditions: (tokenId: NodeId) -> (vec CollectibleEdition) query;
+  getMessages: (channelId: text) ->
+   (variant {
+      err: text;
+      ok: vec ChatMessage;
+    });
   getMintSettings: () -> (MintSettings) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
   getOwnedData: () -> (OwnedGraphData) query;
@@ -335,6 +356,10 @@ service : {
   requestApproval: () -> ();
   resetAllData: () -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
+  sendMessage: (channelId: text, "text": text) -> (variant {
+                                                     err: text;
+                                                     ok;
+                                                   });
   setApproval: (user: principal, status: ApprovalStatus) -> ();
   setMintSettings: (settings: MintSettings) -> ();
   upvoteNode: (nodeId: NodeId) -> ();

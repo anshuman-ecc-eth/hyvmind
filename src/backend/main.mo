@@ -324,6 +324,33 @@ actor {
     };
   };
 
+  // ── Chat Types ──────────────────────────────────────────────────────────────
+
+  type ChatMessage = {
+    sender : Principal;
+    senderName : Text;
+    timestamp : Int;
+    text : Text;
+  };
+
+  type ChatChannel = {
+    id : Text;
+    name : Text;
+    isSubchannel : Bool;
+    parentCuration : ?Text;
+    members : List.List<Principal>;
+    messages : List.List<ChatMessage>;
+    unreadCounts : Map.Map<Principal, Nat>;
+  };
+
+  type ChatChannelSummary = {
+    id : Text;
+    name : Text;
+    isSubchannel : Bool;
+    parentCuration : ?Text;
+    unreadCount : Nat;
+  };
+
   // Backend State
   let voteData = Map.empty<Text, VoteData>();
   let userVoteTracking = Map.empty<Principal, UserVoteTracking>();
@@ -358,6 +385,9 @@ actor {
 
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
+
+  // Chat channels — keyed by curation name (top-level) or "curationName@swarmName" (sub-channel)
+  var chatChannels = Map.empty<Text, ChatChannel>();
 
   type SwarmType = {
     #regular;
@@ -2880,6 +2910,29 @@ actor {
       curationToPublishedGraphId.add(id, thePublishedId);
     };
 
+    // ── Auto-join chat channels based on published curations and swarms ───────
+    for ((_, curation) in stagingCurations.entries()) {
+      // Top-level channel keyed by curation name
+      ensureChatMember(curation.name, curation.name, false, null, caller);
+    };
+    for ((_, swarm) in stagingSwarms.entries()) {
+      // Find parent curation name for this swarm
+      let parentCurationName = switch (curationMap.get(swarm.parentCurationId)) {
+        case (?c) { c.name };
+        case (null) {
+          // May be in staging curations (first publish)
+          switch (stagingCurations.get(swarm.parentCurationId)) {
+            case (?c) { c.name };
+            case (null) { "" };
+          };
+        };
+      };
+      if (parentCurationName != "") {
+        let subChannelId = parentCurationName # "@" # swarm.name;
+        ensureChatMember(subChannelId, swarm.name, true, ?parentCurationName, caller);
+      };
+    };
+
     // ── All staging succeeded — commit to real maps ──────────────────────────
     for ((id, curation) in stagingCurations.entries()) {
       curationMap.add(id, curation);
@@ -3510,6 +3563,112 @@ actor {
     };
   };
 
+  // ─── Chat: ensure channel exists and add member ────────────────────────────
+
+  func ensureChatMember(channelId : Text, channelName : Text, isSubchannel : Bool, parentCuration : ?Text, member : Principal) {
+    switch (chatChannels.get(channelId)) {
+      case (null) {
+        let newChannel : ChatChannel = {
+          id = channelId;
+          name = channelName;
+          isSubchannel;
+          parentCuration;
+          members = List.singleton<Principal>(member);
+          messages = List.empty<ChatMessage>();
+          unreadCounts = Map.empty<Principal, Nat>();
+        };
+        chatChannels.add(channelId, newChannel);
+      };
+      case (?channel) {
+        if (not channel.members.contains(member)) {
+          channel.members.add(member);
+        };
+      };
+    };
+  };
+
+  // ─── getChannels: Returns channels where caller is a member ────────────────
+
+  public shared query ({ caller }) func getChannels() : async [ChatChannelSummary] {
+    if (caller.isAnonymous()) { return [] };
+    let result = List.empty<ChatChannelSummary>();
+    for ((_, channel) in chatChannels.entries()) {
+      if (channel.members.contains(caller)) {
+        let unreadCount = switch (channel.unreadCounts.get(caller)) {
+          case (?n) { n };
+          case (null) { 0 };
+        };
+        result.add({
+          id = channel.id;
+          name = channel.name;
+          isSubchannel = channel.isSubchannel;
+          parentCuration = channel.parentCuration;
+          unreadCount;
+        });
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── sendMessage: Members-only message send ────────────────────────────────
+
+  public shared ({ caller }) func sendMessage(channelId : Text, text : Text) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (chatChannels.get(channelId)) {
+      case (null) { return #err("Channel not found") };
+      case (?channel) {
+        if (not channel.members.contains(caller)) {
+          return #err("Not a member of this channel");
+        };
+        let senderName = switch (userProfiles.get(caller)) {
+          case (?profile) { profile.name };
+          case (null) { caller.toText() };
+        };
+        let msg : ChatMessage = {
+          sender = caller;
+          senderName;
+          timestamp = Time.now();
+          text;
+        };
+        channel.messages.add(msg);
+        // Cap at 100 messages — drop oldest if over limit
+        if (channel.messages.size() > 100) {
+          let sz = channel.messages.size();
+          let kept = channel.messages.sliceToArray((sz - 100).toInt(), sz.toInt());
+          channel.messages.clear();
+          channel.messages.addAll(kept.values());
+        };
+        // Increment unread for all members except sender
+        for (member in channel.members.values()) {
+          if (not Principal.equal(member, caller)) {
+            let current = switch (channel.unreadCounts.get(member)) {
+              case (?n) { n };
+              case (null) { 0 };
+            };
+            channel.unreadCounts.add(member, current + 1);
+          };
+        };
+        #ok
+      };
+    };
+  };
+
+  // ─── getMessages: Members-only fetch; resets caller unread count ────────────
+
+  public shared ({ caller }) func getMessages(channelId : Text) : async { #ok : [ChatMessage]; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (chatChannels.get(channelId)) {
+      case (null) { return #err("Channel not found") };
+      case (?channel) {
+        if (not channel.members.contains(caller)) {
+          return #err("Not a member of this channel");
+        };
+        channel.unreadCounts.add(caller, 0);
+        #ok(channel.messages.toArray())
+      };
+    };
+  };
+
   public shared ({ caller }) func resetAllData() : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
       Runtime.trap("Unauthorized: Only admins can reset data");
@@ -3527,5 +3686,6 @@ actor {
     sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();
+    chatChannels := Map.empty<Text, ChatChannel>();
   };
 };

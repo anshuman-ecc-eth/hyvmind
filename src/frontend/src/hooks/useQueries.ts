@@ -2,6 +2,8 @@ import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   BuzzScore,
+  ChatChannelSummary,
+  ChatMessage,
   CollectibleEdition,
   Curation,
   GraphData,
@@ -709,6 +711,62 @@ export function usePublishSourceGraph() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["graphData"] });
       queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
+    },
+  });
+}
+
+// ─── Chat Hooks ───────────────────────────────────────────────────────────────
+
+export function useGetChatChannels() {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<ChatChannelSummary[]>({
+    queryKey: ["chatChannels"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getChannels();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+    refetchInterval: 3000,
+  });
+}
+
+export function useGetChatMessages(channelId: string | null) {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<ChatMessage[]>({
+    queryKey: ["chatMessages", channelId],
+    queryFn: async () => {
+      if (!actor || !channelId) return [];
+      const result = await actor.getMessages(channelId);
+      if ("ok" in result) return result.ok;
+      return [];
+    },
+    enabled: !!actor && !isFetching && !!identity && !!channelId,
+    refetchInterval: 3000,
+  });
+}
+
+export function useSendChatMessage() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      channelId,
+      text,
+    }: {
+      channelId: string;
+      text: string;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.sendMessage(channelId, text);
+    },
+    onSuccess: (_data, { channelId }) => {
+      queryClient.invalidateQueries({ queryKey: ["chatChannels"] });
+      queryClient.invalidateQueries({ queryKey: ["chatMessages", channelId] });
     },
   });
 }

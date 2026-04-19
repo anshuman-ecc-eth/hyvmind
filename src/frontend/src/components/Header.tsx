@@ -14,8 +14,10 @@ import { clearTreeCache } from "../hooks/useQueries";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
-  currentView: "public-graphs" | "terminal" | "sources";
-  onViewChange: (view: "public-graphs" | "terminal" | "sources") => void;
+  currentView: "public-graphs" | "terminal" | "sources" | "chat";
+  onViewChange: (
+    view: "public-graphs" | "terminal" | "sources" | "chat",
+  ) => void;
   isAuthenticated: boolean;
   isLandingPage: boolean;
 }
@@ -50,10 +52,11 @@ export default function Header({
   };
 
   const navItems: {
-    key: "public-graphs" | "terminal" | "sources";
+    key: "public-graphs" | "terminal" | "sources" | "chat";
     label: string;
   }[] = [
     { key: "sources", label: "sources" },
+    { key: "chat", label: "chat" },
     { key: "public-graphs", label: "public" },
   ];
 

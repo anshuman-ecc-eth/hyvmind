@@ -1,6 +1,18 @@
 // Version: 1.0.0
 type ApprovalStatus__575141016 = {#approved; #pending; #rejected};
 type BuzzScore__18805602 = Int;
+type ChatChannel__15553035 =
+  {
+    id : Text;
+    isSubchannel : Bool;
+    members : List__415060402<Principal>;
+    messages : List__415060402<ChatMessage__1037536196>;
+    name : Text;
+    parentCuration : ?Text;
+    unreadCounts : Map__605269027<Principal, Nat>
+  };
+type ChatMessage__1037536196 =
+  {sender : Principal; senderName : Text; text : Text; timestamp : Int};
 type CollectibleEdition__303213557 =
   {
     editionNumber : Nat;
@@ -169,6 +181,11 @@ actor {
   stable var buzzScores :
     {
       var root : Node__46230540<Principal, BuzzScore__18805602>;
+      var size : Nat__490723111
+    };
+  stable var chatChannels :
+    {
+      var root : Node__46230540<Text, ChatChannel__15553035>;
       var size : Nat__490723111
     };
   stable collectibleEditionsMap :

@@ -17,10 +17,11 @@ import {
 } from "./hooks/useQueries";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
+import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
-type ViewType = "public-graphs" | "terminal" | "sources";
+type ViewType = "public-graphs" | "terminal" | "sources" | "chat";
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -216,6 +217,11 @@ export default function App() {
               {currentView === "public-graphs" && (
                 <div className="flex-1 min-h-0">
                   <PublicGraphView />
+                </div>
+              )}
+              {currentView === "chat" && (
+                <div className="flex-1 min-h-0">
+                  <SwarmsView />
                 </div>
               )}
             </>
