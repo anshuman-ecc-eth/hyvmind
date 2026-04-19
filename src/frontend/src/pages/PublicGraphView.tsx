@@ -160,7 +160,7 @@ function CreatorAccordion({
         className="w-full flex items-center justify-between px-4 py-3 font-mono text-sm text-foreground hover:bg-secondary/50 transition-colors"
         data-ocid="creator_accordion.toggle"
       >
-        <span className="font-semibold">{curationName}</span>
+        <span className="text-xs font-normal">{curationName}</span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>
             {graphs.length} graph{graphs.length !== 1 ? "s" : ""}

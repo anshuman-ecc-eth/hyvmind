@@ -20,8 +20,8 @@ function NodeTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
     curation: "text-blue-400 border-blue-400/40",
     swarm: "text-orange-400 border-orange-400/40",
-    location: "text-green-400 border-green-400/40",
-    lawEntity: "text-yellow-400 border-yellow-400/40",
+    location: "text-emerald-600 border-emerald-600/30",
+    lawEntity: "text-amber-600 border-amber-600/30",
     interpEntity: "text-purple-400 border-purple-400/40",
   };
   const cls = colors[type] ?? "text-muted-foreground border-border";
@@ -42,13 +42,13 @@ function AttributeChangesView({ changes }: { changes: AttributeChange[] }) {
           </span>
           {" → "}
           {c.newWeightedValues && c.newWeightedValues.length > 0 ? (
-            <span className="text-green-400">
+            <span className="text-emerald-600">
               {c.newWeightedValues
                 .map((v) => `${v.value}(×${v.weight})`)
                 .join(", ")}
             </span>
           ) : (
-            <span className="text-green-400">{c.newValues.join(", ")}</span>
+            <span className="text-emerald-600">{c.newValues.join(", ")}</span>
           )}
         </div>
       ))}
@@ -167,7 +167,7 @@ function EdgeUpdateRow({ op }: { op: EdgeOperation }) {
         {op.targetName}
       </div>
       {op.newLabels && op.newLabels.length > 0 && (
-        <div className="text-[10px] text-green-400 mt-0.5">
+        <div className="text-[10px] text-emerald-600 mt-0.5">
           + {op.newLabels.join(", ")}
         </div>
       )}
@@ -235,7 +235,7 @@ export default function PublishConfirmDialog({
           {/* Conflict warning */}
           {hasCurationConflict && (
             <div
-              className="px-3 py-2 border border-dashed border-yellow-500/50 text-yellow-400 text-xs"
+              className="px-3 py-2 border border-dashed border-amber-600/40 text-amber-600 text-xs"
               data-ocid="publish_dialog.curation_conflict_warning"
             >
               ⚠ this curation name already exists. your changes will be added to
@@ -250,19 +250,23 @@ export default function PublishConfirmDialog({
           >
             <div className="flex gap-4 flex-wrap">
               <span>
-                <span className="text-green-400">{summary.nodesToCreate}</span>{" "}
+                <span className="text-emerald-600">
+                  {summary.nodesToCreate}
+                </span>{" "}
                 new nodes
               </span>
               <span>
-                <span className="text-yellow-400">{summary.nodesToUpdate}</span>{" "}
+                <span className="text-amber-600">{summary.nodesToUpdate}</span>{" "}
                 updated nodes
               </span>
               <span>
-                <span className="text-green-400">{summary.edgesToCreate}</span>{" "}
+                <span className="text-emerald-600">
+                  {summary.edgesToCreate}
+                </span>{" "}
                 new edges
               </span>
               <span>
-                <span className="text-yellow-400">{summary.edgesToUpdate}</span>{" "}
+                <span className="text-amber-600">{summary.edgesToUpdate}</span>{" "}
                 updated edges
               </span>
             </div>

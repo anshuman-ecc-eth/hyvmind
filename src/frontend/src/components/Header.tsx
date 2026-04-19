@@ -164,8 +164,8 @@ export default function Header({
                         data-ocid={`header.${item.key}.link`}
                       >
                         {currentView === item.key
-                          ? `> [${item.label}]`
-                          : `[${item.label}]`}
+                          ? `> ${item.label}`
+                          : item.label}
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuItem
@@ -184,9 +184,7 @@ export default function Header({
                       }`}
                       data-ocid="header.terminal.link"
                     >
-                      {currentView === "terminal"
-                        ? "> [terminal]"
-                        : "[terminal]"}
+                      {currentView === "terminal" ? "> terminal" : "terminal"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
