@@ -36,9 +36,18 @@ export default function useSourceGraphs() {
     loadFromStorage(),
   );
 
-  // Sync state from storage on focus (multi-tab support)
+  // Sync state from storage on focus (multi-tab support).
+  // Only update if the serialized data has actually changed to avoid
+  // creating new object references (which would remount SourceGraphDiagram).
   useEffect(() => {
-    const onFocus = () => setStore(loadFromStorage());
+    const onFocus = () => {
+      const fresh = loadFromStorage();
+      setStore((prev) => {
+        const prevJson = JSON.stringify(prev);
+        const freshJson = JSON.stringify(fresh);
+        return prevJson === freshJson ? prev : fresh;
+      });
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);

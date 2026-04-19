@@ -376,7 +376,7 @@ export default function SourcesView() {
             source graphs
           </h2>
           <p className="text-xs text-muted-foreground">
-            import zip files and publish to create backend graph data
+            import a structured zip folder with markdown interpretations
           </p>
         </div>
         <button

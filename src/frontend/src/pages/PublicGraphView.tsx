@@ -106,9 +106,6 @@ function GraphCard({ graph, onView }: GraphCardProps) {
       data-ocid="public_graph.card"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-sm text-foreground font-semibold leading-tight">
-          {graph.name}
-        </span>
         <span className="font-mono text-xs text-muted-foreground shrink-0">
           {date}
         </span>
@@ -141,7 +138,7 @@ function GraphCard({ graph, onView }: GraphCardProps) {
 }
 
 interface CreatorAccordionProps {
-  creatorName: string;
+  curationName: string;
   graphs: PublishedSourceGraphMeta[];
   expanded: boolean;
   onToggle: () => void;
@@ -149,7 +146,7 @@ interface CreatorAccordionProps {
 }
 
 function CreatorAccordion({
-  creatorName,
+  curationName,
   graphs,
   expanded,
   onToggle,
@@ -163,7 +160,7 @@ function CreatorAccordion({
         className="w-full flex items-center justify-between px-4 py-3 font-mono text-sm text-foreground hover:bg-secondary/50 transition-colors"
         data-ocid="creator_accordion.toggle"
       >
-        <span className="font-semibold">{creatorName}</span>
+        <span className="font-semibold">{curationName}</span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>
             {graphs.length} graph{graphs.length !== 1 ? "s" : ""}
@@ -176,6 +173,9 @@ function CreatorAccordion({
         <div className="border-t border-border divide-y divide-border">
           {graphs.map((g) => (
             <div key={g.id} className="px-4 py-3">
+              <div className="mb-1 font-mono text-xs text-muted-foreground">
+                {g.creatorName}
+              </div>
               <GraphCard graph={g} onView={onView} />
             </div>
           ))}
@@ -410,26 +410,26 @@ export default function PublicGraphView({
   }
 
   // ------------------------------------------------------------------
-  // List view — grouped by creator
+  // List view — grouped by curation name
   // ------------------------------------------------------------------
 
-  // Group graphs by creatorName
+  // Group graphs by curation name (graph.name)
   const byCreator = new Map<string, PublishedSourceGraphMeta[]>();
   for (const g of graphs) {
-    const existing = byCreator.get(g.creatorName) ?? [];
+    const existing = byCreator.get(g.name) ?? [];
     existing.push(g);
-    byCreator.set(g.creatorName, existing);
+    byCreator.set(g.name, existing);
   }
 
-  // Sort creator names alphabetically
+  // Sort curation names alphabetically
   const sortedCreators = [...byCreator.keys()].sort((a, b) =>
     a.localeCompare(b),
   );
 
-  // Sort each creator's graphs by publishedAt descending (bigint)
-  for (const [creator, gs] of byCreator) {
+  // Sort each curation's graphs by publishedAt descending (bigint)
+  for (const [curationName, gs] of byCreator) {
     byCreator.set(
-      creator,
+      curationName,
       [...gs].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1)),
     );
   }
@@ -443,10 +443,10 @@ export default function PublicGraphView({
       {/* Header bar */}
       <div className="px-4 py-3 border-b border-border bg-card shrink-0">
         <h2 className="font-mono text-sm text-foreground font-semibold">
-          Public Graphs
+          public graphs
         </h2>
         <p className="font-mono text-xs text-muted-foreground mt-0.5">
-          Published source graphs from the community
+          extensible curations by the community
         </p>
       </div>
 
@@ -466,15 +466,15 @@ export default function PublicGraphView({
           </div>
         ) : (
           <div className="space-y-2" data-ocid="public_graphs.list">
-            {sortedCreators.map((creatorName) => {
-              const creatorGraphs = byCreator.get(creatorName) ?? [];
+            {sortedCreators.map((curationName) => {
+              const creatorGraphs = byCreator.get(curationName) ?? [];
               return (
                 <CreatorAccordion
-                  key={creatorName}
-                  creatorName={creatorName}
+                  key={curationName}
+                  curationName={curationName}
                   graphs={creatorGraphs}
-                  expanded={expandedCreators.has(creatorName)}
-                  onToggle={() => toggleCreator(creatorName)}
+                  expanded={expandedCreators.has(curationName)}
+                  onToggle={() => toggleCreator(curationName)}
                   onView={(id) => setSelectedGraphId(id)}
                 />
               );

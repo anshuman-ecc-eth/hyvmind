@@ -53,9 +53,8 @@ export default function Header({
     key: "public-graphs" | "terminal" | "sources";
     label: string;
   }[] = [
-    { key: "terminal", label: "terminal" },
     { key: "sources", label: "sources" },
-    { key: "public-graphs", label: "graphs" },
+    { key: "public-graphs", label: "public" },
   ];
 
   const isDark = theme !== "light";
@@ -175,6 +174,19 @@ export default function Header({
                       data-ocid="header.settings.link"
                     >
                       settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onViewChange("terminal")}
+                      className={`font-mono text-xs cursor-pointer ${
+                        currentView === "terminal"
+                          ? "text-foreground font-semibold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      data-ocid="header.terminal.link"
+                    >
+                      {currentView === "terminal"
+                        ? "> [terminal]"
+                        : "[terminal]"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
