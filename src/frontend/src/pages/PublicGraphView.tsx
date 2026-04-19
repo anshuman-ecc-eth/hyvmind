@@ -202,6 +202,7 @@ function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
         <div className="flex-1 min-h-0">
           <SourceGraphDiagram
             graph={convertedGraph}
+            graphId={selectedId}
             onNodeClick={setSelectedNode}
           />
         </div>

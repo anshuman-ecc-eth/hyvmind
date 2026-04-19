@@ -54,6 +54,7 @@ interface SourceGraphDiagramProps {
   width?: number;
   height?: number;
   onNodeClick?: (node: SourceNode) => void;
+  graphId?: string;
 }
 
 export function SourceGraphDiagram({
@@ -61,10 +62,17 @@ export function SourceGraphDiagram({
   width,
   height,
   onNodeClick,
+  graphId,
 }: SourceGraphDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<FGInstance | null>(null);
   const { resolvedTheme } = useTheme();
+
+  // Per-instance position cache — persists across re-renders, resets on unmount
+  const positionCacheRef = useRef<
+    Map<string, Map<string, { x: number; y: number }>>
+  >(new Map());
+  const currentGraphIdRef = useRef<string>("");
 
   const isDark = resolvedTheme !== "light";
 
@@ -83,6 +91,12 @@ export function SourceGraphDiagram({
     }
   }, [isDark]);
 
+  // Keep a ref to graphId so the mount-effect closure can always read the latest value
+  const graphIdRef = useRef(graphId);
+  useEffect(() => {
+    graphIdRef.current = graphId;
+  }, [graphId]);
+
   // Transform SourceGraph → force-graph data
   const graphData = useMemo(() => {
     const nodes: FGNode[] = graph.nodes.map((n) => {
@@ -100,6 +114,20 @@ export function SourceGraphDiagram({
         attributes: n.attributes,
       };
     });
+
+    // Restore cached positions so the force simulation starts from the last
+    // known layout instead of randomising on every remount
+    const effectiveGraphId = graphId ?? "";
+    const cachedPositions = positionCacheRef.current.get(effectiveGraphId);
+    if (cachedPositions) {
+      for (const node of nodes) {
+        const pos = cachedPositions.get(node.id);
+        if (pos) {
+          (node as NodeObject).x = pos.x;
+          (node as NodeObject).y = pos.y;
+        }
+      }
+    }
 
     const nodeFullPaths = new Set(nodes.map((n) => n.id));
 
@@ -127,7 +155,7 @@ export function SourceGraphDiagram({
     }
 
     return { nodes, links };
-  }, [graph]);
+  }, [graph, graphId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const graphDataRef = useRef(graphData);
   useEffect(() => {
@@ -194,6 +222,27 @@ export function SourceGraphDiagram({
           onNodeClickRef.current(sourceNode);
         }
       });
+
+    // Cache node positions when the simulation settles
+    fg.onEngineStop(() => {
+      const effectiveId = graphIdRef.current ?? "";
+      // Only capture once per graphId — subsequent stops for the same graph
+      // don't overwrite the initial capture (avoids stale micro-adjustments)
+      if (effectiveId === currentGraphIdRef.current) return;
+      const nodesData = (
+        fg.graphData() as {
+          nodes: Array<{ id: string; x?: number; y?: number }>;
+        }
+      ).nodes;
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const n of nodesData) {
+        if (n.id && n.x !== undefined && n.y !== undefined) {
+          posMap.set(n.id, { x: n.x, y: n.y });
+        }
+      }
+      positionCacheRef.current.set(effectiveId, posMap);
+      currentGraphIdRef.current = effectiveId;
+    });
 
     // Set initial size before pushing data so the canvas has dimensions
     // (width/height props read at mount time only; ResizeObserver keeps them synced)
