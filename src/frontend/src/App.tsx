@@ -17,24 +17,14 @@ import {
 } from "./hooks/useQueries";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
-import SwarmDetailView from "./pages/SwarmDetailView";
-import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
-import TreeView from "./pages/TreeView";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
-type ViewType =
-  | "public-graphs"
-  | "tree"
-  | "terminal"
-  | "swarms"
-  | "swarm-detail"
-  | "sources";
+type ViewType = "public-graphs" | "terminal" | "sources";
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
   const [currentView, setCurrentView] = useState<ViewType>("sources");
-  const [selectedSwarmId, setSelectedSwarmId] = useState<string | null>(null);
   const [gameComplete, setGameComplete] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isAuthenticated = !!identity;
@@ -136,21 +126,8 @@ export default function App() {
     }
   }, [identity]);
 
-  const handleSelectSwarm = (swarmId: string) => {
-    setSelectedSwarmId(swarmId);
-    setCurrentView("swarm-detail");
-  };
-
-  const handleBackToSwarms = () => {
-    setSelectedSwarmId(null);
-    setCurrentView("swarms");
-  };
-
-  // When navigating away from swarms entirely, clear selected swarm
+  // When navigating away, update view
   const handleViewChange = (view: ViewType) => {
-    if (view !== "swarm-detail") {
-      setSelectedSwarmId(null);
-    }
     setCurrentView(view);
   };
 
@@ -201,7 +178,7 @@ export default function App() {
     >
       <div className="flex h-[100dvh] flex-col bg-background">
         <Header
-          currentView={currentView === "swarm-detail" ? "swarms" : currentView}
+          currentView={currentView}
           onViewChange={handleViewChange}
           isAuthenticated={isAuthenticated}
           isLandingPage={isLandingPage}
@@ -230,20 +207,7 @@ export default function App() {
             </div>
           ) : (
             <>
-              {currentView === "tree" && <TreeView />}
               {currentView === "terminal" && <TerminalPage />}
-              {currentView === "swarms" && (
-                <div className="flex-1 overflow-auto">
-                  <SwarmsView onSelectSwarm={handleSelectSwarm} />
-                </div>
-              )}
-              {currentView === "swarm-detail" && selectedSwarmId && (
-                <SwarmDetailView
-                  swarmId={selectedSwarmId}
-                  onBack={handleBackToSwarms}
-                  onSelectSwarm={handleSelectSwarm}
-                />
-              )}
               {currentView === "sources" && (
                 <div className="flex-1 min-h-0">
                   <SourcesView />

@@ -34,10 +34,8 @@ interface CommandPaletteProps {
 }
 
 const navCommands = [
-  { id: "nav-graph", label: "Go to Graph", view: "graph" },
-  { id: "nav-tree", label: "Go to List", view: "tree" },
+  { id: "nav-public-graphs", label: "Go to Graphs", view: "public-graphs" },
   { id: "nav-terminal", label: "Go to Terminal", view: "terminal" },
-  { id: "nav-swarms", label: "Go to Swarms", view: "swarms" },
   { id: "nav-sources", label: "Go to Sources", view: "sources" },
 ];
 

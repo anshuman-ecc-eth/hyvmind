@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GraphData } from "../backend.d";
+import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import type {
   ExtensionEntry,
@@ -9,6 +10,7 @@ import {
   usePublishedSourceGraph,
   usePublishedSourceGraphs,
 } from "../hooks/usePublicGraphs";
+import type { SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
 
 // ---------------------------------------------------------------------------
@@ -172,6 +174,7 @@ function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
   const { data: graphData, isLoading } = usePublishedSourceGraph(selectedId);
   const meta = graphs.find((g) => g.id === selectedId);
   const graphName = meta?.name ?? "Graph";
+  const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
 
   const convertedGraph = graphData
     ? graphDataToSourceGraph(graphData as GraphData, graphName, selectedId)
@@ -197,7 +200,10 @@ function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
 
       {!isLoading && convertedGraph && (
         <div className="flex-1 min-h-0">
-          <SourceGraphDiagram graph={convertedGraph} />
+          <SourceGraphDiagram
+            graph={convertedGraph}
+            onNodeClick={setSelectedNode}
+          />
         </div>
       )}
 
@@ -210,6 +216,13 @@ function GraphDetail({ selectedId, graphs, onBack }: GraphDetailProps) {
             Graph data unavailable.
           </span>
         </div>
+      )}
+
+      {selectedNode && (
+        <PublicNodeDetailsPanel
+          node={selectedNode}
+          onClose={() => setSelectedNode(null)}
+        />
       )}
     </div>
   );

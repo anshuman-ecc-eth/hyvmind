@@ -179,6 +179,7 @@ export function SourceGraphDiagram({
       .onNodeClick((node) => {
         if (onNodeClickRef.current) {
           const sourceNode: SourceNode = {
+            id: node.id,
             name: node.name,
             nodeType: node.nodeType as SourceNode["nodeType"],
             jurisdiction: node.jurisdiction,
