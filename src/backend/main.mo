@@ -1627,6 +1627,28 @@ actor {
     };
   };
 
+  // Derives parent full path by stripping the last @-segment from node.id.
+  // Primary lookup — avoids bare-name map collisions when siblings share names.
+  func parentPathFromId(nodeId : ?Text) : ?Text {
+    switch (nodeId) {
+      case (null) { null };
+      case (?id) {
+        let segIter = id.split(#char '@');
+        let segments = List.empty<Text>();
+        for (seg in segIter) { segments.add(seg) };
+        let allSegs = segments.toArray();
+        if (allSegs.size() <= 1) { return null };
+        var path = allSegs[0];
+        var i = 1;
+        while (i < allSegs.size() - 1) {
+          path := path # "@" # allSegs[i];
+          i += 1;
+        };
+        ?path
+      };
+    };
+  };
+
   // ─── Helper: scope-aware edge target resolution ───────────────────────────────
   // Tries: hierarchical scope walk first → simple name fallback
   func resolveEdgeTarget(targetName : Text, sourceFullPath : Text, nameToId : Map.Map<Text, NodeId>) : ?NodeId {
@@ -2251,7 +2273,8 @@ actor {
             };
             case (null) {};
           };
-          nodeMappings.add((node.name, existingId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
           // Create new
@@ -2274,22 +2297,28 @@ actor {
             };
             case (null) {};
           };
-          nodeMappings.add((node.name, newId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
         };
       };
     };
 
     // Process swarms
     for (node in swarmNodes.values()) {
-      let parentName = switch (node.parentName) {
+       let parentName = switch (node.parentName) {
         case (null) {
           return #error({ message = "Missing parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
         };
         case (?pn) { pn };
       };
-      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
-        case (?fp) { fp };
-        case (null) { parentName };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentCurationId = switch (nameToId.get(parentFullPath)) {
@@ -2341,7 +2370,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, existingId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
           let newId = generateId("swarm", node.name, caller);
@@ -2368,7 +2398,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, newId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
         };
       };
     };
@@ -2381,9 +2412,14 @@ actor {
         };
         case (?pn) { pn };
       };
-      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
-        case (?fp) { fp };
-        case (null) { parentName };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentSwarmId = switch (nameToId.get(parentFullPath)) {
@@ -2426,7 +2462,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, existingId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
           let newId = generateId("location", node.name, caller);
@@ -2450,7 +2487,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, newId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
         };
       };
     };
@@ -2463,9 +2501,14 @@ actor {
         };
         case (?pn) { pn };
       };
-      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
-        case (?fp) { fp };
-        case (null) { parentName };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentLocationId = switch (nameToId.get(parentFullPath)) {
@@ -2508,7 +2551,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, existingId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
           let newId = generateId("lawToken", node.name, caller);
@@ -2532,7 +2576,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, newId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
         };
       };
     };
@@ -2545,9 +2590,14 @@ actor {
         };
         case (?pn) { pn };
       };
-      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
-        case (?fp) { fp };
-        case (null) { parentName };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
       };
       let fullPath = buildFullPath(?parentFullPath, node.name);
       let parentLawTokenId = switch (nameToId.get(parentFullPath)) {
@@ -2595,7 +2645,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, existingId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
         };
         case (null) {
           let newId = generateId("interpretationToken", node.name, caller);
@@ -2620,7 +2671,8 @@ actor {
             case (null) {};
           };
           nodeInputMap.add(fullPath, node);
-          nodeMappings.add((node.name, newId));
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
         };
       };
     };
@@ -2647,8 +2699,8 @@ actor {
             switch (targetNode.parentName) {
               case (null) { false };
               case (?pn) {
-                let parentFullPath = switch (simpleToFullPath.get(pn)) {
-                  case (?fp) { fp };
+                let parentFullPath = switch (parentPathFromId(targetNode.id)) {
+                  case (?pp) { pp };
                   case (null) { pn };
                 };
                 parentFullPath == edge.sourceName
@@ -2658,7 +2710,7 @@ actor {
         };
         if (not isHierarchyEdge) {
           let directionality : Directionality = if (edge.bidirectional) { #bidirectional } else { #unidirectional };
-          // Check existing edges (real map + staging)
+          // Check if edge already exists
           var existingEdge : ?SourceGraphEdge = null;
           switch (sourceEdges.get(sourceId)) {
             case (null) {};
@@ -2666,15 +2718,6 @@ actor {
               existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
             };
           };
-          if (existingEdge == null) {
-            switch (stagingEdges.get(sourceId)) {
-              case (null) {};
-              case (?edgeList) {
-                existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
-              };
-            };
-          };
-
           switch (existingEdge) {
             case (?existing) {
               // Merge labels
