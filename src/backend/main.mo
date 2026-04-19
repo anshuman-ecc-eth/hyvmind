@@ -8,6 +8,7 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
+import Set "mo:core/Set";
 
 import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
@@ -216,6 +217,25 @@ actor {
     edges : [GraphEdge];
   };
 
+  type ExtensionEntry = {
+    extendedAt : Time.Time;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedAttributes : Nat;
+  };
+
+  type PublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    attributeCount : Nat;
+    extensionLog : [ExtensionEntry];
+  };
+
   // Source graph edge with weighted labels
   type SourceGraphEdge = {
     source : NodeId;
@@ -296,6 +316,7 @@ actor {
     #success : {
       nodeMappings : [(Text, NodeId)];
       message : Text;
+      publishedSourceGraphId : ?Text;
     };
     #error : {
       message : Text;
@@ -331,6 +352,12 @@ actor {
 
   // New explicit edge storage for source graph edges (weighted labels)
   var sourceEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
+
+  // Published source graph metadata
+  var publishedSourceGraphs = Map.empty<Text, PublishedSourceGraphMeta>();
+
+  // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
+  var curationToPublishedGraphId = Map.empty<NodeId, Text>();
 
   type SwarmType = {
     #regular;
@@ -2765,6 +2792,94 @@ actor {
       };
     };
 
+    // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
+
+    // Find root curation name (first curation in input)
+    let rootCurationName = switch (input.nodes.find(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" })) {
+      case (?n) { n.name };
+      case (null) { "Unknown" };
+    };
+
+    // Count nodes and edges in this input
+    let addedNodes = input.nodes.size();
+    let addedEdges = input.edges.size();
+    let addedAttributes = input.nodes.foldLeft(0, func(acc : Nat, n : SourceGraphNodeInput) : Nat { acc + n.attributes.size() });
+
+    // Check if any staging curation already has a publishedSourceGraphId (extension scenario)
+    var existingPublishedId : ?Text = null;
+    for ((id, curation) in stagingCurations.entries()) {
+      switch (curationToPublishedGraphId.get(id)) {
+        case (?pid) { existingPublishedId := ?pid };
+        case (null) {
+          // Check if the matching curation in curationMap already has one
+          for ((cid, existingCuration) in curationMap.entries()) {
+            if (existingCuration.name == curation.name) {
+              switch (curationToPublishedGraphId.get(cid)) {
+                case (?pid) { existingPublishedId := ?pid };
+                case (null) {};
+              };
+            };
+          };
+        };
+      };
+    };
+
+    let thePublishedId = switch (existingPublishedId) {
+      case (?pid) {
+        // Extension: update existing metadata
+        switch (publishedSourceGraphs.get(pid)) {
+          case (?existingMeta) {
+            let newEntry : ExtensionEntry = {
+              extendedAt = Time.now();
+              addedNodes;
+              addedEdges;
+              addedAttributes;
+            };
+            let updatedMeta : PublishedSourceGraphMeta = {
+              id = existingMeta.id;
+              name = existingMeta.name;
+              creator = existingMeta.creator;
+              creatorName = existingMeta.creatorName;
+              publishedAt = existingMeta.publishedAt;
+              nodeCount = existingMeta.nodeCount + addedNodes;
+              edgeCount = existingMeta.edgeCount + addedEdges;
+              attributeCount = existingMeta.attributeCount + addedAttributes;
+              extensionLog = existingMeta.extensionLog.concat([newEntry]);
+            };
+            publishedSourceGraphs.add(pid, updatedMeta);
+          };
+          case (null) {};
+        };
+        pid
+      };
+      case (null) {
+        // First publish: create new metadata
+        let newPid = generatePublishedSourceGraphId(caller);
+        let creatorName = switch (userProfiles.get(caller)) {
+          case (?profile) { profile.name };
+          case (null) { caller.toText() };
+        };
+        let newMeta : PublishedSourceGraphMeta = {
+          id = newPid;
+          name = rootCurationName;
+          creator = caller;
+          creatorName;
+          publishedAt = Time.now();
+          nodeCount = addedNodes;
+          edgeCount = addedEdges;
+          attributeCount = addedAttributes;
+          extensionLog = [];
+        };
+        publishedSourceGraphs.add(newPid, newMeta);
+        newPid
+      };
+    };
+
+    // Tag all staging curations with the publishedSourceGraphId before commit
+    for ((id, _curation) in stagingCurations.entries()) {
+      curationToPublishedGraphId.add(id, thePublishedId);
+    };
+
     // ── All staging succeeded — commit to real maps ──────────────────────────
     for ((id, curation) in stagingCurations.entries()) {
       curationMap.add(id, curation);
@@ -2798,6 +2913,7 @@ actor {
     #success({
       nodeMappings = nodeMappings.toArray();
       message = "Published successfully";
+      publishedSourceGraphId = ?thePublishedId;
     });
   };
 
@@ -3251,156 +3367,82 @@ actor {
     nodes.toArray();
   };
 
-  // ─── getAllData: Public query for all non-archived graph data ────────────────
-
-  public query func getAllData() : async GraphData {
-    let filteredCurations = List.empty<Curation>();
-    for (curation in curationMap.values()) {
-      if (not archivedNodes.containsKey(curation.id)) {
-        filteredCurations.add(curation);
-      };
-    };
-    let filteredSwarms = List.empty<Swarm>();
-    for (swarm in swarmMap.values()) {
-      if (not archivedNodes.containsKey(swarm.id)) {
-        filteredSwarms.add(swarm);
-      };
-    };
-    let filteredLocations = List.empty<Location>();
-    for (location in locationMap.values()) {
-      if (not archivedNodes.containsKey(location.id)) {
-        filteredLocations.add(location);
-      };
-    };
-    let filteredLawTokens = List.empty<LawToken>();
-    for (lawToken in lawTokenMap.values()) {
-      if (not archivedNodes.containsKey(lawToken.id)) {
-        filteredLawTokens.add(lawToken);
-      };
-    };
-    let filteredInterpretationTokens = List.empty<InterpretationToken>();
-    for (interpretationToken in interpretationTokenMap.values()) {
-      if (not archivedNodes.containsKey(interpretationToken.id)) {
-        filteredInterpretationTokens.add(interpretationToken);
-      };
-    };
-    let rootNodes = createGraphNodes();
-
-    // Build edges: hierarchy edges from lawToken -> location, plus sourceEdges
-    let edges = List.empty<GraphEdge>();
-
-    // Hierarchy edges: location -> lawToken
-    for (lawToken in lawTokenMap.values()) {
-      if (not archivedNodes.containsKey(lawToken.id) and not archivedNodes.containsKey(lawToken.parentLocationId)) {
-        edges.add({
-          source = lawToken.parentLocationId;
-          target = lawToken.id;
-          edgeLabel = "";
-          directionality = #unidirectional;
-        });
-      };
-    };
-
-    // Source graph edges — aggregate weighted labels to single edgeLabel
-    for ((_sourceId, edgeList) in sourceEdges.entries()) {
-      for (edge in edgeList.values()) {
-        if (not archivedNodes.containsKey(edge.source) and not archivedNodes.containsKey(edge.target)) {
-          edges.add({
-            source = edge.source;
-            target = edge.target;
-            edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
-            directionality = edge.directionality;
-          });
-        };
-      };
-    };
-
-    {
-      curations = filteredCurations.toArray();
-      swarms = filteredSwarms.toArray();
-      locations = filteredLocations.toArray();
-      lawTokens = filteredLawTokens.toArray();
-      interpretationTokens = filteredInterpretationTokens.toArray();
-      rootNodes;
-      edges = edges.toArray();
-    };
+  // ─── generatePublishedSourceGraphId: unique ID for a published source graph ───
+  func generatePublishedSourceGraphId(creator : Principal) : Text {
+    "published-" # Time.now().toText() # "-" # creator.hash().toText()
   };
 
-  // ─── getOwnedData: Caller-owned graph data ───────────────────────────────────
+  // ─── getAllPublishedSourceGraphs: Return all published source graph metadata ──
+  public query func getAllPublishedSourceGraphs() : async [PublishedSourceGraphMeta] {
+    publishedSourceGraphs.values().toArray()
+  };
 
-  public query ({ caller }) func getOwnedData() : async OwnedGraphData {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can access their owned graph data");
-    };
-    let ownedCurations = List.empty<Curation>();
-    for (curation in curationMap.values()) {
-      if (curation.creator == caller and not archivedNodes.containsKey(curation.id)) {
-        ownedCurations.add(curation);
-      };
-    };
-    let ownedSwarms = List.empty<Swarm>();
-    for (swarm in swarmMap.values()) {
-      if (swarm.creator == caller and not archivedNodes.containsKey(swarm.id)) {
-        ownedSwarms.add(swarm);
-      };
-    };
-    let ownedLocations = List.empty<Location>();
-    for (location in locationMap.values()) {
-      if (location.creator == caller and not archivedNodes.containsKey(location.id)) {
-        ownedLocations.add(location);
-      };
-    };
-    let ownedLawTokens = List.empty<LawToken>();
-    for (lawToken in lawTokenMap.values()) {
-      if (lawToken.creator == caller and not archivedNodes.containsKey(lawToken.id)) {
-        ownedLawTokens.add(lawToken);
-      };
-    };
-    let ownedInterpretationTokens = List.empty<InterpretationToken>();
-    for (interpretationToken in interpretationTokenMap.values()) {
-      if (interpretationToken.creator == caller and not archivedNodes.containsKey(interpretationToken.id)) {
-        ownedInterpretationTokens.add(interpretationToken);
-      };
-    };
-
-    // Build owned edges: hierarchy edges from caller's lawTokens + sourceEdges where both endpoints are caller's
-    let ownedEdges = List.empty<GraphEdge>();
-
-    // Hierarchy edges for caller's law tokens
-    for (lawToken in ownedLawTokens.values()) {
-      if (not archivedNodes.containsKey(lawToken.parentLocationId)) {
-        // Only include if location is also owned by caller
-        switch (locationMap.get(lawToken.parentLocationId)) {
-          case (null) {};
-          case (?loc) {
-            if (loc.creator == caller) {
-              ownedEdges.add({
-                source = lawToken.parentLocationId;
-                target = lawToken.id;
-                edgeLabel = "";
-                directionality = #unidirectional;
-              });
-            };
-          };
+  // ─── getPublishedSourceGraph: Return full GraphData for a published graph ─────
+  public query func getPublishedSourceGraph(publishedId : Text) : async ?GraphData {
+    // Collect all curations belonging to this published graph
+    let matchingCurations = List.empty<Curation>();
+    for ((cid, curation) in curationMap.entries()) {
+      switch (curationToPublishedGraphId.get(cid)) {
+        case (?pid) {
+          if (pid == publishedId) { matchingCurations.add(curation) };
         };
+        case (null) {};
       };
     };
 
-    // Source edges where both endpoints belong to caller
-    for ((_sourceId, edgeList) in sourceEdges.entries()) {
-      for (edge in edgeList.values()) {
-        if (not archivedNodes.containsKey(edge.source) and not archivedNodes.containsKey(edge.target)) {
-          // Check source node creator
-          let sourceOwnedByCaller =
-            (switch (lawTokenMap.get(edge.source)) { case (?lt) { lt.creator == caller }; case (null) { false } }) or
-            (switch (interpretationTokenMap.get(edge.source)) { case (?it) { it.creator == caller }; case (null) { false } }) or
-            (switch (locationMap.get(edge.source)) { case (?loc) { loc.creator == caller }; case (null) { false } });
-          let targetOwnedByCaller =
-            (switch (lawTokenMap.get(edge.target)) { case (?lt) { lt.creator == caller }; case (null) { false } }) or
-            (switch (interpretationTokenMap.get(edge.target)) { case (?it) { it.creator == caller }; case (null) { false } }) or
-            (switch (locationMap.get(edge.target)) { case (?loc) { loc.creator == caller }; case (null) { false } });
-          if (sourceOwnedByCaller and targetOwnedByCaller) {
-            ownedEdges.add({
+    if (matchingCurations.isEmpty()) { return null };
+
+    // Build a Set of all node IDs belonging to this published graph
+    let publishedNodeIds = Set.empty<NodeId>();
+    let collectedSwarms = List.empty<Swarm>();
+    let collectedLocations = List.empty<Location>();
+    let collectedLawTokens = List.empty<LawToken>();
+    let collectedInterpTokens = List.empty<InterpretationToken>();
+
+    // Add curation IDs
+    for (curation in matchingCurations.values()) {
+      publishedNodeIds.add(curation.id);
+    };
+
+    // Collect swarms whose parentCurationId is in the set
+    for (swarm in swarmMap.values()) {
+      if (publishedNodeIds.contains(swarm.parentCurationId)) {
+        collectedSwarms.add(swarm);
+        publishedNodeIds.add(swarm.id);
+      };
+    };
+
+    // Collect locations whose parentSwarmId is in the set
+    for (location in locationMap.values()) {
+      if (publishedNodeIds.contains(location.parentSwarmId)) {
+        collectedLocations.add(location);
+        publishedNodeIds.add(location.id);
+      };
+    };
+
+    // Collect law tokens whose parentLocationId is in the set
+    for (lt in lawTokenMap.values()) {
+      if (publishedNodeIds.contains(lt.parentLocationId)) {
+        collectedLawTokens.add(lt);
+        publishedNodeIds.add(lt.id);
+      };
+    };
+
+    // Collect interpretation tokens whose parentLawTokenId is in the set
+    for (it in interpretationTokenMap.values()) {
+      if (publishedNodeIds.contains(it.parentLawTokenId)) {
+        collectedInterpTokens.add(it);
+        publishedNodeIds.add(it.id);
+      };
+    };
+
+    // Filter sourceEdges: only keep edges where both source and target are in the set
+    let collectedEdges = List.empty<GraphEdge>();
+    for ((sourceId, edgeList) in sourceEdges.entries()) {
+      if (publishedNodeIds.contains(sourceId)) {
+        for (edge in edgeList.values()) {
+          if (publishedNodeIds.contains(edge.target)) {
+            collectedEdges.add({
               source = edge.source;
               target = edge.target;
               edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
@@ -3411,13 +3453,60 @@ actor {
       };
     };
 
+    // Build root GraphNodes from matchingCurations
+    let rootNodes = List.empty<GraphNode>();
+    for (curation in matchingCurations.values()) {
+      let childNodes = createSwarmNodes(curation.id);
+      rootNodes.add({
+        id = curation.id;
+        nodeType = "curation";
+        tokenLabel = curation.name;
+        jurisdiction = null;
+        parentId = null;
+        children = childNodes;
+        customAttributes = curation.customAttributes;
+      });
+    };
+
+    ?{
+      curations = matchingCurations.toArray();
+      swarms = collectedSwarms.toArray();
+      locations = collectedLocations.toArray();
+      lawTokens = collectedLawTokens.toArray();
+      interpretationTokens = collectedInterpTokens.toArray();
+      rootNodes = rootNodes.toArray();
+      edges = collectedEdges.toArray();
+    };
+  };
+
+  // ─── getAllData: Public query for all non-archived graph data ────────────────
+  // DEPRECATED: GraphView page removed. Use getPublishedSourceGraph() for published graphs.
+
+  public query func getAllData() : async GraphData {
+    // DEPRECATED: GraphView page removed. Use getPublishedSourceGraph() for published graphs.
     {
-      curations = ownedCurations.toArray();
-      swarms = ownedSwarms.toArray();
-      locations = ownedLocations.toArray();
-      lawTokens = ownedLawTokens.toArray();
-      interpretationTokens = ownedInterpretationTokens.toArray();
-      edges = ownedEdges.toArray();
+      curations = [];
+      swarms = [];
+      locations = [];
+      lawTokens = [];
+      interpretationTokens = [];
+      rootNodes = [];
+      edges = [];
+    };
+  };
+
+  // ─── getOwnedData: Caller-owned graph data ───────────────────────────────────
+  // DEPRECATED: Use getPublishedSourceGraph() for published graphs.
+
+  public query ({ caller }) func getOwnedData() : async OwnedGraphData {
+    // DEPRECATED: GraphView page removed. Use getPublishedSourceGraph() for published graphs.
+    {
+      curations = [];
+      swarms = [];
+      locations = [];
+      lawTokens = [];
+      interpretationTokens = [];
+      edges = [];
     };
   };
 
@@ -3436,5 +3525,7 @@ actor {
     archivedNodes := Map.empty<NodeId, ()>();
     forkPulledSourceNodes := Map.empty<NodeId, List.List<NodeId>>();
     sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
+    publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
+    curationToPublishedGraphId := Map.empty<NodeId, Text>();
   };
 };

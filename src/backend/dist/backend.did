@@ -65,6 +65,18 @@ type SourceGraphEdgeInput =
    sourceName: text;
    targetName: text;
  };
+type PublishedSourceGraphMeta = 
+ record {
+   attributeCount: nat;
+   creator: principal;
+   creatorName: text;
+   edgeCount: nat;
+   extensionLog: vec ExtensionEntry;
+   id: text;
+   name: text;
+   nodeCount: nat;
+   publishedAt: Time;
+ };
 type PublishSourceGraphInput = 
  record {
    edges: vec SourceGraphEdgeInput;
@@ -98,13 +110,15 @@ type PublishCommitResult =
                     };
       message: text;
     };
-   success: record {
-              message: text;
-              nodeMappings: vec record {
-                                  text;
-                                  NodeId;
-                                };
-            };
+   success:
+    record {
+      message: text;
+      nodeMappings: vec record {
+                          text;
+                          NodeId;
+                        };
+      publishedSourceGraphId: opt text;
+    };
  };
 type OwnedGraphData = 
  record {
@@ -203,6 +217,13 @@ type GraphData =
    rootNodes: vec GraphNode;
    swarms: vec Swarm;
  };
+type ExtensionEntry = 
+ record {
+   addedAttributes: nat;
+   addedEdges: nat;
+   addedNodes: nat;
+   extendedAt: Time;
+ };
 type EdgeOperation = 
  record {
    action: variant {
@@ -281,6 +302,7 @@ service : {
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
   getAllData: () -> (GraphData) query;
+  getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
@@ -288,6 +310,7 @@ service : {
   getMintSettings: () -> (MintSettings) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
   getOwnedData: () -> (OwnedGraphData) query;
+  getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
   getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
   getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;

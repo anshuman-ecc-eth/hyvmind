@@ -1,0 +1,24 @@
+{
+  "overview": "Hyvmind is a decentralized legal knowledge platform where users upload source graphs (structured markdown ZIPs) to create and publish canonical legal knowledge graphs. Published graphs are discoverable via the Public Graphs page, organized by creator with extension history tracking.",
+  "features": [
+    "Source graph publishing — upload ZIP files of folder-structured markdown to create legal knowledge graphs",
+    "Public Graphs page — browse all published graphs organized by creator and date with 2D visualization",
+    "Extension history — track how graphs grow over time with per-publish node/edge/attribute counts",
+    "2D graph diagram viewer — interactive force-graph visualization of any published source graph",
+    "Text game modal — narrative experience on the landing page with two embedded games and branching choices",
+    "Leaderboard and settings — top-3 hi-score tracking with name entry, skip-messages mode, and audio override",
+    "Weighted attributes — repeated publishing increments attribute weights for knowledge reinforcement",
+    "Atomic publish with rollback — all-or-nothing commits with full rollback on failure"
+  ],
+  "category": "knowledge-management",
+  "tags": [
+    "legal",
+    "knowledge-graph",
+    "source-graphs",
+    "icp",
+    "decentralized",
+    "motoko",
+    "react"
+  ],
+  "last_updated": "2026-04-19T06:32:38.408Z"
+}

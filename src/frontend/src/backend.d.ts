@@ -40,6 +40,17 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
+export interface PublishedSourceGraphMeta {
+    id: string;
+    creator: Principal;
+    extensionLog: Array<ExtensionEntry>;
+    name: string;
+    publishedAt: Time;
+    attributeCount: bigint;
+    creatorName: string;
+    edgeCount: bigint;
+    nodeCount: bigint;
+}
 export interface NodeOperation {
     localName: string;
     action: {
@@ -101,6 +112,7 @@ export type PublishCommitResult = {
 } | {
     __kind__: "success";
     success: {
+        publishedSourceGraphId?: string;
         message: string;
         nodeMappings: Array<[string, NodeId]>;
     };
@@ -113,6 +125,12 @@ export interface GraphNode {
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
+}
+export interface ExtensionEntry {
+    addedNodes: bigint;
+    addedAttributes: bigint;
+    extendedAt: Time;
+    addedEdges: bigint;
 }
 export interface CollectibleEdition {
     tokenId: NodeId;
@@ -269,6 +287,7 @@ export interface backendInterface {
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
     getAllData(): Promise<GraphData>;
+    getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -276,6 +295,7 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getOwnedData(): Promise<OwnedGraphData>;
+    getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;

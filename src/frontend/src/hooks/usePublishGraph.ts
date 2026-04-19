@@ -7,7 +7,12 @@ import type { PublishedNodeInfo, SourceGraph } from "../types/sourceGraph";
 import { usePublishMappings } from "./usePublishMappings";
 
 export type PublishCommitResult =
-  | { type: "success"; nodeMappings: [string, string][]; message: string }
+  | {
+      type: "success";
+      nodeMappings: [string, string][];
+      message: string;
+      publishedSourceGraphId?: string;
+    }
   | {
       type: "error";
       message: string;
@@ -89,6 +94,7 @@ export function usePublishGraph() {
           type: "success",
           nodeMappings: rawResult.success.nodeMappings,
           message: rawResult.success.message,
+          publishedSourceGraphId: rawResult.success.publishedSourceGraphId,
         };
 
         const newMappings: PublishedNodeInfo[] =
@@ -116,6 +122,7 @@ export function usePublishGraph() {
 
         queryClient.invalidateQueries({ queryKey: ["graphData"] });
         queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
+        queryClient.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
       } else {
         result = {
           type: "error",

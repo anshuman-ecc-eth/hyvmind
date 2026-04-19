@@ -43,6 +43,7 @@ export const PublishCommitResult = IDL.Variant({
     ),
   }),
   'success' : IDL.Record({
+    'publishedSourceGraphId' : IDL.Opt(IDL.Text),
     'message' : IDL.Text,
     'nodeMappings' : IDL.Vec(IDL.Tuple(IDL.Text, NodeId)),
   }),
@@ -136,6 +137,23 @@ export const GraphData = IDL.Record({
   'swarms' : IDL.Vec(Swarm),
   'lawTokens' : IDL.Vec(LawToken),
   'interpretationTokens' : IDL.Vec(InterpretationToken),
+});
+export const ExtensionEntry = IDL.Record({
+  'addedNodes' : IDL.Nat,
+  'addedAttributes' : IDL.Nat,
+  'extendedAt' : Time,
+  'addedEdges' : IDL.Nat,
+});
+export const PublishedSourceGraphMeta = IDL.Record({
+  'id' : IDL.Text,
+  'creator' : IDL.Principal,
+  'extensionLog' : IDL.Vec(ExtensionEntry),
+  'name' : IDL.Text,
+  'publishedAt' : Time,
+  'attributeCount' : IDL.Nat,
+  'creatorName' : IDL.Text,
+  'edgeCount' : IDL.Nat,
+  'nodeCount' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
@@ -265,6 +283,11 @@ export const idlService = IDL.Service({
   'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
   'getAllData' : IDL.Func([], [GraphData], ['query']),
+  'getAllPublishedSourceGraphs' : IDL.Func(
+      [],
+      [IDL.Vec(PublishedSourceGraphMeta)],
+      ['query'],
+    ),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -276,6 +299,11 @@ export const idlService = IDL.Service({
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
   'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
+  'getPublishedSourceGraph' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(GraphData)],
+      ['query'],
+    ),
   'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
   'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
   'getUserProfile' : IDL.Func(
@@ -354,6 +382,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     }),
     'success' : IDL.Record({
+      'publishedSourceGraphId' : IDL.Opt(IDL.Text),
       'message' : IDL.Text,
       'nodeMappings' : IDL.Vec(IDL.Tuple(IDL.Text, NodeId)),
     }),
@@ -444,6 +473,23 @@ export const idlFactory = ({ IDL }) => {
     'swarms' : IDL.Vec(Swarm),
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
+  });
+  const ExtensionEntry = IDL.Record({
+    'addedNodes' : IDL.Nat,
+    'addedAttributes' : IDL.Nat,
+    'extendedAt' : Time,
+    'addedEdges' : IDL.Nat,
+  });
+  const PublishedSourceGraphMeta = IDL.Record({
+    'id' : IDL.Text,
+    'creator' : IDL.Principal,
+    'extensionLog' : IDL.Vec(ExtensionEntry),
+    'name' : IDL.Text,
+    'publishedAt' : Time,
+    'attributeCount' : IDL.Nat,
+    'creatorName' : IDL.Text,
+    'edgeCount' : IDL.Nat,
+    'nodeCount' : IDL.Nat,
   });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
@@ -570,6 +616,11 @@ export const idlFactory = ({ IDL }) => {
     'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
     'getAllData' : IDL.Func([], [GraphData], ['query']),
+    'getAllPublishedSourceGraphs' : IDL.Func(
+        [],
+        [IDL.Vec(PublishedSourceGraphMeta)],
+        ['query'],
+      ),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -581,6 +632,11 @@ export const idlFactory = ({ IDL }) => {
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
     'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
+    'getPublishedSourceGraph' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(GraphData)],
+        ['query'],
+      ),
     'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
     'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
     'getUserProfile' : IDL.Func(

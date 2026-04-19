@@ -22,6 +22,13 @@ type Curation__572080379 =
 type Data__791452850<K, V> =
   {var count : Nat__490723111; kvs : [var ?(K, V)]};
 type Directionality__289700614 = {#bidirectional; #none; #unidirectional};
+type ExtensionEntry__104646688 =
+  {
+    addedAttributes : Nat;
+    addedEdges : Nat;
+    addedNodes : Nat;
+    extendedAt : Time__900049286
+  };
 type ForkedSwarm__273475596 =
   {
     forkPrincipal : ?Principal;
@@ -83,6 +90,18 @@ type Nat__920180692 = Nat;
 type NodeId__811092033 = Text;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type PublishedSourceGraphMeta__808509219 =
+  {
+    attributeCount : Nat;
+    creator : Principal;
+    creatorName : Text;
+    edgeCount : Nat;
+    extensionLog : [ExtensionEntry__104646688];
+    id : Text;
+    name : Text;
+    nodeCount : Nat;
+    publishedAt : Time__900049286
+  };
 type SourceGraphEdge__199036688 =
   {
     directionality : Directionality__289700614;
@@ -169,6 +188,11 @@ actor {
       var root : Node__46230540<NodeId__811092033, Curation__572080379>;
       var size : Nat__490723111
     };
+  stable var curationToPublishedGraphId :
+    {
+      var root : Node__46230540<NodeId__811092033, Text>;
+      var size : Nat__490723111
+    };
   stable var existingAdmins : [Principal];
   stable var forkPulledSourceNodes :
     {
@@ -207,6 +231,11 @@ actor {
   stable mintSettingsMap :
     {
       var root : Node__46230540<Principal, MintSettings__157171564>;
+      var size : Nat__490723111
+    };
+  stable var publishedSourceGraphs :
+    {
+      var root : Node__46230540<Text, PublishedSourceGraphMeta__808509219>;
       var size : Nat__490723111
     };
   stable var sourceEdges :

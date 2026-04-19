@@ -141,6 +141,7 @@ export function useGetOwnedData() {
   });
 }
 
+// DEPRECATED: GraphView page removed. Use usePublishedSourceGraphs/usePublishedSourceGraph instead.
 // Fetches all graph data (not just owned) — used for GraphView and Swarms tab
 export function useGetAllData() {
   const { actor, isFetching } = useBackendActor();

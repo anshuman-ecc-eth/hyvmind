@@ -53,6 +53,12 @@ export interface EdgeOperation {
   'targetName' : string,
   'targetId' : [] | [NodeId],
 }
+export interface ExtensionEntry {
+  'addedNodes' : bigint,
+  'addedAttributes' : bigint,
+  'extendedAt' : Time,
+  'addedEdges' : bigint,
+}
 export interface GraphData {
   'curations' : Array<Curation>,
   'rootNodes' : Array<GraphNode>,
@@ -138,7 +144,11 @@ export type PublishCommitResult = {
     }
   } |
   {
-    'success' : { 'message' : string, 'nodeMappings' : Array<[string, NodeId]> }
+    'success' : {
+      'publishedSourceGraphId' : [] | [string],
+      'message' : string,
+      'nodeMappings' : Array<[string, NodeId]>,
+    }
   };
 export interface PublishPreviewResult {
   'summary' : {
@@ -156,6 +166,17 @@ export type PublishResult = { 'noChanges' : null } |
 export interface PublishSourceGraphInput {
   'edges' : Array<SourceGraphEdgeInput>,
   'nodes' : Array<SourceGraphNodeInput>,
+}
+export interface PublishedSourceGraphMeta {
+  'id' : string,
+  'creator' : Principal,
+  'extensionLog' : Array<ExtensionEntry>,
+  'name' : string,
+  'publishedAt' : Time,
+  'attributeCount' : bigint,
+  'creatorName' : string,
+  'edgeCount' : bigint,
+  'nodeCount' : bigint,
 }
 export interface SourceGraphEdgeInput {
   'sourceName' : string,
@@ -225,6 +246,10 @@ export interface _SERVICE {
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
   'getAllData' : ActorMethod<[], GraphData>,
+  'getAllPublishedSourceGraphs' : ActorMethod<
+    [],
+    Array<PublishedSourceGraphMeta>
+  >,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -232,6 +257,7 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getOwnedData' : ActorMethod<[], OwnedGraphData>,
+  'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,

@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { ThemeProvider } from "next-themes";
-import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { createActor } from "./backend";
 import type { backendInterface } from "./backend";
@@ -16,7 +15,7 @@ import {
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
-import GraphView from "./pages/GraphView";
+import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import SwarmDetailView from "./pages/SwarmDetailView";
 import SwarmsView from "./pages/SwarmsView";
@@ -24,10 +23,8 @@ import TerminalPage from "./pages/TerminalPage";
 import TreeView from "./pages/TreeView";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
-const MemoizedGraphView = React.memo(GraphView);
-
 type ViewType =
-  | "graph"
+  | "public-graphs"
   | "tree"
   | "terminal"
   | "swarms"
@@ -36,7 +33,7 @@ type ViewType =
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
-  const [currentView, setCurrentView] = useState<ViewType>("graph");
+  const [currentView, setCurrentView] = useState<ViewType>("sources");
   const [selectedSwarmId, setSelectedSwarmId] = useState<string | null>(null);
   const [gameComplete, setGameComplete] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -233,9 +230,6 @@ export default function App() {
             </div>
           ) : (
             <>
-              {currentView === "graph" && (
-                <MemoizedGraphView readOnly={false} usePublicData={false} />
-              )}
               {currentView === "tree" && <TreeView />}
               {currentView === "terminal" && <TerminalPage />}
               {currentView === "swarms" && (
@@ -253,6 +247,11 @@ export default function App() {
               {currentView === "sources" && (
                 <div className="flex-1 min-h-0">
                   <SourcesView />
+                </div>
+              )}
+              {currentView === "public-graphs" && (
+                <div className="flex-1 min-h-0">
+                  <PublicGraphView />
                 </div>
               )}
             </>
