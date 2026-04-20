@@ -358,6 +358,7 @@ service : {
   getVoteData: (nodeId: NodeId) -> (VoteData) query;
   hasUserFork: (swarmId: NodeId) -> (bool) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
+  icChallengeNonce: () -> (text) query;
   initializeAccessControl: () -> ();
   isCallerAdmin: () -> (bool) query;
   isCallerApproved: () -> (bool) query;

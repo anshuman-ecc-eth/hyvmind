@@ -4104,6 +4104,10 @@ actor {
     ?globalApiKey;
   };
 
+  public query func icChallengeNonce() : async Text {
+    "ic-gateway-challenge-18a800cbf63cf59f";
+  };
+
   public shared ({ caller }) func resetAllData() : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
       Runtime.trap("Unauthorized: Only admins can reset data");

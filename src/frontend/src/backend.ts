@@ -418,6 +418,7 @@ export interface backendInterface {
     getVoteData(nodeId: NodeId): Promise<VoteData>;
     hasUserFork(swarmId: NodeId): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
+    icChallengeNonce(): Promise<string>;
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
@@ -857,6 +858,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.http_request(arg0);
+            return result;
+        }
+    }
+    async icChallengeNonce(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.icChallengeNonce();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.icChallengeNonce();
             return result;
         }
     }

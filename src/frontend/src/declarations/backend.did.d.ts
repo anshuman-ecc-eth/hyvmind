@@ -295,6 +295,7 @@ export interface _SERVICE {
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'hasUserFork' : ActorMethod<[NodeId], boolean>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
+  'icChallengeNonce' : ActorMethod<[], string>,
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
