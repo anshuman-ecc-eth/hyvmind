@@ -10,10 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Moon, Sun } from "lucide-react";
+import { useActor } from "@caffeineai/core-infrastructure";
+import { Check, Copy, Loader2, Moon, RefreshCw, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../backend";
+import type { backendInterface } from "../backend.d";
 import {
   useGetCallerUserProfile,
   useSaveCallerUserProfile,
@@ -24,6 +27,11 @@ interface ProfileSettingsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function maskApiKey(key: string): string {
+  if (key.length < 8) return "••••••••••••••••";
+  return `${key.slice(0, 4)}••••••••••••••••${key.slice(-4)}`;
+}
+
 export default function ProfileSettingsModal({
   open,
   onOpenChange,
@@ -32,9 +40,50 @@ export default function ProfileSettingsModal({
   const { data: userProfile, isLoading: profileLoading } =
     useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
+  const rawActor = useActor(createActor as Parameters<typeof useActor>[0]);
+  const actor = rawActor.actor as backendInterface | null;
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
+
+  // API Key state
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showRegenConfirm, setShowRegenConfirm] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !actor) return;
+    setApiKeyLoading(true);
+    actor
+      .getApiKey()
+      .then((key) => setApiKey(key ?? null))
+      .catch(() => setApiKey(null))
+      .finally(() => setApiKeyLoading(false));
+  }, [open, actor]);
+
+  const handleCopy = async () => {
+    if (!apiKey) return;
+    await navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRegen = async () => {
+    if (!actor) return;
+    setRegenLoading(true);
+    try {
+      const newKey = await actor.regenerateApiKey();
+      setApiKey(newKey);
+      setShowRegenConfirm(false);
+      toast.success("API key regenerated");
+    } catch {
+      toast.error("Failed to regenerate API key — admin only");
+    } finally {
+      setRegenLoading(false);
+    }
+  };
 
   // Update form when profile data loads
   useEffect(() => {
@@ -149,12 +198,14 @@ export default function ProfileSettingsModal({
                   variant="outline"
                   onClick={handleCancel}
                   disabled={saveProfile.isPending}
+                  data-ocid="settings.cancel_button"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={profileLoading || saveProfile.isPending}
+                  data-ocid="settings.save_button"
                 >
                   {saveProfile.isPending ? (
                     <>
@@ -166,6 +217,102 @@ export default function ProfileSettingsModal({
                   )}
                 </Button>
               </div>
+            </div>
+
+            <Separator />
+
+            {/* API Key Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">API Key</h3>
+              <p className="text-sm text-muted-foreground">
+                Use this key to authenticate requests to the Hyvmind MCP API.
+                Keep it private.
+              </p>
+
+              {apiKeyLoading ? (
+                <div
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                  data-ocid="settings.api_key.loading_state"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading API key...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <code
+                      className="flex-1 rounded border border-border bg-muted/40 px-3 py-2 font-mono text-sm tracking-wider text-foreground select-none"
+                      data-ocid="settings.api_key.display"
+                    >
+                      {apiKey ? maskApiKey(apiKey) : "••••••••••••••••••••••••"}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopy}
+                      disabled={!apiKey}
+                      className="shrink-0"
+                      data-ocid="settings.api_key.copy_button"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-foreground" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+
+                  {!showRegenConfirm ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRegenConfirm(true)}
+                      className="text-xs"
+                      data-ocid="settings.api_key.regenerate_button"
+                    >
+                      <RefreshCw className="mr-2 h-3 w-3" />
+                      Regenerate Key
+                    </Button>
+                  ) : (
+                    <div
+                      className="rounded border border-border bg-muted/30 p-4 space-y-3"
+                      data-ocid="settings.api_key.confirm_dialog"
+                    >
+                      <p className="text-sm text-foreground">
+                        This will invalidate the current API key. All existing
+                        integrations will stop working. Are you sure?
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowRegenConfirm(false)}
+                          disabled={regenLoading}
+                          data-ocid="settings.api_key.cancel_button"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleRegen}
+                          disabled={regenLoading}
+                          data-ocid="settings.api_key.confirm_button"
+                        >
+                          {regenLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              Regenerating...
+                            </>
+                          ) : (
+                            "Confirm Regenerate"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

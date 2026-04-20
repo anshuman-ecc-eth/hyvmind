@@ -14,9 +14,9 @@ import { clearTreeCache } from "../hooks/useQueries";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
-  currentView: "public-graphs" | "terminal" | "sources" | "chat";
+  currentView: "public-graphs" | "terminal" | "sources" | "chat" | "api-docs";
   onViewChange: (
-    view: "public-graphs" | "terminal" | "sources" | "chat",
+    view: "public-graphs" | "terminal" | "sources" | "chat" | "api-docs",
   ) => void;
   isAuthenticated: boolean;
   isLandingPage: boolean;
@@ -52,7 +52,7 @@ export default function Header({
   };
 
   const navItems: {
-    key: "public-graphs" | "terminal" | "sources" | "chat";
+    key: "public-graphs" | "terminal" | "sources" | "chat" | "api-docs";
     label: string;
   }[] = [
     { key: "sources", label: "sources" },
@@ -177,6 +177,17 @@ export default function Header({
                       data-ocid="header.settings.link"
                     >
                       settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onViewChange("api-docs")}
+                      className={`font-mono text-xs cursor-pointer ${
+                        currentView === "api-docs"
+                          ? "text-foreground font-semibold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      data-ocid="header.api-docs.link"
+                    >
+                      {currentView === "api-docs" ? "> API" : "API"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onViewChange("terminal")}

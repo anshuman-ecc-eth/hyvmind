@@ -96,6 +96,17 @@ export interface GraphNode {
   'tokenLabel' : string,
   'nodeType' : string,
 }
+export interface HttpRequest {
+  'url' : string,
+  'method' : string,
+  'body' : Uint8Array,
+  'headers' : Array<[string, string]>,
+}
+export interface HttpResponse {
+  'body' : Uint8Array,
+  'headers' : Array<[string, string]>,
+  'status_code' : number,
+}
 export interface InterpretationToken {
   'id' : NodeId,
   'title' : string,
@@ -263,6 +274,7 @@ export interface _SERVICE {
     [],
     Array<PublishedSourceGraphMeta>
   >,
+  'getApiKey' : ActorMethod<[], [] | [string]>,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -282,6 +294,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'hasUserFork' : ActorMethod<[NodeId], boolean>,
+  'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCallerApproved' : ActorMethod<[], boolean>,
@@ -299,6 +312,7 @@ export interface _SERVICE {
   >,
   'publishSourceGraph' : ActorMethod<[PublishSourceGraphInput], PublishResult>,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
+  'regenerateApiKey' : ActorMethod<[], string>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
@@ -309,6 +323,7 @@ export interface _SERVICE {
   >,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setMintSettings' : ActorMethod<[MintSettings], undefined>,
+  'track_api_request' : ActorMethod<[], undefined>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

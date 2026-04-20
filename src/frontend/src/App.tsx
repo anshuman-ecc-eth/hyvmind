@@ -15,13 +15,14 @@ import {
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
+import ApiDocsPage from "./pages/ApiDocsPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
-type ViewType = "public-graphs" | "terminal" | "sources" | "chat";
+type ViewType = "public-graphs" | "terminal" | "sources" | "chat" | "api-docs";
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -222,6 +223,11 @@ export default function App() {
               {currentView === "chat" && (
                 <div className="flex-1 min-h-0">
                   <SwarmsView />
+                </div>
+              )}
+              {currentView === "api-docs" && (
+                <div className="flex-1 min-h-0">
+                  <ApiDocsPage />
                 </div>
               )}
             </>

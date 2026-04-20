@@ -190,6 +190,25 @@ type InterpretationToken =
    timestamps: Timestamps;
    title: text;
  };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec record {
+                  text;
+                  text;
+                };
+   status_code: nat16;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   headers: vec record {
+                  text;
+                  text;
+                };
+   method: text;
+   url: text;
+ };
 type GraphNode = 
  record {
    children: vec GraphNode;
@@ -318,6 +337,7 @@ service : {
   downvoteNode: (nodeId: NodeId) -> ();
   getAllData: () -> (GraphData) query;
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
+  getApiKey: () -> (opt text) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
@@ -337,6 +357,7 @@ service : {
   getUserProfile: (user: principal) -> (opt UserProfile) query;
   getVoteData: (nodeId: NodeId) -> (VoteData) query;
   hasUserFork: (swarmId: NodeId) -> (bool) query;
+  http_request: (req: HttpRequest) -> (HttpResponse) query;
   initializeAccessControl: () -> ();
   isCallerAdmin: () -> (bool) query;
   isCallerApproved: () -> (bool) query;
@@ -353,6 +374,7 @@ service : {
                          }) -> (PublishPreviewResult);
   publishSourceGraph: (input: PublishSourceGraphInput) -> (PublishResult);
   pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
+  regenerateApiKey: () -> (text);
   requestApproval: () -> ();
   resetAllData: () -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
@@ -362,5 +384,6 @@ service : {
                                                    });
   setApproval: (user: principal, status: ApprovalStatus) -> ();
   setMintSettings: (settings: MintSettings) -> ();
+  track_api_request: () -> ();
   upvoteNode: (nodeId: NodeId) -> ();
 }

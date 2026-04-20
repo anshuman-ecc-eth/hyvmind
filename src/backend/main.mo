@@ -389,6 +389,15 @@ actor {
   // Chat channels — keyed by curation name (top-level) or "curationName@swarmName" (sub-channel)
   var chatChannels = Map.empty<Text, ChatChannel>();
 
+  // ── HTTP API State ───────────────────────────────────────────────────────────
+
+  // Single global API key; admin can regenerate via regenerateApiKey()
+  var globalApiKey : Text = "hyvmind-api-key-2024";
+
+  // Rate limiting: global counters for the single global key
+  var apiRateLimitCount : Nat = 0;
+  var apiRateLimitWindowStart : Int = 0;
+
   type SwarmType = {
     #regular;
     #questionOfLaw;
@@ -3667,6 +3676,432 @@ actor {
         #ok(channel.messages.toArray())
       };
     };
+  };
+
+  // ── HTTP API: Types ──────────────────────────────────────────────────────────
+
+  type HttpRequest = {
+    method : Text;
+    url : Text;
+    headers : [(Text, Text)];
+    body : Blob;
+  };
+
+  type HttpResponse = {
+    status_code : Nat16;
+    headers : [(Text, Text)];
+    body : Blob;
+  };
+
+  // ── HTTP API: JSON helpers ───────────────────────────────────────────────────
+
+  func jsonText(t : Text) : Text {
+    let escaped = t.replace(#text "\\", "\\\\").replace(#text "\"", "\\\"");
+    "\"" # escaped # "\"";
+  };
+
+  func jsonBool(b : Bool) : Text {
+    if (b) { "true" } else { "false" };
+  };
+
+  func jsonNat(n : Nat) : Text {
+    n.toText();
+  };
+
+  func jsonInt(i : Int) : Text {
+    i.toText();
+  };
+
+  func jsonNull() : Text { "null" };
+
+  func jsonArray(items : [Text]) : Text {
+    "[" # items.vals().join(",") # "]";
+  };
+
+  func jsonObject(fields : [(Text, Text)]) : Text {
+    let parts = fields.map(func((k, v) : (Text, Text)) : Text { "\"" # k # "\":" # v });
+    "{" # parts.vals().join(",") # "}";
+  };
+
+  // ── HTTP API: URL parsing ────────────────────────────────────────────────────
+
+  // Returns (path, queryString) split on '?'
+  func splitUrl(url : Text) : (Text, Text) {
+    let parts = url.split(#char '?');
+    let partsArr = parts.toArray();
+    if (partsArr.size() == 0) { return ("", "") };
+    if (partsArr.size() == 1) { return (partsArr[0], "") };
+    (partsArr[0], partsArr[1]);
+  };
+
+  // Extract value of a named query param from a query string like "a=1&b=2"
+  func getQueryParam(queryString : Text, paramName : Text) : ?Text {
+    let pairs = queryString.split(#char '&');
+    for (pair in pairs) {
+      let kv = pair.split(#char '=').toArray();
+      if (kv.size() == 2 and kv[0] == paramName) {
+        return ?kv[1];
+      };
+    };
+    null;
+  };
+
+  // ── HTTP API: Response builders ──────────────────────────────────────────────
+
+  let jsonContentType : (Text, Text) = ("Content-Type", "application/json");
+
+  func httpOk(body : Text) : HttpResponse {
+    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+  };
+
+  func httpError(statusCode : Nat16, msg : Text) : HttpResponse {
+    let body = jsonObject([("error", jsonText(msg))]);
+    { status_code = statusCode; headers = [jsonContentType]; body = body.encodeUtf8() };
+  };
+
+  // ── HTTP API: Node / edge serializers ───────────────────────────────────────
+
+  func serializeWeightedAttributes(attrs : [WeightedAttribute]) : Text {
+    let attrJsons = attrs.map(func(attr : WeightedAttribute) : Text {
+      let valuesJson = attr.weightedValues.map(func(wv : WeightedValue) : Text {
+        jsonObject([("value", jsonText(wv.value)), ("weight", jsonNat(wv.weight))]);
+      });
+      jsonObject([("key", jsonText(attr.key)), ("weightedValues", jsonArray(valuesJson))]);
+    });
+    jsonArray(attrJsons);
+  };
+
+  func serializeCuration(c : Curation) : Text {
+    jsonObject([
+      ("id", jsonText(c.id)),
+      ("name", jsonText(c.name)),
+      ("type", jsonText("curation")),
+      ("creator", jsonText(c.creator.toText())),
+      ("attributes", serializeWeightedAttributes(c.customAttributes)),
+    ]);
+  };
+
+  func serializeSwarm(s : Swarm) : Text {
+    jsonObject([
+      ("id", jsonText(s.id)),
+      ("name", jsonText(s.name)),
+      ("type", jsonText("swarm")),
+      ("parentId", jsonText(s.parentCurationId)),
+      ("tags", jsonArray(s.tags.map<Text, Text>(jsonText))),
+      ("attributes", serializeWeightedAttributes(s.customAttributes)),
+    ]);
+  };
+
+  func serializeLocation(l : Location) : Text {
+    jsonObject([
+      ("id", jsonText(l.id)),
+      ("name", jsonText(l.title)),
+      ("type", jsonText("location")),
+      ("parentId", jsonText(l.parentSwarmId)),
+      ("attributes", serializeWeightedAttributes(l.customAttributes)),
+    ]);
+  };
+
+  func serializeLawToken(lt : LawToken) : Text {
+    jsonObject([
+      ("id", jsonText(lt.id)),
+      ("name", jsonText(lt.tokenLabel)),
+      ("type", jsonText("lawEntity")),
+      ("parentId", jsonText(lt.parentLocationId)),
+      ("attributes", serializeWeightedAttributes(lt.customAttributes)),
+    ]);
+  };
+
+  func serializeInterpToken(it : InterpretationToken) : Text {
+    let latestContent = switch (it.contentVersions.size() > 0) {
+      case (true) { it.contentVersions[it.contentVersions.size() - 1].content };
+      case (false) { "" };
+    };
+    jsonObject([
+      ("id", jsonText(it.id)),
+      ("name", jsonText(it.title)),
+      ("type", jsonText("interpEntity")),
+      ("parentId", jsonText(it.parentLawTokenId)),
+      ("content", jsonText(latestContent)),
+      ("attributes", serializeWeightedAttributes(it.customAttributes)),
+    ]);
+  };
+
+  func serializeEdge(e : GraphEdge) : Text {
+    jsonObject([
+      ("source", jsonText(e.source)),
+      ("target", jsonText(e.target)),
+      ("label", jsonText(e.edgeLabel)),
+      ("bidirectional", jsonBool(e.directionality == #bidirectional)),
+    ]);
+  };
+
+  func serializeMeta(m : PublishedSourceGraphMeta) : Text {
+    jsonObject([
+      ("id", jsonText(m.id)),
+      ("name", jsonText(m.name)),
+      ("creator", jsonText(m.creator.toText())),
+      ("creatorName", jsonText(m.creatorName)),
+      ("publishedAt", jsonInt(m.publishedAt)),
+      ("nodeCount", jsonNat(m.nodeCount)),
+      ("edgeCount", jsonNat(m.edgeCount)),
+      ("attributeCount", jsonNat(m.attributeCount)),
+      ("extensionCount", jsonNat(m.extensionLog.size())),
+    ]);
+  };
+
+  // ── HTTP API: graph data lookup (mirrors getPublishedSourceGraph logic) ──────
+
+  func lookupPublishedGraph(publishedId : Text) : ?GraphData {
+    let matchingCurations = List.empty<Curation>();
+    for ((cid, curation) in curationMap.entries()) {
+      switch (curationToPublishedGraphId.get(cid)) {
+        case (?pid) { if (pid == publishedId) { matchingCurations.add(curation) } };
+        case (null) {};
+      };
+    };
+    if (matchingCurations.isEmpty()) { return null };
+
+    let publishedNodeIds = Set.empty<NodeId>();
+    let collectedSwarms = List.empty<Swarm>();
+    let collectedLocations = List.empty<Location>();
+    let collectedLawTokens = List.empty<LawToken>();
+    let collectedInterpTokens = List.empty<InterpretationToken>();
+
+    for (c in matchingCurations.values()) { publishedNodeIds.add(c.id) };
+
+    for (swarm in swarmMap.values()) {
+      if (publishedNodeIds.contains(swarm.parentCurationId)) {
+        collectedSwarms.add(swarm);
+        publishedNodeIds.add(swarm.id);
+      };
+    };
+    for (location in locationMap.values()) {
+      if (publishedNodeIds.contains(location.parentSwarmId)) {
+        collectedLocations.add(location);
+        publishedNodeIds.add(location.id);
+      };
+    };
+    for (lt in lawTokenMap.values()) {
+      if (publishedNodeIds.contains(lt.parentLocationId)) {
+        collectedLawTokens.add(lt);
+        publishedNodeIds.add(lt.id);
+      };
+    };
+    for (it in interpretationTokenMap.values()) {
+      if (publishedNodeIds.contains(it.parentLawTokenId)) {
+        collectedInterpTokens.add(it);
+        publishedNodeIds.add(it.id);
+      };
+    };
+
+    let collectedEdges = List.empty<GraphEdge>();
+    for ((sourceId, edgeList) in sourceEdges.entries()) {
+      if (publishedNodeIds.contains(sourceId)) {
+        for (edge in edgeList.values()) {
+          if (publishedNodeIds.contains(edge.target)) {
+            collectedEdges.add({
+              source = edge.source;
+              target = edge.target;
+              edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
+              directionality = edge.directionality;
+            });
+          };
+        };
+      };
+    };
+
+    let rootNodes = List.empty<GraphNode>();
+    for (curation in matchingCurations.values()) {
+      rootNodes.add({
+        id = curation.id;
+        nodeType = "curation";
+        tokenLabel = curation.name;
+        jurisdiction = null;
+        parentId = null;
+        children = createSwarmNodes(curation.id);
+        customAttributes = curation.customAttributes;
+      });
+    };
+
+    ?{
+      curations = matchingCurations.toArray();
+      swarms = collectedSwarms.toArray();
+      locations = collectedLocations.toArray();
+      lawTokens = collectedLawTokens.toArray();
+      interpretationTokens = collectedInterpTokens.toArray();
+      rootNodes = rootNodes.toArray();
+      edges = collectedEdges.toArray();
+    };
+  };
+
+  // ── HTTP API: endpoint handlers ──────────────────────────────────────────────
+
+  func handleGetAllGraphs() : HttpResponse {
+    let metaJsons = publishedSourceGraphs.values().map(serializeMeta).toArray();
+    httpOk(jsonArray(metaJsons));
+  };
+
+  func handleGetGraph(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        let body = jsonObject([
+          ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
+          ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
+          ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
+          ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
+          ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
+          ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+        ]);
+        httpOk(body);
+      };
+    };
+  };
+
+  func handleGetNodes(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        let nodes = List.empty<Text>();
+        for (c in data.curations.vals()) { nodes.add(serializeCuration(c)) };
+        for (s in data.swarms.vals()) { nodes.add(serializeSwarm(s)) };
+        for (l in data.locations.vals()) { nodes.add(serializeLocation(l)) };
+        for (lt in data.lawTokens.vals()) { nodes.add(serializeLawToken(lt)) };
+        for (it in data.interpretationTokens.vals()) { nodes.add(serializeInterpToken(it)) };
+        httpOk(jsonArray(nodes.toArray()));
+      };
+    };
+  };
+
+  func handleGetEdges(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        httpOk(jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge)));
+      };
+    };
+  };
+
+  func handleGetTools() : HttpResponse {
+    let tools = [
+      jsonObject([
+        ("name", jsonText("get_all_graphs")),
+        ("description", jsonText("List all published knowledge graphs with metadata")),
+        ("inputSchema", jsonObject([("type", jsonText("object")), ("properties", "{}"), ("required", "[]")])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_data")),
+        ("description", jsonText("Get full graph data (nodes and edges) for a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_nodes")),
+        ("description", jsonText("Get all nodes in a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_edges")),
+        ("description", jsonText("Get all edges in a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+    ];
+    httpOk(jsonObject([("tools", jsonArray(tools))]));
+  };
+
+  // ── HTTP API: http_request (public query — required for IC HTTP interface) ───
+
+  public query func http_request(req : HttpRequest) : async HttpResponse {
+    let (path, queryString) = splitUrl(req.url);
+
+    // Validate API key
+    let apiKeyOpt = getQueryParam(queryString, "api_key");
+    let providedKey = switch (apiKeyOpt) {
+      case (?k) { k };
+      case (null) { return httpError(401, "Missing api_key query parameter") };
+    };
+    if (providedKey != globalApiKey) {
+      return httpError(401, "Invalid API key");
+    };
+
+    // NOTE: Rate limiting cannot be enforced here. Query calls on the IC are read-only —
+    // they can read state but cannot mutate it, so incrementing apiRateLimitCount in a
+    // query function is impossible. The rate limit counter is maintained by the companion
+    // update function track_api_request(), which must be called separately by the HTTP
+    // gateway. The guard is intentionally omitted here; keep the state and track_api_request
+    // for future enforcement via a certified-query or update-based gateway pattern.
+
+    // Route
+    if (path == "/api/tools") {
+      handleGetTools();
+    } else if (path == "/api/graphs") {
+      handleGetAllGraphs();
+    } else if (path.startsWith(#text "/api/graphs/")) {
+      let graphId = switch (path.stripStart(#text "/api/graphs/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetGraph(graphId);
+    } else if (path.startsWith(#text "/api/nodes/")) {
+      let graphId = switch (path.stripStart(#text "/api/nodes/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetNodes(graphId);
+    } else if (path.startsWith(#text "/api/edges/")) {
+      let graphId = switch (path.stripStart(#text "/api/edges/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetEdges(graphId);
+    } else {
+      httpError(404, "Not found");
+    };
+  };
+
+  // ── HTTP API: track_api_request — update call for rate limiting ──────────────
+  // Called by the HTTP gateway on each request to increment the global rate counter.
+
+  public shared func track_api_request() : async () {
+    let now = Time.now();
+    if (now - apiRateLimitWindowStart > 60_000_000_000) {
+      apiRateLimitCount := 1;
+      apiRateLimitWindowStart := now;
+    } else {
+      apiRateLimitCount += 1;
+    };
+  };
+
+  // ── HTTP API: Candid functions for API key management ───────────────────────
+
+  // Admin-only: regenerate the global API key
+  public shared ({ caller }) func regenerateApiKey() : async Text {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      Runtime.trap("Unauthorized: Only admins can regenerate the API key");
+    };
+    let newKey = "hvm-" # Int.abs(Time.now()).toText() # "-key";
+    globalApiKey := newKey;
+    apiRateLimitCount := 0;
+    apiRateLimitWindowStart := 0;
+    newKey;
+  };
+
+  // Any authenticated user can fetch the global API key
+  public shared query ({ caller }) func getApiKey() : async ?Text {
+    if (caller.isAnonymous()) { return null };
+    ?globalApiKey;
   };
 
   public shared ({ caller }) func resetAllData() : async () {

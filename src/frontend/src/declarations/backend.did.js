@@ -196,6 +196,17 @@ export const VoteData = IDL.Record({
   'upvotes' : IDL.Nat,
   'downvotes' : IDL.Nat,
 });
+export const HttpRequest = IDL.Record({
+  'url' : IDL.Text,
+  'method' : IDL.Text,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+});
+export const HttpResponse = IDL.Record({
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+  'status_code' : IDL.Nat16,
+});
 export const ApprovalStatus = IDL.Variant({
   'pending' : IDL.Null,
   'approved' : IDL.Null,
@@ -301,6 +312,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(PublishedSourceGraphMeta)],
       ['query'],
     ),
+  'getApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -332,6 +344,7 @@ export const idlService = IDL.Service({
     ),
   'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
   'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+  'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'initializeAccessControl' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -355,6 +368,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
+  'regenerateApiKey' : IDL.Func([], [IDL.Text], []),
   'requestApproval' : IDL.Func([], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -365,6 +379,7 @@ export const idlService = IDL.Service({
     ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setMintSettings' : IDL.Func([MintSettings], [], []),
+  'track_api_request' : IDL.Func([], [], []),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
@@ -553,6 +568,17 @@ export const idlFactory = ({ IDL }) => {
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
   const VoteData = IDL.Record({ 'upvotes' : IDL.Nat, 'downvotes' : IDL.Nat });
+  const HttpRequest = IDL.Record({
+    'url' : IDL.Text,
+    'method' : IDL.Text,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+  });
+  const HttpResponse = IDL.Record({
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+    'status_code' : IDL.Nat16,
+  });
   const ApprovalStatus = IDL.Variant({
     'pending' : IDL.Null,
     'approved' : IDL.Null,
@@ -658,6 +684,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(PublishedSourceGraphMeta)],
         ['query'],
       ),
+    'getApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -689,6 +716,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
     'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+    'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'initializeAccessControl' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
@@ -712,6 +740,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
+    'regenerateApiKey' : IDL.Func([], [IDL.Text], []),
     'requestApproval' : IDL.Func([], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -722,6 +751,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setMintSettings' : IDL.Func([MintSettings], [], []),
+    'track_api_request' : IDL.Func([], [], []),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };

@@ -122,6 +122,23 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
+export interface EdgeOperation {
+    action: {
+        __kind__: "create";
+        create: null;
+    } | {
+        __kind__: "update";
+        update: {
+            newLabels: Array<string>;
+        };
+    };
+    labels: Array<string>;
+    sourceId?: NodeId;
+    sourceName: string;
+    bidirectional: boolean;
+    targetName: string;
+    targetId?: NodeId;
+}
 export interface ChatChannelSummary {
     id: string;
     name: string;
@@ -303,6 +320,11 @@ export interface GraphData {
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
 }
+export interface HttpResponse {
+    body: Uint8Array;
+    headers: Array<[string, string]>;
+    status_code: number;
+}
 export type BuzzScore = bigint;
 export interface Swarm {
     id: NodeId;
@@ -335,22 +357,11 @@ export interface UserProfile {
     name: string;
     socialUrl?: string;
 }
-export interface EdgeOperation {
-    action: {
-        __kind__: "create";
-        create: null;
-    } | {
-        __kind__: "update";
-        update: {
-            newLabels: Array<string>;
-        };
-    };
-    labels: Array<string>;
-    sourceId?: NodeId;
-    sourceName: string;
-    bidirectional: boolean;
-    targetName: string;
-    targetId?: NodeId;
+export interface HttpRequest {
+    url: string;
+    method: string;
+    body: Uint8Array;
+    headers: Array<[string, string]>;
 }
 export enum ApprovalStatus {
     pending = "pending",
@@ -384,6 +395,7 @@ export interface backendInterface {
     downvoteNode(nodeId: NodeId): Promise<void>;
     getAllData(): Promise<GraphData>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
+    getApiKey(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -405,6 +417,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVoteData(nodeId: NodeId): Promise<VoteData>;
     hasUserFork(swarmId: NodeId): Promise<boolean>;
+    http_request(req: HttpRequest): Promise<HttpResponse>;
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isCallerApproved(): Promise<boolean>;
@@ -416,6 +429,7 @@ export interface backendInterface {
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     publishSourceGraph(input: PublishSourceGraphInput): Promise<PublishResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
+    regenerateApiKey(): Promise<string>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -428,6 +442,7 @@ export interface backendInterface {
     }>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
+    track_api_request(): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
 import type { ApprovalStatus as _ApprovalStatus, AttributeChange as _AttributeChange, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CollectibleEdition as _CollectibleEdition, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, NodeOperation as _NodeOperation, OwnedGraphData as _OwnedGraphData, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishResult as _PublishResult, PublishSourceGraphInput as _PublishSourceGraphInput, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
@@ -599,6 +614,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getAllPublishedSourceGraphs();
             return result;
+        }
+    }
+    async getApiKey(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getApiKey();
+                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getApiKey();
+            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
         }
     }
     async getArchivedNodeIds(): Promise<Array<NodeId>> {
@@ -817,6 +846,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async http_request(arg0: HttpRequest): Promise<HttpResponse> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.http_request(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.http_request(arg0);
+            return result;
+        }
+    }
     async initializeAccessControl(): Promise<void> {
         if (this.processError) {
             try {
@@ -971,6 +1014,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async regenerateApiKey(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.regenerateApiKey();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.regenerateApiKey();
+            return result;
+        }
+    }
     async requestApproval(): Promise<void> {
         if (this.processError) {
             try {
@@ -1058,6 +1115,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setMintSettings(arg0);
+            return result;
+        }
+    }
+    async track_api_request(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.track_api_request();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.track_api_request();
             return result;
         }
     }

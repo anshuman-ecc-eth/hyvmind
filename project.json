@@ -1,24 +1,27 @@
 {
-  "overview": "Hyvmind is a decentralized legal knowledge platform where users upload source graphs (structured markdown ZIPs) to create and publish canonical legal knowledge graphs. Published graphs are discoverable via the Public Graphs page, organized by creator with extension history tracking.",
+  "overview": "Hyvmind is a collaborative legal knowledge platform where users publish structured source graphs (ZIP files of markdown) to create and extend legal knowledge graphs. It features 2D/3D graph visualization, a public graphs browser, group chat per curation/swarm, and now an MCP-compatible public HTTP API so external language models can fetch published graph data via API keys.",
   "features": [
-    "Source graph publishing — upload ZIP files of folder-structured markdown to create legal knowledge graphs",
-    "Public Graphs page — browse all published graphs organized by creator and date with 2D visualization",
-    "Extension history — track how graphs grow over time with per-publish node/edge/attribute counts",
-    "2D graph diagram viewer — interactive force-graph visualization of any published source graph",
-    "Text game modal — narrative experience on the landing page with two embedded games and branching choices",
-    "Leaderboard and settings — top-3 hi-score tracking with name entry, skip-messages mode, and audio override",
-    "Weighted attributes — repeated publishing increments attribute weights for knowledge reinforcement",
-    "Atomic publish with rollback — all-or-nothing commits with full rollback on failure"
+    "Source graph publishing from structured ZIP files",
+    "5-level knowledge hierarchy: curation → swarm → location → law entity → interpretation entity",
+    "Public graphs browser grouped by curation and creator",
+    "Group chat channels per curation and swarm sub-channels",
+    "MCP-compatible HTTP API with tools manifest for LLM auto-discovery",
+    "Global API key management with rate limiting (100 req/min)",
+    "Read-only node details panel in public graph viewer",
+    "Collapsible filter panel with search and node type filtering",
+    "Force graph layout caching for stable diagrams across tab switches"
   ],
   "category": "knowledge-management",
   "tags": [
-    "legal",
     "knowledge-graph",
-    "source-graphs",
-    "icp",
-    "decentralized",
-    "motoko",
-    "react"
+    "legal",
+    "mcp",
+    "llm",
+    "collaboration",
+    "publishing",
+    "graph-visualization",
+    "chat",
+    "api"
   ],
-  "last_updated": "2026-04-19T06:32:38.408Z"
+  "last_updated": "2026-04-20T03:48:51.527Z"
 }

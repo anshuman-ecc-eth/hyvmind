@@ -168,6 +168,8 @@ actor {
       var adminAssigned : Bool;
       userRoles : Map__605269027<Principal, UserRole__1054455867>
     };
+  stable var apiRateLimitCount : Nat;
+  stable var apiRateLimitWindowStart : Int;
   stable approvalState :
     {
       var approvalStatus :
@@ -222,12 +224,14 @@ actor {
       var root : Node__46230540<NodeId__811092033, ForkedSwarm__273475596>;
       var size : Nat__490723111
     };
+  stable var globalApiKey : Text;
   stable var interpretationTokenMap :
     {
       var root :
         Node__46230540<NodeId__811092033, InterpretationToken__77411706>;
       var size : Nat__490723111
     };
+  stable jsonContentType : (Text, Text);
   stable var lawTokenMap :
     {
       var root : Node__46230540<NodeId__811092033, LawToken__181636461>;
