@@ -22,9 +22,24 @@ import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
-type ViewType = "public-graphs" | "terminal" | "sources" | "chat" | "api-docs";
+type ViewType = "public-graphs" | "terminal" | "sources" | "chat";
 
-export default function App() {
+// Standalone public page — no auth, no layout
+function ApiDocsRoute() {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      storageKey="hyvmind-theme"
+    >
+      <ApiDocsPage />
+    </ThemeProvider>
+  );
+}
+
+// Full authenticated app shell with all hooks
+function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
   const [currentView, setCurrentView] = useState<ViewType>("sources");
   const [gameComplete, setGameComplete] = useState(false);
@@ -54,7 +69,6 @@ export default function App() {
   const showProfileSetup =
     isAuthenticated && !profileLoading && isFetched && userProfile === null;
 
-  // Determine if we're showing the landing page (unauthenticated view)
   const isLandingPage = !isAuthenticated;
 
   const handleCheckCondition = async (condition: string, input: string) => {
@@ -128,47 +142,112 @@ export default function App() {
     }
   }, [identity]);
 
-  // When navigating away, update view
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
   };
 
   if (isInitializing) {
     return (
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem={false}
-        storageKey="hyvmind-theme"
-      >
-        <div className="flex h-screen items-center justify-center bg-background">
-          <div className="text-game-font flex flex-col items-center justify-center gap-4">
-            <span
-              className="text-foreground/70"
-              style={{ fontSize: "0.6rem", letterSpacing: "0.2em" }}
-            >
-              LOADING
-            </span>
-            <div className="flex gap-[2px]">
-              {Array.from({ length: 16 }).map((_, i) => (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: positional loading blocks
-                  key={i}
-                  className="text-foreground"
-                  style={{
-                    fontSize: "0.55rem",
-                    animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
-                  }}
-                >
-                  █
-                </span>
-              ))}
-            </div>
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="text-game-font flex flex-col items-center justify-center gap-4">
+          <span
+            className="text-foreground/70"
+            style={{ fontSize: "0.6rem", letterSpacing: "0.2em" }}
+          >
+            LOADING
+          </span>
+          <div className="flex gap-[2px]">
+            {Array.from({ length: 16 }).map((_, i) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: positional loading blocks
+                key={i}
+                className="text-foreground"
+                style={{
+                  fontSize: "0.55rem",
+                  animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                }}
+              >
+                █
+              </span>
+            ))}
           </div>
         </div>
-        <Toaster />
-      </ThemeProvider>
+      </div>
     );
+  }
+
+  return (
+    <div className="flex h-[100dvh] flex-col bg-background">
+      <Header
+        currentView={currentView}
+        onViewChange={handleViewChange}
+        isAuthenticated={isAuthenticated}
+        isLandingPage={isLandingPage}
+      />
+
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {!isAuthenticated ? (
+          <div className="h-full min-h-0 relative">
+            {/* Graph loads in background, hidden until game completes */}
+            <div
+              className="h-full"
+              style={{
+                visibility: gameComplete ? "visible" : "hidden",
+                pointerEvents: gameComplete ? "auto" : "none",
+              }}
+            >
+              <LandingGraphDiagram />
+            </div>
+            {/* Text game overlay */}
+            {!gameComplete && (
+              <TextGameModal
+                onComplete={() => setGameComplete(true)}
+                checkCondition={handleCheckCondition}
+              />
+            )}
+          </div>
+        ) : (
+          <>
+            {currentView === "terminal" && <TerminalPage />}
+            {currentView === "sources" && (
+              <div className="flex-1 min-h-0">
+                <SourcesView />
+              </div>
+            )}
+            {currentView === "public-graphs" && (
+              <div className="flex-1 min-h-0">
+                <PublicGraphView />
+              </div>
+            )}
+            {currentView === "chat" && (
+              <div className="flex-1 min-h-0">
+                <SwarmsView />
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      <Footer />
+
+      {showProfileSetup && <ProfileSetupModal />}
+      <Toaster />
+
+      {isAuthenticated && (
+        <CommandPalette
+          open={commandPaletteOpen}
+          onOpenChange={setCommandPaletteOpen}
+          onViewChange={(view) => handleViewChange(view as ViewType)}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  // /docs/api is a public standalone page — render it directly without auth or layout
+  if (window.location.pathname === "/docs/api") {
+    return <ApiDocsRoute />;
   }
 
   return (
@@ -178,75 +257,7 @@ export default function App() {
       enableSystem={false}
       storageKey="hyvmind-theme"
     >
-      <div className="flex h-[100dvh] flex-col bg-background">
-        <Header
-          currentView={currentView}
-          onViewChange={handleViewChange}
-          isAuthenticated={isAuthenticated}
-          isLandingPage={isLandingPage}
-        />
-
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          {!isAuthenticated ? (
-            <div className="h-full min-h-0 relative">
-              {/* Graph loads in background, hidden until game completes */}
-              <div
-                className="h-full"
-                style={{
-                  visibility: gameComplete ? "visible" : "hidden",
-                  pointerEvents: gameComplete ? "auto" : "none",
-                }}
-              >
-                <LandingGraphDiagram />
-              </div>
-              {/* Text game overlay */}
-              {!gameComplete && (
-                <TextGameModal
-                  onComplete={() => setGameComplete(true)}
-                  checkCondition={handleCheckCondition}
-                />
-              )}
-            </div>
-          ) : (
-            <>
-              {currentView === "terminal" && <TerminalPage />}
-              {currentView === "sources" && (
-                <div className="flex-1 min-h-0">
-                  <SourcesView />
-                </div>
-              )}
-              {currentView === "public-graphs" && (
-                <div className="flex-1 min-h-0">
-                  <PublicGraphView />
-                </div>
-              )}
-              {currentView === "chat" && (
-                <div className="flex-1 min-h-0">
-                  <SwarmsView />
-                </div>
-              )}
-              {currentView === "api-docs" && (
-                <div className="flex-1 min-h-0">
-                  <ApiDocsPage />
-                </div>
-              )}
-            </>
-          )}
-        </main>
-
-        <Footer />
-
-        {showProfileSetup && <ProfileSetupModal />}
-        <Toaster />
-
-        {isAuthenticated && (
-          <CommandPalette
-            open={commandPaletteOpen}
-            onOpenChange={setCommandPaletteOpen}
-            onViewChange={(view) => handleViewChange(view as ViewType)}
-          />
-        )}
-      </div>
+      <AppShell />
     </ThemeProvider>
   );
 }

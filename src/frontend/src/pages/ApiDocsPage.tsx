@@ -1,5 +1,6 @@
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { loadConfig } from "../config";
 
 function CodeBlock({
   code,
@@ -148,17 +149,35 @@ function EndpointCard({
   );
 }
 
-const CANISTER_PLACEHOLDER = "<canister-id>.ic0.app";
+export default function ApiDocsPage() {
+  const [canisterId, setCanisterId] = useState<string | null>(null);
 
-const endpoints = [
-  {
-    method: "GET",
-    path: "/api/tools",
-    description:
-      "Returns the MCP tools manifest. MCP-compatible clients (Claude Desktop, etc.) use this to auto-discover available tools.",
-    params: [{ name: "api_key", required: true, desc: "Your API key" }],
-    curl: `curl "https://${CANISTER_PLACEHOLDER}/api/tools?api_key=YOUR_KEY"`,
-    response: `{
+  useEffect(() => {
+    loadConfig().then((cfg) => setCanisterId(cfg.backend_canister_id));
+  }, []);
+
+  if (!canisterId) {
+    return (
+      <div
+        className="flex h-screen items-center justify-center bg-background font-mono text-xs text-muted-foreground"
+        data-ocid="api-docs.loading_state"
+      >
+        loading...
+      </div>
+    );
+  }
+
+  const baseUrl = `https://${canisterId}.icp0.io`;
+
+  const endpoints = [
+    {
+      method: "GET",
+      path: "/api/tools",
+      description:
+        "Returns the MCP tools manifest. MCP-compatible clients (Claude Desktop, etc.) use this to auto-discover available tools.",
+      params: [{ name: "api_key", required: true, desc: "Your API key" }],
+      curl: `curl "${baseUrl}/api/tools?api_key=YOUR_KEY"`,
+      response: `{
   "tools": [
     {
       "name": "get_all_graphs",
@@ -194,15 +213,15 @@ const endpoints = [
     }
   ]
 }`,
-  },
-  {
-    method: "GET",
-    path: "/api/graphs",
-    description:
-      "Returns metadata for all published knowledge graphs, including creator, node count, edge count, and publication date.",
-    params: [{ name: "api_key", required: true, desc: "Your API key" }],
-    curl: `curl "https://${CANISTER_PLACEHOLDER}/api/graphs?api_key=YOUR_KEY"`,
-    response: `[
+    },
+    {
+      method: "GET",
+      path: "/api/graphs",
+      description:
+        "Returns metadata for all published knowledge graphs, including creator, node count, edge count, and publication date.",
+      params: [{ name: "api_key", required: true, desc: "Your API key" }],
+      curl: `curl "${baseUrl}/api/graphs?api_key=YOUR_KEY"`,
+      response: `[
   {
     "id": "published-1713504000000000000-12345678",
     "name": "Contract Law",
@@ -214,22 +233,22 @@ const endpoints = [
     "extensionLog": []
   }
 ]`,
-  },
-  {
-    method: "GET",
-    path: "/api/graphs/:id",
-    description:
-      "Returns full graph data for a single published graph, including all nodes and edges.",
-    params: [
-      { name: "api_key", required: true, desc: "Your API key" },
-      {
-        name: ":id",
-        required: true,
-        desc: "Published graph ID (from /api/graphs)",
-      },
-    ],
-    curl: `curl "https://${CANISTER_PLACEHOLDER}/api/graphs/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
-    response: `{
+    },
+    {
+      method: "GET",
+      path: "/api/graphs/:id",
+      description:
+        "Returns full graph data for a single published graph, including all nodes and edges.",
+      params: [
+        { name: "api_key", required: true, desc: "Your API key" },
+        {
+          name: ":id",
+          required: true,
+          desc: "Published graph ID (from /api/graphs)",
+        },
+      ],
+      curl: `curl "${baseUrl}/api/graphs/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
+      response: `{
   "curations": [{ "id": "curation-abc", "name": "Contract Law", ... }],
   "swarms": [...],
   "locations": [...],
@@ -239,34 +258,34 @@ const endpoints = [
     { "source": "node-id-1", "target": "node-id-2", "edgeLabel": "references", "directionality": "unidirectional" }
   ]
 }`,
-  },
-  {
-    method: "GET",
-    path: "/api/nodes/:graphId",
-    description:
-      "Returns all nodes for a published graph, flattened into a single array with type annotations.",
-    params: [
-      { name: "api_key", required: true, desc: "Your API key" },
-      { name: ":graphId", required: true, desc: "Published graph ID" },
-    ],
-    curl: `curl "https://${CANISTER_PLACEHOLDER}/api/nodes/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
-    response: `[
+    },
+    {
+      method: "GET",
+      path: "/api/nodes/:graphId",
+      description:
+        "Returns all nodes for a published graph, flattened into a single array with type annotations.",
+      params: [
+        { name: "api_key", required: true, desc: "Your API key" },
+        { name: ":graphId", required: true, desc: "Published graph ID" },
+      ],
+      curl: `curl "${baseUrl}/api/nodes/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
+      response: `[
   { "id": "curation-abc", "type": "curation", "name": "Contract Law", "parentId": null },
   { "id": "curation-abc@Research", "type": "swarm", "name": "Research", "parentId": "curation-abc" },
   { "id": "curation-abc@Research@Definitions", "type": "location", "name": "Definitions", "parentId": "curation-abc@Research" }
 ]`,
-  },
-  {
-    method: "GET",
-    path: "/api/edges/:graphId",
-    description:
-      "Returns all edges for a published graph, including hierarchy and cross-reference edges.",
-    params: [
-      { name: "api_key", required: true, desc: "Your API key" },
-      { name: ":graphId", required: true, desc: "Published graph ID" },
-    ],
-    curl: `curl "https://${CANISTER_PLACEHOLDER}/api/edges/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
-    response: `[
+    },
+    {
+      method: "GET",
+      path: "/api/edges/:graphId",
+      description:
+        "Returns all edges for a published graph, including hierarchy and cross-reference edges.",
+      params: [
+        { name: "api_key", required: true, desc: "Your API key" },
+        { name: ":graphId", required: true, desc: "Published graph ID" },
+      ],
+      curl: `curl "${baseUrl}/api/edges/published-1713504000000000000-12345678?api_key=YOUR_KEY"`,
+      response: `[
   {
     "source": "curation-abc@Research",
     "target": "curation-abc@Research@Definitions",
@@ -282,22 +301,21 @@ const endpoints = [
     "type": "cross-reference"
   }
 ]`,
-  },
-];
+    },
+  ];
 
-const mcpConfig = `{
+  const mcpConfig = `{
   "mcpServers": {
     "hyvmind": {
-      "url": "https://${CANISTER_PLACEHOLDER}/api/tools?api_key=YOUR_KEY",
+      "url": "${baseUrl}/api/tools?api_key=YOUR_KEY",
       "transport": "http"
     }
   }
 }`;
 
-export default function ApiDocsPage() {
   return (
     <div
-      className="h-full overflow-y-auto bg-background"
+      className="min-h-screen overflow-y-auto bg-background"
       data-ocid="api-docs.page"
     >
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-12">
@@ -322,10 +340,7 @@ export default function ApiDocsPage() {
             HTTP client. All endpoints are read-only and return JSON.
           </p>
           <div className="rounded border border-border bg-muted/20 px-4 py-3 text-sm font-mono text-muted-foreground">
-            Base URL:{" "}
-            <span className="text-foreground">
-              https://{CANISTER_PLACEHOLDER}
-            </span>
+            Base URL: <span className="text-foreground">{baseUrl}</span>
           </div>
         </Section>
 
@@ -340,7 +355,7 @@ export default function ApiDocsPage() {
             .
           </p>
           <CodeBlock
-            code={`GET https://${CANISTER_PLACEHOLDER}/api/graphs?api_key=YOUR_KEY`}
+            code={`GET ${baseUrl}/api/graphs?api_key=YOUR_KEY`}
             language="http"
           />
           <div className="rounded border border-border bg-muted/20 p-4 space-y-1 text-sm">
@@ -404,11 +419,7 @@ export default function ApiDocsPage() {
             <code className="font-mono text-foreground text-xs bg-muted/40 px-1 py-0.5 rounded">
               YOUR_KEY
             </code>{" "}
-            with the key from your profile settings, and{" "}
-            <code className="font-mono text-foreground text-xs bg-muted/40 px-1 py-0.5 rounded">
-              {CANISTER_PLACEHOLDER}
-            </code>{" "}
-            with your actual canister domain.
+            with the key from your profile settings.
           </p>
         </Section>
       </div>
