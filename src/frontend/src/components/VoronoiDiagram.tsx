@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { createActorWithConfig } from "@caffeineai/core-infrastructure";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { GraphData, backendInterface } from "../backend";
-import { createActor } from "../backend";
+import type { GraphData } from "../backend";
 import { getNodeTypeStyle } from "../utils/voronoiPalette";
 
 interface Point {
@@ -171,15 +169,16 @@ export default function VoronoiDiagram() {
           }
         }
 
-        // Step 2: Cache is invalid or doesn't exist, fetch fresh data
-        const anonymousActor = (await createActorWithConfig(
-          createActor as Parameters<typeof createActorWithConfig>[0],
-        )) as backendInterface;
-        if (!anonymousActor) {
-          throw new Error("Failed to create anonymous actor");
-        }
-
-        const freshData = await anonymousActor.getAllData();
+        // Step 2: getAllData was removed; no data to fetch
+        const freshData: GraphData = {
+          curations: [],
+          swarms: [],
+          locations: [],
+          lawTokens: [],
+          interpretationTokens: [],
+          rootNodes: [],
+          edges: [],
+        };
 
         // Step 3: Store fresh data in cache
         try {
@@ -234,14 +233,16 @@ export default function VoronoiDiagram() {
     setIsError(false);
 
     try {
-      const anonymousActor = (await createActorWithConfig(
-        createActor as Parameters<typeof createActorWithConfig>[0],
-      )) as backendInterface;
-      if (!anonymousActor) {
-        throw new Error("Failed to create anonymous actor");
-      }
-
-      const freshData = await anonymousActor.getAllData();
+      // getAllData was removed; no data to fetch on refresh
+      const freshData: GraphData = {
+        curations: [],
+        swarms: [],
+        locations: [],
+        lawTokens: [],
+        interpretationTokens: [],
+        rootNodes: [],
+        edges: [],
+      };
 
       // Update cache
       try {

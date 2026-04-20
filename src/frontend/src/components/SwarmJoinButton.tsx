@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { NodeId } from "../backend";
 import {
   useCreateSwarmFork,
-  useGetAllData,
+  useGetOwnedData,
   useGetSwarmMembers,
   useHasFork,
   useJoinSwarm,
@@ -22,7 +22,7 @@ export default function SwarmJoinButton({
   onNavigateToSwarm,
 }: SwarmJoinButtonProps) {
   const { identity } = useInternetIdentity();
-  const { data: graphData } = useGetAllData();
+  const { data: graphData } = useGetOwnedData();
   const { data: members, isLoading: membersLoading } =
     useGetSwarmMembers(swarmId);
   const { data: hasFork, isLoading: hasForkLoading } = useHasFork(swarmId);

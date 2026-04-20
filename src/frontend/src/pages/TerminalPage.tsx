@@ -551,21 +551,17 @@ export default function TerminalPage() {
     try {
       switch (action) {
         case "ownedgraph": {
-          const owned = await actor.getOwnedData();
           addMessage(
             "success",
-            `📊 Owned graph: ${owned.curations.length} curations, ${owned.swarms.length} swarms, ${owned.locations.length} locations, ${owned.lawTokens.length} law tokens, ${owned.interpretationTokens.length} interpretation tokens`,
+            "📊 getOwnedData was removed. Use /debug publishedgraphs to see published graphs.",
           );
-          showJsonPrompt(owned);
           break;
         }
         case "allgraph": {
-          const data = await actor.getAllData();
           addMessage(
             "success",
-            `📊 All graph: ${data.curations.length} curations, ${data.swarms.length} swarms, ${data.locations.length} locations, ${data.lawTokens.length} law tokens, ${data.interpretationTokens.length} interpretation tokens`,
+            "📊 getAllData was removed. Use /debug publishedgraphs to see published graphs.",
           );
-          showJsonPrompt(data);
           break;
         }
         case "archived": {
@@ -672,7 +668,10 @@ export default function TerminalPage() {
             );
             return;
           }
-          const graphDataAll = await actor.getAllData();
+          const graphDataAll = {
+            locations: [] as { parentSwarmId: string; id: string }[],
+            lawTokens: [] as { parentLocationId: string }[],
+          };
           const swarmLocations = graphDataAll.locations.filter(
             (l) => l.parentSwarmId === swarmId,
           );
@@ -733,21 +732,17 @@ export default function TerminalPage() {
           break;
         }
         case "userlawtokens": {
-          const ownedData = await actor.getOwnedData();
           addMessage(
             "success",
-            `⚖️ User law tokens: ${ownedData.lawTokens.length}`,
+            "⚖️ getOwnedData was removed. Law token lookup is no longer available.",
           );
-          showJsonPrompt(ownedData.lawTokens);
           break;
         }
         case "userinterp": {
-          const ownedData = await actor.getOwnedData();
           addMessage(
             "success",
-            `💡 User interpretation tokens: ${ownedData.interpretationTokens.length}`,
+            "💡 getOwnedData was removed. Interpretation token lookup is no longer available.",
           );
-          showJsonPrompt(ownedData.interpretationTokens);
           break;
         }
         case "reset": {

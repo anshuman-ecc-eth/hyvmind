@@ -153,14 +153,6 @@ export interface NodeOperation {
   'parentName' : [] | [string],
   'nodeType' : string,
 }
-export interface OwnedGraphData {
-  'curations' : Array<Curation>,
-  'edges' : Array<GraphEdge>,
-  'locations' : Array<Location>,
-  'swarms' : Array<Swarm>,
-  'lawTokens' : Array<LawToken>,
-  'interpretationTokens' : Array<InterpretationToken>,
-}
 export type PublishCommitResult = {
     'error' : {
       'message' : string,
@@ -184,9 +176,6 @@ export interface PublishPreviewResult {
   'edgeOperations' : Array<EdgeOperation>,
   'nodeOperations' : Array<NodeOperation>,
 }
-export type PublishResult = { 'noChanges' : null } |
-  { 'error' : string } |
-  { 'success' : { 'message' : string } };
 export interface PublishSourceGraphInput {
   'edges' : Array<SourceGraphEdgeInput>,
   'nodes' : Array<SourceGraphNodeInput>,
@@ -269,7 +258,6 @@ export interface _SERVICE {
   >,
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
-  'getAllData' : ActorMethod<[], GraphData>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],
     Array<PublishedSourceGraphMeta>
@@ -287,7 +275,6 @@ export interface _SERVICE {
   >,
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
-  'getOwnedData' : ActorMethod<[], OwnedGraphData>,
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
@@ -311,7 +298,6 @@ export interface _SERVICE {
     [PublishSourceGraphInput, Array<[string, NodeId]>],
     PublishPreviewResult
   >,
-  'publishSourceGraph' : ActorMethod<[PublishSourceGraphInput], PublishResult>,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
   'regenerateApiKey' : ActorMethod<[], string>,
   'requestApproval' : ActorMethod<[], undefined>,

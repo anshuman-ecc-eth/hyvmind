@@ -40,23 +40,6 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
-export interface EdgeOperation {
-    action: {
-        __kind__: "create";
-        create: null;
-    } | {
-        __kind__: "update";
-        update: {
-            newLabels: Array<string>;
-        };
-    };
-    labels: Array<string>;
-    sourceId?: NodeId;
-    sourceName: string;
-    bidirectional: boolean;
-    targetName: string;
-    targetId?: NodeId;
-}
 export interface ChatChannelSummary {
     id: string;
     name: string;
@@ -116,13 +99,14 @@ export interface MintCollectibleRequest {
     tokenId: NodeId;
     tokenType: Variant_lawToken_interpretationToken;
 }
-export interface OwnedGraphData {
-    curations: Array<Curation>;
-    edges: Array<GraphEdge>;
-    locations: Array<Location>;
-    swarms: Array<Swarm>;
-    lawTokens: Array<LawToken>;
-    interpretationTokens: Array<InterpretationToken>;
+export interface GraphNode {
+    id: NodeId;
+    customAttributes: Array<WeightedAttribute>;
+    children: Array<GraphNode>;
+    jurisdiction?: string;
+    parentId?: NodeId;
+    tokenLabel: string;
+    nodeType: string;
 }
 export type PublishCommitResult = {
     __kind__: "error";
@@ -141,15 +125,6 @@ export type PublishCommitResult = {
         nodeMappings: Array<[string, NodeId]>;
     };
 };
-export interface GraphNode {
-    id: NodeId;
-    customAttributes: Array<WeightedAttribute>;
-    children: Array<GraphNode>;
-    jurisdiction?: string;
-    parentId?: NodeId;
-    tokenLabel: string;
-    nodeType: string;
-}
 export interface ExtensionEntry {
     addedNodes: bigint;
     addedAttributes: bigint;
@@ -255,18 +230,23 @@ export interface Swarm {
     parentCurationId: NodeId;
     forkPrincipal?: Principal;
 }
-export type PublishResult = {
-    __kind__: "noChanges";
-    noChanges: null;
-} | {
-    __kind__: "error";
-    error: string;
-} | {
-    __kind__: "success";
-    success: {
-        message: string;
+export interface EdgeOperation {
+    action: {
+        __kind__: "create";
+        create: null;
+    } | {
+        __kind__: "update";
+        update: {
+            newLabels: Array<string>;
+        };
     };
-};
+    labels: Array<string>;
+    sourceId?: NodeId;
+    sourceName: string;
+    bidirectional: boolean;
+    targetName: string;
+    targetId?: NodeId;
+}
 export interface WeightedValue {
     weight: bigint;
     value: string;
@@ -310,7 +290,6 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
-    getAllData(): Promise<GraphData>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getApiKey(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
@@ -327,7 +306,6 @@ export interface backendInterface {
     }>;
     getMintSettings(): Promise<MintSettings>;
     getMyBuzzBalance(): Promise<BuzzScore>;
-    getOwnedData(): Promise<OwnedGraphData>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
@@ -345,7 +323,6 @@ export interface backendInterface {
     listApprovals(): Promise<Array<UserApprovalInfo>>;
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
-    publishSourceGraph(input: PublishSourceGraphInput): Promise<PublishResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
     regenerateApiKey(): Promise<string>;
     requestApproval(): Promise<void>;

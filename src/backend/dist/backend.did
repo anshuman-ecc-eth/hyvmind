@@ -82,12 +82,6 @@ type PublishSourceGraphInput =
    edges: vec SourceGraphEdgeInput;
    nodes: vec SourceGraphNodeInput;
  };
-type PublishResult = 
- variant {
-   error: text;
-   noChanges;
-   success: record {message: text;};
- };
 type PublishPreviewResult = 
  record {
    edgeOperations: vec EdgeOperation;
@@ -119,15 +113,6 @@ type PublishCommitResult =
                         };
       publishedSourceGraphId: opt text;
     };
- };
-type OwnedGraphData = 
- record {
-   curations: vec Curation;
-   edges: vec GraphEdge;
-   interpretationTokens: vec InterpretationToken;
-   lawTokens: vec LawToken;
-   locations: vec Location;
-   swarms: vec Swarm;
  };
 type NodeOperation = 
  record {
@@ -335,7 +320,6 @@ service : {
    customAttributes: vec WeightedAttribute) -> (NodeId);
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
-  getAllData: () -> (GraphData) query;
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getApiKey: () -> (opt text) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
@@ -350,7 +334,6 @@ service : {
     });
   getMintSettings: () -> (MintSettings) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
-  getOwnedData: () -> (OwnedGraphData) query;
   getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
   getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
   getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
@@ -373,7 +356,6 @@ service : {
                            text;
                            NodeId;
                          }) -> (PublishPreviewResult);
-  publishSourceGraph: (input: PublishSourceGraphInput) -> (PublishResult);
   pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
   regenerateApiKey: () -> (text);
   requestApproval: () -> ();

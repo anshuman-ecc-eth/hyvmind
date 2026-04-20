@@ -58,6 +58,52 @@ export const WeightedAttribute = IDL.Record({
 });
 export const Tag = IDL.Text;
 export const Time = IDL.Int;
+export const ExtensionEntry = IDL.Record({
+  'addedNodes' : IDL.Nat,
+  'addedAttributes' : IDL.Nat,
+  'extendedAt' : Time,
+  'addedEdges' : IDL.Nat,
+});
+export const PublishedSourceGraphMeta = IDL.Record({
+  'id' : IDL.Text,
+  'creator' : IDL.Principal,
+  'extensionLog' : IDL.Vec(ExtensionEntry),
+  'name' : IDL.Text,
+  'publishedAt' : Time,
+  'attributeCount' : IDL.Nat,
+  'creatorName' : IDL.Text,
+  'edgeCount' : IDL.Nat,
+  'nodeCount' : IDL.Nat,
+});
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'socialUrl' : IDL.Opt(IDL.Text),
+});
+export const ChatChannelSummary = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'isSubchannel' : IDL.Bool,
+  'unreadCount' : IDL.Nat,
+  'parentCuration' : IDL.Opt(IDL.Text),
+});
+export const CollectibleEdition = IDL.Record({
+  'tokenId' : NodeId,
+  'editionNumber' : IDL.Nat,
+  'owner' : IDL.Principal,
+  'mintedAt' : Time,
+  'tokenType' : IDL.Variant({
+    'lawToken' : IDL.Null,
+    'interpretationToken' : IDL.Null,
+  }),
+});
+export const ChatMessage = IDL.Record({
+  'text' : IDL.Text,
+  'sender' : IDL.Principal,
+  'timestamp' : IDL.Int,
+  'senderName' : IDL.Text,
+});
+export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+export const BuzzScore = IDL.Int;
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
 export const Curation = IDL.Record({
   'id' : NodeId,
@@ -132,60 +178,6 @@ export const InterpretationToken = IDL.Record({
 export const GraphData = IDL.Record({
   'curations' : IDL.Vec(Curation),
   'rootNodes' : IDL.Vec(GraphNode),
-  'edges' : IDL.Vec(GraphEdge),
-  'locations' : IDL.Vec(Location),
-  'swarms' : IDL.Vec(Swarm),
-  'lawTokens' : IDL.Vec(LawToken),
-  'interpretationTokens' : IDL.Vec(InterpretationToken),
-});
-export const ExtensionEntry = IDL.Record({
-  'addedNodes' : IDL.Nat,
-  'addedAttributes' : IDL.Nat,
-  'extendedAt' : Time,
-  'addedEdges' : IDL.Nat,
-});
-export const PublishedSourceGraphMeta = IDL.Record({
-  'id' : IDL.Text,
-  'creator' : IDL.Principal,
-  'extensionLog' : IDL.Vec(ExtensionEntry),
-  'name' : IDL.Text,
-  'publishedAt' : Time,
-  'attributeCount' : IDL.Nat,
-  'creatorName' : IDL.Text,
-  'edgeCount' : IDL.Nat,
-  'nodeCount' : IDL.Nat,
-});
-export const UserProfile = IDL.Record({
-  'name' : IDL.Text,
-  'socialUrl' : IDL.Opt(IDL.Text),
-});
-export const ChatChannelSummary = IDL.Record({
-  'id' : IDL.Text,
-  'name' : IDL.Text,
-  'isSubchannel' : IDL.Bool,
-  'unreadCount' : IDL.Nat,
-  'parentCuration' : IDL.Opt(IDL.Text),
-});
-export const CollectibleEdition = IDL.Record({
-  'tokenId' : NodeId,
-  'editionNumber' : IDL.Nat,
-  'owner' : IDL.Principal,
-  'mintedAt' : Time,
-  'tokenType' : IDL.Variant({
-    'lawToken' : IDL.Null,
-    'interpretationToken' : IDL.Null,
-  }),
-});
-export const ChatMessage = IDL.Record({
-  'text' : IDL.Text,
-  'sender' : IDL.Principal,
-  'timestamp' : IDL.Int,
-  'senderName' : IDL.Text,
-});
-export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
-export const BuzzScore = IDL.Int;
-export const OwnedGraphData = IDL.Record({
-  'curations' : IDL.Vec(Curation),
   'edges' : IDL.Vec(GraphEdge),
   'locations' : IDL.Vec(Location),
   'swarms' : IDL.Vec(Swarm),
@@ -269,11 +261,6 @@ export const PublishPreviewResult = IDL.Record({
   'edgeOperations' : IDL.Vec(EdgeOperation),
   'nodeOperations' : IDL.Vec(NodeOperation),
 });
-export const PublishResult = IDL.Variant({
-  'noChanges' : IDL.Null,
-  'error' : IDL.Text,
-  'success' : IDL.Record({ 'message' : IDL.Text }),
-});
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
@@ -306,7 +293,6 @@ export const idlService = IDL.Service({
     ),
   'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
-  'getAllData' : IDL.Func([], [GraphData], ['query']),
   'getAllPublishedSourceGraphs' : IDL.Func(
       [],
       [IDL.Vec(PublishedSourceGraphMeta)],
@@ -329,7 +315,6 @@ export const idlService = IDL.Service({
     ),
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
-  'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
   'getPublishedSourceGraph' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(GraphData)],
@@ -361,11 +346,6 @@ export const idlService = IDL.Service({
   'previewPublishSourceGraph' : IDL.Func(
       [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
       [PublishPreviewResult],
-      [],
-    ),
-  'publishSourceGraph' : IDL.Func(
-      [PublishSourceGraphInput],
-      [PublishResult],
       [],
     ),
   'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
@@ -434,6 +414,52 @@ export const idlFactory = ({ IDL }) => {
   });
   const Tag = IDL.Text;
   const Time = IDL.Int;
+  const ExtensionEntry = IDL.Record({
+    'addedNodes' : IDL.Nat,
+    'addedAttributes' : IDL.Nat,
+    'extendedAt' : Time,
+    'addedEdges' : IDL.Nat,
+  });
+  const PublishedSourceGraphMeta = IDL.Record({
+    'id' : IDL.Text,
+    'creator' : IDL.Principal,
+    'extensionLog' : IDL.Vec(ExtensionEntry),
+    'name' : IDL.Text,
+    'publishedAt' : Time,
+    'attributeCount' : IDL.Nat,
+    'creatorName' : IDL.Text,
+    'edgeCount' : IDL.Nat,
+    'nodeCount' : IDL.Nat,
+  });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'socialUrl' : IDL.Opt(IDL.Text),
+  });
+  const ChatChannelSummary = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'isSubchannel' : IDL.Bool,
+    'unreadCount' : IDL.Nat,
+    'parentCuration' : IDL.Opt(IDL.Text),
+  });
+  const CollectibleEdition = IDL.Record({
+    'tokenId' : NodeId,
+    'editionNumber' : IDL.Nat,
+    'owner' : IDL.Principal,
+    'mintedAt' : Time,
+    'tokenType' : IDL.Variant({
+      'lawToken' : IDL.Null,
+      'interpretationToken' : IDL.Null,
+    }),
+  });
+  const ChatMessage = IDL.Record({
+    'text' : IDL.Text,
+    'sender' : IDL.Principal,
+    'timestamp' : IDL.Int,
+    'senderName' : IDL.Text,
+  });
+  const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
+  const BuzzScore = IDL.Int;
   const Timestamps = IDL.Record({ 'createdAt' : Time });
   const Curation = IDL.Record({
     'id' : NodeId,
@@ -514,60 +540,6 @@ export const idlFactory = ({ IDL }) => {
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
-  const ExtensionEntry = IDL.Record({
-    'addedNodes' : IDL.Nat,
-    'addedAttributes' : IDL.Nat,
-    'extendedAt' : Time,
-    'addedEdges' : IDL.Nat,
-  });
-  const PublishedSourceGraphMeta = IDL.Record({
-    'id' : IDL.Text,
-    'creator' : IDL.Principal,
-    'extensionLog' : IDL.Vec(ExtensionEntry),
-    'name' : IDL.Text,
-    'publishedAt' : Time,
-    'attributeCount' : IDL.Nat,
-    'creatorName' : IDL.Text,
-    'edgeCount' : IDL.Nat,
-    'nodeCount' : IDL.Nat,
-  });
-  const UserProfile = IDL.Record({
-    'name' : IDL.Text,
-    'socialUrl' : IDL.Opt(IDL.Text),
-  });
-  const ChatChannelSummary = IDL.Record({
-    'id' : IDL.Text,
-    'name' : IDL.Text,
-    'isSubchannel' : IDL.Bool,
-    'unreadCount' : IDL.Nat,
-    'parentCuration' : IDL.Opt(IDL.Text),
-  });
-  const CollectibleEdition = IDL.Record({
-    'tokenId' : NodeId,
-    'editionNumber' : IDL.Nat,
-    'owner' : IDL.Principal,
-    'mintedAt' : Time,
-    'tokenType' : IDL.Variant({
-      'lawToken' : IDL.Null,
-      'interpretationToken' : IDL.Null,
-    }),
-  });
-  const ChatMessage = IDL.Record({
-    'text' : IDL.Text,
-    'sender' : IDL.Principal,
-    'timestamp' : IDL.Int,
-    'senderName' : IDL.Text,
-  });
-  const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
-  const BuzzScore = IDL.Int;
-  const OwnedGraphData = IDL.Record({
-    'curations' : IDL.Vec(Curation),
-    'edges' : IDL.Vec(GraphEdge),
-    'locations' : IDL.Vec(Location),
-    'swarms' : IDL.Vec(Swarm),
-    'lawTokens' : IDL.Vec(LawToken),
-    'interpretationTokens' : IDL.Vec(InterpretationToken),
-  });
   const VoteData = IDL.Record({ 'upvotes' : IDL.Nat, 'downvotes' : IDL.Nat });
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
@@ -642,11 +614,6 @@ export const idlFactory = ({ IDL }) => {
     'edgeOperations' : IDL.Vec(EdgeOperation),
     'nodeOperations' : IDL.Vec(NodeOperation),
   });
-  const PublishResult = IDL.Variant({
-    'noChanges' : IDL.Null,
-    'error' : IDL.Text,
-    'success' : IDL.Record({ 'message' : IDL.Text }),
-  });
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
@@ -679,7 +646,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
-    'getAllData' : IDL.Func([], [GraphData], ['query']),
     'getAllPublishedSourceGraphs' : IDL.Func(
         [],
         [IDL.Vec(PublishedSourceGraphMeta)],
@@ -702,7 +668,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
-    'getOwnedData' : IDL.Func([], [OwnedGraphData], ['query']),
     'getPublishedSourceGraph' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(GraphData)],
@@ -734,11 +699,6 @@ export const idlFactory = ({ IDL }) => {
     'previewPublishSourceGraph' : IDL.Func(
         [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
         [PublishPreviewResult],
-        [],
-      ),
-    'publishSourceGraph' : IDL.Func(
-        [PublishSourceGraphInput],
-        [PublishResult],
         [],
       ),
     'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),

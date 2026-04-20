@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
   useCreateSwarmFork,
-  useGetAllData,
+  useGetOwnedData,
   useGetSwarmMembers,
   useHasFork,
   usePullFromSwarm,
@@ -24,7 +24,7 @@ export default function ForkCardActions({
   onNavigateToSwarm,
 }: ForkCardActionsProps) {
   const { identity } = useInternetIdentity();
-  const { data: graphData } = useGetAllData();
+  const { data: graphData } = useGetOwnedData();
   const { data: members, isLoading: membersLoading } =
     useGetSwarmMembers(originalSwarmId);
   const { data: hasFork, isLoading: hasForkLoading } = useHasFork(forkId);

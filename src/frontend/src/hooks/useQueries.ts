@@ -14,7 +14,6 @@ import type {
   MintCollectibleRequest,
   MintSettings,
   NodeId,
-  OwnedGraphData,
   Swarm,
   backendInterface,
 } from "../backend";
@@ -32,83 +31,6 @@ function useBackendActor(): {
   };
 }
 
-// Build a GraphData-compatible object from OwnedGraphData by constructing
-// rootNodes client-side from the flat owned arrays. Edges come directly from backend.
-function buildGraphDataFromOwned(owned: OwnedGraphData): GraphData {
-  const { curations, swarms, locations, lawTokens, interpretationTokens } =
-    owned;
-
-  // Use edges directly from backend — no client-side fallback construction
-  const edges = owned.edges ? [...owned.edges] : [];
-
-  function buildLawTokenNode(lt: LawToken): GraphNode {
-    return {
-      id: lt.id,
-      nodeType: "lawToken",
-      tokenLabel: lt.tokenLabel,
-      jurisdiction: undefined,
-      parentId: lt.parentLocationId,
-      children: [],
-      customAttributes: lt.customAttributes,
-    };
-  }
-
-  function buildLocationNode(loc: Location): GraphNode {
-    const children: GraphNode[] = lawTokens
-      .filter((lt) => lt.parentLocationId === loc.id)
-      .map((lt) => buildLawTokenNode(lt));
-    return {
-      id: loc.id,
-      nodeType: "location",
-      tokenLabel: loc.title,
-      jurisdiction: undefined,
-      parentId: loc.parentSwarmId,
-      children,
-      customAttributes: loc.customAttributes,
-    };
-  }
-
-  function buildSwarmNode(swarm: Swarm): GraphNode {
-    const children: GraphNode[] = locations
-      .filter((loc) => loc.parentSwarmId === swarm.id)
-      .map((loc) => buildLocationNode(loc));
-    return {
-      id: swarm.id,
-      nodeType: "swarm",
-      tokenLabel: swarm.name,
-      jurisdiction: undefined,
-      parentId: swarm.parentCurationId,
-      children,
-      customAttributes: swarm.customAttributes,
-    };
-  }
-
-  const rootNodes: GraphNode[] = curations.map((curation) => {
-    const children: GraphNode[] = swarms
-      .filter((s) => s.parentCurationId === curation.id)
-      .map((s) => buildSwarmNode(s));
-    return {
-      id: curation.id,
-      nodeType: "curation",
-      tokenLabel: curation.name,
-      jurisdiction: undefined,
-      parentId: undefined,
-      children,
-      customAttributes: curation.customAttributes,
-    };
-  });
-
-  return {
-    curations,
-    swarms,
-    locations,
-    lawTokens,
-    interpretationTokens,
-    rootNodes,
-    edges,
-  };
-}
-
 // Helper to clear cached tree data (kept for backward compatibility with Header)
 export function clearTreeCache() {
   try {
@@ -119,51 +41,24 @@ export function clearTreeCache() {
   }
 }
 
+const EMPTY_GRAPH_DATA: GraphData = {
+  curations: [],
+  swarms: [],
+  locations: [],
+  lawTokens: [],
+  interpretationTokens: [],
+  rootNodes: [],
+  edges: [],
+};
+
+// Returns an empty graph — getOwnedData was removed from the backend.
+// Callers that need graph data should use usePublishedSourceGraphs or
+// usePublishedSourceGraph(id) from usePublicGraphs.ts instead.
 export function useGetOwnedData() {
-  const { actor, isFetching } = useBackendActor();
-  const { identity } = useInternetIdentity();
-
   return useQuery<GraphData>({
-    queryKey: ["graphData", identity?.getPrincipal().toText() ?? "anonymous"],
-    queryFn: async () => {
-      if (!actor)
-        return {
-          curations: [],
-          swarms: [],
-          locations: [],
-          lawTokens: [],
-          interpretationTokens: [],
-          rootNodes: [],
-          edges: [],
-        };
-      const owned = await actor.getOwnedData();
-      return buildGraphDataFromOwned(owned);
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-// DEPRECATED: GraphView page removed. Use usePublishedSourceGraphs/usePublishedSourceGraph instead.
-// Fetches all graph data (not just owned) — used for GraphView and Swarms tab
-export function useGetAllData() {
-  const { actor, isFetching } = useBackendActor();
-
-  return useQuery<GraphData>({
-    queryKey: ["allGraphData"],
-    queryFn: async () => {
-      if (!actor)
-        return {
-          curations: [],
-          swarms: [],
-          locations: [],
-          lawTokens: [],
-          interpretationTokens: [],
-          rootNodes: [],
-          edges: [],
-        };
-      return actor.getAllData();
-    },
-    enabled: !!actor && !isFetching,
+    queryKey: ["graphData", "deprecated"],
+    queryFn: async () => EMPTY_GRAPH_DATA,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }
 
@@ -457,24 +352,8 @@ export function useGetUnvotedTokensForSwarm(swarmId: string) {
   return useQuery({
     queryKey: ["unvotedTokens", swarmId, identity?.getPrincipal().toText()],
     queryFn: async () => {
-      if (!actor || !identity)
-        return { lawTokens: [], interpretationTokens: [] };
-      const graphData = await actor.getAllData();
-      const swarmLocations = graphData.locations.filter(
-        (l) => l.parentSwarmId === swarmId,
-      );
-      const locationIds = new Set(swarmLocations.map((l) => l.id));
-      const swarmLawTokens = graphData.lawTokens.filter((lt) =>
-        locationIds.has(lt.parentLocationId),
-      );
-      const lawTokenIds = new Set(swarmLawTokens.map((lt) => lt.id));
-      const swarmInterpTokens = graphData.interpretationTokens.filter((it) =>
-        lawTokenIds.has(it.parentLawTokenId),
-      );
-      return {
-        lawTokens: swarmLawTokens,
-        interpretationTokens: swarmInterpTokens,
-      };
+      // getAllData removed — return empty; vote functionality is no longer active
+      return { lawTokens: [], interpretationTokens: [] };
     },
     enabled: !!actor && !isFetching && !!swarmId && !!identity,
   });
@@ -654,9 +533,8 @@ export function useGetUserLawTokens() {
       identity?.getPrincipal().toText() ?? "anonymous",
     ],
     queryFn: async () => {
-      if (!actor) return [];
-      const owned = await actor.getOwnedData();
-      return owned.lawTokens;
+      // getOwnedData removed — return empty
+      return [];
     },
     enabled: !!actor && !isFetching && !!identity,
   });
@@ -672,9 +550,8 @@ export function useGetUserInterpretationTokens() {
       identity?.getPrincipal().toText() ?? "anonymous",
     ],
     queryFn: async () => {
-      if (!actor) return [];
-      const owned = await actor.getOwnedData();
-      return owned.interpretationTokens;
+      // getOwnedData removed — return empty
+      return [];
     },
     enabled: !!actor && !isFetching && !!identity,
   });
@@ -696,17 +573,18 @@ export function useResetAllData() {
   });
 }
 
-// Publish source graph to backend
+// Publish source graph to backend (legacy hook — publishSourceGraph was removed;
+// use usePublishGraph from hooks/usePublishGraph.ts which calls commitPublishSourceGraph)
 export function usePublishSourceGraph() {
   const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (
-      input: Parameters<backendInterface["publishSourceGraph"]>[0],
+      input: Parameters<backendInterface["commitPublishSourceGraph"]>[0],
     ) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.publishSourceGraph(input);
+      return actor.commitPublishSourceGraph(input, []);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["graphData"] });
