@@ -323,12 +323,30 @@ export const idlService = IDL.Service({
     ),
   'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
   'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
+  'getTelegramConfig' : IDL.Func(
+      [],
+      [IDL.Opt(IDL.Record({ 'chatId' : IDL.Text, 'botToken' : IDL.Text }))],
+      [],
+    ),
+  'getTelegramConfigStatus' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'updatedAt' : IDL.Opt(IDL.Nat64),
+          'updatedBy' : IDL.Opt(IDL.Text),
+          'hasToken' : IDL.Bool,
+          'hasChatId' : IDL.Bool,
+        }),
+      ],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
+  'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
   'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
   'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
@@ -361,6 +379,11 @@ export const idlService = IDL.Service({
     ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setMintSettings' : IDL.Func([MintSettings], [], []),
+  'setTelegramConfig' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'track_api_request' : IDL.Func([IDL.Text], [], []),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
@@ -677,12 +700,30 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
     'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
+    'getTelegramConfig' : IDL.Func(
+        [],
+        [IDL.Opt(IDL.Record({ 'chatId' : IDL.Text, 'botToken' : IDL.Text }))],
+        [],
+      ),
+    'getTelegramConfigStatus' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'updatedAt' : IDL.Opt(IDL.Nat64),
+            'updatedBy' : IDL.Opt(IDL.Text),
+            'hasToken' : IDL.Bool,
+            'hasChatId' : IDL.Bool,
+          }),
+        ],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
+    'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
     'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
@@ -715,6 +756,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setMintSettings' : IDL.Func([MintSettings], [], []),
+    'setTelegramConfig' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
     'track_api_request' : IDL.Func([IDL.Text], [], []),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });

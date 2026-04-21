@@ -25,6 +25,7 @@ import {
   formatNoMatchesFound,
   formatNodeNotFoundError,
   formatOntCommandMissingNameError,
+  formatTelegramConfigHelp,
 } from "../utils/terminalMessages";
 import {
   type ResolvedNode,
@@ -167,7 +168,10 @@ export default function TerminalPage() {
   const handleHelp = () => {
     const helpText = formatHelpText();
     if (isAdmin) {
-      addMessage("success", `${helpText}\n\n${formatDebugHelpText(true)}`);
+      addMessage(
+        "success",
+        `${helpText}\n\n${formatDebugHelpText(true)}${formatTelegramConfigHelp()}`,
+      );
     } else {
       addMessage("success", helpText);
     }
@@ -1014,6 +1018,155 @@ export default function TerminalPage() {
       const nodeName = fields?.name as string;
       setInput("");
       await handleArchive(nodeName);
+      return;
+    }
+
+    if (command === "config") {
+      setInput("");
+      const rawInput = input.trim();
+
+      // /config telegram_token=<value>
+      const tokenMatch = rawInput.match(/\/config\s+telegram_token=(.+)/);
+      if (tokenMatch) {
+        if (!isAdmin) {
+          addMessage("error", "Not authorized. This command requires admin.");
+          return;
+        }
+        if (!actor) {
+          addMessage(
+            "error",
+            "Backend not connected. Please wait and try again.",
+          );
+          return;
+        }
+        const token = tokenMatch[1].trim();
+        if (!/^\d+:/.test(token)) {
+          addMessage(
+            "error",
+            "Invalid token format. Expected: <bot_id>:<token_string>",
+          );
+          return;
+        }
+        try {
+          const result = await actor.setTelegramConfig(token, "");
+          if ("ok" in result) {
+            addMessage("success", "Telegram bot token configured.");
+          } else {
+            addMessage(
+              "error",
+              `Failed: ${"err" in result ? String(result.err) : "Unknown error"}`,
+            );
+          }
+        } catch (e) {
+          addMessage("error", String(e));
+        }
+        return;
+      }
+
+      // /config telegram_chat_id=<value>
+      const chatIdMatch = rawInput.match(/\/config\s+telegram_chat_id=(.+)/);
+      if (chatIdMatch) {
+        if (!isAdmin) {
+          addMessage("error", "Not authorized. This command requires admin.");
+          return;
+        }
+        if (!actor) {
+          addMessage(
+            "error",
+            "Backend not connected. Please wait and try again.",
+          );
+          return;
+        }
+        const chatId = chatIdMatch[1].trim();
+        if (!chatId.startsWith("-")) {
+          addMessage(
+            "error",
+            "Invalid chat ID. Forum group IDs typically start with - (e.g. -1001234567890)",
+          );
+          return;
+        }
+        try {
+          const result = await actor.setTelegramConfig("", chatId);
+          if ("ok" in result) {
+            addMessage("success", "Telegram chat ID configured.");
+          } else {
+            addMessage(
+              "error",
+              `Failed: ${"err" in result ? String(result.err) : "Unknown error"}`,
+            );
+          }
+        } catch (e) {
+          addMessage("error", String(e));
+        }
+        return;
+      }
+
+      // /config telegram_status
+      if (rawInput === "/config telegram_status") {
+        if (!actor) {
+          addMessage(
+            "error",
+            "Backend not connected. Please wait and try again.",
+          );
+          return;
+        }
+        try {
+          const status = await actor.getTelegramConfigStatus();
+          const updatedAt = status.updatedAt?.[0]
+            ? new Date(
+                Number(status.updatedAt[0] / BigInt(1_000_000)),
+              ).toLocaleString()
+            : "never";
+          const updatedBy = status.updatedBy?.[0] ?? "unknown";
+          addMessage(
+            "success",
+            [
+              "Telegram Config Status:",
+              `  Bot token: ${status.hasToken ? "configured" : "not set"}`,
+              `  Chat ID:   ${status.hasChatId ? "configured" : "not set"}`,
+              `  Last updated: ${updatedAt}`,
+              `  Updated by: ${updatedBy}`,
+            ].join("\n"),
+          );
+        } catch (e) {
+          addMessage("error", String(e));
+        }
+        return;
+      }
+
+      // /config telegram_clear
+      if (rawInput === "/config telegram_clear") {
+        if (!isAdmin) {
+          addMessage("error", "Not authorized. This command requires admin.");
+          return;
+        }
+        if (!actor) {
+          addMessage(
+            "error",
+            "Backend not connected. Please wait and try again.",
+          );
+          return;
+        }
+        try {
+          const result = await actor.setTelegramConfig("", "");
+          if ("ok" in result) {
+            addMessage("success", "Telegram config cleared.");
+          } else {
+            addMessage(
+              "error",
+              `Failed: ${"err" in result ? String(result.err) : "Unknown error"}`,
+            );
+          }
+        } catch (e) {
+          addMessage("error", String(e));
+        }
+        return;
+      }
+
+      addMessage(
+        "error",
+        "Unknown /config sub-command. Type /help for available config commands.",
+      );
       return;
     }
 

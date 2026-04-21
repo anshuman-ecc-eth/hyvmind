@@ -338,8 +338,20 @@ service : {
   getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
   getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
   getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
+  getTelegramConfig: () -> (opt record {
+                                  botToken: text;
+                                  chatId: text;
+                                });
+  getTelegramConfigStatus: () ->
+   (record {
+      hasChatId: bool;
+      hasToken: bool;
+      updatedAt: opt nat64;
+      updatedBy: opt text;
+    }) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;
   getVoteData: (nodeId: NodeId) -> (VoteData) query;
+  hasTelegramConfig: () -> (bool) query;
   hasUserFork: (swarmId: NodeId) -> (bool) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   icChallengeNonce: () -> (text) query;
@@ -368,6 +380,11 @@ service : {
                                                    });
   setApproval: (user: principal, status: ApprovalStatus) -> ();
   setMintSettings: (settings: MintSettings) -> ();
+  setTelegramConfig: (botToken: text, chatId: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
   track_api_request: (apiKey: text) -> ();
   upvoteNode: (nodeId: NodeId) -> ();
 }

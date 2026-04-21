@@ -279,8 +279,22 @@ export interface _SERVICE {
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
+  'getTelegramConfig' : ActorMethod<
+    [],
+    [] | [{ 'chatId' : string, 'botToken' : string }]
+  >,
+  'getTelegramConfigStatus' : ActorMethod<
+    [],
+    {
+      'updatedAt' : [] | [bigint],
+      'updatedBy' : [] | [string],
+      'hasToken' : boolean,
+      'hasChatId' : boolean,
+    }
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
+  'hasTelegramConfig' : ActorMethod<[], boolean>,
   'hasUserFork' : ActorMethod<[NodeId], boolean>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'icChallengeNonce' : ActorMethod<[], string>,
@@ -311,6 +325,11 @@ export interface _SERVICE {
   >,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setMintSettings' : ActorMethod<[MintSettings], undefined>,
+  'setTelegramConfig' : ActorMethod<
+    [string, string],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
   'track_api_request' : ActorMethod<[string], undefined>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }

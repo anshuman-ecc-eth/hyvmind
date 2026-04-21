@@ -14,8 +14,11 @@ import type { ChatChannelSummary } from "../backend";
 import {
   useGetChatChannels,
   useGetChatMessages,
+  useIsCallerAdmin,
   useSendChatMessage,
 } from "../hooks/useQueries";
+import { useTelegram } from "../hooks/useTelegram";
+import * as telegramService from "../services/telegramService";
 
 // ─── Unread Badge ─────────────────────────────────────────────────────────────
 
@@ -158,9 +161,22 @@ export default function SwarmsView() {
 
   const { data: channels = [], isLoading: channelsLoading } =
     useGetChatChannels();
-  const { data: messages = [], isLoading: messagesLoading } =
+  const { data: nativeMessages = [], isLoading: messagesLoading } =
     useGetChatMessages(selectedId);
   const sendMutation = useSendChatMessage();
+
+  // Telegram bridge
+  const {
+    isEnabled,
+    toggleEnabled,
+    isConnected,
+    isLoading: tgLoading,
+    channels: tgChannels,
+    messagesByChannel,
+    canEnable,
+    config: tgConfig,
+  } = useTelegram();
+  const { data: isAdmin } = useIsCallerAdmin();
 
   // Separate curation-level and sub-channels
   const curationChannels = channels.filter((c) => !c.isSubchannel);
@@ -198,19 +214,46 @@ export default function SwarmsView() {
       ? allGroups
       : allGroups.filter((g) => g.curationName === selectedCuration);
 
+  // Determine if we're viewing a Telegram channel
+  const isTelegramChannel = selectedId?.startsWith("tg-") ?? false;
+  const telegramMessages = isTelegramChannel
+    ? (messagesByChannel.get(selectedId!) ?? [])
+    : [];
+  const displayMessages = isTelegramChannel ? telegramMessages : nativeMessages;
+
   const selectedChannel = channels.find((c) => c.id === selectedId);
+  const selectedTgChannel = tgChannels.find((c) => c.id === selectedId);
 
   // Auto-scroll to newest message
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on message change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [displayMessages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = inputText.trim();
-    if (!text || !selectedId || sendMutation.isPending) return;
+    if (!text || !selectedId) return;
     setInputText("");
-    sendMutation.mutate({ channelId: selectedId, text });
+
+    if (isTelegramChannel) {
+      if (!tgConfig) return;
+      const threadPart = selectedId.replace("tg-", "");
+      const threadId =
+        threadPart === "main" ? undefined : Number.parseInt(threadPart, 10);
+      try {
+        await telegramService.sendMessage(
+          tgConfig.botToken,
+          tgConfig.chatId,
+          text,
+          Number.isNaN(threadId) ? undefined : threadId,
+        );
+      } catch (err) {
+        console.error("[Telegram] Send error:", err);
+      }
+    } else {
+      if (sendMutation.isPending) return;
+      sendMutation.mutate({ channelId: selectedId, text });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -220,10 +263,66 @@ export default function SwarmsView() {
     }
   };
 
+  // Derive the active channel name for display
+  const activeChannelName =
+    selectedTgChannel?.name ?? selectedChannel?.name ?? null;
+  const activeChannelParent =
+    !isTelegramChannel && selectedChannel?.isSubchannel
+      ? selectedChannel.parentCuration
+      : null;
+
+  // Suppress unused variable warning — isAdmin used for tooltip context awareness
+  void isAdmin;
+
   return (
     <div className="flex h-full min-h-0 font-mono">
       {/* ── Sidebar ── */}
       <aside className="flex w-[260px] shrink-0 flex-col border-r border-dashed border-border bg-card">
+        {/* Telegram toggle */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-dashed border-border">
+          <span className="text-xs text-muted-foreground font-mono">
+            Telegram
+          </span>
+          {canEnable ? (
+            <button
+              type="button"
+              onClick={toggleEnabled}
+              className={`text-xs px-2 py-1 rounded font-mono transition-colors ${
+                isEnabled
+                  ? "text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title={
+                isEnabled
+                  ? isConnected
+                    ? "Connected — click to disable"
+                    : "Connecting..."
+                  : "Click to enable Telegram bridge"
+              }
+              data-ocid="swarms.telegram.toggle"
+            >
+              {tgLoading
+                ? "…"
+                : isEnabled
+                  ? isConnected
+                    ? "on"
+                    : "connecting"
+                  : "off"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="text-xs px-2 py-1 rounded font-mono text-muted-foreground/50 cursor-not-allowed"
+              title="Admin must configure Telegram via terminal: /config telegram_token=<token> and /config telegram_chat_id=<chatId>"
+              data-ocid="swarms.telegram.toggle"
+            >
+              off
+            </button>
+          )}
+        </div>
+
+        {/* Curation selector */}
         <div className="border-b border-dashed border-border px-2 py-2">
           <Select value={selectedCuration} onValueChange={setSelectedCuration}>
             <SelectTrigger
@@ -244,11 +343,12 @@ export default function SwarmsView() {
             </SelectContent>
           </Select>
         </div>
+
         <ScrollArea className="flex-1 min-h-0 px-2 py-2">
           {channelsLoading && (
             <p className="px-2 py-3 text-xs text-muted-foreground">loading…</p>
           )}
-          {!channelsLoading && filteredGroups.length === 0 && (
+          {!channelsLoading && filteredGroups.length === 0 && !isEnabled && (
             <div
               className="flex flex-col items-center gap-2 px-3 py-8 text-center"
               data-ocid="swarms.channels.empty_state"
@@ -269,6 +369,30 @@ export default function SwarmsView() {
               onSelect={setSelectedId}
             />
           ))}
+
+          {/* Telegram Channels */}
+          {isEnabled && tgChannels.length > 0 && (
+            <>
+              <div className="px-3 py-1 text-xs text-muted-foreground/60 font-mono border-t border-dashed border-border mt-2 pt-2">
+                Telegram Channels
+              </div>
+              {tgChannels.map((tgCh) => (
+                <button
+                  key={tgCh.id}
+                  type="button"
+                  onClick={() => setSelectedId(tgCh.id)}
+                  className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${
+                    selectedId === tgCh.id
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                  data-ocid={`swarms.telegram.channel.${tgCh.id}`}
+                >
+                  {tgCh.name}
+                </button>
+              ))}
+            </>
+          )}
         </ScrollArea>
       </aside>
 
@@ -276,17 +400,21 @@ export default function SwarmsView() {
       <div className="flex flex-1 min-w-0 flex-col bg-background">
         {/* Channel header */}
         <div className="flex items-center gap-2 border-b border-dashed border-border bg-card px-4 py-2.5">
-          {selectedChannel ? (
+          {activeChannelName ? (
             <>
               <span className="truncate text-sm font-semibold text-foreground">
-                {selectedChannel.name}
+                {activeChannelName}
               </span>
-              {selectedChannel.isSubchannel &&
-                selectedChannel.parentCuration && (
-                  <span className="ml-1 text-xs text-muted-foreground/50">
-                    in {selectedChannel.parentCuration}
-                  </span>
-                )}
+              {activeChannelParent && (
+                <span className="ml-1 text-xs text-muted-foreground/50">
+                  in {activeChannelParent}
+                </span>
+              )}
+              {isTelegramChannel && (
+                <span className="ml-1 text-xs text-cyan-400/70 font-mono">
+                  · telegram
+                </span>
+              )}
             </>
           ) : (
             <span className="text-xs text-muted-foreground/60">
@@ -308,7 +436,7 @@ export default function SwarmsView() {
               </p>
             </div>
           )}
-          {selectedId && messagesLoading && (
+          {selectedId && !isTelegramChannel && messagesLoading && (
             <p
               className="text-xs text-muted-foreground py-4"
               data-ocid="swarms.messages.loading_state"
@@ -316,7 +444,7 @@ export default function SwarmsView() {
               loading messages…
             </p>
           )}
-          {selectedId && !messagesLoading && messages.length === 0 && (
+          {selectedId && displayMessages.length === 0 && !messagesLoading && (
             <div
               className="flex flex-col items-center gap-2 py-12 text-center"
               data-ocid="swarms.channel.empty_state"
@@ -327,7 +455,7 @@ export default function SwarmsView() {
             </div>
           )}
           <div className="space-y-3">
-            {messages.map((msg, i) => (
+            {displayMessages.map((msg, i) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: positional message rows
                 key={i}
@@ -359,23 +487,26 @@ export default function SwarmsView() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={`message ${selectedChannel?.name ?? "channel"}`}
+                placeholder={`message ${activeChannelName ?? "channel"}`}
                 className="flex-1 font-mono text-xs bg-background border-border focus-visible:ring-1 rounded-none"
-                disabled={sendMutation.isPending}
+                disabled={!isTelegramChannel && sendMutation.isPending}
                 data-ocid="swarms.message.input"
               />
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={handleSend}
-                disabled={!inputText.trim() || sendMutation.isPending}
+                disabled={
+                  !inputText.trim() ||
+                  (!isTelegramChannel && sendMutation.isPending)
+                }
                 className="shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5"
                 data-ocid="swarms.message.submit_button"
               >
                 <Send className="h-3.5 w-3.5" />
               </Button>
             </div>
-            {sendMutation.isError && (
+            {!isTelegramChannel && sendMutation.isError && (
               <p
                 className="mt-1 text-[10px] text-destructive"
                 data-ocid="swarms.message.error_state"

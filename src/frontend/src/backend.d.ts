@@ -310,8 +310,19 @@ export interface backendInterface {
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
+    getTelegramConfig(): Promise<{
+        chatId: string;
+        botToken: string;
+    } | null>;
+    getTelegramConfigStatus(): Promise<{
+        updatedAt?: bigint;
+        updatedBy?: string;
+        hasToken: boolean;
+        hasChatId: boolean;
+    }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVoteData(nodeId: NodeId): Promise<VoteData>;
+    hasTelegramConfig(): Promise<boolean>;
     hasUserFork(swarmId: NodeId): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
     icChallengeNonce(): Promise<string>;
@@ -338,6 +349,13 @@ export interface backendInterface {
     }>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
+    setTelegramConfig(botToken: string, chatId: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     track_api_request(apiKey: string): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }

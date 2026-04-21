@@ -4,12 +4,14 @@ import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Nat32 "mo:core/Nat32";
+import Nat64 "mo:core/Nat64";
 import Int "mo:core/Int";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Set "mo:core/Set";
+import Blob "mo:core/Blob";
 
 import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
@@ -18,13 +20,6 @@ import Runtime "mo:core/Runtime";
 
 
 
-// Apply any data migration necessary after code changes
-// Drop old single-key API rate-limit fields removed in favour of per-user Maps
-(with migration = func(old : {
-  var globalApiKey : Text;
-  var apiRateLimitCount : Nat;
-  var apiRateLimitWindowStart : Int;
-}) : {} { {} })
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -356,6 +351,15 @@ actor {
     unreadCount : Nat;
   };
 
+  // ── Telegram Bridge Types ────────────────────────────────────────────────────
+
+  type TelegramConfig = {
+    encryptedBotToken : Blob;
+    encryptedChatId : Blob;
+    updatedAt : Nat64;
+    updatedBy : Principal;
+  };
+
   // Backend State
   let voteData = Map.empty<Text, VoteData>();
   let userVoteTracking = Map.empty<Principal, UserVoteTracking>();
@@ -393,6 +397,9 @@ actor {
 
   // Chat channels — keyed by curation name (top-level) or "curationName@swarmName" (sub-channel)
   var chatChannels = Map.empty<Text, ChatChannel>();
+
+  // Telegram bridge config (encrypted)
+  var telegramConfig : ?TelegramConfig = null;
 
   // ── HTTP API State ───────────────────────────────────────────────────────────
 
@@ -3913,6 +3920,124 @@ actor {
     };
   };
 
+  // ── Telegram Bridge ──────────────────────────────────────────────────────────
+
+  // Derive a fixed 32-byte obfuscation secret from the UTF-8 bytes of "telegram_config_v1"
+  func deriveSecret() : Blob {
+    let base = "telegram_config_v1".encodeUtf8().toArray();
+    let len = base.size();
+    let result = Array.tabulate(32, func(i : Nat) : Nat8 {
+      let a = base[i % len];
+      let b = base[(i + 1) % len];
+      a ^ b;
+    });
+    Blob.fromArray(result);
+  };
+
+  // XOR each byte of data with repeating secret bytes — symmetric, so decrypt == encrypt
+  func xorEncrypt(data : Blob, secret : Blob) : Blob {
+    let dataBytes = data.toArray();
+    let secretBytes = secret.toArray();
+    let secretLen = secretBytes.size();
+    if (secretLen == 0) { return data };
+    let result = Array.tabulate(dataBytes.size(), func(i : Nat) : Nat8 {
+      dataBytes[i] ^ secretBytes[i % secretLen];
+    });
+    Blob.fromArray(result);
+  };
+
+  func xorDecrypt(encrypted : Blob, secret : Blob) : Blob {
+    xorEncrypt(encrypted, secret);
+  };
+
+  // Admin-only: store encrypted Telegram credentials. Pass empty strings to clear.
+  public shared ({ caller }) func setTelegramConfig(botToken : Text, chatId : Text) : async { #ok; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    // Clear config if both are empty
+    if (botToken == "" and chatId == "") {
+      telegramConfig := null;
+      return #ok;
+    };
+    let secret = deriveSecret();
+    let now64 = Nat64.fromNat(Int.abs(Time.now()));
+    switch (telegramConfig) {
+      case (null) {
+        // Fresh config — both fields required if neither is empty; store whatever is provided
+        let encToken = if (botToken != "") { xorEncrypt(botToken.encodeUtf8(), secret) } else { Blob.fromArray([]) };
+        let encChat  = if (chatId  != "") { xorEncrypt(chatId.encodeUtf8(),   secret) } else { Blob.fromArray([]) };
+        telegramConfig := ?{
+          encryptedBotToken = encToken;
+          encryptedChatId   = encChat;
+          updatedAt = now64;
+          updatedBy = caller;
+        };
+      };
+      case (?existing) {
+        // Partial update: preserve existing value when new value is empty
+        let encToken = if (botToken != "") { xorEncrypt(botToken.encodeUtf8(), secret) } else { existing.encryptedBotToken };
+        let encChat  = if (chatId  != "") { xorEncrypt(chatId.encodeUtf8(),   secret) } else { existing.encryptedChatId };
+        telegramConfig := ?{
+          encryptedBotToken = encToken;
+          encryptedChatId   = encChat;
+          updatedAt = now64;
+          updatedBy = caller;
+        };
+      };
+    };
+    #ok;
+  };
+
+  // Any authenticated user can retrieve the decrypted config
+  public shared ({ caller }) func getTelegramConfig() : async ?{ botToken : Text; chatId : Text } {
+    if (caller.isAnonymous()) { return null };
+    switch (telegramConfig) {
+      case (null) { null };
+      case (?config) {
+        let secret = deriveSecret();
+        let botTokenBlob = xorDecrypt(config.encryptedBotToken, secret);
+        let chatIdBlob   = xorDecrypt(config.encryptedChatId,   secret);
+        let botToken = switch (botTokenBlob.decodeUtf8()) {
+          case (?t) { t };
+          case (null) { "" };
+        };
+        let chatId = switch (chatIdBlob.decodeUtf8()) {
+          case (?t) { t };
+          case (null) { "" };
+        };
+        ?{ botToken; chatId };
+      };
+    };
+  };
+
+  // Quick boolean check — available to all callers
+  public query func hasTelegramConfig() : async Bool {
+    telegramConfig != null;
+  };
+
+  // Status check with masked info — available to all callers
+  public query func getTelegramConfigStatus() : async {
+    hasToken : Bool;
+    hasChatId : Bool;
+    updatedAt : ?Nat64;
+    updatedBy : ?Text;
+  } {
+    switch (telegramConfig) {
+      case (null) {
+        { hasToken = false; hasChatId = false; updatedAt = null; updatedBy = null };
+      };
+      case (?config) {
+        {
+          hasToken  = config.encryptedBotToken.size() > 0;
+          hasChatId = config.encryptedChatId.size() > 0;
+          updatedAt = ?config.updatedAt;
+          updatedBy = ?config.updatedBy.toText();
+        };
+      };
+    };
+  };
+
   public query func icChallengeNonce() : async Text {
     "ic-gateway-challenge-18a800cbf63cf59f";
   };
@@ -3935,6 +4060,7 @@ actor {
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();
     chatChannels := Map.empty<Text, ChatChannel>();
+    telegramConfig := null;
     apiKeysByPrincipal := Map.empty<Principal, Text>();
     principalByApiKey := Map.empty<Text, Principal>();
     apiRateLimitCounts := Map.empty<Text, Nat>();

@@ -150,3 +150,17 @@ Examples:
   /debug vote nodeId=t_abc123
   /debug reset`;
 }
+
+export function formatTelegramConfigHelp(): string {
+  return [
+    "",
+    "Telegram Config (Admin):",
+    "  /config telegram_token=<token>     set bot token",
+    "  /config telegram_chat_id=<id>      set chat/forum group id",
+    "  /config telegram_status            show config status",
+    "  /config telegram_clear             clear all telegram config",
+    "",
+    "  example: /config telegram_token=123456789:ABCDefgh...",
+    "  example: /config telegram_chat_id=-1001234567890",
+  ].join("\n");
+}
