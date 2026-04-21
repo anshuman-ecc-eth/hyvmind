@@ -290,8 +290,8 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
+    generateApiKey(): Promise<string>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
-    getApiKey(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -305,6 +305,7 @@ export interface backendInterface {
         err: string;
     }>;
     getMintSettings(): Promise<MintSettings>;
+    getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
@@ -324,9 +325,9 @@ export interface backendInterface {
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
-    regenerateApiKey(): Promise<string>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
+    revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
@@ -337,6 +338,6 @@ export interface backendInterface {
     }>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
-    track_api_request(): Promise<void>;
+    track_api_request(apiKey: string): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }

@@ -320,8 +320,8 @@ service : {
    customAttributes: vec WeightedAttribute) -> (NodeId);
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
+  generateApiKey: () -> (text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
-  getApiKey: () -> (opt text) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
@@ -333,6 +333,7 @@ service : {
       ok: vec ChatMessage;
     });
   getMintSettings: () -> (MintSettings) query;
+  getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
   getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
   getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
@@ -357,9 +358,9 @@ service : {
                            NodeId;
                          }) -> (PublishPreviewResult);
   pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
-  regenerateApiKey: () -> (text);
   requestApproval: () -> ();
   resetAllData: () -> ();
+  revokeApiKey: () -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
   sendMessage: (channelId: text, "text": text) -> (variant {
                                                      err: text;
@@ -367,6 +368,6 @@ service : {
                                                    });
   setApproval: (user: principal, status: ApprovalStatus) -> ();
   setMintSettings: (settings: MintSettings) -> ();
-  track_api_request: () -> ();
+  track_api_request: (apiKey: text) -> ();
   upvoteNode: (nodeId: NodeId) -> ();
 }

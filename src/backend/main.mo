@@ -3,6 +3,7 @@ import List "mo:core/List";
 import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
+import Nat32 "mo:core/Nat32";
 import Int "mo:core/Int";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
@@ -18,8 +19,12 @@ import Runtime "mo:core/Runtime";
 
 
 // Apply any data migration necessary after code changes
-
-
+// Drop old single-key API rate-limit fields removed in favour of per-user Maps
+(with migration = func(old : {
+  var globalApiKey : Text;
+  var apiRateLimitCount : Nat;
+  var apiRateLimitWindowStart : Int;
+}) : {} { {} })
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -391,12 +396,13 @@ actor {
 
   // ── HTTP API State ───────────────────────────────────────────────────────────
 
-  // Single global API key; admin can regenerate via regenerateApiKey()
-  var globalApiKey : Text = "hyvmind-api-key-2024";
+  // Per-user API keys: principal → key and reverse lookup key → principal
+  var apiKeysByPrincipal = Map.empty<Principal, Text>();
+  var principalByApiKey = Map.empty<Text, Principal>();
 
-  // Rate limiting: global counters for the single global key
-  var apiRateLimitCount : Nat = 0;
-  var apiRateLimitWindowStart : Int = 0;
+  // Per-key rate limiting counters
+  var apiRateLimitCounts = Map.empty<Text, Nat>();
+  var apiRateLimitWindowStarts = Map.empty<Text, Int>();
 
   type SwarmType = {
     #regular;
@@ -3350,6 +3356,29 @@ actor {
     null;
   };
 
+  // Extract value of a named request header (case-insensitive key match)
+  func getHeaderValue(headers : [(Text, Text)], name : Text) : ?Text {
+    let nameLower = name.toLower();
+    for ((k, v) in headers.vals()) {
+      if (k.toLower() == nameLower) { return ?v };
+    };
+    null;
+  };
+
+  // Extract API key from Authorization: Bearer <key> header, or null
+  func getAuthBearerKey(headers : [(Text, Text)]) : ?Text {
+    switch (getHeaderValue(headers, "authorization")) {
+      case (null) { null };
+      case (?hdr) {
+        let prefix = "Bearer ";
+        switch (hdr.stripStart(#text prefix)) {
+          case (?key) { ?key };
+          case (null) { null };
+        };
+      };
+    };
+  };
+
   // ── HTTP API: Response builders ──────────────────────────────────────────────
 
   let jsonContentType : (Text, Text) = ("Content-Type", "application/json");
@@ -3625,30 +3654,183 @@ actor {
     httpOk(jsonObject([("tools", jsonArray(tools))]));
   };
 
+  // ── HTTP API: MCP JSON-RPC helpers ──────────────────────────────────────────
+
+  // Build a JSON-RPC 2.0 success response
+  func mcpSuccess(id : Text, result : Text) : HttpResponse {
+    let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"result\":" # result # "}";
+    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+  };
+
+  // Build a JSON-RPC 2.0 error response
+  func mcpError(id : Text, code : Int, msg : Text) : HttpResponse {
+    let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"error\":{\"code\":" # code.toText() # ",\"message\":" # jsonText(msg) # "}}";
+    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+  };
+
+  // Extract a JSON string value for a top-level key (naïve but sufficient for
+  // well-formed MCP messages where values are simple quoted strings).
+  // Returns null when the key is absent or its value is not a quoted string.
+  func extractJsonStringField(json : Text, key : Text) : ?Text {
+    let needle = "\"" # key # "\"";
+    let parts = json.split(#text needle).toArray();
+    if (parts.size() < 2) { return null };
+    let rest = parts[1];
+    // Skip leading whitespace and the ':' separator to find the value
+    let restChars = rest.chars().toArray();
+    var idx = 0;
+    while (idx < restChars.size() and (restChars[idx] == ' ' or restChars[idx] == ':' or restChars[idx] == '\t')) {
+      idx += 1;
+    };
+    // Expect an opening quote char (use Char.fromNat32 for double-quote = 34)
+    let dq : Char = Char.fromNat32(34);
+    if (idx >= restChars.size() or not (restChars[idx] == dq)) { return null };
+    idx += 1;
+    // Collect until next unescaped closing quote
+    var result = "";
+    var stop = false;
+    while (idx < restChars.size() and not stop) {
+      let c = restChars[idx];
+      if (c == dq) {
+        stop := true;
+      } else if (c == '\\' and idx + 1 < restChars.size()) {
+        result := result # Text.fromChar(restChars[idx + 1]);
+        idx += 2;
+      } else {
+        result := result # Text.fromChar(c);
+        idx += 1;
+      };
+    };
+    if (stop) { ?result } else { null };
+  };
+
+  // MCP tools list (shared between tools/list and initialize capabilities)
+  func mcpToolsList() : Text {
+    let tools = [
+      jsonObject([
+        ("name", jsonText("get_all_graphs")),
+        ("description", jsonText("List all published knowledge graphs with metadata (id, name, creator, node/edge counts)")),
+        ("inputSchema", jsonObject([("type", jsonText("object")), ("properties", jsonObject([])), ("required", jsonArray([]))])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph")),
+        ("description", jsonText("Get full graph data (curations, swarms, locations, law entities, interpretation entities, and edges) for a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID returned by get_all_graphs"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+    ];
+    jsonArray(tools);
+  };
+
+  // Handle a single MCP JSON-RPC request body (already decoded to Text)
+  func handleMcpBody(body : Text) : HttpResponse {
+    // Extract id field (may be number or string – capture raw token)
+    let idRaw : Text = switch (extractJsonStringField(body, "id")) {
+      case (?s) { "\"" # s # "\"" };
+      case (null) { "null" };
+    };
+
+    let method : Text = switch (extractJsonStringField(body, "method")) {
+      case (?m) { m };
+      case (null) { return mcpError(idRaw, -32600, "Invalid Request: missing method") };
+    };
+
+    if (method == "initialize") {
+      let result = jsonObject([
+        ("protocolVersion", jsonText("2024-11-05")),
+        ("capabilities", jsonObject([("tools", jsonObject([("listChanged", jsonBool(false))]))])),
+        ("serverInfo", jsonObject([("name", jsonText("hyvmind")), ("version", jsonText("1.0"))])),
+      ]);
+      mcpSuccess(idRaw, result);
+    } else if (method == "tools/list") {
+      let result = jsonObject([("tools", mcpToolsList())]);
+      mcpSuccess(idRaw, result);
+    } else if (method == "tools/call") {
+      // Extract tool name from params.name
+      let toolName : Text = switch (extractJsonStringField(body, "name")) {
+        case (?n) { n };
+        case (null) { return mcpError(idRaw, -32602, "Invalid params: missing tool name") };
+      };
+      if (toolName == "get_all_graphs") {
+        let metaJsons = publishedSourceGraphs.values().map(serializeMeta).toArray();
+        let content = jsonArray([jsonObject([("type", jsonText("text")), ("text", jsonText(jsonArray(metaJsons)))])]);
+        mcpSuccess(idRaw, jsonObject([("content", content)]));
+      } else if (toolName == "get_graph") {
+        let graphId : Text = switch (extractJsonStringField(body, "graph_id")) {
+          case (?g) { g };
+          case (null) { return mcpError(idRaw, -32602, "Invalid params: missing graph_id") };
+        };
+        switch (lookupPublishedGraph(graphId)) {
+          case (null) { mcpError(idRaw, -32602, "Graph not found: " # graphId) };
+          case (?data) {
+            let graphJson = jsonObject([
+              ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
+              ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
+              ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
+              ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
+              ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
+              ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+            ]);
+            let content = jsonArray([jsonObject([("type", jsonText("text")), ("text", jsonText(graphJson))])]);
+            mcpSuccess(idRaw, jsonObject([("content", content)]));
+          };
+        };
+      } else {
+        mcpError(idRaw, -32601, "Tool not found: " # toolName);
+      };
+    } else if (method == "notifications/initialized") {
+      // Notification — no response needed but return 200 with empty result
+      mcpSuccess(idRaw, "{}");
+    } else {
+      mcpError(idRaw, -32601, "Method not found: " # method);
+    };
+  };
+
   // ── HTTP API: http_request (public query — required for IC HTTP interface) ───
 
   public query func http_request(req : HttpRequest) : async HttpResponse {
     let (path, queryString) = splitUrl(req.url);
 
-    // Validate API key
-    let apiKeyOpt = getQueryParam(queryString, "api_key");
-    let providedKey = switch (apiKeyOpt) {
+    // Validate API key — accept from Authorization: Bearer header OR api_key query param
+    let providedKey : Text = switch (getAuthBearerKey(req.headers)) {
       case (?k) { k };
-      case (null) { return httpError(401, "Missing api_key query parameter") };
+      case (null) {
+        switch (getQueryParam(queryString, "api_key")) {
+          case (?k) { k };
+          case (null) { return httpError(401, "Missing API key (provide Authorization: Bearer <key> header or api_key query param)") };
+        };
+      };
     };
-    if (providedKey != globalApiKey) {
+    if (principalByApiKey.get(providedKey) == null) {
       return httpError(401, "Invalid API key");
     };
 
-    // NOTE: Rate limiting cannot be enforced here. Query calls on the IC are read-only —
-    // they can read state but cannot mutate it, so incrementing apiRateLimitCount in a
-    // query function is impossible. The rate limit counter is maintained by the companion
-    // update function track_api_request(), which must be called separately by the HTTP
-    // gateway. The guard is intentionally omitted here; keep the state and track_api_request
-    // for future enforcement via a certified-query or update-based gateway pattern.
+    // Rate limit check (read-only; incrementing happens in track_api_request)
+    let keyCount = switch (apiRateLimitCounts.get(providedKey)) {
+      case (?c) { c };
+      case (null) { 0 };
+    };
+    let windowStart = switch (apiRateLimitWindowStarts.get(providedKey)) {
+      case (?w) { w };
+      case (null) { 0 };
+    };
+    let now = Time.now();
+    let withinWindow = now - windowStart <= 60_000_000_000;
+    if (withinWindow and keyCount >= 100) {
+      return httpError(429, "Rate limit exceeded: 100 requests per minute");
+    };
 
     // Route
-    if (path == "/api/tools") {
+    if (path == "/mcp") {
+      // MCP JSON-RPC 2.0 endpoint
+      switch (req.body.decodeUtf8()) {
+        case (null) { httpError(400, "Invalid request body: not valid UTF-8") };
+        case (?bodyText) { handleMcpBody(bodyText) };
+      };
+    } else if (path == "/api/tools") {
       handleGetTools();
     } else if (path == "/api/graphs") {
       handleGetAllGraphs();
@@ -3675,37 +3857,60 @@ actor {
     };
   };
 
-  // ── HTTP API: track_api_request — update call for rate limiting ──────────────
-  // Called by the HTTP gateway on each request to increment the global rate counter.
+  // ── HTTP API: track_api_request — update call for per-key rate limiting ─────
+  // Called by the HTTP gateway on each request to increment the per-key rate counter.
 
-  public shared func track_api_request() : async () {
+  public shared func track_api_request(apiKey : Text) : async () {
     let now = Time.now();
-    if (now - apiRateLimitWindowStart > 60_000_000_000) {
-      apiRateLimitCount := 1;
-      apiRateLimitWindowStart := now;
+    let windowStart = switch (apiRateLimitWindowStarts.get(apiKey)) {
+      case (?w) { w };
+      case (null) { 0 };
+    };
+    if (now - windowStart > 60_000_000_000) {
+      apiRateLimitCounts.add(apiKey, 1);
+      apiRateLimitWindowStarts.add(apiKey, now);
     } else {
-      apiRateLimitCount += 1;
+      let current = switch (apiRateLimitCounts.get(apiKey)) {
+        case (?c) { c };
+        case (null) { 0 };
+      };
+      apiRateLimitCounts.add(apiKey, current + 1);
     };
   };
 
-  // ── HTTP API: Candid functions for API key management ───────────────────────
+  // ── HTTP API: Candid functions for per-user API key management ──────────────
 
-  // Admin-only: regenerate the global API key
-  public shared ({ caller }) func regenerateApiKey() : async Text {
-    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
-      Runtime.trap("Unauthorized: Only admins can regenerate the API key");
+  // Generate (or regenerate) an API key for the calling user
+  public shared ({ caller }) func generateApiKey() : async Text {
+    if (caller.isAnonymous()) { Runtime.trap("Unauthorized: must be logged in") };
+    // Remove old key from reverse map if one exists
+    switch (apiKeysByPrincipal.get(caller)) {
+      case (?oldKey) { principalByApiKey.remove(oldKey) };
+      case (null) {};
     };
-    let newKey = "hvm-" # Int.abs(Time.now()).toText() # "-key";
-    globalApiKey := newKey;
-    apiRateLimitCount := 0;
-    apiRateLimitWindowStart := 0;
+    let newKey = "hvm-" # caller.hash().toText() # "-" # Time.now().toText();
+    apiKeysByPrincipal.add(caller, newKey);
+    principalByApiKey.add(newKey, caller);
     newKey;
   };
 
-  // Any authenticated user can fetch the global API key
-  public shared query ({ caller }) func getApiKey() : async ?Text {
+  // Returns the calling user's current API key, or null if none generated yet
+  public query ({ caller }) func getMyApiKey() : async ?Text {
     if (caller.isAnonymous()) { return null };
-    ?globalApiKey;
+    apiKeysByPrincipal.get(caller);
+  };
+
+  // Revoke the calling user's API key
+  public shared ({ caller }) func revokeApiKey() : async () {
+    switch (apiKeysByPrincipal.get(caller)) {
+      case (?key) {
+        principalByApiKey.remove(key);
+        apiKeysByPrincipal.remove(caller);
+        apiRateLimitCounts.remove(key);
+        apiRateLimitWindowStarts.remove(key);
+      };
+      case (null) {};
+    };
   };
 
   public query func icChallengeNonce() : async Text {
@@ -3730,5 +3935,9 @@ actor {
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();
     chatChannels := Map.empty<Text, ChatChannel>();
+    apiKeysByPrincipal := Map.empty<Principal, Text>();
+    principalByApiKey := Map.empty<Text, Principal>();
+    apiRateLimitCounts := Map.empty<Text, Nat>();
+    apiRateLimitWindowStarts := Map.empty<Text, Int>();
   };
 };

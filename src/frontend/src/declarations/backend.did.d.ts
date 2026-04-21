@@ -258,11 +258,11 @@ export interface _SERVICE {
   >,
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
+  'generateApiKey' : ActorMethod<[], string>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],
     Array<PublishedSourceGraphMeta>
   >,
-  'getApiKey' : ActorMethod<[], [] | [string]>,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -274,6 +274,7 @@ export interface _SERVICE {
       { 'err' : string }
   >,
   'getMintSettings' : ActorMethod<[], MintSettings>,
+  'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
@@ -299,9 +300,9 @@ export interface _SERVICE {
     PublishPreviewResult
   >,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
-  'regenerateApiKey' : ActorMethod<[], string>,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
+  'revokeApiKey' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendMessage' : ActorMethod<
     [string, string],
@@ -310,7 +311,7 @@ export interface _SERVICE {
   >,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setMintSettings' : ActorMethod<[MintSettings], undefined>,
-  'track_api_request' : ActorMethod<[], undefined>,
+  'track_api_request' : ActorMethod<[string], undefined>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

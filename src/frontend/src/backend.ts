@@ -373,8 +373,8 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
+    generateApiKey(): Promise<string>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
-    getApiKey(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -388,6 +388,7 @@ export interface backendInterface {
         err: string;
     }>;
     getMintSettings(): Promise<MintSettings>;
+    getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
@@ -407,9 +408,9 @@ export interface backendInterface {
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
-    regenerateApiKey(): Promise<string>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
+    revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
@@ -420,7 +421,7 @@ export interface backendInterface {
     }>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setMintSettings(settings: MintSettings): Promise<void>;
-    track_api_request(): Promise<void>;
+    track_api_request(apiKey: string): Promise<void>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
 import type { ApprovalStatus as _ApprovalStatus, AttributeChange as _AttributeChange, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CollectibleEdition as _CollectibleEdition, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
@@ -566,6 +567,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async generateApiKey(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateApiKey();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateApiKey();
+            return result;
+        }
+    }
     async getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>> {
         if (this.processError) {
             try {
@@ -578,20 +593,6 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getAllPublishedSourceGraphs();
             return result;
-        }
-    }
-    async getApiKey(): Promise<string | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getApiKey();
-                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getApiKey();
-            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
         }
     }
     async getArchivedNodeIds(): Promise<Array<NodeId>> {
@@ -696,6 +697,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getMintSettings();
             return result;
+        }
+    }
+    async getMyApiKey(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyApiKey();
+                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyApiKey();
+            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMyBuzzBalance(): Promise<BuzzScore> {
@@ -964,20 +979,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async regenerateApiKey(): Promise<string> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.regenerateApiKey();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.regenerateApiKey();
-            return result;
-        }
-    }
     async requestApproval(): Promise<void> {
         if (this.processError) {
             try {
@@ -1003,6 +1004,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.resetAllData();
+            return result;
+        }
+    }
+    async revokeApiKey(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.revokeApiKey();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.revokeApiKey();
             return result;
         }
     }
@@ -1068,17 +1083,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async track_api_request(): Promise<void> {
+    async track_api_request(arg0: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.track_api_request();
+                const result = await this.actor.track_api_request(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.track_api_request();
+            const result = await this.actor.track_api_request(arg0);
             return result;
         }
     }

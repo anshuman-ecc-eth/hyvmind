@@ -11,7 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { Check, Copy, Loader2, Moon, RefreshCw, Sun } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Loader2,
+  Moon,
+  Sun,
+  Trash2,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -50,14 +58,15 @@ export default function ProfileSettingsModal({
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [apiKeyLoading, setApiKeyLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showRegenConfirm, setShowRegenConfirm] = useState(false);
-  const [regenLoading, setRegenLoading] = useState(false);
+  const [revokeConfirm, setRevokeConfirm] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
+  const [generateLoading, setGenerateLoading] = useState(false);
 
   useEffect(() => {
     if (!open || !actor) return;
     setApiKeyLoading(true);
     actor
-      .getApiKey()
+      .getMyApiKey()
       .then((key) => setApiKey(key ?? null))
       .catch(() => setApiKey(null))
       .finally(() => setApiKeyLoading(false));
@@ -70,18 +79,32 @@ export default function ProfileSettingsModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRegen = async () => {
+  const handleGenerate = async () => {
     if (!actor) return;
-    setRegenLoading(true);
+    setGenerateLoading(true);
     try {
-      const newKey = await actor.regenerateApiKey();
+      const newKey = await actor.generateApiKey();
       setApiKey(newKey);
-      setShowRegenConfirm(false);
-      toast.success("API key regenerated");
+      toast.success("API key generated");
     } catch {
-      toast.error("Failed to regenerate API key — admin only");
+      toast.error("Failed to generate API key");
     } finally {
-      setRegenLoading(false);
+      setGenerateLoading(false);
+    }
+  };
+
+  const handleRevoke = async () => {
+    if (!actor) return;
+    setRevokeLoading(true);
+    try {
+      await actor.revokeApiKey();
+      setApiKey(null);
+      setRevokeConfirm(false);
+      toast.success("API key revoked");
+    } catch {
+      toast.error("Failed to revoke API key");
+    } finally {
+      setRevokeLoading(false);
     }
   };
 
@@ -223,10 +246,22 @@ export default function ProfileSettingsModal({
 
             {/* API Key Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">API Key</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">API Key</h3>
+                <a
+                  href="/mcp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  data-ocid="settings.api_key.mcp_link"
+                >
+                  How to connect
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
               <p className="text-sm text-muted-foreground">
-                Use this key to authenticate requests to the Hyvmind MCP API.
-                Keep it private.
+                Use this key to connect MCP clients to your Hyvmind knowledge
+                graphs.
               </p>
 
               {apiKeyLoading ? (
@@ -237,20 +272,19 @@ export default function ProfileSettingsModal({
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading API key...
                 </div>
-              ) : (
+              ) : apiKey ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <code
                       className="flex-1 rounded border border-border bg-muted/40 px-3 py-2 font-mono text-sm tracking-wider text-foreground select-none"
                       data-ocid="settings.api_key.display"
                     >
-                      {apiKey ? maskApiKey(apiKey) : "••••••••••••••••••••••••"}
+                      {maskApiKey(apiKey)}
                     </code>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      disabled={!apiKey}
                       className="shrink-0"
                       data-ocid="settings.api_key.copy_button"
                     >
@@ -262,32 +296,32 @@ export default function ProfileSettingsModal({
                     </Button>
                   </div>
 
-                  {!showRegenConfirm ? (
+                  {!revokeConfirm ? (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowRegenConfirm(true)}
-                      className="text-xs"
-                      data-ocid="settings.api_key.regenerate_button"
+                      onClick={() => setRevokeConfirm(true)}
+                      className="text-xs text-destructive hover:text-destructive"
+                      data-ocid="settings.api_key.revoke_button"
                     >
-                      <RefreshCw className="mr-2 h-3 w-3" />
-                      Regenerate Key
+                      <Trash2 className="mr-2 h-3 w-3" />
+                      Revoke Key
                     </Button>
                   ) : (
                     <div
                       className="rounded border border-border bg-muted/30 p-4 space-y-3"
-                      data-ocid="settings.api_key.confirm_dialog"
+                      data-ocid="settings.api_key.revoke_dialog"
                     >
                       <p className="text-sm text-foreground">
-                        This will invalidate the current API key. All existing
-                        integrations will stop working. Are you sure?
+                        This will permanently invalidate your API key. All
+                        existing integrations will stop working. Are you sure?
                       </p>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowRegenConfirm(false)}
-                          disabled={regenLoading}
+                          onClick={() => setRevokeConfirm(false)}
+                          disabled={revokeLoading}
                           data-ocid="settings.api_key.cancel_button"
                         >
                           Cancel
@@ -295,22 +329,47 @@ export default function ProfileSettingsModal({
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={handleRegen}
-                          disabled={regenLoading}
+                          onClick={handleRevoke}
+                          disabled={revokeLoading}
                           data-ocid="settings.api_key.confirm_button"
                         >
-                          {regenLoading ? (
+                          {revokeLoading ? (
                             <>
                               <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                              Regenerating...
+                              Revoking...
                             </>
                           ) : (
-                            "Confirm Regenerate"
+                            "Confirm Revoke"
                           )}
                         </Button>
                       </div>
                     </div>
                   )}
+                </div>
+              ) : (
+                <div
+                  className="space-y-3"
+                  data-ocid="settings.api_key.empty_state"
+                >
+                  <p className="text-xs text-muted-foreground">
+                    No API key yet. Generate one to connect MCP clients.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerate}
+                    disabled={generateLoading}
+                    data-ocid="settings.api_key.generate_button"
+                  >
+                    {generateLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Key"
+                    )}
+                  </Button>
                 </div>
               )}
             </div>

@@ -15,7 +15,7 @@ import {
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
-import ApiDocsPage from "./pages/ApiDocsPage";
+import McpSetupPage from "./pages/McpSetupPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import SwarmsView from "./pages/SwarmsView";
@@ -26,6 +26,13 @@ type ViewType = "public-graphs" | "terminal" | "sources" | "chat";
 
 // Standalone public page — no auth, no layout
 function ApiDocsRoute() {
+  // Redirect /docs/api → /mcp
+  window.location.replace("/mcp");
+  return null;
+}
+
+// MCP setup page — public, no auth
+function McpSetupRoute() {
   return (
     <ThemeProvider
       attribute="class"
@@ -33,7 +40,7 @@ function ApiDocsRoute() {
       enableSystem={false}
       storageKey="hyvmind-theme"
     >
-      <ApiDocsPage />
+      <McpSetupPage />
     </ThemeProvider>
   );
 }
@@ -245,7 +252,12 @@ function AppShell() {
 }
 
 export default function App() {
-  // /docs/api is a public standalone page — render it directly without auth or layout
+  // /mcp is a public standalone page — render it directly without auth or layout
+  if (window.location.pathname === "/mcp") {
+    return <McpSetupRoute />;
+  }
+
+  // /docs/api redirects to /mcp
   if (window.location.pathname === "/docs/api") {
     return <ApiDocsRoute />;
   }

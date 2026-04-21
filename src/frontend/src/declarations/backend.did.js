@@ -293,12 +293,12 @@ export const idlService = IDL.Service({
     ),
   'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
+  'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'getAllPublishedSourceGraphs' : IDL.Func(
       [],
       [IDL.Vec(PublishedSourceGraphMeta)],
       ['query'],
     ),
-  'getApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -314,6 +314,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
+  'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
   'getPublishedSourceGraph' : IDL.Func(
       [IDL.Text],
@@ -349,9 +350,9 @@ export const idlService = IDL.Service({
       [],
     ),
   'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
-  'regenerateApiKey' : IDL.Func([], [IDL.Text], []),
   'requestApproval' : IDL.Func([], [], []),
   'resetAllData' : IDL.Func([], [], []),
+  'revokeApiKey' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendMessage' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -360,7 +361,7 @@ export const idlService = IDL.Service({
     ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setMintSettings' : IDL.Func([MintSettings], [], []),
-  'track_api_request' : IDL.Func([], [], []),
+  'track_api_request' : IDL.Func([IDL.Text], [], []),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
@@ -646,12 +647,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
+    'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'getAllPublishedSourceGraphs' : IDL.Func(
         [],
         [IDL.Vec(PublishedSourceGraphMeta)],
         ['query'],
       ),
-    'getApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -667,6 +668,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
+    'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
     'getPublishedSourceGraph' : IDL.Func(
         [IDL.Text],
@@ -702,9 +704,9 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
-    'regenerateApiKey' : IDL.Func([], [IDL.Text], []),
     'requestApproval' : IDL.Func([], [], []),
     'resetAllData' : IDL.Func([], [], []),
+    'revokeApiKey' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendMessage' : IDL.Func(
         [IDL.Text, IDL.Text],
@@ -713,7 +715,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setMintSettings' : IDL.Func([MintSettings], [], []),
-    'track_api_request' : IDL.Func([], [], []),
+    'track_api_request' : IDL.Func([IDL.Text], [], []),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };
