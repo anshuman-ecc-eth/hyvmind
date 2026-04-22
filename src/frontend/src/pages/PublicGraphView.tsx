@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend.d";
+import AiSearchBar from "../components/AiSearchBar";
+import AiSearchModal from "../components/AiSearchModal";
 import FilterPanel from "../components/FilterPanel";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
@@ -355,6 +357,8 @@ export default function PublicGraphView({
   const [expandedCreators, setExpandedCreators] = useState<Set<string>>(
     new Set(),
   );
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiInitialQuery, setAiInitialQuery] = useState("");
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
@@ -442,12 +446,22 @@ export default function PublicGraphView({
     <div className={containerClass} data-ocid="public_graphs.page">
       {/* Header bar */}
       <div className="px-4 py-3 border-b border-border bg-card shrink-0">
-        <h2 className="font-mono text-sm text-foreground font-semibold">
-          public graphs
-        </h2>
-        <p className="font-mono text-xs text-muted-foreground mt-0.5">
-          extensible curations by the community
-        </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-mono text-sm text-foreground font-semibold">
+              public graphs
+            </h2>
+            <p className="font-mono text-xs text-muted-foreground mt-0.5">
+              extensible curations by the community
+            </p>
+          </div>
+          <AiSearchBar
+            onSubmit={(query) => {
+              setAiInitialQuery(query);
+              setIsAiModalOpen(true);
+            }}
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -482,6 +496,14 @@ export default function PublicGraphView({
           </div>
         )}
       </div>
+
+      {/* AI Search Modal */}
+      <AiSearchModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        initialQuery={aiInitialQuery}
+        graphs={graphs}
+      />
     </div>
   );
 }
