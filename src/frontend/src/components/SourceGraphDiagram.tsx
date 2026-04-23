@@ -3,6 +3,7 @@ import ForceGraph from "force-graph";
 import type { LinkObject, NodeObject } from "force-graph";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { getVariant } from "../lib/themes";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
@@ -88,7 +89,7 @@ export function SourceGraphDiagram({
   >(new Map());
   const currentGraphIdRef = useRef<string>("");
 
-  const isDark = resolvedTheme !== "light";
+  const isDark = getVariant(resolvedTheme || "minimalist-dark") === "dark";
 
   // Stable refs — carry updates without recreating the graph instance
   const onNodeClickRef = useRef(onNodeClick);
