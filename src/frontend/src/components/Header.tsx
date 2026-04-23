@@ -11,6 +11,7 @@ import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { clearTreeCache } from "../hooks/useQueries";
+import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
@@ -60,10 +61,15 @@ export default function Header({
     { key: "public-graphs", label: "public" },
   ];
 
-  const isDark = theme !== "light";
+  const currentTheme = theme || DEFAULT_THEME;
+  const isDark = getVariant(currentTheme) === "dark";
   const logoSrc = isDark
     ? "/assets/hyvmind_logo_dark.png"
     : "/assets/hyvmind_logo_light.png";
+
+  const handleThemeToggle = () => {
+    setTheme(toggleVariant(currentTheme));
+  };
 
   return (
     <header className="border-b border-dashed border-border bg-background font-mono">
@@ -99,7 +105,7 @@ export default function Header({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
+              onClick={handleThemeToggle}
               className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
               aria-label="Toggle theme"
               data-ocid="header.toggle"

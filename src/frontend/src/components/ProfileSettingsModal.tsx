@@ -24,14 +24,17 @@ import { toast } from "sonner";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
 import {
-  type BaseTheme,
-  THEME_LABELS,
-  useBaseTheme,
-} from "../context/ThemeContext";
-import {
   useGetCallerUserProfile,
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
+import {
+  DEFAULT_THEME,
+  THEME_DISPLAY_NAMES,
+  THEME_NAMES,
+  applyVariant,
+  getBaseTheme,
+  getVariant,
+} from "../lib/themes";
 
 interface ProfileSettingsModalProps {
   open: boolean;
@@ -48,7 +51,6 @@ export default function ProfileSettingsModal({
   onOpenChange,
 }: ProfileSettingsModalProps) {
   const { theme, setTheme } = useTheme();
-  const { baseTheme, setBaseTheme } = useBaseTheme();
   const { data: userProfile, isLoading: profileLoading } =
     useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
@@ -148,7 +150,13 @@ export default function ProfileSettingsModal({
     onOpenChange(false);
   };
 
-  const isLight = theme === "light";
+  const currentTheme = theme || DEFAULT_THEME;
+  const currentBase = getBaseTheme(currentTheme);
+  const currentVariant = getVariant(currentTheme);
+
+  const handleThemeChange = (newBase: string) => {
+    setTheme(applyVariant(newBase, currentVariant));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,45 +174,26 @@ export default function ProfileSettingsModal({
             {/* Appearance Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Appearance</h3>
-              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Theme</Label>
-                  <Select
-                    value={baseTheme}
-                    onValueChange={(v) => setBaseTheme(v as BaseTheme)}
-                  >
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium mb-1">Theme</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Use the sun/moon toggle in the nav bar to switch light/dark
+                    variants.
+                  </p>
+                  <Select value={currentBase} onValueChange={handleThemeChange}>
                     <SelectTrigger
-                      className="w-44"
+                      className="w-full font-mono text-sm"
                       data-ocid="settings.theme_select"
                     >
-                      <SelectValue />
+                      <SelectValue placeholder="Select theme" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {(
-                        Object.entries(THEME_LABELS) as [BaseTheme, string][]
-                      ).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
+                    <SelectContent className="font-mono max-h-72">
+                      {THEME_NAMES.map((slug) => (
+                        <SelectItem key={slug} value={slug} className="text-sm">
+                          {THEME_DISPLAY_NAMES[slug] ?? slug}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label>Mode</Label>
-                  <Select
-                    value={isLight ? "light" : "dark"}
-                    onValueChange={(v) => setTheme(v)}
-                  >
-                    <SelectTrigger
-                      className="w-44"
-                      data-ocid="settings.mode_select"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="light">Light</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

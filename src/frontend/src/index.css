@@ -1,5 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
-@import "./styles/themes.css";
+@import "./themes/tweakcn-themes.css";
 
 @tailwind base;
 @tailwind components;
@@ -7,96 +7,122 @@
 
 @layer base {
   :root {
-    /* Dark mode monochrome palette — default */
-    --background: 0% 0 0;
-    --foreground: 100% 0 0;
-    --card: 0% 0 0;
-    --card-foreground: 100% 0 0;
-    --popover: 5% 0 0;
-    --popover-foreground: 100% 0 0;
-    --primary: 100% 0 0;
-    --primary-foreground: 0% 0 0;
-    --secondary: 15% 0 0;
-    --secondary-foreground: 100% 0 0;
-    --muted: 15% 0 0;
-    --muted-foreground: 65% 0 0;
-    --accent: 15% 0 0;
-    --accent-foreground: 100% 0 0;
-    --destructive: 50% 0.2 25;
-    --destructive-foreground: 100% 0 0;
-    --border: 20% 0 0;
-    --input: 20% 0 0;
-    --ring: 100% 0 0;
-    --chart-1: 60% 0.15 150;
-    --chart-2: 65% 0.15 200;
-    --chart-3: 55% 0.15 100;
-    --chart-4: 70% 0.15 250;
-    --chart-5: 50% 0.15 50;
+    /* Minimalist dark palette — default (full CSS values for var() compatibility) */
+    --background: oklch(0% 0 0);
+    --foreground: oklch(100% 0 0);
+    --card: oklch(0% 0 0);
+    --card-foreground: oklch(100% 0 0);
+    --popover: oklch(5% 0 0);
+    --popover-foreground: oklch(100% 0 0);
+    --primary: oklch(100% 0 0);
+    --primary-foreground: oklch(0% 0 0);
+    --secondary: oklch(15% 0 0);
+    --secondary-foreground: oklch(100% 0 0);
+    --muted: oklch(15% 0 0);
+    --muted-foreground: oklch(65% 0 0);
+    --accent: oklch(15% 0 0);
+    --accent-foreground: oklch(100% 0 0);
+    --destructive: oklch(50% 0.2 25);
+    --destructive-foreground: oklch(100% 0 0);
+    --border: oklch(20% 0 0);
+    --input: oklch(20% 0 0);
+    --ring: oklch(100% 0 0);
+    --chart-1: oklch(60% 0.15 150);
+    --chart-2: oklch(65% 0.15 200);
+    --chart-3: oklch(55% 0.15 100);
+    --chart-4: oklch(70% 0.15 250);
+    --chart-5: oklch(50% 0.15 50);
     --radius: 0px;
+    --sidebar: oklch(5% 0 0);
+    --sidebar-foreground: oklch(100% 0 0);
+    --sidebar-primary: oklch(100% 0 0);
+    --sidebar-primary-foreground: oklch(0% 0 0);
+    --sidebar-accent: oklch(15% 0 0);
+    --sidebar-accent-foreground: oklch(100% 0 0);
+    --sidebar-border: oklch(20% 0 0);
+    --sidebar-ring: oklch(100% 0 0);
     /* Terminal border variables */
     --terminal-border: oklch(30% 0 0);
     --terminal-border-muted: oklch(20% 0 0);
   }
+}
 
-  /* Keep .dark in sync for ThemeProvider */
-  .dark {
-    --background: 0% 0 0;
-    --foreground: 100% 0 0;
-    --card: 0% 0 0;
-    --card-foreground: 100% 0 0;
-    --popover: 5% 0 0;
-    --popover-foreground: 100% 0 0;
-    --primary: 100% 0 0;
-    --primary-foreground: 0% 0 0;
-    --secondary: 15% 0 0;
-    --secondary-foreground: 100% 0 0;
-    --muted: 15% 0 0;
-    --muted-foreground: 65% 0 0;
-    --accent: 15% 0 0;
-    --accent-foreground: 100% 0 0;
-    --destructive: 50% 0.2 25;
-    --destructive-foreground: 100% 0 0;
-    --border: 20% 0 0;
-    --input: 20% 0 0;
-    --ring: 100% 0 0;
-    --chart-1: 60% 0.15 150;
-    --chart-2: 65% 0.15 200;
-    --chart-3: 55% 0.15 100;
-    --chart-4: 70% 0.15 250;
-    --chart-5: 50% 0.15 50;
-    --terminal-border: oklch(30% 0 0);
-    --terminal-border-muted: oklch(20% 0 0);
-  }
+/* ── Minimalist theme class selectors (for next-themes multi-theme support) ── */
 
-  /* Light mode — full inversion of dark palette */
-  .light {
-    --background: 100% 0 0;
-    --foreground: 0% 0 0;
-    --card: 98% 0 0;
-    --card-foreground: 0% 0 0;
-    --popover: 96% 0 0;
-    --popover-foreground: 0% 0 0;
-    --primary: 0% 0 0;
-    --primary-foreground: 100% 0 0;
-    --secondary: 92% 0 0;
-    --secondary-foreground: 0% 0 0;
-    --muted: 92% 0 0;
-    --muted-foreground: 40% 0 0;
-    --accent: 92% 0 0;
-    --accent-foreground: 0% 0 0;
-    --destructive: 50% 0.2 25;
-    --destructive-foreground: 100% 0 0;
-    --border: 80% 0 0;
-    --input: 80% 0 0;
-    --ring: 0% 0 0;
-    --chart-1: 60% 0.15 150;
-    --chart-2: 65% 0.15 200;
-    --chart-3: 55% 0.15 100;
-    --chart-4: 70% 0.15 250;
-    --chart-5: 50% 0.15 50;
-    --terminal-border: oklch(75% 0 0);
-    --terminal-border-muted: oklch(85% 0 0);
-  }
+.minimalist-dark {
+  --background: oklch(0% 0 0);
+  --foreground: oklch(100% 0 0);
+  --card: oklch(0% 0 0);
+  --card-foreground: oklch(100% 0 0);
+  --popover: oklch(5% 0 0);
+  --popover-foreground: oklch(100% 0 0);
+  --primary: oklch(100% 0 0);
+  --primary-foreground: oklch(0% 0 0);
+  --secondary: oklch(15% 0 0);
+  --secondary-foreground: oklch(100% 0 0);
+  --muted: oklch(15% 0 0);
+  --muted-foreground: oklch(65% 0 0);
+  --accent: oklch(15% 0 0);
+  --accent-foreground: oklch(100% 0 0);
+  --destructive: oklch(50% 0.2 25);
+  --destructive-foreground: oklch(100% 0 0);
+  --border: oklch(20% 0 0);
+  --input: oklch(20% 0 0);
+  --ring: oklch(100% 0 0);
+  --chart-1: oklch(60% 0.15 150);
+  --chart-2: oklch(65% 0.15 200);
+  --chart-3: oklch(55% 0.15 100);
+  --chart-4: oklch(70% 0.15 250);
+  --chart-5: oklch(50% 0.15 50);
+  --radius: 0px;
+  --sidebar: oklch(5% 0 0);
+  --sidebar-foreground: oklch(100% 0 0);
+  --sidebar-primary: oklch(100% 0 0);
+  --sidebar-primary-foreground: oklch(0% 0 0);
+  --sidebar-accent: oklch(15% 0 0);
+  --sidebar-accent-foreground: oklch(100% 0 0);
+  --sidebar-border: oklch(20% 0 0);
+  --sidebar-ring: oklch(100% 0 0);
+  --terminal-border: oklch(30% 0 0);
+  --terminal-border-muted: oklch(20% 0 0);
+}
+
+.minimalist-light {
+  --background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --card: oklch(98% 0 0);
+  --card-foreground: oklch(0% 0 0);
+  --popover: oklch(96% 0 0);
+  --popover-foreground: oklch(0% 0 0);
+  --primary: oklch(0% 0 0);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(92% 0 0);
+  --secondary-foreground: oklch(0% 0 0);
+  --muted: oklch(92% 0 0);
+  --muted-foreground: oklch(40% 0 0);
+  --accent: oklch(92% 0 0);
+  --accent-foreground: oklch(0% 0 0);
+  --destructive: oklch(50% 0.2 25);
+  --destructive-foreground: oklch(100% 0 0);
+  --border: oklch(80% 0 0);
+  --input: oklch(80% 0 0);
+  --ring: oklch(0% 0 0);
+  --chart-1: oklch(60% 0.15 150);
+  --chart-2: oklch(65% 0.15 200);
+  --chart-3: oklch(55% 0.15 100);
+  --chart-4: oklch(70% 0.15 250);
+  --chart-5: oklch(50% 0.15 50);
+  --radius: 0px;
+  --sidebar: oklch(96% 0 0);
+  --sidebar-foreground: oklch(0% 0 0);
+  --sidebar-primary: oklch(0% 0 0);
+  --sidebar-primary-foreground: oklch(100% 0 0);
+  --sidebar-accent: oklch(92% 0 0);
+  --sidebar-accent-foreground: oklch(0% 0 0);
+  --sidebar-border: oklch(80% 0 0);
+  --sidebar-ring: oklch(0% 0 0);
+  --terminal-border: oklch(75% 0 0);
+  --terminal-border-muted: oklch(85% 0 0);
 }
 
 @layer base {
@@ -164,16 +190,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: oklch(var(--muted));
+  background: var(--muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(var(--muted-foreground) / 0.3);
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
   border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(var(--muted-foreground) / 0.5);
+  background: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
 }
 
 /* Kill focus ring on cmdk command input */
@@ -214,40 +240,21 @@
   color: #666666;
 }
 
-/* Ensure dark mode does NOT affect Voronoi container */
-.dark .voronoi-diagram-container,
-.dark .voronoi-canvas,
-.dark .voronoi-loading,
-.dark .voronoi-error,
-.dark .voronoi-empty {
+/* Voronoi container is always white regardless of theme */
+html[class*="-dark"] .voronoi-diagram-container,
+html[class*="-dark"] .voronoi-canvas,
+html[class*="-dark"] .voronoi-loading,
+html[class*="-dark"] .voronoi-error,
+html[class*="-dark"] .voronoi-empty {
   background: #ffffff !important;
 }
 
-.dark .voronoi-tooltip-content {
-  background: #ffffff !important;
-  color: #000000 !important;
-  border-color: #cccccc !important;
-}
-
-.dark .voronoi-tooltip-type {
-  color: #666666 !important;
-}
-
-/* Ensure light mode does NOT affect Voronoi container */
-.light .voronoi-diagram-container,
-.light .voronoi-canvas,
-.light .voronoi-loading,
-.light .voronoi-error,
-.light .voronoi-empty {
-  background: #ffffff !important;
-}
-
-.light .voronoi-tooltip-content {
+html[class*="-dark"] .voronoi-tooltip-content {
   background: #ffffff !important;
   color: #000000 !important;
   border-color: #cccccc !important;
 }
 
-.light .voronoi-tooltip-type {
+html[class*="-dark"] .voronoi-tooltip-type {
   color: #666666 !important;
 }

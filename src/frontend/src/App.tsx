@@ -10,12 +10,12 @@ import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
 import TextGameModal from "./components/TextGameModal";
-import { BaseThemeProvider } from "./context/ThemeContext";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
+import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
 import McpSetupPage from "./pages/McpSetupPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
@@ -37,7 +37,8 @@ function McpSetupRoute() {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="dark"
+      themes={ALL_THEMES}
+      defaultTheme={DEFAULT_THEME}
       enableSystem={false}
       storageKey="hyvmind-theme"
     >
@@ -253,6 +254,14 @@ function AppShell() {
 }
 
 export default function App() {
+  // Migrate old "light"/"dark" theme format to new compound format
+  useEffect(() => {
+    const stored = localStorage.getItem("hyvmind-theme");
+    if (stored === "light" || stored === "dark") {
+      localStorage.setItem("hyvmind-theme", migrateTheme(stored));
+    }
+  }, []);
+
   // /mcp is a public standalone page — render it directly without auth or layout
   if (window.location.pathname === "/mcp") {
     return <McpSetupRoute />;
@@ -264,15 +273,14 @@ export default function App() {
   }
 
   return (
-    <BaseThemeProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem={false}
-        storageKey="hyvmind-theme"
-      >
-        <AppShell />
-      </ThemeProvider>
-    </BaseThemeProvider>
+    <ThemeProvider
+      attribute="class"
+      themes={ALL_THEMES}
+      defaultTheme={DEFAULT_THEME}
+      enableSystem={false}
+      storageKey="hyvmind-theme"
+    >
+      <AppShell />
+    </ThemeProvider>
   );
 }
