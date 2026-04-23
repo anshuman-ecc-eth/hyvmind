@@ -48,8 +48,10 @@
 }
 
 /* ── Minimalist theme class selectors (for next-themes multi-theme support) ── */
+/* Use html.minimalist-* for higher specificity (0,1,1) so these win over
+   tweakcn theme classes (0,1,0) imported at the top of this file. */
 
-.minimalist-dark {
+html.minimalist-dark {
   --background: oklch(0% 0 0);
   --foreground: oklch(100% 0 0);
   --card: oklch(0% 0 0);
@@ -87,7 +89,7 @@
   --terminal-border-muted: oklch(20% 0 0);
 }
 
-.minimalist-light {
+html.minimalist-light {
   --background: oklch(100% 0 0);
   --foreground: oklch(0% 0 0);
   --card: oklch(98% 0 0);
