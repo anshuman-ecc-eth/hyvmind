@@ -10,6 +10,7 @@ import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
 import TextGameModal from "./components/TextGameModal";
+import { BaseThemeProvider } from "./context/ThemeContext";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
@@ -263,13 +264,15 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem={false}
-      storageKey="hyvmind-theme"
-    >
-      <AppShell />
-    </ThemeProvider>
+    <BaseThemeProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+        storageKey="hyvmind-theme"
+      >
+        <AppShell />
+      </ThemeProvider>
+    </BaseThemeProvider>
   );
 }

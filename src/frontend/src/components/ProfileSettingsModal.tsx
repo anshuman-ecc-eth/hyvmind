@@ -8,23 +8,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { useActor } from "@caffeineai/core-infrastructure";
 import {
-  Check,
-  Copy,
-  ExternalLink,
-  Loader2,
-  Moon,
-  Sun,
-  Trash2,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { useActor } from "@caffeineai/core-infrastructure";
+import { Check, Copy, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
+import {
+  type BaseTheme,
+  THEME_LABELS,
+  useBaseTheme,
+} from "../context/ThemeContext";
 import {
   useGetCallerUserProfile,
   useSaveCallerUserProfile,
@@ -45,6 +48,7 @@ export default function ProfileSettingsModal({
   onOpenChange,
 }: ProfileSettingsModalProps) {
   const { theme, setTheme } = useTheme();
+  const { baseTheme, setBaseTheme } = useBaseTheme();
   const { data: userProfile, isLoading: profileLoading } =
     useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
@@ -162,29 +166,48 @@ export default function ProfileSettingsModal({
             {/* Appearance Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Appearance</h3>
-              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-3">
-                  {isLight ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                  <div>
-                    <p className="text-sm font-medium">
-                      {isLight ? "Light Mode" : "Dark Mode"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Toggle between light and dark theme
-                    </p>
-                  </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Theme</Label>
+                  <Select
+                    value={baseTheme}
+                    onValueChange={(v) => setBaseTheme(v as BaseTheme)}
+                  >
+                    <SelectTrigger
+                      className="w-44"
+                      data-ocid="settings.theme_select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(
+                        Object.entries(THEME_LABELS) as [BaseTheme, string][]
+                      ).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Switch
-                  checked={isLight}
-                  onCheckedChange={(checked) =>
-                    setTheme(checked ? "light" : "dark")
-                  }
-                  data-ocid="settings.switch"
-                />
+                <div className="flex items-center justify-between">
+                  <Label>Mode</Label>
+                  <Select
+                    value={isLight ? "light" : "dark"}
+                    onValueChange={(v) => setTheme(v)}
+                  >
+                    <SelectTrigger
+                      className="w-44"
+                      data-ocid="settings.mode_select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="light">Light</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 

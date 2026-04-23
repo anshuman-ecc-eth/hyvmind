@@ -62,8 +62,8 @@ export default function Header({
 
   const isDark = theme !== "light";
   const logoSrc = isDark
-    ? "/assets/hyvmind_logo white, transparent.png"
-    : "/assets/hyvmind_logo black, transparent.png";
+    ? "/assets/hyvmind_logo_dark.png"
+    : "/assets/hyvmind_logo_light.png";
 
   return (
     <header className="border-b border-dashed border-border bg-background font-mono">
@@ -71,7 +71,12 @@ export default function Header({
         <div className="flex items-center justify-between">
           {/* Image Logo */}
           <div className="flex items-center">
-            <img src={logoSrc} alt="hyvmind" className="h-5 object-contain" />
+            <img
+              src={logoSrc}
+              alt="hyvmind"
+              className="h-5 object-contain"
+              style={!isDark ? { mixBlendMode: "multiply" } : undefined}
+            />
           </div>
 
           {/* Right Side Controls */}
