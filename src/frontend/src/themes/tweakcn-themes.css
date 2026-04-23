@@ -8,7 +8,7 @@
  */
 
 /* ── modern-minimal ── */
-.modern-minimal-light {
+html.modern-minimal-light {
   --background: #ffffff;
   --foreground: #333333;
   --card: #ffffff;
@@ -44,7 +44,7 @@
   --sidebar-ring: #3b82f6;
 }
 
-.modern-minimal-dark {
+html.modern-minimal-dark {
   --background: #171717;
   --foreground: #e5e5e5;
   --card: #262626;
@@ -81,7 +81,7 @@
 }
 
 /* ── violet-bloom ── */
-.violet-bloom-light {
+html.violet-bloom-light {
   --background: #fdfdfd;
   --foreground: #000000;
   --card: #fdfdfd;
@@ -125,7 +125,7 @@
   --spacing: 0.27rem;
 }
 
-.violet-bloom-dark {
+html.violet-bloom-dark {
   --background: #1a1b1e;
   --foreground: #f0f0f0;
   --card: #222327;
@@ -170,7 +170,7 @@
 }
 
 /* ── mocha-mousse ── */
-.mocha-mousse-light {
+html.mocha-mousse-light {
   --background: #f1f0e5;
   --foreground: #56453f;
   --card: #f1f0e5;
@@ -212,7 +212,7 @@
   --shadow-offset-y: 2px;
 }
 
-.mocha-mousse-dark {
+html.mocha-mousse-dark {
   --background: #2d2521;
   --foreground: #f1f0e5;
   --card: #3c332e;
@@ -249,7 +249,7 @@
 }
 
 /* ── amethyst-haze ── */
-.amethyst-haze-light {
+html.amethyst-haze-light {
   --background: #f8f7fa;
   --foreground: #3d3c4f;
   --card: #ffffff;
@@ -293,7 +293,7 @@
   --spacing: 0.25rem;
 }
 
-.amethyst-haze-dark {
+html.amethyst-haze-dark {
   --background: #1a1823;
   --foreground: #e0ddef;
   --card: #232030;
@@ -329,7 +329,7 @@
 }
 
 /* ── doom-64 ── */
-.doom-64-light {
+html.doom-64-light {
   --background: #cccccc;
   --foreground: #1f1f1f;
   --card: #b0b0b0;
@@ -373,7 +373,7 @@
   --spacing: 0.25rem;
 }
 
-.doom-64-dark {
+html.doom-64-dark {
   --background: #1a1a1a;
   --foreground: #e0e0e0;
   --card: #2a2a2a;
@@ -418,7 +418,7 @@
 }
 
 /* ── kodama-grove ── */
-.kodama-grove-light {
+html.kodama-grove-light {
   --background: #e4d7b0;
   --foreground: #5c4b3e;
   --card: #e7dbbf;
@@ -460,7 +460,7 @@
   --shadow-offset-y: 3px;
 }
 
-.kodama-grove-dark {
+html.kodama-grove-dark {
   --background: #3a3529;
   --foreground: #ede4d4;
   --card: #413c33;
@@ -496,7 +496,7 @@
 }
 
 /* ── cosmic-night ── */
-.cosmic-night-light {
+html.cosmic-night-light {
   --background: #f5f5ff;
   --foreground: #2a2a4a;
   --card: #ffffff;
@@ -538,7 +538,7 @@
   --shadow-offset-y: 4px;
 }
 
-.cosmic-night-dark {
+html.cosmic-night-dark {
   --background: #0f0f1a;
   --foreground: #e2e2f5;
   --card: #1a1a2e;
@@ -575,7 +575,7 @@
 }
 
 /* ── quantum-rose ── */
-.quantum-rose-light {
+html.quantum-rose-light {
   --background: #fff0f8;
   --foreground: #91185c;
   --card: #fff7fc;
@@ -617,7 +617,7 @@
   --shadow-offset-y: 3px;
 }
 
-.quantum-rose-dark {
+html.quantum-rose-dark {
   --background: #1a0922;
   --foreground: #ffb3ff;
   --card: #2a1435;
@@ -654,7 +654,7 @@
 }
 
 /* ── bold-tech ── */
-.bold-tech-light {
+html.bold-tech-light {
   --background: #ffffff;
   --foreground: #312e81;
   --card: #ffffff;
@@ -696,7 +696,7 @@
   --shadow-offset-y: 2px;
 }
 
-.bold-tech-dark {
+html.bold-tech-dark {
   --background: #0f172a;
   --foreground: #e0e7ff;
   --card: #1e1b4b;
@@ -733,7 +733,7 @@
 }
 
 /* ── elegant-luxury ── */
-.elegant-luxury-light {
+html.elegant-luxury-light {
   --background: #faf7f5;
   --foreground: #1a1a1a;
   --card: #faf7f5;
@@ -775,7 +775,7 @@
   --shadow-offset-y: 1px;
 }
 
-.elegant-luxury-dark {
+html.elegant-luxury-dark {
   --background: #1c1917;
   --foreground: #f5f5f4;
   --card: #292524;
@@ -812,7 +812,7 @@
 }
 
 /* ── amber-minimal ── */
-.amber-minimal-light {
+html.amber-minimal-light {
   --background: #ffffff;
   --foreground: #262626;
   --card: #ffffff;
@@ -856,7 +856,7 @@
   --spacing: 0.25rem;
 }
 
-.amber-minimal-dark {
+html.amber-minimal-dark {
   --background: #171717;
   --foreground: #e5e5e5;
   --card: #262626;
@@ -892,7 +892,7 @@
 }
 
 /* ── neo-brutalism ── */
-.neo-brutalism-light {
+html.neo-brutalism-light {
   --background: #ffffff;
   --foreground: #000000;
   --card: #ffffff;
@@ -934,7 +934,7 @@
   --shadow-offset-y: 4px;
 }
 
-.neo-brutalism-dark {
+html.neo-brutalism-dark {
   --background: #000000;
   --foreground: #ffffff;
   --card: #333333;
@@ -971,7 +971,7 @@
 }
 
 /* ── solar-dusk ── */
-.solar-dusk-light {
+html.solar-dusk-light {
   --background: #fdfbf7;
   --foreground: #4a3b33;
   --card: #f8f4ee;
@@ -1013,7 +1013,7 @@
   --shadow-offset-y: 2px;
 }
 
-.solar-dusk-dark {
+html.solar-dusk-dark {
   --background: #1c1917;
   --foreground: #f5f5f4;
   --card: #292524;
@@ -1051,7 +1051,7 @@
 }
 
 /* ── pastel-dreams ── */
-.pastel-dreams-light {
+html.pastel-dreams-light {
   --background: #f7f3f9;
   --foreground: #374151;
   --card: #ffffff;
@@ -1093,7 +1093,7 @@
   --shadow-offset-y: 8px;
 }
 
-.pastel-dreams-dark {
+html.pastel-dreams-dark {
   --background: #1c1917;
   --foreground: #e0e7ff;
   --card: #2d2535;
@@ -1130,7 +1130,7 @@
 }
 
 /* ── clean-slate ── */
-.clean-slate-light {
+html.clean-slate-light {
   --background: #f8fafc;
   --foreground: #1e293b;
   --card: #ffffff;
@@ -1172,7 +1172,7 @@
   --shadow-offset-y: 4px;
 }
 
-.clean-slate-dark {
+html.clean-slate-dark {
   --background: #0f172a;
   --foreground: #e2e8f0;
   --card: #1e293b;
@@ -1209,7 +1209,7 @@
 }
 
 /* ── ocean-breeze ── */
-.ocean-breeze-light {
+html.ocean-breeze-light {
   --background: #f0f8ff;
   --foreground: #374151;
   --card: #ffffff;
@@ -1251,7 +1251,7 @@
   --shadow-offset-y: 4px;
 }
 
-.ocean-breeze-dark {
+html.ocean-breeze-dark {
   --background: #0f172a;
   --foreground: #d1d5db;
   --card: #1e293b;
@@ -1288,7 +1288,7 @@
 }
 
 /* ── retro-arcade ── */
-.retro-arcade-light {
+html.retro-arcade-light {
   --background: #fdf6e3;
   --foreground: #073642;
   --card: #eee8d5;
@@ -1330,7 +1330,7 @@
   --shadow-offset-y: 2px;
 }
 
-.retro-arcade-dark {
+html.retro-arcade-dark {
   --background: #002b36;
   --foreground: #93a1a1;
   --card: #073642;
@@ -1367,7 +1367,7 @@
 }
 
 /* ── midnight-bloom ── */
-.midnight-bloom-light {
+html.midnight-bloom-light {
   --background: #f9f9f9;
   --foreground: #333333;
   --card: #ffffff;
@@ -1409,7 +1409,7 @@
   --shadow-offset-y: 5px;
 }
 
-.midnight-bloom-dark {
+html.midnight-bloom-dark {
   --background: #1a1d23;
   --foreground: #e5e5e5;
   --card: #2f3436;
@@ -1446,7 +1446,7 @@
 }
 
 /* ── northern-lights ── */
-.northern-lights-light {
+html.northern-lights-light {
   --background: #f9f9fa;
   --foreground: #333333;
   --card: #ffffff;
@@ -1482,7 +1482,7 @@
   --sidebar-ring: #34a85a;
 }
 
-.northern-lights-dark {
+html.northern-lights-dark {
   --background: #1a1d23;
   --foreground: #e5e5e5;
   --card: #2f3436;
@@ -1519,7 +1519,7 @@
 }
 
 /* ── vintage-paper ── */
-.vintage-paper-light {
+html.vintage-paper-light {
   --background: #f5f1e6;
   --foreground: #4a3f35;
   --card: #fffcf5;
@@ -1561,7 +1561,7 @@
   --shadow-offset-y: 3px;
 }
 
-.vintage-paper-dark {
+html.vintage-paper-dark {
   --background: #2d2621;
   --foreground: #ece5d8;
   --card: #3a322c;
@@ -1598,7 +1598,7 @@
 }
 
 /* ── sunset-horizon ── */
-.sunset-horizon-light {
+html.sunset-horizon-light {
   --background: #fff9f5;
   --foreground: #3d3436;
   --card: #ffffff;
@@ -1640,7 +1640,7 @@
   --shadow-offset-y: 6px;
 }
 
-.sunset-horizon-dark {
+html.sunset-horizon-dark {
   --background: #2a2024;
   --foreground: #f2e9e4;
   --card: #392f35;
@@ -1677,7 +1677,7 @@
 }
 
 /* ── starry-night ── */
-.starry-night-light {
+html.starry-night-light {
   --background: #f5f7fa;
   --foreground: #1a2238;
   --card: #e3eaf2;
@@ -1713,7 +1713,7 @@
   --sidebar-ring: #f7c873;
 }
 
-.starry-night-dark {
+html.starry-night-dark {
   --background: #181a24;
   --foreground: #e6eaf3;
   --card: #23243a;
@@ -1750,7 +1750,7 @@
 }
 
 /* ── soft-pop ── */
-.soft-pop-light {
+html.soft-pop-light {
   --background: #f7f9f3;
   --foreground: #000000;
   --card: #ffffff;
@@ -1794,7 +1794,7 @@
   --spacing: 0.25rem;
 }
 
-.soft-pop-dark {
+html.soft-pop-dark {
   --background: #000000;
   --foreground: #ffffff;
   --card: #1a212b;
@@ -1839,7 +1839,7 @@
 }
 
 /* ── sage-garden ── */
-.sage-garden-light {
+html.sage-garden-light {
   --background: #f8f7f4;
   --foreground: #1a1f2e;
   --card: #ffffff;
@@ -1883,7 +1883,7 @@
   --spacing: 0.23rem;
 }
 
-.sage-garden-dark {
+html.sage-garden-dark {
   --background: #0a0a0a;
   --foreground: #f5f5f5;
   --card: #121212;
