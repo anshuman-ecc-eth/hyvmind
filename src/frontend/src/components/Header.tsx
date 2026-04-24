@@ -9,30 +9,19 @@ import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useState } from "react";
 import { clearTreeCache } from "../hooks/useQueries";
 import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
-import ProfileSettingsModal from "./ProfileSettingsModal";
 
 interface HeaderProps {
-  currentView: "public-graphs" | "terminal" | "sources" | "chat";
-  onViewChange: (
-    view: "public-graphs" | "terminal" | "sources" | "chat",
-  ) => void;
-  isAuthenticated: boolean;
-  isLandingPage: boolean;
+  onNavigateToSettings: () => void;
 }
 
-export default function Header({
-  currentView,
-  onViewChange,
-  isAuthenticated,
-  isLandingPage: _isLandingPage,
-}: HeaderProps) {
-  const { login, clear, loginStatus } = useInternetIdentity();
-  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
+export default function Header({ onNavigateToSettings }: HeaderProps) {
+  const { login, clear, loginStatus, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+
+  const isAuthenticated = !!identity;
 
   const handleLogout = async () => {
     await clear();
@@ -43,23 +32,15 @@ export default function Header({
   const handleLogin = async () => {
     try {
       await login();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "";
       console.error("Login error:", error);
-      if (error.message === "User is already authenticated") {
+      if (msg === "User is already authenticated") {
         await clear();
         setTimeout(() => login(), 300);
       }
     }
   };
-
-  const navItems: {
-    key: "public-graphs" | "terminal" | "sources" | "chat";
-    label: string;
-  }[] = [
-    { key: "sources", label: "sources" },
-    { key: "chat", label: "chat" },
-    { key: "public-graphs", label: "public" },
-  ];
 
   const currentTheme = theme || DEFAULT_THEME;
   const isDark = getVariant(currentTheme) === "dark";
@@ -72,7 +53,7 @@ export default function Header({
   };
 
   return (
-    <header className="border-b border-dashed border-border bg-background font-mono">
+    <header className="border-b border-dashed border-border bg-background font-mono flex-shrink-0">
       <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Image Logo */}
@@ -101,7 +82,7 @@ export default function Header({
               </Button>
             )}
 
-            {/* Theme toggle button — left of hamburger */}
+            {/* Theme toggle button */}
             <Button
               variant="ghost"
               size="sm"
@@ -166,39 +147,12 @@ export default function Header({
                   </>
                 ) : (
                   <>
-                    {navItems.map((item) => (
-                      <DropdownMenuItem
-                        key={item.key}
-                        onClick={() => onViewChange(item.key)}
-                        className={`font-mono text-xs cursor-pointer ${
-                          currentView === item.key
-                            ? "text-foreground font-semibold"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                        data-ocid={`header.${item.key}.link`}
-                      >
-                        {currentView === item.key
-                          ? `> ${item.label}`
-                          : item.label}
-                      </DropdownMenuItem>
-                    ))}
                     <DropdownMenuItem
-                      onClick={() => setProfileSettingsOpen(true)}
+                      onClick={onNavigateToSettings}
                       className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                      data-ocid="header.settings.link"
+                      data-ocid="header.settings.nav"
                     >
                       settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onViewChange("terminal")}
-                      className={`font-mono text-xs cursor-pointer ${
-                        currentView === "terminal"
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      data-ocid="header.terminal.link"
-                    >
-                      {currentView === "terminal" ? "> terminal" : "terminal"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
@@ -214,14 +168,6 @@ export default function Header({
           </div>
         </div>
       </div>
-
-      {/* Profile Settings Modal */}
-      {profileSettingsOpen && (
-        <ProfileSettingsModal
-          open={profileSettingsOpen}
-          onOpenChange={setProfileSettingsOpen}
-        />
-      )}
     </header>
   );
 }

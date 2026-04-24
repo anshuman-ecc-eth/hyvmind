@@ -1,4 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quattrocento+Sans:wght@400;700&family=Muli:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;700&family=Cardo:wght@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Barlow:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Krub:wght@300;400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Assistant:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Six+Caps&family=Open+Sans+Condensed:wght@300;400;700&display=swap");
+/* tweakcn themes imported before minimalist overrides so minimalist wins when active */
 @import "./themes/tweakcn-themes.css";
 
 @tailwind base;
@@ -44,6 +53,19 @@
     /* Terminal border variables */
     --terminal-border: oklch(30% 0 0);
     --terminal-border-muted: oklch(20% 0 0);
+    /* Annotation tokens — law entity (crimson) and interpretation entity (orchid) */
+    --token-law: #dc143c;
+    --token-law-rgb: 220 20 60;
+    --token-interp: #da70d6;
+    --token-interp-rgb: 218 112 214;
+    --token-law-highlight: rgba(220, 20, 60, 0.15);
+    --token-interp-highlight: rgba(218, 112, 214, 0.15);
+    /* Annotation UI zones */
+    --panel-sidebar: oklch(8% 0 0);
+    --panel-main: oklch(2% 0 0);
+    --panel-details: oklch(8% 0 0);
+    --font-heading: "JetBrains Mono", monospace;
+    --font-body: "JetBrains Mono", monospace;
   }
 }
 
@@ -88,6 +110,9 @@ html.minimalist-dark {
   --sidebar-ring: oklch(100% 0 0);
   --terminal-border: oklch(30% 0 0);
   --terminal-border-muted: oklch(20% 0 0);
+  --panel-sidebar: oklch(8% 0 0);
+  --panel-main: oklch(2% 0 0);
+  --panel-details: oklch(8% 0 0);
 }
 
 html.minimalist-light {
@@ -126,6 +151,21 @@ html.minimalist-light {
   --sidebar-ring: oklch(0% 0 0);
   --terminal-border: oklch(75% 0 0);
   --terminal-border-muted: oklch(85% 0 0);
+  --panel-sidebar: oklch(94% 0 0);
+  --panel-main: oklch(98% 0 0);
+  --panel-details: oklch(94% 0 0);
+}
+
+html {
+  font-family: var(--font-body);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
 }
 
 @layer base {
@@ -134,7 +174,7 @@ html.minimalist-light {
   }
   body {
     @apply bg-background text-foreground font-mono;
-    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-family: var(--font-body);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -260,4 +300,149 @@ html[class*="-dark"] .voronoi-tooltip-content {
 
 html[class*="-dark"] .voronoi-tooltip-type {
   color: #666666 !important;
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Annotation Editor Utilities (NES Pixel Art + Token Highlights) */
+/* ────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Three-column annotation layout */
+  .annotation-container {
+    @apply flex h-full gap-1 bg-background;
+  }
+
+  .annotation-sidebar {
+    @apply w-72 flex-shrink-0 border-r-2 border-border bg-card overflow-y-auto;
+  }
+
+  .annotation-main {
+    @apply flex-1 border-r-2 border-border bg-card overflow-y-auto;
+  }
+
+  .annotation-details {
+    @apply w-80 flex-shrink-0 bg-card border-l-2 border-border overflow-y-auto;
+  }
+
+  /* Pixel art dashed borders for panels */
+  .annotation-panel {
+    @apply border-2 border-dashed border-border p-4;
+  }
+
+  .annotation-panel-title {
+    @apply text-sm font-bold text-foreground uppercase mb-3 tracking-wide;
+  }
+
+  .annotation-panel-divider {
+    @apply border-t-2 border-dashed border-border my-4;
+  }
+
+  /* Token highlight colors — persistent after creation */
+  .token-law {
+    background-color: var(--token-law-highlight) !important;
+    color: var(--token-law) !important;
+    border-bottom: 2px solid var(--token-law);
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .token-law:hover {
+    background-color: rgba(220, 20, 60, 0.25) !important;
+  }
+
+  .token-interp {
+    background-color: var(--token-interp-highlight) !important;
+    color: var(--token-interp) !important;
+    border-bottom: 2px solid var(--token-interp);
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .token-interp:hover {
+    background-color: rgba(218, 112, 214, 0.25) !important;
+  }
+
+  /* Token tree hierarchy styling */
+  .token-tree-node {
+    @apply pl-4 py-2 border-l-2 border-muted;
+  }
+
+  .token-tree-node-law {
+    @apply border-l-2 border-[var(--token-law)];
+  }
+
+  .token-tree-node-interp {
+    @apply border-l-2 border-[var(--token-interp)];
+  }
+
+  .token-tree-branch {
+    @apply text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors;
+  }
+
+  /* Token badge styling */
+  .token-badge-law {
+    @apply bg-[var(--token-law)] text-white px-2 py-1 text-xs font-bold uppercase;
+  }
+
+  .token-badge-interp {
+    @apply bg-[var(--token-interp)] text-white px-2 py-1 text-xs font-bold uppercase;
+  }
+
+  /* Attribute list styling */
+  .attribute-item {
+    @apply flex justify-between items-center py-1 px-2 text-xs border-b border-border;
+  }
+
+  .attribute-key {
+    @apply text-muted-foreground font-mono;
+  }
+
+  .attribute-value {
+    @apply text-foreground font-mono font-bold;
+  }
+
+  .attribute-inherited {
+    @apply opacity-60 italic;
+  }
+
+  .attribute-owned {
+    @apply opacity-100 font-semibold;
+  }
+
+  /* Undo/Redo toolbar */
+  .toolbar-button-inactive {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  /* Pixel art input fields */
+  .annotation-input {
+    @apply bg-input border-2 border-border text-foreground px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+
+  /* Dropdowns for path selection */
+  .annotation-dropdown {
+    @apply bg-card border-2 border-border text-foreground px-2 py-1 text-xs font-mono cursor-pointer hover:border-foreground transition-colors;
+  }
+
+  /* Cross-reference list */
+  .crossref-item {
+    @apply flex items-center justify-between py-1 px-2 text-xs bg-muted rounded-none border border-border;
+  }
+
+  .crossref-badge {
+    @apply text-muted-foreground font-mono;
+  }
+
+  /* Drafts list styling */
+  .draft-item {
+    @apply p-3 border-2 border-dashed border-border mb-2 cursor-pointer hover:bg-muted transition-colors;
+  }
+
+  .draft-title {
+    @apply font-bold text-sm text-foreground;
+  }
+
+  .draft-url {
+    @apply text-xs text-muted-foreground font-mono truncate;
+  }
 }

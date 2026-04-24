@@ -1,27 +1,25 @@
 {
-  "overview": "Hyvmind is a collaborative legal knowledge platform where users publish structured source graphs (ZIP files of markdown) to create and extend legal knowledge graphs. It features 2D/3D graph visualization, a public graphs browser, group chat per curation/swarm, and now an MCP-compatible public HTTP API so external language models can fetch published graph data via API keys.",
+  "overview": "Hyvmind is a collaborative legal knowledge platform where users publish structured legal knowledge graphs from source files or by annotating web content. Features include graph visualization, group chat tied to curations and swarms, a Telegram bridge, AI-powered search, and an MCP server for external AI integrations.",
   "features": [
-    "Source graph publishing from structured ZIP files",
-    "5-level knowledge hierarchy: curation → swarm → location → law entity → interpretation entity",
-    "Public graphs browser grouped by curation and creator",
-    "Group chat channels per curation and swarm sub-channels",
-    "MCP-compatible HTTP API with tools manifest for LLM auto-discovery",
-    "Global API key management with rate limiting (100 req/min)",
-    "Read-only node details panel in public graph viewer",
-    "Collapsible filter panel with search and node type filtering",
-    "Force graph layout caching for stable diagrams across tab switches"
+    "Web content annotation — highlight text from any URL to create law and interpretation tokens",
+    "ZIP-based source graph import and publish pipeline",
+    "2D/3D graph visualization of published knowledge graphs",
+    "Group chat at curation and swarm levels",
+    "Telegram forum bridge with live polling",
+    "AI search powered by WebLLM (on-device)",
+    "MCP server for external AI integrations",
+    "25 tweakcn themes with light/dark variants",
+    "8 Google Fonts pairings and 3 size options",
+    "Per-user API keys with rate limiting"
   ],
-  "category": "knowledge-management",
+  "category": "productivity",
   "tags": [
+    "legal-tech",
     "knowledge-graph",
-    "legal",
-    "mcp",
-    "llm",
-    "collaboration",
-    "publishing",
-    "graph-visualization",
-    "chat",
-    "api"
+    "annotation",
+    "collaborative",
+    "motoko",
+    "react"
   ],
-  "last_updated": "2026-04-20T03:48:51.527Z"
+  "last_updated": "2026-04-24T05:02:02.974Z"
 }

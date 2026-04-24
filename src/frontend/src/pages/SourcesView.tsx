@@ -3,12 +3,14 @@ import FilterPanel from "../components/FilterPanel";
 import NodeDetailsModal from "../components/NodeDetailsModal";
 import PublishConfirmDialog from "../components/PublishConfirmDialog";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
+import { deleteDraft, getAllDrafts } from "../hooks/useAnnotation";
 import { usePublishGraph } from "../hooks/usePublishGraph";
 import { usePublishMappings } from "../hooks/usePublishMappings";
 import { usePublishPreview } from "../hooks/usePublishPreview";
 import useSourceGraphs from "../hooks/useSourceGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
+import AnnotationView from "./AnnotationView";
 
 // ---------------------------------------------------------------------------
 // Filter state shape
@@ -58,7 +60,11 @@ export default function SourcesView() {
   } = usePublishPreview();
   const { isPublished, getMappings } = usePublishMappings();
 
-  const [view, setView] = useState<"list" | "graph">("list");
+  const [view, setView] = useState<"list" | "graph" | "annotate">("list");
+  const [resumeAnnotationId, setResumeAnnotationId] = useState<
+    string | undefined
+  >(undefined);
+  const [draftVersion, setDraftVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -283,6 +289,21 @@ export default function SourcesView() {
   }, [activeGraph, filterState.searchText, filterState.visibleNodeTypes]);
 
   // ---------------------------------------------------------------------------
+  // Annotation view
+  // ---------------------------------------------------------------------------
+  if (view === "annotate") {
+    return (
+      <AnnotationView
+        onBack={() => {
+          setResumeAnnotationId(undefined);
+          setView("list");
+        }}
+        resumeSessionId={resumeAnnotationId}
+      />
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Graph view
   // ---------------------------------------------------------------------------
   if (view === "graph" && activeGraph) {
@@ -379,15 +400,28 @@ export default function SourcesView() {
             import a structured zip folder with markdown interpretations
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleImportClick}
-          disabled={importing}
-          className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          data-ocid="sources.import_button"
-        >
-          {importing ? "parsing..." : "[import graph]"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setResumeAnnotationId(undefined);
+              setView("annotate");
+            }}
+            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+            data-ocid="sources.annotate_button"
+          >
+            [annotate url]
+          </button>
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={importing}
+            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-ocid="sources.import_button"
+          >
+            {importing ? "parsing..." : "[import graph]"}
+          </button>
+        </div>
       </div>
 
       {/* Import error banner */}
@@ -411,6 +445,64 @@ export default function SourcesView() {
           [PUBLISH ERROR] {commitError ?? previewError}
         </div>
       )}
+
+      {/* Annotation drafts */}
+      {(() => {
+        // draftVersion is used to force re-render after deletions
+        void draftVersion;
+        const drafts = getAllDrafts();
+        if (drafts.length === 0) return null;
+        return (
+          <div className="mb-6" data-ocid="sources.drafts_section">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+              annotation drafts
+            </p>
+            <div className="flex flex-col gap-1">
+              {drafts.map((draft, i) => (
+                <div
+                  key={draft.id}
+                  className="flex items-center gap-3 border border-dashed border-border px-3 py-2 hover:border-foreground transition-colors"
+                  data-ocid={`sources.draft_row.${i + 1}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-foreground truncate">
+                      {draft.title || draft.url}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      {draft.url}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResumeAnnotationId(draft.id);
+                        setView("annotate");
+                      }}
+                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+                      data-ocid={`sources.draft_resume_button.${i + 1}`}
+                    >
+                      [resume]
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        deleteDraft(draft.id);
+                        // Force re-render by toggling a local counter
+                        setDraftVersion((v) => v + 1);
+                      }}
+                      className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      data-ocid={`sources.draft_delete_button.${i + 1}`}
+                    >
+                      [delete]
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Empty state */}
       {graphs.length === 0 && !importing && (

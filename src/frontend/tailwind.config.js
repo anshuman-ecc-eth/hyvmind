@@ -16,7 +16,10 @@ export default {
         },
         extend: {
             fontFamily: {
-                mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+                heading: ['var(--font-heading)', 'sans-serif'],
+                body: ['var(--font-body)', 'monospace'],
+                mono: ['var(--font-body)', 'monospace'],
+                sans: ['var(--font-body)', 'sans-serif'],
             },
             colors: {
                 border: 'var(--border)',

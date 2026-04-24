@@ -9,12 +9,21 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
+import { SettingsView } from "./components/SettingsView";
+import { Sidebar } from "./components/Sidebar";
 import TextGameModal from "./components/TextGameModal";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
   useGetOwnedData,
 } from "./hooks/useQueries";
+import { useSettings } from "./hooks/useSettings";
+import {
+  applyFontPairing,
+  applyFontSize,
+  getSavedFontPairing,
+  getSavedFontSize,
+} from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
 import McpSetupPage from "./pages/McpSetupPage";
 import PublicGraphView from "./pages/PublicGraphView";
@@ -22,8 +31,6 @@ import SourcesView from "./pages/SourcesView";
 import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
 import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
-
-type ViewType = "public-graphs" | "terminal" | "sources" | "chat";
 
 // Standalone public page — no auth, no layout
 function ApiDocsRoute() {
@@ -50,10 +57,20 @@ function McpSetupRoute() {
 // Full authenticated app shell with all hooks
 function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
-  const [currentView, setCurrentView] = useState<ViewType>("sources");
   const [gameComplete, setGameComplete] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isAuthenticated = !!identity;
+
+  const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
+    useSettings();
+
+  // Initialize font settings on mount
+  useEffect(() => {
+    const savedPairing = getSavedFontPairing();
+    const savedSize = getSavedFontSize();
+    applyFontPairing(savedPairing);
+    applyFontSize(savedSize);
+  }, []);
 
   // Keyboard shortcut: Ctrl+P / Cmd+P to open command palette
   useEffect(() => {
@@ -77,8 +94,6 @@ function AppShell() {
 
   const showProfileSetup =
     isAuthenticated && !profileLoading && isFetched && userProfile === null;
-
-  const isLandingPage = !isAuthenticated;
 
   const handleCheckCondition = async (condition: string, input: string) => {
     if (condition.toLowerCase().includes("principal")) {
@@ -123,7 +138,6 @@ function AppShell() {
     try {
       const archivedSet = new Set(archivedNodeIds);
 
-      // Collect collectible IDs (law tokens + interpretation tokens) whose node is archived
       const hiddenIds = new Set<string>();
 
       for (const lt of graphData.lawTokens) {
@@ -150,10 +164,6 @@ function AppShell() {
       cleanupRanRef.current = null;
     }
   }, [identity]);
-
-  const handleViewChange = (view: ViewType) => {
-    setCurrentView(view);
-  };
 
   if (isInitializing) {
     return (
@@ -185,17 +195,11 @@ function AppShell() {
     );
   }
 
-  return (
-    <div className="flex h-[100dvh] flex-col bg-background">
-      <Header
-        currentView={currentView}
-        onViewChange={handleViewChange}
-        isAuthenticated={isAuthenticated}
-        isLandingPage={isLandingPage}
-      />
-
-      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        {!isAuthenticated ? (
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-[100dvh] flex-col bg-background">
+        <Header onNavigateToSettings={() => {}} />
+        <main className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full min-h-0 relative">
             {/* Graph loads in background, hidden until game completes */}
             <div
@@ -215,40 +219,85 @@ function AppShell() {
               />
             )}
           </div>
-        ) : (
-          <>
-            {currentView === "terminal" && <TerminalPage />}
-            {currentView === "sources" && (
-              <div className="flex-1 min-h-0">
-                <SourcesView />
-              </div>
-            )}
-            {currentView === "public-graphs" && (
-              <div className="flex-1 min-h-0">
-                <PublicGraphView />
-              </div>
-            )}
-            {currentView === "chat" && (
-              <div className="flex-1 min-h-0">
-                <SwarmsView />
-              </div>
-            )}
-          </>
-        )}
-      </main>
+        </main>
+        <Footer />
+        <Toaster />
+      </div>
+    );
+  }
 
-      <Footer />
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        <Header onNavigateToSettings={() => setActiveTab("settings")} />
+        <main className="flex-1 overflow-hidden relative">
+          <div
+            style={{
+              display: activeTab === "sources" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <SourcesView />
+          </div>
+          <div
+            style={{
+              display: activeTab === "chat" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <SwarmsView />
+          </div>
+          <div
+            style={{
+              display: activeTab === "public" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <PublicGraphView />
+          </div>
+          <div
+            style={{
+              display: activeTab === "settings" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <SettingsView />
+          </div>
+          <div
+            style={{
+              display: activeTab === "terminal" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <TerminalPage />
+          </div>
+        </main>
+        <Footer />
+      </div>
 
       {showProfileSetup && <ProfileSetupModal />}
       <Toaster />
 
-      {isAuthenticated && (
-        <CommandPalette
-          open={commandPaletteOpen}
-          onOpenChange={setCommandPaletteOpen}
-          onViewChange={(view) => handleViewChange(view as ViewType)}
-        />
-      )}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onViewChange={(view) => {
+          // Map legacy view names to new tab IDs
+          const tabMap: Record<string, string> = {
+            sources: "sources",
+            chat: "chat",
+            "public-graphs": "public",
+            terminal: "terminal",
+          };
+          setActiveTab(tabMap[view] ?? view);
+        }}
+      />
     </div>
   );
 }
