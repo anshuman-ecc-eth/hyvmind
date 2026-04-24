@@ -35,6 +35,11 @@ function getTokenColor(annotations: TokenAnnotation[], idx: number) {
   return null;
 }
 
+/** True if the token is a newline-only token (paragraph or line break) */
+function isNewlineToken(token: string): boolean {
+  return /^\n+$/.test(token);
+}
+
 export function TokenAnnotatorPanel({
   tokens,
   annotations,
@@ -72,8 +77,6 @@ export function TokenAnnotatorPanel({
     const selectedIndices: number[] = [];
 
     for (const span of spans) {
-      const range = document.createRange();
-      range.selectNode(span);
       if (sel.containsNode(span, true)) {
         const ti = Number(span.dataset.ti);
         selectedIndices.push(ti);
@@ -84,7 +87,11 @@ export function TokenAnnotatorPanel({
 
     const start = Math.min(...selectedIndices);
     const end = Math.max(...selectedIndices);
-    const selectedText = tokens.slice(start, end + 1).join(" ");
+    // Build display text: skip newline tokens for the visible selection label
+    const selectedText = tokens
+      .slice(start, end + 1)
+      .filter((t) => !isNewlineToken(t))
+      .join(" ");
 
     // Position floating button near selection
     const rects = sel.getRangeAt(0).getClientRects();
@@ -122,8 +129,35 @@ export function TokenAnnotatorPanel({
       data-ocid="token-annotator.panel"
       onMouseUp={handleMouseUp}
     >
-      <div className="font-mono text-sm leading-8 whitespace-pre-wrap break-words text-foreground">
+      {/*
+        word-break: break-word ensures long tokens don't overflow.
+        white-space: pre-wrap is handled per-token via the newline rendering below.
+      */}
+      <div
+        className="font-mono text-sm leading-8 break-words text-foreground"
+        style={{ wordBreak: "break-word" }}
+      >
         {tokens.map((token, idx) => {
+          const tokenKey = `t${idx}-${token.slice(0, 8)}`;
+
+          // Newline tokens render as visual line breaks — not annotatable
+          if (isNewlineToken(token)) {
+            const breaks = (token.match(/\n/g) ?? []).length;
+            return (
+              <span key={tokenKey} data-ti={idx} aria-hidden="true">
+                {breaks >= 2 ? (
+                  // Double newline → paragraph gap
+                  <>
+                    <br />
+                    <br />
+                  </>
+                ) : (
+                  <br />
+                )}
+              </span>
+            );
+          }
+
           const style = getTokenColor(annotations, idx);
           const isSelected =
             selStart !== null &&
@@ -131,7 +165,7 @@ export function TokenAnnotatorPanel({
             idx >= selStart &&
             idx <= selEnd &&
             !style;
-          const tokenKey = `t${idx}-${token.slice(0, 8)}`;
+
           return (
             <span key={tokenKey}>
               <span
@@ -159,7 +193,10 @@ export function TokenAnnotatorPanel({
               >
                 {token}
               </span>
-              {idx < tokens.length - 1 ? " " : ""}
+              {/* Only add space separator between word tokens */}
+              {idx < tokens.length - 1 && !isNewlineToken(tokens[idx + 1] ?? "")
+                ? " "
+                : ""}
             </span>
           );
         })}
