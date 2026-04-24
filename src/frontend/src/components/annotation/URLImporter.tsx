@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { createActor } from "../../backend";
+import type { backendInterface } from "../../backend";
 import { parseHTML } from "../../utils/htmlParser";
 
 interface Props {
@@ -13,6 +16,9 @@ export function URLImporter({ onFetched }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { actor: _rawActor } = useActor(createActor);
+  const actor = _rawActor as backendInterface | null;
+
   async function handleFetch() {
     setError(null);
 
@@ -21,26 +27,21 @@ export function URLImporter({ onFetched }: Props) {
       return;
     }
 
+    if (!actor) {
+      setError("Actor not initialized, please try again");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Fetch via browser — requires CORS headers on the target page.
-      // Falls back to a CORS proxy if direct fetch fails.
-      try {
-        const res = await fetch(url, { mode: "cors" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const html = await res.text();
-        const parsed = await parseHTML(html, url);
-        onFetched(parsed.title, html, url);
-      } catch (_corsErr) {
-        // Try via allorigins CORS proxy as fallback
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { contents?: string };
-        if (!data.contents) throw new Error("Empty response from proxy");
-        const html = data.contents;
-        const parsed = await parseHTML(html, url);
-        onFetched(parsed.title, html, url);
+      // Fetch via IC HTTP outcall — bypasses CORS restrictions
+      const result = await (actor as any).fetchURL(url);
+      if ("ok" in result) {
+        const { html, title } = result.ok;
+        await parseHTML(html, url);
+        onFetched(title, html, url);
+      } else {
+        setError(result.err);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch URL");

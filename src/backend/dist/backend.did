@@ -175,6 +175,12 @@ type InterpretationToken =
    timestamps: Timestamps;
    title: text;
  };
+type IcHttpRequestResult = 
+ record {
+   body: blob;
+   headers: vec HttpHeader;
+   status: nat;
+ };
 type HttpResponse = 
  record {
    body: blob;
@@ -193,6 +199,11 @@ type HttpRequest =
                 };
    method: text;
    url: text;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
  };
 type GraphNode = 
  record {
@@ -320,6 +331,14 @@ service : {
    customAttributes: vec WeightedAttribute) -> (NodeId);
   createSwarmFork: (swarmId: NodeId) -> (NodeId);
   downvoteNode: (nodeId: NodeId) -> ();
+  fetchURL: (url: text) ->
+   (variant {
+      err: text;
+      ok: record {
+            html: text;
+            title: text;
+          };
+    });
   generateApiKey: () -> (text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
@@ -335,6 +354,13 @@ service : {
   getMintSettings: () -> (MintSettings) query;
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
+  getPublishedPaths: () ->
+   (vec record {
+          curation: text;
+          graphId: text;
+          location: text;
+          swarm: text;
+        }) query;
   getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
   getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
   getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
@@ -386,5 +412,9 @@ service : {
       ok;
     });
   track_api_request: (apiKey: text) -> ();
+  transform: (record {
+                context: blob;
+                response: IcHttpRequestResult;
+              }) -> (IcHttpRequestResult) query;
   upvoteNode: (nodeId: NodeId) -> ();
 }

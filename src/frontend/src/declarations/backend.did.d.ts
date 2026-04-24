@@ -96,6 +96,7 @@ export interface GraphNode {
   'tokenLabel' : string,
   'nodeType' : string,
 }
+export interface HttpHeader { 'value' : string, 'name' : string }
 export interface HttpRequest {
   'url' : string,
   'method' : string,
@@ -106,6 +107,11 @@ export interface HttpResponse {
   'body' : Uint8Array,
   'headers' : Array<[string, string]>,
   'status_code' : number,
+}
+export interface IcHttpRequestResult {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<HttpHeader>,
 }
 export interface InterpretationToken {
   'id' : NodeId,
@@ -258,6 +264,11 @@ export interface _SERVICE {
   >,
   'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
   'downvoteNode' : ActorMethod<[NodeId], undefined>,
+  'fetchURL' : ActorMethod<
+    [string],
+    { 'ok' : { 'title' : string, 'html' : string } } |
+      { 'err' : string }
+  >,
   'generateApiKey' : ActorMethod<[], string>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],
@@ -276,6 +287,17 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
+  'getPublishedPaths' : ActorMethod<
+    [],
+    Array<
+      {
+        'graphId' : string,
+        'swarm' : string,
+        'curation' : string,
+        'location' : string,
+      }
+    >
+  >,
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
   'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
@@ -331,6 +353,10 @@ export interface _SERVICE {
       { 'err' : string }
   >,
   'track_api_request' : ActorMethod<[string], undefined>,
+  'transform' : ActorMethod<
+    [{ 'context' : Uint8Array, 'response' : IcHttpRequestResult }],
+    IcHttpRequestResult
+  >,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

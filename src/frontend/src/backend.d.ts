@@ -200,6 +200,10 @@ export interface ContentVersion {
     timestamp: Time;
     contributor: Principal;
 }
+export interface HttpHeader {
+    value: string;
+    name: string;
+}
 export interface UserApprovalInfo {
     status: ApprovalStatus;
     principal: Principal;
@@ -212,6 +216,11 @@ export interface GraphData {
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
+}
+export interface IcHttpRequestResult {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<HttpHeader>;
 }
 export interface HttpResponse {
     body: Uint8Array;
@@ -290,6 +299,16 @@ export interface backendInterface {
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createSwarmFork(swarmId: NodeId): Promise<NodeId>;
     downvoteNode(nodeId: NodeId): Promise<void>;
+    fetchURL(url: string): Promise<{
+        __kind__: "ok";
+        ok: {
+            title: string;
+            html: string;
+        };
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     generateApiKey(): Promise<string>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
@@ -307,6 +326,12 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getPublishedPaths(): Promise<Array<{
+        graphId: string;
+        swarm: string;
+        curation: string;
+        location: string;
+    }>>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
     getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
@@ -357,5 +382,9 @@ export interface backendInterface {
         err: string;
     }>;
     track_api_request(apiKey: string): Promise<void>;
+    transform(arg0: {
+        context: Uint8Array;
+        response: IcHttpRequestResult;
+    }): Promise<IcHttpRequestResult>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }

@@ -261,6 +261,12 @@ export const PublishPreviewResult = IDL.Record({
   'edgeOperations' : IDL.Vec(EdgeOperation),
   'nodeOperations' : IDL.Vec(NodeOperation),
 });
+export const HttpHeader = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
+export const IcHttpRequestResult = IDL.Record({
+  'status' : IDL.Nat,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(HttpHeader),
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
@@ -293,6 +299,16 @@ export const idlService = IDL.Service({
     ),
   'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
   'downvoteNode' : IDL.Func([NodeId], [], []),
+  'fetchURL' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Variant({
+          'ok' : IDL.Record({ 'title' : IDL.Text, 'html' : IDL.Text }),
+          'err' : IDL.Text,
+        }),
+      ],
+      [],
+    ),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'getAllPublishedSourceGraphs' : IDL.Func(
       [],
@@ -316,6 +332,20 @@ export const idlService = IDL.Service({
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+  'getPublishedPaths' : IDL.Func(
+      [],
+      [
+        IDL.Vec(
+          IDL.Record({
+            'graphId' : IDL.Text,
+            'swarm' : IDL.Text,
+            'curation' : IDL.Text,
+            'location' : IDL.Text,
+          })
+        ),
+      ],
+      ['query'],
+    ),
   'getPublishedSourceGraph' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(GraphData)],
@@ -385,6 +415,16 @@ export const idlService = IDL.Service({
       [],
     ),
   'track_api_request' : IDL.Func([IDL.Text], [], []),
+  'transform' : IDL.Func(
+      [
+        IDL.Record({
+          'context' : IDL.Vec(IDL.Nat8),
+          'response' : IcHttpRequestResult,
+        }),
+      ],
+      [IcHttpRequestResult],
+      ['query'],
+    ),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
@@ -638,6 +678,12 @@ export const idlFactory = ({ IDL }) => {
     'edgeOperations' : IDL.Vec(EdgeOperation),
     'nodeOperations' : IDL.Vec(NodeOperation),
   });
+  const HttpHeader = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
+  const IcHttpRequestResult = IDL.Record({
+    'status' : IDL.Nat,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HttpHeader),
+  });
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
@@ -670,6 +716,16 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
     'downvoteNode' : IDL.Func([NodeId], [], []),
+    'fetchURL' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Variant({
+            'ok' : IDL.Record({ 'title' : IDL.Text, 'html' : IDL.Text }),
+            'err' : IDL.Text,
+          }),
+        ],
+        [],
+      ),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'getAllPublishedSourceGraphs' : IDL.Func(
         [],
@@ -693,6 +749,20 @@ export const idlFactory = ({ IDL }) => {
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+    'getPublishedPaths' : IDL.Func(
+        [],
+        [
+          IDL.Vec(
+            IDL.Record({
+              'graphId' : IDL.Text,
+              'swarm' : IDL.Text,
+              'curation' : IDL.Text,
+              'location' : IDL.Text,
+            })
+          ),
+        ],
+        ['query'],
+      ),
     'getPublishedSourceGraph' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(GraphData)],
@@ -762,6 +832,16 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'track_api_request' : IDL.Func([IDL.Text], [], []),
+    'transform' : IDL.Func(
+        [
+          IDL.Record({
+            'context' : IDL.Vec(IDL.Nat8),
+            'response' : IcHttpRequestResult,
+          }),
+        ],
+        [IcHttpRequestResult],
+        ['query'],
+      ),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };

@@ -13,10 +13,15 @@ import Order "mo:core/Order";
 import Set "mo:core/Set";
 import Blob "mo:core/Blob";
 
+import Result "mo:core/Result";
+
 import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
+
+import AnnotationHttpTypes "types/annotation-http";
+import AnnotationHttpApi "mixins/annotation-http-api";
 
 
 
@@ -400,6 +405,27 @@ actor {
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
+
+  // ── IC HTTP Outcall transform (required for consensus) ───────────────────────
+  // The IC management canister calls back this function to strip response headers
+  // before consensus. Must be declared on the actor directly (not in a mixin).
+  // Declared here (before include) to satisfy forward-reference rules.
+  public query func transform({
+    context : Blob;
+    response : AnnotationHttpTypes.IcHttpRequestResult;
+  }) : async AnnotationHttpTypes.IcHttpRequestResult {
+    ignore context;
+    { response with headers = [] };
+  };
+
+  // ── Annotation HTTP mixin (fetchURL + getPublishedPaths) ────────────────────
+  include AnnotationHttpApi(
+    curationToPublishedGraphId,
+    curationMap,
+    swarmMap,
+    locationMap,
+    transform,
+  );
 
   // ── HTTP API State ───────────────────────────────────────────────────────────
 
