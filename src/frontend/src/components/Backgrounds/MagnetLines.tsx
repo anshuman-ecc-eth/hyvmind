@@ -74,7 +74,6 @@ export default function MagnetLines({
           { length: totalCells },
           (_, i) => `cell-${rows}-${columns}-${i}`,
         ).map((cellKey) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: static grid cells, order never changes
           <div
             key={cellKey}
             style={{

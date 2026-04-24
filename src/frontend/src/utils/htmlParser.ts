@@ -1,8 +1,7 @@
 /**
- * Parses HTML content and extracts structured text (with defuddle if available).
- * Falls back to a recursive DOM walker that preserves headings, paragraphs, and lists.
+ * Parses HTML content and extracts structured text.
+ * Preserves headings, paragraphs, citations, and footnotes.
  */
-import Defuddle from "defuddle";
 
 export interface ParsedHTML {
   title: string;
@@ -12,22 +11,7 @@ export interface ParsedHTML {
 }
 
 // ---------------------------------------------------------------------------
-// Part A — defuddle extraction with markdown:true
-// ---------------------------------------------------------------------------
-
-function extractWithDefuddle(doc: Document): string | null {
-  try {
-    const result = new Defuddle(doc, { markdown: true }).parse();
-    // When markdown:true, content is the markdown string
-    const text = result?.content ?? null;
-    return text && text.trim().length > 50 ? text : null;
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Part B — Recursive DOM walker fallback
+// Part A — Recursive DOM walker
 // ---------------------------------------------------------------------------
 
 function headingPrefix(tag: string): string {
@@ -62,7 +46,7 @@ function walkNode(node: Node): string {
 
   // List item
   if (tag === "LI") {
-    const text = el.textContent?.trim() ?? "";
+    const text = Array.from(el.childNodes).map(walkNode).join("").trim();
     return text ? `- ${text}\n` : "";
   }
 
@@ -72,20 +56,36 @@ function walkNode(node: Node): string {
     return text ? `> ${text}\n\n` : "";
   }
 
-  // Inline elements — return flat text
+  // Inline elements — return text with proper spacing
   if (["SPAN", "A", "EM", "STRONG", "B", "I", "CODE"].includes(tag)) {
-    return el.textContent ?? "";
+    const text = el.textContent ?? "";
+    return text.trim();
   }
 
   // Block containers — recurse children
   const childText = Array.from(el.childNodes).map(walkNode).join("");
 
   if (["DIV", "SECTION", "ARTICLE", "MAIN"].includes(tag)) {
-    const trimmed = childText.trim();
-    return trimmed ? `${trimmed}\n\n` : "";
+    const children = Array.from(el.childNodes)
+      .map(walkNode)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    return children.length > 0 ? `${children.join("\n\n")}\n\n` : "";
   }
 
   // UL, OL, TABLE, and everything else — just recurse
+  if (tag === "UL" || tag === "OL") {
+    const items = Array.from(el.querySelectorAll(":scope > li"))
+      .map((li, i) => {
+        const text = Array.from(li.childNodes).map(walkNode).join("").trim();
+        const prefix = tag === "OL" ? `${i + 1}.` : "-";
+        return text ? `${prefix} ${text}` : "";
+      })
+      .filter((t) => t.length > 0);
+    return items.length > 0 ? `${items.join("\n")}\n\n` : "";
+  }
+
+  // TABLE and everything else — just recurse
   return childText;
 }
 
@@ -103,10 +103,18 @@ function extractStructuredText(doc: Document): string {
     "noscript",
     "iframe",
     "svg",
+    "sup",
   ]) {
     for (const el of Array.from(clone.querySelectorAll(tag))) {
       el.remove();
     }
+  }
+
+  // Remove footnotes div separately
+  for (const el of Array.from(
+    clone.querySelectorAll("div#footnotes, [id='footnotes']"),
+  )) {
+    el.remove();
   }
 
   const raw = walkNode(clone.body ?? clone.documentElement);
@@ -115,8 +123,33 @@ function extractStructuredText(doc: Document): string {
   return raw.replace(/\n{3,}/g, "\n\n").trim();
 }
 
+function extractFootnotes(doc: Document): string {
+  const footnotesDiv = doc.querySelector("div#footnotes, [id='footnotes']");
+  if (!footnotesDiv) return "";
+  const items = Array.from(footnotesDiv.querySelectorAll("li"))
+    .map((li, i) => {
+      const text = Array.from(li.childNodes)
+        .map((node) => {
+          if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as Element;
+            if (el.classList.contains("footnote-backref")) return "";
+            return el.textContent ?? "";
+          }
+          return "";
+        })
+        .join("")
+        .trim();
+      return text ? `[${i + 1}] ${text}` : "";
+    })
+    .filter((t) => t.length > 0);
+  return items.length > 0
+    ? `\n\n---\n\nFootnotes:\n\n${items.join("\n\n")}`
+    : "";
+}
+
 // ---------------------------------------------------------------------------
-// Part C — tokenizer that preserves newline tokens
+// Part B — tokenizer that preserves newline tokens
 // ---------------------------------------------------------------------------
 
 export function tokenize(text: string): string[] {
@@ -144,17 +177,18 @@ export async function parseHTML(
   url: string,
 ): Promise<ParsedHTML> {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+
+  // Strip HTML comments before parsing
+  const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, "");
+  const doc = parser.parseFromString(cleanHtml, "text/html");
 
   const title = extractTitle(doc);
 
-  // Try defuddle first (markdown output), fall back to structured walker
-  let text = extractWithDefuddle(doc);
-  if (!text) {
-    text = extractStructuredText(doc);
-  }
+  // Extract main content
+  let text = extractStructuredText(doc);
 
-  const tokens = tokenize(text);
+  const footnotes = extractFootnotes(doc);
+  const fullText = text + footnotes;
 
-  return { title, text, tokens, url };
+  return { title, text: fullText, tokens: tokenize(fullText), url };
 }

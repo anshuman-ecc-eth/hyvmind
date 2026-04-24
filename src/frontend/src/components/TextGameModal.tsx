@@ -1,6 +1,5 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import MagnetLines from "./Backgrounds/MagnetLines";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -388,11 +387,6 @@ function StartScreen({
   leaderboard,
 }: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const { resolvedTheme } = useTheme();
-  const themeLineColor =
-    resolvedTheme?.endsWith("-light") || resolvedTheme === "light"
-      ? "color-mix(in srgb, var(--foreground) 18%, transparent)"
-      : "color-mix(in srgb, var(--foreground) 35%, transparent)";
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -418,105 +412,92 @@ function StartScreen({
   const topScore = leaderboard.length > 0 ? leaderboard[0] : null;
 
   return (
-    <div className="relative overflow-hidden flex-1">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <MagnetLines
-          containerSize="100%"
-          lineColor={themeLineColor}
-          rows={18}
-          columns={18}
-          lineWidth="1vmin"
-          lineHeight="6vmin"
-          baseAngle={-10}
-        />
-      </div>
-      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-8 select-none">
-        {/* Content box — solid background, isolated from magnetic lines */}
-        <div className="bg-card border border-border rounded-2xl px-10 py-8 flex flex-col items-center gap-6 shadow-lg">
-          {/* Title */}
-          <div className="flex flex-col items-center gap-3">
-            <div
-              className="text-foreground tracking-widest"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                display: "flex",
-                alignItems: "center",
-              }}
-              aria-label="HYVMIND"
-            >
-              {"HYVMIND".split("").map((letter) =>
-                letter === "Y" ? (
-                  <span
-                    key={letter}
-                    style={{
-                      fontSize: "2.5rem",
-                      verticalAlign: "middle",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {letter}
-                  </span>
-                ) : (
-                  <span
-                    key={letter}
-                    style={{
-                      fontSize: "2rem",
-                      verticalAlign: "middle",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {letter}
-                  </span>
-                ),
-              )}
-            </div>
-          </div>
-
-          {/* Top score */}
-          {topScore !== null && (
-            <div
-              className="text-muted-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.55rem",
-                letterSpacing: "0.15em",
-              }}
-            >
-              best: {topScore.name} {topScore.score}
-            </div>
-          )}
-
-          {/* Menu */}
-          <div className="flex flex-col items-center gap-3">
-            {MENU_ITEMS.map((item, activeIdx) => {
-              const isSelected = activeIdx === selectedIdx;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                  className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+      {/* Content box — solid background */}
+      <div className="bg-card border border-border rounded-2xl px-10 py-8 flex flex-col items-center gap-6 shadow-lg">
+        {/* Title */}
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="text-foreground tracking-widest"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              display: "flex",
+              alignItems: "center",
+            }}
+            aria-label="HYVMIND"
+          >
+            {"HYVMIND".split("").map((letter) =>
+              letter === "Y" ? (
+                <span
+                  key={letter}
                   style={{
-                    fontFamily: '"Press Start 2P", monospace',
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.2em",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0",
-                  }}
-                  onClick={() => {
-                    if (item === "ENTER") onStart();
-                    else if (item === "SETTINGS") onSettings();
-                    else if (item === "HI-SCORES") onHiScores();
-                    else if (item === "EXIT") onExit();
+                    fontSize: "2.5rem",
+                    verticalAlign: "middle",
+                    lineHeight: 1,
                   }}
                 >
-                  {isSelected ? `> ${item}` : `  ${item}`}
-                </button>
-              );
-            })}
+                  {letter}
+                </span>
+              ) : (
+                <span
+                  key={letter}
+                  style={{
+                    fontSize: "2rem",
+                    verticalAlign: "middle",
+                    lineHeight: 1,
+                  }}
+                >
+                  {letter}
+                </span>
+              ),
+            )}
           </div>
+        </div>
+
+        {/* Top score */}
+        {topScore !== null && (
+          <div
+            className="text-muted-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.55rem",
+              letterSpacing: "0.15em",
+            }}
+          >
+            best: {topScore.name} {topScore.score}
+          </div>
+        )}
+
+        {/* Menu */}
+        <div className="flex flex-col items-center gap-3">
+          {MENU_ITEMS.map((item, activeIdx) => {
+            const isSelected = activeIdx === selectedIdx;
+            return (
+              <button
+                key={item}
+                type="button"
+                data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
+                className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                style={{
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.2em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0",
+                }}
+                onClick={() => {
+                  if (item === "ENTER") onStart();
+                  else if (item === "SETTINGS") onSettings();
+                  else if (item === "HI-SCORES") onHiScores();
+                  else if (item === "EXIT") onExit();
+                }}
+              >
+                {isSelected ? `> ${item}` : `  ${item}`}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
