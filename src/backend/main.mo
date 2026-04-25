@@ -22,11 +22,11 @@ import Runtime "mo:core/Runtime";
 
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
-import Migration "migration";
 
 
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;
