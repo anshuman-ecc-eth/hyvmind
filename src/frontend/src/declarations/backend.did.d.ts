@@ -195,6 +195,7 @@ export interface PublishedSourceGraphMeta {
   'attributeCount' : bigint,
   'creatorName' : string,
   'edgeCount' : bigint,
+  'artworkDataUrl' : [] | [string],
   'nodeCount' : bigint,
 }
 export interface SourceGraphEdgeInput {
@@ -357,6 +358,7 @@ export interface _SERVICE {
     [{ 'context' : Uint8Array, 'response' : IcHttpRequestResult }],
     IcHttpRequestResult
   >,
+  'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

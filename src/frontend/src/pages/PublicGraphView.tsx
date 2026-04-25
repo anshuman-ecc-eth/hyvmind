@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend.d";
 import AiSearchBar from "../components/AiSearchBar";
 import AiSearchModal from "../components/AiSearchModal";
+import ArtworkModal from "../components/ArtworkModal";
 import FilterPanel from "../components/FilterPanel";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import type {
+  PublishedSourceGraphMeta as BasePublishedSourceGraphMeta,
   ExtensionEntry,
-  PublishedSourceGraphMeta,
 } from "../hooks/usePublicGraphs";
 import {
   usePublishedSourceGraph,
@@ -15,6 +16,9 @@ import {
 } from "../hooks/usePublicGraphs";
 import type { SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
+
+// artworkDataUrl is included in the generated bindings as string | undefined
+type PublishedSourceGraphMeta = BasePublishedSourceGraphMeta;
 
 // ---------------------------------------------------------------------------
 // Filter state
@@ -101,6 +105,9 @@ interface GraphCardProps {
 function GraphCard({ graph, onView }: GraphCardProps) {
   const ms = Number(graph.publishedAt) / 1_000_000;
   const date = new Date(ms).toLocaleDateString();
+  const [showArtworkModal, setShowArtworkModal] = useState(false);
+
+  const artworkUrl = graph.artworkDataUrl;
 
   return (
     <div
@@ -112,6 +119,39 @@ function GraphCard({ graph, onView }: GraphCardProps) {
           {date}
         </span>
       </div>
+
+      {/* Artwork thumbnail */}
+      {artworkUrl ? (
+        <button
+          type="button"
+          onClick={() => setShowArtworkModal(true)}
+          className="self-start cursor-pointer border border-border hover:border-foreground/40 transition-colors"
+          title="View full artwork"
+          data-ocid="public_graph.artwork_thumbnail"
+          aria-label={`View artwork for ${graph.name}`}
+        >
+          <img
+            src={artworkUrl}
+            alt={`Truchet artwork for ${graph.name}`}
+            style={{
+              height: 128,
+              width: "auto",
+              display: "block",
+              imageRendering: "pixelated",
+            }}
+          />
+        </button>
+      ) : (
+        <div
+          className="flex items-center justify-center border border-dashed border-border"
+          style={{ height: 128, width: 128 }}
+          data-ocid="public_graph.artwork_pending"
+        >
+          <span className="font-mono text-[10px] text-muted-foreground text-center px-1">
+            artwork pending...
+          </span>
+        </div>
+      )}
 
       <div className="flex gap-4 font-mono text-xs text-muted-foreground">
         <span data-ocid="public_graph.node_count">
@@ -135,6 +175,14 @@ function GraphCard({ graph, onView }: GraphCardProps) {
       >
         View Graph
       </button>
+
+      {showArtworkModal && artworkUrl && (
+        <ArtworkModal
+          artworkUrl={artworkUrl}
+          graphName={graph.name}
+          onClose={() => setShowArtworkModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -73,6 +73,7 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'attributeCount' : IDL.Nat,
   'creatorName' : IDL.Text,
   'edgeCount' : IDL.Nat,
+  'artworkDataUrl' : IDL.Opt(IDL.Text),
   'nodeCount' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({
@@ -425,6 +426,7 @@ export const idlService = IDL.Service({
       [IcHttpRequestResult],
       ['query'],
     ),
+  'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
@@ -493,6 +495,7 @@ export const idlFactory = ({ IDL }) => {
     'attributeCount' : IDL.Nat,
     'creatorName' : IDL.Text,
     'edgeCount' : IDL.Nat,
+    'artworkDataUrl' : IDL.Opt(IDL.Text),
     'nodeCount' : IDL.Nat,
   });
   const UserProfile = IDL.Record({
@@ -842,6 +845,7 @@ export const idlFactory = ({ IDL }) => {
         [IcHttpRequestResult],
         ['query'],
       ),
+    'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };

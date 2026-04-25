@@ -56,6 +56,7 @@ export interface PublishedSourceGraphMeta {
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    artworkDataUrl?: string;
     nodeCount: bigint;
 }
 export interface NodeOperation {
@@ -386,5 +387,6 @@ export interface backendInterface {
         context: Uint8Array;
         response: IcHttpRequestResult;
     }): Promise<IcHttpRequestResult>;
+    updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }

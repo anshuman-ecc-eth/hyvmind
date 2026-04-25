@@ -67,6 +67,7 @@ type SourceGraphEdgeInput =
  };
 type PublishedSourceGraphMeta = 
  record {
+   artworkDataUrl: opt text;
    attributeCount: nat;
    creator: principal;
    creatorName: text;
@@ -416,5 +417,6 @@ service : {
                 context: blob;
                 response: IcHttpRequestResult;
               }) -> (IcHttpRequestResult) query;
+  updateSourceGraphArtwork: (id: text, dataUrl: text) -> (bool);
   upvoteNode: (nodeId: NodeId) -> ();
 }

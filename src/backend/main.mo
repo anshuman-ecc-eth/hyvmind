@@ -22,9 +22,11 @@ import Runtime "mo:core/Runtime";
 
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
+import Migration "migration";
 
 
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -239,6 +241,7 @@ actor {
     edgeCount : Nat;
     attributeCount : Nat;
     extensionLog : [ExtensionEntry];
+    artworkDataUrl : ?Text;
   };
 
   // Source graph edge with weighted labels
@@ -2914,11 +2917,7 @@ actor {
               addedAttributes;
             };
             let updatedMeta : PublishedSourceGraphMeta = {
-              id = existingMeta.id;
-              name = existingMeta.name;
-              creator = existingMeta.creator;
-              creatorName = existingMeta.creatorName;
-              publishedAt = existingMeta.publishedAt;
+              existingMeta with
               nodeCount = existingMeta.nodeCount + addedNodes;
               edgeCount = existingMeta.edgeCount + addedEdges;
               attributeCount = existingMeta.attributeCount + addedAttributes;
@@ -2947,6 +2946,7 @@ actor {
           edgeCount = addedEdges;
           attributeCount = addedAttributes;
           extensionLog = [];
+          artworkDataUrl = null;
         };
         publishedSourceGraphs.add(newPid, newMeta);
         newPid
@@ -3111,6 +3111,19 @@ actor {
   // ─── getAllPublishedSourceGraphs: Return all published source graph metadata ──
   public query func getAllPublishedSourceGraphs() : async [PublishedSourceGraphMeta] {
     publishedSourceGraphs.values().toArray()
+  };
+
+  // ─── updateSourceGraphArtwork: Store artwork for a published graph ────────────
+  public shared ({ caller }) func updateSourceGraphArtwork(id : Text, dataUrl : Text) : async Bool {
+    switch (publishedSourceGraphs.get(id)) {
+      case (null) { false };
+      case (?meta) {
+        if (meta.creator != caller) { return false };
+        let updated : PublishedSourceGraphMeta = { meta with artworkDataUrl = ?dataUrl };
+        publishedSourceGraphs.add(id, updated);
+        true;
+      };
+    };
   };
 
   // ─── getPublishedSourceGraph: Return full GraphData for a published graph ─────

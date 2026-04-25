@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend";
 import type { PublishedNodeInfo, SourceGraph } from "../types/sourceGraph";
+import { generateTruchetArtwork } from "../utils/truchetGenerator";
 import { usePublishMappings } from "./usePublishMappings";
 
 export type PublishCommitResult =
@@ -123,6 +124,29 @@ export function usePublishGraph() {
         queryClient.invalidateQueries({ queryKey: ["graphData"] });
         queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
         queryClient.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
+
+        // After a brand-new publish, generate truchet artwork in the background
+        if (!isUpdate && rawResult.success.publishedSourceGraphId) {
+          const graphId = rawResult.success.publishedSourceGraphId;
+          const graphName = graph.name;
+          const actorRef = actor;
+          setTimeout(async () => {
+            try {
+              const dataUrl = await generateTruchetArtwork(graphName, "full");
+              if (dataUrl && actorRef) {
+                await (actorRef as backendInterface).updateSourceGraphArtwork(
+                  graphId,
+                  dataUrl,
+                );
+              }
+            } catch (artErr) {
+              console.warn(
+                "[ARTWORK] Failed to generate/save artwork:",
+                artErr,
+              );
+            }
+          }, 0);
+        }
       } else {
         result = {
           type: "error",
