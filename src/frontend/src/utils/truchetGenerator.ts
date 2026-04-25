@@ -1,7 +1,7 @@
 /**
- * Truchet tile artwork generator using native Canvas API.
- * Deterministically seeded by curation name via FNV-1a hash + Mulberry32 PRNG.
- * No p5.js dependency — uses only browser Canvas API.
+ * Spirograph pattern artwork generator using native Canvas API.
+ * Deterministically seeded by published graph ID via FNV-1a hash + Mulberry32 PRNG.
+ * No external dependencies — uses only browser Canvas API.
  */
 
 // ---------------------------------------------------------------------------
@@ -31,83 +31,40 @@ function makePrng(seed: number): () => number {
 }
 
 // ---------------------------------------------------------------------------
-// Palette
+// Spirograph helpers
 // ---------------------------------------------------------------------------
 
-const PALETTE = [
-  "#000000", // black
-  "#4B5563", // gray-600
-  "#6B7280", // gray-500
-  "#9CA3AF", // gray-400
-  "#D1D5DB", // gray-300
-  "#E5E7EB", // gray-200
-  "#FFFFFF", // white
-];
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
 
-// ---------------------------------------------------------------------------
-// Tile drawing helpers
-// ---------------------------------------------------------------------------
-
-type TileType = 0 | 1 | 2 | 3;
-// 0 = curved arcs (classic truchet)
-// 1 = diagonal line
-// 2 = cross
-// 3 = dots
-
-function drawTile(
+function drawSpirograph(
   ctx: CanvasRenderingContext2D,
-  tileType: TileType,
-  cellSize: number,
-  fg: string,
+  radius1: number,
+  radius2: number,
+  distance: number,
+  cycles: number,
+  controlPoints: number,
+  scale: number,
 ): void {
-  const half = cellSize / 2;
-  const lw = Math.max(1.5, cellSize * 0.08);
-  ctx.strokeStyle = fg;
-  ctx.lineWidth = lw;
-  ctx.lineCap = "round";
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
 
-  switch (tileType) {
-    case 0: {
-      // Two quarter-circle arcs: top-mid → left-mid and right-mid → bottom-mid
-      ctx.beginPath();
-      ctx.arc(0, 0, half, 0, Math.PI / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cellSize, cellSize, half, Math.PI, (3 * Math.PI) / 2);
-      ctx.stroke();
-      break;
-    }
-    case 1: {
-      // Diagonal from top-left to bottom-right
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(cellSize, cellSize);
-      ctx.stroke();
-      break;
-    }
-    case 2: {
-      // Cross: horizontal + vertical through centre
-      ctx.beginPath();
-      ctx.moveTo(half, 0);
-      ctx.lineTo(half, cellSize);
-      ctx.moveTo(0, half);
-      ctx.lineTo(cellSize, half);
-      ctx.stroke();
-      break;
-    }
-    case 3: {
-      // Two small circles in opposite corners
-      const r = cellSize * 0.15;
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.25, cellSize * 0.25, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.75, cellSize * 0.75, r, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
+  const rDiff = radius1 - radius2;
+  let maxAll = 0;
+
+  for (let i = 0; i <= controlPoints; i++) {
+    const t = (i / controlPoints) * cycles * 2 * Math.PI;
+    const x = rDiff * Math.sin(t) - distance * Math.sin((t * rDiff) / radius2);
+    const y = rDiff * Math.cos(t) + distance * Math.cos((t * rDiff) / radius2);
+    maxAll = Math.max(maxAll, Math.abs(x), Math.abs(y));
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
+
+  ctx.setTransform(scale / maxAll, 0, 0, scale / maxAll, 0, 0);
+  ctx.stroke();
 }
 
 // ---------------------------------------------------------------------------
@@ -115,15 +72,13 @@ function drawTile(
 // ---------------------------------------------------------------------------
 
 export async function generateTruchetArtwork(
-  curationName: string,
+  seed: string,
   size: "thumbnail" | "full",
 ): Promise<string> {
   const canvasSize = size === "thumbnail" ? 200 : 400;
-  const gridCount = size === "thumbnail" ? 10 : 20;
-  const cellSize = canvasSize / gridCount;
 
-  const seed = fnv1a(curationName);
-  const rand = makePrng(seed);
+  const seedNum = fnv1a(seed);
+  const rand = makePrng(seedNum);
 
   // Create canvas — works in browser; gracefully skip in non-browser envs
   let canvas: HTMLCanvasElement;
@@ -142,34 +97,26 @@ export async function generateTruchetArtwork(
   ctx.fillStyle = "#0a0a0a";
   ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-  for (let row = 0; row < gridCount; row++) {
-    for (let col = 0; col < gridCount; col++) {
-      const x = col * cellSize;
-      const y = row * cellSize;
+  // Generate spirograph parameters from seeded PRNG
+  const radius1 = lerp(0.5, 2.5, rand());
+  const radius2 = lerp(0.1, 1.5, rand());
+  const distance = lerp(0.2, 1.5, rand());
+  const cycles = Math.floor(lerp(2, 6, rand())) + 1;
+  const controlPoints = Math.floor(lerp(200, 600, rand()));
 
-      // Pick tile attributes deterministically
-      const tileType = Math.floor(rand() * 4) as TileType;
-      const rotation = Math.floor(rand() * 4) * 90; // 0, 90, 180, 270
-      const fgIdx = Math.floor(rand() * PALETTE.length);
-      let bgIdx = Math.floor(rand() * (PALETTE.length - 1));
-      if (bgIdx >= fgIdx) bgIdx++; // ensure different from fg
-
-      const fg = PALETTE[fgIdx];
-      const bg = PALETTE[bgIdx];
-
-      // Fill cell background
-      ctx.fillStyle = bg;
-      ctx.fillRect(x, y, cellSize, cellSize);
-
-      // Draw tile with rotation around cell centre
-      ctx.save();
-      ctx.translate(x + cellSize / 2, y + cellSize / 2);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.translate(-cellSize / 2, -cellSize / 2);
-      drawTile(ctx, tileType, cellSize, fg);
-      ctx.restore();
-    }
-  }
+  // Draw spirograph centered on canvas
+  ctx.save();
+  ctx.translate(canvasSize / 2, canvasSize / 2);
+  drawSpirograph(
+    ctx,
+    radius1,
+    radius2,
+    distance,
+    cycles,
+    controlPoints,
+    (canvasSize / 2) * 0.9,
+  );
+  ctx.restore();
 
   return canvas.toDataURL("image/jpeg", 0.7);
 }
