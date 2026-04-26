@@ -11,8 +11,8 @@ import type {
   ExtensionEntry,
 } from "../hooks/usePublicGraphs";
 import {
-  usePublishedSourceGraph,
-  usePublishedSourceGraphs,
+  usePublishedGraphData,
+  usePublishedGraphMetas,
 } from "../hooks/usePublicGraphs";
 import type { SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
@@ -252,7 +252,7 @@ function GraphDetail({
   onBack,
   filterStatesRef,
 }: GraphDetailProps) {
-  const { data: graphData, isLoading } = usePublishedSourceGraph(selectedId);
+  const { data: graphData, isLoading } = usePublishedGraphData(selectedId);
   const meta = graphs.find((g) => g.id === selectedId);
   const graphName = meta?.name ?? "Graph";
   const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
@@ -400,7 +400,7 @@ function GraphDetail({
 export default function PublicGraphView({
   isLanding = false,
 }: { isLanding?: boolean }) {
-  const { data: graphs = [], isLoading, error } = usePublishedSourceGraphs();
+  const { data: graphs = [], isLoading, error } = usePublishedGraphMetas();
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
   const [expandedCreators, setExpandedCreators] = useState<Set<string>>(
     new Set(),
@@ -550,7 +550,6 @@ export default function PublicGraphView({
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         initialQuery={aiInitialQuery}
-        graphs={graphs}
       />
     </div>
   );

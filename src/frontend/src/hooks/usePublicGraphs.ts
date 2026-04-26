@@ -1,5 +1,5 @@
 import { useActor } from "@caffeineai/core-infrastructure";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { createActor } from "../backend";
 import type {
   PublishedSourceGraphMeta as BackendPublishedSourceGraphMeta,
@@ -39,12 +39,13 @@ function useBackendActor(): {
 
 /**
  * Fetches all published source graph metadata.
+ * (Renamed from usePublishedSourceGraphs)
  */
-export function usePublishedSourceGraphs() {
+export function usePublishedGraphMetas() {
   const { actor, isFetching } = useBackendActor();
 
   return useQuery<PublishedSourceGraphMeta[]>({
-    queryKey: ["publishedSourceGraphs"],
+    queryKey: ["publishedGraphMetas"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllPublishedSourceGraphs();
@@ -56,12 +57,13 @@ export function usePublishedSourceGraphs() {
 /**
  * Fetches the full GraphData for a single published source graph.
  * Returns null when the id is null or when the backend returns an empty optional.
+ * (Renamed from usePublishedSourceGraph)
  */
-export function usePublishedSourceGraph(id: string | null) {
+export function usePublishedGraphData(id: string | null) {
   const { actor, isFetching } = useBackendActor();
 
   return useQuery<GraphData | null>({
-    queryKey: ["publishedSourceGraph", id],
+    queryKey: ["publishedGraphData", id],
     queryFn: async (): Promise<GraphData | null> => {
       if (!actor || !id) return null;
       // getPublishedSourceGraph returns GraphData | null (generated binding handles optional)
@@ -69,4 +71,27 @@ export function usePublishedSourceGraph(id: string | null) {
     },
     enabled: !!actor && !isFetching && !!id,
   });
+}
+
+/**
+ * Fetches full GraphData for ALL published graphs in parallel.
+ * Returns the raw useQueries result array alongside the metadata list
+ * so callers can track per-graph loading status.
+ */
+export function useAllPublishedGraphDatas() {
+  const { actor, isFetching } = useBackendActor();
+  const { data: metas } = usePublishedGraphMetas();
+
+  const queries = useQueries({
+    queries: (metas ?? []).map((meta) => ({
+      queryKey: ["publishedGraphData", meta.id] as const,
+      queryFn: async (): Promise<GraphData | null> => {
+        if (!actor) return null;
+        return actor.getPublishedSourceGraph(meta.id);
+      },
+      enabled: !!actor && !isFetching && metas !== undefined,
+    })),
+  });
+
+  return { queries, metas };
 }

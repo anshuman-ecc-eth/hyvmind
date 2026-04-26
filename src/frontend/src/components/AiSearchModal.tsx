@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
+import type { GraphData } from "../backend.d";
+import { useAllPublishedGraphDatas } from "../hooks/usePublicGraphs";
 import {
   type ChatMessage,
   MODEL_OPTIONS,
   type ModelOption,
   type ProgressInfo,
   type TextGenerationPipeline,
-  formatGraphsAsContext,
+  formatGraphDataAsContext,
   generateAiResponse,
   initModelPipeline,
 } from "../services/hyvmindAiService";
@@ -15,13 +16,13 @@ interface AiSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialQuery?: string;
-  graphs: PublishedSourceGraphMeta[];
 }
 
 type ModalState =
   | { phase: "webgpu_unsupported" }
   | { phase: "idle" }
-  | { phase: "loading"; progress: number; text: string }
+  | { phase: "loading_graphs"; progress: number; text: string }
+  | { phase: "loading_model"; progress: number; text: string }
   | { phase: "ready" }
   | { phase: "error"; message: string };
 
@@ -35,7 +36,6 @@ export default function AiSearchModal({
   isOpen,
   onClose,
   initialQuery,
-  graphs,
 }: AiSearchModalProps) {
   const [modalState, setModalState] = useState<ModalState>({ phase: "idle" });
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
@@ -44,41 +44,81 @@ export default function AiSearchModal({
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const engineRef = useRef<TextGenerationPipeline | null>(null);
+  const pipelineRef = useRef<TextGenerationPipeline | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const graphContextRef = useRef<string>("");
   const hasInitRef = useRef(false);
   const initialQueryHandledRef = useRef(false);
+  const graphsLoadedRef = useRef(false);
 
-  // Check WebGPU on mount
+  // RAF streaming refs
+  const bufferRef = useRef<string>("");
+  const rafIdRef = useRef<number | null>(null);
+
+  // Parallel graph data fetching
+  const { queries, metas } = useAllPublishedGraphDatas();
+  const totalCount = metas?.length ?? 0;
+  const completedCount = queries.filter((q) => q.isSuccess).length;
+
+  // Check WebGPU on mount and start Phase 1
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isOpen) return;
     if (!("gpu" in navigator)) {
       setModalState({ phase: "webgpu_unsupported" });
     } else {
-      setModalState({ phase: "idle" });
+      setModalState((prev) =>
+        prev.phase === "idle"
+          ? { phase: "loading_graphs", progress: 0, text: "Reading graphs..." }
+          : prev,
+      );
     }
   }, [isOpen]);
 
-  // Build graph context when graphs arrive
-  useEffect(() => {
-    if (graphs.length > 0) {
-      graphContextRef.current = formatGraphsAsContext(graphs);
-    } else {
-      graphContextRef.current =
-        "You are an AI assistant for Hyvmind. No published graphs are available yet.";
-    }
-  }, [graphs]);
-
-  // Auto-load model when modal opens (idle → loading)
+  // Phase 1: track graph loading progress
   useEffect(() => {
     if (!isOpen) return;
-    if (modalState.phase !== "idle") return;
+    if (modalState.phase !== "loading_graphs") return;
+
+    if (totalCount === 0 && metas !== undefined) {
+      // No graphs — skip to Phase 2
+      graphContextRef.current =
+        "You are an AI assistant for Hyvmind. No published graphs are available yet.";
+      graphsLoadedRef.current = true;
+      startModelLoad();
+      return;
+    }
+
+    if (totalCount > 0) {
+      const progress = Math.round((completedCount / totalCount) * 100);
+      setModalState({
+        phase: "loading_graphs",
+        progress,
+        text: `Reading graphs... (${completedCount}/${totalCount})`,
+      });
+
+      if (completedCount === totalCount && !graphsLoadedRef.current) {
+        graphsLoadedRef.current = true;
+        const graphDatas = queries.map(
+          (q) => (q.data as GraphData | null | undefined) ?? null,
+        );
+        graphContextRef.current = formatGraphDataAsContext(metas!, graphDatas);
+        startModelLoad();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedCount, totalCount, metas, queries, isOpen, modalState.phase]);
+
+  const startModelLoad = () => {
     if (hasInitRef.current) return;
     hasInitRef.current = true;
+    setModalState({
+      phase: "loading_model",
+      progress: 0,
+      text: "Loading model...",
+    });
     loadModel(selectedModel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, modalState.phase, selectedModel]);
+  };
 
   // Send initial query once model is ready
   useEffect(() => {
@@ -102,7 +142,7 @@ export default function AiSearchModal({
   // Reset state on close
   const handleClose = () => {
     onClose();
-    // Don't destroy engine — reuse across opens
+    // Don't destroy pipeline — reuse across opens
     initialQueryHandledRef.current = false;
   };
 
@@ -112,20 +152,20 @@ export default function AiSearchModal({
       return;
     }
 
-    setModalState({ phase: "loading", progress: 0, text: "Initialising..." });
-
     try {
       const onProgress = (info: ProgressInfo) => {
-        const pct = Math.round(info.progress ?? 0);
+        const pct = info.progress !== undefined ? Math.round(info.progress) : 0;
         setModalState({
-          phase: "loading",
+          phase: "loading_model",
           progress: pct,
-          text: info.status ?? `Loading model… ${pct}%`,
+          text:
+            info.status ??
+            (pct > 0 ? `Loading model… ${pct}%` : "Loading model..."),
         });
       };
 
       const engine = await initModelPipeline(model.modelId, onProgress);
-      engineRef.current = engine;
+      pipelineRef.current = engine;
       setModalState({ phase: "ready" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load model.";
@@ -138,19 +178,19 @@ export default function AiSearchModal({
     if (isGenerating) return;
     setSelectedModel(model);
     setMessages([]);
-    engineRef.current = null;
+    pipelineRef.current = null;
     hasInitRef.current = false;
+    graphsLoadedRef.current = false;
     initialQueryHandledRef.current = false;
-    setModalState({ phase: "idle" });
-    // Trigger load
-    setTimeout(() => {
-      hasInitRef.current = false;
-      setModalState({ phase: "idle" });
-    }, 0);
+    setModalState({
+      phase: "loading_graphs",
+      progress: 0,
+      text: "Reading graphs...",
+    });
   };
 
   const sendMessage = async (text: string) => {
-    if (!engineRef.current || isGenerating) return;
+    if (!pipelineRef.current || isGenerating) return;
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -164,19 +204,21 @@ export default function AiSearchModal({
       { role: "assistant", content: "", streaming: true },
     ]);
 
-    // Build history for context
+    // Build history for context — limit to last 10 entries
     const history: ChatMessage[] = messages
       .filter((m) => !m.streaming)
       .concat(userMsg)
+      .slice(-10)
       .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       let accumulated = "";
-      await generateAiResponse(
-        engineRef.current,
-        history,
-        graphContextRef.current,
-        (chunk) => {
+
+      // RAF-throttled streaming
+      const flushBuffer = () => {
+        if (bufferRef.current) {
+          const chunk = bufferRef.current;
+          bufferRef.current = "";
           accumulated += chunk;
           setMessages((prev) => {
             const next = [...prev];
@@ -190,8 +232,31 @@ export default function AiSearchModal({
             }
             return next;
           });
+        }
+        rafIdRef.current = null;
+      };
+
+      await generateAiResponse(
+        pipelineRef.current,
+        history,
+        graphContextRef.current,
+        (chunk) => {
+          bufferRef.current += chunk;
+          if (rafIdRef.current === null) {
+            rafIdRef.current = requestAnimationFrame(flushBuffer);
+          }
         },
       );
+
+      // Flush any remaining buffer
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      if (bufferRef.current) {
+        accumulated += bufferRef.current;
+        bufferRef.current = "";
+      }
 
       // Finalise
       setMessages((prev) => {
@@ -228,6 +293,10 @@ export default function AiSearchModal({
 
   if (!isOpen) return null;
 
+  const isLoadingPhase =
+    modalState.phase === "loading_graphs" ||
+    modalState.phase === "loading_model";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
@@ -259,7 +328,7 @@ export default function AiSearchModal({
                 const m = MODEL_OPTIONS.find((o) => o.id === e.target.value);
                 if (m) handleModelChange(m);
               }}
-              disabled={isGenerating || modalState.phase === "loading"}
+              disabled={isGenerating || isLoadingPhase}
               className="bg-background border border-border text-xs text-foreground px-1.5 py-0.5 outline-none disabled:opacity-50 font-mono max-w-[200px]"
               data-ocid="ai_search.model_select"
               aria-label="Select AI model"
@@ -302,8 +371,8 @@ export default function AiSearchModal({
             </div>
           )}
 
-          {/* Loading */}
-          {modalState.phase === "loading" && (
+          {/* Phase 1: Graph loading */}
+          {modalState.phase === "loading_graphs" && (
             <div
               className="flex flex-1 flex-col items-center justify-center gap-4 p-8"
               data-ocid="ai_search.loading_state"
@@ -314,7 +383,38 @@ export default function AiSearchModal({
               <div className="w-full max-w-xs border border-border bg-background h-2">
                 <div
                   className="h-full bg-foreground/60 transition-all duration-300"
-                  style={{ width: `${modalState.progress}%` }}
+                  style={{
+                    width:
+                      modalState.progress > 0
+                        ? `${modalState.progress}%`
+                        : "0%",
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground/60">
+                Loading graph data for AI context…
+              </p>
+            </div>
+          )}
+
+          {/* Phase 2: Model loading */}
+          {modalState.phase === "loading_model" && (
+            <div
+              className="flex flex-1 flex-col items-center justify-center gap-4 p-8"
+              data-ocid="ai_search.loading_state"
+            >
+              <p className="text-xs text-muted-foreground text-center max-w-xs break-words">
+                {modalState.text}
+              </p>
+              <div className="w-full max-w-xs border border-border bg-background h-2">
+                <div
+                  className="h-full bg-foreground/60 transition-all duration-300"
+                  style={{
+                    width:
+                      modalState.progress > 0
+                        ? `${modalState.progress}%`
+                        : "0%",
+                  }}
                 />
               </div>
               <p className="text-[10px] text-muted-foreground/60">
@@ -334,8 +434,12 @@ export default function AiSearchModal({
                 type="button"
                 onClick={() => {
                   hasInitRef.current = false;
-                  setModalState({ phase: "idle" });
-                  loadModel(selectedModel);
+                  graphsLoadedRef.current = false;
+                  setModalState({
+                    phase: "loading_graphs",
+                    progress: 0,
+                    text: "Reading graphs...",
+                  });
                 }}
                 className="border border-border px-3 py-1 text-xs text-foreground hover:bg-secondary transition-colors"
                 data-ocid="ai_search.retry_button"
@@ -345,12 +449,12 @@ export default function AiSearchModal({
             </div>
           )}
 
-          {/* Chat area (ready or idle with cached engine) */}
+          {/* Chat area (ready or idle with cached pipeline) */}
           {(modalState.phase === "ready" || modalState.phase === "idle") &&
-            engineRef.current && (
+            pipelineRef.current && (
               <>
                 {/* No graphs notice */}
-                {graphs.length === 0 && (
+                {totalCount === 0 && (
                   <div className="px-4 py-2 border-b border-border bg-muted/30 text-[10px] text-muted-foreground">
                     No published graphs available. Publish a source graph from
                     the Sources page to enable graph-aware answers.

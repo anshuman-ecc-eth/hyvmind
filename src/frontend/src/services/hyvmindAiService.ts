@@ -3,7 +3,16 @@ import {
   TextStreamer,
   pipeline,
 } from "@huggingface/transformers";
-import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
+import type {
+  Curation,
+  GraphData,
+  InterpretationToken,
+  LawToken,
+  Location,
+  PublishedSourceGraphMeta,
+  Swarm,
+  WeightedAttribute,
+} from "../backend.d";
 
 // ---------------------------------------------------------------------------
 // Model options
@@ -34,44 +43,144 @@ export const MODEL_OPTIONS: ModelOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Context formatter
+// Context formatters
 // ---------------------------------------------------------------------------
 
-const MAX_GRAPHS = 50;
-const MAX_CONTEXT_CHARS = 8000;
+const MAX_CONTEXT_CHARS = 12000;
 
-export function formatGraphsAsContext(
-  graphs: PublishedSourceGraphMeta[],
+/** Serialize a WeightedAttribute array into a compact key: value string. */
+function serializeAttributes(attrs: WeightedAttribute[]): string {
+  if (!attrs || attrs.length === 0) return "";
+  return attrs
+    .map((attr) => {
+      const values = attr.weightedValues
+        .map((wv) =>
+          Number(wv.weight) > 1 ? `${wv.value}(×${wv.weight})` : wv.value,
+        )
+        .join(", ");
+      return `${attr.key}: ${values}`;
+    })
+    .join("; ");
+}
+
+/**
+ * Serializes the complete graph structure across all 5 hierarchy levels
+ * plus explicit edges. Accepts the full GraphData for each published graph
+ * alongside metadata for header information.
+ */
+export function formatGraphDataAsContext(
+  metadatas: PublishedSourceGraphMeta[],
+  graphDatas: (GraphData | null)[],
 ): string {
-  const subset = graphs.slice(0, MAX_GRAPHS);
-
-  const lines: string[] = [
+  const parts: string[] = [
     "You are an AI assistant helping users explore a legal knowledge graph platform called Hyvmind.",
-    "The following published knowledge graphs are available in the system:\n",
+    "The following published knowledge graphs are available with their full content:\n",
   ];
 
-  for (const g of subset) {
+  for (let i = 0; i < metadatas.length; i++) {
+    const graphData = graphDatas[i];
+    if (!graphData) continue;
+    const meta = metadatas[i];
+
     const date = new Date(
-      Number(g.publishedAt) / 1_000_000,
+      Number(meta.publishedAt) / 1_000_000,
     ).toLocaleDateString();
-    lines.push(
-      `- Graph: "${g.name}" | Creator: ${g.creatorName} | Nodes: ${Number(g.nodeCount)} | Edges: ${Number(g.edgeCount)} | Attributes: ${Number(g.attributeCount)} | Published: ${date}`,
+
+    parts.push(
+      `\n=== Graph: ${meta.name} ===\nCreator: ${meta.creatorName}\nPublished: ${date}`,
     );
+
+    // Build id→name lookup for edge rendering
+    const idToName = new Map<string, string>();
+    for (const c of graphData.curations) idToName.set(c.id, c.name);
+    for (const s of graphData.swarms) idToName.set(s.id, s.name);
+    for (const l of graphData.locations) idToName.set(l.id, l.title);
+    for (const lt of graphData.lawTokens) idToName.set(lt.id, lt.tokenLabel);
+    for (const it of graphData.interpretationTokens)
+      idToName.set(it.id, it.title);
+
+    // Group nodes by parent for efficient hierarchy traversal
+    const swarmsByCuration = new Map<string, Swarm[]>();
+    for (const s of graphData.swarms) {
+      const arr = swarmsByCuration.get(s.parentCurationId) ?? [];
+      arr.push(s);
+      swarmsByCuration.set(s.parentCurationId, arr);
+    }
+
+    const locationsBySwarm = new Map<string, Location[]>();
+    for (const l of graphData.locations) {
+      const arr = locationsBySwarm.get(l.parentSwarmId) ?? [];
+      arr.push(l);
+      locationsBySwarm.set(l.parentSwarmId, arr);
+    }
+
+    const lawsByLocation = new Map<string, LawToken[]>();
+    for (const lt of graphData.lawTokens) {
+      const arr = lawsByLocation.get(lt.parentLocationId) ?? [];
+      arr.push(lt);
+      lawsByLocation.set(lt.parentLocationId, arr);
+    }
+
+    const interpsByLaw = new Map<string, InterpretationToken[]>();
+    for (const it of graphData.interpretationTokens) {
+      const arr = interpsByLaw.get(it.parentLawTokenId) ?? [];
+      arr.push(it);
+      interpsByLaw.set(it.parentLawTokenId, arr);
+    }
+
+    // Walk 5-level hierarchy
+    for (const curation of graphData.curations) {
+      const cAttrs = serializeAttributes(curation.customAttributes);
+      parts.push(`[Curation] ${curation.name}${cAttrs ? ` | ${cAttrs}` : ""}`);
+
+      for (const swarm of swarmsByCuration.get(curation.id) ?? []) {
+        const sAttrs = serializeAttributes(swarm.customAttributes);
+        parts.push(`  [Swarm] ${swarm.name}${sAttrs ? ` | ${sAttrs}` : ""}`);
+
+        for (const location of locationsBySwarm.get(swarm.id) ?? []) {
+          const lAttrs = serializeAttributes(location.customAttributes);
+          parts.push(
+            `    [Location] ${location.title}${lAttrs ? ` | ${lAttrs}` : ""}`,
+          );
+
+          for (const law of lawsByLocation.get(location.id) ?? []) {
+            const ltAttrs = serializeAttributes(law.customAttributes);
+            parts.push(
+              `      [Law] ${law.tokenLabel}${ltAttrs ? ` | ${ltAttrs}` : ""}`,
+            );
+
+            for (const interp of interpsByLaw.get(law.id) ?? []) {
+              const content =
+                interp.contentVersions[interp.contentVersions.length - 1]
+                  ?.content ?? "";
+              const itAttrs = serializeAttributes(interp.customAttributes);
+              parts.push(
+                `        [Interp] ${interp.title}: ${content}${itAttrs ? ` | ${itAttrs}` : ""}`,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Serialize edges with readable names
+    if (graphData.edges.length > 0) {
+      parts.push("  Edges:");
+      for (const edge of graphData.edges) {
+        const src = idToName.get(edge.source) ?? edge.source;
+        const tgt = idToName.get(edge.target) ?? edge.target;
+        parts.push(`    Edge: ${src} --[${edge.edgeLabel}]--> ${tgt}`);
+      }
+    }
   }
 
-  if (graphs.length > MAX_GRAPHS) {
-    lines.push(
-      `\n(Showing first ${MAX_GRAPHS} of ${graphs.length} total graphs.)`,
-    );
-  }
-
-  lines.push(
+  parts.push(
     "\nAnswer questions about the knowledge graphs above. Be concise and helpful.",
   );
 
-  const result = lines.join("\n");
+  const result = parts.join("\n");
   return result.length > MAX_CONTEXT_CHARS
-    ? `${result.slice(0, MAX_CONTEXT_CHARS)}\n...(truncated)`
+    ? `${result.slice(0, MAX_CONTEXT_CHARS)}\n...[truncated]`
     : result;
 }
 
