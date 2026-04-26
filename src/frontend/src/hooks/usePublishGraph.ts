@@ -128,10 +128,11 @@ export function usePublishGraph() {
         // After a brand-new publish, generate truchet artwork in the background
         if (!isUpdate && rawResult.success.publishedSourceGraphId) {
           const graphId = rawResult.success.publishedSourceGraphId;
+          const graphName = graph.name;
           const actorRef = actor;
           setTimeout(async () => {
             try {
-              const dataUrl = await generateTruchetArtwork(graphId, "full");
+              const dataUrl = await generateTruchetArtwork(graphName, "full");
               if (dataUrl && actorRef) {
                 await (actorRef as backendInterface).updateSourceGraphArtwork(
                   graphId,

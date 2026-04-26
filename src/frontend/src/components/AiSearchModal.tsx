@@ -1,13 +1,14 @@
-import type { InitProgressReport, MLCEngine } from "@mlc-ai/web-llm";
 import { useEffect, useRef, useState } from "react";
 import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
 import {
   type ChatMessage,
   MODEL_OPTIONS,
   type ModelOption,
+  type ProgressInfo,
+  type TextGenerationPipeline,
   formatGraphsAsContext,
   generateAiResponse,
-  initWebLLMEngine,
+  initModelPipeline,
 } from "../services/hyvmindAiService";
 
 interface AiSearchModalProps {
@@ -43,7 +44,7 @@ export default function AiSearchModal({
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const engineRef = useRef<MLCEngine | null>(null);
+  const engineRef = useRef<TextGenerationPipeline | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const graphContextRef = useRef<string>("");
   const hasInitRef = useRef(false);
@@ -114,16 +115,16 @@ export default function AiSearchModal({
     setModalState({ phase: "loading", progress: 0, text: "Initialising..." });
 
     try {
-      const onProgress = (report: InitProgressReport) => {
-        const pct = Math.round((report.progress ?? 0) * 100);
+      const onProgress = (info: ProgressInfo) => {
+        const pct = Math.round(info.progress ?? 0);
         setModalState({
           phase: "loading",
           progress: pct,
-          text: report.text ?? `Loading model… ${pct}%`,
+          text: info.status ?? `Loading model… ${pct}%`,
         });
       };
 
-      const engine = await initWebLLMEngine(model.modelId, onProgress);
+      const engine = await initModelPipeline(model.modelId, onProgress);
       engineRef.current = engine;
       setModalState({ phase: "ready" });
     } catch (err) {

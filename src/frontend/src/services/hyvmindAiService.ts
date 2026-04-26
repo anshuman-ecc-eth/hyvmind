@@ -1,5 +1,8 @@
-import type { InitProgressReport, MLCEngine } from "@mlc-ai/web-llm";
-import { CreateMLCEngine } from "@mlc-ai/web-llm";
+import {
+  type TextGenerationPipeline,
+  TextStreamer,
+  pipeline,
+} from "@huggingface/transformers";
 import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
 
 // ---------------------------------------------------------------------------
@@ -14,19 +17,19 @@ export interface ModelOption {
 
 export const MODEL_OPTIONS: ModelOption[] = [
   {
-    id: "smollm2",
-    label: "SmolLM2-135M (fastest, ~270MB)",
-    modelId: "SmolLM2-135M-Instruct-q4f16_1-MLC",
+    id: "smollm2-135m",
+    label: "SmolLM2-135M (fastest, ~118MB)",
+    modelId: "HuggingFaceTB/SmolLM2-135M-Instruct",
   },
   {
-    id: "qwen",
-    label: "Qwen2.5-0.5B (~400MB)",
-    modelId: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+    id: "smollm2-360m",
+    label: "SmolLM2-360M (~273MB)",
+    modelId: "HuggingFaceTB/SmolLM2-360M-Instruct",
   },
   {
-    id: "tinyllama",
-    label: "TinyLlama-1.1B (~670MB)",
-    modelId: "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC",
+    id: "smollm2-1.7b",
+    label: "SmolLM2-1.7B (~1.1GB)",
+    modelId: "HuggingFaceTB/SmolLM2-1.7B-Instruct",
   },
 ];
 
@@ -73,17 +76,29 @@ export function formatGraphsAsContext(
 }
 
 // ---------------------------------------------------------------------------
-// Engine initialisation
+// Pipeline initialisation
 // ---------------------------------------------------------------------------
 
-export async function initWebLLMEngine(
+// The public engine handle used by the component layer
+export type { TextGenerationPipeline };
+
+export interface ProgressInfo {
+  status: string;
+  progress?: number;
+  file?: string;
+}
+
+export async function initModelPipeline(
   modelId: string,
-  onProgress: (report: InitProgressReport) => void,
-): Promise<MLCEngine> {
-  const engine = await CreateMLCEngine(modelId, {
-    initProgressCallback: onProgress,
+  onProgress: (info: ProgressInfo) => void,
+): Promise<TextGenerationPipeline> {
+  const pipe = await pipeline("text-generation", modelId, {
+    device: "webgpu",
+    progress_callback: (info: ProgressInfo) => {
+      onProgress(info);
+    },
   });
-  return engine;
+  return pipe;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,7 +111,7 @@ export interface ChatMessage {
 }
 
 export async function generateAiResponse(
-  engine: MLCEngine,
+  engine: TextGenerationPipeline,
   messages: ChatMessage[],
   graphContext: string,
   onChunk?: (chunk: string) => void,
@@ -109,28 +124,38 @@ export async function generateAiResponse(
   const allMessages = [systemMessage, ...messages];
 
   if (onChunk) {
-    // Streaming
-    const chunks = await engine.chat.completions.create({
-      messages: allMessages,
-      stream: true,
+    // Streaming path via TextStreamer
+    let accumulated = "";
+    const streamer = new TextStreamer(engine.tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: (token: string) => {
+        accumulated += token;
+        onChunk(token);
+      },
     });
 
-    let full = "";
-    for await (const chunk of chunks) {
-      const delta = chunk.choices[0]?.delta?.content ?? "";
-      if (delta) {
-        full += delta;
-        onChunk(delta);
-      }
-    }
-    return full;
+    await engine(allMessages, {
+      max_new_tokens: 256,
+      streamer,
+    });
+
+    return accumulated;
   }
 
   // Non-streaming fallback
-  const reply = await engine.chat.completions.create({
-    messages: allMessages,
-    stream: false,
-  });
-
-  return reply.choices[0]?.message?.content ?? "";
+  const output = await engine(allMessages, { max_new_tokens: 256 });
+  const result = Array.isArray(output) ? output[0] : output;
+  if (
+    result &&
+    typeof result === "object" &&
+    "generated_text" in result &&
+    Array.isArray(result.generated_text)
+  ) {
+    const last = result.generated_text[result.generated_text.length - 1];
+    if (last && typeof last === "object" && "content" in last) {
+      return String(last.content);
+    }
+  }
+  return "";
 }
