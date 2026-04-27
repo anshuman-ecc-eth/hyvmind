@@ -5,6 +5,7 @@ import List "mo:core/List";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Time "mo:core/Time";
+import Error "mo:core/Error";
 
 
 import Types "../types/annotation-http";
@@ -46,8 +47,8 @@ module {
 
     let response = try {
       await (with cycles = HTTP_OUTCALL_CYCLES) IC.http_request(request);
-    } catch (_e) {
-      return #err("HTTP outcall failed");
+    } catch (e) {
+      return #err("HTTP outcall failed: " # e.message());
     };
 
     let html = switch (response.body.decodeUtf8()) {
