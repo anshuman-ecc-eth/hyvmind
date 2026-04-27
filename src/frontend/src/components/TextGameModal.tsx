@@ -1,8 +1,5 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
-import { usePublishedGraphMetas } from "../hooks/usePublicGraphs";
-import ArtworkModal from "./ArtworkModal";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -435,62 +432,6 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
   );
 }
 
-// ── CurationTileset ────────────────────────────────────────────────────────────
-
-interface CurationTilesetProps {
-  curations: PublishedSourceGraphMeta[];
-  onViewArtwork: (url: string, name: string) => void;
-}
-
-function CurationTileset({ curations, onViewArtwork }: CurationTilesetProps) {
-  const withArtwork = curations.filter((c) => c.artworkDataUrl);
-  if (withArtwork.length === 0) return null;
-  return (
-    <div
-      className="absolute left-4 top-4 flex flex-wrap gap-2"
-      style={{ zIndex: 10 }}
-    >
-      {withArtwork.map((c) => {
-        const dateStr = c.publishedAt
-          ? new Date(Number(c.publishedAt) / 1_000_000).toLocaleDateString()
-          : "unknown date";
-        return (
-          <button
-            key={c.id}
-            type="button"
-            className="relative group cursor-pointer"
-            onClick={() => onViewArtwork(c.artworkDataUrl!, c.name)}
-            aria-label={`View tileset for ${c.name}`}
-          >
-            <img
-              src={c.artworkDataUrl!}
-              alt={c.name}
-              style={{
-                width: 64,
-                height: 64,
-                imageRendering: "pixelated",
-                display: "block",
-              }}
-            />
-            {/* Hover tooltip */}
-            <div
-              className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-black/90 border border-white/20 p-2 text-xs font-mono whitespace-nowrap"
-              style={{ zIndex: 20 }}
-            >
-              <div className="font-bold">{c.name}</div>
-              <div>{dateStr}</div>
-              <div>
-                {Number(c.nodeCount)} nodes · {Number(c.edgeCount)} edges ·{" "}
-                {Number(c.attributeCount)} attrs
-              </div>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Start Screen ───────────────────────────────────────────────────────────────
 
 interface StartScreenProps {
@@ -499,8 +440,6 @@ interface StartScreenProps {
   onHiScores: () => void;
   onExit: () => void;
   leaderboard: LeaderboardEntry[];
-  curations: PublishedSourceGraphMeta[];
-  onViewArtwork: (url: string, name: string) => void;
 }
 
 function StartScreen({
@@ -509,8 +448,6 @@ function StartScreen({
   onHiScores,
   onExit,
   leaderboard,
-  curations,
-  onViewArtwork,
 }: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -539,9 +476,8 @@ function StartScreen({
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
-      <CurationTileset curations={curations} onViewArtwork={onViewArtwork} />
       {/* Content box — solid background */}
-      <div className="bg-card border border-border rounded-2xl px-10 py-8 flex flex-col items-center gap-6 shadow-lg">
+      <div className="bg-card rounded-2xl px-10 py-8 flex flex-col items-center gap-6 shadow-lg">
         {/* Title */}
         <div className="flex flex-col items-center gap-3">
           <div
@@ -920,16 +856,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // Pending score awaiting name entry
   const [pendingScore, setPendingScore] = useState<number | null>(null);
 
-  // Curation tileset artwork viewer
-  const [artworkToView, setArtworkToView] = useState<{
-    url: string;
-    name: string;
-  } | null>(null);
-  const { data: curationsRaw = [] } = usePublishedGraphMetas();
-  const curations = [...curationsRaw].sort(
-    (a, b) => Number(b.publishedAt) - Number(a.publishedAt),
-  );
-
   // ── Persist settings & leaderboard ────────────────────────────────────────
 
   useEffect(() => {
@@ -1281,8 +1207,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
             leaderboard={leaderboard}
-            curations={curations}
-            onViewArtwork={(url, name) => setArtworkToView({ url, name })}
           />
         );
 
@@ -1495,14 +1419,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
         {renderContent()}
       </div>
-
-      {artworkToView && (
-        <ArtworkModal
-          artworkUrl={artworkToView.url}
-          graphName={artworkToView.name}
-          onClose={() => setArtworkToView(null)}
-        />
-      )}
     </>
   );
 }

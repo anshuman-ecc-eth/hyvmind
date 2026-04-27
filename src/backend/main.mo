@@ -26,8 +26,6 @@ import AnnotationHttpApi "mixins/annotation-http-api";
 
 
 
-// Migration: drop jsonContentType stable variable that was removed in this version
-(with migration = func(old : { jsonContentType : (Text, Text) }) : {} { {} })
 actor {
   // Type Aliases
   type NodeId = Text;
