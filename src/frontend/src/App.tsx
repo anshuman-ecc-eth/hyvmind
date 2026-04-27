@@ -25,6 +25,7 @@ import {
   getSavedFontSize,
 } from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
+import HyvmindSkillsPage from "./pages/HyvmindSkillsPage";
 import McpSetupPage from "./pages/McpSetupPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
@@ -50,6 +51,21 @@ function McpSetupRoute() {
       storageKey="hyvmind-theme"
     >
       <McpSetupPage />
+    </ThemeProvider>
+  );
+}
+
+// SKILLS documentation page — public, no auth
+function HyvmindSkillsRoute() {
+  return (
+    <ThemeProvider
+      attribute="class"
+      themes={ALL_THEMES}
+      defaultTheme={DEFAULT_THEME}
+      enableSystem={false}
+      storageKey="hyvmind-theme"
+    >
+      <HyvmindSkillsPage />
     </ThemeProvider>
   );
 }
@@ -310,6 +326,11 @@ export default function App() {
       localStorage.setItem("hyvmind-theme", migrateTheme(stored));
     }
   }, []);
+
+  // /skills is the SKILLS documentation page — public, no auth
+  if (window.location.pathname === "/skills") {
+    return <HyvmindSkillsRoute />;
+  }
 
   // /mcp is a public standalone page — render it directly without auth or layout
   if (window.location.pathname === "/mcp") {

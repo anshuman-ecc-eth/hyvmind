@@ -300,126 +300,134 @@ export function SettingsView() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">API Key</h2>
             <a
-              href="/mcp"
+              href="/skills"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               data-ocid="settings.api_key.mcp_link"
             >
-              How to connect
+              Give your agent Hyvmind skills
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Use this key to connect MCP clients to your Hyvmind knowledge
-            graphs.
+          <p className="text-sm text-primary font-medium">
+            No API key required — Hyvmind is now open access
           </p>
+          <div className="opacity-50 grayscale pointer-events-none space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Use this key to connect MCP clients to your Hyvmind knowledge
+              graphs.
+            </p>
 
-          {apiKeyLoading ? (
-            <div
-              className="flex items-center gap-2 text-sm text-muted-foreground"
-              data-ocid="settings.api_key.loading_state"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading API key...
-            </div>
-          ) : apiKey ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <code
-                  className="flex-1 rounded border border-border bg-muted/40 px-3 py-2 font-mono text-sm tracking-wider text-foreground select-none"
-                  data-ocid="settings.api_key.display"
-                >
-                  {maskApiKey(apiKey)}
-                </code>
+            {apiKeyLoading ? (
+              <div
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+                data-ocid="settings.api_key.loading_state"
+              >
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading API key...
+              </div>
+            ) : apiKey ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <code
+                    className="flex-1 rounded border border-border bg-muted/40 px-3 py-2 font-mono text-sm tracking-wider text-foreground select-none"
+                    data-ocid="settings.api_key.display"
+                  >
+                    {maskApiKey(apiKey)}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="shrink-0"
+                    data-ocid="settings.api_key.copy_button"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-foreground" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+
+                {!revokeConfirm ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRevokeConfirm(true)}
+                    className="text-xs text-destructive hover:text-destructive"
+                    data-ocid="settings.api_key.revoke_button"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Revoke Key
+                  </Button>
+                ) : (
+                  <div
+                    className="rounded border border-border bg-muted/30 p-4 space-y-3"
+                    data-ocid="settings.api_key.revoke_dialog"
+                  >
+                    <p className="text-sm text-foreground">
+                      This will permanently invalidate your API key. All
+                      existing integrations will stop working. Are you sure?
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRevokeConfirm(false)}
+                        disabled={revokeLoading}
+                        data-ocid="settings.api_key.cancel_button"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRevoke}
+                        disabled={revokeLoading}
+                        data-ocid="settings.api_key.confirm_button"
+                      >
+                        {revokeLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Revoking...
+                          </>
+                        ) : (
+                          "Confirm Revoke"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                className="space-y-3"
+                data-ocid="settings.api_key.empty_state"
+              >
+                <p className="text-xs text-muted-foreground">
+                  No API key yet. Generate one to connect MCP clients.
+                </p>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleCopy}
-                  className="shrink-0"
-                  data-ocid="settings.api_key.copy_button"
+                  onClick={handleGenerate}
+                  disabled={generateLoading}
+                  data-ocid="settings.api_key.generate_button"
                 >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-foreground" />
+                  {generateLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Generating...
+                    </>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    "Generate Key"
                   )}
                 </Button>
               </div>
-
-              {!revokeConfirm ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setRevokeConfirm(true)}
-                  className="text-xs text-destructive hover:text-destructive"
-                  data-ocid="settings.api_key.revoke_button"
-                >
-                  <Trash2 className="mr-2 h-3 w-3" />
-                  Revoke Key
-                </Button>
-              ) : (
-                <div
-                  className="rounded border border-border bg-muted/30 p-4 space-y-3"
-                  data-ocid="settings.api_key.revoke_dialog"
-                >
-                  <p className="text-sm text-foreground">
-                    This will permanently invalidate your API key. All existing
-                    integrations will stop working. Are you sure?
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setRevokeConfirm(false)}
-                      disabled={revokeLoading}
-                      data-ocid="settings.api_key.cancel_button"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={handleRevoke}
-                      disabled={revokeLoading}
-                      data-ocid="settings.api_key.confirm_button"
-                    >
-                      {revokeLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                          Revoking...
-                        </>
-                      ) : (
-                        "Confirm Revoke"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3" data-ocid="settings.api_key.empty_state">
-              <p className="text-xs text-muted-foreground">
-                No API key yet. Generate one to connect MCP clients.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleGenerate}
-                disabled={generateLoading}
-                data-ocid="settings.api_key.generate_button"
-              >
-                {generateLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  "Generate Key"
-                )}
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </section>
       </div>
     </div>

@@ -26,7 +26,8 @@ import AnnotationHttpApi "mixins/annotation-http-api";
 
 
 
-
+// Migration: drop jsonContentType stable variable that was removed in this version
+(with migration = func(old : { jsonContentType : (Text, Text) }) : {} { {} })
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -3427,15 +3428,29 @@ actor {
 
   // ── HTTP API: Response builders ──────────────────────────────────────────────
 
-  let jsonContentType : (Text, Text) = ("Content-Type", "application/json");
-
   func httpOk(body : Text) : HttpResponse {
-    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
   };
 
   func httpError(statusCode : Nat16, msg : Text) : HttpResponse {
     let body = jsonObject([("error", jsonText(msg))]);
-    { status_code = statusCode; headers = [jsonContentType]; body = body.encodeUtf8() };
+    {
+      status_code = statusCode;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+      ];
+      body = body.encodeUtf8();
+    };
   };
 
   // ── HTTP API: Node / edge serializers ───────────────────────────────────────
@@ -3705,13 +3720,31 @@ actor {
   // Build a JSON-RPC 2.0 success response
   func mcpSuccess(id : Text, result : Text) : HttpResponse {
     let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"result\":" # result # "}";
-    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
   };
 
   // Build a JSON-RPC 2.0 error response
   func mcpError(id : Text, code : Int, msg : Text) : HttpResponse {
     let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"error\":{\"code\":" # code.toText() # ",\"message\":" # jsonText(msg) # "}}";
-    { status_code = 200; headers = [jsonContentType]; body = body.encodeUtf8() };
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
   };
 
   // Extract a JSON string value for a top-level key (naïve but sufficient for
@@ -3839,34 +3872,20 @@ actor {
 
   public query func http_request(req : HttpRequest) : async HttpResponse {
     let (path, queryString) = splitUrl(req.url);
+    ignore queryString;
 
-    // Validate API key — accept from Authorization: Bearer header OR api_key query param
-    let providedKey : Text = switch (getAuthBearerKey(req.headers)) {
-      case (?k) { k };
-      case (null) {
-        switch (getQueryParam(queryString, "api_key")) {
-          case (?k) { k };
-          case (null) { return httpError(401, "Missing API key (provide Authorization: Bearer <key> header or api_key query param)") };
-        };
+    // Handle CORS preflight requests
+    if (req.method == "OPTIONS") {
+      return {
+        status_code = 204;
+        headers = [
+          ("Access-Control-Allow-Origin", "*"),
+          ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+          ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+          ("Access-Control-Max-Age", "86400"),
+        ];
+        body = Blob.fromArray([]);
       };
-    };
-    if (principalByApiKey.get(providedKey) == null) {
-      return httpError(401, "Invalid API key");
-    };
-
-    // Rate limit check (read-only; incrementing happens in track_api_request)
-    let keyCount = switch (apiRateLimitCounts.get(providedKey)) {
-      case (?c) { c };
-      case (null) { 0 };
-    };
-    let windowStart = switch (apiRateLimitWindowStarts.get(providedKey)) {
-      case (?w) { w };
-      case (null) { 0 };
-    };
-    let now = Time.now();
-    let withinWindow = now - windowStart <= 60_000_000_000;
-    if (withinWindow and keyCount >= 100) {
-      return httpError(429, "Rate limit exceeded: 100 requests per minute");
     };
 
     // Route
