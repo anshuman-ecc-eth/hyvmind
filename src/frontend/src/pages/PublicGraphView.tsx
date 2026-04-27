@@ -120,38 +120,19 @@ function GraphCard({ graph, onView }: GraphCardProps) {
         </span>
       </div>
 
-      {/* Artwork thumbnail */}
-      {artworkUrl ? (
-        <button
-          type="button"
-          onClick={() => setShowArtworkModal(true)}
-          className="self-start cursor-pointer border border-border hover:border-foreground/40 transition-colors"
-          title="View full artwork"
-          data-ocid="public_graph.artwork_thumbnail"
-          aria-label={`View artwork for ${graph.name}`}
-        >
-          <img
-            src={artworkUrl}
-            alt={`Truchet artwork for ${graph.name}`}
-            style={{
-              height: 128,
-              width: "auto",
-              display: "block",
-              imageRendering: "pixelated",
-            }}
-          />
-        </button>
-      ) : (
-        <div
-          className="flex items-center justify-center border border-dashed border-border"
-          style={{ height: 128, width: 128 }}
-          data-ocid="public_graph.artwork_pending"
-        >
-          <span className="font-mono text-[10px] text-muted-foreground text-center px-1">
-            artwork pending...
-          </span>
-        </div>
-      )}
+      {/* View Tileset button */}
+      <button
+        type="button"
+        onClick={() => setShowArtworkModal(true)}
+        disabled={!artworkUrl}
+        className="self-start border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        data-ocid="public_graph.artwork_thumbnail"
+        aria-label={
+          artworkUrl ? `View tileset for ${graph.name}` : "Tileset generating"
+        }
+      >
+        {artworkUrl ? "View Tileset" : "Making Tileset.."}
+      </button>
 
       <div className="flex gap-4 font-mono text-xs text-muted-foreground">
         <span data-ocid="public_graph.node_count">
