@@ -1,0 +1,42 @@
+- welcome, fellow researcher
+- these are trying times
+- the world is making us run in opposite directions
+- (insert game) rebirth.html
+- clearly, it's not easy
+- (selectable choices) 
+	- (choice 1) why though? 
+		- hmm...we're wondering too
+		- those yellow diamonds shouldn't be on different sides
+		- our investigations suggest the play of two contradictory forces
+	- (choice 2) what's the point?
+		- for now, survive as long as possible
+		- the point(s?) will become clear
+- in research land, some days are easier than others 
+- the forces cancel out and we get a moment's break..
+- to digest tiny bits of new information
+- but chaos is never far behind
+- (insert game) squarebar.html
+- the wise ones once mumbled..
+- "the thing that removes obstacles is itself an irremovable obstacle"
+- (choice tree)
+	- (choice 1) dang, that's deep
+		- glad you think so
+		- the wise ones have many riddles
+	- (choice 2) meh
+		- we don't take them too seriously either
+		- all they do is mumble
+- anyway, back to the story
+- one day, as three of our scientists were driving to work
+- their steering went wild and the road turned to ice
+- (insert game) slalom.html
+- they could not recover after hitting the first obstacle
+- by the time help came, all three were in a state of deep sleep
+- (choice tree) 
+	- (choice 1) are they dead?
+		- nope, just hibernating
+		- every now and then, they leave us a bunch of dream traces
+		- (choice 1A) what's that?
+			- evidence mismatches, anomaly detections, disciplinary breaches..
+			- routine stuff..
+			- (choice 1B)  
+		- (choice 2b) 

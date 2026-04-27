@@ -12,17 +12,52 @@ const CONTENT = {
     "the world is making us run in opposite directions",
   ],
   postGame1: ["clearly, it's not easy"],
-  choices: ["why opposite directions?", "what's the point?"],
+  choices: ["why though?", "what's the point?"],
   choice1Path: [
-    "exactly, we're wondering too",
-    "those yellow diamonds shouldn't be on opposite sides",
-    "our investigations suggest two contradictory forces",
+    "hmm...we're wondering too",
+    "those yellow diamonds shouldn't be on different sides",
+    "our investigations suggest the play of two contradictory forces",
   ],
-  choice2Path: ["for now, survive as long as possible", "the points will come"],
+  choice2Path: [
+    "for now, survive as long as possible",
+    "the point(s?) will become clear",
+  ],
   preOutro: [
-    "sometimes the forces cancel out and we get a moment's break",
+    "in research land, some days are easier than others",
+    "the forces cancel out and we get a moment's break..",
+    "to digest tiny bits of new information",
     "but chaos is never far behind",
   ],
+  postGame2: [
+    "the wise ones once mumbled..",
+    '"the thing that removes obstacles is itself an irremovable obstacle"',
+  ],
+  choices2: ["dang, that's deep", "meh"],
+  choice1bPath: ["glad you think so", "the wise ones have many riddles"],
+  choice2bPath: [
+    "we don't take them too seriously either",
+    "all they do is mumble",
+  ],
+  preGame3: [
+    "anyway, back to the story",
+    "one day, as three of our scientists were driving to work",
+    "their steering went wild and the road turned to ice",
+  ],
+  postGame3: [
+    "they could not recover after hitting the first obstacle",
+    "by the time help came, all three were in a state of deep sleep",
+  ],
+  choices3: ["are they dead?", "..."],
+  choice1cPath: [
+    "nope, just hibernating",
+    "every now and then, they leave us a bunch of dream traces",
+  ],
+  choice1cSub: ["what's that?", "..."],
+  choice1cSubPath: [
+    "evidence mismatches, anomaly detections, disciplinary breaches..",
+    "routine stuff..",
+  ],
+  choice2cPath: ["..."],
   outro: ["game not over"],
 };
 
@@ -55,8 +90,20 @@ type Phase =
   | { type: "choices"; selected: 0 | 1 }
   | { type: "choice1"; step: number }
   | { type: "choice2"; step: number }
-  | { type: "game2" }
   | { type: "preOutro"; step: number }
+  | { type: "game2" }
+  | { type: "postGame2"; step: number }
+  | { type: "choices2"; selected: 0 | 1 }
+  | { type: "choice1b"; step: number }
+  | { type: "choice2b"; step: number }
+  | { type: "preGame3"; step: number }
+  | { type: "game3" }
+  | { type: "postGame3"; step: number }
+  | { type: "choices3"; selected: 0 | 1 }
+  | { type: "choice1c"; step: number }
+  | { type: "choice1cSub"; selected: 0 | 1 }
+  | { type: "choice1cSubPath"; step: number }
+  | { type: "choice2c"; step: number }
   | { type: "outro"; step: number }
   | { type: "finalExit" };
 
@@ -78,6 +125,22 @@ function getCurrentMessage(phase: Phase): string {
       return CONTENT.choice2Path[phase.step];
     case "preOutro":
       return CONTENT.preOutro[phase.step];
+    case "postGame2":
+      return CONTENT.postGame2[phase.step];
+    case "choice1b":
+      return CONTENT.choice1bPath[phase.step];
+    case "choice2b":
+      return CONTENT.choice2bPath[phase.step];
+    case "preGame3":
+      return CONTENT.preGame3[phase.step];
+    case "postGame3":
+      return CONTENT.postGame3[phase.step];
+    case "choice1c":
+      return CONTENT.choice1cPath[phase.step];
+    case "choice1cSubPath":
+      return CONTENT.choice1cSubPath[phase.step];
+    case "choice2c":
+      return CONTENT.choice2cPath[phase.step];
     case "outro":
       return CONTENT.outro[phase.step];
     default:
@@ -777,7 +840,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   });
 
   // Game scores for this session
-  const [gameScores, setGameScores] = useState({ game1: 0, game2: 0 });
+  const [_gameScores, setGameScores] = useState({
+    game1: 0,
+    game2: 0,
+    game3: 0,
+  });
 
   // Override audio (island-puzzle-mystery.ogg)
   const [overrideAudio] = useState<HTMLAudioElement | null>(() => {
@@ -878,7 +945,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       setPhase({ type: "intro", step: 0 });
     }
     setScrambleComplete(false);
-    setGameScores({ game1: 0, game2: 0 });
+    setGameScores({ game1: 0, game2: 0, game3: 0 });
   }, [settings.skipMessages]);
 
   // ── Game completion via postMessage ────────────────────────────────────────
@@ -896,27 +963,39 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         }
       } else if (e.data?.type === "squarebar-game-over") {
         const score2 = (e.data.score as number) || 0;
-        const totalScore = gameScores.game1 + score2;
         setGameScores((prev) => ({ ...prev, game2: score2 }));
-
-        const qualifies =
-          leaderboard.length < 3 ||
-          totalScore > leaderboard[leaderboard.length - 1].score;
-
-        if (qualifies) {
-          setPendingScore(totalScore);
-          setPhase({ type: "nameEntry", score: totalScore });
-        } else if (settings.skipMessages) {
-          onCompleteRef.current();
+        if (settings.skipMessages) {
+          setPhase({ type: "game3" });
         } else {
-          setPhase({ type: "preOutro", step: 0 });
+          setPhase({ type: "postGame2", step: 0 });
           setScrambleComplete(false);
         }
+      } else if (e.data?.type === "slalom-game-over") {
+        const score3 = (e.data.score as number) || 0;
+        setGameScores((prev) => {
+          const totalScore = prev.game1 + prev.game2 + score3;
+          const newScores = { ...prev, game3: score3 };
+
+          const qualifies =
+            leaderboard.length < 3 ||
+            totalScore > leaderboard[leaderboard.length - 1].score;
+
+          if (qualifies) {
+            setPendingScore(totalScore);
+            setPhase({ type: "nameEntry", score: totalScore });
+          } else if (settings.skipMessages) {
+            onCompleteRef.current();
+          } else {
+            setPhase({ type: "postGame3", step: 0 });
+            setScrambleComplete(false);
+          }
+          return newScores;
+        });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, gameScores.game1, leaderboard]);
+  }, [settings, leaderboard]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -944,7 +1023,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setPhase({ type: "choice1", step: phase.step + 1 });
           setScrambleComplete(false);
         } else {
-          setPhase({ type: "game2" });
+          setPhase({ type: "preOutro", step: 0 });
+          setScrambleComplete(false);
         }
         break;
       case "choice2":
@@ -952,7 +1032,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setPhase({ type: "choice2", step: phase.step + 1 });
           setScrambleComplete(false);
         } else {
-          setPhase({ type: "game2" });
+          setPhase({ type: "preOutro", step: 0 });
+          setScrambleComplete(false);
         }
         break;
       case "preOutro":
@@ -960,17 +1041,84 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setPhase({ type: "preOutro", step: phase.step + 1 });
           setScrambleComplete(false);
         } else {
+          setPhase({ type: "game2" });
+        }
+        break;
+      case "postGame2":
+        if (phase.step < CONTENT.postGame2.length - 1) {
+          setPhase({ type: "postGame2", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "choices2", selected: 0 });
+        }
+        break;
+      case "choice1b":
+        if (phase.step < CONTENT.choice1bPath.length - 1) {
+          setPhase({ type: "choice1b", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "preGame3", step: 0 });
+          setScrambleComplete(false);
+        }
+        break;
+      case "choice2b":
+        if (phase.step < CONTENT.choice2bPath.length - 1) {
+          setPhase({ type: "choice2b", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "preGame3", step: 0 });
+          setScrambleComplete(false);
+        }
+        break;
+      case "preGame3":
+        if (phase.step < CONTENT.preGame3.length - 1) {
+          setPhase({ type: "preGame3", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "game3" });
+        }
+        break;
+      case "postGame3":
+        if (phase.step < CONTENT.postGame3.length - 1) {
+          setPhase({ type: "postGame3", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "choices3", selected: 0 });
+        }
+        break;
+      case "choice1c":
+        if (phase.step < CONTENT.choice1cPath.length - 1) {
+          setPhase({ type: "choice1c", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "choice1cSub", selected: 0 });
+        }
+        break;
+      case "choice1cSubPath":
+        if (phase.step < CONTENT.choice1cSubPath.length - 1) {
+          setPhase({ type: "choice1cSubPath", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
+          setPhase({ type: "outro", step: 0 });
+          setScrambleComplete(false);
+        }
+        break;
+      case "choice2c":
+        if (phase.step < CONTENT.choice2cPath.length - 1) {
+          setPhase({ type: "choice2c", step: phase.step + 1 });
+          setScrambleComplete(false);
+        } else {
           setPhase({ type: "outro", step: 0 });
           setScrambleComplete(false);
         }
         break;
       case "outro":
-        // outro is just "game not over" — auto-closes after scramble
+        // "game not over" — auto-closes after scramble
         break;
     }
   }, [phase, scrambleComplete]);
 
-  // ── Choice confirmation handler ────────────────────────────────────────────
+  // ── Choice confirmation handlers ───────────────────────────────────────────
 
   const handleChoiceConfirm = useCallback((index: number) => {
     if (index === 0) {
@@ -978,6 +1126,36 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       setScrambleComplete(false);
     } else {
       setPhase({ type: "choice2", step: 0 });
+      setScrambleComplete(false);
+    }
+  }, []);
+
+  const handleChoice2Confirm = useCallback((index: number) => {
+    if (index === 0) {
+      setPhase({ type: "choice1b", step: 0 });
+      setScrambleComplete(false);
+    } else {
+      setPhase({ type: "choice2b", step: 0 });
+      setScrambleComplete(false);
+    }
+  }, []);
+
+  const handleChoice3Confirm = useCallback((index: number) => {
+    if (index === 0) {
+      setPhase({ type: "choice1c", step: 0 });
+      setScrambleComplete(false);
+    } else {
+      setPhase({ type: "choice2c", step: 0 });
+      setScrambleComplete(false);
+    }
+  }, []);
+
+  const handleChoice1cSubConfirm = useCallback((index: number) => {
+    if (index === 0) {
+      setPhase({ type: "choice1cSubPath", step: 0 });
+      setScrambleComplete(false);
+    } else {
+      setPhase({ type: "outro", step: 0 });
       setScrambleComplete(false);
     }
   }, []);
@@ -991,6 +1169,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       "choice1",
       "choice2",
       "preOutro",
+      "postGame2",
+      "choice1b",
+      "choice2b",
+      "preGame3",
+      "postGame3",
+      "choice1c",
+      "choice1cSubPath",
+      "choice2c",
       "outro",
     ];
     if (!textPhases.includes(phase.type)) return;
@@ -1050,7 +1236,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "postGame1":
       case "choice1":
       case "choice2":
-      case "preOutro": {
+      case "preOutro":
+      case "postGame2":
+      case "choice1b":
+      case "choice2b":
+      case "preGame3":
+      case "postGame3":
+      case "choice1c":
+      case "choice1cSubPath":
+      case "choice2c": {
         return (
           <ScrambleDisplay
             key={`${phase.type}-${"step" in phase ? phase.step : 0}`}
@@ -1091,6 +1285,42 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           />
         );
 
+      case "choices2":
+        return (
+          <ChoiceMenu
+            options={CONTENT.choices2}
+            selected={phase.selected}
+            onSelect={(i) =>
+              setPhase({ type: "choices2", selected: i as 0 | 1 })
+            }
+            onConfirm={handleChoice2Confirm}
+          />
+        );
+
+      case "choices3":
+        return (
+          <ChoiceMenu
+            options={CONTENT.choices3}
+            selected={phase.selected}
+            onSelect={(i) =>
+              setPhase({ type: "choices3", selected: i as 0 | 1 })
+            }
+            onConfirm={handleChoice3Confirm}
+          />
+        );
+
+      case "choice1cSub":
+        return (
+          <ChoiceMenu
+            options={CONTENT.choice1cSub}
+            selected={phase.selected}
+            onSelect={(i) =>
+              setPhase({ type: "choice1cSub", selected: i as 0 | 1 })
+            }
+            onConfirm={handleChoice1cSubConfirm}
+          />
+        );
+
       case "game1":
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
@@ -1120,6 +1350,23 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 className="w-full h-full border-0"
                 title="Square Bar"
                 data-ocid="text_game.game2_iframe"
+              />
+            </div>
+          </div>
+        );
+
+      case "game3":
+        return (
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            <div
+              className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
+            >
+              <iframe
+                src={`/assets/slalom.html${bgmParam}`}
+                allow="autoplay"
+                className="w-full h-full border-0"
+                title="Slalom"
+                data-ocid="text_game.game3_iframe"
               />
             </div>
           </div>

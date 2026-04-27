@@ -83,16 +83,10 @@ options = {
   theme: "dark",
   viewSize: { x: 200, y: 60 },
   isPlayingBgm: true,
-  isPlayingSe: true,
   isReplayEnabled: true,
   isDrawingScoreFront: true,
   seed: 2000,
 };
-const urlParams = new URLSearchParams(window.location.search);
-const bgmOff = urlParams.get('bgm') === 'off';
-if (bgmOff) { options.isPlayingBgm = false; }
-const seOff = urlParams.get('se') === 'off';
-if (seOff) { options.isPlayingSe = false; }
 
 /** @type {{x: number, vx: number, world: -1 | 1}[]} */
 let tracks;
@@ -112,7 +106,7 @@ let diaCount;
 let player;
 let multiplier;
 let scrollX;
-const scrollMsg = "here's a rather crude simulation..   ";
+const scrollMsg = "press to jump. collect yellow diamonds. obstacles fling you to the other side... ";
 
 function update() {
   if (!ticks) {
@@ -227,10 +221,7 @@ function update() {
       play("explosion");
       color("red");
       text("X", 100, d.pos.y);
-      if (window.parent !== window) {
-        window.parent.postMessage({ type: 'rebirth-game-over', score: score }, '*');
-      }
-      end();
+      (function(){ try { var _s = typeof score !== 'undefined' ? score : 0; window.parent.postMessage({ type: 'rebirth-game-over', score: _s }, '*'); } catch(_e) {} end(); })();
     }
   });
   scrollX -= sqrt(difficulty) * 0.5;
