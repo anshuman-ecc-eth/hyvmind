@@ -39,6 +39,9 @@ importers:
       '@dfinity/principal':
         specifier: ~3.3.0
         version: 3.3.1
+      '@gsap/react':
+        specifier: ^2.1.2
+        version: 2.1.2(gsap@3.15.0)(react@19.1.5)
       '@huggingface/transformers':
         specifier: ^3.8.1
         version: 3.8.1
@@ -165,6 +168,9 @@ importers:
       force-graph:
         specifier: ^1.51.2
         version: 1.51.2
+      gsap:
+        specifier: ^3.15.0
+        version: 3.15.0
       input-otp:
         specifier: ^1.4.1
         version: 1.4.2(react-dom@19.1.5(react@19.1.5))(react@19.1.5)
@@ -692,6 +698,12 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@gsap/react@2.1.2':
+    resolution: {integrity: sha512-JqliybO1837UcgH2hVOM4VO+38APk3ECNrsuSM4MuXp+rbf+/2IG2K1YJiqfTcXQHH7XlA0m3ykniFYstfq0Iw==}
+    peerDependencies:
+      gsap: ^3.12.5
+      react: '>=17'
 
   '@huggingface/jinja@0.5.8':
     resolution: {integrity: sha512-ZdElB7DPS7QQS8ZnFc5RPPtkg+eN11z8AmIZWAyes6pSbwXqiFB/POVevvm01begdSX1ho9Gxln/F6qlQMsuaA==}
@@ -2468,6 +2480,9 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
+  gsap@3.15.0:
+    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
+
   guid-typescript@1.0.9:
     resolution: {integrity: sha512-Y8T4vYhEfwJOTbouREvG+3XDsjr8E3kIr7uf+JZ0BYloFsttiHU0WfvANVsR7TxNUJa/WpCnw/Ino/p+DeBhBQ==}
 
@@ -3977,6 +3992,11 @@ snapshots:
       react-dom: 19.1.5(react@19.1.5)
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@gsap/react@2.1.2(gsap@3.15.0)(react@19.1.5)':
+    dependencies:
+      gsap: 3.15.0
+      react: 19.1.5
 
   '@huggingface/jinja@0.5.8': {}
 
@@ -5705,6 +5725,8 @@ snapshots:
   glsl-noise@0.0.0: {}
 
   gopd@1.2.0: {}
+
+  gsap@3.15.0: {}
 
   guid-typescript@1.0.9: {}
 

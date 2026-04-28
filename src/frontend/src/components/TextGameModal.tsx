@@ -476,8 +476,8 @@ function StartScreen({
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
-      {/* Content box — solid background */}
-      <div className="bg-card rounded-2xl px-10 py-8 flex flex-col items-center gap-6 shadow-lg">
+      {/* Content box — flat, no card */}
+      <div className="flex flex-col items-center gap-6">
         {/* Title */}
         <div className="flex flex-col items-center gap-3">
           <div
