@@ -3033,6 +3033,9 @@ body{
 .max-w-\[200px\]{
   max-width: 200px;
 }
+.max-w-\[360px\]{
+  max-width: 360px;
+}
 .max-w-\[400px\]{
   max-width: 400px;
 }
@@ -3922,6 +3925,9 @@ body{
 }
 .uppercase{
   text-transform: uppercase;
+}
+.lowercase{
+  text-transform: lowercase;
 }
 .capitalize{
   text-transform: capitalize;
@@ -4950,6 +4956,12 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .hover\:opacity-100:hover{
   opacity: 1;
 }
+.hover\:opacity-80:hover{
+  opacity: 0.8;
+}
+.hover\:opacity-90:hover{
+  opacity: 0.9;
+}
 .hover\:shadow-\[0_0_0_1px_hsl\(var\(--sidebar-accent\)\)\]:hover{
   --tw-shadow: 0 0 0 1px hsl(var(--sidebar-accent));
   --tw-shadow-colored: 0 0 0 1px var(--tw-shadow-color);
@@ -4974,6 +4986,9 @@ html[class*="-dark"] .voronoi-tooltip-type {
 }
 .focus\:border-foreground:focus{
   border-color: var(--foreground);
+}
+.focus\:border-primary:focus{
+  border-color: var(--primary);
 }
 .focus\:bg-accent:focus{
   background-color: var(--accent);

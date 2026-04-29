@@ -73,6 +73,7 @@
     "@tanstack/react-query": "^5.24.0",
     "@tanstack/react-router": "~1.131.8",
     "@types/jszip": "^3.4.1",
+    "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

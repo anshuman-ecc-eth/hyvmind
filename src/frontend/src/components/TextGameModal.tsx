@@ -1,9 +1,17 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
+import ChessPuzzleGame from "./ChessPuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["ENTER", "SETTINGS", "HI-SCORES", "EXIT"] as const;
+const MENU_ITEMS = [
+  "STORY",
+  "PUZZLES",
+  "SETTINGS",
+  "HI-SCORES",
+  "EXIT",
+] as const;
+const PUZZLE_MENU_ITEMS = ["CHESS", "BACK"] as const;
 
 const CONTENT = {
   intro: [
@@ -105,6 +113,8 @@ type Phase =
   | { type: "choice1cSubPath"; step: number }
   | { type: "choice2c"; step: number }
   | { type: "outro"; step: number }
+  | { type: "chess" }
+  | { type: "chessGameOver"; score: number }
   | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -436,6 +446,7 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
 
 interface StartScreenProps {
   onStart: () => void;
+  onChess: () => void;
   onSettings: () => void;
   onHiScores: () => void;
   onExit: () => void;
@@ -444,32 +455,62 @@ interface StartScreenProps {
 
 function StartScreen({
   onStart,
+  onChess,
   onSettings,
   onHiScores,
   onExit,
   leaderboard,
 }: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [subMenu, setSubMenu] = useState<"main" | "puzzles">("main");
+  const [puzzleSelectedIdx, setPuzzleSelectedIdx] = useState(0);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
-        setSelectedIdx(
-          (prev) => (prev - 1 + MENU_ITEMS.length) % MENU_ITEMS.length,
-        );
-      } else if (e.key === "ArrowDown") {
-        setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
-      } else if (e.key === "Enter") {
-        const chosen = MENU_ITEMS[selectedIdx];
-        if (chosen === "ENTER") onStart();
-        else if (chosen === "SETTINGS") onSettings();
-        else if (chosen === "HI-SCORES") onHiScores();
-        else if (chosen === "EXIT") onExit();
+      if (subMenu === "main") {
+        if (e.key === "ArrowUp") {
+          setSelectedIdx(
+            (prev) => (prev - 1 + MENU_ITEMS.length) % MENU_ITEMS.length,
+          );
+        } else if (e.key === "ArrowDown") {
+          setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
+        } else if (e.key === "Enter") {
+          const chosen = MENU_ITEMS[selectedIdx];
+          if (chosen === "STORY") onStart();
+          else if (chosen === "PUZZLES") {
+            setSubMenu("puzzles");
+            setPuzzleSelectedIdx(0);
+          } else if (chosen === "SETTINGS") onSettings();
+          else if (chosen === "HI-SCORES") onHiScores();
+          else if (chosen === "EXIT") onExit();
+        }
+      } else {
+        if (e.key === "ArrowUp") {
+          setPuzzleSelectedIdx(
+            (prev) =>
+              (prev - 1 + PUZZLE_MENU_ITEMS.length) % PUZZLE_MENU_ITEMS.length,
+          );
+        } else if (e.key === "ArrowDown") {
+          setPuzzleSelectedIdx((prev) => (prev + 1) % PUZZLE_MENU_ITEMS.length);
+        } else if (e.key === "Enter") {
+          const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
+          if (chosen === "CHESS") onChess();
+          else if (chosen === "BACK") setSubMenu("main");
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedIdx, onStart, onSettings, onHiScores, onExit]);
+  }, [
+    selectedIdx,
+    puzzleSelectedIdx,
+    subMenu,
+    onStart,
+    onChess,
+    onSettings,
+    onHiScores,
+    onExit,
+  ]);
 
   // Show top score under title if leaderboard has entries
   const topScore = leaderboard.length > 0 ? leaderboard[0] : null;
@@ -533,34 +574,66 @@ function StartScreen({
 
         {/* Menu */}
         <div className="flex flex-col items-center gap-3">
-          {MENU_ITEMS.map((item, activeIdx) => {
-            const isSelected = activeIdx === selectedIdx;
-            return (
-              <button
-                key={item}
-                type="button"
-                data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                style={{
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.2em",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0",
-                }}
-                onClick={() => {
-                  if (item === "ENTER") onStart();
-                  else if (item === "SETTINGS") onSettings();
-                  else if (item === "HI-SCORES") onHiScores();
-                  else if (item === "EXIT") onExit();
-                }}
-              >
-                {isSelected ? `> ${item}` : `  ${item}`}
-              </button>
-            );
-          })}
+          {subMenu === "main"
+            ? MENU_ITEMS.map((item, activeIdx) => {
+                const isSelected = activeIdx === selectedIdx;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
+                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.2em",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                    }}
+                    onClick={() => {
+                      setSelectedIdx(activeIdx);
+                      if (item === "STORY") onStart();
+                      else if (item === "PUZZLES") {
+                        setSubMenu("puzzles");
+                        setPuzzleSelectedIdx(0);
+                      } else if (item === "SETTINGS") onSettings();
+                      else if (item === "HI-SCORES") onHiScores();
+                      else if (item === "EXIT") onExit();
+                    }}
+                  >
+                    {isSelected ? `> ${item}` : `  ${item}`}
+                  </button>
+                );
+              })
+            : PUZZLE_MENU_ITEMS.map((item, activeIdx) => {
+                const isSelected = activeIdx === puzzleSelectedIdx;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    data-ocid={`text_game.start_screen.puzzle_${item.toLowerCase()}`}
+                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.2em",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                    }}
+                    onClick={() => {
+                      setPuzzleSelectedIdx(activeIdx);
+                      if (item === "CHESS") onChess();
+                      else if (item === "BACK") setSubMenu("main");
+                    }}
+                  >
+                    {isSelected ? `> ${item}` : `  ${item}`}
+                  </button>
+                );
+              })}
         </div>
       </div>
     </div>
@@ -912,6 +985,25 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "leaderboard" });
   }, []);
 
+  const handleStartChess = useCallback(() => {
+    setPhase({ type: "chess" });
+  }, []);
+
+  const handleChessComplete = useCallback(
+    (score: number) => {
+      const qualifies =
+        leaderboard.length < 3 ||
+        score > leaderboard[leaderboard.length - 1].score;
+      if (qualifies) {
+        setPendingScore(score);
+        setPhase({ type: "nameEntry", score });
+      } else {
+        setPhase({ type: "idle" });
+      }
+    },
+    [leaderboard],
+  );
+
   const handleCloseSubScreen = useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
@@ -1196,6 +1288,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         return (
           <StartScreen
             onStart={handleStart}
+            onChess={handleStartChess}
             onSettings={handleOpenSettings}
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
@@ -1363,6 +1456,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               />
             </div>
           </div>
+        );
+
+      case "chess":
+        return (
+          <ChessPuzzleGame
+            onComplete={handleChessComplete}
+            onExit={() => setPhase({ type: "idle" })}
+          />
         );
 
       default:
