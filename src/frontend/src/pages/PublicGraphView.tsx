@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend.d";
-import AiSearchBar from "../components/AiSearchBar";
-import AiSearchModal from "../components/AiSearchModal";
 import ArtworkModal from "../components/ArtworkModal";
 import FilterPanel from "../components/FilterPanel";
+import GraphFuzzyFinder, {
+  type SearchableItem,
+} from "../components/GraphFuzzyFinder";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
 import type {
@@ -174,6 +175,7 @@ interface CreatorAccordionProps {
   expanded: boolean;
   onToggle: () => void;
   onView: (id: string) => void;
+  containerRef?: (el: HTMLDivElement | null) => void;
 }
 
 function CreatorAccordion({
@@ -182,9 +184,14 @@ function CreatorAccordion({
   expanded,
   onToggle,
   onView,
+  containerRef,
 }: CreatorAccordionProps) {
   return (
-    <div className="border border-border" data-ocid="creator_accordion.section">
+    <div
+      ref={containerRef}
+      className="border border-border"
+      data-ocid="creator_accordion.section"
+    >
       <button
         type="button"
         onClick={onToggle}
@@ -386,11 +393,10 @@ export default function PublicGraphView({
   const [expandedCreators, setExpandedCreators] = useState<Set<string>>(
     new Set(),
   );
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiInitialQuery, setAiInitialQuery] = useState("");
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
+  const curationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const toggleCreator = (name: string) => {
     setExpandedCreators((prev) => {
@@ -398,6 +404,20 @@ export default function PublicGraphView({
       if (next.has(name)) next.delete(name);
       else next.add(name);
       return next;
+    });
+  };
+
+  const handleFuzzySelect = (item: SearchableItem) => {
+    setExpandedCreators((prev) => {
+      const next = new Set(prev);
+      next.add(item.curationName);
+      return next;
+    });
+    requestAnimationFrame(() => {
+      const element = curationRefs.current.get(item.curationName);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     });
   };
 
@@ -484,12 +504,7 @@ export default function PublicGraphView({
               extensible curations by the community
             </p>
           </div>
-          <AiSearchBar
-            onSubmit={(query) => {
-              setAiInitialQuery(query);
-              setIsAiModalOpen(true);
-            }}
-          />
+          <GraphFuzzyFinder onSelect={handleFuzzySelect} />
         </div>
       </div>
 
@@ -519,19 +534,16 @@ export default function PublicGraphView({
                   expanded={expandedCreators.has(curationName)}
                   onToggle={() => toggleCreator(curationName)}
                   onView={(id) => setSelectedGraphId(id)}
+                  containerRef={(el) => {
+                    if (el) curationRefs.current.set(curationName, el);
+                    else curationRefs.current.delete(curationName);
+                  }}
                 />
               );
             })}
           </div>
         )}
       </div>
-
-      {/* AI Search Modal */}
-      <AiSearchModal
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-        initialQuery={aiInitialQuery}
-      />
     </div>
   );
 }
