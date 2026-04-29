@@ -2,6 +2,7 @@ import { Chess } from "chess.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChessPuzzles } from "../hooks/useChessPuzzles";
 import { CHESS_UNICODE } from "../utils/chessPieces";
+import { uciToSan } from "../utils/chessUtils";
 
 interface ChessPuzzleGameProps {
   onComplete: (score: number) => void;
@@ -12,7 +13,7 @@ function calculateScore(puzzleNumber: number): number {
   return 10 + puzzleNumber * 20;
 }
 
-/** Parse FEN board string into an 8x8 array (rank 8 = index 0, file a = index 0). */
+/** Parse FEN board string into an 8×8 array (rank 8 = row 0, file a = col 0). */
 function parseFenBoard(fen: string): (string | null)[][] {
   const boardPart = fen.split(" ")[0];
   const ranks = boardPart.split("/");
@@ -30,20 +31,6 @@ function parseFenBoard(fen: string): (string | null)[][] {
   });
 }
 
-/** Apply a UCI move to a FEN string and return the resulting FEN. */
-function applyUciMove(fen: string, uci: string): string | null {
-  try {
-    const chess = new Chess(fen);
-    const from = uci.slice(0, 2);
-    const to = uci.slice(2, 4);
-    const promotion = uci.length > 4 ? uci[4] : undefined;
-    chess.move({ from, to, promotion });
-    return chess.fen();
-  } catch {
-    return null;
-  }
-}
-
 /** Render an 8×8 chess board from a FEN string. */
 function ChessBoard({ fen }: { fen: string }) {
   const board = parseFenBoard(fen);
@@ -54,11 +41,11 @@ function ChessBoard({ fen }: { fen: string }) {
         display: "grid",
         gridTemplateColumns: "repeat(8, 1fr)",
         gridTemplateRows: "repeat(8, 1fr)",
-        width: "100%",
-        maxWidth: 360,
-        aspectRatio: "1 / 1",
+        width: "min(90vw, 400px)",
+        height: "min(90vw, 400px)",
         margin: "0 auto",
         border: "2px solid var(--border)",
+        flexShrink: 0,
       }}
       aria-label="Chess board"
     >
@@ -76,7 +63,7 @@ function ChessBoard({ fen }: { fen: string }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "1.6rem",
+                fontSize: "clamp(1rem, 4vw, 1.6rem)",
                 lineHeight: 1,
                 color: isWhitePiece ? "#ffffff" : "#111111",
                 textShadow: isWhitePiece
@@ -103,7 +90,7 @@ export default function ChessPuzzleGame({
 }: ChessPuzzleGameProps) {
   const [puzzleNumber, setPuzzleNumber] = useState(1);
   const [score, setScore] = useState(0);
-  const [targetRating, setTargetRating] = useState(1500);
+  const [targetRating, setTargetRating] = useState(1000);
   const [timeLeft, setTimeLeft] = useState(20);
   const [userInput, setUserInput] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -111,7 +98,11 @@ export default function ChessPuzzleGame({
   const [gameOverReason, setGameOverReason] = useState<
     "incorrect" | "timeout" | null
   >(null);
+  /** FEN of the puzzle start position (after opponent's last move). Set only when ready. */
   const [boardFen, setBoardFen] = useState<string | null>(null);
+  /** Human-readable opponent move in SAN or UCI fallback */
+  const [opponentMoveSan, setOpponentMoveSan] = useState<string | null>(null);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,26 +110,29 @@ export default function ChessPuzzleGame({
   const { currentPuzzle, loading, error, fetchNext } =
     useChessPuzzles(targetRating);
 
-  // Fetch first puzzle on mount — fetchNext is stable (useCallback with no changing deps)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    void fetchNext();
-  }, [fetchNext]); // fetchNext is a stable callback from useChessPuzzles
-
-  // When puzzle changes, apply opponent move and update boardFen
+  // ── Puzzle loaded: set board FEN and opponent move display ───────────────
   useEffect(() => {
     if (!currentPuzzle) return;
-    const result = applyUciMove(currentPuzzle.fen, currentPuzzle.opponentMove);
-    setBoardFen(result ?? currentPuzzle.fen);
+    setBoardFen(currentPuzzle.fen);
     setTimeLeft(20);
     setUserInput("");
     setFeedback(null);
+
+    // Convert lastMove UCI → SAN using the pre-move position
+    try {
+      const san = uciToSan(currentPuzzle.preMovefen, currentPuzzle.lastMove);
+      setOpponentMoveSan(san);
+    } catch {
+      setOpponentMoveSan(currentPuzzle.lastMove || null);
+    }
+
     inputRef.current?.focus();
   }, [currentPuzzle]);
 
-  // Timer countdown
+  // ── Timer countdown — ONLY starts when board is fully ready ─────────────
   useEffect(() => {
-    if (gameOver || !currentPuzzle || loading) return;
+    // Do not start if any of: game over, no puzzle, no board, still loading
+    if (gameOver || !currentPuzzle || boardFen === null || loading) return;
 
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
@@ -156,8 +150,9 @@ export default function ChessPuzzleGame({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentPuzzle, gameOver, loading]);
+  }, [currentPuzzle, boardFen, gameOver, loading]);
 
+  // ── Move submission ──────────────────────────────────────────────────────
   const handleSubmit = useCallback(() => {
     if (!currentPuzzle || !boardFen || gameOver) return;
     const san = userInput.trim();
@@ -168,17 +163,16 @@ export default function ChessPuzzleGame({
       const move = chess.move(san);
       if (!move) throw new Error("Invalid move");
 
-      // Construct UCI from the Move object
       const uci = move.from + move.to + (move.promotion ?? "");
       const expected = currentPuzzle.solution[0];
 
       if (uci === expected) {
-        // Correct!
         if (timerRef.current) clearInterval(timerRef.current);
         const points = calculateScore(puzzleNumber);
         const newScore = score + points;
         setScore(newScore);
         setFeedback(`Correct! +${points}`);
+        setBoardFen(null); // hide board while loading next
 
         feedbackTimeoutRef.current = setTimeout(() => {
           setPuzzleNumber((n) => n + 1);
@@ -186,15 +180,13 @@ export default function ChessPuzzleGame({
           void fetchNext();
         }, 1500);
       } else {
-        // Wrong move — game over
         if (timerRef.current) clearInterval(timerRef.current);
         setGameOver(true);
         setGameOverReason("incorrect");
         setFeedback("Incorrect!");
       }
     } catch {
-      // chess.js throws on invalid SAN
-      setFeedback("Invalid move");
+      setFeedback("Invalid move — try again");
       setUserInput("");
     }
   }, [
@@ -207,7 +199,24 @@ export default function ChessPuzzleGame({
     fetchNext,
   ]);
 
-  // Cleanup on unmount
+  // ── Reset handler ────────────────────────────────────────────────────────
+  const handleTryAgain = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    setPuzzleNumber(1);
+    setScore(0);
+    setTargetRating(1000);
+    setTimeLeft(20);
+    setUserInput("");
+    setFeedback(null);
+    setGameOver(false);
+    setGameOverReason(null);
+    setBoardFen(null);
+    setOpponentMoveSan(null);
+    void fetchNext();
+  }, [fetchNext]);
+
+  // ── Cleanup on unmount ───────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -218,7 +227,7 @@ export default function ChessPuzzleGame({
   const timerColor =
     timeLeft <= 5 ? "text-destructive" : "text-muted-foreground";
 
-  // ── Loading ─────────────────────────────────────────────────────────────
+  // ── Loading state (initial fetch) ────────────────────────────────────────
   if (loading && !currentPuzzle) {
     return (
       <div
@@ -226,11 +235,11 @@ export default function ChessPuzzleGame({
         data-ocid="chess_puzzle.loading_state"
       >
         <div className="text-foreground text-sm animate-pulse">
-          Fetching puzzles...
+          Fetching puzzle...
         </div>
         <button
           type="button"
-          className="text-muted-foreground text-xs underline mt-4"
+          className="text-muted-foreground text-xs underline mt-4 hover:text-foreground transition-colors"
           onClick={onExit}
           data-ocid="chess_puzzle.cancel_button"
         >
@@ -240,17 +249,17 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────
+  // ── Error state ──────────────────────────────────────────────────────────
   if (error && !currentPuzzle) {
     return (
       <div
         className="flex flex-col items-center justify-center gap-4 py-12 font-mono"
         data-ocid="chess_puzzle.error_state"
       >
-        <div className="text-destructive text-sm">{error}</div>
+        <div className="text-destructive text-sm text-center px-4">{error}</div>
         <button
           type="button"
-          className="text-muted-foreground text-xs underline"
+          className="text-muted-foreground text-xs underline hover:text-foreground transition-colors"
           onClick={onExit}
           data-ocid="chess_puzzle.cancel_button"
         >
@@ -260,7 +269,7 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Game Over ────────────────────────────────────────────────────────────
+  // ── Game over ────────────────────────────────────────────────────────────
   if (gameOver) {
     return (
       <div
@@ -288,7 +297,7 @@ export default function ChessPuzzleGame({
           <button
             type="button"
             className="text-muted-foreground text-xs tracking-widest hover:text-foreground transition-colors"
-            onClick={onExit}
+            onClick={handleTryAgain}
             data-ocid="chess_puzzle.cancel_button"
           >
             TRY AGAIN
@@ -308,14 +317,14 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Main Game ────────────────────────────────────────────────────────────
+  // ── Main game ────────────────────────────────────────────────────────────
   return (
     <div
-      className="flex flex-col items-center gap-4 py-4 font-mono"
+      className="flex flex-col items-center gap-3 py-4 font-mono"
       data-ocid="chess_puzzle.panel"
     >
-      {/* Header row: puzzle #, score, rating, timer */}
-      <div className="flex items-center justify-between w-full max-w-[360px] text-xs text-muted-foreground px-1">
+      {/* Header row */}
+      <div className="flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground px-1">
         <span data-ocid="chess_puzzle.puzzle_number">#{puzzleNumber}</span>
         <span>
           Score: <span className="text-foreground font-bold">{score}</span>
@@ -329,34 +338,49 @@ export default function ChessPuzzleGame({
         </span>
       </div>
 
-      {/* Board */}
+      {/* Board or loading placeholder */}
       {boardFen ? (
         <ChessBoard fen={boardFen} />
       ) : (
-        <div className="text-muted-foreground text-xs animate-pulse">
+        <div
+          className="flex items-center justify-center text-muted-foreground text-xs animate-pulse"
+          style={{ width: "min(90vw, 400px)", height: "min(90vw, 400px)" }}
+          data-ocid="chess_puzzle.loading_state"
+        >
           Loading board...
         </div>
       )}
 
-      {/* Instruction */}
-      <div className="text-muted-foreground text-xs tracking-wide">
-        Enter your move in SAN notation (e.g. Qxf7)
-      </div>
+      {/* Opponent's last move — shown only when board is ready */}
+      {boardFen && opponentMoveSan && (
+        <div className="text-xs text-muted-foreground tracking-wide">
+          Opponent played:{" "}
+          <span className="text-foreground font-bold">{opponentMoveSan}</span>
+        </div>
+      )}
+
+      {/* SAN input hint */}
+      {boardFen && (
+        <div className="text-muted-foreground text-xs tracking-wide">
+          Your Move..{" "}
+          <span className="opacity-50">(SAN notation, e.g. Qxf7)</span>
+        </div>
+      )}
 
       {/* Input row */}
-      <div className="flex gap-2 w-full max-w-[360px]">
+      <div className="flex gap-2 w-full max-w-[400px]">
         <input
           ref={inputRef}
           type="text"
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value.toUpperCase())}
+          onChange={(e) => setUserInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit();
           }}
-          placeholder="SAN MOVE..."
-          disabled={gameOver}
-          className="flex-1 bg-background border border-border text-foreground font-mono text-sm px-3 py-2 uppercase placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-          style={{ letterSpacing: "0.1em" }}
+          placeholder="Your Move.."
+          disabled={gameOver || !boardFen}
+          className="flex-1 bg-background border border-border text-foreground font-mono text-sm px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:border-primary disabled:opacity-40"
+          style={{ letterSpacing: "0.05em" }}
           autoComplete="off"
           spellCheck={false}
           data-ocid="chess_puzzle.input"
@@ -364,7 +388,7 @@ export default function ChessPuzzleGame({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={gameOver || !userInput.trim()}
+          disabled={gameOver || !userInput.trim() || !boardFen}
           className="bg-primary text-primary-foreground font-mono text-xs tracking-widest px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-40"
           data-ocid="chess_puzzle.submit_button"
         >

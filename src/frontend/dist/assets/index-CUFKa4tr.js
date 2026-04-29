@@ -59906,100 +59906,143 @@ class Chess {
     return this._moveNumber;
   }
 }
-function parsePuzzleFromApi(data) {
+function fenFromPuzzleData(pgn2, initialPly) {
   try {
+    const parser = new Chess();
+    parser.loadPgn(pgn2);
+    const history = parser.history({ verbose: true });
+    if (history.length === 0 || initialPly < 1) return null;
+    const replayer = new Chess();
+    for (let i2 = 0; i2 < initialPly && i2 < history.length; i2++) {
+      replayer.move(history[i2].san);
+    }
+    const fen = replayer.fen();
+    const preReplayer = new Chess();
+    for (let i2 = 0; i2 < initialPly - 1 && i2 < history.length; i2++) {
+      preReplayer.move(history[i2].san);
+    }
+    const preMovefen = preReplayer.fen();
+    const lastMoveObj = history[initialPly - 1];
+    const lastMove = lastMoveObj ? `${lastMoveObj.from}${lastMoveObj.to}${lastMoveObj.promotion ?? ""}` : "";
+    return { fen, preMovefen, lastMove };
+  } catch {
+    return null;
+  }
+}
+async function fetchPuzzleMeta() {
+  try {
+    const res = await fetch("https://lichess.org/api/puzzle/next", {
+      headers: { Accept: "application/json" }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const puzzle = data.puzzle;
+    if (!puzzle) return null;
+    return {
+      id: puzzle.id,
+      rating: puzzle.rating,
+      solution: puzzle.solution ?? [],
+      themes: puzzle.themes ?? []
+    };
+  } catch {
+    return null;
+  }
+}
+async function fetchPuzzleById(id2) {
+  try {
+    const res = await fetch(`https://lichess.org/api/puzzle/${id2}`, {
+      headers: { Accept: "application/json" }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
     const puzzle = data.puzzle;
     const game = data.game;
     if (!puzzle || !game) return null;
-    const solution = puzzle.solution;
-    const id2 = puzzle.id;
+    const pgn2 = game.pgn;
+    const initialPly = puzzle.initialPly;
+    const solution = puzzle.solution ?? [];
     const rating = puzzle.rating;
     const themes = puzzle.themes ?? [];
-    const opponentMove = solution[0];
-    const playerSolution = solution.slice(1);
-    const fen = puzzle.fen || "";
+    if (!pgn2 || typeof initialPly !== "number") return null;
+    const fenData = fenFromPuzzleData(pgn2, initialPly);
+    if (!fenData) return null;
     return {
       id: id2,
-      fen,
-      opponentMove,
-      solution: playerSolution,
+      fen: fenData.fen,
+      preMovefen: fenData.preMovefen,
+      lastMove: fenData.lastMove,
       rating,
+      // solution[0] is the opponent's move; player's first expected reply is solution[1]
+      // But according to Lichess docs, solution already contains the full continuation
+      // starting with the opponent move. The player answers solution[0].
+      // We keep the full solution array; the game component uses solution[0].
+      solution,
       themes
     };
   } catch {
     return null;
   }
 }
-function useChessPuzzles(initialTargetRating = 1500) {
+async function fetchOnePuzzle() {
+  const meta = await fetchPuzzleMeta();
+  if (!meta) return null;
+  return fetchPuzzleById(meta.id);
+}
+const CACHE_SIZE = 5;
+function useChessPuzzles(initialTargetRating = 1e3) {
   const [currentPuzzle, setCurrentPuzzle] = reactExports.useState(null);
-  const [loading, setLoading] = reactExports.useState(false);
+  const [loading, setLoading] = reactExports.useState(true);
   const [error, setError] = reactExports.useState(null);
   const cacheRef = reactExports.useRef([]);
-  const targetRatingRef = reactExports.useRef(initialTargetRating);
-  const fetchBatch = reactExports.useCallback(
-    async (targetRating) => {
-      const fetchCount = 20;
-      const promises = Array.from(
-        { length: fetchCount },
-        () => fetch("https://lichess.org/api/puzzle/next", {
-          headers: { Accept: "application/json" }
-        }).then((r2) => r2.ok ? r2.json() : null).catch(() => null)
-      );
-      const results = await Promise.allSettled(promises);
-      const puzzles = [];
-      for (const result of results) {
-        if (result.status === "fulfilled" && result.value) {
-          const parsed = parsePuzzleFromApi(
-            result.value
-          );
-          if (parsed) {
-            const ratingDiff = Math.abs(parsed.rating - targetRating);
-            if (ratingDiff <= 400) {
-              puzzles.push(parsed);
-            }
-          }
+  const fillingRef = reactExports.useRef(false);
+  reactExports.useRef(initialTargetRating);
+  const fillCache = reactExports.useCallback(async () => {
+    if (fillingRef.current) return;
+    fillingRef.current = true;
+    try {
+      while (cacheRef.current.length < CACHE_SIZE) {
+        const puzzle = await fetchOnePuzzle();
+        if (puzzle) {
+          cacheRef.current = [...cacheRef.current, puzzle];
+        } else {
+          break;
         }
       }
-      return puzzles;
-    },
-    []
-  );
+    } finally {
+      fillingRef.current = false;
+    }
+  }, []);
   const fetchNext = reactExports.useCallback(async () => {
     if (cacheRef.current.length > 0) {
-      const next = cacheRef.current.shift();
+      const [next, ...rest] = cacheRef.current;
+      cacheRef.current = rest;
       setCurrentPuzzle(next);
+      setError(null);
+      void fillCache();
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const puzzles = await fetchBatch(targetRatingRef.current);
-      if (puzzles.length === 0) {
-        const fallback = await fetch("https://lichess.org/api/puzzle/next", {
-          headers: { Accept: "application/json" }
-        });
-        if (fallback.ok) {
-          const data = await fallback.json();
-          const parsed = parsePuzzleFromApi(data);
-          if (parsed) {
-            setCurrentPuzzle(parsed);
-          } else {
-            setError("Failed to parse puzzle");
-          }
-        } else {
-          setError("Failed to fetch puzzle");
-        }
+      const puzzle = await fetchOnePuzzle();
+      if (puzzle) {
+        setCurrentPuzzle(puzzle);
       } else {
-        const [first, ...rest] = puzzles;
-        setCurrentPuzzle(first);
-        cacheRef.current = rest;
+        setError("Failed to fetch puzzle. Check your connection.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
+      void fillCache();
     }
-  }, [fetchBatch]);
+  }, [fillCache]);
+  reactExports.useEffect(() => {
+    void fetchNext();
+  }, [fetchNext]);
+  reactExports.useEffect(() => {
+    if (currentPuzzle) setLoading(false);
+  }, [currentPuzzle]);
   return { currentPuzzle, loading, error, fetchNext };
 }
 const CHESS_UNICODE = {
@@ -60016,6 +60059,18 @@ const CHESS_UNICODE = {
   n: "♞",
   p: "♟"
 };
+function uciToSan(fen, uci) {
+  try {
+    const chess = new Chess(fen);
+    const from = uci.slice(0, 2);
+    const to = uci.slice(2, 4);
+    const promotion = uci.length === 5 ? uci[4] : void 0;
+    const move = chess.move({ from, to, promotion });
+    return move ? move.san : uci;
+  } catch {
+    return uci;
+  }
+}
 function calculateScore(puzzleNumber) {
   return 10 + puzzleNumber * 20;
 }
@@ -60035,18 +60090,6 @@ function parseFenBoard(fen) {
     return row;
   });
 }
-function applyUciMove(fen, uci) {
-  try {
-    const chess = new Chess(fen);
-    const from = uci.slice(0, 2);
-    const to = uci.slice(2, 4);
-    const promotion = uci.length > 4 ? uci[4] : void 0;
-    chess.move({ from, to, promotion });
-    return chess.fen();
-  } catch {
-    return null;
-  }
-}
 function ChessBoard({ fen }) {
   const board = parseFenBoard(fen);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -60056,11 +60099,11 @@ function ChessBoard({ fen }) {
         display: "grid",
         gridTemplateColumns: "repeat(8, 1fr)",
         gridTemplateRows: "repeat(8, 1fr)",
-        width: "100%",
-        maxWidth: 360,
-        aspectRatio: "1 / 1",
+        width: "min(90vw, 400px)",
+        height: "min(90vw, 400px)",
         margin: "0 auto",
-        border: "2px solid var(--border)"
+        border: "2px solid var(--border)",
+        flexShrink: 0
       },
       "aria-label": "Chess board",
       children: board.map(
@@ -60077,7 +60120,7 @@ function ChessBoard({ fen }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "1.6rem",
+                fontSize: "clamp(1rem, 4vw, 1.6rem)",
                 lineHeight: 1,
                 color: isWhitePiece ? "#ffffff" : "#111111",
                 textShadow: isWhitePiece ? "0 0 2px #000, 0 0 4px #000" : "0 0 2px #fff, 0 0 4px #fff",
@@ -60100,32 +60143,35 @@ function ChessPuzzleGame({
 }) {
   const [puzzleNumber, setPuzzleNumber] = reactExports.useState(1);
   const [score, setScore] = reactExports.useState(0);
-  const [targetRating, setTargetRating] = reactExports.useState(1500);
+  const [targetRating, setTargetRating] = reactExports.useState(1e3);
   const [timeLeft, setTimeLeft] = reactExports.useState(20);
   const [userInput, setUserInput] = reactExports.useState("");
   const [feedback, setFeedback] = reactExports.useState(null);
   const [gameOver, setGameOver] = reactExports.useState(false);
   const [gameOverReason, setGameOverReason] = reactExports.useState(null);
   const [boardFen, setBoardFen] = reactExports.useState(null);
+  const [opponentMoveSan, setOpponentMoveSan] = reactExports.useState(null);
   const timerRef = reactExports.useRef(null);
   const feedbackTimeoutRef = reactExports.useRef(null);
   const inputRef = reactExports.useRef(null);
   const { currentPuzzle, loading, error, fetchNext } = useChessPuzzles(targetRating);
   reactExports.useEffect(() => {
-    void fetchNext();
-  }, [fetchNext]);
-  reactExports.useEffect(() => {
     var _a3;
     if (!currentPuzzle) return;
-    const result = applyUciMove(currentPuzzle.fen, currentPuzzle.opponentMove);
-    setBoardFen(result ?? currentPuzzle.fen);
+    setBoardFen(currentPuzzle.fen);
     setTimeLeft(20);
     setUserInput("");
     setFeedback(null);
+    try {
+      const san = uciToSan(currentPuzzle.preMovefen, currentPuzzle.lastMove);
+      setOpponentMoveSan(san);
+    } catch {
+      setOpponentMoveSan(currentPuzzle.lastMove || null);
+    }
     (_a3 = inputRef.current) == null ? void 0 : _a3.focus();
   }, [currentPuzzle]);
   reactExports.useEffect(() => {
-    if (gameOver || !currentPuzzle || loading) return;
+    if (gameOver || !currentPuzzle || boardFen === null || loading) return;
     timerRef.current = setInterval(() => {
       setTimeLeft((t2) => {
         if (t2 <= 1) {
@@ -60141,7 +60187,7 @@ function ChessPuzzleGame({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentPuzzle, gameOver, loading]);
+  }, [currentPuzzle, boardFen, gameOver, loading]);
   const handleSubmit = reactExports.useCallback(() => {
     if (!currentPuzzle || !boardFen || gameOver) return;
     const san = userInput.trim();
@@ -60158,6 +60204,7 @@ function ChessPuzzleGame({
         const newScore = score + points;
         setScore(newScore);
         setFeedback(`Correct! +${points}`);
+        setBoardFen(null);
         feedbackTimeoutRef.current = setTimeout(() => {
           setPuzzleNumber((n2) => n2 + 1);
           setTargetRating((r2) => r2 + 100);
@@ -60170,7 +60217,7 @@ function ChessPuzzleGame({
         setFeedback("Incorrect!");
       }
     } catch {
-      setFeedback("Invalid move");
+      setFeedback("Invalid move — try again");
       setUserInput("");
     }
   }, [
@@ -60182,6 +60229,21 @@ function ChessPuzzleGame({
     puzzleNumber,
     fetchNext
   ]);
+  const handleTryAgain = reactExports.useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    setPuzzleNumber(1);
+    setScore(0);
+    setTargetRating(1e3);
+    setTimeLeft(20);
+    setUserInput("");
+    setFeedback(null);
+    setGameOver(false);
+    setGameOverReason(null);
+    setBoardFen(null);
+    setOpponentMoveSan(null);
+    void fetchNext();
+  }, [fetchNext]);
   reactExports.useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -60196,12 +60258,12 @@ function ChessPuzzleGame({
         className: "flex flex-col items-center justify-center gap-4 py-12 font-mono",
         "data-ocid": "chess_puzzle.loading_state",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-foreground text-sm animate-pulse", children: "Fetching puzzles..." }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-foreground text-sm animate-pulse", children: "Fetching puzzle..." }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
-              className: "text-muted-foreground text-xs underline mt-4",
+              className: "text-muted-foreground text-xs underline mt-4 hover:text-foreground transition-colors",
               onClick: onExit,
               "data-ocid": "chess_puzzle.cancel_button",
               children: "BACK"
@@ -60218,12 +60280,12 @@ function ChessPuzzleGame({
         className: "flex flex-col items-center justify-center gap-4 py-12 font-mono",
         "data-ocid": "chess_puzzle.error_state",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-destructive text-sm", children: error }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-destructive text-sm text-center px-4", children: error }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
-              className: "text-muted-foreground text-xs underline",
+              className: "text-muted-foreground text-xs underline hover:text-foreground transition-colors",
               onClick: onExit,
               "data-ocid": "chess_puzzle.cancel_button",
               children: "BACK"
@@ -60265,7 +60327,7 @@ function ChessPuzzleGame({
               {
                 type: "button",
                 className: "text-muted-foreground text-xs tracking-widest hover:text-foreground transition-colors",
-                onClick: onExit,
+                onClick: handleTryAgain,
                 "data-ocid": "chess_puzzle.cancel_button",
                 children: "TRY AGAIN"
               }
@@ -60288,10 +60350,10 @@ function ChessPuzzleGame({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
-      className: "flex flex-col items-center gap-4 py-4 font-mono",
+      className: "flex flex-col items-center gap-3 py-4 font-mono",
       "data-ocid": "chess_puzzle.panel",
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[360px] text-xs text-muted-foreground px-1", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground px-1", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "chess_puzzle.puzzle_number", children: [
             "#",
             puzzleNumber
@@ -60316,23 +60378,40 @@ function ChessPuzzleGame({
             }
           )
         ] }),
-        boardFen ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChessBoard, { fen: boardFen }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-muted-foreground text-xs animate-pulse", children: "Loading board..." }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-muted-foreground text-xs tracking-wide", children: "Enter your move in SAN notation (e.g. Qxf7)" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 w-full max-w-[360px]", children: [
+        boardFen ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChessBoard, { fen: boardFen }) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "flex items-center justify-center text-muted-foreground text-xs animate-pulse",
+            style: { width: "min(90vw, 400px)", height: "min(90vw, 400px)" },
+            "data-ocid": "chess_puzzle.loading_state",
+            children: "Loading board..."
+          }
+        ),
+        boardFen && opponentMoveSan && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs text-muted-foreground tracking-wide", children: [
+          "Opponent played:",
+          " ",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: opponentMoveSan })
+        ] }),
+        boardFen && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-muted-foreground text-xs tracking-wide", children: [
+          "Your Move..",
+          " ",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "opacity-50", children: "(SAN notation, e.g. Qxf7)" })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 w-full max-w-[400px]", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "input",
             {
               ref: inputRef,
               type: "text",
               value: userInput,
-              onChange: (e2) => setUserInput(e2.target.value.toUpperCase()),
+              onChange: (e2) => setUserInput(e2.target.value),
               onKeyDown: (e2) => {
                 if (e2.key === "Enter") handleSubmit();
               },
-              placeholder: "SAN MOVE...",
-              disabled: gameOver,
-              className: "flex-1 bg-background border border-border text-foreground font-mono text-sm px-3 py-2 uppercase placeholder:text-muted-foreground focus:outline-none focus:border-primary",
-              style: { letterSpacing: "0.1em" },
+              placeholder: "Your Move..",
+              disabled: gameOver || !boardFen,
+              className: "flex-1 bg-background border border-border text-foreground font-mono text-sm px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:border-primary disabled:opacity-40",
+              style: { letterSpacing: "0.05em" },
               autoComplete: "off",
               spellCheck: false,
               "data-ocid": "chess_puzzle.input"
@@ -60343,7 +60422,7 @@ function ChessPuzzleGame({
             {
               type: "button",
               onClick: handleSubmit,
-              disabled: gameOver || !userInput.trim(),
+              disabled: gameOver || !userInput.trim() || !boardFen,
               className: "bg-primary text-primary-foreground font-mono text-xs tracking-widest px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-40",
               "data-ocid": "chess_puzzle.submit_button",
               children: "ENTER"
