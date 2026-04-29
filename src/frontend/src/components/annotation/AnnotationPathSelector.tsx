@@ -150,7 +150,7 @@ export function AnnotationPathSelector({
               setNewCuration(e.target.value);
               onChange({ ...path, curation: e.target.value });
             }}
-            className="font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+            className="font-mono text-xs border-2 border-primary rounded-none bg-background"
           />
         )}
       </div>
@@ -191,7 +191,7 @@ export function AnnotationPathSelector({
               setNewSwarm(e.target.value);
               onChange({ ...path, swarm: e.target.value });
             }}
-            className="font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+            className="font-mono text-xs border-2 border-primary rounded-none bg-background"
           />
         )}
       </div>
@@ -232,7 +232,7 @@ export function AnnotationPathSelector({
               setNewLocation(e.target.value);
               onChange({ ...path, location: e.target.value });
             }}
-            className="font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+            className="font-mono text-xs border-2 border-primary rounded-none bg-background"
           />
         )}
       </div>

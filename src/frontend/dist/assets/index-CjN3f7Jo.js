@@ -41506,7 +41506,7 @@ function FilterPanel({
                         className: "w-full text-[10px] border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors text-left",
                         "data-ocid": "filter_panel.fit_to_visible",
                         "aria-label": "Zoom to fit visible nodes",
-                        children: "[fit to visible]"
+                        children: "fit to visible"
                       }
                     ),
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -41518,7 +41518,7 @@ function FilterPanel({
                         className: "w-full text-[10px] border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed",
                         "data-ocid": "filter_panel.reset_button",
                         "aria-label": "Reset all filters",
-                        children: "[reset filters]"
+                        children: "reset filters"
                       }
                     )
                   ] })
@@ -56536,7 +56536,7 @@ function SettingsScreen({
             skipMessages: !settings.skipMessages
           });
         } else if (item === "music") {
-          const values = ["on", "off", "override"];
+          const values = ["on", "off"];
           const currentIdx = values.indexOf(settings.music);
           const nextIdx = (currentIdx + 1) % values.length;
           onUpdateSettings({ ...settings, music: values[nextIdx] });
@@ -56549,10 +56549,10 @@ function SettingsScreen({
   const rows = [
     {
       key: "skipMessages",
-      label: "SKIP MESSAGES",
+      label: "NARRATIVE",
       value: settings.skipMessages ? "ON" : "OFF"
     },
-    { key: "music", label: "MUSIC", value: settings.music.toUpperCase() },
+    { key: "music", label: "SOUND", value: settings.music.toUpperCase() },
     { key: "back", label: "BACK" }
   ];
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-8 select-none", children: [
@@ -56591,7 +56591,7 @@ function SettingsScreen({
                 skipMessages: !settings.skipMessages
               });
             } else if (row.key === "music") {
-              const values = ["on", "off", "override"];
+              const values = ["on", "off"];
               const currentIdx = values.indexOf(settings.music);
               onUpdateSettings({
                 ...settings,
@@ -57084,7 +57084,7 @@ function TextGameModal({ onComplete }) {
   const [scrambleComplete, setScrambleComplete] = reactExports.useState(false);
   const [settings, setSettings] = reactExports.useState(() => {
     const saved = localStorage.getItem("hyvmind_textgame_settings");
-    return saved ? JSON.parse(saved) : { skipMessages: false, music: "on" };
+    return saved ? JSON.parse(saved) : { skipMessages: false, music: "off" };
   });
   const [leaderboard, setLeaderboard] = reactExports.useState(() => {
     const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
@@ -57112,7 +57112,7 @@ function TextGameModal({ onComplete }) {
   }, [leaderboard]);
   reactExports.useEffect(() => {
     if (!overrideAudio) return;
-    if (settings.music === "override") {
+    if (settings.music === "on") {
       overrideAudio.play().catch(() => {
       });
     } else {
@@ -57389,7 +57389,7 @@ function TextGameModal({ onComplete }) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [phase.type, handleAdvance]);
-  const bgmParam = settings.music === "override" ? "?bgm=off&se=off" : settings.music === "off" ? "?bgm=off" : "";
+  const bgmParam = settings.music === "off" ? "?bgm=off" : "";
   const renderContent = () => {
     switch (phase.type) {
       case "idle":
@@ -58874,7 +58874,7 @@ function PublishConfirmDialog({
               onClick: onClose,
               className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
               "data-ocid": "publish_dialog.close_button",
-              children: "[×]"
+              children: "×"
             }
           )
         ] }),
@@ -58979,7 +58979,7 @@ function PublishConfirmDialog({
               onClick: onClose,
               className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "publish_dialog.cancel_button",
-              children: "[cancel]"
+              children: "cancel"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -58990,7 +58990,7 @@ function PublishConfirmDialog({
               disabled: isLoading || noChanges,
               className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
               "data-ocid": "publish_dialog.confirm_button",
-              children: isLoading ? "working..." : isPublished ? "[update]" : "[publish]"
+              children: isLoading ? "working..." : isPublished ? "update" : "publish"
             }
           )
         ] })
@@ -63102,7 +63102,7 @@ function AnnotationPathSelector({
             setNewCuration(e2.target.value);
             onChange15({ ...path, curation: e2.target.value });
           },
-          className: "font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+          className: "font-mono text-xs border-2 border-primary rounded-none bg-background"
         }
       )
     ] }),
@@ -63140,7 +63140,7 @@ function AnnotationPathSelector({
             setNewSwarm(e2.target.value);
             onChange15({ ...path, swarm: e2.target.value });
           },
-          className: "font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+          className: "font-mono text-xs border-2 border-primary rounded-none bg-background"
         }
       )
     ] }),
@@ -63178,7 +63178,7 @@ function AnnotationPathSelector({
             setNewLocation(e2.target.value);
             onChange15({ ...path, location: e2.target.value });
           },
-          className: "font-mono text-xs border-2 border-dashed border-primary rounded-none bg-background"
+          className: "font-mono text-xs border-2 border-primary rounded-none bg-background"
         }
       )
     ] })
@@ -63645,7 +63645,7 @@ function AttributeEditor({
       },
       k2
     )),
-    adding && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1 border-2 border-dashed border-primary", children: [
+    adding && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1 border-2 border-primary", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         Input,
         {
@@ -64878,7 +64878,7 @@ function SourcesView() {
             disabled: importing,
             className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
             "data-ocid": "sources.import_button",
-            children: importing ? "parsing..." : "[import graph]"
+            children: importing ? "parsing..." : "import graph"
           }
         )
       ] })
@@ -64933,7 +64933,7 @@ function SourcesView() {
                     },
                     className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors",
                     "data-ocid": `sources.draft_resume_button.${i2 + 1}`,
-                    children: "[resume]"
+                    children: "resume"
                   }
                 ),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -64946,7 +64946,7 @@ function SourcesView() {
                     },
                     className: "text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
                     "data-ocid": `sources.draft_delete_button.${i2 + 1}`,
-                    children: "[delete]"
+                    children: "delete"
                   }
                 )
               ] })
@@ -64971,7 +64971,7 @@ function SourcesView() {
               onClick: handleImportClick,
               className: "mt-5 text-xs border border-dashed border-border px-4 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "sources.empty_import_button",
-              children: "[import graph]"
+              children: "import graph"
             }
           )
         ]
@@ -65022,7 +65022,7 @@ function SourcesView() {
                   onClick: () => handleView(graph),
                   className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors",
                   "data-ocid": `sources.view_button.${graph.id}`,
-                  children: "[view]"
+                  children: "view"
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -65033,7 +65033,7 @@ function SourcesView() {
                   disabled: isPublishing || isPreviewLoading,
                   className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                   "data-ocid": `sources.publish_button.${graph.id}`,
-                  children: isPreviewLoading && (previewGraph == null ? void 0 : previewGraph.id) === graph.id ? "previewing..." : published ? "[update]" : "[publish]"
+                  children: isPreviewLoading && (previewGraph == null ? void 0 : previewGraph.id) === graph.id ? "previewing..." : published ? "update" : "publish"
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -65043,7 +65043,7 @@ function SourcesView() {
                   onClick: () => handleDeleteRequest(graph.id),
                   className: "text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
                   "data-ocid": `sources.delete_button.${graph.id}`,
-                  children: "[delete]"
+                  children: "delete"
                 }
               )
             ] })
@@ -65075,7 +65075,7 @@ function SourcesView() {
                 onClick: handleDeleteConfirm,
                 className: "flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
                 "data-ocid": "sources.confirm_delete_yes",
-                children: "[delete]"
+                children: "delete"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -65085,7 +65085,7 @@ function SourcesView() {
                 onClick: handleDeleteCancel,
                 className: "flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
                 "data-ocid": "sources.confirm_delete_cancel",
-                children: "[cancel]"
+                children: "cancel"
               }
             )
           ] })

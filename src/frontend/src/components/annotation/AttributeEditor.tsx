@@ -134,7 +134,7 @@ export function AttributeEditor({
 
       {/* Add new attribute row */}
       {adding && (
-        <div className="flex items-center gap-1 border-2 border-dashed border-primary">
+        <div className="flex items-center gap-1 border-2 border-primary">
           <Input
             data-ocid="attribute-editor.new-key.input"
             autoFocus

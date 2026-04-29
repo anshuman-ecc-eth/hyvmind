@@ -419,7 +419,7 @@ export default function SourcesView() {
             className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-ocid="sources.import_button"
           >
-            {importing ? "parsing..." : "[import graph]"}
+            {importing ? "parsing..." : "import graph"}
           </button>
         </div>
       </div>
@@ -482,7 +482,7 @@ export default function SourcesView() {
                       className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
                       data-ocid={`sources.draft_resume_button.${i + 1}`}
                     >
-                      [resume]
+                      resume
                     </button>
                     <button
                       type="button"
@@ -494,7 +494,7 @@ export default function SourcesView() {
                       className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                       data-ocid={`sources.draft_delete_button.${i + 1}`}
                     >
-                      [delete]
+                      delete
                     </button>
                   </div>
                 </div>
@@ -522,7 +522,7 @@ export default function SourcesView() {
             className="mt-5 text-xs border border-dashed border-border px-4 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
             data-ocid="sources.empty_import_button"
           >
-            [import graph]
+            import graph
           </button>
         </div>
       )}
@@ -568,7 +568,7 @@ export default function SourcesView() {
                     className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
                     data-ocid={`sources.view_button.${graph.id}`}
                   >
-                    [view]
+                    view
                   </button>
                   <button
                     type="button"
@@ -580,8 +580,8 @@ export default function SourcesView() {
                     {isPreviewLoading && previewGraph?.id === graph.id
                       ? "previewing..."
                       : published
-                        ? "[update]"
-                        : "[publish]"}
+                        ? "update"
+                        : "publish"}
                   </button>
                   <button
                     type="button"
@@ -589,7 +589,7 @@ export default function SourcesView() {
                     className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     data-ocid={`sources.delete_button.${graph.id}`}
                   >
-                    [delete]
+                    delete
                   </button>
                 </div>
               </div>
@@ -621,7 +621,7 @@ export default function SourcesView() {
                 className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 data-ocid="sources.confirm_delete_yes"
               >
-                [delete]
+                delete
               </button>
               <button
                 type="button"
@@ -629,7 +629,7 @@ export default function SourcesView() {
                 className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
                 data-ocid="sources.confirm_delete_cancel"
               >
-                [cancel]
+                cancel
               </button>
             </div>
           </div>

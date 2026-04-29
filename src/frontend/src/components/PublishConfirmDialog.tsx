@@ -227,7 +227,7 @@ export default function PublishConfirmDialog({
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             data-ocid="publish_dialog.close_button"
           >
-            [×]
+            ×
           </button>
         </div>
 
@@ -335,7 +335,7 @@ export default function PublishConfirmDialog({
             className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors"
             data-ocid="publish_dialog.cancel_button"
           >
-            [cancel]
+            cancel
           </button>
           <button
             type="button"
@@ -344,7 +344,7 @@ export default function PublishConfirmDialog({
             className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-ocid="publish_dialog.confirm_button"
           >
-            {isLoading ? "working..." : isPublished ? "[update]" : "[publish]"}
+            {isLoading ? "working..." : isPublished ? "update" : "publish"}
           </button>
         </div>
       </div>

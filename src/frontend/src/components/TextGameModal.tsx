@@ -66,7 +66,7 @@ const SCRAMBLE_CHARS =
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type MusicMode = "on" | "off" | "override";
+type MusicMode = "on" | "off";
 
 interface GameSettings {
   skipMessages: boolean;
@@ -182,7 +182,7 @@ function SettingsScreen({
             skipMessages: !settings.skipMessages,
           });
         } else if (item === "music") {
-          const values: MusicMode[] = ["on", "off", "override"];
+          const values: MusicMode[] = ["on", "off"];
           const currentIdx = values.indexOf(settings.music);
           const nextIdx = (currentIdx + 1) % values.length;
           onUpdateSettings({ ...settings, music: values[nextIdx] });
@@ -200,10 +200,10 @@ function SettingsScreen({
   }[] = [
     {
       key: "skipMessages",
-      label: "SKIP MESSAGES",
+      label: "NARRATIVE",
       value: settings.skipMessages ? "ON" : "OFF",
     },
-    { key: "music", label: "MUSIC", value: settings.music.toUpperCase() },
+    { key: "music", label: "SOUND", value: settings.music.toUpperCase() },
     { key: "back", label: "BACK" },
   ];
 
@@ -243,7 +243,7 @@ function SettingsScreen({
                     skipMessages: !settings.skipMessages,
                   });
                 } else if (row.key === "music") {
-                  const values: MusicMode[] = ["on", "off", "override"];
+                  const values: MusicMode[] = ["on", "off"];
                   const currentIdx = values.indexOf(settings.music);
                   onUpdateSettings({
                     ...settings,
@@ -830,7 +830,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     const saved = localStorage.getItem("hyvmind_textgame_settings");
     return saved
       ? (JSON.parse(saved) as GameSettings)
-      : { skipMessages: false, music: "on" };
+      : { skipMessages: false, music: "off" };
   });
 
   // Leaderboard (persisted)
@@ -869,13 +869,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     );
   }, [leaderboard]);
 
-  // ── Override audio: play/pause based on music setting ─────────────────────
-  // The component is only mounted when the modal is open, so we just need to
-  // react to settings.music changes. Start/stop immediately on every change.
+  // ── Audio: play/pause based on sound setting ──────────────────────────────
 
   useEffect(() => {
     if (!overrideAudio) return;
-    if (settings.music === "override") {
+    if (settings.music === "on") {
       overrideAudio.play().catch(() => {
         // Autoplay may be blocked; silently ignore
       });
@@ -1190,12 +1188,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const bgmParam =
-    settings.music === "override"
-      ? "?bgm=off&se=off"
-      : settings.music === "off"
-        ? "?bgm=off"
-        : "";
+  const bgmParam = settings.music === "off" ? "?bgm=off" : "";
 
   const renderContent = () => {
     switch (phase.type) {

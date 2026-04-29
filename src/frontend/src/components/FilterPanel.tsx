@@ -218,7 +218,7 @@ export default function FilterPanel({
               data-ocid="filter_panel.fit_to_visible"
               aria-label="Zoom to fit visible nodes"
             >
-              [fit to visible]
+              fit to visible
             </button>
             <button
               type="button"
@@ -228,7 +228,7 @@ export default function FilterPanel({
               data-ocid="filter_panel.reset_button"
               aria-label="Reset all filters"
             >
-              [reset filters]
+              reset filters
             </button>
           </div>
         </div>
