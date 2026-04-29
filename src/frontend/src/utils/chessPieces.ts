@@ -1,18 +1,3 @@
-/**
- * Unicode chess piece symbols mapped by FEN piece codes.
- * Uppercase = white pieces, lowercase = black pieces.
- */
-export const CHESS_UNICODE: Record<string, string> = {
-  K: "♔",
-  Q: "♕",
-  R: "♖",
-  B: "♗",
-  N: "♘",
-  P: "♙",
-  k: "♚",
-  q: "♛",
-  r: "♜",
-  b: "♝",
-  n: "♞",
-  p: "♟",
-};
+// This file has been superseded by react-chessboard and is no longer used.
+// It can be safely deleted.
+export {};
