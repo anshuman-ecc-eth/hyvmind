@@ -119,11 +119,8 @@ async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
       preMovefen: fenData.preMovefen,
       lastMove: fenData.lastMove,
       rating,
-      // solution[0] is the opponent's move; player's first expected reply is solution[1]
-      // But according to Lichess docs, solution already contains the full continuation
-      // starting with the opponent move. The player answers solution[0].
-      // We keep the full solution array; the game component uses solution[0].
-      solution,
+      // Lichess solution[0] is the opponent's last move; slice it so the component only sees the solver's moves.
+      solution: solution.slice(1),
       themes,
     };
   } catch {

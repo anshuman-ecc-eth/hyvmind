@@ -52,11 +52,21 @@ export default function ChessPuzzleGame({
   // boardFen is the puzzle position (after opponent's premove) — kept as fallback
   const boardFen = currentPuzzle?.fen ?? null;
 
-  // Board orientation: flip based on whose turn it is (Atzingen style)
+  // Board orientation: inverted so White pieces appear at the bottom when White is the solver
   const sideToMove = boardFen?.split(" ")[1] ?? "w";
-  const boardOrientation = sideToMove === "w" ? "white" : "black";
+  const boardOrientation = sideToMove === "w" ? "black" : "white";
 
-  // Step 2: lastMoveArrow computation removed entirely.
+  // Last-move arrow: blue arrow showing the opponent's move that created the puzzle position
+  const lastMoveArrow: Arrow[] =
+    currentPuzzle?.lastMove && currentPuzzle.lastMove.length >= 4
+      ? [
+          {
+            startSquare: currentPuzzle.lastMove.slice(0, 2),
+            endSquare: currentPuzzle.lastMove.slice(2, 4),
+            color: "#60a5fa",
+          },
+        ]
+      : [];
 
   // ── Step 4: Validate a move against the full solution sequence ───────────
   const validateMove = useCallback(
@@ -344,7 +354,7 @@ export default function ChessPuzzleGame({
             },
             darkSquareStyle: { backgroundColor: "#6b6b7b" },
             lightSquareStyle: { backgroundColor: "#f0f0d8" },
-            arrows: solutionArrows,
+            arrows: [...lastMoveArrow, ...solutionArrows],
           }}
         />
 
@@ -449,7 +459,7 @@ export default function ChessPuzzleGame({
           position: chessInstance?.fen() ?? boardFen ?? "start",
           boardOrientation,
           onPieceDrop: handlePieceDrop,
-          arrows: [],
+          arrows: lastMoveArrow,
           allowDragging: !gameOver && !promotionState,
           boardStyle: {
             width: "min(90vw, 400px)",

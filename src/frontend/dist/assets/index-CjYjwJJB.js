@@ -64791,11 +64791,8 @@ async function fetchPuzzleById(id2) {
       preMovefen: fenData.preMovefen,
       lastMove: fenData.lastMove,
       rating,
-      // solution[0] is the opponent's move; player's first expected reply is solution[1]
-      // But according to Lichess docs, solution already contains the full continuation
-      // starting with the opponent move. The player answers solution[0].
-      // We keep the full solution array; the game component uses solution[0].
-      solution,
+      // Lichess solution[0] is the opponent's last move; slice it so the component only sees the solver's moves.
+      solution: solution.slice(1),
       themes
     };
   } catch {
@@ -64914,7 +64911,14 @@ function ChessPuzzleGame({
   const { currentPuzzle, loading, error, fetchNext } = useChessPuzzles(targetRating);
   const boardFen = (currentPuzzle == null ? void 0 : currentPuzzle.fen) ?? null;
   const sideToMove = (boardFen == null ? void 0 : boardFen.split(" ")[1]) ?? "w";
-  const boardOrientation = sideToMove === "w" ? "white" : "black";
+  const boardOrientation = sideToMove === "w" ? "black" : "white";
+  const lastMoveArrow = (currentPuzzle == null ? void 0 : currentPuzzle.lastMove) && currentPuzzle.lastMove.length >= 4 ? [
+    {
+      startSquare: currentPuzzle.lastMove.slice(0, 2),
+      endSquare: currentPuzzle.lastMove.slice(2, 4),
+      color: "#60a5fa"
+    }
+  ] : [];
   const validateMove = reactExports.useCallback(
     (move) => {
       if (!move || !currentPuzzle || !chessInstance) return false;
@@ -65170,7 +65174,7 @@ function ChessPuzzleGame({
                 },
                 darkSquareStyle: { backgroundColor: "#6b6b7b" },
                 lightSquareStyle: { backgroundColor: "#f0f0d8" },
-                arrows: solutionArrows
+                arrows: [...lastMoveArrow, ...solutionArrows]
               }
             }
           ),
@@ -65279,7 +65283,7 @@ function ChessPuzzleGame({
               position: (chessInstance == null ? void 0 : chessInstance.fen()) ?? boardFen ?? "start",
               boardOrientation,
               onPieceDrop: handlePieceDrop,
-              arrows: [],
+              arrows: lastMoveArrow,
               allowDragging: !gameOver && !promotionState,
               boardStyle: {
                 width: "min(90vw, 400px)",
