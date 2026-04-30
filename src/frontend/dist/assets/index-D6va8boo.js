@@ -64840,6 +64840,28 @@ function useChessPuzzles(initialTargetRating = 1e3) {
       void fillCache();
       return;
     }
+    if (fillingRef.current) {
+      setLoading(true);
+      setError(null);
+      await new Promise((resolve) => {
+        const interval2 = setInterval(() => {
+          if (cacheRef.current.length > 0 || !fillingRef.current) {
+            clearInterval(interval2);
+            resolve();
+          }
+        }, 200);
+      });
+      if (cacheRef.current.length > 0) {
+        const [next, ...rest] = cacheRef.current;
+        cacheRef.current = rest;
+        setCurrentPuzzle(next);
+        setError(null);
+        setLoading(false);
+        void fillCache();
+        return;
+      }
+      setLoading(false);
+    }
     setLoading(true);
     setError(null);
     try {
@@ -64864,8 +64886,8 @@ function useChessPuzzles(initialTargetRating = 1e3) {
   }, [currentPuzzle]);
   return { currentPuzzle, loading, error, fetchNext };
 }
-function calculateScore(n2) {
-  return 10 + n2 * 20;
+function calculateScore(_n) {
+  return 50;
 }
 const PIECE_SYMBOLS = {
   q: "♕",
@@ -64880,7 +64902,7 @@ function ChessPuzzleGame({
   const [puzzleNumber, setPuzzleNumber] = reactExports.useState(1);
   const [score, setScore] = reactExports.useState(0);
   const [targetRating, setTargetRating] = reactExports.useState(1e3);
-  const [timeLeft, setTimeLeft] = reactExports.useState(20);
+  const [timeLeft, setTimeLeft] = reactExports.useState(60);
   const [feedback, setFeedback] = reactExports.useState("");
   const [gameOver, setGameOver] = reactExports.useState(false);
   const [gameOverReason, setGameOverReason] = reactExports.useState(null);
@@ -64905,16 +64927,16 @@ function ChessPuzzleGame({
       const expected = currentPuzzle.solution[0];
       if (uci === expected) {
         if (timerRef.current) clearInterval(timerRef.current);
-        const points = calculateScore(puzzleNumber);
+        const points = calculateScore();
         setScore((s2) => s2 + points);
         setFeedback(`Correct! +${points}`);
         feedbackTimeoutRef.current = setTimeout(() => {
           setPuzzleNumber((n2) => n2 + 1);
-          setTargetRating((r2) => r2 + 100);
           void fetchNext();
         }, 1500);
         return true;
       }
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
       setGameOver(true);
       setGameOverReason("incorrect");
@@ -64966,15 +64988,16 @@ function ChessPuzzleGame({
         const expected = currentPuzzle == null ? void 0 : currentPuzzle.solution[0];
         if (uci === expected) {
           if (timerRef.current) clearInterval(timerRef.current);
-          const points = calculateScore(puzzleNumber);
+          const points = calculateScore();
           setScore((s2) => s2 + points);
           setFeedback(`Correct! +${points}`);
           feedbackTimeoutRef.current = setTimeout(() => {
             setPuzzleNumber((n2) => n2 + 1);
-            setTargetRating((r2) => r2 + 100);
             void fetchNext();
           }, 1500);
         } else {
+          if (feedbackTimeoutRef.current)
+            clearTimeout(feedbackTimeoutRef.current);
           if (timerRef.current) clearInterval(timerRef.current);
           setGameOver(true);
           setGameOverReason("incorrect");
@@ -64987,11 +65010,13 @@ function ChessPuzzleGame({
   reactExports.useEffect(() => {
     if (gameOver || !currentPuzzle || !boardFen || loading || promotionState)
       return;
-    setTimeLeft(20);
+    setTimeLeft(60);
     timerRef.current = setInterval(() => {
       setTimeLeft((t2) => {
         if (t2 <= 1) {
           clearInterval(timerRef.current);
+          if (feedbackTimeoutRef.current)
+            clearTimeout(feedbackTimeoutRef.current);
           setGameOver(true);
           setGameOverReason("timeout");
           setFeedback("Time's up!");
@@ -65010,7 +65035,7 @@ function ChessPuzzleGame({
     setPuzzleNumber(1);
     setScore(0);
     setTargetRating(1e3);
-    setTimeLeft(20);
+    setTimeLeft(60);
     setFeedback("");
     setGameOver(false);
     setGameOverReason(null);
@@ -65068,6 +65093,19 @@ function ChessPuzzleGame({
     );
   }
   if (gameOver) {
+    const correctMoveArrows = gameOverReason === "incorrect" && currentPuzzle ? [
+      {
+        startSquare: currentPuzzle.solution[0].slice(0, 2),
+        endSquare: currentPuzzle.solution[0].slice(2, 4),
+        color: "red"
+      }
+    ] : lastMoveArrow;
+    const correctMoveHint = gameOverReason === "incorrect" && currentPuzzle ? (() => {
+      const sol = currentPuzzle.solution[0];
+      const hintFrom = sol.slice(0, 2).toUpperCase();
+      const hintTo = sol.slice(2, 4).toUpperCase();
+      return `Correct move was: ${hintFrom}→${hintTo}`;
+    })() : null;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -65087,10 +65125,12 @@ function ChessPuzzleGame({
                 },
                 darkSquareStyle: { backgroundColor: "#6b6b7b" },
                 lightSquareStyle: { backgroundColor: "#f0f0d8" },
-                arrows: lastMoveArrow
+                // CHANGE 1: show red arrow for correct move on incorrect endings
+                arrows: correctMoveArrows
               }
             }
           ),
+          correctMoveHint && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm font-mono mt-2 text-muted-foreground", children: correctMoveHint }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-2 mt-1", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "div",

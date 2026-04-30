@@ -184,7 +184,33 @@ export function useChessPuzzles(
       return;
     }
 
-    // Cache empty — fetch one immediately (blocking, shows loading)
+    // CHANGE 3B: if a fill is already in-flight, poll until it delivers at least
+    // one puzzle rather than blocking indefinitely on a second fetch.
+    if (fillingRef.current) {
+      setLoading(true);
+      setError(null);
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (cacheRef.current.length > 0 || !fillingRef.current) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 200);
+      });
+      if (cacheRef.current.length > 0) {
+        const [next, ...rest] = cacheRef.current;
+        cacheRef.current = rest;
+        setCurrentPuzzle(next);
+        setError(null);
+        setLoading(false);
+        void fillCache();
+        return;
+      }
+      // Fill finished but yielded nothing — fall through to direct fetch below
+      setLoading(false);
+    }
+
+    // Cache empty and no fill in-flight — fetch one immediately (blocking)
     setLoading(true);
     setError(null);
     try {

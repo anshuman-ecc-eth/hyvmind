@@ -9,8 +9,9 @@ interface ChessPuzzleGameProps {
   onExit: () => void;
 }
 
-function calculateScore(n: number): number {
-  return 10 + n * 20; // puzzle 1 = 30, puzzle 2 = 50, etc.
+// CHANGE 4: flat 50 points per puzzle
+function calculateScore(_n: number): number {
+  return 50;
 }
 
 const PIECE_SYMBOLS: Record<string, string> = {
@@ -27,7 +28,8 @@ export default function ChessPuzzleGame({
   const [puzzleNumber, setPuzzleNumber] = useState(1);
   const [score, setScore] = useState(0);
   const [targetRating, setTargetRating] = useState(1000);
-  const [timeLeft, setTimeLeft] = useState(20);
+  // CHANGE 2: timer starts at 60 seconds
+  const [timeLeft, setTimeLeft] = useState(60);
   const [feedback, setFeedback] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [gameOverReason, setGameOverReason] = useState<
@@ -75,11 +77,13 @@ export default function ChessPuzzleGame({
         setFeedback(`Correct! +${points}`);
         feedbackTimeoutRef.current = setTimeout(() => {
           setPuzzleNumber((n) => n + 1);
-          setTargetRating((r) => r + 100);
+          // CHANGE 5: removed setTargetRating((r) => r + 100)
           void fetchNext();
         }, 1500);
         return true;
       }
+      // CHANGE 3A: clear any pending feedback timeout before triggering game over
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
       setGameOver(true);
       setGameOverReason("incorrect");
@@ -141,10 +145,13 @@ export default function ChessPuzzleGame({
           setFeedback(`Correct! +${points}`);
           feedbackTimeoutRef.current = setTimeout(() => {
             setPuzzleNumber((n) => n + 1);
-            setTargetRating((r) => r + 100);
+            // CHANGE 5: removed setTargetRating((r) => r + 100)
             void fetchNext();
           }, 1500);
         } else {
+          // CHANGE 3A: clear any pending feedback timeout before triggering game over
+          if (feedbackTimeoutRef.current)
+            clearTimeout(feedbackTimeoutRef.current);
           if (timerRef.current) clearInterval(timerRef.current);
           setGameOver(true);
           setGameOverReason("incorrect");
@@ -159,11 +166,15 @@ export default function ChessPuzzleGame({
   useEffect(() => {
     if (gameOver || !currentPuzzle || !boardFen || loading || promotionState)
       return;
-    setTimeLeft(20);
+    // CHANGE 2: reset to 60 seconds on each new puzzle
+    setTimeLeft(60);
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current!);
+          // CHANGE 3A: clear any pending feedback timeout before triggering game over
+          if (feedbackTimeoutRef.current)
+            clearTimeout(feedbackTimeoutRef.current);
           setGameOver(true);
           setGameOverReason("timeout");
           setFeedback("Time's up!");
@@ -184,7 +195,8 @@ export default function ChessPuzzleGame({
     setPuzzleNumber(1);
     setScore(0);
     setTargetRating(1000);
-    setTimeLeft(20);
+    // CHANGE 2: reset to 60 seconds
+    setTimeLeft(60);
     setFeedback("");
     setGameOver(false);
     setGameOverReason(null);
@@ -244,6 +256,28 @@ export default function ChessPuzzleGame({
 
   // ── Game over state ──────────────────────────────────────────────────────
   if (gameOver) {
+    // CHANGE 1: compute correct-move arrow and hint text for incorrect endings
+    const correctMoveArrows: Arrow[] =
+      gameOverReason === "incorrect" && currentPuzzle
+        ? [
+            {
+              startSquare: currentPuzzle.solution[0].slice(0, 2),
+              endSquare: currentPuzzle.solution[0].slice(2, 4),
+              color: "red",
+            },
+          ]
+        : lastMoveArrow;
+
+    const correctMoveHint =
+      gameOverReason === "incorrect" && currentPuzzle
+        ? (() => {
+            const sol = currentPuzzle.solution[0];
+            const hintFrom = sol.slice(0, 2).toUpperCase();
+            const hintTo = sol.slice(2, 4).toUpperCase();
+            return `Correct move was: ${hintFrom}→${hintTo}`;
+          })()
+        : null;
+
     return (
       <div
         className="flex flex-col items-center gap-4 py-4 font-mono w-full"
@@ -261,9 +295,17 @@ export default function ChessPuzzleGame({
             },
             darkSquareStyle: { backgroundColor: "#6b6b7b" },
             lightSquareStyle: { backgroundColor: "#f0f0d8" },
-            arrows: lastMoveArrow,
+            // CHANGE 1: show red arrow for correct move on incorrect endings
+            arrows: correctMoveArrows,
           }}
         />
+
+        {/* CHANGE 1: correct move hint text */}
+        {correctMoveHint && (
+          <div className="text-sm font-mono mt-2 text-muted-foreground">
+            {correctMoveHint}
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-2 mt-1">
           <div
