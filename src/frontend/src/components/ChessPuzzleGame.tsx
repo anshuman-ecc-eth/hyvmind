@@ -1,63 +1,156 @@
 import { Chess } from "chess.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import type { Arrow, PieceDropHandlerArgs } from "react-chessboard";
+import type { PieceDropHandlerArgs } from "react-chessboard";
 import { useChessPuzzles } from "../hooks/useChessPuzzles";
+import type { Puzzle } from "../hooks/useChessPuzzles";
 
 interface ChessPuzzleGameProps {
   onComplete: (score: number) => void;
   onExit: () => void;
 }
 
-// Flat 50 points per puzzle
-function calculateScore(_n: number): number {
-  return 50;
-}
-
-const PIECE_SYMBOLS: Record<string, string> = {
-  q: "♕",
-  r: "♖",
-  b: "♗",
-  n: "♘",
-};
-
 export default function ChessPuzzleGame({
   onComplete,
   onExit,
 }: ChessPuzzleGameProps) {
-  const [puzzleNumber, setPuzzleNumber] = useState(1);
+  // === STEP 1: STATE ===
+  const [game, setGame] = useState<Chess | null>(null);
+  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [score, setScore] = useState(0);
-  const [targetRating, setTargetRating] = useState(1000);
+  const [puzzleNumber, setPuzzleNumber] = useState(1);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [feedback, setFeedback] = useState("");
   const [gameOver, setGameOver] = useState(false);
-  const [gameOverReason, setGameOverReason] = useState<
-    "timeout" | "incorrect" | null
-  >(null);
-  const [promotionState, setPromotionState] = useState<{
-    from: string;
-    to: string;
-  } | null>(null);
-
-  // Step 1: persistent chess state
-  const [chessInstance, setChessInstance] = useState<Chess | null>(null);
-  const [moveIndex, setMoveIndex] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { currentPuzzle, loading, error, fetchNext } =
-    useChessPuzzles(targetRating);
+  const {
+    currentPuzzle: fetchedPuzzle,
+    loading,
+    error,
+    fetchNext,
+  } = useChessPuzzles();
 
-  // boardFen is the puzzle position (after opponent's premove) — kept as fallback
-  const boardFen = currentPuzzle?.fen ?? null;
+  // Sync fetchedPuzzle into local state
+  useEffect(() => {
+    if (fetchedPuzzle) setCurrentPuzzle(fetchedPuzzle);
+  }, [fetchedPuzzle]);
 
-  // Board orientation: inverted so White pieces appear at the bottom when White is the solver
-  const sideToMove = boardFen?.split(" ")[1] ?? "w";
-  const boardOrientation = sideToMove === "w" ? "black" : "white";
+  // === STEP 2: BOARD ORIENTATION ===
+  // After puzzle FEN is applied, it is the solver's turn.
+  // sideToMove "w" → White is solver → boardOrientation "white" (white pieces at bottom)
+  const sideToMove = game?.fen().split(" ")[1] ?? "w";
+  const boardOrientation: "white" | "black" =
+    sideToMove === "w" ? "white" : "black";
 
-  // Last-move arrow: blue arrow showing the opponent's move that created the puzzle position
-  const lastMoveArrow: Arrow[] =
+  // === STEP 3: loadPuzzle ===
+  // The puzzle.fen already represents the position AFTER the opponent's lastMove
+  // (confirmed by useChessPuzzles.ts: fen = fenData.fen which is after initialPly moves).
+  // We simply load that FEN directly — no need to re-apply lastMove.
+  const loadPuzzle = useCallback(() => {
+    if (!currentPuzzle) return;
+    const newGame = new Chess(currentPuzzle.fen);
+    setGame(newGame);
+    setFeedback("");
+    setIsCorrect(null);
+  }, [currentPuzzle]);
+
+  // === STEP 6: PUZZLE LOAD EFFECT ===
+  useEffect(() => {
+    if (currentPuzzle) loadPuzzle();
+  }, [currentPuzzle, loadPuzzle]);
+
+  // === STEP 4: handlePieceDrop ===
+  const handlePieceDrop = useCallback(
+    ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
+      if (!game || !currentPuzzle || gameOver) return false;
+      if (!targetSquare) return false;
+
+      const move = game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q",
+      });
+      if (!move) return false;
+
+      const uci = move.from + move.to + (move.promotion ?? "");
+      const expected = currentPuzzle.solution[0];
+
+      if (uci === expected) {
+        setIsCorrect(true);
+        setFeedback("Correct!");
+
+        if (currentPuzzle.solution.length === 1) {
+          // Puzzle complete — single move solution
+          if (timerRef.current) clearInterval(timerRef.current);
+          setScore((s) => s + 50);
+          setPuzzleNumber((n) => n + 1);
+          setTimeout(() => {
+            void fetchNext();
+          }, 1200);
+        } else {
+          // Auto-play opponent's response (solution[1]) after 500ms
+          setTimeout(() => {
+            const reply = currentPuzzle.solution[1];
+            game.move({
+              from: reply.slice(0, 2),
+              to: reply.slice(2, 4),
+              promotion: reply[4] ?? undefined,
+            });
+            setCurrentPuzzle((prev) =>
+              prev ? { ...prev, solution: prev.solution.slice(2) } : null,
+            );
+            setGame(new Chess(game.fen()));
+            setFeedback("");
+            setIsCorrect(null);
+          }, 500);
+        }
+        return true;
+      }
+      setFeedback("Incorrect!");
+      setIsCorrect(false);
+      setGameOver(true);
+      return true;
+    },
+    [game, currentPuzzle, gameOver, fetchNext],
+  );
+
+  // === STEP 5: TIMER EFFECT ===
+  // `game` is intentionally omitted from deps to avoid resetting the timer
+  // on every board state change — we only want to reset when the puzzle changes.
+  useEffect(() => {
+    if (gameOver || !currentPuzzle) return;
+    setTimeLeft(60);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(timerRef.current!);
+          setGameOver(true);
+          setFeedback("Time's up!");
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // Intentionally omit `game` to avoid resetting timer on every game state change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPuzzle, gameOver]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // === STEP 7: LAST MOVE ARROW ===
+  const lastMoveArrow =
     currentPuzzle?.lastMove && currentPuzzle.lastMove.length >= 4
       ? [
           {
@@ -68,213 +161,10 @@ export default function ChessPuzzleGame({
         ]
       : [];
 
-  // ── Step 4: Validate a move against the full solution sequence ───────────
-  const validateMove = useCallback(
-    (move: ReturnType<Chess["move"]>): boolean => {
-      if (!move || !currentPuzzle || !chessInstance) return false;
+  // === STEP 8: RENDER ===
 
-      const uci = move.from + move.to + (move.promotion ?? "");
-      const expected = currentPuzzle.solution[moveIndex];
-
-      if (uci === expected) {
-        const newIndex = moveIndex + 1;
-        setMoveIndex(newIndex);
-        setFeedback("Correct!");
-        setChessInstance(new Chess(chessInstance.fen()));
-
-        const remaining = currentPuzzle.solution.length - newIndex;
-        if (remaining === 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          const points = calculateScore(puzzleNumber);
-          setScore((s) => s + points);
-          setTimeout(() => {
-            setPuzzleNumber((n) => n + 1);
-            void fetchNext();
-          }, 1500);
-          return true;
-        }
-
-        // Auto-play opponent reply using a fresh clone to avoid stale closure
-        setTimeout(() => {
-          const reply = currentPuzzle.solution[newIndex];
-          const newChess = new Chess(chessInstance.fen());
-          newChess.move({
-            from: reply.slice(0, 2),
-            to: reply.slice(2, 4),
-            promotion: reply.length === 5 ? reply[4] : undefined,
-          });
-          setMoveIndex((i) => i + 1);
-          setChessInstance(new Chess(newChess.fen()));
-        }, 500);
-
-        return true;
-      }
-
-      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setGameOver(true);
-      setGameOverReason("incorrect");
-      setFeedback("Incorrect!");
-      return true;
-    },
-    [currentPuzzle, puzzleNumber, moveIndex, chessInstance, fetchNext],
-  );
-
-  // ── Step 5: Handle drag-and-drop piece drop ──────────────────────────────
-  const handlePieceDrop = useCallback(
-    ({
-      piece: _piece,
-      sourceSquare,
-      targetSquare,
-    }: PieceDropHandlerArgs): boolean => {
-      if (!currentPuzzle || gameOver || !chessInstance || promotionState)
-        return false;
-      if (!targetSquare) return false;
-      // Clone the instance so the original state is unchanged until validateMove commits
-      const chess = new Chess(chessInstance.fen());
-      try {
-        const move = chess.move({
-          from: sourceSquare,
-          to: targetSquare,
-          promotion: "q",
-        });
-        if (!move) return false;
-        // Detect pawn promotion — let user pick piece
-        if (move.promotion) {
-          setPromotionState({ from: move.from, to: move.to });
-          return false;
-        }
-        return validateMove(move);
-      } catch {
-        return false;
-      }
-    },
-    [chessInstance, currentPuzzle, gameOver, promotionState, validateMove],
-  );
-
-  // ── Step 6: Complete a promotion with chosen piece ───────────────────────
-  const completePromotion = useCallback(
-    (pieceType: string) => {
-      if (!promotionState || !chessInstance) return;
-      const chess = new Chess(chessInstance.fen());
-      const move = chess.move({
-        from: promotionState.from,
-        to: promotionState.to,
-        promotion: pieceType,
-      });
-      setPromotionState(null);
-      if (move) {
-        const uci = move.from + move.to + pieceType;
-        const expected = currentPuzzle?.solution[moveIndex];
-        if (uci === expected) {
-          const newIndex = moveIndex + 1;
-          setMoveIndex(newIndex);
-          setFeedback("Correct!");
-          setChessInstance(new Chess(chess.fen()));
-
-          const remaining = (currentPuzzle?.solution.length ?? 0) - newIndex;
-          if (remaining === 0) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            const points = calculateScore(puzzleNumber);
-            setScore((s) => s + points);
-            setTimeout(() => {
-              setPuzzleNumber((n) => n + 1);
-              void fetchNext();
-            }, 1500);
-          } else {
-            // Auto-play opponent reply
-            setTimeout(() => {
-              if (!currentPuzzle) return;
-              const reply = currentPuzzle.solution[newIndex];
-              const newChess = new Chess(chess.fen());
-              newChess.move({
-                from: reply.slice(0, 2),
-                to: reply.slice(2, 4),
-                promotion: reply.length === 5 ? reply[4] : undefined,
-              });
-              setMoveIndex((i) => i + 1);
-              setChessInstance(new Chess(newChess.fen()));
-            }, 500);
-          }
-        } else {
-          if (feedbackTimeoutRef.current)
-            clearTimeout(feedbackTimeoutRef.current);
-          if (timerRef.current) clearInterval(timerRef.current);
-          setGameOver(true);
-          setGameOverReason("incorrect");
-          setFeedback("Incorrect!");
-        }
-      }
-    },
-    [
-      promotionState,
-      chessInstance,
-      currentPuzzle,
-      puzzleNumber,
-      moveIndex,
-      fetchNext,
-    ],
-  );
-
-  // ── Step 7: Timer — starts only when puzzle + board are fully ready ──────
-  useEffect(() => {
-    if (gameOver || !currentPuzzle || !boardFen || loading || promotionState)
-      return;
-    setTimeLeft(60);
-    timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timerRef.current!);
-          if (feedbackTimeoutRef.current)
-            clearTimeout(feedbackTimeoutRef.current);
-          setGameOver(true);
-          setGameOverReason("timeout");
-          setFeedback("Time's up!");
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [currentPuzzle, boardFen, gameOver, loading, promotionState]);
-
-  // ── Reset / try again ────────────────────────────────────────────────────
-  const handleTryAgain = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    setPuzzleNumber(1);
-    setScore(0);
-    setTargetRating(1000);
-    setTimeLeft(60);
-    setFeedback("");
-    setGameOver(false);
-    setGameOverReason(null);
-    setPromotionState(null);
-    setChessInstance(null);
-    setMoveIndex(0);
-    void fetchNext();
-  }, [fetchNext]);
-
-  // ── Cleanup on unmount ───────────────────────────────────────────────────
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    };
-  }, []);
-
-  // ── Step 3: Initialize chess instance when puzzle loads ──────────────────
-  useEffect(() => {
-    if (currentPuzzle?.fen) {
-      setChessInstance(new Chess(currentPuzzle.fen));
-      setMoveIndex(0);
-    }
-  }, [currentPuzzle?.fen]);
-
-  // ── Loading state ────────────────────────────────────────────────────────
-  if (loading || !boardFen) {
+  // Loading state
+  if (loading || !game) {
     return (
       <div
         className="flex flex-col items-center justify-center py-12 font-mono"
@@ -295,7 +185,7 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────
+  // Error state
   if (error && !currentPuzzle) {
     return (
       <div
@@ -315,37 +205,16 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Step 8+9: Game over state ─────────────────────────────────────────────
+  // Game over state
   if (gameOver) {
-    // Build solution arrows (Atzingen style: green=player, blue=opponent)
-    const solutionArrows: Arrow[] = currentPuzzle
-      ? currentPuzzle.solution.map((move, i) => ({
-          startSquare: move.slice(0, 2),
-          endSquare: move.slice(2, 4),
-          color: i % 2 === 0 ? "#4ade80" : "#60a5fa",
-        }))
-      : [];
-
-    const correctMoveHint =
-      gameOverReason === "incorrect" && currentPuzzle
-        ? (() => {
-            const sol =
-              currentPuzzle.solution[moveIndex] ?? currentPuzzle.solution[0];
-            const hintFrom = sol.slice(0, 2).toUpperCase();
-            const hintTo = sol.slice(2, 4).toUpperCase();
-            return `Correct move was: ${hintFrom}→${hintTo}`;
-          })()
-        : null;
-
     return (
       <div
         className="flex flex-col items-center gap-4 py-4 font-mono w-full"
         data-ocid="chess_puzzle.game_over"
       >
-        {/* Board at final position */}
         <Chessboard
           options={{
-            position: chessInstance?.fen() ?? boardFen,
+            position: game.fen(),
             boardOrientation,
             allowDragging: false,
             boardStyle: {
@@ -354,23 +223,16 @@ export default function ChessPuzzleGame({
             },
             darkSquareStyle: { backgroundColor: "#6b6b7b" },
             lightSquareStyle: { backgroundColor: "#f0f0d8" },
-            arrows: [...lastMoveArrow, ...solutionArrows],
+            arrows: lastMoveArrow,
           }}
         />
-
-        {/* Correct move hint text */}
-        {correctMoveHint && (
-          <div className="text-sm font-mono mt-2 text-muted-foreground">
-            {correctMoveHint}
-          </div>
-        )}
 
         <div className="flex flex-col items-center gap-2 mt-1">
           <div
             className="text-destructive font-bold text-lg tracking-widest"
             data-ocid="chess_puzzle.error_state"
           >
-            {gameOverReason === "timeout" ? "TIME'S UP!" : "INCORRECT!"}
+            {feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"}
           </div>
           <div className="text-foreground text-sm">
             Puzzles solved:{" "}
@@ -384,7 +246,16 @@ export default function ChessPuzzleGame({
         <div className="flex gap-4 mt-2">
           <button
             type="button"
-            onClick={handleTryAgain}
+            onClick={() => {
+              if (timerRef.current) clearInterval(timerRef.current);
+              setScore(0);
+              setPuzzleNumber(1);
+              setGameOver(false);
+              setFeedback("");
+              setIsCorrect(null);
+              setGame(null);
+              void fetchNext();
+            }}
             className="text-muted-foreground text-xs tracking-widest hover:text-foreground transition-colors"
             data-ocid="chess_puzzle.cancel_button"
           >
@@ -413,7 +284,7 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // ── Step 10: Main game ────────────────────────────────────────────────────
+  // Active game
   return (
     <div
       className="flex flex-col items-center gap-3 py-4 font-mono w-full"
@@ -425,10 +296,9 @@ export default function ChessPuzzleGame({
         <span>
           Score: <span className="text-foreground font-bold">{score}</span>
         </span>
-        <span>Rating: {targetRating}</span>
         <span
           className={`text-xl font-bold tabular-nums ${
-            timeLeft <= 5 ? "text-destructive" : "text-foreground"
+            timeLeft <= 10 ? "text-destructive" : "text-foreground"
           }`}
           data-ocid="chess_puzzle.timer"
         >
@@ -436,31 +306,14 @@ export default function ChessPuzzleGame({
         </span>
       </div>
 
-      {/* Promotion piece selector */}
-      {promotionState && (
-        <div className="flex gap-2" data-ocid="chess_puzzle.promotion_selector">
-          {["q", "r", "b", "n"].map((piece) => (
-            <button
-              key={piece}
-              type="button"
-              onClick={() => completePromotion(piece)}
-              className="w-12 h-12 bg-primary text-primary-foreground rounded hover:opacity-80 text-xl"
-              data-ocid={`chess_puzzle.promotion_${piece}`}
-            >
-              {PIECE_SYMBOLS[piece]}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Chessboard — position driven by chessInstance */}
+      {/* Chessboard */}
       <Chessboard
         options={{
-          position: chessInstance?.fen() ?? boardFen ?? "start",
+          position: game.fen(),
           boardOrientation,
           onPieceDrop: handlePieceDrop,
           arrows: lastMoveArrow,
-          allowDragging: !gameOver && !promotionState,
+          allowDragging: !gameOver,
           boardStyle: {
             width: "min(90vw, 400px)",
             height: "min(90vw, 400px)",
@@ -474,13 +327,20 @@ export default function ChessPuzzleGame({
       {/* Feedback */}
       <div
         className="text-sm text-center min-h-[1.5rem]"
-        data-ocid="chess_puzzle.success_state"
+        data-ocid={
+          isCorrect === true
+            ? "chess_puzzle.success_state"
+            : isCorrect === false
+              ? "chess_puzzle.error_state"
+              : "chess_puzzle.feedback"
+        }
         style={{
-          color: feedback.startsWith("Correct")
-            ? "oklch(65% 0.15 150)"
-            : feedback
-              ? "var(--destructive)"
-              : "transparent",
+          color:
+            isCorrect === true
+              ? "oklch(65% 0.15 150)"
+              : isCorrect === false
+                ? "var(--destructive)"
+                : "transparent",
         }}
       >
         {feedback || "·"}

@@ -64883,185 +64883,96 @@ function useChessPuzzles(initialTargetRating = 1e3) {
   }, [currentPuzzle]);
   return { currentPuzzle, loading, error, fetchNext };
 }
-function calculateScore(_n) {
-  return 50;
-}
-const PIECE_SYMBOLS = {
-  q: "♕",
-  r: "♖",
-  b: "♗",
-  n: "♘"
-};
 function ChessPuzzleGame({
   onComplete,
   onExit
 }) {
-  const [puzzleNumber, setPuzzleNumber] = reactExports.useState(1);
+  const [game, setGame] = reactExports.useState(null);
+  const [currentPuzzle, setCurrentPuzzle] = reactExports.useState(null);
   const [score, setScore] = reactExports.useState(0);
-  const [targetRating, setTargetRating] = reactExports.useState(1e3);
+  const [puzzleNumber, setPuzzleNumber] = reactExports.useState(1);
   const [timeLeft, setTimeLeft] = reactExports.useState(60);
-  const [feedback, setFeedback] = reactExports.useState("");
   const [gameOver, setGameOver] = reactExports.useState(false);
-  const [gameOverReason, setGameOverReason] = reactExports.useState(null);
-  const [promotionState, setPromotionState] = reactExports.useState(null);
-  const [chessInstance, setChessInstance] = reactExports.useState(null);
-  const [moveIndex, setMoveIndex] = reactExports.useState(0);
+  const [feedback, setFeedback] = reactExports.useState("");
+  const [isCorrect, setIsCorrect] = reactExports.useState(null);
   const timerRef = reactExports.useRef(null);
-  const feedbackTimeoutRef = reactExports.useRef(null);
-  const { currentPuzzle, loading, error, fetchNext } = useChessPuzzles(targetRating);
-  const boardFen = (currentPuzzle == null ? void 0 : currentPuzzle.fen) ?? null;
-  const sideToMove = (boardFen == null ? void 0 : boardFen.split(" ")[1]) ?? "w";
-  const boardOrientation = sideToMove === "w" ? "black" : "white";
-  const lastMoveArrow = (currentPuzzle == null ? void 0 : currentPuzzle.lastMove) && currentPuzzle.lastMove.length >= 4 ? [
-    {
-      startSquare: currentPuzzle.lastMove.slice(0, 2),
-      endSquare: currentPuzzle.lastMove.slice(2, 4),
-      color: "#60a5fa"
-    }
-  ] : [];
-  const validateMove = reactExports.useCallback(
-    (move) => {
-      if (!move || !currentPuzzle || !chessInstance) return false;
+  const {
+    currentPuzzle: fetchedPuzzle,
+    loading,
+    error,
+    fetchNext
+  } = useChessPuzzles();
+  reactExports.useEffect(() => {
+    if (fetchedPuzzle) setCurrentPuzzle(fetchedPuzzle);
+  }, [fetchedPuzzle]);
+  const sideToMove = (game == null ? void 0 : game.fen().split(" ")[1]) ?? "w";
+  const boardOrientation = sideToMove === "w" ? "white" : "black";
+  const loadPuzzle = reactExports.useCallback(() => {
+    if (!currentPuzzle) return;
+    const newGame = new Chess(currentPuzzle.fen);
+    setGame(newGame);
+    setFeedback("");
+    setIsCorrect(null);
+  }, [currentPuzzle]);
+  reactExports.useEffect(() => {
+    if (currentPuzzle) loadPuzzle();
+  }, [currentPuzzle, loadPuzzle]);
+  const handlePieceDrop = reactExports.useCallback(
+    ({ sourceSquare, targetSquare }) => {
+      if (!game || !currentPuzzle || gameOver) return false;
+      if (!targetSquare) return false;
+      const move = game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q"
+      });
+      if (!move) return false;
       const uci = move.from + move.to + (move.promotion ?? "");
-      const expected = currentPuzzle.solution[moveIndex];
+      const expected = currentPuzzle.solution[0];
       if (uci === expected) {
-        const newIndex = moveIndex + 1;
-        setMoveIndex(newIndex);
+        setIsCorrect(true);
         setFeedback("Correct!");
-        setChessInstance(new Chess(chessInstance.fen()));
-        const remaining = currentPuzzle.solution.length - newIndex;
-        if (remaining === 0) {
+        if (currentPuzzle.solution.length === 1) {
           if (timerRef.current) clearInterval(timerRef.current);
-          const points = calculateScore();
-          setScore((s2) => s2 + points);
+          setScore((s2) => s2 + 50);
+          setPuzzleNumber((n2) => n2 + 1);
           setTimeout(() => {
-            setPuzzleNumber((n2) => n2 + 1);
             void fetchNext();
-          }, 1500);
-          return true;
+          }, 1200);
+        } else {
+          setTimeout(() => {
+            const reply = currentPuzzle.solution[1];
+            game.move({
+              from: reply.slice(0, 2),
+              to: reply.slice(2, 4),
+              promotion: reply[4] ?? void 0
+            });
+            setCurrentPuzzle(
+              (prev) => prev ? { ...prev, solution: prev.solution.slice(2) } : null
+            );
+            setGame(new Chess(game.fen()));
+            setFeedback("");
+            setIsCorrect(null);
+          }, 500);
         }
-        setTimeout(() => {
-          const reply = currentPuzzle.solution[newIndex];
-          const newChess = new Chess(chessInstance.fen());
-          newChess.move({
-            from: reply.slice(0, 2),
-            to: reply.slice(2, 4),
-            promotion: reply.length === 5 ? reply[4] : void 0
-          });
-          setMoveIndex((i2) => i2 + 1);
-          setChessInstance(new Chess(newChess.fen()));
-        }, 500);
         return true;
       }
-      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setGameOver(true);
-      setGameOverReason("incorrect");
       setFeedback("Incorrect!");
+      setIsCorrect(false);
+      setGameOver(true);
       return true;
     },
-    [currentPuzzle, puzzleNumber, moveIndex, chessInstance, fetchNext]
-  );
-  const handlePieceDrop = reactExports.useCallback(
-    ({
-      piece: _piece,
-      sourceSquare,
-      targetSquare
-    }) => {
-      if (!currentPuzzle || gameOver || !chessInstance || promotionState)
-        return false;
-      if (!targetSquare) return false;
-      const chess = new Chess(chessInstance.fen());
-      try {
-        const move = chess.move({
-          from: sourceSquare,
-          to: targetSquare,
-          promotion: "q"
-        });
-        if (!move) return false;
-        if (move.promotion) {
-          setPromotionState({ from: move.from, to: move.to });
-          return false;
-        }
-        return validateMove(move);
-      } catch {
-        return false;
-      }
-    },
-    [chessInstance, currentPuzzle, gameOver, promotionState, validateMove]
-  );
-  const completePromotion = reactExports.useCallback(
-    (pieceType) => {
-      if (!promotionState || !chessInstance) return;
-      const chess = new Chess(chessInstance.fen());
-      const move = chess.move({
-        from: promotionState.from,
-        to: promotionState.to,
-        promotion: pieceType
-      });
-      setPromotionState(null);
-      if (move) {
-        const uci = move.from + move.to + pieceType;
-        const expected = currentPuzzle == null ? void 0 : currentPuzzle.solution[moveIndex];
-        if (uci === expected) {
-          const newIndex = moveIndex + 1;
-          setMoveIndex(newIndex);
-          setFeedback("Correct!");
-          setChessInstance(new Chess(chess.fen()));
-          const remaining = ((currentPuzzle == null ? void 0 : currentPuzzle.solution.length) ?? 0) - newIndex;
-          if (remaining === 0) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            const points = calculateScore();
-            setScore((s2) => s2 + points);
-            setTimeout(() => {
-              setPuzzleNumber((n2) => n2 + 1);
-              void fetchNext();
-            }, 1500);
-          } else {
-            setTimeout(() => {
-              if (!currentPuzzle) return;
-              const reply = currentPuzzle.solution[newIndex];
-              const newChess = new Chess(chess.fen());
-              newChess.move({
-                from: reply.slice(0, 2),
-                to: reply.slice(2, 4),
-                promotion: reply.length === 5 ? reply[4] : void 0
-              });
-              setMoveIndex((i2) => i2 + 1);
-              setChessInstance(new Chess(newChess.fen()));
-            }, 500);
-          }
-        } else {
-          if (feedbackTimeoutRef.current)
-            clearTimeout(feedbackTimeoutRef.current);
-          if (timerRef.current) clearInterval(timerRef.current);
-          setGameOver(true);
-          setGameOverReason("incorrect");
-          setFeedback("Incorrect!");
-        }
-      }
-    },
-    [
-      promotionState,
-      chessInstance,
-      currentPuzzle,
-      puzzleNumber,
-      moveIndex,
-      fetchNext
-    ]
+    [game, currentPuzzle, gameOver, fetchNext]
   );
   reactExports.useEffect(() => {
-    if (gameOver || !currentPuzzle || !boardFen || loading || promotionState)
-      return;
+    if (gameOver || !currentPuzzle) return;
     setTimeLeft(60);
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setTimeLeft((t2) => {
         if (t2 <= 1) {
           clearInterval(timerRef.current);
-          if (feedbackTimeoutRef.current)
-            clearTimeout(feedbackTimeoutRef.current);
           setGameOver(true);
-          setGameOverReason("timeout");
           setFeedback("Time's up!");
           return 0;
         }
@@ -65071,35 +64982,20 @@ function ChessPuzzleGame({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentPuzzle, boardFen, gameOver, loading, promotionState]);
-  const handleTryAgain = reactExports.useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    setPuzzleNumber(1);
-    setScore(0);
-    setTargetRating(1e3);
-    setTimeLeft(60);
-    setFeedback("");
-    setGameOver(false);
-    setGameOverReason(null);
-    setPromotionState(null);
-    setChessInstance(null);
-    setMoveIndex(0);
-    void fetchNext();
-  }, [fetchNext]);
+  }, [currentPuzzle, gameOver]);
   reactExports.useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
     };
   }, []);
-  reactExports.useEffect(() => {
-    if (currentPuzzle == null ? void 0 : currentPuzzle.fen) {
-      setChessInstance(new Chess(currentPuzzle.fen));
-      setMoveIndex(0);
+  const lastMoveArrow = (currentPuzzle == null ? void 0 : currentPuzzle.lastMove) && currentPuzzle.lastMove.length >= 4 ? [
+    {
+      startSquare: currentPuzzle.lastMove.slice(0, 2),
+      endSquare: currentPuzzle.lastMove.slice(2, 4),
+      color: "#60a5fa"
     }
-  }, [currentPuzzle == null ? void 0 : currentPuzzle.fen]);
-  if (loading || !boardFen) {
+  ] : [];
+  if (loading || !game) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -65144,17 +65040,6 @@ function ChessPuzzleGame({
     );
   }
   if (gameOver) {
-    const solutionArrows = currentPuzzle ? currentPuzzle.solution.map((move, i2) => ({
-      startSquare: move.slice(0, 2),
-      endSquare: move.slice(2, 4),
-      color: i2 % 2 === 0 ? "#4ade80" : "#60a5fa"
-    })) : [];
-    const correctMoveHint = gameOverReason === "incorrect" && currentPuzzle ? (() => {
-      const sol = currentPuzzle.solution[moveIndex] ?? currentPuzzle.solution[0];
-      const hintFrom = sol.slice(0, 2).toUpperCase();
-      const hintTo = sol.slice(2, 4).toUpperCase();
-      return `Correct move was: ${hintFrom}→${hintTo}`;
-    })() : null;
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -65165,7 +65050,7 @@ function ChessPuzzleGame({
             Chessboard,
             {
               options: {
-                position: (chessInstance == null ? void 0 : chessInstance.fen()) ?? boardFen,
+                position: game.fen(),
                 boardOrientation,
                 allowDragging: false,
                 boardStyle: {
@@ -65174,18 +65059,17 @@ function ChessPuzzleGame({
                 },
                 darkSquareStyle: { backgroundColor: "#6b6b7b" },
                 lightSquareStyle: { backgroundColor: "#f0f0d8" },
-                arrows: [...lastMoveArrow, ...solutionArrows]
+                arrows: lastMoveArrow
               }
             }
           ),
-          correctMoveHint && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm font-mono mt-2 text-muted-foreground", children: correctMoveHint }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-2 mt-1", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "div",
               {
                 className: "text-destructive font-bold text-lg tracking-widest",
                 "data-ocid": "chess_puzzle.error_state",
-                children: gameOverReason === "timeout" ? "TIME'S UP!" : "INCORRECT!"
+                children: feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-foreground text-sm", children: [
@@ -65203,7 +65087,16 @@ function ChessPuzzleGame({
               "button",
               {
                 type: "button",
-                onClick: handleTryAgain,
+                onClick: () => {
+                  if (timerRef.current) clearInterval(timerRef.current);
+                  setScore(0);
+                  setPuzzleNumber(1);
+                  setGameOver(false);
+                  setFeedback("");
+                  setIsCorrect(null);
+                  setGame(null);
+                  void fetchNext();
+                },
                 className: "text-muted-foreground text-xs tracking-widest hover:text-foreground transition-colors",
                 "data-ocid": "chess_puzzle.cancel_button",
                 children: "TRY AGAIN"
@@ -65249,14 +65142,10 @@ function ChessPuzzleGame({
             "Score: ",
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: score })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-            "Rating: ",
-            targetRating
-          ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "span",
             {
-              className: `text-xl font-bold tabular-nums ${timeLeft <= 5 ? "text-destructive" : "text-foreground"}`,
+              className: `text-xl font-bold tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`,
               "data-ocid": "chess_puzzle.timer",
               children: [
                 timeLeft,
@@ -65265,26 +65154,15 @@ function ChessPuzzleGame({
             }
           )
         ] }),
-        promotionState && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", "data-ocid": "chess_puzzle.promotion_selector", children: ["q", "r", "b", "n"].map((piece) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            onClick: () => completePromotion(piece),
-            className: "w-12 h-12 bg-primary text-primary-foreground rounded hover:opacity-80 text-xl",
-            "data-ocid": `chess_puzzle.promotion_${piece}`,
-            children: PIECE_SYMBOLS[piece]
-          },
-          piece
-        )) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           Chessboard,
           {
             options: {
-              position: (chessInstance == null ? void 0 : chessInstance.fen()) ?? boardFen ?? "start",
+              position: game.fen(),
               boardOrientation,
               onPieceDrop: handlePieceDrop,
               arrows: lastMoveArrow,
-              allowDragging: !gameOver && !promotionState,
+              allowDragging: !gameOver,
               boardStyle: {
                 width: "min(90vw, 400px)",
                 height: "min(90vw, 400px)"
@@ -65299,9 +65177,9 @@ function ChessPuzzleGame({
           "div",
           {
             className: "text-sm text-center min-h-[1.5rem]",
-            "data-ocid": "chess_puzzle.success_state",
+            "data-ocid": isCorrect === true ? "chess_puzzle.success_state" : isCorrect === false ? "chess_puzzle.error_state" : "chess_puzzle.feedback",
             style: {
-              color: feedback.startsWith("Correct") ? "oklch(65% 0.15 150)" : feedback ? "var(--destructive)" : "transparent"
+              color: isCorrect === true ? "oklch(65% 0.15 150)" : isCorrect === false ? "var(--destructive)" : "transparent"
             },
             children: feedback || "·"
           }
