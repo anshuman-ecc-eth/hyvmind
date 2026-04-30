@@ -1,7 +1,7 @@
 import { Chess } from "chess.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import type { PieceDropHandlerArgs } from "react-chessboard";
+import type { Arrow, PieceDropHandlerArgs } from "react-chessboard";
 import { useChessPuzzles } from "../hooks/useChessPuzzles";
 import type { Puzzle } from "../hooks/useChessPuzzles";
 
@@ -14,7 +14,7 @@ export default function ChessPuzzleGame({
   onComplete,
   onExit,
 }: ChessPuzzleGameProps) {
-  // === STEP 1: STATE ===
+  // === STATE ===
   const [game, setGame] = useState<Chess | null>(null);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [score, setScore] = useState(0);
@@ -24,7 +24,17 @@ export default function ChessPuzzleGame({
   const [feedback, setFeedback] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
+  // Solution animation state
+  const [showingSolution, setShowingSolution] = useState(false);
+  const [solutionStep, setSolutionStep] = useState(0);
+  const solutionGameRef = useRef<Chess | null>(null);
+  const solutionArrowsRef = useRef<Arrow[]>([]);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const solutionTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Refinement 1: stable board orientation stored in a ref, set once per puzzle
+  const boardOrientationRef = useRef<"white" | "black">("white");
 
   const {
     currentPuzzle: fetchedPuzzle,
@@ -38,34 +48,39 @@ export default function ChessPuzzleGame({
     if (fetchedPuzzle) setCurrentPuzzle(fetchedPuzzle);
   }, [fetchedPuzzle]);
 
-  // === STEP 2: BOARD ORIENTATION ===
-  // After puzzle FEN is applied, it is the solver's turn.
-  // sideToMove "w" → White is solver → boardOrientation "white" (white pieces at bottom)
-  const sideToMove = game?.fen().split(" ")[1] ?? "w";
-  const boardOrientation: "white" | "black" =
-    sideToMove === "w" ? "white" : "black";
-
-  // === STEP 3: loadPuzzle ===
-  // The puzzle.fen already represents the position AFTER the opponent's lastMove
-  // (confirmed by useChessPuzzles.ts: fen = fenData.fen which is after initialPly moves).
-  // We simply load that FEN directly — no need to re-apply lastMove.
+  // === loadPuzzle ===
+  // puzzle.fen is the pre-move FEN (opponent is about to play lastMove).
+  // Solver's color = opposite of FEN side-to-move.
   const loadPuzzle = useCallback(() => {
     if (!currentPuzzle) return;
+
+    // Set stable board orientation from the pre-move FEN
+    const fenSide = currentPuzzle.fen.split(" ")[1];
+    boardOrientationRef.current = fenSide === "w" ? "black" : "white";
+
     const newGame = new Chess(currentPuzzle.fen);
+
+    // Apply opponent's creating move so the board shows the puzzle position
+    newGame.move({
+      from: currentPuzzle.lastMove.slice(0, 2),
+      to: currentPuzzle.lastMove.slice(2, 4),
+      promotion: currentPuzzle.lastMove[4] ?? undefined,
+    });
+
     setGame(newGame);
     setFeedback("");
     setIsCorrect(null);
   }, [currentPuzzle]);
 
-  // === STEP 6: PUZZLE LOAD EFFECT ===
+  // Puzzle load effect
   useEffect(() => {
     if (currentPuzzle) loadPuzzle();
   }, [currentPuzzle, loadPuzzle]);
 
-  // === STEP 4: handlePieceDrop ===
+  // === handlePieceDrop ===
   const handlePieceDrop = useCallback(
     ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
-      if (!game || !currentPuzzle || gameOver) return false;
+      if (!game || !currentPuzzle || gameOver || showingSolution) return false;
       if (!targetSquare) return false;
 
       const move = game.move({
@@ -109,19 +124,71 @@ export default function ChessPuzzleGame({
         }
         return true;
       }
+
+      // Wrong move — animate solution before showing game-over
       setFeedback("Incorrect!");
       setIsCorrect(false);
+      animateSolution();
       setGameOver(true);
       return true;
     },
-    [game, currentPuzzle, gameOver, fetchNext],
+    // animateSolution is defined below; safe to include because useCallback deps are evaluated lazily
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [game, currentPuzzle, gameOver, showingSolution, fetchNext],
   );
 
-  // === STEP 5: TIMER EFFECT ===
-  // `game` is intentionally omitted from deps to avoid resetting the timer
-  // on every board state change — we only want to reset when the puzzle changes.
+  // === animateSolution ===
+  const animateSolution = useCallback(() => {
+    if (!currentPuzzle) return;
+
+    // Reset to puzzle starting position (before opponent's creating move)
+    const startGame = new Chess(currentPuzzle.fen);
+    solutionGameRef.current = startGame;
+    setShowingSolution(true);
+    setSolutionStep(0);
+
+    // Full move sequence: opponent's creating move + all solution moves
+    const allMoves = [currentPuzzle.lastMove, ...currentPuzzle.solution];
+
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    allMoves.forEach((moveUCI, index) => {
+      const id = setTimeout(() => {
+        if (!solutionGameRef.current) return;
+
+        solutionGameRef.current.move({
+          from: moveUCI.slice(0, 2),
+          to: moveUCI.slice(2, 4),
+          promotion: moveUCI[4] ?? undefined,
+        });
+
+        // Blue for opponent moves (even indices), green for solver moves (odd indices)
+        solutionArrowsRef.current = [
+          {
+            startSquare: moveUCI.slice(0, 2),
+            endSquare: moveUCI.slice(2, 4),
+            color: index % 2 === 0 ? "#60a5fa" : "#4ade80",
+          },
+        ];
+
+        setSolutionStep(index + 1);
+        setGame(new Chess(solutionGameRef.current.fen()));
+
+        // After last move, wait 1 second then reveal game over UI
+        if (index === allMoves.length - 1) {
+          const finalId = setTimeout(() => {
+            setShowingSolution(false);
+          }, 1000);
+          solutionTimeoutsRef.current.push(finalId);
+        }
+      }, index * 1000);
+      timeoutIds.push(id);
+    });
+    solutionTimeoutsRef.current = timeoutIds;
+  }, [currentPuzzle]);
+
+  // === TIMER EFFECT ===
   useEffect(() => {
-    if (gameOver || !currentPuzzle) return;
+    if (gameOver || !currentPuzzle || !game || showingSolution) return;
     setTimeLeft(60);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -138,19 +205,19 @@ export default function ChessPuzzleGame({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // Intentionally omit `game` to avoid resetting timer on every game state change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPuzzle, gameOver]);
+  }, [currentPuzzle, gameOver, game, showingSolution]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      for (const id of solutionTimeoutsRef.current) clearTimeout(id);
     };
   }, []);
 
-  // === STEP 7: LAST MOVE ARROW ===
-  const lastMoveArrow =
+  // Last move arrow shown during normal gameplay (blue)
+  const lastMoveArrow: Arrow[] =
     currentPuzzle?.lastMove && currentPuzzle.lastMove.length >= 4
       ? [
           {
@@ -161,7 +228,7 @@ export default function ChessPuzzleGame({
         ]
       : [];
 
-  // === STEP 8: RENDER ===
+  // === RENDER ===
 
   // Loading state
   if (loading || !game) {
@@ -186,7 +253,7 @@ export default function ChessPuzzleGame({
   }
 
   // Error state
-  if (error && !currentPuzzle) {
+  if (error && !loading) {
     return (
       <div
         className="flex flex-col items-center justify-center gap-4 py-12 font-mono"
@@ -205,8 +272,8 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // Game over state
-  if (gameOver) {
+  // Game over state — only shown after solution animation completes
+  if (gameOver && !showingSolution) {
     return (
       <div
         className="flex flex-col items-center gap-4 py-4 font-mono w-full"
@@ -215,7 +282,7 @@ export default function ChessPuzzleGame({
         <Chessboard
           options={{
             position: game.fen(),
-            boardOrientation,
+            boardOrientation: boardOrientationRef.current,
             allowDragging: false,
             boardStyle: {
               width: "min(90vw, 400px)",
@@ -284,6 +351,55 @@ export default function ChessPuzzleGame({
     );
   }
 
+  // Solution animation — shown after wrong move, before game-over UI
+  if (showingSolution) {
+    return (
+      <div
+        className="flex flex-col items-center gap-3 py-4 font-mono w-full"
+        data-ocid="chess_puzzle.solution_animation"
+      >
+        {/* Header row — keep visible during animation */}
+        <div className="flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground">
+          <span data-ocid="chess_puzzle.puzzle_number">#{puzzleNumber}</span>
+          <span>
+            Score: <span className="text-foreground font-bold">{score}</span>
+          </span>
+          <span
+            className="text-xl font-bold tabular-nums text-foreground"
+            data-ocid="chess_puzzle.timer"
+          >
+            {solutionStep > 0 ? `${solutionStep}` : "·"}
+          </span>
+        </div>
+
+        {/* Board showing solution animation */}
+        <Chessboard
+          options={{
+            position: solutionGameRef.current?.fen() ?? "start",
+            boardOrientation: boardOrientationRef.current,
+            allowDragging: false,
+            arrows: solutionArrowsRef.current,
+            boardStyle: {
+              width: "min(90vw, 400px)",
+              height: "min(90vw, 400px)",
+            },
+            darkSquareStyle: { backgroundColor: "#6b6b7b" },
+            lightSquareStyle: { backgroundColor: "#f0f0d8" },
+            clearArrowsOnPositionChange: false,
+          }}
+        />
+
+        {/* "Showing solution" text */}
+        <div
+          className="text-sm text-center text-muted-foreground animate-pulse"
+          data-ocid="chess_puzzle.feedback"
+        >
+          Showing solution...
+        </div>
+      </div>
+    );
+  }
+
   // Active game
   return (
     <div
@@ -310,7 +426,7 @@ export default function ChessPuzzleGame({
       <Chessboard
         options={{
           position: game.fen(),
-          boardOrientation,
+          boardOrientation: boardOrientationRef.current,
           onPieceDrop: handlePieceDrop,
           arrows: lastMoveArrow,
           allowDragging: !gameOver,

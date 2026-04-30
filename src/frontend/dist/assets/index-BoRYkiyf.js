@@ -64744,14 +64744,18 @@ function fenFromPuzzleData(pgn2, initialPly) {
     const lastMoveObj = history[initialPly - 1];
     const lastMove = lastMoveObj ? `${lastMoveObj.from}${lastMoveObj.to}${lastMoveObj.promotion ?? ""}` : "";
     return { fen, preMovefen, lastMove };
-  } catch {
+  } catch (err) {
+    console.error("fenFromPuzzleData failed:", err);
     return null;
   }
 }
 async function fetchPuzzleMeta() {
   try {
     const res = await fetch("https://lichess.org/api/puzzle/next", {
-      headers: { Accept: "application/json" }
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)"
+      }
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -64763,14 +64767,18 @@ async function fetchPuzzleMeta() {
       solution: puzzle.solution ?? [],
       themes: puzzle.themes ?? []
     };
-  } catch {
+  } catch (err) {
+    console.error("fetchPuzzleMeta failed:", err);
     return null;
   }
 }
 async function fetchPuzzleById(id2) {
   try {
     const res = await fetch(`https://lichess.org/api/puzzle/${id2}`, {
-      headers: { Accept: "application/json" }
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)"
+      }
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -64795,7 +64803,8 @@ async function fetchPuzzleById(id2) {
       solution: solution.slice(1),
       themes
     };
-  } catch {
+  } catch (err) {
+    console.error("fetchPuzzleById failed:", err);
     return null;
   }
 }
@@ -64821,6 +64830,7 @@ function useChessPuzzles(initialTargetRating = 1e3) {
         if (puzzle) {
           cacheRef.current = [...cacheRef.current, puzzle];
         } else {
+          console.warn("fillCache: puzzle fetch failed, stopping fill");
           break;
         }
       }
@@ -64887,6 +64897,7 @@ function ChessPuzzleGame({
   onComplete,
   onExit
 }) {
+  var _a3;
   const [game, setGame] = reactExports.useState(null);
   const [currentPuzzle, setCurrentPuzzle] = reactExports.useState(null);
   const [score, setScore] = reactExports.useState(0);
@@ -64895,7 +64906,13 @@ function ChessPuzzleGame({
   const [gameOver, setGameOver] = reactExports.useState(false);
   const [feedback, setFeedback] = reactExports.useState("");
   const [isCorrect, setIsCorrect] = reactExports.useState(null);
+  const [showingSolution, setShowingSolution] = reactExports.useState(false);
+  const [solutionStep, setSolutionStep] = reactExports.useState(0);
+  const solutionGameRef = reactExports.useRef(null);
+  const solutionArrowsRef = reactExports.useRef([]);
   const timerRef = reactExports.useRef(null);
+  const solutionTimeoutsRef = reactExports.useRef([]);
+  const boardOrientationRef = reactExports.useRef("white");
   const {
     currentPuzzle: fetchedPuzzle,
     loading,
@@ -64905,11 +64922,16 @@ function ChessPuzzleGame({
   reactExports.useEffect(() => {
     if (fetchedPuzzle) setCurrentPuzzle(fetchedPuzzle);
   }, [fetchedPuzzle]);
-  const sideToMove = (game == null ? void 0 : game.fen().split(" ")[1]) ?? "w";
-  const boardOrientation = sideToMove === "w" ? "white" : "black";
   const loadPuzzle = reactExports.useCallback(() => {
     if (!currentPuzzle) return;
+    const fenSide = currentPuzzle.fen.split(" ")[1];
+    boardOrientationRef.current = fenSide === "w" ? "black" : "white";
     const newGame = new Chess(currentPuzzle.fen);
+    newGame.move({
+      from: currentPuzzle.lastMove.slice(0, 2),
+      to: currentPuzzle.lastMove.slice(2, 4),
+      promotion: currentPuzzle.lastMove[4] ?? void 0
+    });
     setGame(newGame);
     setFeedback("");
     setIsCorrect(null);
@@ -64919,7 +64941,7 @@ function ChessPuzzleGame({
   }, [currentPuzzle, loadPuzzle]);
   const handlePieceDrop = reactExports.useCallback(
     ({ sourceSquare, targetSquare }) => {
-      if (!game || !currentPuzzle || gameOver) return false;
+      if (!game || !currentPuzzle || gameOver || showingSolution) return false;
       if (!targetSquare) return false;
       const move = game.move({
         from: sourceSquare,
@@ -64959,13 +64981,52 @@ function ChessPuzzleGame({
       }
       setFeedback("Incorrect!");
       setIsCorrect(false);
+      animateSolution();
       setGameOver(true);
       return true;
     },
-    [game, currentPuzzle, gameOver, fetchNext]
+    // animateSolution is defined below; safe to include because useCallback deps are evaluated lazily
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [game, currentPuzzle, gameOver, showingSolution, fetchNext]
   );
+  const animateSolution = reactExports.useCallback(() => {
+    if (!currentPuzzle) return;
+    const startGame = new Chess(currentPuzzle.fen);
+    solutionGameRef.current = startGame;
+    setShowingSolution(true);
+    setSolutionStep(0);
+    const allMoves = [currentPuzzle.lastMove, ...currentPuzzle.solution];
+    const timeoutIds = [];
+    allMoves.forEach((moveUCI, index2) => {
+      const id2 = setTimeout(() => {
+        if (!solutionGameRef.current) return;
+        solutionGameRef.current.move({
+          from: moveUCI.slice(0, 2),
+          to: moveUCI.slice(2, 4),
+          promotion: moveUCI[4] ?? void 0
+        });
+        solutionArrowsRef.current = [
+          {
+            startSquare: moveUCI.slice(0, 2),
+            endSquare: moveUCI.slice(2, 4),
+            color: index2 % 2 === 0 ? "#60a5fa" : "#4ade80"
+          }
+        ];
+        setSolutionStep(index2 + 1);
+        setGame(new Chess(solutionGameRef.current.fen()));
+        if (index2 === allMoves.length - 1) {
+          const finalId = setTimeout(() => {
+            setShowingSolution(false);
+          }, 1e3);
+          solutionTimeoutsRef.current.push(finalId);
+        }
+      }, index2 * 1e3);
+      timeoutIds.push(id2);
+    });
+    solutionTimeoutsRef.current = timeoutIds;
+  }, [currentPuzzle]);
   reactExports.useEffect(() => {
-    if (gameOver || !currentPuzzle) return;
+    if (gameOver || !currentPuzzle || !game || showingSolution) return;
     setTimeLeft(60);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -64982,10 +65043,11 @@ function ChessPuzzleGame({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentPuzzle, gameOver]);
+  }, [currentPuzzle, gameOver, game, showingSolution]);
   reactExports.useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      for (const id2 of solutionTimeoutsRef.current) clearTimeout(id2);
     };
   }, []);
   const lastMoveArrow = (currentPuzzle == null ? void 0 : currentPuzzle.lastMove) && currentPuzzle.lastMove.length >= 4 ? [
@@ -65017,7 +65079,7 @@ function ChessPuzzleGame({
       }
     );
   }
-  if (error && !currentPuzzle) {
+  if (error && !loading) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -65039,7 +65101,7 @@ function ChessPuzzleGame({
       }
     );
   }
-  if (gameOver) {
+  if (gameOver && !showingSolution) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -65051,7 +65113,7 @@ function ChessPuzzleGame({
             {
               options: {
                 position: game.fen(),
-                boardOrientation,
+                boardOrientation: boardOrientationRef.current,
                 allowDragging: false,
                 boardStyle: {
                   width: "min(90vw, 400px)",
@@ -65127,6 +65189,61 @@ function ChessPuzzleGame({
       }
     );
   }
+  if (showingSolution) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "flex flex-col items-center gap-3 py-4 font-mono w-full",
+        "data-ocid": "chess_puzzle.solution_animation",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "chess_puzzle.puzzle_number", children: [
+              "#",
+              puzzleNumber
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+              "Score: ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: score })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-xl font-bold tabular-nums text-foreground",
+                "data-ocid": "chess_puzzle.timer",
+                children: solutionStep > 0 ? `${solutionStep}` : "·"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Chessboard,
+            {
+              options: {
+                position: ((_a3 = solutionGameRef.current) == null ? void 0 : _a3.fen()) ?? "start",
+                boardOrientation: boardOrientationRef.current,
+                allowDragging: false,
+                arrows: solutionArrowsRef.current,
+                boardStyle: {
+                  width: "min(90vw, 400px)",
+                  height: "min(90vw, 400px)"
+                },
+                darkSquareStyle: { backgroundColor: "#6b6b7b" },
+                lightSquareStyle: { backgroundColor: "#f0f0d8" },
+                clearArrowsOnPositionChange: false
+              }
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-sm text-center text-muted-foreground animate-pulse",
+              "data-ocid": "chess_puzzle.feedback",
+              children: "Showing solution..."
+            }
+          )
+        ]
+      }
+    );
+  }
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -65159,7 +65276,7 @@ function ChessPuzzleGame({
           {
             options: {
               position: game.fen(),
-              boardOrientation,
+              boardOrientation: boardOrientationRef.current,
               onPieceDrop: handlePieceDrop,
               arrows: lastMoveArrow,
               allowDragging: !gameOver,

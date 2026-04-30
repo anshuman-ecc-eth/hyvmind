@@ -59,7 +59,8 @@ function fenFromPuzzleData(
       : "";
 
     return { fen, preMovefen, lastMove };
-  } catch {
+  } catch (err) {
+    console.error("fenFromPuzzleData failed:", err);
     return null;
   }
 }
@@ -73,7 +74,10 @@ async function fetchPuzzleMeta(): Promise<{
 } | null> {
   try {
     const res = await fetch("https://lichess.org/api/puzzle/next", {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)",
+      },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Record<string, unknown>;
@@ -85,7 +89,8 @@ async function fetchPuzzleMeta(): Promise<{
       solution: (puzzle.solution as string[]) ?? [],
       themes: (puzzle.themes as string[]) ?? [],
     };
-  } catch {
+  } catch (err) {
+    console.error("fetchPuzzleMeta failed:", err);
     return null;
   }
 }
@@ -94,7 +99,10 @@ async function fetchPuzzleMeta(): Promise<{
 async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
   try {
     const res = await fetch(`https://lichess.org/api/puzzle/${id}`, {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)",
+      },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Record<string, unknown>;
@@ -123,7 +131,8 @@ async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
       solution: solution.slice(1),
       themes,
     };
-  } catch {
+  } catch (err) {
+    console.error("fetchPuzzleById failed:", err);
     return null;
   }
 }
@@ -161,6 +170,7 @@ export function useChessPuzzles(
           cacheRef.current = [...cacheRef.current, puzzle];
         } else {
           // If a fetch fails during background fill, stop trying
+          console.warn("fillCache: puzzle fetch failed, stopping fill");
           break;
         }
       }
