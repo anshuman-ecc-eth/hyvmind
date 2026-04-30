@@ -64907,33 +64907,46 @@ function ChessPuzzleGame({
   const [gameOver, setGameOver] = reactExports.useState(false);
   const [gameOverReason, setGameOverReason] = reactExports.useState(null);
   const [promotionState, setPromotionState] = reactExports.useState(null);
+  const [chessInstance, setChessInstance] = reactExports.useState(null);
+  const [moveIndex, setMoveIndex] = reactExports.useState(0);
   const timerRef = reactExports.useRef(null);
   const feedbackTimeoutRef = reactExports.useRef(null);
   const { currentPuzzle, loading, error, fetchNext } = useChessPuzzles(targetRating);
   const boardFen = (currentPuzzle == null ? void 0 : currentPuzzle.fen) ?? null;
   const sideToMove = (boardFen == null ? void 0 : boardFen.split(" ")[1]) ?? "w";
   const boardOrientation = sideToMove === "w" ? "white" : "black";
-  const lastMoveArrow = (currentPuzzle == null ? void 0 : currentPuzzle.lastMove) ? [
-    {
-      startSquare: currentPuzzle.lastMove.slice(0, 2),
-      endSquare: currentPuzzle.lastMove.slice(2, 4),
-      color: "#888888"
-    }
-  ] : [];
   const validateMove = reactExports.useCallback(
     (move) => {
-      if (!move || !currentPuzzle) return false;
+      if (!move || !currentPuzzle || !chessInstance) return false;
       const uci = move.from + move.to + (move.promotion ?? "");
-      const expected = currentPuzzle.solution[0];
+      const expected = currentPuzzle.solution[moveIndex];
       if (uci === expected) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        const points = calculateScore();
-        setScore((s2) => s2 + points);
-        setFeedback(`Correct! +${points}`);
-        feedbackTimeoutRef.current = setTimeout(() => {
-          setPuzzleNumber((n2) => n2 + 1);
-          void fetchNext();
-        }, 1500);
+        const newIndex = moveIndex + 1;
+        setMoveIndex(newIndex);
+        setFeedback("Correct!");
+        setChessInstance(new Chess(chessInstance.fen()));
+        const remaining = currentPuzzle.solution.length - newIndex;
+        if (remaining === 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          const points = calculateScore();
+          setScore((s2) => s2 + points);
+          setTimeout(() => {
+            setPuzzleNumber((n2) => n2 + 1);
+            void fetchNext();
+          }, 1500);
+          return true;
+        }
+        setTimeout(() => {
+          const reply = currentPuzzle.solution[newIndex];
+          const newChess = new Chess(chessInstance.fen());
+          newChess.move({
+            from: reply.slice(0, 2),
+            to: reply.slice(2, 4),
+            promotion: reply.length === 5 ? reply[4] : void 0
+          });
+          setMoveIndex((i2) => i2 + 1);
+          setChessInstance(new Chess(newChess.fen()));
+        }, 500);
         return true;
       }
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
@@ -64943,7 +64956,7 @@ function ChessPuzzleGame({
       setFeedback("Incorrect!");
       return true;
     },
-    [currentPuzzle, puzzleNumber, fetchNext]
+    [currentPuzzle, puzzleNumber, moveIndex, chessInstance, fetchNext]
   );
   const handlePieceDrop = reactExports.useCallback(
     ({
@@ -64951,10 +64964,10 @@ function ChessPuzzleGame({
       sourceSquare,
       targetSquare
     }) => {
-      if (!currentPuzzle || gameOver || !boardFen || promotionState)
+      if (!currentPuzzle || gameOver || !chessInstance || promotionState)
         return false;
       if (!targetSquare) return false;
-      const chess = new Chess(boardFen);
+      const chess = new Chess(chessInstance.fen());
       try {
         const move = chess.move({
           from: sourceSquare,
@@ -64971,12 +64984,12 @@ function ChessPuzzleGame({
         return false;
       }
     },
-    [currentPuzzle, gameOver, boardFen, promotionState, validateMove]
+    [chessInstance, currentPuzzle, gameOver, promotionState, validateMove]
   );
   const completePromotion = reactExports.useCallback(
     (pieceType) => {
-      if (!promotionState || !boardFen) return;
-      const chess = new Chess(boardFen);
+      if (!promotionState || !chessInstance) return;
+      const chess = new Chess(chessInstance.fen());
       const move = chess.move({
         from: promotionState.from,
         to: promotionState.to,
@@ -64985,16 +64998,35 @@ function ChessPuzzleGame({
       setPromotionState(null);
       if (move) {
         const uci = move.from + move.to + pieceType;
-        const expected = currentPuzzle == null ? void 0 : currentPuzzle.solution[0];
+        const expected = currentPuzzle == null ? void 0 : currentPuzzle.solution[moveIndex];
         if (uci === expected) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          const points = calculateScore();
-          setScore((s2) => s2 + points);
-          setFeedback(`Correct! +${points}`);
-          feedbackTimeoutRef.current = setTimeout(() => {
-            setPuzzleNumber((n2) => n2 + 1);
-            void fetchNext();
-          }, 1500);
+          const newIndex = moveIndex + 1;
+          setMoveIndex(newIndex);
+          setFeedback("Correct!");
+          setChessInstance(new Chess(chess.fen()));
+          const remaining = ((currentPuzzle == null ? void 0 : currentPuzzle.solution.length) ?? 0) - newIndex;
+          if (remaining === 0) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            const points = calculateScore();
+            setScore((s2) => s2 + points);
+            setTimeout(() => {
+              setPuzzleNumber((n2) => n2 + 1);
+              void fetchNext();
+            }, 1500);
+          } else {
+            setTimeout(() => {
+              if (!currentPuzzle) return;
+              const reply = currentPuzzle.solution[newIndex];
+              const newChess = new Chess(chess.fen());
+              newChess.move({
+                from: reply.slice(0, 2),
+                to: reply.slice(2, 4),
+                promotion: reply.length === 5 ? reply[4] : void 0
+              });
+              setMoveIndex((i2) => i2 + 1);
+              setChessInstance(new Chess(newChess.fen()));
+            }, 500);
+          }
         } else {
           if (feedbackTimeoutRef.current)
             clearTimeout(feedbackTimeoutRef.current);
@@ -65005,7 +65037,14 @@ function ChessPuzzleGame({
         }
       }
     },
-    [promotionState, boardFen, currentPuzzle, puzzleNumber, fetchNext]
+    [
+      promotionState,
+      chessInstance,
+      currentPuzzle,
+      puzzleNumber,
+      moveIndex,
+      fetchNext
+    ]
   );
   reactExports.useEffect(() => {
     if (gameOver || !currentPuzzle || !boardFen || loading || promotionState)
@@ -65040,6 +65079,8 @@ function ChessPuzzleGame({
     setGameOver(false);
     setGameOverReason(null);
     setPromotionState(null);
+    setChessInstance(null);
+    setMoveIndex(0);
     void fetchNext();
   }, [fetchNext]);
   reactExports.useEffect(() => {
@@ -65048,6 +65089,12 @@ function ChessPuzzleGame({
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
     };
   }, []);
+  reactExports.useEffect(() => {
+    if (currentPuzzle == null ? void 0 : currentPuzzle.fen) {
+      setChessInstance(new Chess(currentPuzzle.fen));
+      setMoveIndex(0);
+    }
+  }, [currentPuzzle == null ? void 0 : currentPuzzle.fen]);
   if (loading || !boardFen) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
@@ -65093,15 +65140,13 @@ function ChessPuzzleGame({
     );
   }
   if (gameOver) {
-    const correctMoveArrows = gameOverReason === "incorrect" && currentPuzzle ? [
-      {
-        startSquare: currentPuzzle.solution[0].slice(0, 2),
-        endSquare: currentPuzzle.solution[0].slice(2, 4),
-        color: "red"
-      }
-    ] : lastMoveArrow;
+    const solutionArrows = currentPuzzle ? currentPuzzle.solution.map((move, i2) => ({
+      startSquare: move.slice(0, 2),
+      endSquare: move.slice(2, 4),
+      color: i2 % 2 === 0 ? "#4ade80" : "#60a5fa"
+    })) : [];
     const correctMoveHint = gameOverReason === "incorrect" && currentPuzzle ? (() => {
-      const sol = currentPuzzle.solution[0];
+      const sol = currentPuzzle.solution[moveIndex] ?? currentPuzzle.solution[0];
       const hintFrom = sol.slice(0, 2).toUpperCase();
       const hintTo = sol.slice(2, 4).toUpperCase();
       return `Correct move was: ${hintFrom}→${hintTo}`;
@@ -65116,7 +65161,7 @@ function ChessPuzzleGame({
             Chessboard,
             {
               options: {
-                position: boardFen,
+                position: (chessInstance == null ? void 0 : chessInstance.fen()) ?? boardFen,
                 boardOrientation,
                 allowDragging: false,
                 boardStyle: {
@@ -65125,8 +65170,7 @@ function ChessPuzzleGame({
                 },
                 darkSquareStyle: { backgroundColor: "#6b6b7b" },
                 lightSquareStyle: { backgroundColor: "#f0f0d8" },
-                // CHANGE 1: show red arrow for correct move on incorrect endings
-                arrows: correctMoveArrows
+                arrows: solutionArrows
               }
             }
           ),
@@ -65232,10 +65276,10 @@ function ChessPuzzleGame({
           Chessboard,
           {
             options: {
-              position: boardFen,
+              position: (chessInstance == null ? void 0 : chessInstance.fen()) ?? boardFen ?? "start",
               boardOrientation,
               onPieceDrop: handlePieceDrop,
-              arrows: lastMoveArrow,
+              arrows: [],
               allowDragging: !gameOver && !promotionState,
               boardStyle: {
                 width: "min(90vw, 400px)",
