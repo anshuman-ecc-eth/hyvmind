@@ -226,10 +226,9 @@ h6 {
   font-size: 0.7rem !important;
 }
 
-/* Fix jQuery UI draggable appearing behind modals */
-.ui-draggable,
-.ui-draggable-dragging {
-  z-index: 100 !important;
+/* Fix chessboard.js draggable pieces appearing behind modals */
+body > img[data-piece] {
+  z-index: 10000 !important;
 }
 
 /* Theme-adaptive scrollbar styling */

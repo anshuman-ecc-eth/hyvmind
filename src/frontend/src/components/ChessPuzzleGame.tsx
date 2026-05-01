@@ -138,7 +138,12 @@ export default function ChessPuzzleGame({
       const p = puzzleRef.current;
       if (!chess || !p || gameOver || showingSolution) return "snapback";
 
-      const move = chess.move({ from: source, to: target, promotion: "q" });
+      let move: ReturnType<typeof chess.move> | undefined;
+      try {
+        move = chess.move({ from: source, to: target, promotion: "q" });
+      } catch {
+        return "snapback";
+      }
       if (!move) return "snapback";
 
       const uci = move.from + move.to + (move.promotion ?? "");

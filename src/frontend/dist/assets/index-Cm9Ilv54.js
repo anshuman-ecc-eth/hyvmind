@@ -66493,7 +66493,12 @@ function ChessPuzzleGame({
       const chess = gameRef.current;
       const p2 = puzzleRef.current;
       if (!chess || !p2 || gameOver || showingSolution) return "snapback";
-      const move = chess.move({ from: source, to: target, promotion: "q" });
+      let move;
+      try {
+        move = chess.move({ from: source, to: target, promotion: "q" });
+      } catch {
+        return "snapback";
+      }
       if (!move) return "snapback";
       const uci = move.from + move.to + (move.promotion ?? "");
       applyMoveRef.current(uci);
