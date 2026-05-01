@@ -33,6 +33,7 @@
   "dependencies": {
     "@caffeineai/core-infrastructure": "~0.1.0",
     "@chenglou/pretext": "^0.0.5",
+    "@chrisoakman/chessboardjs": "^1.0.0",
     "@dfinity/agent": "~3.3.0",
     "@dfinity/auth-client": "~3.3.0",
     "@dfinity/candid": "~3.3.0",
@@ -72,6 +73,7 @@
     "@react-three/fiber": "~9.1.2",
     "@tanstack/react-query": "^5.24.0",
     "@tanstack/react-router": "~1.131.8",
+    "@types/jquery": "^4.0.0",
     "@types/jszip": "^3.4.1",
     "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.0",
@@ -85,6 +87,7 @@
     "fuse.js": "^7.3.0",
     "gsap": "^3.15.0",
     "input-otp": "^1.4.1",
+    "jquery": "^3.7.1",
     "jszip": "^3.10.1",
     "lucide-react": "0.511.0",
     "motion": "^12.34.3",
