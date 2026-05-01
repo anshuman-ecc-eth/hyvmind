@@ -66603,12 +66603,13 @@ function ChessPuzzleGame({
   applyMoveRef.current = applyMove;
   reactExports.useEffect(() => {
     if (puzzle && boardReady) {
+      if (gameOver || showingSolution) return;
       setGameOver(false);
       setShowingSolution(false);
       setTimeLeft(60);
       loadPuzzle(puzzle);
     }
-  }, [puzzle, boardReady, loadPuzzle]);
+  }, [puzzle, boardReady, loadPuzzle, gameOver, showingSolution]);
   reactExports.useEffect(() => {
     if (gameOver || showingSolution || !puzzle || !boardReady) return;
     if (timerRef.current) clearInterval(timerRef.current);

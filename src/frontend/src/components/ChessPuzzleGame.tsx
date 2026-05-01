@@ -271,12 +271,16 @@ export default function ChessPuzzleGame({
   // Load puzzle once board script is ready and puzzle data arrives
   useEffect(() => {
     if (puzzle && boardReady) {
+      // Guard: don't reset game state when game is already over or showing solution
+      // This prevents the effect from running when gameOver/showingSolution change
+      // (which triggers handleDrop → loadPuzzle dependency recreation)
+      if (gameOver || showingSolution) return;
       setGameOver(false);
       setShowingSolution(false);
       setTimeLeft(60);
       loadPuzzle(puzzle);
     }
-  }, [puzzle, boardReady, loadPuzzle]);
+  }, [puzzle, boardReady, loadPuzzle, gameOver, showingSolution]);
 
   // Timer — starts after puzzle loads, pauses on game over or solution animation
   useEffect(() => {
