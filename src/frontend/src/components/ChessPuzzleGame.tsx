@@ -171,8 +171,7 @@ export default function ChessPuzzleGame({
           draggable: true,
           orientation: orientationRef.current,
           onDrop: handleDrop,
-          pieceTheme:
-            "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
+          pieceTheme: "/chesspieces/pixel/{piece}.svg",
         });
         boardRef.current = board;
 
