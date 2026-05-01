@@ -16,7 +16,7 @@ interface ChessboardConfig {
 }
 
 interface ChessboardInstance {
-  position(fen?: string): string | undefined;
+  position(fen?: string, useAnimation?: boolean): string | undefined;
   orientation(side?: "white" | "black"): string | undefined;
   destroy(): void;
 }

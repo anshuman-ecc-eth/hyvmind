@@ -66463,7 +66463,7 @@ function ChessPuzzleGame({
     setShowingSolution(true);
     const solutionGame = new Chess(p2.fen);
     const allMoves = [p2.lastMove, ...p2.solution];
-    (_a3 = boardRef.current) == null ? void 0 : _a3.position(p2.fen);
+    (_a3 = boardRef.current) == null ? void 0 : _a3.position(p2.fen, true);
     for (const id2 of solutionTimeoutsRef.current) clearTimeout(id2);
     const ids = [];
     allMoves.forEach((uci, i2) => {
@@ -66475,7 +66475,7 @@ function ChessPuzzleGame({
             to: uci.slice(2, 4),
             promotion: uci[4] ?? void 0
           });
-          (_a4 = boardRef.current) == null ? void 0 : _a4.position(solutionGame.fen());
+          (_a4 = boardRef.current) == null ? void 0 : _a4.position(solutionGame.fen(), true);
         } catch {
         }
         if (i2 === allMoves.length - 1) {
@@ -66522,20 +66522,7 @@ function ChessPuzzleGame({
           pieceTheme: "/chesspieces/pixel/{piece}.svg"
         });
         boardRef.current = board;
-        setTimeout(() => {
-          var _a3;
-          try {
-            chess.move({
-              from: p2.lastMove.slice(0, 2),
-              to: p2.lastMove.slice(2, 4),
-              promotion: p2.lastMove[4] ?? void 0
-            });
-            (_a3 = boardRef.current) == null ? void 0 : _a3.position(chess.fen());
-            puzzleRef.current = { ...p2, solution: p2.solution.slice(1) };
-          } catch (err) {
-            console.error("opponent lastMove failed:", err);
-          }
-        }, 300);
+        puzzleRef.current = p2;
         setFeedback("");
       } catch (err) {
         console.error("loadPuzzle failed:", err);
@@ -66578,7 +66565,7 @@ function ChessPuzzleGame({
               to: reply.slice(2, 4),
               promotion: reply[4] ?? void 0
             });
-            (_a3 = boardRef.current) == null ? void 0 : _a3.position(chess.fen());
+            (_a3 = boardRef.current) == null ? void 0 : _a3.position(chess.fen(), true);
             puzzleRef.current = { ...p2, solution: playerSolution.slice(2) };
             setFeedback("");
           } catch (err) {

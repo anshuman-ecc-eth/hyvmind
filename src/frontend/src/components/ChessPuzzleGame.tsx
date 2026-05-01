@@ -93,7 +93,7 @@ export default function ChessPuzzleGame({
     const allMoves = [p.lastMove, ...p.solution];
 
     // Reset board to the pre-lastMove FEN
-    boardRef.current?.position(p.fen);
+    boardRef.current?.position(p.fen, true);
 
     // Clear any existing timeouts
     for (const id of solutionTimeoutsRef.current) clearTimeout(id);
@@ -107,7 +107,7 @@ export default function ChessPuzzleGame({
             to: uci.slice(2, 4),
             promotion: uci[4] ?? undefined,
           });
-          boardRef.current?.position(solutionGame.fen());
+          boardRef.current?.position(solutionGame.fen(), true);
         } catch {
           /* skip illegal moves */
         }
@@ -175,21 +175,9 @@ export default function ChessPuzzleGame({
         });
         boardRef.current = board;
 
-        // Animate opponent's creating move then set solver's solution window
-        setTimeout(() => {
-          try {
-            chess.move({
-              from: p.lastMove.slice(0, 2),
-              to: p.lastMove.slice(2, 4),
-              promotion: p.lastMove[4] ?? undefined,
-            });
-            boardRef.current?.position(chess.fen());
-            // solution[0] === lastMove (opponent's creating move); player starts at [1]
-            puzzleRef.current = { ...p, solution: p.solution.slice(1) };
-          } catch (err) {
-            console.error("opponent lastMove failed:", err);
-          }
-        }, 300);
+        // FEN from API is already the puzzle start position
+        // solution[0] is the player's first move from this position
+        puzzleRef.current = p;
 
         setFeedback("");
       } catch (err) {
@@ -240,7 +228,7 @@ export default function ChessPuzzleGame({
               to: reply.slice(2, 4),
               promotion: reply[4] ?? undefined,
             });
-            boardRef.current?.position(chess.fen());
+            boardRef.current?.position(chess.fen(), true);
             puzzleRef.current = { ...p, solution: playerSolution.slice(2) };
             setFeedback("");
           } catch (err) {
