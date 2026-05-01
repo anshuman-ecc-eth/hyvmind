@@ -59909,26 +59909,6 @@ class Chess {
 const UA = "Hyvmind/1.0 (hyvmind.app)";
 const HEADERS = { Accept: "application/json", "User-Agent": UA };
 const CACHE_SIZE = 3;
-function computePuzzlePosition(pgn2, initialPly) {
-  try {
-    const parser = new Chess();
-    parser.loadPgn(pgn2);
-    const history = parser.history({ verbose: true });
-    if (history.length === 0 || initialPly < 1) return null;
-    const pre = new Chess();
-    for (let i2 = 0; i2 < initialPly - 1 && i2 < history.length; i2++) {
-      pre.move(history[i2].san);
-    }
-    const lastMoveObj = history[initialPly - 1];
-    if (!lastMoveObj) return null;
-    const lastMove = lastMoveObj.from + lastMoveObj.to + (lastMoveObj.promotion ?? "");
-    pre.move(lastMoveObj.san);
-    return { fen: pre.fen(), lastMove };
-  } catch (err) {
-    console.error("computePuzzlePosition failed:", err);
-    return null;
-  }
-}
 async function fetchPuzzleMeta() {
   try {
     const res = await fetch("https://lichess.org/api/puzzle/next", {
@@ -59938,12 +59918,7 @@ async function fetchPuzzleMeta() {
     const data = await res.json();
     const p2 = data.puzzle;
     if (!(p2 == null ? void 0 : p2.id)) return null;
-    return {
-      id: p2.id,
-      rating: p2.rating ?? 1500,
-      solution: p2.solution ?? [],
-      themes: p2.themes ?? []
-    };
+    return { id: p2.id };
   } catch (err) {
     console.error("fetchPuzzleMeta failed:", err);
     return null;
@@ -59957,30 +59932,31 @@ async function fetchPuzzleById(id2) {
     if (!res.ok) return null;
     const data = await res.json();
     const p2 = data.puzzle;
-    const g2 = data.game;
-    if (!p2 || !g2) return null;
-    const pgn2 = g2.pgn;
-    const initialPly = p2.initialPly;
+    if (!p2) return null;
+    const fen = p2.fen;
+    const lastMove = p2.lastMove;
     const solution = p2.solution ?? [];
     const rating = p2.rating ?? 1500;
     const themes = p2.themes ?? [];
-    if (!pgn2 || typeof initialPly !== "number") return null;
-    const pos = computePuzzlePosition(pgn2, initialPly);
-    if (!pos) return null;
-    if (!pos.fen || !pos.lastMove || solution.length < 2) {
-      console.error("fetchPuzzleById: missing required fields", {
-        pos,
-        solution
+    if (!fen || !lastMove || !fen.trim() || !lastMove.trim()) {
+      console.error("fetchPuzzleById: missing fen or lastMove", {
+        id: id2,
+        fen,
+        lastMove
       });
+      return null;
+    }
+    if (solution.length < 2) {
+      console.error("fetchPuzzleById: solution too short", { id: id2, solution });
       return null;
     }
     return {
       id: id2,
-      fen: pos.fen,
-      lastMove: pos.lastMove,
-      // solution[0] from Lichess is the opponent's last move (same as lastMove).
-      // Slice it off so solution[0] is the first move the solver must play.
-      solution: solution.slice(1),
+      fen,
+      lastMove,
+      // Return raw solution from API — solution[0] is the opponent's last move (same as lastMove)
+      // The game component is responsible for slicing solution[1..] for player moves
+      solution,
       rating,
       themes
     };
@@ -60107,24 +60083,22 @@ function fenToPosition(fen) {
       }
       const rank2 = 8 - ri;
       const file2 = String.fromCharCode(97 + ci);
-      const color2 = ch === ch.toUpperCase() ? "w" : "b";
-      const type = ch.toUpperCase();
-      pos[`${file2}${rank2}`] = `${color2}${type}`;
+      pos[`${file2}${rank2}`] = `${ch === ch.toUpperCase() ? "w" : "b"}${ch.toUpperCase()}`;
       ci++;
     }
   });
   return pos;
 }
-function squareToCoords(sq, orientation) {
+function squareCenter(sq, orient) {
   const file2 = sq.charCodeAt(0) - 97;
   const rank2 = Number.parseInt(sq[1]) - 1;
-  const col = orientation === "white" ? file2 : 7 - file2;
-  const row = orientation === "white" ? 7 - rank2 : rank2;
+  const col = orient === "white" ? file2 : 7 - file2;
+  const row = orient === "white" ? 7 - rank2 : rank2;
   return [col * 12.5 + 6.25, row * 12.5 + 6.25];
 }
 function ArrowOverlay({
   arrows,
-  orientation
+  orient
 }) {
   if (!arrows.length) return null;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -60156,8 +60130,8 @@ function ArrowOverlay({
           `m-${a2.from}${a2.to}`
         )) }),
         arrows.map((a2) => {
-          const [x1, y1] = squareToCoords(a2.from, orientation);
-          const [x22, y2] = squareToCoords(a2.to, orientation);
+          const [x1, y1] = squareCenter(a2.from, orient);
+          const [x22, y2] = squareCenter(a2.to, orient);
           return /* @__PURE__ */ jsxRuntimeExports.jsx(
             "line",
             {
@@ -60167,7 +60141,7 @@ function ArrowOverlay({
               y2,
               stroke: a2.color,
               strokeWidth: "2.5",
-              strokeOpacity: "0.75",
+              strokeOpacity: "0.78",
               markerEnd: `url(#ah-${a2.from}${a2.to})`
             },
             `l-${a2.from}${a2.to}`
@@ -60181,13 +60155,36 @@ function ChessBoard({
   position,
   orientation,
   arrows = [],
-  selectedSquare,
-  onSquareClick,
-  allowInteraction = true
+  allowInteraction = true,
+  onDrop
 }) {
+  const [dragging, setDragging] = reactExports.useState(null);
+  const [dragOver, setDragOver] = reactExports.useState(null);
+  const boardSize = "min(88vw, 400px)";
   const ranks = orientation === "white" ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
   const files = orientation === "white" ? ["a", "b", "c", "d", "e", "f", "g", "h"] : ["h", "g", "f", "e", "d", "c", "b", "a"];
-  const boardSize = "min(88vw, 400px)";
+  const handleDragStart = (sq) => {
+    if (!allowInteraction || !position[sq]) return;
+    setDragging(sq);
+  };
+  const handleDragOver = (e2, sq) => {
+    e2.preventDefault();
+    setDragOver(sq);
+  };
+  const handleDrop = (e2, sq) => {
+    e2.preventDefault();
+    setDragOver(null);
+    if (!dragging || dragging === sq || !onDrop) {
+      setDragging(null);
+      return;
+    }
+    onDrop(dragging, sq);
+    setDragging(null);
+  };
+  const handleDragEnd = () => {
+    setDragging(null);
+    setDragOver(null);
+  };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -60207,7 +60204,7 @@ function ChessBoard({
               gridTemplateRows: "repeat(8, 1fr)",
               width: "100%",
               height: "100%",
-              border: "1px solid var(--border)"
+              border: "2px solid #555"
             },
             children: ranks.map(
               (rank2) => files.map((file2) => {
@@ -60215,32 +60212,36 @@ function ChessBoard({
                 const fileIdx = file2.charCodeAt(0) - 97;
                 const isLight2 = (fileIdx + rank2) % 2 !== 0;
                 const piece = position[sq];
-                const isSelected = sq === selectedSquare;
+                const isDragSource = sq === dragging;
+                const isDropTarget = sq === dragOver;
                 return /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
+                  "div",
                   {
-                    type: "button",
-                    tabIndex: allowInteraction ? 0 : -1,
-                    onClick: () => allowInteraction && (onSquareClick == null ? void 0 : onSquareClick(sq)),
+                    onDragOver: (e2) => allowInteraction && handleDragOver(e2, sq),
+                    onDrop: (e2) => allowInteraction && handleDrop(e2, sq),
                     style: {
-                      backgroundColor: isSelected ? "oklch(75% 0.18 80 / 0.55)" : isLight2 ? "#f0f0d8" : "#6b6b7b",
+                      backgroundColor: isDropTarget ? "oklch(75% 0.18 80 / 0.55)" : isLight2 ? "#f0f0d8" : "#6b6b7b",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      cursor: allowInteraction && piece ? "pointer" : "default",
-                      userSelect: "none",
                       position: "relative",
-                      fontSize: "clamp(1.1rem, 4vw, 2rem)",
-                      lineHeight: 1,
-                      transition: "background-color 0.15s"
+                      transition: "background-color 0.1s"
                     },
                     children: piece && /* @__PURE__ */ jsxRuntimeExports.jsx(
                       "span",
                       {
+                        draggable: allowInteraction,
+                        onDragStart: () => handleDragStart(sq),
+                        onDragEnd: handleDragEnd,
                         style: {
                           display: "block",
+                          fontSize: "clamp(1.1rem, 4vw, 2rem)",
+                          lineHeight: 1,
+                          cursor: allowInteraction ? "grab" : "default",
+                          userSelect: "none",
+                          opacity: isDragSource ? 0.3 : 1,
                           filter: piece[0] === "w" ? "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" : "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
-                          lineHeight: 1
+                          transition: "opacity 0.1s"
                         },
                         children: UNICODE[piece] ?? ""
                       }
@@ -60252,7 +60253,7 @@ function ChessBoard({
             )
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowOverlay, { arrows, orientation })
+        /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowOverlay, { arrows, orient: orientation })
       ]
     }
   );
@@ -60275,7 +60276,6 @@ function ChessPuzzleGame({
   const [showingSolution, setShowingSolution] = reactExports.useState(false);
   const [position, setPosition] = reactExports.useState({});
   const [arrows, setArrows] = reactExports.useState([]);
-  const [selectedSquare, setSelectedSquare] = reactExports.useState(null);
   const gameRef = reactExports.useRef(null);
   const timerRef = reactExports.useRef(null);
   const puzzleRef = reactExports.useRef(null);
@@ -60301,7 +60301,6 @@ function ChessPuzzleGame({
           color: "#60a5fa"
         }
       ]);
-      setSelectedSquare(null);
       setFeedback("");
     } catch (err) {
       console.error("loadPuzzle failed:", err);
@@ -60341,7 +60340,7 @@ function ChessPuzzleGame({
     if (!p2) return;
     setShowingSolution(true);
     const solutionGame = new Chess(p2.fen);
-    const allMoves = [p2.lastMove, ...p2.solution];
+    const allMoves = [p2.lastMove, ...p2.solution.slice(1)];
     const ids = [];
     allMoves.forEach((uci, i2) => {
       const id2 = setTimeout(() => {
@@ -60375,7 +60374,8 @@ function ChessPuzzleGame({
       const p2 = puzzleRef.current;
       const chess = gameRef.current;
       if (!p2 || !chess) return;
-      const expected = p2.solution[0];
+      const playerSolution = p2.solution;
+      const expected = playerSolution[0];
       if (uci !== expected) {
         if (timerRef.current) clearInterval(timerRef.current);
         setFeedback("Incorrect!");
@@ -60384,11 +60384,10 @@ function ChessPuzzleGame({
         return;
       }
       setArrows([]);
-      if (p2.solution.length === 1) {
+      if (playerSolution.length === 1) {
         if (timerRef.current) clearInterval(timerRef.current);
-        const pts = 50;
-        setScore((s2) => s2 + pts);
-        setFeedback(`+${pts}`);
+        setScore((s2) => s2 + 50);
+        setFeedback("+50");
         setTimeout(() => {
           setPuzzleNumber((n2) => n2 + 1);
           setFeedback("");
@@ -60396,7 +60395,7 @@ function ChessPuzzleGame({
         }, 1200);
       } else {
         setFeedback("Correct!");
-        const reply = p2.solution[1];
+        const reply = playerSolution[1];
         setTimeout(() => {
           try {
             chess.move({
@@ -60404,7 +60403,7 @@ function ChessPuzzleGame({
               to: reply.slice(2, 4),
               promotion: reply[4] ?? void 0
             });
-            puzzleRef.current = { ...p2, solution: p2.solution.slice(2) };
+            puzzleRef.current = { ...p2, solution: playerSolution.slice(2) };
             setPosition(fenToPosition(chess.fen()));
             setArrows([
               {
@@ -60422,42 +60421,24 @@ function ChessPuzzleGame({
     },
     [animateSolution, fetchNext]
   );
-  const handleSquareClick = reactExports.useCallback(
-    (sq) => {
+  reactExports.useEffect(() => {
+    const p2 = fetchedPuzzle;
+    if (!p2) return;
+    puzzleRef.current = { ...p2, solution: p2.solution.slice(1) };
+  }, [fetchedPuzzle]);
+  const handleDrop = reactExports.useCallback(
+    (from, to) => {
       const chess = gameRef.current;
       const p2 = puzzleRef.current;
-      if (!chess || !p2 || gameOver || showingSolution) return;
-      const sideToMove = chess.fen().split(" ")[1];
-      const pieceAtSq = fenToPosition(chess.fen())[sq];
-      const isOwnPiece = pieceAtSq && pieceAtSq[0] === sideToMove;
-      if (!selectedSquare) {
-        if (isOwnPiece) setSelectedSquare(sq);
-        return;
-      }
-      if (sq === selectedSquare) {
-        setSelectedSquare(null);
-        return;
-      }
-      if (isOwnPiece) {
-        setSelectedSquare(sq);
-        return;
-      }
-      try {
-        const move = chess.move({
-          from: selectedSquare,
-          to: sq,
-          promotion: "q"
-        });
-        setSelectedSquare(null);
-        if (!move) return;
-        setPosition(fenToPosition(chess.fen()));
-        const uci = move.from + move.to + (move.promotion ?? "");
-        applyMove(uci);
-      } catch {
-        setSelectedSquare(null);
-      }
+      if (!chess || !p2 || gameOver || showingSolution) return "snapback";
+      const move = chess.move({ from, to, promotion: "q" });
+      if (!move) return "snapback";
+      setPosition(fenToPosition(chess.fen()));
+      const uci = move.from + move.to + (move.promotion ?? "");
+      applyMove(uci);
+      return "accept";
     },
-    [selectedSquare, gameOver, showingSolution, applyMove]
+    [gameOver, showingSolution, applyMove]
   );
   if (loading || !fetchedPuzzle && !error) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -60560,6 +60541,7 @@ function ChessPuzzleGame({
                   for (const id2 of solutionTimeoutsRef.current) clearTimeout(id2);
                   setScore(0);
                   setPuzzleNumber(1);
+                  setTimeLeft(60);
                   setGameOver(false);
                   setFeedback("");
                   setShowingSolution(false);
@@ -60668,9 +60650,8 @@ function ChessPuzzleGame({
             position,
             orientation: orientationRef.current,
             arrows,
-            selectedSquare,
-            onSquareClick: handleSquareClick,
-            allowInteraction: !gameOver && !showingSolution
+            allowInteraction: !gameOver && !showingSolution,
+            onDrop: handleDrop
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsx(

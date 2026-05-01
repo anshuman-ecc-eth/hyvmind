@@ -1,11 +1,10 @@
-import { Chess } from "chess.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface Puzzle {
   id: string;
-  fen: string; // FEN AFTER opponent's lastMove (puzzle start position)
+  fen: string; // FEN before opponent's lastMove (puzzle start position from API)
   lastMove: string; // opponent's creating move in UCI
-  solution: string[]; // solver moves only (opponent setup move already sliced off)
+  solution: string[]; // raw solution from API (first element is opponent's last move)
   rating: number;
   themes: string[];
 }
@@ -21,50 +20,8 @@ const UA = "Hyvmind/1.0 (hyvmind.app)";
 const HEADERS = { Accept: "application/json", "User-Agent": UA };
 const CACHE_SIZE = 3;
 
-/**
- * Compute puzzle FEN and lastMove from a Lichess /api/puzzle/{id} response.
- * The Lichess API returns a PGN + initialPly.  We replay the game to
- * initialPly half-moves to get the base position, then apply move[initialPly]
- * which is the opponent's last move that created the puzzle.
- */
-function computePuzzlePosition(
-  pgn: string,
-  initialPly: number,
-): { fen: string; lastMove: string } | null {
-  try {
-    const parser = new Chess();
-    parser.loadPgn(pgn);
-    const history = parser.history({ verbose: true });
-    if (history.length === 0 || initialPly < 1) return null;
-
-    // Replay to (initialPly - 1) to get pre-move position
-    const pre = new Chess();
-    for (let i = 0; i < initialPly - 1 && i < history.length; i++) {
-      pre.move(history[i].san);
-    }
-
-    // The move at index (initialPly - 1) is the opponent's creating move
-    const lastMoveObj = history[initialPly - 1];
-    if (!lastMoveObj) return null;
-    const lastMove =
-      lastMoveObj.from + lastMoveObj.to + (lastMoveObj.promotion ?? "");
-
-    // Apply that move to get the puzzle-start FEN
-    pre.move(lastMoveObj.san);
-    return { fen: pre.fen(), lastMove };
-  } catch (err) {
-    console.error("computePuzzlePosition failed:", err);
-    return null;
-  }
-}
-
-/** Step 1: get puzzle ID (and solution/themes) from /api/puzzle/next */
-async function fetchPuzzleMeta(): Promise<{
-  id: string;
-  rating: number;
-  solution: string[];
-  themes: string[];
-} | null> {
+/** Step 1: get puzzle ID from /api/puzzle/next */
+async function fetchPuzzleMeta(): Promise<{ id: string } | null> {
   try {
     const res = await fetch("https://lichess.org/api/puzzle/next", {
       headers: HEADERS,
@@ -73,19 +30,21 @@ async function fetchPuzzleMeta(): Promise<{
     const data = (await res.json()) as Record<string, unknown>;
     const p = data.puzzle as Record<string, unknown> | undefined;
     if (!p?.id) return null;
-    return {
-      id: p.id as string,
-      rating: (p.rating as number) ?? 1500,
-      solution: (p.solution as string[]) ?? [],
-      themes: (p.themes as string[]) ?? [],
-    };
+    return { id: p.id as string };
   } catch (err) {
     console.error("fetchPuzzleMeta failed:", err);
     return null;
   }
 }
 
-/** Step 2: get PGN + initialPly from /api/puzzle/{id}, compute FEN */
+/**
+ * Step 2: get full puzzle data from /api/puzzle/{id}
+ * The API returns puzzle.fen and puzzle.lastMove directly — no PGN parsing needed.
+ * puzzle.fen is the board position BEFORE the opponent's creating move.
+ * puzzle.lastMove is the opponent's creating move in UCI format.
+ * puzzle.solution[0] is the opponent's creating move (same as lastMove).
+ * puzzle.solution[1..] are the solver's moves.
+ */
 async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
   try {
     const res = await fetch(`https://lichess.org/api/puzzle/${id}`, {
@@ -94,36 +53,35 @@ async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
     if (!res.ok) return null;
     const data = (await res.json()) as Record<string, unknown>;
     const p = data.puzzle as Record<string, unknown> | undefined;
-    const g = data.game as Record<string, unknown> | undefined;
-    if (!p || !g) return null;
+    if (!p) return null;
 
-    const pgn = g.pgn as string;
-    const initialPly = p.initialPly as number;
+    const fen = p.fen as string | undefined;
+    const lastMove = p.lastMove as string | undefined;
     const solution = (p.solution as string[]) ?? [];
     const rating = (p.rating as number) ?? 1500;
     const themes = (p.themes as string[]) ?? [];
 
-    if (!pgn || typeof initialPly !== "number") return null;
-
-    const pos = computePuzzlePosition(pgn, initialPly);
-    if (!pos) return null;
-
     // Validate required fields
-    if (!pos.fen || !pos.lastMove || solution.length < 2) {
-      console.error("fetchPuzzleById: missing required fields", {
-        pos,
-        solution,
+    if (!fen || !lastMove || !fen.trim() || !lastMove.trim()) {
+      console.error("fetchPuzzleById: missing fen or lastMove", {
+        id,
+        fen,
+        lastMove,
       });
+      return null;
+    }
+    if (solution.length < 2) {
+      console.error("fetchPuzzleById: solution too short", { id, solution });
       return null;
     }
 
     return {
       id,
-      fen: pos.fen,
-      lastMove: pos.lastMove,
-      // solution[0] from Lichess is the opponent's last move (same as lastMove).
-      // Slice it off so solution[0] is the first move the solver must play.
-      solution: solution.slice(1),
+      fen,
+      lastMove,
+      // Return raw solution from API — solution[0] is the opponent's last move (same as lastMove)
+      // The game component is responsible for slicing solution[1..] for player moves
+      solution,
       rating,
       themes,
     };
