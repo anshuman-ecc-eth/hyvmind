@@ -171,10 +171,29 @@ export default function ChessPuzzleGame({
           draggable: true,
           orientation: orientationRef.current,
           onDrop: handleDrop,
+          onSnapEnd: () => {
+            boardRef.current?.position(gameRef.current?.fen() ?? "", true);
+          },
           pieceTheme: "/chesspieces/pixel/{piece}.svg",
         });
         boardRef.current = board;
-
+        // Play opponent's lastMove to show the puzzle in its starting position (after opponent's move)
+        // This matches PuzzleDash's "Play First Move" pattern
+        if (p.lastMove) {
+          try {
+            const chess = gameRef.current;
+            if (chess) {
+              chess.move({
+                from: p.lastMove.slice(0, 2),
+                to: p.lastMove.slice(2, 4),
+                promotion: p.lastMove[4] ?? undefined,
+              });
+              boardRef.current?.position(chess.fen(), true);
+            }
+          } catch {
+            // skip illegal moves - shouldn't happen with valid puzzle data
+          }
+        }
         // FEN from API is already the puzzle start position
         // solution[0] is the player's first move from this position
         puzzleRef.current = p;

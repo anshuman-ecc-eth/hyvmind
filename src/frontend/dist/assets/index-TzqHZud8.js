@@ -66503,6 +66503,7 @@ function ChessPuzzleGame({
   );
   const loadPuzzle = reactExports.useCallback(
     (p2) => {
+      var _a3;
       puzzleRef.current = p2;
       try {
         const chess = new Chess(p2.fen);
@@ -66519,9 +66520,27 @@ function ChessPuzzleGame({
           draggable: true,
           orientation: orientationRef.current,
           onDrop: handleDrop,
+          onSnapEnd: () => {
+            var _a4, _b3;
+            (_b3 = boardRef.current) == null ? void 0 : _b3.position(((_a4 = gameRef.current) == null ? void 0 : _a4.fen()) ?? "", true);
+          },
           pieceTheme: "/chesspieces/pixel/{piece}.svg"
         });
         boardRef.current = board;
+        if (p2.lastMove) {
+          try {
+            const chess2 = gameRef.current;
+            if (chess2) {
+              chess2.move({
+                from: p2.lastMove.slice(0, 2),
+                to: p2.lastMove.slice(2, 4),
+                promotion: p2.lastMove[4] ?? void 0
+              });
+              (_a3 = boardRef.current) == null ? void 0 : _a3.position(chess2.fen(), true);
+            }
+          } catch {
+          }
+        }
         puzzleRef.current = p2;
         setFeedback("");
       } catch (err) {

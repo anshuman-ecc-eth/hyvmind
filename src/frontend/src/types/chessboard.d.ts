@@ -12,6 +12,7 @@ interface ChessboardConfig {
     oldPos: Record<string, string>,
     orientation: string,
   ) => "snapback" | "trash" | undefined;
+  onSnapEnd?: () => void;
   pieceTheme?: string;
 }
 

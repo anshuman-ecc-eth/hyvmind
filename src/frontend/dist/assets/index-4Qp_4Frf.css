@@ -4726,6 +4726,11 @@ h6 {
   line-height: 1.8 !important;
   font-size: 0.7rem !important;
 }
+/* Fix jQuery UI draggable appearing behind modals */
+.ui-draggable,
+.ui-draggable-dragging {
+  z-index: 100 !important;
+}
 /* Theme-adaptive scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;
