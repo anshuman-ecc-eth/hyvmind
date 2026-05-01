@@ -4354,7 +4354,7 @@ function B$3(t2) {
     case c$2.NegativeInteger:
       return j$1(e2);
     case c$2.ByteString:
-      return $$2(e2);
+      return $$3(e2);
     case c$2.TextString:
       return F(e2);
     case c$2.Array:
@@ -4447,7 +4447,7 @@ function j$1(t2) {
   const n2 = E$2(t2);
   return typeof n2 == "number" ? -1 - n2 : -1n - n2;
 }
-function $$2(t2) {
+function $$3(t2) {
   const n2 = E$2(t2);
   if (n2 > Number.MAX_SAFE_INTEGER)
     throw new w$1("Byte length is too large");
@@ -4455,7 +4455,7 @@ function $$2(t2) {
   return a$2 += e2, A$1.slice(a$2 - e2, a$2);
 }
 function F(t2) {
-  const n2 = $$2(t2);
+  const n2 = $$3(t2);
   return K$3.decode(n2);
 }
 function M$2(t2, n2) {
@@ -30214,13 +30214,13 @@ function createActor(canisterId, _uploadFile, _downloadFile, options = {}) {
   });
   return new Backend(actor, _uploadFile, _downloadFile, options.processError);
 }
-var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$1 = 0.1, u$1 = 0.999, $$1 = 0.9999;
+var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$1 = 0.1, u$1 = 0.999, $$2 = 0.9999;
 var k$2 = 0.99, m$2 = /[\\\/_+.#"@\[\(\{&]/, B$2 = /[\\\/_+.#"@\[\(\{&]/g, K$2 = /[\s-]/, X$1 = /[\s-]/g;
 function G$1(_2, C2, h2, P2, A2, f2, O2) {
   if (f2 === C2.length) return A2 === _2.length ? U : k$2;
   var T2 = `${A2},${f2}`;
   if (O2[T2] !== void 0) return O2[T2];
-  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$1), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$1)), (E2 < p$1 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$1 > E2 && (E2 = N2 * p$1)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
+  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$1), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$2)), (E2 < p$1 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$1 > E2 && (E2 = N2 * p$1)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
   return O2[T2] = S2, S2;
 }
 function D$1(_2) {
@@ -48971,15 +48971,15 @@ function S(n2) {
 function C(n2, l2) {
   this.props = n2, this.context = l2;
 }
-function $(n2, l2) {
-  if (null == l2) return n2.__ ? $(n2.__, n2.__i + 1) : null;
+function $$1(n2, l2) {
+  if (null == l2) return n2.__ ? $$1(n2.__, n2.__i + 1) : null;
   for (var u2; l2 < n2.__k.length; l2++) if (null != (u2 = n2.__k[l2]) && null != u2.__e) return u2.__e;
-  return "function" == typeof n2.type ? $(n2) : null;
+  return "function" == typeof n2.type ? $$1(n2) : null;
 }
 function I(n2) {
   if (n2.__P && n2.__d) {
     var u2 = n2.__v, t2 = u2.__e, i2 = [], r2 = [], o2 = m$1({}, u2);
-    o2.__v = u2.__v + 1, l.vnode && l.vnode(o2), q(n2.__P, o2, u2, n2.__n, n2.__P.namespaceURI, 32 & u2.__u ? [t2] : null, i2, null == t2 ? $(u2) : t2, !!(32 & u2.__u), r2), o2.__v = u2.__v, o2.__.__k[o2.__i] = o2, D(i2, o2, r2), u2.__e = u2.__ = null, o2.__e != t2 && P(o2);
+    o2.__v = u2.__v + 1, l.vnode && l.vnode(o2), q(n2.__P, o2, u2, n2.__n, n2.__P.namespaceURI, 32 & u2.__u ? [t2] : null, i2, null == t2 ? $$1(u2) : t2, !!(32 & u2.__u), r2), o2.__v = u2.__v, o2.__.__k[o2.__i] = o2, D(i2, o2, r2), u2.__e = u2.__ = null, o2.__e != t2 && P(o2);
   }
 }
 function P(n2) {
@@ -49005,7 +49005,7 @@ function L(n2, l2, u2, t2, i2, r2, o2, e2, f2, c2, s2) {
 function T(n2, l2, u2, t2, i2) {
   var r2, o2, e2, f2, c2, s2 = u2.length, a2 = s2, h2 = 0;
   for (n2.__k = new Array(i2), r2 = 0; r2 < i2; r2++) null != (o2 = l2[r2]) && "boolean" != typeof o2 && "function" != typeof o2 ? ("string" == typeof o2 || "number" == typeof o2 || "bigint" == typeof o2 || o2.constructor == String ? o2 = n2.__k[r2] = x$1(null, o2, null, null, null) : g(o2) ? o2 = n2.__k[r2] = x$1(S, { children: o2 }, null, null, null) : void 0 === o2.constructor && o2.__b > 0 ? o2 = n2.__k[r2] = x$1(o2.type, o2.props, o2.key, o2.ref ? o2.ref : null, o2.__v) : n2.__k[r2] = o2, f2 = r2 + h2, o2.__ = n2, o2.__b = n2.__b + 1, e2 = null, -1 != (c2 = o2.__i = O(o2, u2, f2, a2)) && (a2--, (e2 = u2[c2]) && (e2.__u |= 2)), null == e2 || null == e2.__v ? (-1 == c2 && (i2 > s2 ? h2-- : i2 < s2 && h2++), "function" != typeof o2.type && (o2.__u |= 4)) : c2 != f2 && (c2 == f2 - 1 ? h2-- : c2 == f2 + 1 ? h2++ : (c2 > f2 ? h2-- : h2++, o2.__u |= 4))) : n2.__k[r2] = null;
-  if (a2) for (r2 = 0; r2 < s2; r2++) null != (e2 = u2[r2]) && 0 == (2 & e2.__u) && (e2.__e == t2 && (t2 = $(e2)), K(e2, e2));
+  if (a2) for (r2 = 0; r2 < s2; r2++) null != (e2 = u2[r2]) && 0 == (2 & e2.__u) && (e2.__e == t2 && (t2 = $$1(e2)), K(e2, e2));
   return t2;
 }
 function j(n2, l2, u2, t2) {
@@ -49014,7 +49014,7 @@ function j(n2, l2, u2, t2) {
     for (i2 = n2.__k, r2 = 0; i2 && r2 < i2.length; r2++) i2[r2] && (i2[r2].__ = n2, l2 = j(i2[r2], l2, u2, t2));
     return l2;
   }
-  n2.__e != l2 && (t2 && (l2 && n2.type && !l2.parentNode && (l2 = $(n2)), u2.insertBefore(n2.__e, l2 || null)), l2 = n2.__e);
+  n2.__e != l2 && (t2 && (l2 && n2.type && !l2.parentNode && (l2 = $$1(n2)), u2.insertBefore(n2.__e, l2 || null)), l2 = n2.__e);
   do {
     l2 = l2 && l2.nextSibling;
   } while (null != l2 && 8 == l2.nodeType);
@@ -49131,7 +49131,7 @@ function G(u2, t2, i2, r2, o2, e2, f2, c2, s2) {
     for (a2 in m2) y2 = m2[a2], "dangerouslySetInnerHTML" == a2 ? p2 = y2 : "children" == a2 || a2 in k2 || "value" == a2 && "defaultValue" in k2 || "checked" == a2 && "defaultChecked" in k2 || N(u2, a2, null, y2, o2);
     for (a2 in k2) y2 = k2[a2], "children" == a2 ? v2 = y2 : "dangerouslySetInnerHTML" == a2 ? h2 = y2 : "value" == a2 ? w3 = y2 : "checked" == a2 ? _2 = y2 : c2 && "function" != typeof y2 || m2[a2] === y2 || N(u2, a2, y2, m2[a2], o2);
     if (h2) c2 || p2 && (h2.__html == p2.__html || h2.__html == u2.innerHTML) || (u2.innerHTML = h2.__html), t2.__k = [];
-    else if (p2 && (u2.innerHTML = ""), L("template" == t2.type ? u2.content : u2, g(v2) ? v2 : [v2], t2, i2, r2, "foreignObject" == x3 ? "http://www.w3.org/1999/xhtml" : o2, e2, f2, e2 ? e2[0] : i2.__k && $(i2, 0), c2, s2), null != e2) for (a2 = e2.length; a2--; ) b(e2[a2]);
+    else if (p2 && (u2.innerHTML = ""), L("template" == t2.type ? u2.content : u2, g(v2) ? v2 : [v2], t2, i2, r2, "foreignObject" == x3 ? "http://www.w3.org/1999/xhtml" : o2, e2, f2, e2 ? e2[0] : i2.__k && $$1(i2, 0), c2, s2), null != e2) for (a2 = e2.length; a2--; ) b(e2[a2]);
     c2 || (a2 = "value", "progress" == x3 && null == w3 ? u2.removeAttribute("value") : null != w3 && (w3 !== u2[a2] || "progress" == x3 && !w3 || "option" == x3 && w3 != m2[a2]) && N(u2, a2, w3, m2[a2], o2), a2 = "checked", null != _2 && _2 != u2[a2] && N(u2, a2, _2, m2[a2], o2));
   }
   return u2;
@@ -56417,6 +56417,3495 @@ function Sidebar({
     }
   );
 }
+function rootNode(comment) {
+  return comment !== null ? { comment, variations: [] } : { variations: [] };
+}
+function node(move, suffix2, nag, comment, variations) {
+  const node2 = { move, variations };
+  if (suffix2) {
+    node2.suffix = suffix2;
+  }
+  if (nag) {
+    node2.nag = nag;
+  }
+  if (comment !== null) {
+    node2.comment = comment;
+  }
+  return node2;
+}
+function lineToTree(...nodes) {
+  const [root2, ...rest] = nodes;
+  let parent = root2;
+  for (const child of rest) {
+    if (child !== null) {
+      parent.variations = [child, ...child.variations];
+      child.variations = [];
+      parent = child;
+    }
+  }
+  return root2;
+}
+function pgn(headers, game) {
+  if (game.marker && game.marker.comment) {
+    let node2 = game.root;
+    while (true) {
+      const next = node2.variations[0];
+      if (!next) {
+        node2.comment = game.marker.comment;
+        break;
+      }
+      node2 = next;
+    }
+  }
+  return {
+    headers,
+    root: game.root,
+    result: (game.marker && game.marker.result) ?? void 0
+  };
+}
+function peg$subclass(child, parent) {
+  function C2() {
+    this.constructor = child;
+  }
+  C2.prototype = parent.prototype;
+  child.prototype = new C2();
+}
+function peg$SyntaxError(message, expected, found, location2) {
+  var self2 = Error.call(this, message);
+  if (Object.setPrototypeOf) {
+    Object.setPrototypeOf(self2, peg$SyntaxError.prototype);
+  }
+  self2.expected = expected;
+  self2.found = found;
+  self2.location = location2;
+  self2.name = "SyntaxError";
+  return self2;
+}
+peg$subclass(peg$SyntaxError, Error);
+function peg$padEnd(str, targetLength, padString) {
+  padString = padString || " ";
+  if (str.length > targetLength) {
+    return str;
+  }
+  targetLength -= str.length;
+  padString += padString.repeat(targetLength);
+  return str + padString.slice(0, targetLength);
+}
+peg$SyntaxError.prototype.format = function(sources) {
+  var str = "Error: " + this.message;
+  if (this.location) {
+    var src = null;
+    var k2;
+    for (k2 = 0; k2 < sources.length; k2++) {
+      if (sources[k2].source === this.location.source) {
+        src = sources[k2].text.split(/\r\n|\n|\r/g);
+        break;
+      }
+    }
+    var s2 = this.location.start;
+    var offset_s = this.location.source && typeof this.location.source.offset === "function" ? this.location.source.offset(s2) : s2;
+    var loc = this.location.source + ":" + offset_s.line + ":" + offset_s.column;
+    if (src) {
+      var e2 = this.location.end;
+      var filler = peg$padEnd("", offset_s.line.toString().length, " ");
+      var line = src[s2.line - 1];
+      var last = s2.line === e2.line ? e2.column : line.length + 1;
+      var hatLen = last - s2.column || 1;
+      str += "\n --> " + loc + "\n" + filler + " |\n" + offset_s.line + " | " + line + "\n" + filler + " | " + peg$padEnd("", s2.column - 1, " ") + peg$padEnd("", hatLen, "^");
+    } else {
+      str += "\n at " + loc;
+    }
+  }
+  return str;
+};
+peg$SyntaxError.buildMessage = function(expected, found) {
+  var DESCRIBE_EXPECTATION_FNS = {
+    literal: function(expectation) {
+      return '"' + literalEscape(expectation.text) + '"';
+    },
+    class: function(expectation) {
+      var escapedParts = expectation.parts.map(function(part) {
+        return Array.isArray(part) ? classEscape(part[0]) + "-" + classEscape(part[1]) : classEscape(part);
+      });
+      return "[" + (expectation.inverted ? "^" : "") + escapedParts.join("") + "]";
+    },
+    any: function() {
+      return "any character";
+    },
+    end: function() {
+      return "end of input";
+    },
+    other: function(expectation) {
+      return expectation.description;
+    }
+  };
+  function hex2(ch) {
+    return ch.charCodeAt(0).toString(16).toUpperCase();
+  }
+  function literalEscape(s2) {
+    return s2.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\0/g, "\\0").replace(/\t/g, "\\t").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/[\x00-\x0F]/g, function(ch) {
+      return "\\x0" + hex2(ch);
+    }).replace(/[\x10-\x1F\x7F-\x9F]/g, function(ch) {
+      return "\\x" + hex2(ch);
+    });
+  }
+  function classEscape(s2) {
+    return s2.replace(/\\/g, "\\\\").replace(/\]/g, "\\]").replace(/\^/g, "\\^").replace(/-/g, "\\-").replace(/\0/g, "\\0").replace(/\t/g, "\\t").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/[\x00-\x0F]/g, function(ch) {
+      return "\\x0" + hex2(ch);
+    }).replace(/[\x10-\x1F\x7F-\x9F]/g, function(ch) {
+      return "\\x" + hex2(ch);
+    });
+  }
+  function describeExpectation(expectation) {
+    return DESCRIBE_EXPECTATION_FNS[expectation.type](expectation);
+  }
+  function describeExpected(expected2) {
+    var descriptions = expected2.map(describeExpectation);
+    var i2, j2;
+    descriptions.sort();
+    if (descriptions.length > 0) {
+      for (i2 = 1, j2 = 1; i2 < descriptions.length; i2++) {
+        if (descriptions[i2 - 1] !== descriptions[i2]) {
+          descriptions[j2] = descriptions[i2];
+          j2++;
+        }
+      }
+      descriptions.length = j2;
+    }
+    switch (descriptions.length) {
+      case 1:
+        return descriptions[0];
+      case 2:
+        return descriptions[0] + " or " + descriptions[1];
+      default:
+        return descriptions.slice(0, -1).join(", ") + ", or " + descriptions[descriptions.length - 1];
+    }
+  }
+  function describeFound(found2) {
+    return found2 ? '"' + literalEscape(found2) + '"' : "end of input";
+  }
+  return "Expected " + describeExpected(expected) + " but " + describeFound(found) + " found.";
+};
+function peg$parse(input, options) {
+  options = options !== void 0 ? options : {};
+  var peg$FAILED = {};
+  var peg$source = options.grammarSource;
+  var peg$startRuleFunctions = { pgn: peg$parsepgn };
+  var peg$startRuleFunction = peg$parsepgn;
+  var peg$c0 = "[";
+  var peg$c1 = '"';
+  var peg$c2 = "]";
+  var peg$c3 = ".";
+  var peg$c4 = "O-O-O";
+  var peg$c5 = "O-O";
+  var peg$c6 = "0-0-0";
+  var peg$c7 = "0-0";
+  var peg$c8 = "$";
+  var peg$c9 = "{";
+  var peg$c10 = "}";
+  var peg$c11 = ";";
+  var peg$c12 = "(";
+  var peg$c13 = ")";
+  var peg$c14 = "1-0";
+  var peg$c15 = "0-1";
+  var peg$c16 = "1/2-1/2";
+  var peg$c17 = "*";
+  var peg$r0 = /^[a-zA-Z]/;
+  var peg$r1 = /^[^"]/;
+  var peg$r2 = /^[0-9]/;
+  var peg$r3 = /^[.]/;
+  var peg$r4 = /^[a-zA-Z1-8\-=]/;
+  var peg$r5 = /^[+#]/;
+  var peg$r6 = /^[!?]/;
+  var peg$r7 = /^[^}]/;
+  var peg$r8 = /^[^\r\n]/;
+  var peg$r9 = /^[ \t\r\n]/;
+  var peg$e0 = peg$otherExpectation("tag pair");
+  var peg$e1 = peg$literalExpectation("[", false);
+  var peg$e2 = peg$literalExpectation('"', false);
+  var peg$e3 = peg$literalExpectation("]", false);
+  var peg$e4 = peg$otherExpectation("tag name");
+  var peg$e5 = peg$classExpectation([["a", "z"], ["A", "Z"]], false, false);
+  var peg$e6 = peg$otherExpectation("tag value");
+  var peg$e7 = peg$classExpectation(['"'], true, false);
+  var peg$e8 = peg$otherExpectation("move number");
+  var peg$e9 = peg$classExpectation([["0", "9"]], false, false);
+  var peg$e10 = peg$literalExpectation(".", false);
+  var peg$e11 = peg$classExpectation(["."], false, false);
+  var peg$e12 = peg$otherExpectation("standard algebraic notation");
+  var peg$e13 = peg$literalExpectation("O-O-O", false);
+  var peg$e14 = peg$literalExpectation("O-O", false);
+  var peg$e15 = peg$literalExpectation("0-0-0", false);
+  var peg$e16 = peg$literalExpectation("0-0", false);
+  var peg$e17 = peg$classExpectation([["a", "z"], ["A", "Z"], ["1", "8"], "-", "="], false, false);
+  var peg$e18 = peg$classExpectation(["+", "#"], false, false);
+  var peg$e19 = peg$otherExpectation("suffix annotation");
+  var peg$e20 = peg$classExpectation(["!", "?"], false, false);
+  var peg$e21 = peg$otherExpectation("NAG");
+  var peg$e22 = peg$literalExpectation("$", false);
+  var peg$e23 = peg$otherExpectation("brace comment");
+  var peg$e24 = peg$literalExpectation("{", false);
+  var peg$e25 = peg$classExpectation(["}"], true, false);
+  var peg$e26 = peg$literalExpectation("}", false);
+  var peg$e27 = peg$otherExpectation("rest of line comment");
+  var peg$e28 = peg$literalExpectation(";", false);
+  var peg$e29 = peg$classExpectation(["\r", "\n"], true, false);
+  var peg$e30 = peg$otherExpectation("variation");
+  var peg$e31 = peg$literalExpectation("(", false);
+  var peg$e32 = peg$literalExpectation(")", false);
+  var peg$e33 = peg$otherExpectation("game termination marker");
+  var peg$e34 = peg$literalExpectation("1-0", false);
+  var peg$e35 = peg$literalExpectation("0-1", false);
+  var peg$e36 = peg$literalExpectation("1/2-1/2", false);
+  var peg$e37 = peg$literalExpectation("*", false);
+  var peg$e38 = peg$otherExpectation("whitespace");
+  var peg$e39 = peg$classExpectation([" ", "	", "\r", "\n"], false, false);
+  var peg$f0 = function(headers, game) {
+    return pgn(headers, game);
+  };
+  var peg$f1 = function(tagPairs) {
+    return Object.fromEntries(tagPairs);
+  };
+  var peg$f2 = function(tagName, tagValue) {
+    return [tagName, tagValue];
+  };
+  var peg$f3 = function(root2, marker) {
+    return { root: root2, marker };
+  };
+  var peg$f4 = function(comment, moves) {
+    return lineToTree(rootNode(comment), ...moves.flat());
+  };
+  var peg$f5 = function(san, suffix2, nag, comment, variations) {
+    return node(san, suffix2, nag, comment, variations);
+  };
+  var peg$f6 = function(nag) {
+    return nag;
+  };
+  var peg$f7 = function(comment) {
+    return comment.replace(/[\r\n]+/g, " ");
+  };
+  var peg$f8 = function(comment) {
+    return comment.trim();
+  };
+  var peg$f9 = function(line) {
+    return line;
+  };
+  var peg$f10 = function(result, comment) {
+    return { result, comment };
+  };
+  var peg$currPos = options.peg$currPos | 0;
+  var peg$posDetailsCache = [{ line: 1, column: 1 }];
+  var peg$maxFailPos = peg$currPos;
+  var peg$maxFailExpected = options.peg$maxFailExpected || [];
+  var peg$silentFails = options.peg$silentFails | 0;
+  var peg$result;
+  if (options.startRule) {
+    if (!(options.startRule in peg$startRuleFunctions)) {
+      throw new Error(`Can't start parsing from rule "` + options.startRule + '".');
+    }
+    peg$startRuleFunction = peg$startRuleFunctions[options.startRule];
+  }
+  function peg$literalExpectation(text, ignoreCase) {
+    return { type: "literal", text, ignoreCase };
+  }
+  function peg$classExpectation(parts, inverted, ignoreCase) {
+    return { type: "class", parts, inverted, ignoreCase };
+  }
+  function peg$endExpectation() {
+    return { type: "end" };
+  }
+  function peg$otherExpectation(description) {
+    return { type: "other", description };
+  }
+  function peg$computePosDetails(pos) {
+    var details = peg$posDetailsCache[pos];
+    var p2;
+    if (details) {
+      return details;
+    } else {
+      if (pos >= peg$posDetailsCache.length) {
+        p2 = peg$posDetailsCache.length - 1;
+      } else {
+        p2 = pos;
+        while (!peg$posDetailsCache[--p2]) {
+        }
+      }
+      details = peg$posDetailsCache[p2];
+      details = {
+        line: details.line,
+        column: details.column
+      };
+      while (p2 < pos) {
+        if (input.charCodeAt(p2) === 10) {
+          details.line++;
+          details.column = 1;
+        } else {
+          details.column++;
+        }
+        p2++;
+      }
+      peg$posDetailsCache[pos] = details;
+      return details;
+    }
+  }
+  function peg$computeLocation(startPos, endPos, offset2) {
+    var startPosDetails = peg$computePosDetails(startPos);
+    var endPosDetails = peg$computePosDetails(endPos);
+    var res = {
+      source: peg$source,
+      start: {
+        offset: startPos,
+        line: startPosDetails.line,
+        column: startPosDetails.column
+      },
+      end: {
+        offset: endPos,
+        line: endPosDetails.line,
+        column: endPosDetails.column
+      }
+    };
+    return res;
+  }
+  function peg$fail(expected) {
+    if (peg$currPos < peg$maxFailPos) {
+      return;
+    }
+    if (peg$currPos > peg$maxFailPos) {
+      peg$maxFailPos = peg$currPos;
+      peg$maxFailExpected = [];
+    }
+    peg$maxFailExpected.push(expected);
+  }
+  function peg$buildStructuredError(expected, found, location2) {
+    return new peg$SyntaxError(
+      peg$SyntaxError.buildMessage(expected, found),
+      expected,
+      found,
+      location2
+    );
+  }
+  function peg$parsepgn() {
+    var s0, s1, s2;
+    s0 = peg$currPos;
+    s1 = peg$parsetagPairSection();
+    s2 = peg$parsemoveTextSection();
+    s0 = peg$f0(s1, s2);
+    return s0;
+  }
+  function peg$parsetagPairSection() {
+    var s0, s1, s2;
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = peg$parsetagPair();
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = peg$parsetagPair();
+    }
+    s2 = peg$parse_();
+    s0 = peg$f1(s1);
+    return s0;
+  }
+  function peg$parsetagPair() {
+    var s0, s2, s4, s6, s7, s8, s10;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    peg$parse_();
+    if (input.charCodeAt(peg$currPos) === 91) {
+      s2 = peg$c0;
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e1);
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      peg$parse_();
+      s4 = peg$parsetagName();
+      if (s4 !== peg$FAILED) {
+        peg$parse_();
+        if (input.charCodeAt(peg$currPos) === 34) {
+          s6 = peg$c1;
+          peg$currPos++;
+        } else {
+          s6 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e2);
+          }
+        }
+        if (s6 !== peg$FAILED) {
+          s7 = peg$parsetagValue();
+          if (input.charCodeAt(peg$currPos) === 34) {
+            s8 = peg$c1;
+            peg$currPos++;
+          } else {
+            s8 = peg$FAILED;
+            if (peg$silentFails === 0) {
+              peg$fail(peg$e2);
+            }
+          }
+          if (s8 !== peg$FAILED) {
+            peg$parse_();
+            if (input.charCodeAt(peg$currPos) === 93) {
+              s10 = peg$c2;
+              peg$currPos++;
+            } else {
+              s10 = peg$FAILED;
+              if (peg$silentFails === 0) {
+                peg$fail(peg$e3);
+              }
+            }
+            if (s10 !== peg$FAILED) {
+              s0 = peg$f2(s4, s7);
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e0);
+      }
+    }
+    return s0;
+  }
+  function peg$parsetagName() {
+    var s0, s1, s2;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = input.charAt(peg$currPos);
+    if (peg$r0.test(s2)) {
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e5);
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      while (s2 !== peg$FAILED) {
+        s1.push(s2);
+        s2 = input.charAt(peg$currPos);
+        if (peg$r0.test(s2)) {
+          peg$currPos++;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e5);
+          }
+        }
+      }
+    } else {
+      s1 = peg$FAILED;
+    }
+    if (s1 !== peg$FAILED) {
+      s0 = input.substring(s0, peg$currPos);
+    } else {
+      s0 = s1;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e4);
+      }
+    }
+    return s0;
+  }
+  function peg$parsetagValue() {
+    var s0, s1, s2;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = input.charAt(peg$currPos);
+    if (peg$r1.test(s2)) {
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e7);
+      }
+    }
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = input.charAt(peg$currPos);
+      if (peg$r1.test(s2)) {
+        peg$currPos++;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e7);
+        }
+      }
+    }
+    s0 = input.substring(s0, peg$currPos);
+    peg$silentFails--;
+    s1 = peg$FAILED;
+    if (peg$silentFails === 0) {
+      peg$fail(peg$e6);
+    }
+    return s0;
+  }
+  function peg$parsemoveTextSection() {
+    var s0, s1, s3;
+    s0 = peg$currPos;
+    s1 = peg$parseline();
+    peg$parse_();
+    s3 = peg$parsegameTerminationMarker();
+    if (s3 === peg$FAILED) {
+      s3 = null;
+    }
+    peg$parse_();
+    s0 = peg$f3(s1, s3);
+    return s0;
+  }
+  function peg$parseline() {
+    var s0, s1, s2, s3;
+    s0 = peg$currPos;
+    s1 = peg$parsecomment();
+    if (s1 === peg$FAILED) {
+      s1 = null;
+    }
+    s2 = [];
+    s3 = peg$parsemove();
+    while (s3 !== peg$FAILED) {
+      s2.push(s3);
+      s3 = peg$parsemove();
+    }
+    s0 = peg$f4(s1, s2);
+    return s0;
+  }
+  function peg$parsemove() {
+    var s0, s4, s5, s6, s7, s8, s9, s10;
+    s0 = peg$currPos;
+    peg$parse_();
+    peg$parsemoveNumber();
+    peg$parse_();
+    s4 = peg$parsesan();
+    if (s4 !== peg$FAILED) {
+      s5 = peg$parsesuffixAnnotation();
+      if (s5 === peg$FAILED) {
+        s5 = null;
+      }
+      s6 = [];
+      s7 = peg$parsenag();
+      while (s7 !== peg$FAILED) {
+        s6.push(s7);
+        s7 = peg$parsenag();
+      }
+      s7 = peg$parse_();
+      s8 = peg$parsecomment();
+      if (s8 === peg$FAILED) {
+        s8 = null;
+      }
+      s9 = [];
+      s10 = peg$parsevariation();
+      while (s10 !== peg$FAILED) {
+        s9.push(s10);
+        s10 = peg$parsevariation();
+      }
+      s0 = peg$f5(s4, s5, s6, s8, s9);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    return s0;
+  }
+  function peg$parsemoveNumber() {
+    var s0, s1, s2, s3, s4, s5;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = input.charAt(peg$currPos);
+    if (peg$r2.test(s2)) {
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e9);
+      }
+    }
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      s2 = input.charAt(peg$currPos);
+      if (peg$r2.test(s2)) {
+        peg$currPos++;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e9);
+        }
+      }
+    }
+    if (input.charCodeAt(peg$currPos) === 46) {
+      s2 = peg$c3;
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e10);
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      s3 = peg$parse_();
+      s4 = [];
+      s5 = input.charAt(peg$currPos);
+      if (peg$r3.test(s5)) {
+        peg$currPos++;
+      } else {
+        s5 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e11);
+        }
+      }
+      while (s5 !== peg$FAILED) {
+        s4.push(s5);
+        s5 = input.charAt(peg$currPos);
+        if (peg$r3.test(s5)) {
+          peg$currPos++;
+        } else {
+          s5 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e11);
+          }
+        }
+      }
+      s1 = [s1, s2, s3, s4];
+      s0 = s1;
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e8);
+      }
+    }
+    return s0;
+  }
+  function peg$parsesan() {
+    var s0, s1, s2, s3, s4, s5;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    s1 = peg$currPos;
+    if (input.substr(peg$currPos, 5) === peg$c4) {
+      s2 = peg$c4;
+      peg$currPos += 5;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e13);
+      }
+    }
+    if (s2 === peg$FAILED) {
+      if (input.substr(peg$currPos, 3) === peg$c5) {
+        s2 = peg$c5;
+        peg$currPos += 3;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e14);
+        }
+      }
+      if (s2 === peg$FAILED) {
+        if (input.substr(peg$currPos, 5) === peg$c6) {
+          s2 = peg$c6;
+          peg$currPos += 5;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e15);
+          }
+        }
+        if (s2 === peg$FAILED) {
+          if (input.substr(peg$currPos, 3) === peg$c7) {
+            s2 = peg$c7;
+            peg$currPos += 3;
+          } else {
+            s2 = peg$FAILED;
+            if (peg$silentFails === 0) {
+              peg$fail(peg$e16);
+            }
+          }
+          if (s2 === peg$FAILED) {
+            s2 = peg$currPos;
+            s3 = input.charAt(peg$currPos);
+            if (peg$r0.test(s3)) {
+              peg$currPos++;
+            } else {
+              s3 = peg$FAILED;
+              if (peg$silentFails === 0) {
+                peg$fail(peg$e5);
+              }
+            }
+            if (s3 !== peg$FAILED) {
+              s4 = [];
+              s5 = input.charAt(peg$currPos);
+              if (peg$r4.test(s5)) {
+                peg$currPos++;
+              } else {
+                s5 = peg$FAILED;
+                if (peg$silentFails === 0) {
+                  peg$fail(peg$e17);
+                }
+              }
+              if (s5 !== peg$FAILED) {
+                while (s5 !== peg$FAILED) {
+                  s4.push(s5);
+                  s5 = input.charAt(peg$currPos);
+                  if (peg$r4.test(s5)) {
+                    peg$currPos++;
+                  } else {
+                    s5 = peg$FAILED;
+                    if (peg$silentFails === 0) {
+                      peg$fail(peg$e17);
+                    }
+                  }
+                }
+              } else {
+                s4 = peg$FAILED;
+              }
+              if (s4 !== peg$FAILED) {
+                s3 = [s3, s4];
+                s2 = s3;
+              } else {
+                peg$currPos = s2;
+                s2 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s2;
+              s2 = peg$FAILED;
+            }
+          }
+        }
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      s3 = input.charAt(peg$currPos);
+      if (peg$r5.test(s3)) {
+        peg$currPos++;
+      } else {
+        s3 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e18);
+        }
+      }
+      if (s3 === peg$FAILED) {
+        s3 = null;
+      }
+      s2 = [s2, s3];
+      s1 = s2;
+    } else {
+      peg$currPos = s1;
+      s1 = peg$FAILED;
+    }
+    if (s1 !== peg$FAILED) {
+      s0 = input.substring(s0, peg$currPos);
+    } else {
+      s0 = s1;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e12);
+      }
+    }
+    return s0;
+  }
+  function peg$parsesuffixAnnotation() {
+    var s0, s1, s2;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    s1 = [];
+    s2 = input.charAt(peg$currPos);
+    if (peg$r6.test(s2)) {
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e20);
+      }
+    }
+    while (s2 !== peg$FAILED) {
+      s1.push(s2);
+      if (s1.length >= 2) {
+        s2 = peg$FAILED;
+      } else {
+        s2 = input.charAt(peg$currPos);
+        if (peg$r6.test(s2)) {
+          peg$currPos++;
+        } else {
+          s2 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e20);
+          }
+        }
+      }
+    }
+    if (s1.length < 1) {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    } else {
+      s0 = s1;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e19);
+      }
+    }
+    return s0;
+  }
+  function peg$parsenag() {
+    var s0, s2, s3, s4, s5;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    peg$parse_();
+    if (input.charCodeAt(peg$currPos) === 36) {
+      s2 = peg$c8;
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e22);
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      s3 = peg$currPos;
+      s4 = [];
+      s5 = input.charAt(peg$currPos);
+      if (peg$r2.test(s5)) {
+        peg$currPos++;
+      } else {
+        s5 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e9);
+        }
+      }
+      if (s5 !== peg$FAILED) {
+        while (s5 !== peg$FAILED) {
+          s4.push(s5);
+          s5 = input.charAt(peg$currPos);
+          if (peg$r2.test(s5)) {
+            peg$currPos++;
+          } else {
+            s5 = peg$FAILED;
+            if (peg$silentFails === 0) {
+              peg$fail(peg$e9);
+            }
+          }
+        }
+      } else {
+        s4 = peg$FAILED;
+      }
+      if (s4 !== peg$FAILED) {
+        s3 = input.substring(s3, peg$currPos);
+      } else {
+        s3 = s4;
+      }
+      if (s3 !== peg$FAILED) {
+        s0 = peg$f6(s3);
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e21);
+      }
+    }
+    return s0;
+  }
+  function peg$parsecomment() {
+    var s0;
+    s0 = peg$parsebraceComment();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parserestOfLineComment();
+    }
+    return s0;
+  }
+  function peg$parsebraceComment() {
+    var s0, s1, s2, s3, s4;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    if (input.charCodeAt(peg$currPos) === 123) {
+      s1 = peg$c9;
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e24);
+      }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$currPos;
+      s3 = [];
+      s4 = input.charAt(peg$currPos);
+      if (peg$r7.test(s4)) {
+        peg$currPos++;
+      } else {
+        s4 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e25);
+        }
+      }
+      while (s4 !== peg$FAILED) {
+        s3.push(s4);
+        s4 = input.charAt(peg$currPos);
+        if (peg$r7.test(s4)) {
+          peg$currPos++;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e25);
+          }
+        }
+      }
+      s2 = input.substring(s2, peg$currPos);
+      if (input.charCodeAt(peg$currPos) === 125) {
+        s3 = peg$c10;
+        peg$currPos++;
+      } else {
+        s3 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e26);
+        }
+      }
+      if (s3 !== peg$FAILED) {
+        s0 = peg$f7(s2);
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e23);
+      }
+    }
+    return s0;
+  }
+  function peg$parserestOfLineComment() {
+    var s0, s1, s2, s3, s4;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    if (input.charCodeAt(peg$currPos) === 59) {
+      s1 = peg$c11;
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e28);
+      }
+    }
+    if (s1 !== peg$FAILED) {
+      s2 = peg$currPos;
+      s3 = [];
+      s4 = input.charAt(peg$currPos);
+      if (peg$r8.test(s4)) {
+        peg$currPos++;
+      } else {
+        s4 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e29);
+        }
+      }
+      while (s4 !== peg$FAILED) {
+        s3.push(s4);
+        s4 = input.charAt(peg$currPos);
+        if (peg$r8.test(s4)) {
+          peg$currPos++;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e29);
+          }
+        }
+      }
+      s2 = input.substring(s2, peg$currPos);
+      s0 = peg$f8(s2);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e27);
+      }
+    }
+    return s0;
+  }
+  function peg$parsevariation() {
+    var s0, s2, s3, s5;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    peg$parse_();
+    if (input.charCodeAt(peg$currPos) === 40) {
+      s2 = peg$c12;
+      peg$currPos++;
+    } else {
+      s2 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e31);
+      }
+    }
+    if (s2 !== peg$FAILED) {
+      s3 = peg$parseline();
+      if (s3 !== peg$FAILED) {
+        peg$parse_();
+        if (input.charCodeAt(peg$currPos) === 41) {
+          s5 = peg$c13;
+          peg$currPos++;
+        } else {
+          s5 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e32);
+          }
+        }
+        if (s5 !== peg$FAILED) {
+          s0 = peg$f9(s3);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e30);
+      }
+    }
+    return s0;
+  }
+  function peg$parsegameTerminationMarker() {
+    var s0, s1, s3;
+    peg$silentFails++;
+    s0 = peg$currPos;
+    if (input.substr(peg$currPos, 3) === peg$c14) {
+      s1 = peg$c14;
+      peg$currPos += 3;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e34);
+      }
+    }
+    if (s1 === peg$FAILED) {
+      if (input.substr(peg$currPos, 3) === peg$c15) {
+        s1 = peg$c15;
+        peg$currPos += 3;
+      } else {
+        s1 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e35);
+        }
+      }
+      if (s1 === peg$FAILED) {
+        if (input.substr(peg$currPos, 7) === peg$c16) {
+          s1 = peg$c16;
+          peg$currPos += 7;
+        } else {
+          s1 = peg$FAILED;
+          if (peg$silentFails === 0) {
+            peg$fail(peg$e36);
+          }
+        }
+        if (s1 === peg$FAILED) {
+          if (input.charCodeAt(peg$currPos) === 42) {
+            s1 = peg$c17;
+            peg$currPos++;
+          } else {
+            s1 = peg$FAILED;
+            if (peg$silentFails === 0) {
+              peg$fail(peg$e37);
+            }
+          }
+        }
+      }
+    }
+    if (s1 !== peg$FAILED) {
+      peg$parse_();
+      s3 = peg$parsecomment();
+      if (s3 === peg$FAILED) {
+        s3 = null;
+      }
+      s0 = peg$f10(s1, s3);
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+    peg$silentFails--;
+    if (s0 === peg$FAILED) {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e33);
+      }
+    }
+    return s0;
+  }
+  function peg$parse_() {
+    var s0, s1;
+    peg$silentFails++;
+    s0 = [];
+    s1 = input.charAt(peg$currPos);
+    if (peg$r9.test(s1)) {
+      peg$currPos++;
+    } else {
+      s1 = peg$FAILED;
+      if (peg$silentFails === 0) {
+        peg$fail(peg$e39);
+      }
+    }
+    while (s1 !== peg$FAILED) {
+      s0.push(s1);
+      s1 = input.charAt(peg$currPos);
+      if (peg$r9.test(s1)) {
+        peg$currPos++;
+      } else {
+        s1 = peg$FAILED;
+        if (peg$silentFails === 0) {
+          peg$fail(peg$e39);
+        }
+      }
+    }
+    peg$silentFails--;
+    s1 = peg$FAILED;
+    if (peg$silentFails === 0) {
+      peg$fail(peg$e38);
+    }
+    return s0;
+  }
+  peg$result = peg$startRuleFunction();
+  if (options.peg$library) {
+    return (
+      /** @type {any} */
+      {
+        peg$result,
+        peg$currPos,
+        peg$FAILED,
+        peg$maxFailExpected,
+        peg$maxFailPos
+      }
+    );
+  }
+  if (peg$result !== peg$FAILED && peg$currPos === input.length) {
+    return peg$result;
+  } else {
+    if (peg$result !== peg$FAILED && peg$currPos < input.length) {
+      peg$fail(peg$endExpectation());
+    }
+    throw peg$buildStructuredError(
+      peg$maxFailExpected,
+      peg$maxFailPos < input.length ? input.charAt(peg$maxFailPos) : null,
+      peg$maxFailPos < input.length ? peg$computeLocation(peg$maxFailPos, peg$maxFailPos + 1) : peg$computeLocation(peg$maxFailPos, peg$maxFailPos)
+    );
+  }
+}
+/**
+ * @license
+ * Copyright (c) 2025, Jeff Hlywa (jhlywa@gmail.com)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+const MASK64 = 0xffffffffffffffffn;
+function rotl(x3, k2) {
+  return (x3 << k2 | x3 >> 64n - k2) & 0xffffffffffffffffn;
+}
+function wrappingMul(x3, y2) {
+  return x3 * y2 & MASK64;
+}
+function xoroshiro128(state) {
+  return function() {
+    let s0 = BigInt(state & MASK64);
+    let s1 = BigInt(state >> 64n & MASK64);
+    const result = wrappingMul(rotl(wrappingMul(s0, 5n), 7n), 9n);
+    s1 ^= s0;
+    s0 = (rotl(s0, 24n) ^ s1 ^ s1 << 16n) & MASK64;
+    s1 = rotl(s1, 37n);
+    state = s1 << 64n | s0;
+    return result;
+  };
+}
+const rand = xoroshiro128(0xa187eb39cdcaed8f31c4b365b102e01en);
+const PIECE_KEYS = Array.from({ length: 2 }, () => Array.from({ length: 6 }, () => Array.from({ length: 128 }, () => rand())));
+const EP_KEYS = Array.from({ length: 8 }, () => rand());
+const CASTLING_KEYS = Array.from({ length: 16 }, () => rand());
+const SIDE_KEY = rand();
+const WHITE = "w";
+const BLACK = "b";
+const PAWN = "p";
+const KNIGHT = "n";
+const BISHOP = "b";
+const ROOK = "r";
+const QUEEN = "q";
+const KING = "k";
+const DEFAULT_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+class Move {
+  constructor(chess, internal) {
+    __publicField(this, "color");
+    __publicField(this, "from");
+    __publicField(this, "to");
+    __publicField(this, "piece");
+    __publicField(this, "captured");
+    __publicField(this, "promotion");
+    /**
+     * @deprecated This field is deprecated and will be removed in version 2.0.0.
+     * Please use move descriptor functions instead: `isCapture`, `isPromotion`,
+     * `isEnPassant`, `isKingsideCastle`, `isQueensideCastle`, `isCastle`, and
+     * `isBigPawn`
+     */
+    __publicField(this, "flags");
+    __publicField(this, "san");
+    __publicField(this, "lan");
+    __publicField(this, "before");
+    __publicField(this, "after");
+    const { color: color2, piece, from, to, flags, captured, promotion } = internal;
+    const fromAlgebraic = algebraic(from);
+    const toAlgebraic = algebraic(to);
+    this.color = color2;
+    this.piece = piece;
+    this.from = fromAlgebraic;
+    this.to = toAlgebraic;
+    this.san = chess["_moveToSan"](internal, chess["_moves"]({ legal: true }));
+    this.lan = fromAlgebraic + toAlgebraic;
+    this.before = chess.fen();
+    chess["_makeMove"](internal);
+    this.after = chess.fen();
+    chess["_undoMove"]();
+    this.flags = "";
+    for (const flag in BITS) {
+      if (BITS[flag] & flags) {
+        this.flags += FLAGS[flag];
+      }
+    }
+    if (captured) {
+      this.captured = captured;
+    }
+    if (promotion) {
+      this.promotion = promotion;
+      this.lan += promotion;
+    }
+  }
+  isCapture() {
+    return this.flags.indexOf(FLAGS["CAPTURE"]) > -1;
+  }
+  isPromotion() {
+    return this.flags.indexOf(FLAGS["PROMOTION"]) > -1;
+  }
+  isEnPassant() {
+    return this.flags.indexOf(FLAGS["EP_CAPTURE"]) > -1;
+  }
+  isKingsideCastle() {
+    return this.flags.indexOf(FLAGS["KSIDE_CASTLE"]) > -1;
+  }
+  isQueensideCastle() {
+    return this.flags.indexOf(FLAGS["QSIDE_CASTLE"]) > -1;
+  }
+  isBigPawn() {
+    return this.flags.indexOf(FLAGS["BIG_PAWN"]) > -1;
+  }
+}
+const EMPTY = -1;
+const FLAGS = {
+  NORMAL: "n",
+  CAPTURE: "c",
+  BIG_PAWN: "b",
+  EP_CAPTURE: "e",
+  PROMOTION: "p",
+  KSIDE_CASTLE: "k",
+  QSIDE_CASTLE: "q",
+  NULL_MOVE: "-"
+};
+const BITS = {
+  NORMAL: 1,
+  CAPTURE: 2,
+  BIG_PAWN: 4,
+  EP_CAPTURE: 8,
+  PROMOTION: 16,
+  KSIDE_CASTLE: 32,
+  QSIDE_CASTLE: 64,
+  NULL_MOVE: 128
+};
+const SEVEN_TAG_ROSTER = {
+  Event: "?",
+  Site: "?",
+  Date: "????.??.??",
+  Round: "?",
+  White: "?",
+  Black: "?",
+  Result: "*"
+};
+const SUPLEMENTAL_TAGS = {
+  WhiteTitle: null,
+  BlackTitle: null,
+  WhiteElo: null,
+  BlackElo: null,
+  WhiteUSCF: null,
+  BlackUSCF: null,
+  WhiteNA: null,
+  BlackNA: null,
+  WhiteType: null,
+  BlackType: null,
+  EventDate: null,
+  EventSponsor: null,
+  Section: null,
+  Stage: null,
+  Board: null,
+  Opening: null,
+  Variation: null,
+  SubVariation: null,
+  ECO: null,
+  NIC: null,
+  Time: null,
+  UTCTime: null,
+  UTCDate: null,
+  TimeControl: null,
+  SetUp: null,
+  FEN: null,
+  Termination: null,
+  Annotator: null,
+  Mode: null,
+  PlyCount: null
+};
+const HEADER_TEMPLATE = {
+  ...SEVEN_TAG_ROSTER,
+  ...SUPLEMENTAL_TAGS
+};
+const Ox88 = {
+  a8: 0,
+  b8: 1,
+  c8: 2,
+  d8: 3,
+  e8: 4,
+  f8: 5,
+  g8: 6,
+  h8: 7,
+  a7: 16,
+  b7: 17,
+  c7: 18,
+  d7: 19,
+  e7: 20,
+  f7: 21,
+  g7: 22,
+  h7: 23,
+  a6: 32,
+  b6: 33,
+  c6: 34,
+  d6: 35,
+  e6: 36,
+  f6: 37,
+  g6: 38,
+  h6: 39,
+  a5: 48,
+  b5: 49,
+  c5: 50,
+  d5: 51,
+  e5: 52,
+  f5: 53,
+  g5: 54,
+  h5: 55,
+  a4: 64,
+  b4: 65,
+  c4: 66,
+  d4: 67,
+  e4: 68,
+  f4: 69,
+  g4: 70,
+  h4: 71,
+  a3: 80,
+  b3: 81,
+  c3: 82,
+  d3: 83,
+  e3: 84,
+  f3: 85,
+  g3: 86,
+  h3: 87,
+  a2: 96,
+  b2: 97,
+  c2: 98,
+  d2: 99,
+  e2: 100,
+  f2: 101,
+  g2: 102,
+  h2: 103,
+  a1: 112,
+  b1: 113,
+  c1: 114,
+  d1: 115,
+  e1: 116,
+  f1: 117,
+  g1: 118,
+  h1: 119
+};
+const PAWN_OFFSETS = {
+  b: [16, 32, 17, 15],
+  w: [-16, -32, -17, -15]
+};
+const PIECE_OFFSETS = {
+  n: [-18, -33, -31, -14, 18, 33, 31, 14],
+  b: [-17, -15, 17, 15],
+  r: [-16, 1, 16, -1],
+  q: [-17, -16, -15, 1, 17, 16, 15, -1],
+  k: [-17, -16, -15, 1, 17, 16, 15, -1]
+};
+const ATTACKS = [
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  24,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  2,
+  24,
+  2,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  2,
+  53,
+  56,
+  53,
+  2,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  24,
+  24,
+  24,
+  24,
+  24,
+  24,
+  56,
+  0,
+  56,
+  24,
+  24,
+  24,
+  24,
+  24,
+  24,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  2,
+  53,
+  56,
+  53,
+  2,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  2,
+  24,
+  2,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  24,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20,
+  0,
+  0,
+  20,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  24,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  20
+];
+const RAYS = [
+  17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  16,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  15,
+  0,
+  0,
+  17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  16,
+  0,
+  0,
+  0,
+  0,
+  0,
+  15,
+  0,
+  0,
+  0,
+  0,
+  17,
+  0,
+  0,
+  0,
+  0,
+  16,
+  0,
+  0,
+  0,
+  0,
+  15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  17,
+  0,
+  0,
+  0,
+  16,
+  0,
+  0,
+  0,
+  15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  17,
+  0,
+  0,
+  16,
+  0,
+  0,
+  15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  17,
+  0,
+  16,
+  0,
+  15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  17,
+  16,
+  15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  -16,
+  -17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  0,
+  -16,
+  0,
+  -17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  0,
+  0,
+  -16,
+  0,
+  0,
+  -17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  0,
+  0,
+  0,
+  -16,
+  0,
+  0,
+  0,
+  -17,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  0,
+  0,
+  0,
+  0,
+  -16,
+  0,
+  0,
+  0,
+  0,
+  -17,
+  0,
+  0,
+  0,
+  0,
+  -15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -16,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -17,
+  0,
+  0,
+  -15,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -16,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  -17
+];
+const PIECE_MASKS = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 };
+const SYMBOLS = "pnbrqkPNBRQK";
+const PROMOTIONS = [KNIGHT, BISHOP, ROOK, QUEEN];
+const RANK_1 = 7;
+const RANK_2 = 6;
+const RANK_7 = 1;
+const RANK_8 = 0;
+const SIDES = {
+  [KING]: BITS.KSIDE_CASTLE,
+  [QUEEN]: BITS.QSIDE_CASTLE
+};
+const ROOKS = {
+  w: [
+    { square: Ox88.a1, flag: BITS.QSIDE_CASTLE },
+    { square: Ox88.h1, flag: BITS.KSIDE_CASTLE }
+  ],
+  b: [
+    { square: Ox88.a8, flag: BITS.QSIDE_CASTLE },
+    { square: Ox88.h8, flag: BITS.KSIDE_CASTLE }
+  ]
+};
+const SECOND_RANK = { b: RANK_7, w: RANK_2 };
+const SAN_NULLMOVE = "--";
+function rank(square) {
+  return square >> 4;
+}
+function file(square) {
+  return square & 15;
+}
+function isDigit(c2) {
+  return "0123456789".indexOf(c2) !== -1;
+}
+function algebraic(square) {
+  const f2 = file(square);
+  const r2 = rank(square);
+  return "abcdefgh".substring(f2, f2 + 1) + "87654321".substring(r2, r2 + 1);
+}
+function swapColor(color2) {
+  return color2 === WHITE ? BLACK : WHITE;
+}
+function validateFen(fen) {
+  const tokens = fen.split(/\s+/);
+  if (tokens.length !== 6) {
+    return {
+      ok: false,
+      error: "Invalid FEN: must contain six space-delimited fields"
+    };
+  }
+  const moveNumber = parseInt(tokens[5], 10);
+  if (isNaN(moveNumber) || moveNumber <= 0) {
+    return {
+      ok: false,
+      error: "Invalid FEN: move number must be a positive integer"
+    };
+  }
+  const halfMoves = parseInt(tokens[4], 10);
+  if (isNaN(halfMoves) || halfMoves < 0) {
+    return {
+      ok: false,
+      error: "Invalid FEN: half move counter number must be a non-negative integer"
+    };
+  }
+  if (!/^(-|[abcdefgh][36])$/.test(tokens[3])) {
+    return { ok: false, error: "Invalid FEN: en-passant square is invalid" };
+  }
+  if (/[^kKqQ-]/.test(tokens[2])) {
+    return { ok: false, error: "Invalid FEN: castling availability is invalid" };
+  }
+  if (!/^(w|b)$/.test(tokens[1])) {
+    return { ok: false, error: "Invalid FEN: side-to-move is invalid" };
+  }
+  const rows = tokens[0].split("/");
+  if (rows.length !== 8) {
+    return {
+      ok: false,
+      error: "Invalid FEN: piece data does not contain 8 '/'-delimited rows"
+    };
+  }
+  for (let i2 = 0; i2 < rows.length; i2++) {
+    let sumFields = 0;
+    let previousWasNumber = false;
+    for (let k2 = 0; k2 < rows[i2].length; k2++) {
+      if (isDigit(rows[i2][k2])) {
+        if (previousWasNumber) {
+          return {
+            ok: false,
+            error: "Invalid FEN: piece data is invalid (consecutive number)"
+          };
+        }
+        sumFields += parseInt(rows[i2][k2], 10);
+        previousWasNumber = true;
+      } else {
+        if (!/^[prnbqkPRNBQK]$/.test(rows[i2][k2])) {
+          return {
+            ok: false,
+            error: "Invalid FEN: piece data is invalid (invalid piece)"
+          };
+        }
+        sumFields += 1;
+        previousWasNumber = false;
+      }
+    }
+    if (sumFields !== 8) {
+      return {
+        ok: false,
+        error: "Invalid FEN: piece data is invalid (too many squares in rank)"
+      };
+    }
+  }
+  if (tokens[3][1] == "3" && tokens[1] == "w" || tokens[3][1] == "6" && tokens[1] == "b") {
+    return { ok: false, error: "Invalid FEN: illegal en-passant square" };
+  }
+  const kings = [
+    { color: "white", regex: /K/g },
+    { color: "black", regex: /k/g }
+  ];
+  for (const { color: color2, regex } of kings) {
+    if (!regex.test(tokens[0])) {
+      return { ok: false, error: `Invalid FEN: missing ${color2} king` };
+    }
+    if ((tokens[0].match(regex) || []).length > 1) {
+      return { ok: false, error: `Invalid FEN: too many ${color2} kings` };
+    }
+  }
+  if (Array.from(rows[0] + rows[7]).some((char) => char.toUpperCase() === "P")) {
+    return {
+      ok: false,
+      error: "Invalid FEN: some pawns are on the edge rows"
+    };
+  }
+  return { ok: true };
+}
+function getDisambiguator(move, moves) {
+  const from = move.from;
+  const to = move.to;
+  const piece = move.piece;
+  let ambiguities = 0;
+  let sameRank = 0;
+  let sameFile = 0;
+  for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+    const ambigFrom = moves[i2].from;
+    const ambigTo = moves[i2].to;
+    const ambigPiece = moves[i2].piece;
+    if (piece === ambigPiece && from !== ambigFrom && to === ambigTo) {
+      ambiguities++;
+      if (rank(from) === rank(ambigFrom)) {
+        sameRank++;
+      }
+      if (file(from) === file(ambigFrom)) {
+        sameFile++;
+      }
+    }
+  }
+  if (ambiguities > 0) {
+    if (sameRank > 0 && sameFile > 0) {
+      return algebraic(from);
+    } else if (sameFile > 0) {
+      return algebraic(from).charAt(1);
+    } else {
+      return algebraic(from).charAt(0);
+    }
+  }
+  return "";
+}
+function addMove(moves, color2, from, to, piece, captured = void 0, flags = BITS.NORMAL) {
+  const r2 = rank(to);
+  if (piece === PAWN && (r2 === RANK_1 || r2 === RANK_8)) {
+    for (let i2 = 0; i2 < PROMOTIONS.length; i2++) {
+      const promotion = PROMOTIONS[i2];
+      moves.push({
+        color: color2,
+        from,
+        to,
+        piece,
+        captured,
+        promotion,
+        flags: flags | BITS.PROMOTION
+      });
+    }
+  } else {
+    moves.push({
+      color: color2,
+      from,
+      to,
+      piece,
+      captured,
+      flags
+    });
+  }
+}
+function inferPieceType(san) {
+  let pieceType = san.charAt(0);
+  if (pieceType >= "a" && pieceType <= "h") {
+    const matches = san.match(/[a-h]\d.*[a-h]\d/);
+    if (matches) {
+      return void 0;
+    }
+    return PAWN;
+  }
+  pieceType = pieceType.toLowerCase();
+  if (pieceType === "o") {
+    return KING;
+  }
+  return pieceType;
+}
+function strippedSan(move) {
+  return move.replace(/=/, "").replace(/[+#]?[?!]*$/, "");
+}
+class Chess {
+  constructor(fen = DEFAULT_POSITION, { skipValidation = false } = {}) {
+    __publicField(this, "_board", new Array(128));
+    __publicField(this, "_turn", WHITE);
+    __publicField(this, "_header", {});
+    __publicField(this, "_kings", { w: EMPTY, b: EMPTY });
+    __publicField(this, "_epSquare", -1);
+    __publicField(this, "_halfMoves", 0);
+    __publicField(this, "_moveNumber", 0);
+    __publicField(this, "_history", []);
+    __publicField(this, "_comments", {});
+    __publicField(this, "_castling", { w: 0, b: 0 });
+    __publicField(this, "_hash", 0n);
+    // tracks number of times a position has been seen for repetition checking
+    __publicField(this, "_positionCount", /* @__PURE__ */ new Map());
+    this.load(fen, { skipValidation });
+  }
+  clear({ preserveHeaders = false } = {}) {
+    this._board = new Array(128);
+    this._kings = { w: EMPTY, b: EMPTY };
+    this._turn = WHITE;
+    this._castling = { w: 0, b: 0 };
+    this._epSquare = EMPTY;
+    this._halfMoves = 0;
+    this._moveNumber = 1;
+    this._history = [];
+    this._comments = {};
+    this._header = preserveHeaders ? this._header : { ...HEADER_TEMPLATE };
+    this._hash = this._computeHash();
+    this._positionCount = /* @__PURE__ */ new Map();
+    this._header["SetUp"] = null;
+    this._header["FEN"] = null;
+  }
+  load(fen, { skipValidation = false, preserveHeaders = false } = {}) {
+    let tokens = fen.split(/\s+/);
+    if (tokens.length >= 2 && tokens.length < 6) {
+      const adjustments = ["-", "-", "0", "1"];
+      fen = tokens.concat(adjustments.slice(-(6 - tokens.length))).join(" ");
+    }
+    tokens = fen.split(/\s+/);
+    if (!skipValidation) {
+      const { ok, error } = validateFen(fen);
+      if (!ok) {
+        throw new Error(error);
+      }
+    }
+    const position = tokens[0];
+    let square = 0;
+    this.clear({ preserveHeaders });
+    for (let i2 = 0; i2 < position.length; i2++) {
+      const piece = position.charAt(i2);
+      if (piece === "/") {
+        square += 8;
+      } else if (isDigit(piece)) {
+        square += parseInt(piece, 10);
+      } else {
+        const color2 = piece < "a" ? WHITE : BLACK;
+        this._put({ type: piece.toLowerCase(), color: color2 }, algebraic(square));
+        square++;
+      }
+    }
+    this._turn = tokens[1];
+    if (tokens[2].indexOf("K") > -1) {
+      this._castling.w |= BITS.KSIDE_CASTLE;
+    }
+    if (tokens[2].indexOf("Q") > -1) {
+      this._castling.w |= BITS.QSIDE_CASTLE;
+    }
+    if (tokens[2].indexOf("k") > -1) {
+      this._castling.b |= BITS.KSIDE_CASTLE;
+    }
+    if (tokens[2].indexOf("q") > -1) {
+      this._castling.b |= BITS.QSIDE_CASTLE;
+    }
+    this._epSquare = tokens[3] === "-" ? EMPTY : Ox88[tokens[3]];
+    this._halfMoves = parseInt(tokens[4], 10);
+    this._moveNumber = parseInt(tokens[5], 10);
+    this._hash = this._computeHash();
+    this._updateSetup(fen);
+    this._incPositionCount();
+  }
+  fen({ forceEnpassantSquare = false } = {}) {
+    var _a3, _b3;
+    let empty2 = 0;
+    let fen = "";
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (this._board[i2]) {
+        if (empty2 > 0) {
+          fen += empty2;
+          empty2 = 0;
+        }
+        const { color: color2, type: piece } = this._board[i2];
+        fen += color2 === WHITE ? piece.toUpperCase() : piece.toLowerCase();
+      } else {
+        empty2++;
+      }
+      if (i2 + 1 & 136) {
+        if (empty2 > 0) {
+          fen += empty2;
+        }
+        if (i2 !== Ox88.h1) {
+          fen += "/";
+        }
+        empty2 = 0;
+        i2 += 8;
+      }
+    }
+    let castling = "";
+    if (this._castling[WHITE] & BITS.KSIDE_CASTLE) {
+      castling += "K";
+    }
+    if (this._castling[WHITE] & BITS.QSIDE_CASTLE) {
+      castling += "Q";
+    }
+    if (this._castling[BLACK] & BITS.KSIDE_CASTLE) {
+      castling += "k";
+    }
+    if (this._castling[BLACK] & BITS.QSIDE_CASTLE) {
+      castling += "q";
+    }
+    castling = castling || "-";
+    let epSquare = "-";
+    if (this._epSquare !== EMPTY) {
+      if (forceEnpassantSquare) {
+        epSquare = algebraic(this._epSquare);
+      } else {
+        const bigPawnSquare = this._epSquare + (this._turn === WHITE ? 16 : -16);
+        const squares = [bigPawnSquare + 1, bigPawnSquare - 1];
+        for (const square of squares) {
+          if (square & 136) {
+            continue;
+          }
+          const color2 = this._turn;
+          if (((_a3 = this._board[square]) == null ? void 0 : _a3.color) === color2 && ((_b3 = this._board[square]) == null ? void 0 : _b3.type) === PAWN) {
+            this._makeMove({
+              color: color2,
+              from: square,
+              to: this._epSquare,
+              piece: PAWN,
+              captured: PAWN,
+              flags: BITS.EP_CAPTURE
+            });
+            const isLegal = !this._isKingAttacked(color2);
+            this._undoMove();
+            if (isLegal) {
+              epSquare = algebraic(this._epSquare);
+              break;
+            }
+          }
+        }
+      }
+    }
+    return [
+      fen,
+      this._turn,
+      castling,
+      epSquare,
+      this._halfMoves,
+      this._moveNumber
+    ].join(" ");
+  }
+  _pieceKey(i2) {
+    if (!this._board[i2]) {
+      return 0n;
+    }
+    const { color: color2, type } = this._board[i2];
+    const colorIndex = {
+      w: 0,
+      b: 1
+    }[color2];
+    const typeIndex = {
+      p: 0,
+      n: 1,
+      b: 2,
+      r: 3,
+      q: 4,
+      k: 5
+    }[type];
+    return PIECE_KEYS[colorIndex][typeIndex][i2];
+  }
+  _epKey() {
+    return this._epSquare === EMPTY ? 0n : EP_KEYS[this._epSquare & 7];
+  }
+  _castlingKey() {
+    const index2 = this._castling.w >> 5 | this._castling.b >> 3;
+    return CASTLING_KEYS[index2];
+  }
+  _computeHash() {
+    let hash = 0n;
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (i2 & 136) {
+        i2 += 7;
+        continue;
+      }
+      if (this._board[i2]) {
+        hash ^= this._pieceKey(i2);
+      }
+    }
+    hash ^= this._epKey();
+    hash ^= this._castlingKey();
+    if (this._turn === "b") {
+      hash ^= SIDE_KEY;
+    }
+    return hash;
+  }
+  /*
+   * Called when the initial board setup is changed with put() or remove().
+   * modifies the SetUp and FEN properties of the header object. If the FEN
+   * is equal to the default position, the SetUp and FEN are deleted the setup
+   * is only updated if history.length is zero, ie moves haven't been made.
+   */
+  _updateSetup(fen) {
+    if (this._history.length > 0)
+      return;
+    if (fen !== DEFAULT_POSITION) {
+      this._header["SetUp"] = "1";
+      this._header["FEN"] = fen;
+    } else {
+      this._header["SetUp"] = null;
+      this._header["FEN"] = null;
+    }
+  }
+  reset() {
+    this.load(DEFAULT_POSITION);
+  }
+  get(square) {
+    return this._board[Ox88[square]];
+  }
+  findPiece(piece) {
+    var _a3;
+    const squares = [];
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (i2 & 136) {
+        i2 += 7;
+        continue;
+      }
+      if (!this._board[i2] || ((_a3 = this._board[i2]) == null ? void 0 : _a3.color) !== piece.color) {
+        continue;
+      }
+      if (this._board[i2].color === piece.color && this._board[i2].type === piece.type) {
+        squares.push(algebraic(i2));
+      }
+    }
+    return squares;
+  }
+  put({ type, color: color2 }, square) {
+    if (this._put({ type, color: color2 }, square)) {
+      this._updateCastlingRights();
+      this._updateEnPassantSquare();
+      this._updateSetup(this.fen());
+      return true;
+    }
+    return false;
+  }
+  _set(sq, piece) {
+    this._hash ^= this._pieceKey(sq);
+    this._board[sq] = piece;
+    this._hash ^= this._pieceKey(sq);
+  }
+  _put({ type, color: color2 }, square) {
+    if (SYMBOLS.indexOf(type.toLowerCase()) === -1) {
+      return false;
+    }
+    if (!(square in Ox88)) {
+      return false;
+    }
+    const sq = Ox88[square];
+    if (type == KING && !(this._kings[color2] == EMPTY || this._kings[color2] == sq)) {
+      return false;
+    }
+    const currentPieceOnSquare = this._board[sq];
+    if (currentPieceOnSquare && currentPieceOnSquare.type === KING) {
+      this._kings[currentPieceOnSquare.color] = EMPTY;
+    }
+    this._set(sq, { type, color: color2 });
+    if (type === KING) {
+      this._kings[color2] = sq;
+    }
+    return true;
+  }
+  _clear(sq) {
+    this._hash ^= this._pieceKey(sq);
+    delete this._board[sq];
+  }
+  remove(square) {
+    const piece = this.get(square);
+    this._clear(Ox88[square]);
+    if (piece && piece.type === KING) {
+      this._kings[piece.color] = EMPTY;
+    }
+    this._updateCastlingRights();
+    this._updateEnPassantSquare();
+    this._updateSetup(this.fen());
+    return piece;
+  }
+  _updateCastlingRights() {
+    var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2, _i2, _j2, _k2, _l2;
+    this._hash ^= this._castlingKey();
+    const whiteKingInPlace = ((_a3 = this._board[Ox88.e1]) == null ? void 0 : _a3.type) === KING && ((_b3 = this._board[Ox88.e1]) == null ? void 0 : _b3.color) === WHITE;
+    const blackKingInPlace = ((_c2 = this._board[Ox88.e8]) == null ? void 0 : _c2.type) === KING && ((_d2 = this._board[Ox88.e8]) == null ? void 0 : _d2.color) === BLACK;
+    if (!whiteKingInPlace || ((_e3 = this._board[Ox88.a1]) == null ? void 0 : _e3.type) !== ROOK || ((_f2 = this._board[Ox88.a1]) == null ? void 0 : _f2.color) !== WHITE) {
+      this._castling.w &= -65;
+    }
+    if (!whiteKingInPlace || ((_g2 = this._board[Ox88.h1]) == null ? void 0 : _g2.type) !== ROOK || ((_h2 = this._board[Ox88.h1]) == null ? void 0 : _h2.color) !== WHITE) {
+      this._castling.w &= -33;
+    }
+    if (!blackKingInPlace || ((_i2 = this._board[Ox88.a8]) == null ? void 0 : _i2.type) !== ROOK || ((_j2 = this._board[Ox88.a8]) == null ? void 0 : _j2.color) !== BLACK) {
+      this._castling.b &= -65;
+    }
+    if (!blackKingInPlace || ((_k2 = this._board[Ox88.h8]) == null ? void 0 : _k2.type) !== ROOK || ((_l2 = this._board[Ox88.h8]) == null ? void 0 : _l2.color) !== BLACK) {
+      this._castling.b &= -33;
+    }
+    this._hash ^= this._castlingKey();
+  }
+  _updateEnPassantSquare() {
+    var _a3, _b3;
+    if (this._epSquare === EMPTY) {
+      return;
+    }
+    const startSquare = this._epSquare + (this._turn === WHITE ? -16 : 16);
+    const currentSquare = this._epSquare + (this._turn === WHITE ? 16 : -16);
+    const attackers = [currentSquare + 1, currentSquare - 1];
+    if (this._board[startSquare] !== null || this._board[this._epSquare] !== null || ((_a3 = this._board[currentSquare]) == null ? void 0 : _a3.color) !== swapColor(this._turn) || ((_b3 = this._board[currentSquare]) == null ? void 0 : _b3.type) !== PAWN) {
+      this._hash ^= this._epKey();
+      this._epSquare = EMPTY;
+      return;
+    }
+    const canCapture = (square) => {
+      var _a4, _b4;
+      return !(square & 136) && ((_a4 = this._board[square]) == null ? void 0 : _a4.color) === this._turn && ((_b4 = this._board[square]) == null ? void 0 : _b4.type) === PAWN;
+    };
+    if (!attackers.some(canCapture)) {
+      this._hash ^= this._epKey();
+      this._epSquare = EMPTY;
+    }
+  }
+  _attacked(color2, square, verbose) {
+    const attackers = [];
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (i2 & 136) {
+        i2 += 7;
+        continue;
+      }
+      if (this._board[i2] === void 0 || this._board[i2].color !== color2) {
+        continue;
+      }
+      const piece = this._board[i2];
+      const difference2 = i2 - square;
+      if (difference2 === 0) {
+        continue;
+      }
+      const index2 = difference2 + 119;
+      if (ATTACKS[index2] & PIECE_MASKS[piece.type]) {
+        if (piece.type === PAWN) {
+          if (difference2 > 0 && piece.color === WHITE || difference2 <= 0 && piece.color === BLACK) {
+            if (!verbose) {
+              return true;
+            } else {
+              attackers.push(algebraic(i2));
+            }
+          }
+          continue;
+        }
+        if (piece.type === "n" || piece.type === "k") {
+          if (!verbose) {
+            return true;
+          } else {
+            attackers.push(algebraic(i2));
+            continue;
+          }
+        }
+        const offset2 = RAYS[index2];
+        let j2 = i2 + offset2;
+        let blocked = false;
+        while (j2 !== square) {
+          if (this._board[j2] != null) {
+            blocked = true;
+            break;
+          }
+          j2 += offset2;
+        }
+        if (!blocked) {
+          if (!verbose) {
+            return true;
+          } else {
+            attackers.push(algebraic(i2));
+            continue;
+          }
+        }
+      }
+    }
+    if (verbose) {
+      return attackers;
+    } else {
+      return false;
+    }
+  }
+  attackers(square, attackedBy) {
+    if (!attackedBy) {
+      return this._attacked(this._turn, Ox88[square], true);
+    } else {
+      return this._attacked(attackedBy, Ox88[square], true);
+    }
+  }
+  _isKingAttacked(color2) {
+    const square = this._kings[color2];
+    return square === -1 ? false : this._attacked(swapColor(color2), square);
+  }
+  hash() {
+    return this._hash.toString(16);
+  }
+  isAttacked(square, attackedBy) {
+    return this._attacked(attackedBy, Ox88[square]);
+  }
+  isCheck() {
+    return this._isKingAttacked(this._turn);
+  }
+  inCheck() {
+    return this.isCheck();
+  }
+  isCheckmate() {
+    return this.isCheck() && this._moves().length === 0;
+  }
+  isStalemate() {
+    return !this.isCheck() && this._moves().length === 0;
+  }
+  isInsufficientMaterial() {
+    const pieces = {
+      b: 0,
+      n: 0,
+      r: 0,
+      q: 0,
+      k: 0,
+      p: 0
+    };
+    const bishops = [];
+    let numPieces = 0;
+    let squareColor = 0;
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      squareColor = (squareColor + 1) % 2;
+      if (i2 & 136) {
+        i2 += 7;
+        continue;
+      }
+      const piece = this._board[i2];
+      if (piece) {
+        pieces[piece.type] = piece.type in pieces ? pieces[piece.type] + 1 : 1;
+        if (piece.type === BISHOP) {
+          bishops.push(squareColor);
+        }
+        numPieces++;
+      }
+    }
+    if (numPieces === 2) {
+      return true;
+    } else if (
+      // k vs. kn .... or .... k vs. kb
+      numPieces === 3 && (pieces[BISHOP] === 1 || pieces[KNIGHT] === 1)
+    ) {
+      return true;
+    } else if (numPieces === pieces[BISHOP] + 2) {
+      let sum2 = 0;
+      const len = bishops.length;
+      for (let i2 = 0; i2 < len; i2++) {
+        sum2 += bishops[i2];
+      }
+      if (sum2 === 0 || sum2 === len) {
+        return true;
+      }
+    }
+    return false;
+  }
+  isThreefoldRepetition() {
+    return this._getPositionCount(this._hash) >= 3;
+  }
+  isDrawByFiftyMoves() {
+    return this._halfMoves >= 100;
+  }
+  isDraw() {
+    return this.isDrawByFiftyMoves() || this.isStalemate() || this.isInsufficientMaterial() || this.isThreefoldRepetition();
+  }
+  isGameOver() {
+    return this.isCheckmate() || this.isDraw();
+  }
+  moves({ verbose = false, square = void 0, piece = void 0 } = {}) {
+    const moves = this._moves({ square, piece });
+    if (verbose) {
+      return moves.map((move) => new Move(this, move));
+    } else {
+      return moves.map((move) => this._moveToSan(move, moves));
+    }
+  }
+  _moves({ legal = true, piece = void 0, square = void 0 } = {}) {
+    var _a3;
+    const forSquare = square ? square.toLowerCase() : void 0;
+    const forPiece = piece == null ? void 0 : piece.toLowerCase();
+    const moves = [];
+    const us = this._turn;
+    const them = swapColor(us);
+    let firstSquare = Ox88.a8;
+    let lastSquare = Ox88.h1;
+    let singleSquare = false;
+    if (forSquare) {
+      if (!(forSquare in Ox88)) {
+        return [];
+      } else {
+        firstSquare = lastSquare = Ox88[forSquare];
+        singleSquare = true;
+      }
+    }
+    for (let from = firstSquare; from <= lastSquare; from++) {
+      if (from & 136) {
+        from += 7;
+        continue;
+      }
+      if (!this._board[from] || this._board[from].color === them) {
+        continue;
+      }
+      const { type } = this._board[from];
+      let to;
+      if (type === PAWN) {
+        if (forPiece && forPiece !== type)
+          continue;
+        to = from + PAWN_OFFSETS[us][0];
+        if (!this._board[to]) {
+          addMove(moves, us, from, to, PAWN);
+          to = from + PAWN_OFFSETS[us][1];
+          if (SECOND_RANK[us] === rank(from) && !this._board[to]) {
+            addMove(moves, us, from, to, PAWN, void 0, BITS.BIG_PAWN);
+          }
+        }
+        for (let j2 = 2; j2 < 4; j2++) {
+          to = from + PAWN_OFFSETS[us][j2];
+          if (to & 136)
+            continue;
+          if (((_a3 = this._board[to]) == null ? void 0 : _a3.color) === them) {
+            addMove(moves, us, from, to, PAWN, this._board[to].type, BITS.CAPTURE);
+          } else if (to === this._epSquare) {
+            addMove(moves, us, from, to, PAWN, PAWN, BITS.EP_CAPTURE);
+          }
+        }
+      } else {
+        if (forPiece && forPiece !== type)
+          continue;
+        for (let j2 = 0, len = PIECE_OFFSETS[type].length; j2 < len; j2++) {
+          const offset2 = PIECE_OFFSETS[type][j2];
+          to = from;
+          while (true) {
+            to += offset2;
+            if (to & 136)
+              break;
+            if (!this._board[to]) {
+              addMove(moves, us, from, to, type);
+            } else {
+              if (this._board[to].color === us)
+                break;
+              addMove(moves, us, from, to, type, this._board[to].type, BITS.CAPTURE);
+              break;
+            }
+            if (type === KNIGHT || type === KING)
+              break;
+          }
+        }
+      }
+    }
+    if (forPiece === void 0 || forPiece === KING) {
+      if (!singleSquare || lastSquare === this._kings[us]) {
+        if (this._castling[us] & BITS.KSIDE_CASTLE) {
+          const castlingFrom = this._kings[us];
+          const castlingTo = castlingFrom + 2;
+          if (!this._board[castlingFrom + 1] && !this._board[castlingTo] && !this._attacked(them, this._kings[us]) && !this._attacked(them, castlingFrom + 1) && !this._attacked(them, castlingTo)) {
+            addMove(moves, us, this._kings[us], castlingTo, KING, void 0, BITS.KSIDE_CASTLE);
+          }
+        }
+        if (this._castling[us] & BITS.QSIDE_CASTLE) {
+          const castlingFrom = this._kings[us];
+          const castlingTo = castlingFrom - 2;
+          if (!this._board[castlingFrom - 1] && !this._board[castlingFrom - 2] && !this._board[castlingFrom - 3] && !this._attacked(them, this._kings[us]) && !this._attacked(them, castlingFrom - 1) && !this._attacked(them, castlingTo)) {
+            addMove(moves, us, this._kings[us], castlingTo, KING, void 0, BITS.QSIDE_CASTLE);
+          }
+        }
+      }
+    }
+    if (!legal || this._kings[us] === -1) {
+      return moves;
+    }
+    const legalMoves = [];
+    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+      this._makeMove(moves[i2]);
+      if (!this._isKingAttacked(us)) {
+        legalMoves.push(moves[i2]);
+      }
+      this._undoMove();
+    }
+    return legalMoves;
+  }
+  move(move, { strict = false } = {}) {
+    let moveObj = null;
+    if (typeof move === "string") {
+      moveObj = this._moveFromSan(move, strict);
+    } else if (move === null) {
+      moveObj = this._moveFromSan(SAN_NULLMOVE, strict);
+    } else if (typeof move === "object") {
+      const moves = this._moves();
+      for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+        if (move.from === algebraic(moves[i2].from) && move.to === algebraic(moves[i2].to) && (!("promotion" in moves[i2]) || move.promotion === moves[i2].promotion)) {
+          moveObj = moves[i2];
+          break;
+        }
+      }
+    }
+    if (!moveObj) {
+      if (typeof move === "string") {
+        throw new Error(`Invalid move: ${move}`);
+      } else {
+        throw new Error(`Invalid move: ${JSON.stringify(move)}`);
+      }
+    }
+    if (this.isCheck() && moveObj.flags & BITS.NULL_MOVE) {
+      throw new Error("Null move not allowed when in check");
+    }
+    const prettyMove = new Move(this, moveObj);
+    this._makeMove(moveObj);
+    this._incPositionCount();
+    return prettyMove;
+  }
+  _push(move) {
+    this._history.push({
+      move,
+      kings: { b: this._kings.b, w: this._kings.w },
+      turn: this._turn,
+      castling: { b: this._castling.b, w: this._castling.w },
+      epSquare: this._epSquare,
+      halfMoves: this._halfMoves,
+      moveNumber: this._moveNumber
+    });
+  }
+  _movePiece(from, to) {
+    this._hash ^= this._pieceKey(from);
+    this._board[to] = this._board[from];
+    delete this._board[from];
+    this._hash ^= this._pieceKey(to);
+  }
+  _makeMove(move) {
+    var _a3, _b3, _c2, _d2;
+    const us = this._turn;
+    const them = swapColor(us);
+    this._push(move);
+    if (move.flags & BITS.NULL_MOVE) {
+      if (us === BLACK) {
+        this._moveNumber++;
+      }
+      this._halfMoves++;
+      this._turn = them;
+      this._epSquare = EMPTY;
+      return;
+    }
+    this._hash ^= this._epKey();
+    this._hash ^= this._castlingKey();
+    if (move.captured) {
+      this._hash ^= this._pieceKey(move.to);
+    }
+    this._movePiece(move.from, move.to);
+    if (move.flags & BITS.EP_CAPTURE) {
+      if (this._turn === BLACK) {
+        this._clear(move.to - 16);
+      } else {
+        this._clear(move.to + 16);
+      }
+    }
+    if (move.promotion) {
+      this._clear(move.to);
+      this._set(move.to, { type: move.promotion, color: us });
+    }
+    if (this._board[move.to].type === KING) {
+      this._kings[us] = move.to;
+      if (move.flags & BITS.KSIDE_CASTLE) {
+        const castlingTo = move.to - 1;
+        const castlingFrom = move.to + 1;
+        this._movePiece(castlingFrom, castlingTo);
+      } else if (move.flags & BITS.QSIDE_CASTLE) {
+        const castlingTo = move.to + 1;
+        const castlingFrom = move.to - 2;
+        this._movePiece(castlingFrom, castlingTo);
+      }
+      this._castling[us] = 0;
+    }
+    if (this._castling[us]) {
+      for (let i2 = 0, len = ROOKS[us].length; i2 < len; i2++) {
+        if (move.from === ROOKS[us][i2].square && this._castling[us] & ROOKS[us][i2].flag) {
+          this._castling[us] ^= ROOKS[us][i2].flag;
+          break;
+        }
+      }
+    }
+    if (this._castling[them]) {
+      for (let i2 = 0, len = ROOKS[them].length; i2 < len; i2++) {
+        if (move.to === ROOKS[them][i2].square && this._castling[them] & ROOKS[them][i2].flag) {
+          this._castling[them] ^= ROOKS[them][i2].flag;
+          break;
+        }
+      }
+    }
+    this._hash ^= this._castlingKey();
+    if (move.flags & BITS.BIG_PAWN) {
+      let epSquare;
+      if (us === BLACK) {
+        epSquare = move.to - 16;
+      } else {
+        epSquare = move.to + 16;
+      }
+      if (!(move.to - 1 & 136) && ((_a3 = this._board[move.to - 1]) == null ? void 0 : _a3.type) === PAWN && ((_b3 = this._board[move.to - 1]) == null ? void 0 : _b3.color) === them || !(move.to + 1 & 136) && ((_c2 = this._board[move.to + 1]) == null ? void 0 : _c2.type) === PAWN && ((_d2 = this._board[move.to + 1]) == null ? void 0 : _d2.color) === them) {
+        this._epSquare = epSquare;
+        this._hash ^= this._epKey();
+      } else {
+        this._epSquare = EMPTY;
+      }
+    } else {
+      this._epSquare = EMPTY;
+    }
+    if (move.piece === PAWN) {
+      this._halfMoves = 0;
+    } else if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
+      this._halfMoves = 0;
+    } else {
+      this._halfMoves++;
+    }
+    if (us === BLACK) {
+      this._moveNumber++;
+    }
+    this._turn = them;
+    this._hash ^= SIDE_KEY;
+  }
+  undo() {
+    const hash = this._hash;
+    const move = this._undoMove();
+    if (move) {
+      const prettyMove = new Move(this, move);
+      this._decPositionCount(hash);
+      return prettyMove;
+    }
+    return null;
+  }
+  _undoMove() {
+    const old = this._history.pop();
+    if (old === void 0) {
+      return null;
+    }
+    this._hash ^= this._epKey();
+    this._hash ^= this._castlingKey();
+    const move = old.move;
+    this._kings = old.kings;
+    this._turn = old.turn;
+    this._castling = old.castling;
+    this._epSquare = old.epSquare;
+    this._halfMoves = old.halfMoves;
+    this._moveNumber = old.moveNumber;
+    this._hash ^= this._epKey();
+    this._hash ^= this._castlingKey();
+    this._hash ^= SIDE_KEY;
+    const us = this._turn;
+    const them = swapColor(us);
+    if (move.flags & BITS.NULL_MOVE) {
+      return move;
+    }
+    this._movePiece(move.to, move.from);
+    if (move.piece) {
+      this._clear(move.from);
+      this._set(move.from, { type: move.piece, color: us });
+    }
+    if (move.captured) {
+      if (move.flags & BITS.EP_CAPTURE) {
+        let index2;
+        if (us === BLACK) {
+          index2 = move.to - 16;
+        } else {
+          index2 = move.to + 16;
+        }
+        this._set(index2, { type: PAWN, color: them });
+      } else {
+        this._set(move.to, { type: move.captured, color: them });
+      }
+    }
+    if (move.flags & (BITS.KSIDE_CASTLE | BITS.QSIDE_CASTLE)) {
+      let castlingTo, castlingFrom;
+      if (move.flags & BITS.KSIDE_CASTLE) {
+        castlingTo = move.to + 1;
+        castlingFrom = move.to - 1;
+      } else {
+        castlingTo = move.to - 2;
+        castlingFrom = move.to + 1;
+      }
+      this._movePiece(castlingFrom, castlingTo);
+    }
+    return move;
+  }
+  pgn({ newline = "\n", maxWidth = 0 } = {}) {
+    const result = [];
+    let headerExists = false;
+    for (const i2 in this._header) {
+      const headerTag = this._header[i2];
+      if (headerTag)
+        result.push(`[${i2} "${this._header[i2]}"]` + newline);
+      headerExists = true;
+    }
+    if (headerExists && this._history.length) {
+      result.push(newline);
+    }
+    const appendComment = (moveString2) => {
+      const comment = this._comments[this.fen()];
+      if (typeof comment !== "undefined") {
+        const delimiter = moveString2.length > 0 ? " " : "";
+        moveString2 = `${moveString2}${delimiter}{${comment}}`;
+      }
+      return moveString2;
+    };
+    const reversedHistory = [];
+    while (this._history.length > 0) {
+      reversedHistory.push(this._undoMove());
+    }
+    const moves = [];
+    let moveString = "";
+    if (reversedHistory.length === 0) {
+      moves.push(appendComment(""));
+    }
+    while (reversedHistory.length > 0) {
+      moveString = appendComment(moveString);
+      const move = reversedHistory.pop();
+      if (!move) {
+        break;
+      }
+      if (!this._history.length && move.color === "b") {
+        const prefix2 = `${this._moveNumber}. ...`;
+        moveString = moveString ? `${moveString} ${prefix2}` : prefix2;
+      } else if (move.color === "w") {
+        if (moveString.length) {
+          moves.push(moveString);
+        }
+        moveString = this._moveNumber + ".";
+      }
+      moveString = moveString + " " + this._moveToSan(move, this._moves({ legal: true }));
+      this._makeMove(move);
+    }
+    if (moveString.length) {
+      moves.push(appendComment(moveString));
+    }
+    moves.push(this._header.Result || "*");
+    if (maxWidth === 0) {
+      return result.join("") + moves.join(" ");
+    }
+    const strip = function() {
+      if (result.length > 0 && result[result.length - 1] === " ") {
+        result.pop();
+        return true;
+      }
+      return false;
+    };
+    const wrapComment = function(width, move) {
+      for (const token of move.split(" ")) {
+        if (!token) {
+          continue;
+        }
+        if (width + token.length > maxWidth) {
+          while (strip()) {
+            width--;
+          }
+          result.push(newline);
+          width = 0;
+        }
+        result.push(token);
+        width += token.length;
+        result.push(" ");
+        width++;
+      }
+      if (strip()) {
+        width--;
+      }
+      return width;
+    };
+    let currentWidth = 0;
+    for (let i2 = 0; i2 < moves.length; i2++) {
+      if (currentWidth + moves[i2].length > maxWidth) {
+        if (moves[i2].includes("{")) {
+          currentWidth = wrapComment(currentWidth, moves[i2]);
+          continue;
+        }
+      }
+      if (currentWidth + moves[i2].length > maxWidth && i2 !== 0) {
+        if (result[result.length - 1] === " ") {
+          result.pop();
+        }
+        result.push(newline);
+        currentWidth = 0;
+      } else if (i2 !== 0) {
+        result.push(" ");
+        currentWidth++;
+      }
+      result.push(moves[i2]);
+      currentWidth += moves[i2].length;
+    }
+    return result.join("");
+  }
+  /**
+   * @deprecated Use `setHeader` and `getHeaders` instead. This method will return null header tags (which is not what you want)
+   */
+  header(...args) {
+    for (let i2 = 0; i2 < args.length; i2 += 2) {
+      if (typeof args[i2] === "string" && typeof args[i2 + 1] === "string") {
+        this._header[args[i2]] = args[i2 + 1];
+      }
+    }
+    return this._header;
+  }
+  // TODO: value validation per spec
+  setHeader(key, value) {
+    this._header[key] = value ?? SEVEN_TAG_ROSTER[key] ?? null;
+    return this.getHeaders();
+  }
+  removeHeader(key) {
+    if (key in this._header) {
+      this._header[key] = SEVEN_TAG_ROSTER[key] || null;
+      return true;
+    }
+    return false;
+  }
+  // return only non-null headers (omit placemarker nulls)
+  getHeaders() {
+    const nonNullHeaders = {};
+    for (const [key, value] of Object.entries(this._header)) {
+      if (value !== null) {
+        nonNullHeaders[key] = value;
+      }
+    }
+    return nonNullHeaders;
+  }
+  loadPgn(pgn2, { strict = false, newlineChar = "\r?\n" } = {}) {
+    if (newlineChar !== "\r?\n") {
+      pgn2 = pgn2.replace(new RegExp(newlineChar, "g"), "\n");
+    }
+    const parsedPgn = peg$parse(pgn2);
+    this.reset();
+    const headers = parsedPgn.headers;
+    let fen = "";
+    for (const key in headers) {
+      if (key.toLowerCase() === "fen") {
+        fen = headers[key];
+      }
+      this.header(key, headers[key]);
+    }
+    if (!strict) {
+      if (fen) {
+        this.load(fen, { preserveHeaders: true });
+      }
+    } else {
+      if (headers["SetUp"] === "1") {
+        if (!("FEN" in headers)) {
+          throw new Error("Invalid PGN: FEN tag must be supplied with SetUp tag");
+        }
+        this.load(headers["FEN"], { preserveHeaders: true });
+      }
+    }
+    let node2 = parsedPgn.root;
+    while (node2) {
+      if (node2.move) {
+        const move = this._moveFromSan(node2.move, strict);
+        if (move == null) {
+          throw new Error(`Invalid move in PGN: ${node2.move}`);
+        } else {
+          this._makeMove(move);
+          this._incPositionCount();
+        }
+      }
+      if (node2.comment !== void 0) {
+        this._comments[this.fen()] = node2.comment;
+      }
+      node2 = node2.variations[0];
+    }
+    const result = parsedPgn.result;
+    if (result && Object.keys(this._header).length && this._header["Result"] !== result) {
+      this.setHeader("Result", result);
+    }
+  }
+  /*
+   * Convert a move from 0x88 coordinates to Standard Algebraic Notation
+   * (SAN)
+   *
+   * @param {boolean} strict Use the strict SAN parser. It will throw errors
+   * on overly disambiguated moves (see below):
+   *
+   * r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4
+   * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
+   * 4. ... Ne7 is technically the valid SAN
+   */
+  _moveToSan(move, moves) {
+    let output = "";
+    if (move.flags & BITS.KSIDE_CASTLE) {
+      output = "O-O";
+    } else if (move.flags & BITS.QSIDE_CASTLE) {
+      output = "O-O-O";
+    } else if (move.flags & BITS.NULL_MOVE) {
+      return SAN_NULLMOVE;
+    } else {
+      if (move.piece !== PAWN) {
+        const disambiguator = getDisambiguator(move, moves);
+        output += move.piece.toUpperCase() + disambiguator;
+      }
+      if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
+        if (move.piece === PAWN) {
+          output += algebraic(move.from)[0];
+        }
+        output += "x";
+      }
+      output += algebraic(move.to);
+      if (move.promotion) {
+        output += "=" + move.promotion.toUpperCase();
+      }
+    }
+    this._makeMove(move);
+    if (this.isCheck()) {
+      if (this.isCheckmate()) {
+        output += "#";
+      } else {
+        output += "+";
+      }
+    }
+    this._undoMove();
+    return output;
+  }
+  // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
+  _moveFromSan(move, strict = false) {
+    let cleanMove = strippedSan(move);
+    if (!strict) {
+      if (cleanMove === "0-0") {
+        cleanMove = "O-O";
+      } else if (cleanMove === "0-0-0") {
+        cleanMove = "O-O-O";
+      }
+    }
+    if (cleanMove == SAN_NULLMOVE) {
+      const res = {
+        color: this._turn,
+        from: 0,
+        to: 0,
+        piece: "k",
+        flags: BITS.NULL_MOVE
+      };
+      return res;
+    }
+    let pieceType = inferPieceType(cleanMove);
+    let moves = this._moves({ legal: true, piece: pieceType });
+    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+      if (cleanMove === strippedSan(this._moveToSan(moves[i2], moves))) {
+        return moves[i2];
+      }
+    }
+    if (strict) {
+      return null;
+    }
+    let piece = void 0;
+    let matches = void 0;
+    let from = void 0;
+    let to = void 0;
+    let promotion = void 0;
+    let overlyDisambiguated = false;
+    matches = cleanMove.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/);
+    if (matches) {
+      piece = matches[1];
+      from = matches[2];
+      to = matches[3];
+      promotion = matches[4];
+      if (from.length == 1) {
+        overlyDisambiguated = true;
+      }
+    } else {
+      matches = cleanMove.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/);
+      if (matches) {
+        piece = matches[1];
+        from = matches[2];
+        to = matches[3];
+        promotion = matches[4];
+        if (from.length == 1) {
+          overlyDisambiguated = true;
+        }
+      }
+    }
+    pieceType = inferPieceType(cleanMove);
+    moves = this._moves({
+      legal: true,
+      piece: piece ? piece : pieceType
+    });
+    if (!to) {
+      return null;
+    }
+    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+      if (!from) {
+        if (cleanMove === strippedSan(this._moveToSan(moves[i2], moves)).replace("x", "")) {
+          return moves[i2];
+        }
+      } else if ((!piece || piece.toLowerCase() == moves[i2].piece) && Ox88[from] == moves[i2].from && Ox88[to] == moves[i2].to && (!promotion || promotion.toLowerCase() == moves[i2].promotion)) {
+        return moves[i2];
+      } else if (overlyDisambiguated) {
+        const square = algebraic(moves[i2].from);
+        if ((!piece || piece.toLowerCase() == moves[i2].piece) && Ox88[to] == moves[i2].to && (from == square[0] || from == square[1]) && (!promotion || promotion.toLowerCase() == moves[i2].promotion)) {
+          return moves[i2];
+        }
+      }
+    }
+    return null;
+  }
+  ascii() {
+    let s2 = "   +------------------------+\n";
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (file(i2) === 0) {
+        s2 += " " + "87654321"[rank(i2)] + " |";
+      }
+      if (this._board[i2]) {
+        const piece = this._board[i2].type;
+        const color2 = this._board[i2].color;
+        const symbol = color2 === WHITE ? piece.toUpperCase() : piece.toLowerCase();
+        s2 += " " + symbol + " ";
+      } else {
+        s2 += " . ";
+      }
+      if (i2 + 1 & 136) {
+        s2 += "|\n";
+        i2 += 8;
+      }
+    }
+    s2 += "   +------------------------+\n";
+    s2 += "     a  b  c  d  e  f  g  h";
+    return s2;
+  }
+  perft(depth) {
+    const moves = this._moves({ legal: false });
+    let nodes = 0;
+    const color2 = this._turn;
+    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
+      this._makeMove(moves[i2]);
+      if (!this._isKingAttacked(color2)) {
+        if (depth - 1 > 0) {
+          nodes += this.perft(depth - 1);
+        } else {
+          nodes++;
+        }
+      }
+      this._undoMove();
+    }
+    return nodes;
+  }
+  setTurn(color2) {
+    if (this._turn == color2) {
+      return false;
+    }
+    this.move("--");
+    return true;
+  }
+  turn() {
+    return this._turn;
+  }
+  board() {
+    const output = [];
+    let row = [];
+    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
+      if (this._board[i2] == null) {
+        row.push(null);
+      } else {
+        row.push({
+          square: algebraic(i2),
+          type: this._board[i2].type,
+          color: this._board[i2].color
+        });
+      }
+      if (i2 + 1 & 136) {
+        output.push(row);
+        row = [];
+        i2 += 8;
+      }
+    }
+    return output;
+  }
+  squareColor(square) {
+    if (square in Ox88) {
+      const sq = Ox88[square];
+      return (rank(sq) + file(sq)) % 2 === 0 ? "light" : "dark";
+    }
+    return null;
+  }
+  history({ verbose = false } = {}) {
+    const reversedHistory = [];
+    const moveHistory = [];
+    while (this._history.length > 0) {
+      reversedHistory.push(this._undoMove());
+    }
+    while (true) {
+      const move = reversedHistory.pop();
+      if (!move) {
+        break;
+      }
+      if (verbose) {
+        moveHistory.push(new Move(this, move));
+      } else {
+        moveHistory.push(this._moveToSan(move, this._moves()));
+      }
+      this._makeMove(move);
+    }
+    return moveHistory;
+  }
+  /*
+   * Keeps track of position occurrence counts for the purpose of repetition
+   * checking. Old positions are removed from the map if their counts are reduced to 0.
+   */
+  _getPositionCount(hash) {
+    return this._positionCount.get(hash) ?? 0;
+  }
+  _incPositionCount() {
+    this._positionCount.set(this._hash, (this._positionCount.get(this._hash) ?? 0) + 1);
+  }
+  _decPositionCount(hash) {
+    const currentCount = this._positionCount.get(hash) ?? 0;
+    if (currentCount === 1) {
+      this._positionCount.delete(hash);
+    } else {
+      this._positionCount.set(hash, currentCount - 1);
+    }
+  }
+  _pruneComments() {
+    const reversedHistory = [];
+    const currentComments = {};
+    const copyComment = (fen) => {
+      if (fen in this._comments) {
+        currentComments[fen] = this._comments[fen];
+      }
+    };
+    while (this._history.length > 0) {
+      reversedHistory.push(this._undoMove());
+    }
+    copyComment(this.fen());
+    while (true) {
+      const move = reversedHistory.pop();
+      if (!move) {
+        break;
+      }
+      this._makeMove(move);
+      copyComment(this.fen());
+    }
+    this._comments = currentComments;
+  }
+  getComment() {
+    return this._comments[this.fen()];
+  }
+  setComment(comment) {
+    this._comments[this.fen()] = comment.replace("{", "[").replace("}", "]");
+  }
+  /**
+   * @deprecated Renamed to `removeComment` for consistency
+   */
+  deleteComment() {
+    return this.removeComment();
+  }
+  removeComment() {
+    const comment = this._comments[this.fen()];
+    delete this._comments[this.fen()];
+    return comment;
+  }
+  getComments() {
+    this._pruneComments();
+    return Object.keys(this._comments).map((fen) => {
+      return { fen, comment: this._comments[fen] };
+    });
+  }
+  /**
+   * @deprecated Renamed to `removeComments` for consistency
+   */
+  deleteComments() {
+    return this.removeComments();
+  }
+  removeComments() {
+    this._pruneComments();
+    return Object.keys(this._comments).map((fen) => {
+      const comment = this._comments[fen];
+      delete this._comments[fen];
+      return { fen, comment };
+    });
+  }
+  setCastlingRights(color2, rights) {
+    for (const side of [KING, QUEEN]) {
+      if (rights[side] !== void 0) {
+        if (rights[side]) {
+          this._castling[color2] |= SIDES[side];
+        } else {
+          this._castling[color2] &= ~SIDES[side];
+        }
+      }
+    }
+    this._updateCastlingRights();
+    const result = this.getCastlingRights(color2);
+    return (rights[KING] === void 0 || rights[KING] === result[KING]) && (rights[QUEEN] === void 0 || rights[QUEEN] === result[QUEEN]);
+  }
+  getCastlingRights(color2) {
+    return {
+      [KING]: (this._castling[color2] & SIDES[KING]) !== 0,
+      [QUEEN]: (this._castling[color2] & SIDES[QUEEN]) !== 0
+    };
+  }
+  moveNumber() {
+    return this._moveNumber;
+  }
+}
 var jquery = { exports: {} };
 /*!
  * jQuery JavaScript Library v3.7.1
@@ -62765,3495 +66254,8 @@ var jquery = { exports: {} };
     return jQuery;
   });
 })(jquery);
-function rootNode(comment) {
-  return comment !== null ? { comment, variations: [] } : { variations: [] };
-}
-function node(move, suffix2, nag, comment, variations) {
-  const node2 = { move, variations };
-  if (suffix2) {
-    node2.suffix = suffix2;
-  }
-  if (nag) {
-    node2.nag = nag;
-  }
-  if (comment !== null) {
-    node2.comment = comment;
-  }
-  return node2;
-}
-function lineToTree(...nodes) {
-  const [root2, ...rest] = nodes;
-  let parent = root2;
-  for (const child of rest) {
-    if (child !== null) {
-      parent.variations = [child, ...child.variations];
-      child.variations = [];
-      parent = child;
-    }
-  }
-  return root2;
-}
-function pgn(headers, game) {
-  if (game.marker && game.marker.comment) {
-    let node2 = game.root;
-    while (true) {
-      const next = node2.variations[0];
-      if (!next) {
-        node2.comment = game.marker.comment;
-        break;
-      }
-      node2 = next;
-    }
-  }
-  return {
-    headers,
-    root: game.root,
-    result: (game.marker && game.marker.result) ?? void 0
-  };
-}
-function peg$subclass(child, parent) {
-  function C2() {
-    this.constructor = child;
-  }
-  C2.prototype = parent.prototype;
-  child.prototype = new C2();
-}
-function peg$SyntaxError(message, expected, found, location2) {
-  var self2 = Error.call(this, message);
-  if (Object.setPrototypeOf) {
-    Object.setPrototypeOf(self2, peg$SyntaxError.prototype);
-  }
-  self2.expected = expected;
-  self2.found = found;
-  self2.location = location2;
-  self2.name = "SyntaxError";
-  return self2;
-}
-peg$subclass(peg$SyntaxError, Error);
-function peg$padEnd(str, targetLength, padString) {
-  padString = padString || " ";
-  if (str.length > targetLength) {
-    return str;
-  }
-  targetLength -= str.length;
-  padString += padString.repeat(targetLength);
-  return str + padString.slice(0, targetLength);
-}
-peg$SyntaxError.prototype.format = function(sources) {
-  var str = "Error: " + this.message;
-  if (this.location) {
-    var src = null;
-    var k2;
-    for (k2 = 0; k2 < sources.length; k2++) {
-      if (sources[k2].source === this.location.source) {
-        src = sources[k2].text.split(/\r\n|\n|\r/g);
-        break;
-      }
-    }
-    var s2 = this.location.start;
-    var offset_s = this.location.source && typeof this.location.source.offset === "function" ? this.location.source.offset(s2) : s2;
-    var loc = this.location.source + ":" + offset_s.line + ":" + offset_s.column;
-    if (src) {
-      var e2 = this.location.end;
-      var filler = peg$padEnd("", offset_s.line.toString().length, " ");
-      var line = src[s2.line - 1];
-      var last = s2.line === e2.line ? e2.column : line.length + 1;
-      var hatLen = last - s2.column || 1;
-      str += "\n --> " + loc + "\n" + filler + " |\n" + offset_s.line + " | " + line + "\n" + filler + " | " + peg$padEnd("", s2.column - 1, " ") + peg$padEnd("", hatLen, "^");
-    } else {
-      str += "\n at " + loc;
-    }
-  }
-  return str;
-};
-peg$SyntaxError.buildMessage = function(expected, found) {
-  var DESCRIBE_EXPECTATION_FNS = {
-    literal: function(expectation) {
-      return '"' + literalEscape(expectation.text) + '"';
-    },
-    class: function(expectation) {
-      var escapedParts = expectation.parts.map(function(part) {
-        return Array.isArray(part) ? classEscape(part[0]) + "-" + classEscape(part[1]) : classEscape(part);
-      });
-      return "[" + (expectation.inverted ? "^" : "") + escapedParts.join("") + "]";
-    },
-    any: function() {
-      return "any character";
-    },
-    end: function() {
-      return "end of input";
-    },
-    other: function(expectation) {
-      return expectation.description;
-    }
-  };
-  function hex2(ch) {
-    return ch.charCodeAt(0).toString(16).toUpperCase();
-  }
-  function literalEscape(s2) {
-    return s2.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\0/g, "\\0").replace(/\t/g, "\\t").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/[\x00-\x0F]/g, function(ch) {
-      return "\\x0" + hex2(ch);
-    }).replace(/[\x10-\x1F\x7F-\x9F]/g, function(ch) {
-      return "\\x" + hex2(ch);
-    });
-  }
-  function classEscape(s2) {
-    return s2.replace(/\\/g, "\\\\").replace(/\]/g, "\\]").replace(/\^/g, "\\^").replace(/-/g, "\\-").replace(/\0/g, "\\0").replace(/\t/g, "\\t").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/[\x00-\x0F]/g, function(ch) {
-      return "\\x0" + hex2(ch);
-    }).replace(/[\x10-\x1F\x7F-\x9F]/g, function(ch) {
-      return "\\x" + hex2(ch);
-    });
-  }
-  function describeExpectation(expectation) {
-    return DESCRIBE_EXPECTATION_FNS[expectation.type](expectation);
-  }
-  function describeExpected(expected2) {
-    var descriptions = expected2.map(describeExpectation);
-    var i2, j2;
-    descriptions.sort();
-    if (descriptions.length > 0) {
-      for (i2 = 1, j2 = 1; i2 < descriptions.length; i2++) {
-        if (descriptions[i2 - 1] !== descriptions[i2]) {
-          descriptions[j2] = descriptions[i2];
-          j2++;
-        }
-      }
-      descriptions.length = j2;
-    }
-    switch (descriptions.length) {
-      case 1:
-        return descriptions[0];
-      case 2:
-        return descriptions[0] + " or " + descriptions[1];
-      default:
-        return descriptions.slice(0, -1).join(", ") + ", or " + descriptions[descriptions.length - 1];
-    }
-  }
-  function describeFound(found2) {
-    return found2 ? '"' + literalEscape(found2) + '"' : "end of input";
-  }
-  return "Expected " + describeExpected(expected) + " but " + describeFound(found) + " found.";
-};
-function peg$parse(input, options) {
-  options = options !== void 0 ? options : {};
-  var peg$FAILED = {};
-  var peg$source = options.grammarSource;
-  var peg$startRuleFunctions = { pgn: peg$parsepgn };
-  var peg$startRuleFunction = peg$parsepgn;
-  var peg$c0 = "[";
-  var peg$c1 = '"';
-  var peg$c2 = "]";
-  var peg$c3 = ".";
-  var peg$c4 = "O-O-O";
-  var peg$c5 = "O-O";
-  var peg$c6 = "0-0-0";
-  var peg$c7 = "0-0";
-  var peg$c8 = "$";
-  var peg$c9 = "{";
-  var peg$c10 = "}";
-  var peg$c11 = ";";
-  var peg$c12 = "(";
-  var peg$c13 = ")";
-  var peg$c14 = "1-0";
-  var peg$c15 = "0-1";
-  var peg$c16 = "1/2-1/2";
-  var peg$c17 = "*";
-  var peg$r0 = /^[a-zA-Z]/;
-  var peg$r1 = /^[^"]/;
-  var peg$r2 = /^[0-9]/;
-  var peg$r3 = /^[.]/;
-  var peg$r4 = /^[a-zA-Z1-8\-=]/;
-  var peg$r5 = /^[+#]/;
-  var peg$r6 = /^[!?]/;
-  var peg$r7 = /^[^}]/;
-  var peg$r8 = /^[^\r\n]/;
-  var peg$r9 = /^[ \t\r\n]/;
-  var peg$e0 = peg$otherExpectation("tag pair");
-  var peg$e1 = peg$literalExpectation("[", false);
-  var peg$e2 = peg$literalExpectation('"', false);
-  var peg$e3 = peg$literalExpectation("]", false);
-  var peg$e4 = peg$otherExpectation("tag name");
-  var peg$e5 = peg$classExpectation([["a", "z"], ["A", "Z"]], false, false);
-  var peg$e6 = peg$otherExpectation("tag value");
-  var peg$e7 = peg$classExpectation(['"'], true, false);
-  var peg$e8 = peg$otherExpectation("move number");
-  var peg$e9 = peg$classExpectation([["0", "9"]], false, false);
-  var peg$e10 = peg$literalExpectation(".", false);
-  var peg$e11 = peg$classExpectation(["."], false, false);
-  var peg$e12 = peg$otherExpectation("standard algebraic notation");
-  var peg$e13 = peg$literalExpectation("O-O-O", false);
-  var peg$e14 = peg$literalExpectation("O-O", false);
-  var peg$e15 = peg$literalExpectation("0-0-0", false);
-  var peg$e16 = peg$literalExpectation("0-0", false);
-  var peg$e17 = peg$classExpectation([["a", "z"], ["A", "Z"], ["1", "8"], "-", "="], false, false);
-  var peg$e18 = peg$classExpectation(["+", "#"], false, false);
-  var peg$e19 = peg$otherExpectation("suffix annotation");
-  var peg$e20 = peg$classExpectation(["!", "?"], false, false);
-  var peg$e21 = peg$otherExpectation("NAG");
-  var peg$e22 = peg$literalExpectation("$", false);
-  var peg$e23 = peg$otherExpectation("brace comment");
-  var peg$e24 = peg$literalExpectation("{", false);
-  var peg$e25 = peg$classExpectation(["}"], true, false);
-  var peg$e26 = peg$literalExpectation("}", false);
-  var peg$e27 = peg$otherExpectation("rest of line comment");
-  var peg$e28 = peg$literalExpectation(";", false);
-  var peg$e29 = peg$classExpectation(["\r", "\n"], true, false);
-  var peg$e30 = peg$otherExpectation("variation");
-  var peg$e31 = peg$literalExpectation("(", false);
-  var peg$e32 = peg$literalExpectation(")", false);
-  var peg$e33 = peg$otherExpectation("game termination marker");
-  var peg$e34 = peg$literalExpectation("1-0", false);
-  var peg$e35 = peg$literalExpectation("0-1", false);
-  var peg$e36 = peg$literalExpectation("1/2-1/2", false);
-  var peg$e37 = peg$literalExpectation("*", false);
-  var peg$e38 = peg$otherExpectation("whitespace");
-  var peg$e39 = peg$classExpectation([" ", "	", "\r", "\n"], false, false);
-  var peg$f0 = function(headers, game) {
-    return pgn(headers, game);
-  };
-  var peg$f1 = function(tagPairs) {
-    return Object.fromEntries(tagPairs);
-  };
-  var peg$f2 = function(tagName, tagValue) {
-    return [tagName, tagValue];
-  };
-  var peg$f3 = function(root2, marker) {
-    return { root: root2, marker };
-  };
-  var peg$f4 = function(comment, moves) {
-    return lineToTree(rootNode(comment), ...moves.flat());
-  };
-  var peg$f5 = function(san, suffix2, nag, comment, variations) {
-    return node(san, suffix2, nag, comment, variations);
-  };
-  var peg$f6 = function(nag) {
-    return nag;
-  };
-  var peg$f7 = function(comment) {
-    return comment.replace(/[\r\n]+/g, " ");
-  };
-  var peg$f8 = function(comment) {
-    return comment.trim();
-  };
-  var peg$f9 = function(line) {
-    return line;
-  };
-  var peg$f10 = function(result, comment) {
-    return { result, comment };
-  };
-  var peg$currPos = options.peg$currPos | 0;
-  var peg$posDetailsCache = [{ line: 1, column: 1 }];
-  var peg$maxFailPos = peg$currPos;
-  var peg$maxFailExpected = options.peg$maxFailExpected || [];
-  var peg$silentFails = options.peg$silentFails | 0;
-  var peg$result;
-  if (options.startRule) {
-    if (!(options.startRule in peg$startRuleFunctions)) {
-      throw new Error(`Can't start parsing from rule "` + options.startRule + '".');
-    }
-    peg$startRuleFunction = peg$startRuleFunctions[options.startRule];
-  }
-  function peg$literalExpectation(text, ignoreCase) {
-    return { type: "literal", text, ignoreCase };
-  }
-  function peg$classExpectation(parts, inverted, ignoreCase) {
-    return { type: "class", parts, inverted, ignoreCase };
-  }
-  function peg$endExpectation() {
-    return { type: "end" };
-  }
-  function peg$otherExpectation(description) {
-    return { type: "other", description };
-  }
-  function peg$computePosDetails(pos) {
-    var details = peg$posDetailsCache[pos];
-    var p2;
-    if (details) {
-      return details;
-    } else {
-      if (pos >= peg$posDetailsCache.length) {
-        p2 = peg$posDetailsCache.length - 1;
-      } else {
-        p2 = pos;
-        while (!peg$posDetailsCache[--p2]) {
-        }
-      }
-      details = peg$posDetailsCache[p2];
-      details = {
-        line: details.line,
-        column: details.column
-      };
-      while (p2 < pos) {
-        if (input.charCodeAt(p2) === 10) {
-          details.line++;
-          details.column = 1;
-        } else {
-          details.column++;
-        }
-        p2++;
-      }
-      peg$posDetailsCache[pos] = details;
-      return details;
-    }
-  }
-  function peg$computeLocation(startPos, endPos, offset2) {
-    var startPosDetails = peg$computePosDetails(startPos);
-    var endPosDetails = peg$computePosDetails(endPos);
-    var res = {
-      source: peg$source,
-      start: {
-        offset: startPos,
-        line: startPosDetails.line,
-        column: startPosDetails.column
-      },
-      end: {
-        offset: endPos,
-        line: endPosDetails.line,
-        column: endPosDetails.column
-      }
-    };
-    return res;
-  }
-  function peg$fail(expected) {
-    if (peg$currPos < peg$maxFailPos) {
-      return;
-    }
-    if (peg$currPos > peg$maxFailPos) {
-      peg$maxFailPos = peg$currPos;
-      peg$maxFailExpected = [];
-    }
-    peg$maxFailExpected.push(expected);
-  }
-  function peg$buildStructuredError(expected, found, location2) {
-    return new peg$SyntaxError(
-      peg$SyntaxError.buildMessage(expected, found),
-      expected,
-      found,
-      location2
-    );
-  }
-  function peg$parsepgn() {
-    var s0, s1, s2;
-    s0 = peg$currPos;
-    s1 = peg$parsetagPairSection();
-    s2 = peg$parsemoveTextSection();
-    s0 = peg$f0(s1, s2);
-    return s0;
-  }
-  function peg$parsetagPairSection() {
-    var s0, s1, s2;
-    s0 = peg$currPos;
-    s1 = [];
-    s2 = peg$parsetagPair();
-    while (s2 !== peg$FAILED) {
-      s1.push(s2);
-      s2 = peg$parsetagPair();
-    }
-    s2 = peg$parse_();
-    s0 = peg$f1(s1);
-    return s0;
-  }
-  function peg$parsetagPair() {
-    var s0, s2, s4, s6, s7, s8, s10;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    peg$parse_();
-    if (input.charCodeAt(peg$currPos) === 91) {
-      s2 = peg$c0;
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e1);
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      peg$parse_();
-      s4 = peg$parsetagName();
-      if (s4 !== peg$FAILED) {
-        peg$parse_();
-        if (input.charCodeAt(peg$currPos) === 34) {
-          s6 = peg$c1;
-          peg$currPos++;
-        } else {
-          s6 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e2);
-          }
-        }
-        if (s6 !== peg$FAILED) {
-          s7 = peg$parsetagValue();
-          if (input.charCodeAt(peg$currPos) === 34) {
-            s8 = peg$c1;
-            peg$currPos++;
-          } else {
-            s8 = peg$FAILED;
-            if (peg$silentFails === 0) {
-              peg$fail(peg$e2);
-            }
-          }
-          if (s8 !== peg$FAILED) {
-            peg$parse_();
-            if (input.charCodeAt(peg$currPos) === 93) {
-              s10 = peg$c2;
-              peg$currPos++;
-            } else {
-              s10 = peg$FAILED;
-              if (peg$silentFails === 0) {
-                peg$fail(peg$e3);
-              }
-            }
-            if (s10 !== peg$FAILED) {
-              s0 = peg$f2(s4, s7);
-            } else {
-              peg$currPos = s0;
-              s0 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s0;
-            s0 = peg$FAILED;
-          }
-        } else {
-          peg$currPos = s0;
-          s0 = peg$FAILED;
-        }
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e0);
-      }
-    }
-    return s0;
-  }
-  function peg$parsetagName() {
-    var s0, s1, s2;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    s1 = [];
-    s2 = input.charAt(peg$currPos);
-    if (peg$r0.test(s2)) {
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e5);
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      while (s2 !== peg$FAILED) {
-        s1.push(s2);
-        s2 = input.charAt(peg$currPos);
-        if (peg$r0.test(s2)) {
-          peg$currPos++;
-        } else {
-          s2 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e5);
-          }
-        }
-      }
-    } else {
-      s1 = peg$FAILED;
-    }
-    if (s1 !== peg$FAILED) {
-      s0 = input.substring(s0, peg$currPos);
-    } else {
-      s0 = s1;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e4);
-      }
-    }
-    return s0;
-  }
-  function peg$parsetagValue() {
-    var s0, s1, s2;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    s1 = [];
-    s2 = input.charAt(peg$currPos);
-    if (peg$r1.test(s2)) {
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e7);
-      }
-    }
-    while (s2 !== peg$FAILED) {
-      s1.push(s2);
-      s2 = input.charAt(peg$currPos);
-      if (peg$r1.test(s2)) {
-        peg$currPos++;
-      } else {
-        s2 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e7);
-        }
-      }
-    }
-    s0 = input.substring(s0, peg$currPos);
-    peg$silentFails--;
-    s1 = peg$FAILED;
-    if (peg$silentFails === 0) {
-      peg$fail(peg$e6);
-    }
-    return s0;
-  }
-  function peg$parsemoveTextSection() {
-    var s0, s1, s3;
-    s0 = peg$currPos;
-    s1 = peg$parseline();
-    peg$parse_();
-    s3 = peg$parsegameTerminationMarker();
-    if (s3 === peg$FAILED) {
-      s3 = null;
-    }
-    peg$parse_();
-    s0 = peg$f3(s1, s3);
-    return s0;
-  }
-  function peg$parseline() {
-    var s0, s1, s2, s3;
-    s0 = peg$currPos;
-    s1 = peg$parsecomment();
-    if (s1 === peg$FAILED) {
-      s1 = null;
-    }
-    s2 = [];
-    s3 = peg$parsemove();
-    while (s3 !== peg$FAILED) {
-      s2.push(s3);
-      s3 = peg$parsemove();
-    }
-    s0 = peg$f4(s1, s2);
-    return s0;
-  }
-  function peg$parsemove() {
-    var s0, s4, s5, s6, s7, s8, s9, s10;
-    s0 = peg$currPos;
-    peg$parse_();
-    peg$parsemoveNumber();
-    peg$parse_();
-    s4 = peg$parsesan();
-    if (s4 !== peg$FAILED) {
-      s5 = peg$parsesuffixAnnotation();
-      if (s5 === peg$FAILED) {
-        s5 = null;
-      }
-      s6 = [];
-      s7 = peg$parsenag();
-      while (s7 !== peg$FAILED) {
-        s6.push(s7);
-        s7 = peg$parsenag();
-      }
-      s7 = peg$parse_();
-      s8 = peg$parsecomment();
-      if (s8 === peg$FAILED) {
-        s8 = null;
-      }
-      s9 = [];
-      s10 = peg$parsevariation();
-      while (s10 !== peg$FAILED) {
-        s9.push(s10);
-        s10 = peg$parsevariation();
-      }
-      s0 = peg$f5(s4, s5, s6, s8, s9);
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    return s0;
-  }
-  function peg$parsemoveNumber() {
-    var s0, s1, s2, s3, s4, s5;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    s1 = [];
-    s2 = input.charAt(peg$currPos);
-    if (peg$r2.test(s2)) {
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e9);
-      }
-    }
-    while (s2 !== peg$FAILED) {
-      s1.push(s2);
-      s2 = input.charAt(peg$currPos);
-      if (peg$r2.test(s2)) {
-        peg$currPos++;
-      } else {
-        s2 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e9);
-        }
-      }
-    }
-    if (input.charCodeAt(peg$currPos) === 46) {
-      s2 = peg$c3;
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e10);
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      s3 = peg$parse_();
-      s4 = [];
-      s5 = input.charAt(peg$currPos);
-      if (peg$r3.test(s5)) {
-        peg$currPos++;
-      } else {
-        s5 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e11);
-        }
-      }
-      while (s5 !== peg$FAILED) {
-        s4.push(s5);
-        s5 = input.charAt(peg$currPos);
-        if (peg$r3.test(s5)) {
-          peg$currPos++;
-        } else {
-          s5 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e11);
-          }
-        }
-      }
-      s1 = [s1, s2, s3, s4];
-      s0 = s1;
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e8);
-      }
-    }
-    return s0;
-  }
-  function peg$parsesan() {
-    var s0, s1, s2, s3, s4, s5;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    s1 = peg$currPos;
-    if (input.substr(peg$currPos, 5) === peg$c4) {
-      s2 = peg$c4;
-      peg$currPos += 5;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e13);
-      }
-    }
-    if (s2 === peg$FAILED) {
-      if (input.substr(peg$currPos, 3) === peg$c5) {
-        s2 = peg$c5;
-        peg$currPos += 3;
-      } else {
-        s2 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e14);
-        }
-      }
-      if (s2 === peg$FAILED) {
-        if (input.substr(peg$currPos, 5) === peg$c6) {
-          s2 = peg$c6;
-          peg$currPos += 5;
-        } else {
-          s2 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e15);
-          }
-        }
-        if (s2 === peg$FAILED) {
-          if (input.substr(peg$currPos, 3) === peg$c7) {
-            s2 = peg$c7;
-            peg$currPos += 3;
-          } else {
-            s2 = peg$FAILED;
-            if (peg$silentFails === 0) {
-              peg$fail(peg$e16);
-            }
-          }
-          if (s2 === peg$FAILED) {
-            s2 = peg$currPos;
-            s3 = input.charAt(peg$currPos);
-            if (peg$r0.test(s3)) {
-              peg$currPos++;
-            } else {
-              s3 = peg$FAILED;
-              if (peg$silentFails === 0) {
-                peg$fail(peg$e5);
-              }
-            }
-            if (s3 !== peg$FAILED) {
-              s4 = [];
-              s5 = input.charAt(peg$currPos);
-              if (peg$r4.test(s5)) {
-                peg$currPos++;
-              } else {
-                s5 = peg$FAILED;
-                if (peg$silentFails === 0) {
-                  peg$fail(peg$e17);
-                }
-              }
-              if (s5 !== peg$FAILED) {
-                while (s5 !== peg$FAILED) {
-                  s4.push(s5);
-                  s5 = input.charAt(peg$currPos);
-                  if (peg$r4.test(s5)) {
-                    peg$currPos++;
-                  } else {
-                    s5 = peg$FAILED;
-                    if (peg$silentFails === 0) {
-                      peg$fail(peg$e17);
-                    }
-                  }
-                }
-              } else {
-                s4 = peg$FAILED;
-              }
-              if (s4 !== peg$FAILED) {
-                s3 = [s3, s4];
-                s2 = s3;
-              } else {
-                peg$currPos = s2;
-                s2 = peg$FAILED;
-              }
-            } else {
-              peg$currPos = s2;
-              s2 = peg$FAILED;
-            }
-          }
-        }
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      s3 = input.charAt(peg$currPos);
-      if (peg$r5.test(s3)) {
-        peg$currPos++;
-      } else {
-        s3 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e18);
-        }
-      }
-      if (s3 === peg$FAILED) {
-        s3 = null;
-      }
-      s2 = [s2, s3];
-      s1 = s2;
-    } else {
-      peg$currPos = s1;
-      s1 = peg$FAILED;
-    }
-    if (s1 !== peg$FAILED) {
-      s0 = input.substring(s0, peg$currPos);
-    } else {
-      s0 = s1;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e12);
-      }
-    }
-    return s0;
-  }
-  function peg$parsesuffixAnnotation() {
-    var s0, s1, s2;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    s1 = [];
-    s2 = input.charAt(peg$currPos);
-    if (peg$r6.test(s2)) {
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e20);
-      }
-    }
-    while (s2 !== peg$FAILED) {
-      s1.push(s2);
-      if (s1.length >= 2) {
-        s2 = peg$FAILED;
-      } else {
-        s2 = input.charAt(peg$currPos);
-        if (peg$r6.test(s2)) {
-          peg$currPos++;
-        } else {
-          s2 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e20);
-          }
-        }
-      }
-    }
-    if (s1.length < 1) {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    } else {
-      s0 = s1;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e19);
-      }
-    }
-    return s0;
-  }
-  function peg$parsenag() {
-    var s0, s2, s3, s4, s5;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    peg$parse_();
-    if (input.charCodeAt(peg$currPos) === 36) {
-      s2 = peg$c8;
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e22);
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      s3 = peg$currPos;
-      s4 = [];
-      s5 = input.charAt(peg$currPos);
-      if (peg$r2.test(s5)) {
-        peg$currPos++;
-      } else {
-        s5 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e9);
-        }
-      }
-      if (s5 !== peg$FAILED) {
-        while (s5 !== peg$FAILED) {
-          s4.push(s5);
-          s5 = input.charAt(peg$currPos);
-          if (peg$r2.test(s5)) {
-            peg$currPos++;
-          } else {
-            s5 = peg$FAILED;
-            if (peg$silentFails === 0) {
-              peg$fail(peg$e9);
-            }
-          }
-        }
-      } else {
-        s4 = peg$FAILED;
-      }
-      if (s4 !== peg$FAILED) {
-        s3 = input.substring(s3, peg$currPos);
-      } else {
-        s3 = s4;
-      }
-      if (s3 !== peg$FAILED) {
-        s0 = peg$f6(s3);
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e21);
-      }
-    }
-    return s0;
-  }
-  function peg$parsecomment() {
-    var s0;
-    s0 = peg$parsebraceComment();
-    if (s0 === peg$FAILED) {
-      s0 = peg$parserestOfLineComment();
-    }
-    return s0;
-  }
-  function peg$parsebraceComment() {
-    var s0, s1, s2, s3, s4;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    if (input.charCodeAt(peg$currPos) === 123) {
-      s1 = peg$c9;
-      peg$currPos++;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e24);
-      }
-    }
-    if (s1 !== peg$FAILED) {
-      s2 = peg$currPos;
-      s3 = [];
-      s4 = input.charAt(peg$currPos);
-      if (peg$r7.test(s4)) {
-        peg$currPos++;
-      } else {
-        s4 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e25);
-        }
-      }
-      while (s4 !== peg$FAILED) {
-        s3.push(s4);
-        s4 = input.charAt(peg$currPos);
-        if (peg$r7.test(s4)) {
-          peg$currPos++;
-        } else {
-          s4 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e25);
-          }
-        }
-      }
-      s2 = input.substring(s2, peg$currPos);
-      if (input.charCodeAt(peg$currPos) === 125) {
-        s3 = peg$c10;
-        peg$currPos++;
-      } else {
-        s3 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e26);
-        }
-      }
-      if (s3 !== peg$FAILED) {
-        s0 = peg$f7(s2);
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e23);
-      }
-    }
-    return s0;
-  }
-  function peg$parserestOfLineComment() {
-    var s0, s1, s2, s3, s4;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    if (input.charCodeAt(peg$currPos) === 59) {
-      s1 = peg$c11;
-      peg$currPos++;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e28);
-      }
-    }
-    if (s1 !== peg$FAILED) {
-      s2 = peg$currPos;
-      s3 = [];
-      s4 = input.charAt(peg$currPos);
-      if (peg$r8.test(s4)) {
-        peg$currPos++;
-      } else {
-        s4 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e29);
-        }
-      }
-      while (s4 !== peg$FAILED) {
-        s3.push(s4);
-        s4 = input.charAt(peg$currPos);
-        if (peg$r8.test(s4)) {
-          peg$currPos++;
-        } else {
-          s4 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e29);
-          }
-        }
-      }
-      s2 = input.substring(s2, peg$currPos);
-      s0 = peg$f8(s2);
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e27);
-      }
-    }
-    return s0;
-  }
-  function peg$parsevariation() {
-    var s0, s2, s3, s5;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    peg$parse_();
-    if (input.charCodeAt(peg$currPos) === 40) {
-      s2 = peg$c12;
-      peg$currPos++;
-    } else {
-      s2 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e31);
-      }
-    }
-    if (s2 !== peg$FAILED) {
-      s3 = peg$parseline();
-      if (s3 !== peg$FAILED) {
-        peg$parse_();
-        if (input.charCodeAt(peg$currPos) === 41) {
-          s5 = peg$c13;
-          peg$currPos++;
-        } else {
-          s5 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e32);
-          }
-        }
-        if (s5 !== peg$FAILED) {
-          s0 = peg$f9(s3);
-        } else {
-          peg$currPos = s0;
-          s0 = peg$FAILED;
-        }
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e30);
-      }
-    }
-    return s0;
-  }
-  function peg$parsegameTerminationMarker() {
-    var s0, s1, s3;
-    peg$silentFails++;
-    s0 = peg$currPos;
-    if (input.substr(peg$currPos, 3) === peg$c14) {
-      s1 = peg$c14;
-      peg$currPos += 3;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e34);
-      }
-    }
-    if (s1 === peg$FAILED) {
-      if (input.substr(peg$currPos, 3) === peg$c15) {
-        s1 = peg$c15;
-        peg$currPos += 3;
-      } else {
-        s1 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e35);
-        }
-      }
-      if (s1 === peg$FAILED) {
-        if (input.substr(peg$currPos, 7) === peg$c16) {
-          s1 = peg$c16;
-          peg$currPos += 7;
-        } else {
-          s1 = peg$FAILED;
-          if (peg$silentFails === 0) {
-            peg$fail(peg$e36);
-          }
-        }
-        if (s1 === peg$FAILED) {
-          if (input.charCodeAt(peg$currPos) === 42) {
-            s1 = peg$c17;
-            peg$currPos++;
-          } else {
-            s1 = peg$FAILED;
-            if (peg$silentFails === 0) {
-              peg$fail(peg$e37);
-            }
-          }
-        }
-      }
-    }
-    if (s1 !== peg$FAILED) {
-      peg$parse_();
-      s3 = peg$parsecomment();
-      if (s3 === peg$FAILED) {
-        s3 = null;
-      }
-      s0 = peg$f10(s1, s3);
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-    peg$silentFails--;
-    if (s0 === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e33);
-      }
-    }
-    return s0;
-  }
-  function peg$parse_() {
-    var s0, s1;
-    peg$silentFails++;
-    s0 = [];
-    s1 = input.charAt(peg$currPos);
-    if (peg$r9.test(s1)) {
-      peg$currPos++;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) {
-        peg$fail(peg$e39);
-      }
-    }
-    while (s1 !== peg$FAILED) {
-      s0.push(s1);
-      s1 = input.charAt(peg$currPos);
-      if (peg$r9.test(s1)) {
-        peg$currPos++;
-      } else {
-        s1 = peg$FAILED;
-        if (peg$silentFails === 0) {
-          peg$fail(peg$e39);
-        }
-      }
-    }
-    peg$silentFails--;
-    s1 = peg$FAILED;
-    if (peg$silentFails === 0) {
-      peg$fail(peg$e38);
-    }
-    return s0;
-  }
-  peg$result = peg$startRuleFunction();
-  if (options.peg$library) {
-    return (
-      /** @type {any} */
-      {
-        peg$result,
-        peg$currPos,
-        peg$FAILED,
-        peg$maxFailExpected,
-        peg$maxFailPos
-      }
-    );
-  }
-  if (peg$result !== peg$FAILED && peg$currPos === input.length) {
-    return peg$result;
-  } else {
-    if (peg$result !== peg$FAILED && peg$currPos < input.length) {
-      peg$fail(peg$endExpectation());
-    }
-    throw peg$buildStructuredError(
-      peg$maxFailExpected,
-      peg$maxFailPos < input.length ? input.charAt(peg$maxFailPos) : null,
-      peg$maxFailPos < input.length ? peg$computeLocation(peg$maxFailPos, peg$maxFailPos + 1) : peg$computeLocation(peg$maxFailPos, peg$maxFailPos)
-    );
-  }
-}
-/**
- * @license
- * Copyright (c) 2025, Jeff Hlywa (jhlywa@gmail.com)
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
-const MASK64 = 0xffffffffffffffffn;
-function rotl(x3, k2) {
-  return (x3 << k2 | x3 >> 64n - k2) & 0xffffffffffffffffn;
-}
-function wrappingMul(x3, y2) {
-  return x3 * y2 & MASK64;
-}
-function xoroshiro128(state) {
-  return function() {
-    let s0 = BigInt(state & MASK64);
-    let s1 = BigInt(state >> 64n & MASK64);
-    const result = wrappingMul(rotl(wrappingMul(s0, 5n), 7n), 9n);
-    s1 ^= s0;
-    s0 = (rotl(s0, 24n) ^ s1 ^ s1 << 16n) & MASK64;
-    s1 = rotl(s1, 37n);
-    state = s1 << 64n | s0;
-    return result;
-  };
-}
-const rand = xoroshiro128(0xa187eb39cdcaed8f31c4b365b102e01en);
-const PIECE_KEYS = Array.from({ length: 2 }, () => Array.from({ length: 6 }, () => Array.from({ length: 128 }, () => rand())));
-const EP_KEYS = Array.from({ length: 8 }, () => rand());
-const CASTLING_KEYS = Array.from({ length: 16 }, () => rand());
-const SIDE_KEY = rand();
-const WHITE = "w";
-const BLACK = "b";
-const PAWN = "p";
-const KNIGHT = "n";
-const BISHOP = "b";
-const ROOK = "r";
-const QUEEN = "q";
-const KING = "k";
-const DEFAULT_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-class Move {
-  constructor(chess, internal) {
-    __publicField(this, "color");
-    __publicField(this, "from");
-    __publicField(this, "to");
-    __publicField(this, "piece");
-    __publicField(this, "captured");
-    __publicField(this, "promotion");
-    /**
-     * @deprecated This field is deprecated and will be removed in version 2.0.0.
-     * Please use move descriptor functions instead: `isCapture`, `isPromotion`,
-     * `isEnPassant`, `isKingsideCastle`, `isQueensideCastle`, `isCastle`, and
-     * `isBigPawn`
-     */
-    __publicField(this, "flags");
-    __publicField(this, "san");
-    __publicField(this, "lan");
-    __publicField(this, "before");
-    __publicField(this, "after");
-    const { color: color2, piece, from, to, flags, captured, promotion } = internal;
-    const fromAlgebraic = algebraic(from);
-    const toAlgebraic = algebraic(to);
-    this.color = color2;
-    this.piece = piece;
-    this.from = fromAlgebraic;
-    this.to = toAlgebraic;
-    this.san = chess["_moveToSan"](internal, chess["_moves"]({ legal: true }));
-    this.lan = fromAlgebraic + toAlgebraic;
-    this.before = chess.fen();
-    chess["_makeMove"](internal);
-    this.after = chess.fen();
-    chess["_undoMove"]();
-    this.flags = "";
-    for (const flag in BITS) {
-      if (BITS[flag] & flags) {
-        this.flags += FLAGS[flag];
-      }
-    }
-    if (captured) {
-      this.captured = captured;
-    }
-    if (promotion) {
-      this.promotion = promotion;
-      this.lan += promotion;
-    }
-  }
-  isCapture() {
-    return this.flags.indexOf(FLAGS["CAPTURE"]) > -1;
-  }
-  isPromotion() {
-    return this.flags.indexOf(FLAGS["PROMOTION"]) > -1;
-  }
-  isEnPassant() {
-    return this.flags.indexOf(FLAGS["EP_CAPTURE"]) > -1;
-  }
-  isKingsideCastle() {
-    return this.flags.indexOf(FLAGS["KSIDE_CASTLE"]) > -1;
-  }
-  isQueensideCastle() {
-    return this.flags.indexOf(FLAGS["QSIDE_CASTLE"]) > -1;
-  }
-  isBigPawn() {
-    return this.flags.indexOf(FLAGS["BIG_PAWN"]) > -1;
-  }
-}
-const EMPTY = -1;
-const FLAGS = {
-  NORMAL: "n",
-  CAPTURE: "c",
-  BIG_PAWN: "b",
-  EP_CAPTURE: "e",
-  PROMOTION: "p",
-  KSIDE_CASTLE: "k",
-  QSIDE_CASTLE: "q",
-  NULL_MOVE: "-"
-};
-const BITS = {
-  NORMAL: 1,
-  CAPTURE: 2,
-  BIG_PAWN: 4,
-  EP_CAPTURE: 8,
-  PROMOTION: 16,
-  KSIDE_CASTLE: 32,
-  QSIDE_CASTLE: 64,
-  NULL_MOVE: 128
-};
-const SEVEN_TAG_ROSTER = {
-  Event: "?",
-  Site: "?",
-  Date: "????.??.??",
-  Round: "?",
-  White: "?",
-  Black: "?",
-  Result: "*"
-};
-const SUPLEMENTAL_TAGS = {
-  WhiteTitle: null,
-  BlackTitle: null,
-  WhiteElo: null,
-  BlackElo: null,
-  WhiteUSCF: null,
-  BlackUSCF: null,
-  WhiteNA: null,
-  BlackNA: null,
-  WhiteType: null,
-  BlackType: null,
-  EventDate: null,
-  EventSponsor: null,
-  Section: null,
-  Stage: null,
-  Board: null,
-  Opening: null,
-  Variation: null,
-  SubVariation: null,
-  ECO: null,
-  NIC: null,
-  Time: null,
-  UTCTime: null,
-  UTCDate: null,
-  TimeControl: null,
-  SetUp: null,
-  FEN: null,
-  Termination: null,
-  Annotator: null,
-  Mode: null,
-  PlyCount: null
-};
-const HEADER_TEMPLATE = {
-  ...SEVEN_TAG_ROSTER,
-  ...SUPLEMENTAL_TAGS
-};
-const Ox88 = {
-  a8: 0,
-  b8: 1,
-  c8: 2,
-  d8: 3,
-  e8: 4,
-  f8: 5,
-  g8: 6,
-  h8: 7,
-  a7: 16,
-  b7: 17,
-  c7: 18,
-  d7: 19,
-  e7: 20,
-  f7: 21,
-  g7: 22,
-  h7: 23,
-  a6: 32,
-  b6: 33,
-  c6: 34,
-  d6: 35,
-  e6: 36,
-  f6: 37,
-  g6: 38,
-  h6: 39,
-  a5: 48,
-  b5: 49,
-  c5: 50,
-  d5: 51,
-  e5: 52,
-  f5: 53,
-  g5: 54,
-  h5: 55,
-  a4: 64,
-  b4: 65,
-  c4: 66,
-  d4: 67,
-  e4: 68,
-  f4: 69,
-  g4: 70,
-  h4: 71,
-  a3: 80,
-  b3: 81,
-  c3: 82,
-  d3: 83,
-  e3: 84,
-  f3: 85,
-  g3: 86,
-  h3: 87,
-  a2: 96,
-  b2: 97,
-  c2: 98,
-  d2: 99,
-  e2: 100,
-  f2: 101,
-  g2: 102,
-  h2: 103,
-  a1: 112,
-  b1: 113,
-  c1: 114,
-  d1: 115,
-  e1: 116,
-  f1: 117,
-  g1: 118,
-  h1: 119
-};
-const PAWN_OFFSETS = {
-  b: [16, 32, 17, 15],
-  w: [-16, -32, -17, -15]
-};
-const PIECE_OFFSETS = {
-  n: [-18, -33, -31, -14, 18, 33, 31, 14],
-  b: [-17, -15, 17, 15],
-  r: [-16, 1, 16, -1],
-  q: [-17, -16, -15, 1, 17, 16, 15, -1],
-  k: [-17, -16, -15, 1, 17, 16, 15, -1]
-};
-const ATTACKS = [
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  24,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  2,
-  24,
-  2,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  2,
-  53,
-  56,
-  53,
-  2,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  24,
-  24,
-  24,
-  24,
-  24,
-  24,
-  56,
-  0,
-  56,
-  24,
-  24,
-  24,
-  24,
-  24,
-  24,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  2,
-  53,
-  56,
-  53,
-  2,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  2,
-  24,
-  2,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  24,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20,
-  0,
-  0,
-  20,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  24,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  20
-];
-const RAYS = [
-  17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  16,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  15,
-  0,
-  0,
-  17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  16,
-  0,
-  0,
-  0,
-  0,
-  0,
-  15,
-  0,
-  0,
-  0,
-  0,
-  17,
-  0,
-  0,
-  0,
-  0,
-  16,
-  0,
-  0,
-  0,
-  0,
-  15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  17,
-  0,
-  0,
-  0,
-  16,
-  0,
-  0,
-  0,
-  15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  17,
-  0,
-  0,
-  16,
-  0,
-  0,
-  15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  17,
-  0,
-  16,
-  0,
-  15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  17,
-  16,
-  15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  1,
-  0,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  -16,
-  -17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  0,
-  -16,
-  0,
-  -17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  0,
-  0,
-  -16,
-  0,
-  0,
-  -17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  0,
-  0,
-  0,
-  -16,
-  0,
-  0,
-  0,
-  -17,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  0,
-  0,
-  0,
-  0,
-  -16,
-  0,
-  0,
-  0,
-  0,
-  -17,
-  0,
-  0,
-  0,
-  0,
-  -15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -16,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -17,
-  0,
-  0,
-  -15,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -16,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  -17
-];
-const PIECE_MASKS = { p: 1, n: 2, b: 4, r: 8, q: 16, k: 32 };
-const SYMBOLS = "pnbrqkPNBRQK";
-const PROMOTIONS = [KNIGHT, BISHOP, ROOK, QUEEN];
-const RANK_1 = 7;
-const RANK_2 = 6;
-const RANK_7 = 1;
-const RANK_8 = 0;
-const SIDES = {
-  [KING]: BITS.KSIDE_CASTLE,
-  [QUEEN]: BITS.QSIDE_CASTLE
-};
-const ROOKS = {
-  w: [
-    { square: Ox88.a1, flag: BITS.QSIDE_CASTLE },
-    { square: Ox88.h1, flag: BITS.KSIDE_CASTLE }
-  ],
-  b: [
-    { square: Ox88.a8, flag: BITS.QSIDE_CASTLE },
-    { square: Ox88.h8, flag: BITS.KSIDE_CASTLE }
-  ]
-};
-const SECOND_RANK = { b: RANK_7, w: RANK_2 };
-const SAN_NULLMOVE = "--";
-function rank(square) {
-  return square >> 4;
-}
-function file(square) {
-  return square & 15;
-}
-function isDigit(c2) {
-  return "0123456789".indexOf(c2) !== -1;
-}
-function algebraic(square) {
-  const f2 = file(square);
-  const r2 = rank(square);
-  return "abcdefgh".substring(f2, f2 + 1) + "87654321".substring(r2, r2 + 1);
-}
-function swapColor(color2) {
-  return color2 === WHITE ? BLACK : WHITE;
-}
-function validateFen(fen) {
-  const tokens = fen.split(/\s+/);
-  if (tokens.length !== 6) {
-    return {
-      ok: false,
-      error: "Invalid FEN: must contain six space-delimited fields"
-    };
-  }
-  const moveNumber = parseInt(tokens[5], 10);
-  if (isNaN(moveNumber) || moveNumber <= 0) {
-    return {
-      ok: false,
-      error: "Invalid FEN: move number must be a positive integer"
-    };
-  }
-  const halfMoves = parseInt(tokens[4], 10);
-  if (isNaN(halfMoves) || halfMoves < 0) {
-    return {
-      ok: false,
-      error: "Invalid FEN: half move counter number must be a non-negative integer"
-    };
-  }
-  if (!/^(-|[abcdefgh][36])$/.test(tokens[3])) {
-    return { ok: false, error: "Invalid FEN: en-passant square is invalid" };
-  }
-  if (/[^kKqQ-]/.test(tokens[2])) {
-    return { ok: false, error: "Invalid FEN: castling availability is invalid" };
-  }
-  if (!/^(w|b)$/.test(tokens[1])) {
-    return { ok: false, error: "Invalid FEN: side-to-move is invalid" };
-  }
-  const rows = tokens[0].split("/");
-  if (rows.length !== 8) {
-    return {
-      ok: false,
-      error: "Invalid FEN: piece data does not contain 8 '/'-delimited rows"
-    };
-  }
-  for (let i2 = 0; i2 < rows.length; i2++) {
-    let sumFields = 0;
-    let previousWasNumber = false;
-    for (let k2 = 0; k2 < rows[i2].length; k2++) {
-      if (isDigit(rows[i2][k2])) {
-        if (previousWasNumber) {
-          return {
-            ok: false,
-            error: "Invalid FEN: piece data is invalid (consecutive number)"
-          };
-        }
-        sumFields += parseInt(rows[i2][k2], 10);
-        previousWasNumber = true;
-      } else {
-        if (!/^[prnbqkPRNBQK]$/.test(rows[i2][k2])) {
-          return {
-            ok: false,
-            error: "Invalid FEN: piece data is invalid (invalid piece)"
-          };
-        }
-        sumFields += 1;
-        previousWasNumber = false;
-      }
-    }
-    if (sumFields !== 8) {
-      return {
-        ok: false,
-        error: "Invalid FEN: piece data is invalid (too many squares in rank)"
-      };
-    }
-  }
-  if (tokens[3][1] == "3" && tokens[1] == "w" || tokens[3][1] == "6" && tokens[1] == "b") {
-    return { ok: false, error: "Invalid FEN: illegal en-passant square" };
-  }
-  const kings = [
-    { color: "white", regex: /K/g },
-    { color: "black", regex: /k/g }
-  ];
-  for (const { color: color2, regex } of kings) {
-    if (!regex.test(tokens[0])) {
-      return { ok: false, error: `Invalid FEN: missing ${color2} king` };
-    }
-    if ((tokens[0].match(regex) || []).length > 1) {
-      return { ok: false, error: `Invalid FEN: too many ${color2} kings` };
-    }
-  }
-  if (Array.from(rows[0] + rows[7]).some((char) => char.toUpperCase() === "P")) {
-    return {
-      ok: false,
-      error: "Invalid FEN: some pawns are on the edge rows"
-    };
-  }
-  return { ok: true };
-}
-function getDisambiguator(move, moves) {
-  const from = move.from;
-  const to = move.to;
-  const piece = move.piece;
-  let ambiguities = 0;
-  let sameRank = 0;
-  let sameFile = 0;
-  for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-    const ambigFrom = moves[i2].from;
-    const ambigTo = moves[i2].to;
-    const ambigPiece = moves[i2].piece;
-    if (piece === ambigPiece && from !== ambigFrom && to === ambigTo) {
-      ambiguities++;
-      if (rank(from) === rank(ambigFrom)) {
-        sameRank++;
-      }
-      if (file(from) === file(ambigFrom)) {
-        sameFile++;
-      }
-    }
-  }
-  if (ambiguities > 0) {
-    if (sameRank > 0 && sameFile > 0) {
-      return algebraic(from);
-    } else if (sameFile > 0) {
-      return algebraic(from).charAt(1);
-    } else {
-      return algebraic(from).charAt(0);
-    }
-  }
-  return "";
-}
-function addMove(moves, color2, from, to, piece, captured = void 0, flags = BITS.NORMAL) {
-  const r2 = rank(to);
-  if (piece === PAWN && (r2 === RANK_1 || r2 === RANK_8)) {
-    for (let i2 = 0; i2 < PROMOTIONS.length; i2++) {
-      const promotion = PROMOTIONS[i2];
-      moves.push({
-        color: color2,
-        from,
-        to,
-        piece,
-        captured,
-        promotion,
-        flags: flags | BITS.PROMOTION
-      });
-    }
-  } else {
-    moves.push({
-      color: color2,
-      from,
-      to,
-      piece,
-      captured,
-      flags
-    });
-  }
-}
-function inferPieceType(san) {
-  let pieceType = san.charAt(0);
-  if (pieceType >= "a" && pieceType <= "h") {
-    const matches = san.match(/[a-h]\d.*[a-h]\d/);
-    if (matches) {
-      return void 0;
-    }
-    return PAWN;
-  }
-  pieceType = pieceType.toLowerCase();
-  if (pieceType === "o") {
-    return KING;
-  }
-  return pieceType;
-}
-function strippedSan(move) {
-  return move.replace(/=/, "").replace(/[+#]?[?!]*$/, "");
-}
-class Chess {
-  constructor(fen = DEFAULT_POSITION, { skipValidation = false } = {}) {
-    __publicField(this, "_board", new Array(128));
-    __publicField(this, "_turn", WHITE);
-    __publicField(this, "_header", {});
-    __publicField(this, "_kings", { w: EMPTY, b: EMPTY });
-    __publicField(this, "_epSquare", -1);
-    __publicField(this, "_halfMoves", 0);
-    __publicField(this, "_moveNumber", 0);
-    __publicField(this, "_history", []);
-    __publicField(this, "_comments", {});
-    __publicField(this, "_castling", { w: 0, b: 0 });
-    __publicField(this, "_hash", 0n);
-    // tracks number of times a position has been seen for repetition checking
-    __publicField(this, "_positionCount", /* @__PURE__ */ new Map());
-    this.load(fen, { skipValidation });
-  }
-  clear({ preserveHeaders = false } = {}) {
-    this._board = new Array(128);
-    this._kings = { w: EMPTY, b: EMPTY };
-    this._turn = WHITE;
-    this._castling = { w: 0, b: 0 };
-    this._epSquare = EMPTY;
-    this._halfMoves = 0;
-    this._moveNumber = 1;
-    this._history = [];
-    this._comments = {};
-    this._header = preserveHeaders ? this._header : { ...HEADER_TEMPLATE };
-    this._hash = this._computeHash();
-    this._positionCount = /* @__PURE__ */ new Map();
-    this._header["SetUp"] = null;
-    this._header["FEN"] = null;
-  }
-  load(fen, { skipValidation = false, preserveHeaders = false } = {}) {
-    let tokens = fen.split(/\s+/);
-    if (tokens.length >= 2 && tokens.length < 6) {
-      const adjustments = ["-", "-", "0", "1"];
-      fen = tokens.concat(adjustments.slice(-(6 - tokens.length))).join(" ");
-    }
-    tokens = fen.split(/\s+/);
-    if (!skipValidation) {
-      const { ok, error } = validateFen(fen);
-      if (!ok) {
-        throw new Error(error);
-      }
-    }
-    const position = tokens[0];
-    let square = 0;
-    this.clear({ preserveHeaders });
-    for (let i2 = 0; i2 < position.length; i2++) {
-      const piece = position.charAt(i2);
-      if (piece === "/") {
-        square += 8;
-      } else if (isDigit(piece)) {
-        square += parseInt(piece, 10);
-      } else {
-        const color2 = piece < "a" ? WHITE : BLACK;
-        this._put({ type: piece.toLowerCase(), color: color2 }, algebraic(square));
-        square++;
-      }
-    }
-    this._turn = tokens[1];
-    if (tokens[2].indexOf("K") > -1) {
-      this._castling.w |= BITS.KSIDE_CASTLE;
-    }
-    if (tokens[2].indexOf("Q") > -1) {
-      this._castling.w |= BITS.QSIDE_CASTLE;
-    }
-    if (tokens[2].indexOf("k") > -1) {
-      this._castling.b |= BITS.KSIDE_CASTLE;
-    }
-    if (tokens[2].indexOf("q") > -1) {
-      this._castling.b |= BITS.QSIDE_CASTLE;
-    }
-    this._epSquare = tokens[3] === "-" ? EMPTY : Ox88[tokens[3]];
-    this._halfMoves = parseInt(tokens[4], 10);
-    this._moveNumber = parseInt(tokens[5], 10);
-    this._hash = this._computeHash();
-    this._updateSetup(fen);
-    this._incPositionCount();
-  }
-  fen({ forceEnpassantSquare = false } = {}) {
-    var _a3, _b3;
-    let empty2 = 0;
-    let fen = "";
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (this._board[i2]) {
-        if (empty2 > 0) {
-          fen += empty2;
-          empty2 = 0;
-        }
-        const { color: color2, type: piece } = this._board[i2];
-        fen += color2 === WHITE ? piece.toUpperCase() : piece.toLowerCase();
-      } else {
-        empty2++;
-      }
-      if (i2 + 1 & 136) {
-        if (empty2 > 0) {
-          fen += empty2;
-        }
-        if (i2 !== Ox88.h1) {
-          fen += "/";
-        }
-        empty2 = 0;
-        i2 += 8;
-      }
-    }
-    let castling = "";
-    if (this._castling[WHITE] & BITS.KSIDE_CASTLE) {
-      castling += "K";
-    }
-    if (this._castling[WHITE] & BITS.QSIDE_CASTLE) {
-      castling += "Q";
-    }
-    if (this._castling[BLACK] & BITS.KSIDE_CASTLE) {
-      castling += "k";
-    }
-    if (this._castling[BLACK] & BITS.QSIDE_CASTLE) {
-      castling += "q";
-    }
-    castling = castling || "-";
-    let epSquare = "-";
-    if (this._epSquare !== EMPTY) {
-      if (forceEnpassantSquare) {
-        epSquare = algebraic(this._epSquare);
-      } else {
-        const bigPawnSquare = this._epSquare + (this._turn === WHITE ? 16 : -16);
-        const squares = [bigPawnSquare + 1, bigPawnSquare - 1];
-        for (const square of squares) {
-          if (square & 136) {
-            continue;
-          }
-          const color2 = this._turn;
-          if (((_a3 = this._board[square]) == null ? void 0 : _a3.color) === color2 && ((_b3 = this._board[square]) == null ? void 0 : _b3.type) === PAWN) {
-            this._makeMove({
-              color: color2,
-              from: square,
-              to: this._epSquare,
-              piece: PAWN,
-              captured: PAWN,
-              flags: BITS.EP_CAPTURE
-            });
-            const isLegal = !this._isKingAttacked(color2);
-            this._undoMove();
-            if (isLegal) {
-              epSquare = algebraic(this._epSquare);
-              break;
-            }
-          }
-        }
-      }
-    }
-    return [
-      fen,
-      this._turn,
-      castling,
-      epSquare,
-      this._halfMoves,
-      this._moveNumber
-    ].join(" ");
-  }
-  _pieceKey(i2) {
-    if (!this._board[i2]) {
-      return 0n;
-    }
-    const { color: color2, type } = this._board[i2];
-    const colorIndex = {
-      w: 0,
-      b: 1
-    }[color2];
-    const typeIndex = {
-      p: 0,
-      n: 1,
-      b: 2,
-      r: 3,
-      q: 4,
-      k: 5
-    }[type];
-    return PIECE_KEYS[colorIndex][typeIndex][i2];
-  }
-  _epKey() {
-    return this._epSquare === EMPTY ? 0n : EP_KEYS[this._epSquare & 7];
-  }
-  _castlingKey() {
-    const index2 = this._castling.w >> 5 | this._castling.b >> 3;
-    return CASTLING_KEYS[index2];
-  }
-  _computeHash() {
-    let hash = 0n;
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (i2 & 136) {
-        i2 += 7;
-        continue;
-      }
-      if (this._board[i2]) {
-        hash ^= this._pieceKey(i2);
-      }
-    }
-    hash ^= this._epKey();
-    hash ^= this._castlingKey();
-    if (this._turn === "b") {
-      hash ^= SIDE_KEY;
-    }
-    return hash;
-  }
-  /*
-   * Called when the initial board setup is changed with put() or remove().
-   * modifies the SetUp and FEN properties of the header object. If the FEN
-   * is equal to the default position, the SetUp and FEN are deleted the setup
-   * is only updated if history.length is zero, ie moves haven't been made.
-   */
-  _updateSetup(fen) {
-    if (this._history.length > 0)
-      return;
-    if (fen !== DEFAULT_POSITION) {
-      this._header["SetUp"] = "1";
-      this._header["FEN"] = fen;
-    } else {
-      this._header["SetUp"] = null;
-      this._header["FEN"] = null;
-    }
-  }
-  reset() {
-    this.load(DEFAULT_POSITION);
-  }
-  get(square) {
-    return this._board[Ox88[square]];
-  }
-  findPiece(piece) {
-    var _a3;
-    const squares = [];
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (i2 & 136) {
-        i2 += 7;
-        continue;
-      }
-      if (!this._board[i2] || ((_a3 = this._board[i2]) == null ? void 0 : _a3.color) !== piece.color) {
-        continue;
-      }
-      if (this._board[i2].color === piece.color && this._board[i2].type === piece.type) {
-        squares.push(algebraic(i2));
-      }
-    }
-    return squares;
-  }
-  put({ type, color: color2 }, square) {
-    if (this._put({ type, color: color2 }, square)) {
-      this._updateCastlingRights();
-      this._updateEnPassantSquare();
-      this._updateSetup(this.fen());
-      return true;
-    }
-    return false;
-  }
-  _set(sq, piece) {
-    this._hash ^= this._pieceKey(sq);
-    this._board[sq] = piece;
-    this._hash ^= this._pieceKey(sq);
-  }
-  _put({ type, color: color2 }, square) {
-    if (SYMBOLS.indexOf(type.toLowerCase()) === -1) {
-      return false;
-    }
-    if (!(square in Ox88)) {
-      return false;
-    }
-    const sq = Ox88[square];
-    if (type == KING && !(this._kings[color2] == EMPTY || this._kings[color2] == sq)) {
-      return false;
-    }
-    const currentPieceOnSquare = this._board[sq];
-    if (currentPieceOnSquare && currentPieceOnSquare.type === KING) {
-      this._kings[currentPieceOnSquare.color] = EMPTY;
-    }
-    this._set(sq, { type, color: color2 });
-    if (type === KING) {
-      this._kings[color2] = sq;
-    }
-    return true;
-  }
-  _clear(sq) {
-    this._hash ^= this._pieceKey(sq);
-    delete this._board[sq];
-  }
-  remove(square) {
-    const piece = this.get(square);
-    this._clear(Ox88[square]);
-    if (piece && piece.type === KING) {
-      this._kings[piece.color] = EMPTY;
-    }
-    this._updateCastlingRights();
-    this._updateEnPassantSquare();
-    this._updateSetup(this.fen());
-    return piece;
-  }
-  _updateCastlingRights() {
-    var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2, _i2, _j2, _k2, _l2;
-    this._hash ^= this._castlingKey();
-    const whiteKingInPlace = ((_a3 = this._board[Ox88.e1]) == null ? void 0 : _a3.type) === KING && ((_b3 = this._board[Ox88.e1]) == null ? void 0 : _b3.color) === WHITE;
-    const blackKingInPlace = ((_c2 = this._board[Ox88.e8]) == null ? void 0 : _c2.type) === KING && ((_d2 = this._board[Ox88.e8]) == null ? void 0 : _d2.color) === BLACK;
-    if (!whiteKingInPlace || ((_e3 = this._board[Ox88.a1]) == null ? void 0 : _e3.type) !== ROOK || ((_f2 = this._board[Ox88.a1]) == null ? void 0 : _f2.color) !== WHITE) {
-      this._castling.w &= -65;
-    }
-    if (!whiteKingInPlace || ((_g2 = this._board[Ox88.h1]) == null ? void 0 : _g2.type) !== ROOK || ((_h2 = this._board[Ox88.h1]) == null ? void 0 : _h2.color) !== WHITE) {
-      this._castling.w &= -33;
-    }
-    if (!blackKingInPlace || ((_i2 = this._board[Ox88.a8]) == null ? void 0 : _i2.type) !== ROOK || ((_j2 = this._board[Ox88.a8]) == null ? void 0 : _j2.color) !== BLACK) {
-      this._castling.b &= -65;
-    }
-    if (!blackKingInPlace || ((_k2 = this._board[Ox88.h8]) == null ? void 0 : _k2.type) !== ROOK || ((_l2 = this._board[Ox88.h8]) == null ? void 0 : _l2.color) !== BLACK) {
-      this._castling.b &= -33;
-    }
-    this._hash ^= this._castlingKey();
-  }
-  _updateEnPassantSquare() {
-    var _a3, _b3;
-    if (this._epSquare === EMPTY) {
-      return;
-    }
-    const startSquare = this._epSquare + (this._turn === WHITE ? -16 : 16);
-    const currentSquare = this._epSquare + (this._turn === WHITE ? 16 : -16);
-    const attackers = [currentSquare + 1, currentSquare - 1];
-    if (this._board[startSquare] !== null || this._board[this._epSquare] !== null || ((_a3 = this._board[currentSquare]) == null ? void 0 : _a3.color) !== swapColor(this._turn) || ((_b3 = this._board[currentSquare]) == null ? void 0 : _b3.type) !== PAWN) {
-      this._hash ^= this._epKey();
-      this._epSquare = EMPTY;
-      return;
-    }
-    const canCapture = (square) => {
-      var _a4, _b4;
-      return !(square & 136) && ((_a4 = this._board[square]) == null ? void 0 : _a4.color) === this._turn && ((_b4 = this._board[square]) == null ? void 0 : _b4.type) === PAWN;
-    };
-    if (!attackers.some(canCapture)) {
-      this._hash ^= this._epKey();
-      this._epSquare = EMPTY;
-    }
-  }
-  _attacked(color2, square, verbose) {
-    const attackers = [];
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (i2 & 136) {
-        i2 += 7;
-        continue;
-      }
-      if (this._board[i2] === void 0 || this._board[i2].color !== color2) {
-        continue;
-      }
-      const piece = this._board[i2];
-      const difference2 = i2 - square;
-      if (difference2 === 0) {
-        continue;
-      }
-      const index2 = difference2 + 119;
-      if (ATTACKS[index2] & PIECE_MASKS[piece.type]) {
-        if (piece.type === PAWN) {
-          if (difference2 > 0 && piece.color === WHITE || difference2 <= 0 && piece.color === BLACK) {
-            if (!verbose) {
-              return true;
-            } else {
-              attackers.push(algebraic(i2));
-            }
-          }
-          continue;
-        }
-        if (piece.type === "n" || piece.type === "k") {
-          if (!verbose) {
-            return true;
-          } else {
-            attackers.push(algebraic(i2));
-            continue;
-          }
-        }
-        const offset2 = RAYS[index2];
-        let j2 = i2 + offset2;
-        let blocked = false;
-        while (j2 !== square) {
-          if (this._board[j2] != null) {
-            blocked = true;
-            break;
-          }
-          j2 += offset2;
-        }
-        if (!blocked) {
-          if (!verbose) {
-            return true;
-          } else {
-            attackers.push(algebraic(i2));
-            continue;
-          }
-        }
-      }
-    }
-    if (verbose) {
-      return attackers;
-    } else {
-      return false;
-    }
-  }
-  attackers(square, attackedBy) {
-    if (!attackedBy) {
-      return this._attacked(this._turn, Ox88[square], true);
-    } else {
-      return this._attacked(attackedBy, Ox88[square], true);
-    }
-  }
-  _isKingAttacked(color2) {
-    const square = this._kings[color2];
-    return square === -1 ? false : this._attacked(swapColor(color2), square);
-  }
-  hash() {
-    return this._hash.toString(16);
-  }
-  isAttacked(square, attackedBy) {
-    return this._attacked(attackedBy, Ox88[square]);
-  }
-  isCheck() {
-    return this._isKingAttacked(this._turn);
-  }
-  inCheck() {
-    return this.isCheck();
-  }
-  isCheckmate() {
-    return this.isCheck() && this._moves().length === 0;
-  }
-  isStalemate() {
-    return !this.isCheck() && this._moves().length === 0;
-  }
-  isInsufficientMaterial() {
-    const pieces = {
-      b: 0,
-      n: 0,
-      r: 0,
-      q: 0,
-      k: 0,
-      p: 0
-    };
-    const bishops = [];
-    let numPieces = 0;
-    let squareColor = 0;
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      squareColor = (squareColor + 1) % 2;
-      if (i2 & 136) {
-        i2 += 7;
-        continue;
-      }
-      const piece = this._board[i2];
-      if (piece) {
-        pieces[piece.type] = piece.type in pieces ? pieces[piece.type] + 1 : 1;
-        if (piece.type === BISHOP) {
-          bishops.push(squareColor);
-        }
-        numPieces++;
-      }
-    }
-    if (numPieces === 2) {
-      return true;
-    } else if (
-      // k vs. kn .... or .... k vs. kb
-      numPieces === 3 && (pieces[BISHOP] === 1 || pieces[KNIGHT] === 1)
-    ) {
-      return true;
-    } else if (numPieces === pieces[BISHOP] + 2) {
-      let sum2 = 0;
-      const len = bishops.length;
-      for (let i2 = 0; i2 < len; i2++) {
-        sum2 += bishops[i2];
-      }
-      if (sum2 === 0 || sum2 === len) {
-        return true;
-      }
-    }
-    return false;
-  }
-  isThreefoldRepetition() {
-    return this._getPositionCount(this._hash) >= 3;
-  }
-  isDrawByFiftyMoves() {
-    return this._halfMoves >= 100;
-  }
-  isDraw() {
-    return this.isDrawByFiftyMoves() || this.isStalemate() || this.isInsufficientMaterial() || this.isThreefoldRepetition();
-  }
-  isGameOver() {
-    return this.isCheckmate() || this.isDraw();
-  }
-  moves({ verbose = false, square = void 0, piece = void 0 } = {}) {
-    const moves = this._moves({ square, piece });
-    if (verbose) {
-      return moves.map((move) => new Move(this, move));
-    } else {
-      return moves.map((move) => this._moveToSan(move, moves));
-    }
-  }
-  _moves({ legal = true, piece = void 0, square = void 0 } = {}) {
-    var _a3;
-    const forSquare = square ? square.toLowerCase() : void 0;
-    const forPiece = piece == null ? void 0 : piece.toLowerCase();
-    const moves = [];
-    const us = this._turn;
-    const them = swapColor(us);
-    let firstSquare = Ox88.a8;
-    let lastSquare = Ox88.h1;
-    let singleSquare = false;
-    if (forSquare) {
-      if (!(forSquare in Ox88)) {
-        return [];
-      } else {
-        firstSquare = lastSquare = Ox88[forSquare];
-        singleSquare = true;
-      }
-    }
-    for (let from = firstSquare; from <= lastSquare; from++) {
-      if (from & 136) {
-        from += 7;
-        continue;
-      }
-      if (!this._board[from] || this._board[from].color === them) {
-        continue;
-      }
-      const { type } = this._board[from];
-      let to;
-      if (type === PAWN) {
-        if (forPiece && forPiece !== type)
-          continue;
-        to = from + PAWN_OFFSETS[us][0];
-        if (!this._board[to]) {
-          addMove(moves, us, from, to, PAWN);
-          to = from + PAWN_OFFSETS[us][1];
-          if (SECOND_RANK[us] === rank(from) && !this._board[to]) {
-            addMove(moves, us, from, to, PAWN, void 0, BITS.BIG_PAWN);
-          }
-        }
-        for (let j2 = 2; j2 < 4; j2++) {
-          to = from + PAWN_OFFSETS[us][j2];
-          if (to & 136)
-            continue;
-          if (((_a3 = this._board[to]) == null ? void 0 : _a3.color) === them) {
-            addMove(moves, us, from, to, PAWN, this._board[to].type, BITS.CAPTURE);
-          } else if (to === this._epSquare) {
-            addMove(moves, us, from, to, PAWN, PAWN, BITS.EP_CAPTURE);
-          }
-        }
-      } else {
-        if (forPiece && forPiece !== type)
-          continue;
-        for (let j2 = 0, len = PIECE_OFFSETS[type].length; j2 < len; j2++) {
-          const offset2 = PIECE_OFFSETS[type][j2];
-          to = from;
-          while (true) {
-            to += offset2;
-            if (to & 136)
-              break;
-            if (!this._board[to]) {
-              addMove(moves, us, from, to, type);
-            } else {
-              if (this._board[to].color === us)
-                break;
-              addMove(moves, us, from, to, type, this._board[to].type, BITS.CAPTURE);
-              break;
-            }
-            if (type === KNIGHT || type === KING)
-              break;
-          }
-        }
-      }
-    }
-    if (forPiece === void 0 || forPiece === KING) {
-      if (!singleSquare || lastSquare === this._kings[us]) {
-        if (this._castling[us] & BITS.KSIDE_CASTLE) {
-          const castlingFrom = this._kings[us];
-          const castlingTo = castlingFrom + 2;
-          if (!this._board[castlingFrom + 1] && !this._board[castlingTo] && !this._attacked(them, this._kings[us]) && !this._attacked(them, castlingFrom + 1) && !this._attacked(them, castlingTo)) {
-            addMove(moves, us, this._kings[us], castlingTo, KING, void 0, BITS.KSIDE_CASTLE);
-          }
-        }
-        if (this._castling[us] & BITS.QSIDE_CASTLE) {
-          const castlingFrom = this._kings[us];
-          const castlingTo = castlingFrom - 2;
-          if (!this._board[castlingFrom - 1] && !this._board[castlingFrom - 2] && !this._board[castlingFrom - 3] && !this._attacked(them, this._kings[us]) && !this._attacked(them, castlingFrom - 1) && !this._attacked(them, castlingTo)) {
-            addMove(moves, us, this._kings[us], castlingTo, KING, void 0, BITS.QSIDE_CASTLE);
-          }
-        }
-      }
-    }
-    if (!legal || this._kings[us] === -1) {
-      return moves;
-    }
-    const legalMoves = [];
-    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-      this._makeMove(moves[i2]);
-      if (!this._isKingAttacked(us)) {
-        legalMoves.push(moves[i2]);
-      }
-      this._undoMove();
-    }
-    return legalMoves;
-  }
-  move(move, { strict = false } = {}) {
-    let moveObj = null;
-    if (typeof move === "string") {
-      moveObj = this._moveFromSan(move, strict);
-    } else if (move === null) {
-      moveObj = this._moveFromSan(SAN_NULLMOVE, strict);
-    } else if (typeof move === "object") {
-      const moves = this._moves();
-      for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-        if (move.from === algebraic(moves[i2].from) && move.to === algebraic(moves[i2].to) && (!("promotion" in moves[i2]) || move.promotion === moves[i2].promotion)) {
-          moveObj = moves[i2];
-          break;
-        }
-      }
-    }
-    if (!moveObj) {
-      if (typeof move === "string") {
-        throw new Error(`Invalid move: ${move}`);
-      } else {
-        throw new Error(`Invalid move: ${JSON.stringify(move)}`);
-      }
-    }
-    if (this.isCheck() && moveObj.flags & BITS.NULL_MOVE) {
-      throw new Error("Null move not allowed when in check");
-    }
-    const prettyMove = new Move(this, moveObj);
-    this._makeMove(moveObj);
-    this._incPositionCount();
-    return prettyMove;
-  }
-  _push(move) {
-    this._history.push({
-      move,
-      kings: { b: this._kings.b, w: this._kings.w },
-      turn: this._turn,
-      castling: { b: this._castling.b, w: this._castling.w },
-      epSquare: this._epSquare,
-      halfMoves: this._halfMoves,
-      moveNumber: this._moveNumber
-    });
-  }
-  _movePiece(from, to) {
-    this._hash ^= this._pieceKey(from);
-    this._board[to] = this._board[from];
-    delete this._board[from];
-    this._hash ^= this._pieceKey(to);
-  }
-  _makeMove(move) {
-    var _a3, _b3, _c2, _d2;
-    const us = this._turn;
-    const them = swapColor(us);
-    this._push(move);
-    if (move.flags & BITS.NULL_MOVE) {
-      if (us === BLACK) {
-        this._moveNumber++;
-      }
-      this._halfMoves++;
-      this._turn = them;
-      this._epSquare = EMPTY;
-      return;
-    }
-    this._hash ^= this._epKey();
-    this._hash ^= this._castlingKey();
-    if (move.captured) {
-      this._hash ^= this._pieceKey(move.to);
-    }
-    this._movePiece(move.from, move.to);
-    if (move.flags & BITS.EP_CAPTURE) {
-      if (this._turn === BLACK) {
-        this._clear(move.to - 16);
-      } else {
-        this._clear(move.to + 16);
-      }
-    }
-    if (move.promotion) {
-      this._clear(move.to);
-      this._set(move.to, { type: move.promotion, color: us });
-    }
-    if (this._board[move.to].type === KING) {
-      this._kings[us] = move.to;
-      if (move.flags & BITS.KSIDE_CASTLE) {
-        const castlingTo = move.to - 1;
-        const castlingFrom = move.to + 1;
-        this._movePiece(castlingFrom, castlingTo);
-      } else if (move.flags & BITS.QSIDE_CASTLE) {
-        const castlingTo = move.to + 1;
-        const castlingFrom = move.to - 2;
-        this._movePiece(castlingFrom, castlingTo);
-      }
-      this._castling[us] = 0;
-    }
-    if (this._castling[us]) {
-      for (let i2 = 0, len = ROOKS[us].length; i2 < len; i2++) {
-        if (move.from === ROOKS[us][i2].square && this._castling[us] & ROOKS[us][i2].flag) {
-          this._castling[us] ^= ROOKS[us][i2].flag;
-          break;
-        }
-      }
-    }
-    if (this._castling[them]) {
-      for (let i2 = 0, len = ROOKS[them].length; i2 < len; i2++) {
-        if (move.to === ROOKS[them][i2].square && this._castling[them] & ROOKS[them][i2].flag) {
-          this._castling[them] ^= ROOKS[them][i2].flag;
-          break;
-        }
-      }
-    }
-    this._hash ^= this._castlingKey();
-    if (move.flags & BITS.BIG_PAWN) {
-      let epSquare;
-      if (us === BLACK) {
-        epSquare = move.to - 16;
-      } else {
-        epSquare = move.to + 16;
-      }
-      if (!(move.to - 1 & 136) && ((_a3 = this._board[move.to - 1]) == null ? void 0 : _a3.type) === PAWN && ((_b3 = this._board[move.to - 1]) == null ? void 0 : _b3.color) === them || !(move.to + 1 & 136) && ((_c2 = this._board[move.to + 1]) == null ? void 0 : _c2.type) === PAWN && ((_d2 = this._board[move.to + 1]) == null ? void 0 : _d2.color) === them) {
-        this._epSquare = epSquare;
-        this._hash ^= this._epKey();
-      } else {
-        this._epSquare = EMPTY;
-      }
-    } else {
-      this._epSquare = EMPTY;
-    }
-    if (move.piece === PAWN) {
-      this._halfMoves = 0;
-    } else if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
-      this._halfMoves = 0;
-    } else {
-      this._halfMoves++;
-    }
-    if (us === BLACK) {
-      this._moveNumber++;
-    }
-    this._turn = them;
-    this._hash ^= SIDE_KEY;
-  }
-  undo() {
-    const hash = this._hash;
-    const move = this._undoMove();
-    if (move) {
-      const prettyMove = new Move(this, move);
-      this._decPositionCount(hash);
-      return prettyMove;
-    }
-    return null;
-  }
-  _undoMove() {
-    const old = this._history.pop();
-    if (old === void 0) {
-      return null;
-    }
-    this._hash ^= this._epKey();
-    this._hash ^= this._castlingKey();
-    const move = old.move;
-    this._kings = old.kings;
-    this._turn = old.turn;
-    this._castling = old.castling;
-    this._epSquare = old.epSquare;
-    this._halfMoves = old.halfMoves;
-    this._moveNumber = old.moveNumber;
-    this._hash ^= this._epKey();
-    this._hash ^= this._castlingKey();
-    this._hash ^= SIDE_KEY;
-    const us = this._turn;
-    const them = swapColor(us);
-    if (move.flags & BITS.NULL_MOVE) {
-      return move;
-    }
-    this._movePiece(move.to, move.from);
-    if (move.piece) {
-      this._clear(move.from);
-      this._set(move.from, { type: move.piece, color: us });
-    }
-    if (move.captured) {
-      if (move.flags & BITS.EP_CAPTURE) {
-        let index2;
-        if (us === BLACK) {
-          index2 = move.to - 16;
-        } else {
-          index2 = move.to + 16;
-        }
-        this._set(index2, { type: PAWN, color: them });
-      } else {
-        this._set(move.to, { type: move.captured, color: them });
-      }
-    }
-    if (move.flags & (BITS.KSIDE_CASTLE | BITS.QSIDE_CASTLE)) {
-      let castlingTo, castlingFrom;
-      if (move.flags & BITS.KSIDE_CASTLE) {
-        castlingTo = move.to + 1;
-        castlingFrom = move.to - 1;
-      } else {
-        castlingTo = move.to - 2;
-        castlingFrom = move.to + 1;
-      }
-      this._movePiece(castlingFrom, castlingTo);
-    }
-    return move;
-  }
-  pgn({ newline = "\n", maxWidth = 0 } = {}) {
-    const result = [];
-    let headerExists = false;
-    for (const i2 in this._header) {
-      const headerTag = this._header[i2];
-      if (headerTag)
-        result.push(`[${i2} "${this._header[i2]}"]` + newline);
-      headerExists = true;
-    }
-    if (headerExists && this._history.length) {
-      result.push(newline);
-    }
-    const appendComment = (moveString2) => {
-      const comment = this._comments[this.fen()];
-      if (typeof comment !== "undefined") {
-        const delimiter = moveString2.length > 0 ? " " : "";
-        moveString2 = `${moveString2}${delimiter}{${comment}}`;
-      }
-      return moveString2;
-    };
-    const reversedHistory = [];
-    while (this._history.length > 0) {
-      reversedHistory.push(this._undoMove());
-    }
-    const moves = [];
-    let moveString = "";
-    if (reversedHistory.length === 0) {
-      moves.push(appendComment(""));
-    }
-    while (reversedHistory.length > 0) {
-      moveString = appendComment(moveString);
-      const move = reversedHistory.pop();
-      if (!move) {
-        break;
-      }
-      if (!this._history.length && move.color === "b") {
-        const prefix2 = `${this._moveNumber}. ...`;
-        moveString = moveString ? `${moveString} ${prefix2}` : prefix2;
-      } else if (move.color === "w") {
-        if (moveString.length) {
-          moves.push(moveString);
-        }
-        moveString = this._moveNumber + ".";
-      }
-      moveString = moveString + " " + this._moveToSan(move, this._moves({ legal: true }));
-      this._makeMove(move);
-    }
-    if (moveString.length) {
-      moves.push(appendComment(moveString));
-    }
-    moves.push(this._header.Result || "*");
-    if (maxWidth === 0) {
-      return result.join("") + moves.join(" ");
-    }
-    const strip = function() {
-      if (result.length > 0 && result[result.length - 1] === " ") {
-        result.pop();
-        return true;
-      }
-      return false;
-    };
-    const wrapComment = function(width, move) {
-      for (const token of move.split(" ")) {
-        if (!token) {
-          continue;
-        }
-        if (width + token.length > maxWidth) {
-          while (strip()) {
-            width--;
-          }
-          result.push(newline);
-          width = 0;
-        }
-        result.push(token);
-        width += token.length;
-        result.push(" ");
-        width++;
-      }
-      if (strip()) {
-        width--;
-      }
-      return width;
-    };
-    let currentWidth = 0;
-    for (let i2 = 0; i2 < moves.length; i2++) {
-      if (currentWidth + moves[i2].length > maxWidth) {
-        if (moves[i2].includes("{")) {
-          currentWidth = wrapComment(currentWidth, moves[i2]);
-          continue;
-        }
-      }
-      if (currentWidth + moves[i2].length > maxWidth && i2 !== 0) {
-        if (result[result.length - 1] === " ") {
-          result.pop();
-        }
-        result.push(newline);
-        currentWidth = 0;
-      } else if (i2 !== 0) {
-        result.push(" ");
-        currentWidth++;
-      }
-      result.push(moves[i2]);
-      currentWidth += moves[i2].length;
-    }
-    return result.join("");
-  }
-  /**
-   * @deprecated Use `setHeader` and `getHeaders` instead. This method will return null header tags (which is not what you want)
-   */
-  header(...args) {
-    for (let i2 = 0; i2 < args.length; i2 += 2) {
-      if (typeof args[i2] === "string" && typeof args[i2 + 1] === "string") {
-        this._header[args[i2]] = args[i2 + 1];
-      }
-    }
-    return this._header;
-  }
-  // TODO: value validation per spec
-  setHeader(key, value) {
-    this._header[key] = value ?? SEVEN_TAG_ROSTER[key] ?? null;
-    return this.getHeaders();
-  }
-  removeHeader(key) {
-    if (key in this._header) {
-      this._header[key] = SEVEN_TAG_ROSTER[key] || null;
-      return true;
-    }
-    return false;
-  }
-  // return only non-null headers (omit placemarker nulls)
-  getHeaders() {
-    const nonNullHeaders = {};
-    for (const [key, value] of Object.entries(this._header)) {
-      if (value !== null) {
-        nonNullHeaders[key] = value;
-      }
-    }
-    return nonNullHeaders;
-  }
-  loadPgn(pgn2, { strict = false, newlineChar = "\r?\n" } = {}) {
-    if (newlineChar !== "\r?\n") {
-      pgn2 = pgn2.replace(new RegExp(newlineChar, "g"), "\n");
-    }
-    const parsedPgn = peg$parse(pgn2);
-    this.reset();
-    const headers = parsedPgn.headers;
-    let fen = "";
-    for (const key in headers) {
-      if (key.toLowerCase() === "fen") {
-        fen = headers[key];
-      }
-      this.header(key, headers[key]);
-    }
-    if (!strict) {
-      if (fen) {
-        this.load(fen, { preserveHeaders: true });
-      }
-    } else {
-      if (headers["SetUp"] === "1") {
-        if (!("FEN" in headers)) {
-          throw new Error("Invalid PGN: FEN tag must be supplied with SetUp tag");
-        }
-        this.load(headers["FEN"], { preserveHeaders: true });
-      }
-    }
-    let node2 = parsedPgn.root;
-    while (node2) {
-      if (node2.move) {
-        const move = this._moveFromSan(node2.move, strict);
-        if (move == null) {
-          throw new Error(`Invalid move in PGN: ${node2.move}`);
-        } else {
-          this._makeMove(move);
-          this._incPositionCount();
-        }
-      }
-      if (node2.comment !== void 0) {
-        this._comments[this.fen()] = node2.comment;
-      }
-      node2 = node2.variations[0];
-    }
-    const result = parsedPgn.result;
-    if (result && Object.keys(this._header).length && this._header["Result"] !== result) {
-      this.setHeader("Result", result);
-    }
-  }
-  /*
-   * Convert a move from 0x88 coordinates to Standard Algebraic Notation
-   * (SAN)
-   *
-   * @param {boolean} strict Use the strict SAN parser. It will throw errors
-   * on overly disambiguated moves (see below):
-   *
-   * r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4
-   * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
-   * 4. ... Ne7 is technically the valid SAN
-   */
-  _moveToSan(move, moves) {
-    let output = "";
-    if (move.flags & BITS.KSIDE_CASTLE) {
-      output = "O-O";
-    } else if (move.flags & BITS.QSIDE_CASTLE) {
-      output = "O-O-O";
-    } else if (move.flags & BITS.NULL_MOVE) {
-      return SAN_NULLMOVE;
-    } else {
-      if (move.piece !== PAWN) {
-        const disambiguator = getDisambiguator(move, moves);
-        output += move.piece.toUpperCase() + disambiguator;
-      }
-      if (move.flags & (BITS.CAPTURE | BITS.EP_CAPTURE)) {
-        if (move.piece === PAWN) {
-          output += algebraic(move.from)[0];
-        }
-        output += "x";
-      }
-      output += algebraic(move.to);
-      if (move.promotion) {
-        output += "=" + move.promotion.toUpperCase();
-      }
-    }
-    this._makeMove(move);
-    if (this.isCheck()) {
-      if (this.isCheckmate()) {
-        output += "#";
-      } else {
-        output += "+";
-      }
-    }
-    this._undoMove();
-    return output;
-  }
-  // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
-  _moveFromSan(move, strict = false) {
-    let cleanMove = strippedSan(move);
-    if (!strict) {
-      if (cleanMove === "0-0") {
-        cleanMove = "O-O";
-      } else if (cleanMove === "0-0-0") {
-        cleanMove = "O-O-O";
-      }
-    }
-    if (cleanMove == SAN_NULLMOVE) {
-      const res = {
-        color: this._turn,
-        from: 0,
-        to: 0,
-        piece: "k",
-        flags: BITS.NULL_MOVE
-      };
-      return res;
-    }
-    let pieceType = inferPieceType(cleanMove);
-    let moves = this._moves({ legal: true, piece: pieceType });
-    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-      if (cleanMove === strippedSan(this._moveToSan(moves[i2], moves))) {
-        return moves[i2];
-      }
-    }
-    if (strict) {
-      return null;
-    }
-    let piece = void 0;
-    let matches = void 0;
-    let from = void 0;
-    let to = void 0;
-    let promotion = void 0;
-    let overlyDisambiguated = false;
-    matches = cleanMove.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/);
-    if (matches) {
-      piece = matches[1];
-      from = matches[2];
-      to = matches[3];
-      promotion = matches[4];
-      if (from.length == 1) {
-        overlyDisambiguated = true;
-      }
-    } else {
-      matches = cleanMove.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/);
-      if (matches) {
-        piece = matches[1];
-        from = matches[2];
-        to = matches[3];
-        promotion = matches[4];
-        if (from.length == 1) {
-          overlyDisambiguated = true;
-        }
-      }
-    }
-    pieceType = inferPieceType(cleanMove);
-    moves = this._moves({
-      legal: true,
-      piece: piece ? piece : pieceType
-    });
-    if (!to) {
-      return null;
-    }
-    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-      if (!from) {
-        if (cleanMove === strippedSan(this._moveToSan(moves[i2], moves)).replace("x", "")) {
-          return moves[i2];
-        }
-      } else if ((!piece || piece.toLowerCase() == moves[i2].piece) && Ox88[from] == moves[i2].from && Ox88[to] == moves[i2].to && (!promotion || promotion.toLowerCase() == moves[i2].promotion)) {
-        return moves[i2];
-      } else if (overlyDisambiguated) {
-        const square = algebraic(moves[i2].from);
-        if ((!piece || piece.toLowerCase() == moves[i2].piece) && Ox88[to] == moves[i2].to && (from == square[0] || from == square[1]) && (!promotion || promotion.toLowerCase() == moves[i2].promotion)) {
-          return moves[i2];
-        }
-      }
-    }
-    return null;
-  }
-  ascii() {
-    let s2 = "   +------------------------+\n";
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (file(i2) === 0) {
-        s2 += " " + "87654321"[rank(i2)] + " |";
-      }
-      if (this._board[i2]) {
-        const piece = this._board[i2].type;
-        const color2 = this._board[i2].color;
-        const symbol = color2 === WHITE ? piece.toUpperCase() : piece.toLowerCase();
-        s2 += " " + symbol + " ";
-      } else {
-        s2 += " . ";
-      }
-      if (i2 + 1 & 136) {
-        s2 += "|\n";
-        i2 += 8;
-      }
-    }
-    s2 += "   +------------------------+\n";
-    s2 += "     a  b  c  d  e  f  g  h";
-    return s2;
-  }
-  perft(depth) {
-    const moves = this._moves({ legal: false });
-    let nodes = 0;
-    const color2 = this._turn;
-    for (let i2 = 0, len = moves.length; i2 < len; i2++) {
-      this._makeMove(moves[i2]);
-      if (!this._isKingAttacked(color2)) {
-        if (depth - 1 > 0) {
-          nodes += this.perft(depth - 1);
-        } else {
-          nodes++;
-        }
-      }
-      this._undoMove();
-    }
-    return nodes;
-  }
-  setTurn(color2) {
-    if (this._turn == color2) {
-      return false;
-    }
-    this.move("--");
-    return true;
-  }
-  turn() {
-    return this._turn;
-  }
-  board() {
-    const output = [];
-    let row = [];
-    for (let i2 = Ox88.a8; i2 <= Ox88.h1; i2++) {
-      if (this._board[i2] == null) {
-        row.push(null);
-      } else {
-        row.push({
-          square: algebraic(i2),
-          type: this._board[i2].type,
-          color: this._board[i2].color
-        });
-      }
-      if (i2 + 1 & 136) {
-        output.push(row);
-        row = [];
-        i2 += 8;
-      }
-    }
-    return output;
-  }
-  squareColor(square) {
-    if (square in Ox88) {
-      const sq = Ox88[square];
-      return (rank(sq) + file(sq)) % 2 === 0 ? "light" : "dark";
-    }
-    return null;
-  }
-  history({ verbose = false } = {}) {
-    const reversedHistory = [];
-    const moveHistory = [];
-    while (this._history.length > 0) {
-      reversedHistory.push(this._undoMove());
-    }
-    while (true) {
-      const move = reversedHistory.pop();
-      if (!move) {
-        break;
-      }
-      if (verbose) {
-        moveHistory.push(new Move(this, move));
-      } else {
-        moveHistory.push(this._moveToSan(move, this._moves()));
-      }
-      this._makeMove(move);
-    }
-    return moveHistory;
-  }
-  /*
-   * Keeps track of position occurrence counts for the purpose of repetition
-   * checking. Old positions are removed from the map if their counts are reduced to 0.
-   */
-  _getPositionCount(hash) {
-    return this._positionCount.get(hash) ?? 0;
-  }
-  _incPositionCount() {
-    this._positionCount.set(this._hash, (this._positionCount.get(this._hash) ?? 0) + 1);
-  }
-  _decPositionCount(hash) {
-    const currentCount = this._positionCount.get(hash) ?? 0;
-    if (currentCount === 1) {
-      this._positionCount.delete(hash);
-    } else {
-      this._positionCount.set(hash, currentCount - 1);
-    }
-  }
-  _pruneComments() {
-    const reversedHistory = [];
-    const currentComments = {};
-    const copyComment = (fen) => {
-      if (fen in this._comments) {
-        currentComments[fen] = this._comments[fen];
-      }
-    };
-    while (this._history.length > 0) {
-      reversedHistory.push(this._undoMove());
-    }
-    copyComment(this.fen());
-    while (true) {
-      const move = reversedHistory.pop();
-      if (!move) {
-        break;
-      }
-      this._makeMove(move);
-      copyComment(this.fen());
-    }
-    this._comments = currentComments;
-  }
-  getComment() {
-    return this._comments[this.fen()];
-  }
-  setComment(comment) {
-    this._comments[this.fen()] = comment.replace("{", "[").replace("}", "]");
-  }
-  /**
-   * @deprecated Renamed to `removeComment` for consistency
-   */
-  deleteComment() {
-    return this.removeComment();
-  }
-  removeComment() {
-    const comment = this._comments[this.fen()];
-    delete this._comments[this.fen()];
-    return comment;
-  }
-  getComments() {
-    this._pruneComments();
-    return Object.keys(this._comments).map((fen) => {
-      return { fen, comment: this._comments[fen] };
-    });
-  }
-  /**
-   * @deprecated Renamed to `removeComments` for consistency
-   */
-  deleteComments() {
-    return this.removeComments();
-  }
-  removeComments() {
-    this._pruneComments();
-    return Object.keys(this._comments).map((fen) => {
-      const comment = this._comments[fen];
-      delete this._comments[fen];
-      return { fen, comment };
-    });
-  }
-  setCastlingRights(color2, rights) {
-    for (const side of [KING, QUEEN]) {
-      if (rights[side] !== void 0) {
-        if (rights[side]) {
-          this._castling[color2] |= SIDES[side];
-        } else {
-          this._castling[color2] &= ~SIDES[side];
-        }
-      }
-    }
-    this._updateCastlingRights();
-    const result = this.getCastlingRights(color2);
-    return (rights[KING] === void 0 || rights[KING] === result[KING]) && (rights[QUEEN] === void 0 || rights[QUEEN] === result[QUEEN]);
-  }
-  getCastlingRights(color2) {
-    return {
-      [KING]: (this._castling[color2] & SIDES[KING]) !== 0,
-      [QUEEN]: (this._castling[color2] & SIDES[QUEEN]) !== 0
-    };
-  }
-  moveNumber() {
-    return this._moveNumber;
-  }
-}
+var jqueryExports = jquery.exports;
+const $ = /* @__PURE__ */ getDefaultExportFromCjs(jqueryExports);
 const UA = "Hyvmind/1.0 (hyvmind.app)";
 const HEADERS = { Accept: "application/json", "User-Agent": UA };
 const CACHE_SIZE = 3;
@@ -66404,6 +66406,10 @@ function useLichessPuzzles() {
     void fetchNext();
   }, [fetchNext]);
   return { puzzle, loading, error, fetchNext };
+}
+if (typeof window !== "undefined") {
+  window.jQuery = $;
+  window.$ = $;
 }
 let scriptPromise = null;
 function loadChessboardScript() {

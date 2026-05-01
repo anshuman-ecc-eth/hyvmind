@@ -1,9 +1,14 @@
 import "@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css";
-import "jquery";
 import { Chess } from "chess.js";
+import $ from "jquery";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Puzzle } from "../hooks/useLichessPuzzles";
 import { useLichessPuzzles } from "../hooks/useLichessPuzzles";
+// Attach jQuery to window for chessboard.js UMD bundle
+if (typeof window !== "undefined") {
+  (window as unknown as { jQuery: typeof $ }).jQuery = $;
+  (window as unknown as { $: typeof $ }).$ = $;
+}
 
 // @chrisoakman/chessboardjs is a UMD module that attaches to window.Chessboard
 // after jQuery is loaded. We import jquery first as a side effect, then load
