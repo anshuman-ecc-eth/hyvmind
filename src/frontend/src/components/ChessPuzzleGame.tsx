@@ -467,6 +467,41 @@ export default function ChessPuzzleGame({
         >
           Showing solution...
         </div>
+        <div className="flex gap-3 mt-1">
+          <button
+            type="button"
+            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            data-ocid="chess_puzzle.retry_button"
+            onClick={() => {
+              if (timerRef.current) clearInterval(timerRef.current);
+              for (const id of solutionTimeoutsRef.current) clearTimeout(id);
+              setGameOver(false);
+              setShowingSolution(false);
+              setTimeLeft(60);
+              void fetchNext();
+            }}
+          >
+            TRY AGAIN
+          </button>
+          {score > 0 && (
+            <button
+              type="button"
+              className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+              data-ocid="chess_puzzle.submit_button"
+              onClick={() => onComplete(score)}
+            >
+              SUBMIT SCORE
+            </button>
+          )}
+          <button
+            type="button"
+            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            data-ocid="chess_puzzle.exit_button"
+            onClick={onExit}
+          >
+            BACK
+          </button>
+        </div>
       </div>
     );
   }

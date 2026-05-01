@@ -66817,7 +66817,46 @@ function ChessPuzzleGame({
               "data-ocid": "chess_puzzle.feedback",
               children: "Showing solution..."
             }
-          )
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3 mt-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                "data-ocid": "chess_puzzle.retry_button",
+                onClick: () => {
+                  if (timerRef.current) clearInterval(timerRef.current);
+                  for (const id2 of solutionTimeoutsRef.current) clearTimeout(id2);
+                  setGameOver(false);
+                  setShowingSolution(false);
+                  setTimeLeft(60);
+                  void fetchNext();
+                },
+                children: "TRY AGAIN"
+              }
+            ),
+            score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                "data-ocid": "chess_puzzle.submit_button",
+                onClick: () => onComplete(score),
+                children: "SUBMIT SCORE"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                "data-ocid": "chess_puzzle.exit_button",
+                onClick: onExit,
+                children: "BACK"
+              }
+            )
+          ] })
         ]
       }
     );
