@@ -1,194 +1,296 @@
 import { Chess } from "chess.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Chessboard } from "react-chessboard";
-import type { Arrow, PieceDropHandlerArgs } from "react-chessboard";
-import { useChessPuzzles } from "../hooks/useChessPuzzles";
-import type { Puzzle } from "../hooks/useChessPuzzles";
+import { useLichessPuzzles } from "../hooks/useLichessPuzzles";
+import type { Puzzle } from "../hooks/useLichessPuzzles";
 
 interface ChessPuzzleGameProps {
   onComplete: (score: number) => void;
   onExit: () => void;
 }
 
+// ── Piece helpers ──────────────────────────────────────────────────────────────
+
+const UNICODE: Record<string, string> = {
+  wK: "♔",
+  wQ: "♕",
+  wR: "♖",
+  wB: "♗",
+  wN: "♘",
+  wP: "♙",
+  bK: "♚",
+  bQ: "♛",
+  bR: "♜",
+  bB: "♝",
+  bN: "♞",
+  bP: "♟",
+};
+
+function fenToPosition(fen: string): Record<string, string> {
+  const pos: Record<string, string> = {};
+  const rows = fen.split(" ")[0].split("/");
+  rows.forEach((row, ri) => {
+    let ci = 0;
+    for (const ch of row) {
+      if (/\d/.test(ch)) {
+        ci += Number.parseInt(ch);
+        continue;
+      }
+      const rank = 8 - ri;
+      const file = String.fromCharCode(97 + ci);
+      const color = ch === ch.toUpperCase() ? "w" : "b";
+      const type = ch.toUpperCase();
+      pos[`${file}${rank}`] = `${color}${type}`;
+      ci++;
+    }
+  });
+  return pos;
+}
+
+// ── Arrow overlay ──────────────────────────────────────────────────────────────
+
+interface ArrowDef {
+  from: string;
+  to: string;
+  color: string;
+}
+
+function squareToCoords(
+  sq: string,
+  orientation: "white" | "black",
+): [number, number] {
+  const file = sq.charCodeAt(0) - 97; // 0–7
+  const rank = Number.parseInt(sq[1]) - 1; // 0–7
+  const col = orientation === "white" ? file : 7 - file;
+  const row = orientation === "white" ? 7 - rank : rank;
+  return [col * 12.5 + 6.25, row * 12.5 + 6.25]; // % centres
+}
+
+function ArrowOverlay({
+  arrows,
+  orientation,
+}: { arrows: ArrowDef[]; orientation: "white" | "black" }) {
+  if (!arrows.length) return null;
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 10,
+      }}
+    >
+      <defs>
+        {arrows.map((a) => (
+          <marker
+            key={`m-${a.from}${a.to}`}
+            id={`ah-${a.from}${a.to}`}
+            markerWidth="4"
+            markerHeight="4"
+            refX="3"
+            refY="2"
+            orient="auto"
+          >
+            <path d="M0,0 L4,2 L0,4 Z" fill={a.color} />
+          </marker>
+        ))}
+      </defs>
+      {arrows.map((a) => {
+        const [x1, y1] = squareToCoords(a.from, orientation);
+        const [x2, y2] = squareToCoords(a.to, orientation);
+        return (
+          <line
+            key={`l-${a.from}${a.to}`}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke={a.color}
+            strokeWidth="2.5"
+            strokeOpacity="0.75"
+            markerEnd={`url(#ah-${a.from}${a.to})`}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+// ── Board ──────────────────────────────────────────────────────────────────────
+
+interface BoardProps {
+  position: Record<string, string>;
+  orientation: "white" | "black";
+  arrows?: ArrowDef[];
+  selectedSquare?: string | null;
+  onSquareClick?: (sq: string) => void;
+  allowInteraction?: boolean;
+}
+
+function ChessBoard({
+  position,
+  orientation,
+  arrows = [],
+  selectedSquare,
+  onSquareClick,
+  allowInteraction = true,
+}: BoardProps) {
+  const ranks =
+    orientation === "white"
+      ? [8, 7, 6, 5, 4, 3, 2, 1]
+      : [1, 2, 3, 4, 5, 6, 7, 8];
+  const files =
+    orientation === "white"
+      ? ["a", "b", "c", "d", "e", "f", "g", "h"]
+      : ["h", "g", "f", "e", "d", "c", "b", "a"];
+  const boardSize = "min(88vw, 400px)";
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: boardSize,
+        height: boardSize,
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(8, 1fr)",
+          gridTemplateRows: "repeat(8, 1fr)",
+          width: "100%",
+          height: "100%",
+          border: "1px solid var(--border)",
+        }}
+      >
+        {ranks.map((rank) =>
+          files.map((file) => {
+            const sq = `${file}${rank}`;
+            const fileIdx = file.charCodeAt(0) - 97;
+            const isLight = (fileIdx + rank) % 2 !== 0;
+            const piece = position[sq];
+            const isSelected = sq === selectedSquare;
+            return (
+              <button
+                key={sq}
+                type="button"
+                tabIndex={allowInteraction ? 0 : -1}
+                onClick={() => allowInteraction && onSquareClick?.(sq)}
+                style={{
+                  backgroundColor: isSelected
+                    ? "oklch(75% 0.18 80 / 0.55)"
+                    : isLight
+                      ? "#f0f0d8"
+                      : "#6b6b7b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: allowInteraction && piece ? "pointer" : "default",
+                  userSelect: "none",
+                  position: "relative",
+                  fontSize: "clamp(1.1rem, 4vw, 2rem)",
+                  lineHeight: 1,
+                  transition: "background-color 0.15s",
+                }}
+              >
+                {piece && (
+                  <span
+                    style={{
+                      display: "block",
+                      filter:
+                        piece[0] === "w"
+                          ? "drop-shadow(0 1px 1px rgba(0,0,0,0.5))"
+                          : "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {UNICODE[piece] ?? ""}
+                  </span>
+                )}
+              </button>
+            );
+          }),
+        )}
+      </div>
+      <ArrowOverlay arrows={arrows} orientation={orientation} />
+    </div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
+
 export default function ChessPuzzleGame({
   onComplete,
   onExit,
 }: ChessPuzzleGameProps) {
-  // === STATE ===
-  const [game, setGame] = useState<Chess | null>(null);
-  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
+  const {
+    puzzle: fetchedPuzzle,
+    loading,
+    error,
+    fetchNext,
+  } = useLichessPuzzles();
+
   const [score, setScore] = useState(0);
   const [puzzleNumber, setPuzzleNumber] = useState(1);
   const [timeLeft, setTimeLeft] = useState(60);
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-
-  // Solution animation state
   const [showingSolution, setShowingSolution] = useState(false);
-  const [solutionStep, setSolutionStep] = useState(0);
-  const solutionGameRef = useRef<Chess | null>(null);
-  const solutionArrowsRef = useRef<Arrow[]>([]);
+  const [position, setPosition] = useState<Record<string, string>>({});
+  const [arrows, setArrows] = useState<ArrowDef[]>([]);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
+  const gameRef = useRef<Chess | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const puzzleRef = useRef<Puzzle | null>(null);
   const solutionTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const orientationRef = useRef<"white" | "black">("white");
 
-  // Refinement 1: stable board orientation stored in a ref, set once per puzzle
-  const boardOrientationRef = useRef<"white" | "black">("white");
-
-  const {
-    currentPuzzle: fetchedPuzzle,
-    loading,
-    error,
-    fetchNext,
-  } = useChessPuzzles();
-
-  // Sync fetchedPuzzle into local state
-  useEffect(() => {
-    if (fetchedPuzzle) setCurrentPuzzle(fetchedPuzzle);
-  }, [fetchedPuzzle]);
-
-  // === loadPuzzle ===
-  // puzzle.fen is the pre-move FEN (opponent is about to play lastMove).
-  // Solver's color = opposite of FEN side-to-move.
-  const loadPuzzle = useCallback(() => {
-    if (!currentPuzzle) return;
-
-    // Set stable board orientation from the pre-move FEN
-    const fenSide = currentPuzzle.fen.split(" ")[1];
-    boardOrientationRef.current = fenSide === "w" ? "black" : "white";
-
-    const newGame = new Chess(currentPuzzle.fen);
-
-    // Apply opponent's creating move so the board shows the puzzle position
-    newGame.move({
-      from: currentPuzzle.lastMove.slice(0, 2),
-      to: currentPuzzle.lastMove.slice(2, 4),
-      promotion: currentPuzzle.lastMove[4] ?? undefined,
-    });
-
-    setGame(newGame);
-    setFeedback("");
-    setIsCorrect(null);
-  }, [currentPuzzle]);
-
-  // Puzzle load effect
-  useEffect(() => {
-    if (currentPuzzle) loadPuzzle();
-  }, [currentPuzzle, loadPuzzle]);
-
-  // === handlePieceDrop ===
-  const handlePieceDrop = useCallback(
-    ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
-      if (!game || !currentPuzzle || gameOver || showingSolution) return false;
-      if (!targetSquare) return false;
-
-      const move = game.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: "q",
+  // Load puzzle into refs/state when fetchedPuzzle changes
+  const loadPuzzle = useCallback((p: Puzzle) => {
+    puzzleRef.current = p;
+    try {
+      const chess = new Chess(p.fen);
+      // Apply opponent's last move to get the puzzle-start position
+      chess.move({
+        from: p.lastMove.slice(0, 2),
+        to: p.lastMove.slice(2, 4),
+        promotion: p.lastMove[4] ?? undefined,
       });
-      if (!move) return false;
+      gameRef.current = chess;
 
-      const uci = move.from + move.to + (move.promotion ?? "");
-      const expected = currentPuzzle.solution[0];
+      // Orientation: solver is the side to move after lastMove
+      const sideToMove = chess.fen().split(" ")[1];
+      orientationRef.current = sideToMove === "w" ? "white" : "black";
 
-      if (uci === expected) {
-        setIsCorrect(true);
-        setFeedback("Correct!");
+      setPosition(fenToPosition(chess.fen()));
+      setArrows([
+        {
+          from: p.lastMove.slice(0, 2),
+          to: p.lastMove.slice(2, 4),
+          color: "#60a5fa",
+        },
+      ]);
+      setSelectedSquare(null);
+      setFeedback("");
+    } catch (err) {
+      console.error("loadPuzzle failed:", err);
+    }
+  }, []);
 
-        if (currentPuzzle.solution.length === 1) {
-          // Puzzle complete — single move solution
-          if (timerRef.current) clearInterval(timerRef.current);
-          setScore((s) => s + 50);
-          setPuzzleNumber((n) => n + 1);
-          setTimeout(() => {
-            void fetchNext();
-          }, 1200);
-        } else {
-          // Auto-play opponent's response (solution[1]) after 500ms
-          setTimeout(() => {
-            const reply = currentPuzzle.solution[1];
-            game.move({
-              from: reply.slice(0, 2),
-              to: reply.slice(2, 4),
-              promotion: reply[4] ?? undefined,
-            });
-            setCurrentPuzzle((prev) =>
-              prev ? { ...prev, solution: prev.solution.slice(2) } : null,
-            );
-            setGame(new Chess(game.fen()));
-            setFeedback("");
-            setIsCorrect(null);
-          }, 500);
-        }
-        return true;
-      }
-
-      // Wrong move — animate solution before showing game-over
-      setFeedback("Incorrect!");
-      setIsCorrect(false);
-      animateSolution();
-      setGameOver(true);
-      return true;
-    },
-    // animateSolution is defined below; safe to include because useCallback deps are evaluated lazily
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [game, currentPuzzle, gameOver, showingSolution, fetchNext],
-  );
-
-  // === animateSolution ===
-  const animateSolution = useCallback(() => {
-    if (!currentPuzzle) return;
-
-    // Reset to puzzle starting position (before opponent's creating move)
-    const startGame = new Chess(currentPuzzle.fen);
-    solutionGameRef.current = startGame;
-    setShowingSolution(true);
-    setSolutionStep(0);
-
-    // Full move sequence: opponent's creating move + all solution moves
-    const allMoves = [currentPuzzle.lastMove, ...currentPuzzle.solution];
-
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
-    allMoves.forEach((moveUCI, index) => {
-      const id = setTimeout(() => {
-        if (!solutionGameRef.current) return;
-
-        solutionGameRef.current.move({
-          from: moveUCI.slice(0, 2),
-          to: moveUCI.slice(2, 4),
-          promotion: moveUCI[4] ?? undefined,
-        });
-
-        // Blue for opponent moves (even indices), green for solver moves (odd indices)
-        solutionArrowsRef.current = [
-          {
-            startSquare: moveUCI.slice(0, 2),
-            endSquare: moveUCI.slice(2, 4),
-            color: index % 2 === 0 ? "#60a5fa" : "#4ade80",
-          },
-        ];
-
-        setSolutionStep(index + 1);
-        setGame(new Chess(solutionGameRef.current.fen()));
-
-        // After last move, wait 1 second then reveal game over UI
-        if (index === allMoves.length - 1) {
-          const finalId = setTimeout(() => {
-            setShowingSolution(false);
-          }, 1000);
-          solutionTimeoutsRef.current.push(finalId);
-        }
-      }, index * 1000);
-      timeoutIds.push(id);
-    });
-    solutionTimeoutsRef.current = timeoutIds;
-  }, [currentPuzzle]);
-
-  // === TIMER EFFECT ===
   useEffect(() => {
-    if (gameOver || !currentPuzzle || !game || showingSolution) return;
+    if (fetchedPuzzle) loadPuzzle(fetchedPuzzle);
+  }, [fetchedPuzzle, loadPuzzle]);
+
+  // Timer
+  useEffect(() => {
+    if (gameOver || !fetchedPuzzle || !gameRef.current || showingSolution)
+      return;
     setTimeLeft(60);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -206,7 +308,7 @@ export default function ChessPuzzleGame({
       if (timerRef.current) clearInterval(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPuzzle, gameOver, game, showingSolution]);
+  }, [fetchedPuzzle, gameOver, showingSolution]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -216,50 +318,156 @@ export default function ChessPuzzleGame({
     };
   }, []);
 
-  // Last move arrow shown during normal gameplay (blue)
-  const lastMoveArrow: Arrow[] =
-    currentPuzzle?.lastMove && currentPuzzle.lastMove.length >= 4
-      ? [
-          {
-            startSquare: currentPuzzle.lastMove.slice(0, 2),
-            endSquare: currentPuzzle.lastMove.slice(2, 4),
-            color: "#60a5fa",
-          },
-        ]
-      : [];
+  const animateSolution = useCallback(() => {
+    const p = puzzleRef.current;
+    if (!p) return;
+    setShowingSolution(true);
+    // Reset to pre-lastMove FEN
+    const solutionGame = new Chess(p.fen);
+    const allMoves = [p.lastMove, ...p.solution];
+    const ids: ReturnType<typeof setTimeout>[] = [];
+    allMoves.forEach((uci, i) => {
+      const id = setTimeout(() => {
+        try {
+          solutionGame.move({
+            from: uci.slice(0, 2),
+            to: uci.slice(2, 4),
+            promotion: uci[4] ?? undefined,
+          });
+          setPosition(fenToPosition(solutionGame.fen()));
+          setArrows([
+            {
+              from: uci.slice(0, 2),
+              to: uci.slice(2, 4),
+              color: i % 2 === 0 ? "#60a5fa" : "#4ade80",
+            },
+          ]);
+        } catch {
+          /* skip invalid */
+        }
+        if (i === allMoves.length - 1) {
+          const finalId = setTimeout(() => setShowingSolution(false), 1000);
+          solutionTimeoutsRef.current.push(finalId);
+        }
+      }, i * 1000);
+      ids.push(id);
+    });
+    solutionTimeoutsRef.current = ids;
+  }, []);
 
-  // === RENDER ===
+  const applyMove = useCallback(
+    (uci: string) => {
+      const p = puzzleRef.current;
+      const chess = gameRef.current;
+      if (!p || !chess) return;
 
-  // Loading state
-  if (loading || !game) {
+      const expected = p.solution[0];
+      if (uci !== expected) {
+        // Wrong — animate solution, then game over
+        if (timerRef.current) clearInterval(timerRef.current);
+        setFeedback("Incorrect!");
+        animateSolution();
+        setGameOver(true);
+        return;
+      }
+
+      // Correct
+      setArrows([]);
+      if (p.solution.length === 1) {
+        // Puzzle complete
+        if (timerRef.current) clearInterval(timerRef.current);
+        const pts = 50;
+        setScore((s) => s + pts);
+        setFeedback(`+${pts}`);
+        setTimeout(() => {
+          setPuzzleNumber((n) => n + 1);
+          setFeedback("");
+          void fetchNext();
+        }, 1200);
+      } else {
+        // Auto-play opponent reply
+        setFeedback("Correct!");
+        const reply = p.solution[1];
+        setTimeout(() => {
+          try {
+            chess.move({
+              from: reply.slice(0, 2),
+              to: reply.slice(2, 4),
+              promotion: reply[4] ?? undefined,
+            });
+            puzzleRef.current = { ...p, solution: p.solution.slice(2) };
+            setPosition(fenToPosition(chess.fen()));
+            setArrows([
+              {
+                from: reply.slice(0, 2),
+                to: reply.slice(2, 4),
+                color: "#60a5fa",
+              },
+            ]);
+            setFeedback("");
+          } catch (err) {
+            console.error("opponent reply failed:", err);
+          }
+        }, 500);
+      }
+    },
+    [animateSolution, fetchNext],
+  );
+
+  const handleSquareClick = useCallback(
+    (sq: string) => {
+      const chess = gameRef.current;
+      const p = puzzleRef.current;
+      if (!chess || !p || gameOver || showingSolution) return;
+
+      const sideToMove = chess.fen().split(" ")[1];
+      const pieceAtSq = fenToPosition(chess.fen())[sq];
+      const isOwnPiece = pieceAtSq && pieceAtSq[0] === sideToMove;
+
+      if (!selectedSquare) {
+        if (isOwnPiece) setSelectedSquare(sq);
+        return;
+      }
+
+      if (sq === selectedSquare) {
+        setSelectedSquare(null);
+        return;
+      }
+      if (isOwnPiece) {
+        setSelectedSquare(sq);
+        return;
+      }
+
+      // Attempt move
+      try {
+        const move = chess.move({
+          from: selectedSquare,
+          to: sq,
+          promotion: "q",
+        });
+        setSelectedSquare(null);
+        if (!move) return;
+        setPosition(fenToPosition(chess.fen()));
+        const uci = move.from + move.to + (move.promotion ?? "");
+        applyMove(uci);
+      } catch {
+        setSelectedSquare(null);
+      }
+    },
+    [selectedSquare, gameOver, showingSolution, applyMove],
+  );
+
+  // ── RENDER ──────────────────────────────────────────────────────────────────
+
+  if (loading || (!fetchedPuzzle && !error)) {
     return (
       <div
-        className="flex flex-col items-center justify-center py-12 font-mono"
+        className="flex flex-col items-center justify-center py-12 font-mono gap-4"
         data-ocid="chess_puzzle.loading_state"
       >
         <div className="text-foreground text-sm animate-pulse">
           Loading puzzle...
         </div>
-        <button
-          type="button"
-          onClick={onExit}
-          className="text-muted-foreground text-xs underline mt-4 hover:text-foreground transition-colors"
-          data-ocid="chess_puzzle.cancel_button"
-        >
-          BACK
-        </button>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && !loading) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center gap-4 py-12 font-mono"
-        data-ocid="chess_puzzle.error_state"
-      >
-        <div className="text-destructive text-sm text-center px-4">{error}</div>
         <button
           type="button"
           onClick={onExit}
@@ -272,55 +480,77 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // Game over state — only shown after solution animation completes
+  if (error) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center gap-4 py-12 font-mono"
+        data-ocid="chess_puzzle.error_state"
+      >
+        <div className="text-destructive text-sm text-center px-4">{error}</div>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-muted-foreground text-xs underline hover:text-foreground transition-colors"
+            data-ocid="chess_puzzle.cancel_button"
+          >
+            BACK
+          </button>
+          <button
+            type="button"
+            onClick={() => void fetchNext()}
+            className="text-primary text-xs underline hover:opacity-80 transition-opacity"
+            data-ocid="chess_puzzle.retry_button"
+          >
+            RETRY
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (gameOver && !showingSolution) {
     return (
       <div
         className="flex flex-col items-center gap-4 py-4 font-mono w-full"
         data-ocid="chess_puzzle.game_over"
       >
-        <Chessboard
-          options={{
-            position: game.fen(),
-            boardOrientation: boardOrientationRef.current,
-            allowDragging: false,
-            boardStyle: {
-              width: "min(90vw, 400px)",
-              height: "min(90vw, 400px)",
-            },
-            darkSquareStyle: { backgroundColor: "#6b6b7b" },
-            lightSquareStyle: { backgroundColor: "#f0f0d8" },
-            arrows: lastMoveArrow,
-          }}
+        <ChessBoard
+          position={position}
+          orientation={orientationRef.current}
+          arrows={arrows}
+          allowInteraction={false}
         />
-
-        <div className="flex flex-col items-center gap-2 mt-1">
+        <div className="flex flex-col items-center gap-1 mt-1">
           <div
             className="text-destructive font-bold text-lg tracking-widest"
             data-ocid="chess_puzzle.error_state"
           >
             {feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"}
           </div>
-          <div className="text-foreground text-sm">
+          <div className="text-muted-foreground text-sm">
             Puzzles solved:{" "}
-            <span className="font-bold">{puzzleNumber - 1}</span>
+            <span className="text-foreground font-bold">
+              {puzzleNumber - 1}
+            </span>
           </div>
-          <div className="text-foreground text-sm">
-            Final score: <span className="font-bold text-primary">{score}</span>
+          <div className="text-muted-foreground text-sm">
+            Final score: <span className="text-primary font-bold">{score}</span>
           </div>
         </div>
-
-        <div className="flex gap-4 mt-2">
+        <div className="flex gap-5 mt-1">
           <button
             type="button"
             onClick={() => {
               if (timerRef.current) clearInterval(timerRef.current);
+              for (const id of solutionTimeoutsRef.current) clearTimeout(id);
               setScore(0);
               setPuzzleNumber(1);
               setGameOver(false);
               setFeedback("");
-              setIsCorrect(null);
-              setGame(null);
+              setShowingSolution(false);
+              setArrows([]);
+              setPosition({});
               void fetchNext();
             }}
             className="text-muted-foreground text-xs tracking-widest hover:text-foreground transition-colors"
@@ -351,45 +581,24 @@ export default function ChessPuzzleGame({
     );
   }
 
-  // Solution animation — shown after wrong move, before game-over UI
   if (showingSolution) {
     return (
       <div
         className="flex flex-col items-center gap-3 py-4 font-mono w-full"
         data-ocid="chess_puzzle.solution_animation"
       >
-        {/* Header row — keep visible during animation */}
         <div className="flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground">
-          <span data-ocid="chess_puzzle.puzzle_number">#{puzzleNumber}</span>
+          <span>#{puzzleNumber}</span>
           <span>
             Score: <span className="text-foreground font-bold">{score}</span>
           </span>
-          <span
-            className="text-xl font-bold tabular-nums text-foreground"
-            data-ocid="chess_puzzle.timer"
-          >
-            {solutionStep > 0 ? `${solutionStep}` : "·"}
-          </span>
         </div>
-
-        {/* Board showing solution animation */}
-        <Chessboard
-          options={{
-            position: solutionGameRef.current?.fen() ?? "start",
-            boardOrientation: boardOrientationRef.current,
-            allowDragging: false,
-            arrows: solutionArrowsRef.current,
-            boardStyle: {
-              width: "min(90vw, 400px)",
-              height: "min(90vw, 400px)",
-            },
-            darkSquareStyle: { backgroundColor: "#6b6b7b" },
-            lightSquareStyle: { backgroundColor: "#f0f0d8" },
-            clearArrowsOnPositionChange: false,
-          }}
+        <ChessBoard
+          position={position}
+          orientation={orientationRef.current}
+          arrows={arrows}
+          allowInteraction={false}
         />
-
-        {/* "Showing solution" text */}
         <div
           className="text-sm text-center text-muted-foreground animate-pulse"
           data-ocid="chess_puzzle.feedback"
@@ -406,63 +615,32 @@ export default function ChessPuzzleGame({
       className="flex flex-col items-center gap-3 py-4 font-mono w-full"
       data-ocid="chess_puzzle.panel"
     >
-      {/* Header row */}
       <div className="flex items-center justify-between w-full max-w-[400px] text-xs text-muted-foreground">
         <span data-ocid="chess_puzzle.puzzle_number">#{puzzleNumber}</span>
         <span>
           Score: <span className="text-foreground font-bold">{score}</span>
         </span>
         <span
-          className={`text-xl font-bold tabular-nums ${
-            timeLeft <= 10 ? "text-destructive" : "text-foreground"
-          }`}
+          className={`text-xl font-bold tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`}
           data-ocid="chess_puzzle.timer"
         >
           {timeLeft}s
         </span>
       </div>
-
-      {/* Chessboard */}
-      <Chessboard
-        options={{
-          position: game.fen(),
-          boardOrientation: boardOrientationRef.current,
-          onPieceDrop: handlePieceDrop,
-          arrows: lastMoveArrow,
-          allowDragging: !gameOver,
-          boardStyle: {
-            width: "min(90vw, 400px)",
-            height: "min(90vw, 400px)",
-          },
-          darkSquareStyle: { backgroundColor: "#6b6b7b" },
-          lightSquareStyle: { backgroundColor: "#f0f0d8" },
-          clearArrowsOnPositionChange: false,
-        }}
+      <ChessBoard
+        position={position}
+        orientation={orientationRef.current}
+        arrows={arrows}
+        selectedSquare={selectedSquare}
+        onSquareClick={handleSquareClick}
+        allowInteraction={!gameOver && !showingSolution}
       />
-
-      {/* Feedback */}
       <div
-        className="text-sm text-center min-h-[1.5rem]"
-        data-ocid={
-          isCorrect === true
-            ? "chess_puzzle.success_state"
-            : isCorrect === false
-              ? "chess_puzzle.error_state"
-              : "chess_puzzle.feedback"
-        }
-        style={{
-          color:
-            isCorrect === true
-              ? "oklch(65% 0.15 150)"
-              : isCorrect === false
-                ? "var(--destructive)"
-                : "transparent",
-        }}
+        className={`text-sm text-center min-h-[1.5rem] ${feedback === "Correct!" || feedback.startsWith("+") ? "text-green-500" : feedback ? "text-destructive" : "text-transparent"}`}
+        data-ocid="chess_puzzle.feedback"
       >
         {feedback || "·"}
       </div>
-
-      {/* Exit */}
       <button
         type="button"
         onClick={onExit}
