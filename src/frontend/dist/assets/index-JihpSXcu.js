@@ -67675,7 +67675,7 @@ function StartScreen({
           fontSize: "0.5rem",
           letterSpacing: "0.05em"
         },
-        children: "/ a digital sanctuary for legal researchers /"
+        children: "/ a digital sanctuary for legal researchers \\"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {

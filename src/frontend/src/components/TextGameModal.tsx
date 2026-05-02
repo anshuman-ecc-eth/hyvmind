@@ -564,7 +564,7 @@ function StartScreen({
             letterSpacing: "0.05em",
           }}
         >
-          / a digital sanctuary for legal researchers /
+          / a digital sanctuary for legal researchers \
         </div>
 
         {/* Menu */}
