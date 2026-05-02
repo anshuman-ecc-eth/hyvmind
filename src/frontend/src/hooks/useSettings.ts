@@ -11,7 +11,7 @@ import {
 
 export function useSettings() {
   const [activeTab, setActiveTabState] = useState<string>(
-    () => localStorage.getItem("hyvmind-active-tab") ?? "editor",
+    () => localStorage.getItem("hyvmind-active-tab") ?? "notes",
   );
   const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(
     () => localStorage.getItem("hyvmind-sidebar-collapsed") === "true",

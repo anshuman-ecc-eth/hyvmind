@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type {
   EditorAction,
   EditorNode,
@@ -95,7 +95,7 @@ function emptySession(): EditorSession {
 // ---------------------------------------------------------------------------
 
 export function useMarkdownEditor() {
-  const { graphs, saveGraph, deleteGraph } = useSourceGraphs();
+  const { graphs, saveGraph } = useSourceGraphs();
 
   const [session, setSession] = useState<EditorSession>(() => {
     const s = emptySession();
@@ -107,8 +107,7 @@ export function useMarkdownEditor() {
   // Track which graph ids we've already synced to avoid re-importing unchanged data
   const syncedGraphIdsRef = useRef<Set<string>>(new Set());
 
-  // Debounce timer for auto-save
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // (debounce timer removed — no auto-save)
 
   // ---------------------------------------------------------------------------
   // loadGraphs — merge all SourceGraphs into the session
@@ -146,112 +145,57 @@ export function useMarkdownEditor() {
     });
   }, [graphs]);
 
-  // Auto-load on mount
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only load
-  useEffect(() => {
-    loadGraphs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // (auto-load on mount removed — Notes and Graphs are now independent)
 
-  // Re-sync when graphs change (e.g. imported from Sources page)
-  const graphsJsonRef = useRef<string>("");
-  useEffect(() => {
-    const json = JSON.stringify(graphs.map((g) => g.id));
-    if (json !== graphsJsonRef.current) {
-      graphsJsonRef.current = json;
-      loadGraphs();
-    }
-  }, [graphs, loadGraphs]);
+  // (re-sync on graphs change removed — Notes and Graphs are now independent)
 
   // ---------------------------------------------------------------------------
-  // Internal: persist a curation subtree back to useSourceGraphs
+  // Internal: persist helpers (kept for explicit convert only)
   // ---------------------------------------------------------------------------
-
-  const persistCuration = useCallback(
-    (curationId: string, nodes: Map<string, EditorNode>) => {
-      try {
-        const sg = editorToSourceGraph(nodes, curationId);
-        // Replace the existing graph with the same root name, or add new
-        // We use saveGraph which appends; so we must delete+save
-        const existing = graphs.find(
-          (g) => g.name === nodes.get(curationId)?.name,
-        );
-        if (existing) deleteGraph(existing.id);
-        saveGraph(sg);
-      } catch (err) {
-        console.error("[useMarkdownEditor] persistCuration failed:", err);
-      }
-    },
-    [graphs, saveGraph, deleteGraph],
-  );
-
-  // Debounced auto-save
-  const scheduleSave = useCallback(
-    (curationId: string, nodes: Map<string, EditorNode>) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        persistCuration(curationId, nodes);
-      }, 800);
-    },
-    [persistCuration],
-  );
 
   // ---------------------------------------------------------------------------
   // createCuration
   // ---------------------------------------------------------------------------
 
-  const createCuration = useCallback(
-    (name: string) => {
-      const id = slugify(name) || `curation-${Date.now()}`;
-      const now = Date.now();
-      const node: EditorNode = {
-        id,
-        name,
-        type: "folder",
-        parentId: null,
-        nodeType: "curation",
-        frontmatter: {},
-        inheritedAttributes: {},
-        children: [],
-        createdAt: now,
-        updatedAt: now,
+  const createCuration = useCallback((name: string) => {
+    const id = slugify(name) || `curation-${Date.now()}`;
+    const now = Date.now();
+    const node: EditorNode = {
+      id,
+      name,
+      type: "folder",
+      parentId: null,
+      nodeType: "curation",
+      frontmatter: {},
+      inheritedAttributes: {},
+      children: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const action: EditorAction = { type: "create", node, parentId: null };
+
+    setSession((prev) => {
+      // Guard: don't create duplicate curation ids
+      if (prev.nodes.has(id)) return prev;
+      // Guard: don't create duplicate curation names
+      const nameExists = Array.from(prev.nodes.values()).some(
+        (n) => n.nodeType === "curation" && n.name === name,
+      );
+      if (nameExists) return prev;
+      const nodes = new Map(prev.nodes);
+      nodes.set(id, node);
+      const newSession = {
+        ...prev,
+        nodes,
+        rootIds: [...prev.rootIds, id],
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now,
       };
-
-      const action: EditorAction = { type: "create", node, parentId: null };
-
-      setSession((prev) => {
-        // Guard: don't create duplicate curation ids
-        if (prev.nodes.has(id)) return prev;
-        // Guard: don't create duplicate curation names
-        const nameExists = Array.from(prev.nodes.values()).some(
-          (n) => n.nodeType === "curation" && n.name === name,
-        );
-        if (nameExists) return prev;
-        const nodes = new Map(prev.nodes);
-        nodes.set(id, node);
-        const newSession = {
-          ...prev,
-          nodes,
-          rootIds: [...prev.rootIds, id],
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now,
-        };
-        // Persist immediately for new curations
-        try {
-          const sg = editorToSourceGraph(nodes, id);
-          saveGraph(sg);
-        } catch (err) {
-          console.error(
-            "[useMarkdownEditor] createCuration persist failed:",
-            err,
-          );
-        }
-        return newSession;
-      });
-    },
-    [saveGraph],
-  );
+      return newSession;
+    });
+  }, []);
 
   // ---------------------------------------------------------------------------
   // createNode
@@ -298,8 +242,7 @@ export function useMarkdownEditor() {
           updatedAt: now,
         });
 
-        // Find root curation id
-        const rootId = findRootId(parentId, nodes);
+        // no auto-save
 
         const newSession = {
           ...prev,
@@ -309,11 +252,12 @@ export function useMarkdownEditor() {
           lastSavedAt: now,
         };
 
-        if (rootId) scheduleSave(rootId, nodes);
+        // no auto-save
+
         return newSession;
       });
     },
-    [scheduleSave],
+    [],
   );
 
   // ---------------------------------------------------------------------------
@@ -379,8 +323,7 @@ export function useMarkdownEditor() {
         }
         void lastAction; // used above
 
-        const rootId = findRootId(fileId, nodes);
-        if (rootId) scheduleSave(rootId, nodes);
+        // no auto-save
 
         return {
           ...prev,
@@ -391,144 +334,127 @@ export function useMarkdownEditor() {
         };
       });
     },
-    [scheduleSave],
+    [],
   );
 
   // ---------------------------------------------------------------------------
   // renameNode
   // ---------------------------------------------------------------------------
 
-  const renameNode = useCallback(
-    (nodeId: string, newName: string) => {
-      setSession((prev) => {
-        const node = prev.nodes.get(nodeId);
-        if (!node || node.name === newName) return prev;
+  const renameNode = useCallback((nodeId: string, newName: string) => {
+    setSession((prev) => {
+      const node = prev.nodes.get(nodeId);
+      if (!node || node.name === newName) return prev;
 
-        const now = Date.now();
-        const action: EditorAction = {
-          type: "rename",
-          nodeId,
-          oldName: node.name,
-          newName,
-        };
+      const now = Date.now();
+      const action: EditorAction = {
+        type: "rename",
+        nodeId,
+        oldName: node.name,
+        newName,
+      };
 
-        // Rebuild ids for node and all descendants (since ids are path-based)
-        const newId = node.parentId
-          ? `${node.parentId}@${newName}`
-          : slugify(newName);
-        const nodes = renameNodeIds(prev.nodes, nodeId, newId, newName, now);
+      // Rebuild ids for node and all descendants (since ids are path-based)
+      const newId = node.parentId
+        ? `${node.parentId}@${newName}`
+        : slugify(newName);
+      const nodes = renameNodeIds(prev.nodes, nodeId, newId, newName, now);
 
-        // Update parent's children list
-        if (node.parentId) {
-          const parent = nodes.get(node.parentId);
-          if (parent) {
-            nodes.set(node.parentId, {
-              ...parent,
-              children: parent.children.map((c) => (c === nodeId ? newId : c)),
-              updatedAt: now,
-            });
-          }
+      // Update parent's children list
+      if (node.parentId) {
+        const parent = nodes.get(node.parentId);
+        if (parent) {
+          nodes.set(node.parentId, {
+            ...parent,
+            children: parent.children.map((c) => (c === nodeId ? newId : c)),
+            updatedAt: now,
+          });
         }
+      }
 
-        // Update rootIds if curation was renamed
-        const rootIds = prev.rootIds.map((id) => (id === nodeId ? newId : id));
+      // Update rootIds if curation was renamed
+      const rootIds = prev.rootIds.map((id) => (id === nodeId ? newId : id));
 
-        // Fix activeFileId if it was under the renamed node
-        const activeFileId = prev.activeFileId
-          ? remapId(prev.activeFileId, nodeId, newId)
-          : null;
-        if (activeFileId !== prev.activeFileId && activeFileId) {
-          localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
-        }
+      // Fix activeFileId if it was under the renamed node
+      const activeFileId = prev.activeFileId
+        ? remapId(prev.activeFileId, nodeId, newId)
+        : null;
+      if (activeFileId !== prev.activeFileId && activeFileId) {
+        localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
+      }
 
-        const rootId = findRootId(newId, nodes);
-        if (rootId) scheduleSave(rootId, nodes);
+      // no auto-save after rename
 
-        return {
-          ...prev,
-          nodes,
-          rootIds,
-          activeFileId,
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now,
-        };
-      });
-    },
-    [scheduleSave],
-  );
+      return {
+        ...prev,
+        nodes,
+        rootIds,
+        activeFileId,
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now,
+      };
+    });
+  }, []);
 
   // ---------------------------------------------------------------------------
   // deleteNode
   // ---------------------------------------------------------------------------
 
-  const deleteNode = useCallback(
-    (nodeId: string) => {
-      setSession((prev) => {
-        const node = prev.nodes.get(nodeId);
-        if (!node) return prev;
+  const deleteNode = useCallback((nodeId: string) => {
+    setSession((prev) => {
+      const node = prev.nodes.get(nodeId);
+      if (!node) return prev;
 
-        const now = Date.now();
-        const allIds = collectDescendantIds(nodeId, prev.nodes);
-        const deletedDescendantIds = allIds.filter((id) => id !== nodeId);
+      const now = Date.now();
+      const allIds = collectDescendantIds(nodeId, prev.nodes);
+      const deletedDescendantIds = allIds.filter((id) => id !== nodeId);
 
-        const action: EditorAction = {
-          type: "delete",
-          node,
-          parentId: node.parentId,
-          deletedDescendantIds,
-        };
+      const action: EditorAction = {
+        type: "delete",
+        node,
+        parentId: node.parentId,
+        deletedDescendantIds,
+      };
 
-        const nodes = new Map(prev.nodes);
-        for (const id of allIds) nodes.delete(id);
+      const nodes = new Map(prev.nodes);
+      for (const id of allIds) nodes.delete(id);
 
-        // Remove from parent's children
-        if (node.parentId) {
-          const parent = nodes.get(node.parentId);
-          if (parent) {
-            nodes.set(node.parentId, {
-              ...parent,
-              children: parent.children.filter((c) => c !== nodeId),
-              updatedAt: now,
-            });
-          }
+      // Remove from parent's children
+      if (node.parentId) {
+        const parent = nodes.get(node.parentId);
+        if (parent) {
+          nodes.set(node.parentId, {
+            ...parent,
+            children: parent.children.filter((c) => c !== nodeId),
+            updatedAt: now,
+          });
         }
+      }
 
-        const rootIds = prev.rootIds.filter((id) => id !== nodeId);
-        const activeFileId =
-          prev.activeFileId && allIds.includes(prev.activeFileId)
-            ? null
-            : prev.activeFileId;
-        if (activeFileId !== prev.activeFileId) {
-          if (activeFileId) localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
-          else localStorage.removeItem(ACTIVE_FILE_KEY);
-        }
+      const rootIds = prev.rootIds.filter((id) => id !== nodeId);
+      const activeFileId =
+        prev.activeFileId && allIds.includes(prev.activeFileId)
+          ? null
+          : prev.activeFileId;
+      if (activeFileId !== prev.activeFileId) {
+        if (activeFileId) localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
+        else localStorage.removeItem(ACTIVE_FILE_KEY);
+      }
 
-        // If deleting a curation, delete the matching source graph
-        if (node.nodeType === "curation") {
-          const existing = graphs.find((g) => g.name === node.name);
-          if (existing) deleteGraph(existing.id);
-        } else {
-          // Persist the updated curation
-          const rootId = node.parentId
-            ? findRootId(node.parentId, nodes)
-            : null;
-          if (rootId) scheduleSave(rootId, nodes);
-        }
+      // No auto-sync with Graphs — Notes and Graphs are independent
 
-        return {
-          ...prev,
-          nodes,
-          rootIds,
-          activeFileId,
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now,
-        };
-      });
-    },
-    [graphs, deleteGraph, scheduleSave],
-  );
+      return {
+        ...prev,
+        nodes,
+        rootIds,
+        activeFileId,
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now,
+      };
+    });
+  }, []);
 
   // ---------------------------------------------------------------------------
   // setActiveFile
@@ -579,34 +505,59 @@ export function useMarkdownEditor() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // publishCuration
+  // convertToSourceGraph — explicit one-way conversion: Notes → Graphs
   // ---------------------------------------------------------------------------
 
-  const publishCuration = useCallback(
+  const convertToSourceGraph = useCallback(
     (curationId: string) => {
       setSession((prev) => {
         const node = prev.nodes.get(curationId);
         if (!node || node.nodeType !== "curation") return prev;
         try {
-          const sg = editorToSourceGraph(prev.nodes, curationId);
-          const existing = graphs.find((g) => g.name === node.name);
-          if (existing) deleteGraph(existing.id);
-          saveGraph(sg);
+          const sourceGraph = editorToSourceGraph(prev.nodes, curationId);
+          // Resolve name conflicts in Graphs store
+          let graphName = sourceGraph.name;
+          const existingNames = new Set(graphs.map((g) => g.name));
+          if (existingNames.has(graphName)) {
+            let counter = 1;
+            while (existingNames.has(`${graphName} (${counter})`)) {
+              counter++;
+            }
+            graphName = `${graphName} (${counter})`;
+          }
+          saveGraph({ ...sourceGraph, name: graphName });
         } catch (err) {
-          console.error("[useMarkdownEditor] publishCuration failed:", err);
+          console.error(
+            "[useMarkdownEditor] convertToSourceGraph failed:",
+            err,
+          );
         }
         return { ...prev, lastSavedAt: Date.now() };
       });
     },
-    [graphs, saveGraph, deleteGraph],
+    [graphs, saveGraph],
   );
 
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, []);
+  // ---------------------------------------------------------------------------
+  // importRawNodes — add raw nodes directly to session (ZIP import)
+  // ---------------------------------------------------------------------------
+
+  const importRawNodes = useCallback(
+    (nodes: Map<string, EditorNode>, rootId: string) => {
+      setSession((prev) => {
+        const mergedNodes = new Map(prev.nodes);
+        for (const [id, node] of nodes) {
+          mergedNodes.set(id, node);
+        }
+        return {
+          ...prev,
+          nodes: mergedNodes,
+          rootIds: [...prev.rootIds, rootId],
+        };
+      });
+    },
+    [],
+  );
 
   return {
     session,
@@ -622,7 +573,8 @@ export function useMarkdownEditor() {
     redo,
     canUndo: session.undoStack.length > 0,
     canRedo: session.redoStack.length > 0,
-    publishCuration,
+    convertToSourceGraph,
+    importRawNodes,
   };
 }
 
@@ -630,21 +582,6 @@ export function useMarkdownEditor() {
 // Pure helpers used inside state updaters (defined outside hook to avoid
 // stale-closure issues since they are stateless)
 // ---------------------------------------------------------------------------
-
-/** Walk up the parent chain to find the root curation id */
-function findRootId(
-  nodeId: string,
-  nodes: Map<string, EditorNode>,
-): string | null {
-  let current = nodes.get(nodeId);
-  if (!current) return null;
-  while (current.parentId) {
-    const parent = nodes.get(current.parentId);
-    if (!parent) break;
-    current = parent;
-  }
-  return current.nodeType === "curation" ? current.id : null;
-}
 
 /** Remap a single id: if it starts with oldId, replace that prefix with newId */
 function remapId(id: string, oldId: string, newId: string): string {

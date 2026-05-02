@@ -256,7 +256,7 @@ function AppShell() {
         <main className="flex-1 overflow-hidden relative">
           <div
             style={{
-              display: activeTab === "editor" ? "block" : "none",
+              display: activeTab === "notes" ? "block" : "none",
               height: "100%",
             }}
           >
@@ -264,7 +264,7 @@ function AppShell() {
           </div>
           <div
             style={{
-              display: activeTab === "sources" ? "block" : "none",
+              display: activeTab === "graphs" ? "block" : "none",
               height: "100%",
             }}
           >
@@ -315,7 +315,8 @@ function AppShell() {
         onViewChange={(view) => {
           // Map legacy view names to new tab IDs
           const tabMap: Record<string, string> = {
-            sources: "sources",
+            sources: "graphs",
+            graphs: "graphs",
             chat: "chat",
             "public-graphs": "public",
             terminal: "terminal",

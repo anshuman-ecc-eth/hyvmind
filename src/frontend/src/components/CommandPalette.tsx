@@ -36,7 +36,7 @@ interface CommandPaletteProps {
 const navCommands = [
   { id: "nav-public-graphs", label: "Go to Graphs", view: "public-graphs" },
   { id: "nav-terminal", label: "Go to Terminal", view: "terminal" },
-  { id: "nav-sources", label: "Go to Sources", view: "sources" },
+  { id: "nav-graphs", label: "Go to Graphs", view: "graphs" },
 ];
 
 const terminalCommands = [

@@ -6,7 +6,7 @@ import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import useSourceGraphs from "@/hooks/useSourceGraphs";
-import { parseSourceGraphZip } from "@/utils/sourceGraphParser";
+import type { EditorNode } from "@/types/markdownEditor";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FilterPanel from "../components/FilterPanel";
 import { SourceGraphDiagram } from "../components/SourceGraphDiagram";
@@ -28,11 +28,17 @@ type ContextOption =
   | "new-file"
   | "rename"
   | "delete"
-  | "publish"
+  | "convert-to-source-graph"
   | "view-graph";
 
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
-  curation: ["new-swarm", "rename", "delete", "publish", "view-graph"],
+  curation: [
+    "new-swarm",
+    "rename",
+    "delete",
+    "convert-to-source-graph",
+    "view-graph",
+  ],
   swarm: ["new-location", "rename", "delete", "view-graph"],
   location: ["new-law-entity", "rename", "delete", "view-graph"],
   lawEntity: ["new-file", "rename", "delete", "view-graph"],
@@ -46,7 +52,7 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   "new-file": "New File",
   rename: "Rename",
   delete: "Delete",
-  publish: "Publish",
+  "convert-to-source-graph": "Convert to Source Graph",
   "view-graph": "View Graph",
 };
 
@@ -148,14 +154,15 @@ export default function EditorView() {
     deleteNode,
     setActiveFile,
     setViewMode,
-    publishCuration,
+    convertToSourceGraph,
+    importRawNodes,
     undo,
     redo,
     canUndo,
     canRedo,
   } = useMarkdownEditor();
 
-  const { saveGraph, graphs } = useSourceGraphs();
+  const { graphs } = useSourceGraphs();
 
   // Saving indicator
   const [isSaving, setIsSaving] = useState(false);
@@ -329,15 +336,15 @@ export default function EditorView() {
         case "delete":
           setDeleteTarget(nodeId);
           break;
-        case "publish":
-          publishCuration(nodeId);
+        case "convert-to-source-graph":
+          convertToSourceGraph(nodeId);
           break;
         case "view-graph":
           handleViewGraph();
           break;
       }
     },
-    [contextMenu, session, publishCuration, handleViewGraph],
+    [contextMenu, session, convertToSourceGraph, handleViewGraph],
   );
 
   const handleFileChange = useCallback(
@@ -346,13 +353,85 @@ export default function EditorView() {
       if (!file) return;
       e.target.value = "";
       try {
-        const graph = await parseSourceGraphZip(file);
-        saveGraph(graph);
+        const { default: JSZip } = await import("jszip");
+        const zip = await JSZip.loadAsync(file);
+        const entries = Object.keys(zip.files);
+        const curationName = file.name.replace(/\.zip$/i, "");
+
+        const newNodes = new Map<string, EditorNode>();
+        const idMap = new Map<string, string>(); // normalized path -> nodeId
+
+        const curationId = `import-${Date.now()}-root`;
+        const curationNode: EditorNode = {
+          id: curationId,
+          name: curationName,
+          type: "folder",
+          parentId: null,
+          nodeType: "curation",
+          content: undefined,
+          frontmatter: {},
+          inheritedAttributes: {},
+          children: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        newNodes.set(curationId, curationNode);
+        idMap.set("", curationId);
+
+        const sortedEntries = [...entries].sort();
+
+        for (const entryPath of sortedEntries) {
+          const zipEntry = zip.files[entryPath];
+          if (!entryPath || entryPath === "/") continue;
+          const normalizedPath = entryPath.replace(/\/$/, "");
+          if (!normalizedPath) continue;
+          const parts = normalizedPath.split("/");
+          const name = parts[parts.length - 1];
+          if (!name) continue;
+
+          const parentPath = parts.slice(0, -1).join("/");
+          const parentId = idMap.get(parentPath) ?? curationId;
+          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const isDirectory = zipEntry.dir || entryPath.endsWith("/");
+
+          let content: string | undefined;
+          if (!isDirectory && name.endsWith(".md")) {
+            try {
+              content = await zipEntry.async("string");
+            } catch {
+              content = "";
+            }
+          }
+
+          const node: EditorNode = {
+            id: nodeId,
+            name,
+            type: isDirectory ? "folder" : "file",
+            parentId,
+            nodeType: isDirectory ? "swarm" : "interpEntity",
+            content,
+            frontmatter: {},
+            inheritedAttributes: {},
+            children: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          newNodes.set(nodeId, node);
+          idMap.set(normalizedPath, nodeId);
+
+          const parent = newNodes.get(parentId);
+          if (parent) {
+            parent.children.push(nodeId);
+          }
+        }
+
+        importRawNodes(newNodes, curationId);
       } catch (err) {
         console.error("[EditorView] ZIP import failed:", err);
       }
     },
-    [saveGraph],
+    [importRawNodes],
   );
 
   const handleContentChange = useCallback(
@@ -411,7 +490,7 @@ export default function EditorView() {
   return (
     <div
       className="flex flex-col h-full bg-background font-mono"
-      data-ocid="editor.page"
+      data-ocid="notes.page"
     >
       {/* Hidden file input */}
       <input
@@ -427,7 +506,7 @@ export default function EditorView() {
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground mr-auto">
-          editor
+          notes
         </span>
 
         {/* View mode tabs */}

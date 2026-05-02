@@ -37171,7 +37171,7 @@ function TerminalDisambiguationPicker({
 const navCommands = [
   { id: "nav-public-graphs", label: "Go to Graphs", view: "public-graphs" },
   { id: "nav-terminal", label: "Go to Terminal", view: "terminal" },
-  { id: "nav-sources", label: "Go to Sources", view: "sources" }
+  { id: "nav-graphs", label: "Go to Graphs", view: "graphs" }
 ];
 const terminalCommands = [
   {
@@ -56125,7 +56125,7 @@ function saveFontSize(size2) {
 }
 function useSettings() {
   const [activeTab, setActiveTabState] = reactExports.useState(
-    () => localStorage.getItem("hyvmind-active-tab") ?? "editor"
+    () => localStorage.getItem("hyvmind-active-tab") ?? "notes"
   );
   const [sidebarCollapsed, setSidebarCollapsedState] = reactExports.useState(
     () => localStorage.getItem("hyvmind-sidebar-collapsed") === "true"
@@ -56672,8 +56672,8 @@ function SettingsView() {
   ] }) });
 }
 const TABS = [
-  { id: "editor", label: "editor", ocid: "sidebar.tab.editor" },
-  { id: "sources", label: "sources", ocid: "sidebar.tab.sources" },
+  { id: "notes", label: "notes", ocid: "sidebar.tab.notes" },
+  { id: "graphs", label: "graphs", ocid: "sidebar.tab.graphs" },
   { id: "chat", label: "chat", ocid: "sidebar.tab.chat" },
   { id: "public", label: "public", ocid: "sidebar.tab.public" },
   { id: "settings", label: "settings", ocid: "sidebar.tab.settings" },
@@ -69134,7 +69134,7 @@ function editorToSourceGraph(nodes, rootId) {
 function commonjsRequire(path) {
   throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
 }
-var jszip_min = { exports: {} };
+var jszip_min$1 = { exports: {} };
 /*!
 
 JSZip v3.10.1 - A JavaScript class for generating and reading zip files
@@ -71449,9 +71449,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       }).call(this, "undefined" != typeof commonjsGlobal ? commonjsGlobal : "undefined" != typeof self ? self : "undefined" != typeof window ? window : {});
     }, {}] }, {}, [10])(10);
   });
-})(jszip_min);
-var jszip_minExports = jszip_min.exports;
+})(jszip_min$1);
+var jszip_minExports = jszip_min$1.exports;
 const JSZip = /* @__PURE__ */ getDefaultExportFromCjs(jszip_minExports);
+const jszip_min = /* @__PURE__ */ _mergeNamespaces({
+  __proto__: null,
+  default: JSZip
+}, [jszip_minExports]);
 function parseFrontmatter(text) {
   const result = {};
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -71986,7 +71990,7 @@ function emptySession() {
   };
 }
 function useMarkdownEditor() {
-  const { graphs, saveGraph, deleteGraph } = useSourceGraphs();
+  const { graphs, saveGraph } = useSourceGraphs();
   const [session, setSession] = reactExports.useState(() => {
     const s2 = emptySession();
     const savedFile = localStorage.getItem(ACTIVE_FILE_KEY);
@@ -71994,7 +71998,6 @@ function useMarkdownEditor() {
     return s2;
   });
   const syncedGraphIdsRef = reactExports.useRef(/* @__PURE__ */ new Set());
-  const saveTimerRef = reactExports.useRef(null);
   const loadGraphs = reactExports.useCallback(() => {
     setSession((prev) => {
       const nodes = new Map(prev.nodes);
@@ -72021,91 +72024,41 @@ function useMarkdownEditor() {
       };
     });
   }, [graphs]);
-  reactExports.useEffect(() => {
-    loadGraphs();
-  }, []);
-  const graphsJsonRef = reactExports.useRef("");
-  reactExports.useEffect(() => {
-    const json = JSON.stringify(graphs.map((g2) => g2.id));
-    if (json !== graphsJsonRef.current) {
-      graphsJsonRef.current = json;
-      loadGraphs();
-    }
-  }, [graphs, loadGraphs]);
-  const persistCuration = reactExports.useCallback(
-    (curationId, nodes) => {
-      try {
-        const sg = editorToSourceGraph(nodes, curationId);
-        const existing = graphs.find(
-          (g2) => {
-            var _a3;
-            return g2.name === ((_a3 = nodes.get(curationId)) == null ? void 0 : _a3.name);
-          }
-        );
-        if (existing) deleteGraph(existing.id);
-        saveGraph(sg);
-      } catch (err) {
-        console.error("[useMarkdownEditor] persistCuration failed:", err);
-      }
-    },
-    [graphs, saveGraph, deleteGraph]
-  );
-  const scheduleSave = reactExports.useCallback(
-    (curationId, nodes) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        persistCuration(curationId, nodes);
-      }, 800);
-    },
-    [persistCuration]
-  );
-  const createCuration = reactExports.useCallback(
-    (name) => {
-      const id2 = slugify(name) || `curation-${Date.now()}`;
-      const now2 = Date.now();
-      const node2 = {
-        id: id2,
-        name,
-        type: "folder",
-        parentId: null,
-        nodeType: "curation",
-        frontmatter: {},
-        inheritedAttributes: {},
-        children: [],
-        createdAt: now2,
-        updatedAt: now2
+  const createCuration = reactExports.useCallback((name) => {
+    const id2 = slugify(name) || `curation-${Date.now()}`;
+    const now2 = Date.now();
+    const node2 = {
+      id: id2,
+      name,
+      type: "folder",
+      parentId: null,
+      nodeType: "curation",
+      frontmatter: {},
+      inheritedAttributes: {},
+      children: [],
+      createdAt: now2,
+      updatedAt: now2
+    };
+    const action = { type: "create", node: node2, parentId: null };
+    setSession((prev) => {
+      if (prev.nodes.has(id2)) return prev;
+      const nameExists = Array.from(prev.nodes.values()).some(
+        (n2) => n2.nodeType === "curation" && n2.name === name
+      );
+      if (nameExists) return prev;
+      const nodes = new Map(prev.nodes);
+      nodes.set(id2, node2);
+      const newSession = {
+        ...prev,
+        nodes,
+        rootIds: [...prev.rootIds, id2],
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now2
       };
-      const action = { type: "create", node: node2, parentId: null };
-      setSession((prev) => {
-        if (prev.nodes.has(id2)) return prev;
-        const nameExists = Array.from(prev.nodes.values()).some(
-          (n2) => n2.nodeType === "curation" && n2.name === name
-        );
-        if (nameExists) return prev;
-        const nodes = new Map(prev.nodes);
-        nodes.set(id2, node2);
-        const newSession = {
-          ...prev,
-          nodes,
-          rootIds: [...prev.rootIds, id2],
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now2
-        };
-        try {
-          const sg = editorToSourceGraph(nodes, id2);
-          saveGraph(sg);
-        } catch (err) {
-          console.error(
-            "[useMarkdownEditor] createCuration persist failed:",
-            err
-          );
-        }
-        return newSession;
-      });
-    },
-    [saveGraph]
-  );
+      return newSession;
+    });
+  }, []);
   const createNode = reactExports.useCallback(
     (parentId, name, type) => {
       setSession((prev) => {
@@ -72141,7 +72094,6 @@ function useMarkdownEditor() {
           children: [...parent.children, childId],
           updatedAt: now2
         });
-        const rootId = findRootId(parentId, nodes);
         const newSession = {
           ...prev,
           nodes,
@@ -72149,11 +72101,10 @@ function useMarkdownEditor() {
           redoStack: [],
           lastSavedAt: now2
         };
-        if (rootId) scheduleSave(rootId, nodes);
         return newSession;
       });
     },
-    [scheduleSave]
+    []
   );
   const updateFile = reactExports.useCallback(
     (fileId, updates) => {
@@ -72192,8 +72143,6 @@ function useMarkdownEditor() {
         for (const a2 of actions) {
           undoStack = pushCapped(undoStack, a2);
         }
-        const rootId = findRootId(fileId, nodes);
-        if (rootId) scheduleSave(rootId, nodes);
         return {
           ...prev,
           nodes,
@@ -72203,104 +72152,89 @@ function useMarkdownEditor() {
         };
       });
     },
-    [scheduleSave]
+    []
   );
-  const renameNode = reactExports.useCallback(
-    (nodeId, newName) => {
-      setSession((prev) => {
-        const node2 = prev.nodes.get(nodeId);
-        if (!node2 || node2.name === newName) return prev;
-        const now2 = Date.now();
-        const action = {
-          type: "rename",
-          nodeId,
-          oldName: node2.name,
-          newName
-        };
-        const newId2 = node2.parentId ? `${node2.parentId}@${newName}` : slugify(newName);
-        const nodes = renameNodeIds(prev.nodes, nodeId, newId2, newName, now2);
-        if (node2.parentId) {
-          const parent = nodes.get(node2.parentId);
-          if (parent) {
-            nodes.set(node2.parentId, {
-              ...parent,
-              children: parent.children.map((c2) => c2 === nodeId ? newId2 : c2),
-              updatedAt: now2
-            });
-          }
+  const renameNode = reactExports.useCallback((nodeId, newName) => {
+    setSession((prev) => {
+      const node2 = prev.nodes.get(nodeId);
+      if (!node2 || node2.name === newName) return prev;
+      const now2 = Date.now();
+      const action = {
+        type: "rename",
+        nodeId,
+        oldName: node2.name,
+        newName
+      };
+      const newId2 = node2.parentId ? `${node2.parentId}@${newName}` : slugify(newName);
+      const nodes = renameNodeIds(prev.nodes, nodeId, newId2, newName, now2);
+      if (node2.parentId) {
+        const parent = nodes.get(node2.parentId);
+        if (parent) {
+          nodes.set(node2.parentId, {
+            ...parent,
+            children: parent.children.map((c2) => c2 === nodeId ? newId2 : c2),
+            updatedAt: now2
+          });
         }
-        const rootIds = prev.rootIds.map((id2) => id2 === nodeId ? newId2 : id2);
-        const activeFileId = prev.activeFileId ? remapId(prev.activeFileId, nodeId, newId2) : null;
-        if (activeFileId !== prev.activeFileId && activeFileId) {
-          localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
+      }
+      const rootIds = prev.rootIds.map((id2) => id2 === nodeId ? newId2 : id2);
+      const activeFileId = prev.activeFileId ? remapId(prev.activeFileId, nodeId, newId2) : null;
+      if (activeFileId !== prev.activeFileId && activeFileId) {
+        localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
+      }
+      return {
+        ...prev,
+        nodes,
+        rootIds,
+        activeFileId,
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now2
+      };
+    });
+  }, []);
+  const deleteNode = reactExports.useCallback((nodeId) => {
+    setSession((prev) => {
+      const node2 = prev.nodes.get(nodeId);
+      if (!node2) return prev;
+      const now2 = Date.now();
+      const allIds = collectDescendantIds(nodeId, prev.nodes);
+      const deletedDescendantIds = allIds.filter((id2) => id2 !== nodeId);
+      const action = {
+        type: "delete",
+        node: node2,
+        parentId: node2.parentId,
+        deletedDescendantIds
+      };
+      const nodes = new Map(prev.nodes);
+      for (const id2 of allIds) nodes.delete(id2);
+      if (node2.parentId) {
+        const parent = nodes.get(node2.parentId);
+        if (parent) {
+          nodes.set(node2.parentId, {
+            ...parent,
+            children: parent.children.filter((c2) => c2 !== nodeId),
+            updatedAt: now2
+          });
         }
-        const rootId = findRootId(newId2, nodes);
-        if (rootId) scheduleSave(rootId, nodes);
-        return {
-          ...prev,
-          nodes,
-          rootIds,
-          activeFileId,
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now2
-        };
-      });
-    },
-    [scheduleSave]
-  );
-  const deleteNode = reactExports.useCallback(
-    (nodeId) => {
-      setSession((prev) => {
-        const node2 = prev.nodes.get(nodeId);
-        if (!node2) return prev;
-        const now2 = Date.now();
-        const allIds = collectDescendantIds(nodeId, prev.nodes);
-        const deletedDescendantIds = allIds.filter((id2) => id2 !== nodeId);
-        const action = {
-          type: "delete",
-          node: node2,
-          parentId: node2.parentId,
-          deletedDescendantIds
-        };
-        const nodes = new Map(prev.nodes);
-        for (const id2 of allIds) nodes.delete(id2);
-        if (node2.parentId) {
-          const parent = nodes.get(node2.parentId);
-          if (parent) {
-            nodes.set(node2.parentId, {
-              ...parent,
-              children: parent.children.filter((c2) => c2 !== nodeId),
-              updatedAt: now2
-            });
-          }
-        }
-        const rootIds = prev.rootIds.filter((id2) => id2 !== nodeId);
-        const activeFileId = prev.activeFileId && allIds.includes(prev.activeFileId) ? null : prev.activeFileId;
-        if (activeFileId !== prev.activeFileId) {
-          if (activeFileId) localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
-          else localStorage.removeItem(ACTIVE_FILE_KEY);
-        }
-        if (node2.nodeType === "curation") {
-          const existing = graphs.find((g2) => g2.name === node2.name);
-          if (existing) deleteGraph(existing.id);
-        } else {
-          const rootId = node2.parentId ? findRootId(node2.parentId, nodes) : null;
-          if (rootId) scheduleSave(rootId, nodes);
-        }
-        return {
-          ...prev,
-          nodes,
-          rootIds,
-          activeFileId,
-          undoStack: pushCapped(prev.undoStack, action),
-          redoStack: [],
-          lastSavedAt: now2
-        };
-      });
-    },
-    [graphs, deleteGraph, scheduleSave]
-  );
+      }
+      const rootIds = prev.rootIds.filter((id2) => id2 !== nodeId);
+      const activeFileId = prev.activeFileId && allIds.includes(prev.activeFileId) ? null : prev.activeFileId;
+      if (activeFileId !== prev.activeFileId) {
+        if (activeFileId) localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
+        else localStorage.removeItem(ACTIVE_FILE_KEY);
+      }
+      return {
+        ...prev,
+        nodes,
+        rootIds,
+        activeFileId,
+        undoStack: pushCapped(prev.undoStack, action),
+        redoStack: [],
+        lastSavedAt: now2
+      };
+    });
+  }, []);
   const setActiveFile = reactExports.useCallback((fileId) => {
     setSession((prev) => {
       if (fileId) localStorage.setItem(ACTIVE_FILE_KEY, fileId);
@@ -72333,29 +72267,50 @@ function useMarkdownEditor() {
       return { ...prev, nodes, rootIds, undoStack, redoStack };
     });
   }, []);
-  const publishCuration = reactExports.useCallback(
+  const convertToSourceGraph = reactExports.useCallback(
     (curationId) => {
       setSession((prev) => {
         const node2 = prev.nodes.get(curationId);
         if (!node2 || node2.nodeType !== "curation") return prev;
         try {
-          const sg = editorToSourceGraph(prev.nodes, curationId);
-          const existing = graphs.find((g2) => g2.name === node2.name);
-          if (existing) deleteGraph(existing.id);
-          saveGraph(sg);
+          const sourceGraph = editorToSourceGraph(prev.nodes, curationId);
+          let graphName = sourceGraph.name;
+          const existingNames = new Set(graphs.map((g2) => g2.name));
+          if (existingNames.has(graphName)) {
+            let counter = 1;
+            while (existingNames.has(`${graphName} (${counter})`)) {
+              counter++;
+            }
+            graphName = `${graphName} (${counter})`;
+          }
+          saveGraph({ ...sourceGraph, name: graphName });
         } catch (err) {
-          console.error("[useMarkdownEditor] publishCuration failed:", err);
+          console.error(
+            "[useMarkdownEditor] convertToSourceGraph failed:",
+            err
+          );
         }
         return { ...prev, lastSavedAt: Date.now() };
       });
     },
-    [graphs, saveGraph, deleteGraph]
+    [graphs, saveGraph]
   );
-  reactExports.useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, []);
+  const importRawNodes = reactExports.useCallback(
+    (nodes, rootId) => {
+      setSession((prev) => {
+        const mergedNodes = new Map(prev.nodes);
+        for (const [id2, node2] of nodes) {
+          mergedNodes.set(id2, node2);
+        }
+        return {
+          ...prev,
+          nodes: mergedNodes,
+          rootIds: [...prev.rootIds, rootId]
+        };
+      });
+    },
+    []
+  );
   return {
     session,
     loadGraphs,
@@ -72370,18 +72325,9 @@ function useMarkdownEditor() {
     redo,
     canUndo: session.undoStack.length > 0,
     canRedo: session.redoStack.length > 0,
-    publishCuration
+    convertToSourceGraph,
+    importRawNodes
   };
-}
-function findRootId(nodeId, nodes) {
-  let current = nodes.get(nodeId);
-  if (!current) return null;
-  while (current.parentId) {
-    const parent = nodes.get(current.parentId);
-    if (!parent) break;
-    current = parent;
-  }
-  return current.nodeType === "curation" ? current.id : null;
 }
 function remapId(id2, oldId, newId2) {
   if (id2 === oldId) return newId2;
@@ -72548,7 +72494,13 @@ function applyInverseAction(action, nodes) {
   return next;
 }
 const CONTEXT_OPTIONS = {
-  curation: ["new-swarm", "rename", "delete", "publish", "view-graph"],
+  curation: [
+    "new-swarm",
+    "rename",
+    "delete",
+    "convert-to-source-graph",
+    "view-graph"
+  ],
   swarm: ["new-location", "rename", "delete", "view-graph"],
   location: ["new-law-entity", "rename", "delete", "view-graph"],
   lawEntity: ["new-file", "rename", "delete", "view-graph"],
@@ -72561,7 +72513,7 @@ const OPTION_LABELS = {
   "new-file": "New File",
   rename: "Rename",
   delete: "Delete",
-  publish: "Publish",
+  "convert-to-source-graph": "Convert to Source Graph",
   "view-graph": "View Graph"
 };
 function InlineDialog({
@@ -72660,13 +72612,14 @@ function EditorView() {
     deleteNode,
     setActiveFile,
     setViewMode,
-    publishCuration,
+    convertToSourceGraph,
+    importRawNodes,
     undo,
     redo,
     canUndo,
     canRedo
   } = useMarkdownEditor();
-  const { saveGraph, graphs } = useSourceGraphs();
+  const { graphs } = useSourceGraphs();
   const [isSaving, setIsSaving] = reactExports.useState(false);
   const savingTimerRef = reactExports.useRef(null);
   const [contextMenu, setContextMenu] = reactExports.useState(null);
@@ -72797,15 +72750,15 @@ function EditorView() {
         case "delete":
           setDeleteTarget(nodeId);
           break;
-        case "publish":
-          publishCuration(nodeId);
+        case "convert-to-source-graph":
+          convertToSourceGraph(nodeId);
           break;
         case "view-graph":
           handleViewGraph();
           break;
       }
     },
-    [contextMenu, session, publishCuration, handleViewGraph]
+    [contextMenu, session, convertToSourceGraph, handleViewGraph]
   );
   const handleFileChange = reactExports.useCallback(
     async (e2) => {
@@ -72814,13 +72767,78 @@ function EditorView() {
       if (!file2) return;
       e2.target.value = "";
       try {
-        const graph = await parseSourceGraphZip(file2);
-        saveGraph(graph);
+        const { default: JSZip2 } = await __vitePreload(async () => {
+          const { default: JSZip3 } = await Promise.resolve().then(() => jszip_min);
+          return { default: JSZip3 };
+        }, true ? void 0 : void 0);
+        const zip = await JSZip2.loadAsync(file2);
+        const entries = Object.keys(zip.files);
+        const curationName = file2.name.replace(/\.zip$/i, "");
+        const newNodes = /* @__PURE__ */ new Map();
+        const idMap = /* @__PURE__ */ new Map();
+        const curationId = `import-${Date.now()}-root`;
+        const curationNode = {
+          id: curationId,
+          name: curationName,
+          type: "folder",
+          parentId: null,
+          nodeType: "curation",
+          content: void 0,
+          frontmatter: {},
+          inheritedAttributes: {},
+          children: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        newNodes.set(curationId, curationNode);
+        idMap.set("", curationId);
+        const sortedEntries = [...entries].sort();
+        for (const entryPath of sortedEntries) {
+          const zipEntry = zip.files[entryPath];
+          if (!entryPath || entryPath === "/") continue;
+          const normalizedPath = entryPath.replace(/\/$/, "");
+          if (!normalizedPath) continue;
+          const parts = normalizedPath.split("/");
+          const name = parts[parts.length - 1];
+          if (!name) continue;
+          const parentPath = parts.slice(0, -1).join("/");
+          const parentId = idMap.get(parentPath) ?? curationId;
+          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const isDirectory = zipEntry.dir || entryPath.endsWith("/");
+          let content;
+          if (!isDirectory && name.endsWith(".md")) {
+            try {
+              content = await zipEntry.async("string");
+            } catch {
+              content = "";
+            }
+          }
+          const node2 = {
+            id: nodeId,
+            name,
+            type: isDirectory ? "folder" : "file",
+            parentId,
+            nodeType: isDirectory ? "swarm" : "interpEntity",
+            content,
+            frontmatter: {},
+            inheritedAttributes: {},
+            children: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          newNodes.set(nodeId, node2);
+          idMap.set(normalizedPath, nodeId);
+          const parent = newNodes.get(parentId);
+          if (parent) {
+            parent.children.push(nodeId);
+          }
+        }
+        importRawNodes(newNodes, curationId);
       } catch (err) {
         console.error("[EditorView] ZIP import failed:", err);
       }
     },
-    [saveGraph]
+    [importRawNodes]
   );
   const handleContentChange = reactExports.useCallback(
     (content) => {
@@ -72863,7 +72881,7 @@ function EditorView() {
     "div",
     {
       className: "flex flex-col h-full bg-background font-mono",
-      "data-ocid": "editor.page",
+      "data-ocid": "notes.page",
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "input",
@@ -72878,7 +72896,7 @@ function EditorView() {
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "editor" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "notes" }),
           !isEmpty && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "markdown"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
@@ -78405,7 +78423,7 @@ function AppShell() {
           "div",
           {
             style: {
-              display: activeTab === "editor" ? "block" : "none",
+              display: activeTab === "notes" ? "block" : "none",
               height: "100%"
             },
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(EditorView, {})
@@ -78415,7 +78433,7 @@ function AppShell() {
           "div",
           {
             style: {
-              display: activeTab === "sources" ? "block" : "none",
+              display: activeTab === "graphs" ? "block" : "none",
               height: "100%"
             },
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(SourcesView, {})
@@ -78473,7 +78491,8 @@ function AppShell() {
         onOpenChange: setCommandPaletteOpen,
         onViewChange: (view) => {
           const tabMap = {
-            sources: "sources",
+            sources: "graphs",
+            graphs: "graphs",
             chat: "chat",
             "public-graphs": "public",
             terminal: "terminal"
