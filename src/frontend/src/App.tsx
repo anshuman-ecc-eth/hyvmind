@@ -25,6 +25,7 @@ import {
   getSavedFontSize,
 } from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
+import EditorView from "./pages/EditorView";
 import HyvmindSkillsPage from "./pages/HyvmindSkillsPage";
 import McpSetupPage from "./pages/McpSetupPage";
 import PublicGraphView from "./pages/PublicGraphView";
@@ -253,6 +254,14 @@ function AppShell() {
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header onNavigateToSettings={() => setActiveTab("settings")} />
         <main className="flex-1 overflow-hidden relative">
+          <div
+            style={{
+              display: activeTab === "editor" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <EditorView />
+          </div>
           <div
             style={{
               display: activeTab === "sources" ? "block" : "none",

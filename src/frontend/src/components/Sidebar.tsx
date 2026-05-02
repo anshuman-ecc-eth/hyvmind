@@ -6,6 +6,7 @@ interface SidebarProps {
 }
 
 const TABS = [
+  { id: "editor", label: "editor", ocid: "sidebar.tab.editor" },
   { id: "sources", label: "sources", ocid: "sidebar.tab.sources" },
   { id: "chat", label: "chat", ocid: "sidebar.tab.chat" },
   { id: "public", label: "public", ocid: "sidebar.tab.public" },
