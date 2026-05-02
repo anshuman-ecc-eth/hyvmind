@@ -9,7 +9,7 @@ const MENU_ITEMS = [
   "STORY",
   "PUZZLES",
   "SETTINGS",
-  "HI-SCORES",
+  "LEADERBOARD",
   "EXIT",
 ] as const;
 const PUZZLE_MENU_ITEMS = ["CHESS", "BACK"] as const;
@@ -460,7 +460,6 @@ function StartScreen({
   onSettings,
   onHiScores,
   onExit,
-  leaderboard,
 }: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [subMenu, setSubMenu] = useState<"main" | "puzzles">("main");
@@ -482,7 +481,7 @@ function StartScreen({
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
           } else if (chosen === "SETTINGS") onSettings();
-          else if (chosen === "HI-SCORES") onHiScores();
+          else if (chosen === "LEADERBOARD") onHiScores();
           else if (chosen === "EXIT") onExit();
         }
       } else {
@@ -512,9 +511,6 @@ function StartScreen({
     onHiScores,
     onExit,
   ]);
-
-  // Show top score under title if leaderboard has entries
-  const topScore = leaderboard.length > 0 ? leaderboard[0] : null;
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
@@ -559,19 +555,17 @@ function StartScreen({
           </div>
         </div>
 
-        {/* Top score */}
-        {topScore !== null && (
-          <div
-            className="text-muted-foreground"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.55rem",
-              letterSpacing: "0.15em",
-            }}
-          >
-            best: {topScore.name} {topScore.score}
-          </div>
-        )}
+        {/* Subtitle */}
+        <div
+          className="text-muted-foreground text-center mt-2"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.5rem",
+            letterSpacing: "0.05em",
+          }}
+        >
+          / a digital sanctuary for legal researchers /
+        </div>
 
         {/* Menu */}
         <div className="flex flex-col items-center gap-3">
@@ -600,7 +594,7 @@ function StartScreen({
                         setSubMenu("puzzles");
                         setPuzzleSelectedIdx(0);
                       } else if (item === "SETTINGS") onSettings();
-                      else if (item === "HI-SCORES") onHiScores();
+                      else if (item === "LEADERBOARD") onHiScores();
                       else if (item === "EXIT") onExit();
                     }}
                   >
@@ -1022,7 +1016,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           date: new Date().toISOString(),
         };
         setLeaderboard((prev) =>
-          [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 3),
+          [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 10),
         );
         // Generate a Buzz secret for the score
         try {

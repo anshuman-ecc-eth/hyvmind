@@ -68,20 +68,6 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-2">
-            {/* Login button for unauthenticated users */}
-            {!isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogin}
-                disabled={loginStatus === "logging-in"}
-                className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
-                data-ocid="header.login.button"
-              >
-                {loginStatus === "logging-in" ? "> logging in..." : "> login"}
-              </Button>
-            )}
-
             {/* Theme toggle button */}
             <Button
               variant="ghost"
@@ -118,20 +104,20 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                 {!isAuthenticated ? (
                   <>
                     <DropdownMenuItem
-                      onClick={() =>
-                        window.open("https://app.cg/c/hyvmind/", "_blank")
-                      }
+                      onClick={handleLogin}
+                      disabled={loginStatus === "logging-in"}
                       className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                      data-ocid="header.login.button"
                     >
-                      join chat
+                      {loginStatus === "logging-in" ? "logging in..." : "login"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
-                        window.open("https://x.com/hyvmind_app", "_blank")
+                        window.open("https://telegram.me/hyvmind_tg", "_blank")
                       }
                       className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                     >
-                      keep track
+                      telegram
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
@@ -142,7 +128,7 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                       }
                       className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                     >
-                      see whitepaper
+                      whitepaper
                     </DropdownMenuItem>
                   </>
                 ) : (

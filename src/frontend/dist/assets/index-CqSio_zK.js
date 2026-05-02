@@ -41298,18 +41298,6 @@ function Header({ onNavigateToSettings }) {
       }
     ) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-      !isAuthenticated && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
-        {
-          variant: "ghost",
-          size: "sm",
-          onClick: handleLogin,
-          disabled: loginStatus === "logging-in",
-          className: "font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border",
-          "data-ocid": "header.login.button",
-          children: loginStatus === "logging-in" ? "> logging in..." : "> login"
-        }
-      ),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         Button,
         {
@@ -41343,17 +41331,19 @@ function Header({ onNavigateToSettings }) {
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 DropdownMenuItem,
                 {
-                  onClick: () => window.open("https://app.cg/c/hyvmind/", "_blank"),
+                  onClick: handleLogin,
+                  disabled: loginStatus === "logging-in",
                   className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "join chat"
+                  "data-ocid": "header.login.button",
+                  children: loginStatus === "logging-in" ? "logging in..." : "login"
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 DropdownMenuItem,
                 {
-                  onClick: () => window.open("https://x.com/hyvmind_app", "_blank"),
+                  onClick: () => window.open("https://telegram.me/hyvmind_tg", "_blank"),
                   className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "keep track"
+                  children: "telegram"
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -41364,7 +41354,7 @@ function Header({ onNavigateToSettings }) {
                     "_blank"
                   ),
                   className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "see whitepaper"
+                  children: "whitepaper"
                 }
               )
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
@@ -67203,7 +67193,7 @@ const MENU_ITEMS = [
   "STORY",
   "PUZZLES",
   "SETTINGS",
-  "HI-SCORES",
+  "LEADERBOARD",
   "EXIT"
 ];
 const PUZZLE_MENU_ITEMS = ["CHESS", "BACK"];
@@ -67564,8 +67554,7 @@ function StartScreen({
   onChess,
   onSettings,
   onHiScores,
-  onExit,
-  leaderboard
+  onExit
 }) {
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
@@ -67586,7 +67575,7 @@ function StartScreen({
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
           } else if (chosen === "SETTINGS") onSettings();
-          else if (chosen === "HI-SCORES") onHiScores();
+          else if (chosen === "LEADERBOARD") onHiScores();
           else if (chosen === "EXIT") onExit();
         }
       } else {
@@ -67615,7 +67604,6 @@ function StartScreen({
     onHiScores,
     onExit
   ]);
-  const topScore = leaderboard.length > 0 ? leaderboard[0] : null;
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-6", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
@@ -67654,21 +67642,16 @@ function StartScreen({
         )
       }
     ) }),
-    topScore !== null && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
-        className: "text-muted-foreground",
+        className: "text-muted-foreground text-center mt-2",
         style: {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.55rem",
-          letterSpacing: "0.15em"
+          fontSize: "0.5rem",
+          letterSpacing: "0.05em"
         },
-        children: [
-          "best: ",
-          topScore.name,
-          " ",
-          topScore.score
-        ]
+        children: "/ a digital sanctuary for legal researchers /"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
@@ -67695,7 +67678,7 @@ function StartScreen({
               setSubMenu("puzzles");
               setPuzzleSelectedIdx(0);
             } else if (item === "SETTINGS") onSettings();
-            else if (item === "HI-SCORES") onHiScores();
+            else if (item === "LEADERBOARD") onHiScores();
             else if (item === "EXIT") onExit();
           },
           children: isSelected ? `> ${item}` : `  ${item}`
@@ -68018,7 +68001,7 @@ function TextGameModal({ onComplete }) {
           date: (/* @__PURE__ */ new Date()).toISOString()
         };
         setLeaderboard(
-          (prev) => [...prev, newEntry].sort((a2, b2) => b2.score - a2.score).slice(0, 3)
+          (prev) => [...prev, newEntry].sort((a2, b2) => b2.score - a2.score).slice(0, 10)
         );
         try {
           const secret = await generateBuzzSecret.mutateAsync(

@@ -44,7 +44,6 @@ function loadChessboardScript(): Promise<void> {
 
 // Typed accessor for the window global set by the UMD bundle
 function getChessboard(): typeof Chessboard {
-  // biome-ignore lint/suspicious/noExplicitAny: window global from UMD
   return (window as unknown as Record<string, unknown>)
     .Chessboard as typeof Chessboard;
 }
