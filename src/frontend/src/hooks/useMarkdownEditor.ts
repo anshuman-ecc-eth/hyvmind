@@ -509,33 +509,38 @@ export function useMarkdownEditor() {
   // ---------------------------------------------------------------------------
 
   const convertToSourceGraph = useCallback(
-    (curationId: string) => {
-      setSession((prev) => {
-        const node = prev.nodes.get(curationId);
-        if (!node || node.nodeType !== "curation") return prev;
-        try {
-          const sourceGraph = editorToSourceGraph(prev.nodes, curationId);
-          // Resolve name conflicts in Graphs store
-          let graphName = sourceGraph.name;
-          const existingNames = new Set(graphs.map((g) => g.name));
-          if (existingNames.has(graphName)) {
-            let counter = 1;
-            while (existingNames.has(`${graphName} (${counter})`)) {
-              counter++;
-            }
-            graphName = `${graphName} (${counter})`;
-          }
-          saveGraph({ ...sourceGraph, name: graphName });
-        } catch (err) {
-          console.error(
-            "[useMarkdownEditor] convertToSourceGraph failed:",
-            err,
-          );
+    async (
+      curationId: string,
+    ): Promise<
+      { success: true; graphName: string } | { success: false; error: string }
+    > => {
+      try {
+        const node = session.nodes.get(curationId);
+        if (!node || node.nodeType !== "curation") {
+          return { success: false, error: "Node is not a curation" };
         }
-        return { ...prev, lastSavedAt: Date.now() };
-      });
+        const sourceGraph = editorToSourceGraph(session.nodes, curationId);
+        // Resolve name conflicts in Graphs store
+        let graphName = sourceGraph.name;
+        const existingNames = new Set(graphs.map((g) => g.name));
+        if (existingNames.has(graphName)) {
+          let counter = 1;
+          while (existingNames.has(`${graphName} (${counter})`)) {
+            counter++;
+          }
+          graphName = `${graphName} (${counter})`;
+        }
+        saveGraph({ ...sourceGraph, name: graphName });
+        setSession((prev) => ({ ...prev, lastSavedAt: Date.now() }));
+        return { success: true, graphName };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Conversion failed";
+        console.error("[useMarkdownEditor] convertToSourceGraph failed:", err);
+        return { success: false, error: message };
+      }
     },
-    [graphs, saveGraph],
+    [graphs, saveGraph, session.nodes],
   );
 
   // ---------------------------------------------------------------------------
@@ -543,7 +548,8 @@ export function useMarkdownEditor() {
   // ---------------------------------------------------------------------------
 
   const importRawNodes = useCallback(
-    (nodes: Map<string, EditorNode>, rootId: string) => {
+    (nodes: Map<string, EditorNode>, rootIds: string | string[]) => {
+      const newRootIds = Array.isArray(rootIds) ? rootIds : [rootIds];
       setSession((prev) => {
         const mergedNodes = new Map(prev.nodes);
         for (const [id, node] of nodes) {
@@ -552,7 +558,7 @@ export function useMarkdownEditor() {
         return {
           ...prev,
           nodes: mergedNodes,
-          rootIds: [...prev.rootIds, rootId],
+          rootIds: [...prev.rootIds, ...newRootIds],
         };
       });
     },

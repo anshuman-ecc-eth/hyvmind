@@ -5,11 +5,9 @@ import { GettingStarted } from "@/components/markdown-editor/GettingStarted";
 import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
-import useSourceGraphs from "@/hooks/useSourceGraphs";
 import type { EditorNode } from "@/types/markdownEditor";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import FilterPanel from "../components/FilterPanel";
-import { SourceGraphDiagram } from "../components/SourceGraphDiagram";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Context menu state
@@ -28,21 +26,14 @@ type ContextOption =
   | "new-file"
   | "rename"
   | "delete"
-  | "convert-to-source-graph"
-  | "view-graph";
+  | "convert-to-source-graph";
 
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
-  curation: [
-    "new-swarm",
-    "rename",
-    "delete",
-    "convert-to-source-graph",
-    "view-graph",
-  ],
-  swarm: ["new-location", "rename", "delete", "view-graph"],
-  location: ["new-law-entity", "rename", "delete", "view-graph"],
-  lawEntity: ["new-file", "rename", "delete", "view-graph"],
-  interpEntity: ["rename", "delete", "view-graph"],
+  curation: ["new-swarm", "rename", "delete", "convert-to-source-graph"],
+  swarm: ["new-location", "rename", "delete"],
+  location: ["new-law-entity", "rename", "delete"],
+  lawEntity: ["new-file", "rename", "delete"],
+  interpEntity: ["rename", "delete"],
 };
 
 const OPTION_LABELS: Record<ContextOption, string> = {
@@ -52,8 +43,7 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   "new-file": "New File",
   rename: "Rename",
   delete: "Delete",
-  "convert-to-source-graph": "Convert to Source Graph",
-  "view-graph": "View Graph",
+  "convert-to-source-graph": "Convert",
 };
 
 // ---------------------------------------------------------------------------
@@ -162,8 +152,6 @@ export default function EditorView() {
     canRedo,
   } = useMarkdownEditor();
 
-  const { graphs } = useSourceGraphs();
-
   // Saving indicator
   const [isSaving, setIsSaving] = useState(false);
   const savingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,24 +178,6 @@ export default function EditorView() {
     type: "folder" | "file";
     label: string;
   } | null>(null);
-
-  // Graph modal state
-  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
-  const [modalCurationName, setModalCurationName] = useState<string | null>(
-    null,
-  );
-  const [graphFilterState, setGraphFilterState] = useState({
-    searchText: "",
-    visibleNodeTypes: new Set([
-      "curation",
-      "swarm",
-      "location",
-      "lawEntity",
-      "interpEntity",
-    ]),
-    isCollapsed: false,
-  });
-  const [graphFitFn, setGraphFitFn] = useState<(() => void) | null>(null);
 
   // File input
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -262,41 +232,6 @@ export default function EditorView() {
     [],
   );
 
-  const handleViewGraph = useCallback(() => {
-    if (!contextMenu || !session) return;
-    const { nodeId } = contextMenu;
-    setContextMenu(null);
-
-    let currentId = nodeId;
-    let node = session.nodes.get(currentId);
-    while (node?.parentId) {
-      currentId = node.parentId;
-      node = session.nodes.get(currentId);
-    }
-
-    if (node?.nodeType === "curation") {
-      setModalCurationName(node.name);
-      setIsGraphModalOpen(true);
-    }
-  }, [contextMenu, session]);
-
-  const handleCloseGraphModal = useCallback(() => {
-    setIsGraphModalOpen(false);
-    setModalCurationName(null);
-    setGraphFilterState({
-      searchText: "",
-      visibleNodeTypes: new Set([
-        "curation",
-        "swarm",
-        "location",
-        "lawEntity",
-        "interpEntity",
-      ]),
-      isCollapsed: false,
-    });
-    setGraphFitFn(null);
-  }, []);
-
   const handleContextOption = useCallback(
     (option: ContextOption) => {
       if (!contextMenu) return;
@@ -336,15 +271,20 @@ export default function EditorView() {
         case "delete":
           setDeleteTarget(nodeId);
           break;
-        case "convert-to-source-graph":
-          convertToSourceGraph(nodeId);
+        case "convert-to-source-graph": {
+          void (async () => {
+            const result = await convertToSourceGraph(nodeId);
+            if (result.success) {
+              toast.success(`Converted to source graph: ${result.graphName}`);
+            } else {
+              toast.error(`Conversion failed: ${result.error}`);
+            }
+          })();
           break;
-        case "view-graph":
-          handleViewGraph();
-          break;
+        }
       }
     },
-    [contextMenu, session, convertToSourceGraph, handleViewGraph],
+    [contextMenu, session, convertToSourceGraph],
   );
 
   const handleFileChange = useCallback(
@@ -356,27 +296,10 @@ export default function EditorView() {
         const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(file);
         const entries = Object.keys(zip.files);
-        const curationName = file.name.replace(/\.zip$/i, "");
 
         const newNodes = new Map<string, EditorNode>();
         const idMap = new Map<string, string>(); // normalized path -> nodeId
-
-        const curationId = `import-${Date.now()}-root`;
-        const curationNode: EditorNode = {
-          id: curationId,
-          name: curationName,
-          type: "folder",
-          parentId: null,
-          nodeType: "curation",
-          content: undefined,
-          frontmatter: {},
-          inheritedAttributes: {},
-          children: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        newNodes.set(curationId, curationNode);
-        idMap.set("", curationId);
+        const topLevelFolderIds: string[] = [];
 
         const sortedEntries = [...entries].sort();
 
@@ -390,9 +313,9 @@ export default function EditorView() {
           if (!name) continue;
 
           const parentPath = parts.slice(0, -1).join("/");
-          const parentId = idMap.get(parentPath) ?? curationId;
-          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const isTopLevel = parentPath === "";
           const isDirectory = zipEntry.dir || entryPath.endsWith("/");
+          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
           let content: string | undefined;
           if (!isDirectory && name.endsWith(".md")) {
@@ -403,12 +326,24 @@ export default function EditorView() {
             }
           }
 
+          // Top-level folders become curations; nested dirs become swarms
+          let nodeType: EditorNode["nodeType"];
+          if (isTopLevel && isDirectory) {
+            nodeType = "curation";
+          } else if (isDirectory) {
+            nodeType = "swarm";
+          } else {
+            nodeType = "interpEntity";
+          }
+
+          const parentId = isTopLevel ? null : (idMap.get(parentPath) ?? null);
+
           const node: EditorNode = {
             id: nodeId,
             name,
             type: isDirectory ? "folder" : "file",
             parentId,
-            nodeType: isDirectory ? "swarm" : "interpEntity",
+            nodeType,
             content,
             frontmatter: {},
             inheritedAttributes: {},
@@ -420,13 +355,27 @@ export default function EditorView() {
           newNodes.set(nodeId, node);
           idMap.set(normalizedPath, nodeId);
 
-          const parent = newNodes.get(parentId);
-          if (parent) {
-            parent.children.push(nodeId);
+          if (parentId !== null) {
+            const parent = newNodes.get(parentId);
+            if (parent) {
+              parent.children.push(nodeId);
+            }
+          }
+
+          if (isTopLevel && isDirectory) {
+            topLevelFolderIds.push(nodeId);
           }
         }
 
-        importRawNodes(newNodes, curationId);
+        // Use top-level folder IDs as roots; fall back to any root-level entries
+        const rootIds =
+          topLevelFolderIds.length > 0
+            ? topLevelFolderIds
+            : [...newNodes.keys()].filter(
+                (id) => newNodes.get(id)?.parentId === null,
+              );
+
+        importRawNodes(newNodes, rootIds);
       } catch (err) {
         console.error("[EditorView] ZIP import failed:", err);
       }
@@ -460,25 +409,6 @@ export default function EditorView() {
   const activeNode = session?.activeFileId
     ? (session.nodes.get(session.activeFileId) ?? null)
     : null;
-
-  const activeGraphForModal = useMemo(() => {
-    if (!isGraphModalOpen || !modalCurationName) return null;
-    return graphs.find((g) => g.name === modalCurationName) ?? null;
-  }, [isGraphModalOpen, modalCurationName, graphs]);
-
-  const visibleNodeCount = useMemo(() => {
-    if (!activeGraphForModal) return 0;
-    const search = graphFilterState.searchText.trim().toLowerCase();
-    const types = graphFilterState.visibleNodeTypes;
-    const allTypes = types.size >= 5;
-    const noSearch = search.length === 0;
-    if (allTypes && noSearch) return activeGraphForModal.nodes.length;
-    return activeGraphForModal.nodes.filter((n) => {
-      const typeOk = allTypes || types.has(n.nodeType);
-      const searchOk = noSearch || n.name.toLowerCase().includes(search);
-      return typeOk && searchOk;
-    }).length;
-  }, [activeGraphForModal, graphFilterState]);
 
   const viewMode = session?.viewMode ?? "edit";
   const isEmpty = !session || session.rootIds.length === 0;
@@ -742,75 +672,6 @@ export default function EditorView() {
         }}
         onCancel={() => setDeleteTarget(null)}
       />
-
-      {/* Graph modal */}
-      {isGraphModalOpen && activeGraphForModal && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background font-mono">
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
-            <button
-              type="button"
-              onClick={handleCloseGraphModal}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← back to editor
-            </button>
-            <span className="text-xs text-border">|</span>
-            <span className="text-xs text-foreground">
-              {activeGraphForModal.name}
-            </span>
-            <span className="text-xs text-muted-foreground ml-auto">
-              {activeGraphForModal.nodes.length} nodes
-            </span>
-          </div>
-          <div className="flex flex-1 min-h-0 h-full">
-            <div className="flex-1 min-w-0 min-h-0">
-              <SourceGraphDiagram
-                graph={activeGraphForModal}
-                graphId={activeGraphForModal.id}
-                searchText={graphFilterState.searchText}
-                visibleNodeTypes={graphFilterState.visibleNodeTypes}
-                onFitToVisible={setGraphFitFn}
-              />
-            </div>
-            <FilterPanel
-              searchText={graphFilterState.searchText}
-              onSearchChange={(text) =>
-                setGraphFilterState((prev) => ({ ...prev, searchText: text }))
-              }
-              visibleNodeTypes={graphFilterState.visibleNodeTypes}
-              onNodeTypesChange={(types) =>
-                setGraphFilterState((prev) => ({
-                  ...prev,
-                  visibleNodeTypes: types,
-                }))
-              }
-              totalNodes={activeGraphForModal.nodes.length}
-              visibleNodes={visibleNodeCount}
-              onReset={() =>
-                setGraphFilterState({
-                  searchText: "",
-                  visibleNodeTypes: new Set([
-                    "curation",
-                    "swarm",
-                    "location",
-                    "lawEntity",
-                    "interpEntity",
-                  ]),
-                  isCollapsed: false,
-                })
-              }
-              onFitToVisible={() => graphFitFn?.()}
-              isCollapsed={graphFilterState.isCollapsed}
-              onToggleCollapsed={() =>
-                setGraphFilterState((prev) => ({
-                  ...prev,
-                  isCollapsed: !prev.isCollapsed,
-                }))
-              }
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

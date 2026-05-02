@@ -72268,35 +72268,36 @@ function useMarkdownEditor() {
     });
   }, []);
   const convertToSourceGraph = reactExports.useCallback(
-    (curationId) => {
-      setSession((prev) => {
-        const node2 = prev.nodes.get(curationId);
-        if (!node2 || node2.nodeType !== "curation") return prev;
-        try {
-          const sourceGraph = editorToSourceGraph(prev.nodes, curationId);
-          let graphName = sourceGraph.name;
-          const existingNames = new Set(graphs.map((g2) => g2.name));
-          if (existingNames.has(graphName)) {
-            let counter = 1;
-            while (existingNames.has(`${graphName} (${counter})`)) {
-              counter++;
-            }
-            graphName = `${graphName} (${counter})`;
-          }
-          saveGraph({ ...sourceGraph, name: graphName });
-        } catch (err) {
-          console.error(
-            "[useMarkdownEditor] convertToSourceGraph failed:",
-            err
-          );
+    async (curationId) => {
+      try {
+        const node2 = session.nodes.get(curationId);
+        if (!node2 || node2.nodeType !== "curation") {
+          return { success: false, error: "Node is not a curation" };
         }
-        return { ...prev, lastSavedAt: Date.now() };
-      });
+        const sourceGraph = editorToSourceGraph(session.nodes, curationId);
+        let graphName = sourceGraph.name;
+        const existingNames = new Set(graphs.map((g2) => g2.name));
+        if (existingNames.has(graphName)) {
+          let counter = 1;
+          while (existingNames.has(`${graphName} (${counter})`)) {
+            counter++;
+          }
+          graphName = `${graphName} (${counter})`;
+        }
+        saveGraph({ ...sourceGraph, name: graphName });
+        setSession((prev) => ({ ...prev, lastSavedAt: Date.now() }));
+        return { success: true, graphName };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Conversion failed";
+        console.error("[useMarkdownEditor] convertToSourceGraph failed:", err);
+        return { success: false, error: message };
+      }
     },
-    [graphs, saveGraph]
+    [graphs, saveGraph, session.nodes]
   );
   const importRawNodes = reactExports.useCallback(
-    (nodes, rootId) => {
+    (nodes, rootIds) => {
+      const newRootIds = Array.isArray(rootIds) ? rootIds : [rootIds];
       setSession((prev) => {
         const mergedNodes = new Map(prev.nodes);
         for (const [id2, node2] of nodes) {
@@ -72305,7 +72306,7 @@ function useMarkdownEditor() {
         return {
           ...prev,
           nodes: mergedNodes,
-          rootIds: [...prev.rootIds, rootId]
+          rootIds: [...prev.rootIds, ...newRootIds]
         };
       });
     },
@@ -72494,17 +72495,11 @@ function applyInverseAction(action, nodes) {
   return next;
 }
 const CONTEXT_OPTIONS = {
-  curation: [
-    "new-swarm",
-    "rename",
-    "delete",
-    "convert-to-source-graph",
-    "view-graph"
-  ],
-  swarm: ["new-location", "rename", "delete", "view-graph"],
-  location: ["new-law-entity", "rename", "delete", "view-graph"],
-  lawEntity: ["new-file", "rename", "delete", "view-graph"],
-  interpEntity: ["rename", "delete", "view-graph"]
+  curation: ["new-swarm", "rename", "delete", "convert-to-source-graph"],
+  swarm: ["new-location", "rename", "delete"],
+  location: ["new-law-entity", "rename", "delete"],
+  lawEntity: ["new-file", "rename", "delete"],
+  interpEntity: ["rename", "delete"]
 };
 const OPTION_LABELS = {
   "new-swarm": "New Swarm",
@@ -72513,8 +72508,7 @@ const OPTION_LABELS = {
   "new-file": "New File",
   rename: "Rename",
   delete: "Delete",
-  "convert-to-source-graph": "Convert to Source Graph",
-  "view-graph": "View Graph"
+  "convert-to-source-graph": "Convert"
 };
 function InlineDialog({
   label,
@@ -72619,7 +72613,6 @@ function EditorView() {
     canUndo,
     canRedo
   } = useMarkdownEditor();
-  const { graphs } = useSourceGraphs();
   const [isSaving, setIsSaving] = reactExports.useState(false);
   const savingTimerRef = reactExports.useRef(null);
   const [contextMenu, setContextMenu] = reactExports.useState(null);
@@ -72628,22 +72621,6 @@ function EditorView() {
   const [showCreateCuration, setShowCreateCuration] = reactExports.useState(false);
   const [renameTarget, setRenameTarget] = reactExports.useState(null);
   const [createChild, setCreateChild] = reactExports.useState(null);
-  const [isGraphModalOpen, setIsGraphModalOpen] = reactExports.useState(false);
-  const [modalCurationName, setModalCurationName] = reactExports.useState(
-    null
-  );
-  const [graphFilterState, setGraphFilterState] = reactExports.useState({
-    searchText: "",
-    visibleNodeTypes: /* @__PURE__ */ new Set([
-      "curation",
-      "swarm",
-      "location",
-      "lawEntity",
-      "interpEntity"
-    ]),
-    isCollapsed: false
-  });
-  const [graphFitFn, setGraphFitFn] = reactExports.useState(null);
   const fileInputRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     const handler = (e2) => {
@@ -72681,37 +72658,6 @@ function EditorView() {
     },
     []
   );
-  const handleViewGraph = reactExports.useCallback(() => {
-    if (!contextMenu || !session) return;
-    const { nodeId } = contextMenu;
-    setContextMenu(null);
-    let currentId = nodeId;
-    let node2 = session.nodes.get(currentId);
-    while (node2 == null ? void 0 : node2.parentId) {
-      currentId = node2.parentId;
-      node2 = session.nodes.get(currentId);
-    }
-    if ((node2 == null ? void 0 : node2.nodeType) === "curation") {
-      setModalCurationName(node2.name);
-      setIsGraphModalOpen(true);
-    }
-  }, [contextMenu, session]);
-  const handleCloseGraphModal = reactExports.useCallback(() => {
-    setIsGraphModalOpen(false);
-    setModalCurationName(null);
-    setGraphFilterState({
-      searchText: "",
-      visibleNodeTypes: /* @__PURE__ */ new Set([
-        "curation",
-        "swarm",
-        "location",
-        "lawEntity",
-        "interpEntity"
-      ]),
-      isCollapsed: false
-    });
-    setGraphFitFn(null);
-  }, []);
   const handleContextOption = reactExports.useCallback(
     (option) => {
       if (!contextMenu) return;
@@ -72750,15 +72696,20 @@ function EditorView() {
         case "delete":
           setDeleteTarget(nodeId);
           break;
-        case "convert-to-source-graph":
-          convertToSourceGraph(nodeId);
+        case "convert-to-source-graph": {
+          void (async () => {
+            const result = await convertToSourceGraph(nodeId);
+            if (result.success) {
+              ue$1.success(`Converted to source graph: ${result.graphName}`);
+            } else {
+              ue$1.error(`Conversion failed: ${result.error}`);
+            }
+          })();
           break;
-        case "view-graph":
-          handleViewGraph();
-          break;
+        }
       }
     },
-    [contextMenu, session, convertToSourceGraph, handleViewGraph]
+    [contextMenu, session, convertToSourceGraph]
   );
   const handleFileChange = reactExports.useCallback(
     async (e2) => {
@@ -72773,25 +72724,9 @@ function EditorView() {
         }, true ? void 0 : void 0);
         const zip = await JSZip2.loadAsync(file2);
         const entries = Object.keys(zip.files);
-        const curationName = file2.name.replace(/\.zip$/i, "");
         const newNodes = /* @__PURE__ */ new Map();
         const idMap = /* @__PURE__ */ new Map();
-        const curationId = `import-${Date.now()}-root`;
-        const curationNode = {
-          id: curationId,
-          name: curationName,
-          type: "folder",
-          parentId: null,
-          nodeType: "curation",
-          content: void 0,
-          frontmatter: {},
-          inheritedAttributes: {},
-          children: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        };
-        newNodes.set(curationId, curationNode);
-        idMap.set("", curationId);
+        const topLevelFolderIds = [];
         const sortedEntries = [...entries].sort();
         for (const entryPath of sortedEntries) {
           const zipEntry = zip.files[entryPath];
@@ -72802,9 +72737,9 @@ function EditorView() {
           const name = parts[parts.length - 1];
           if (!name) continue;
           const parentPath = parts.slice(0, -1).join("/");
-          const parentId = idMap.get(parentPath) ?? curationId;
-          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const isTopLevel = parentPath === "";
           const isDirectory = zipEntry.dir || entryPath.endsWith("/");
+          const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
           let content;
           if (!isDirectory && name.endsWith(".md")) {
             try {
@@ -72813,12 +72748,21 @@ function EditorView() {
               content = "";
             }
           }
+          let nodeType;
+          if (isTopLevel && isDirectory) {
+            nodeType = "curation";
+          } else if (isDirectory) {
+            nodeType = "swarm";
+          } else {
+            nodeType = "interpEntity";
+          }
+          const parentId = isTopLevel ? null : idMap.get(parentPath) ?? null;
           const node2 = {
             id: nodeId,
             name,
             type: isDirectory ? "folder" : "file",
             parentId,
-            nodeType: isDirectory ? "swarm" : "interpEntity",
+            nodeType,
             content,
             frontmatter: {},
             inheritedAttributes: {},
@@ -72828,12 +72772,23 @@ function EditorView() {
           };
           newNodes.set(nodeId, node2);
           idMap.set(normalizedPath, nodeId);
-          const parent = newNodes.get(parentId);
-          if (parent) {
-            parent.children.push(nodeId);
+          if (parentId !== null) {
+            const parent = newNodes.get(parentId);
+            if (parent) {
+              parent.children.push(nodeId);
+            }
+          }
+          if (isTopLevel && isDirectory) {
+            topLevelFolderIds.push(nodeId);
           }
         }
-        importRawNodes(newNodes, curationId);
+        const rootIds = topLevelFolderIds.length > 0 ? topLevelFolderIds : [...newNodes.keys()].filter(
+          (id2) => {
+            var _a5;
+            return ((_a5 = newNodes.get(id2)) == null ? void 0 : _a5.parentId) === null;
+          }
+        );
+        importRawNodes(newNodes, rootIds);
       } catch (err) {
         console.error("[EditorView] ZIP import failed:", err);
       }
@@ -72858,23 +72813,6 @@ function EditorView() {
     [session, updateFile]
   );
   const activeNode = (session == null ? void 0 : session.activeFileId) ? session.nodes.get(session.activeFileId) ?? null : null;
-  const activeGraphForModal = reactExports.useMemo(() => {
-    if (!isGraphModalOpen || !modalCurationName) return null;
-    return graphs.find((g2) => g2.name === modalCurationName) ?? null;
-  }, [isGraphModalOpen, modalCurationName, graphs]);
-  const visibleNodeCount = reactExports.useMemo(() => {
-    if (!activeGraphForModal) return 0;
-    const search2 = graphFilterState.searchText.trim().toLowerCase();
-    const types = graphFilterState.visibleNodeTypes;
-    const allTypes = types.size >= 5;
-    const noSearch = search2.length === 0;
-    if (allTypes && noSearch) return activeGraphForModal.nodes.length;
-    return activeGraphForModal.nodes.filter((n2) => {
-      const typeOk = allTypes || types.has(n2.nodeType);
-      const searchOk = noSearch || n2.name.toLowerCase().includes(search2);
-      return typeOk && searchOk;
-    }).length;
-  }, [activeGraphForModal, graphFilterState]);
   const viewMode = (session == null ? void 0 : session.viewMode) ?? "edit";
   const isEmpty = !session || session.rootIds.length === 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -73108,69 +73046,7 @@ function EditorView() {
             },
             onCancel: () => setDeleteTarget(null)
           }
-        ),
-        isGraphModalOpen && activeGraphForModal && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "fixed inset-0 z-50 flex flex-col bg-background font-mono", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                onClick: handleCloseGraphModal,
-                className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
-                children: "← back to editor"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-border", children: "|" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground", children: activeGraphForModal.name }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground ml-auto", children: [
-              activeGraphForModal.nodes.length,
-              " nodes"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0 h-full", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0 min-h-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              SourceGraphDiagram,
-              {
-                graph: activeGraphForModal,
-                graphId: activeGraphForModal.id,
-                searchText: graphFilterState.searchText,
-                visibleNodeTypes: graphFilterState.visibleNodeTypes,
-                onFitToVisible: setGraphFitFn
-              }
-            ) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              FilterPanel,
-              {
-                searchText: graphFilterState.searchText,
-                onSearchChange: (text) => setGraphFilterState((prev) => ({ ...prev, searchText: text })),
-                visibleNodeTypes: graphFilterState.visibleNodeTypes,
-                onNodeTypesChange: (types) => setGraphFilterState((prev) => ({
-                  ...prev,
-                  visibleNodeTypes: types
-                })),
-                totalNodes: activeGraphForModal.nodes.length,
-                visibleNodes: visibleNodeCount,
-                onReset: () => setGraphFilterState({
-                  searchText: "",
-                  visibleNodeTypes: /* @__PURE__ */ new Set([
-                    "curation",
-                    "swarm",
-                    "location",
-                    "lawEntity",
-                    "interpEntity"
-                  ]),
-                  isCollapsed: false
-                }),
-                onFitToVisible: () => graphFitFn == null ? void 0 : graphFitFn(),
-                isCollapsed: graphFilterState.isCollapsed,
-                onToggleCollapsed: () => setGraphFilterState((prev) => ({
-                  ...prev,
-                  isCollapsed: !prev.isCollapsed
-                }))
-              }
-            )
-          ] })
-        ] })
+        )
       ]
     }
   );
