@@ -68915,39 +68915,6 @@ function GettingStarted({ onCreate, onImport }) {
     }
   );
 }
-function GraphPanel({ graph, onNodeClick }) {
-  if (!graph) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "flex-1 flex items-center justify-center bg-background",
-        "data-ocid": "graph_panel.empty_state",
-        children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-muted-foreground text-sm", children: "No graph data available" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-muted-foreground text-xs mt-1", children: "Save your curation to generate a graph preview" })
-        ] })
-      }
-    );
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "div",
-    {
-      className: "flex-1 min-h-0 relative bg-background",
-      "data-ocid": "graph_panel.panel",
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "div",
-          {
-            className: "absolute inset-0 z-10 cursor-pointer",
-            "aria-hidden": "true",
-            style: { pointerEvents: "none" }
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(SourceGraphDiagram, { graph, onNodeClick })
-      ]
-    }
-  );
-}
 function MarkdownEditor({
   content,
   onChange: onChange15,
@@ -71907,8 +71874,10 @@ function useSourceGraphs() {
   }, []);
   const saveGraph = reactExports.useCallback((graph) => {
     setStore((prev) => {
+      const existingIndex = prev.graphs.findIndex((g2) => g2.id === graph.id);
+      const newGraphs = existingIndex >= 0 ? prev.graphs.map((g2, i2) => i2 === existingIndex ? graph : g2) : [...prev.graphs, graph];
       const next = {
-        graphs: [...prev.graphs, graph],
+        graphs: newGraphs,
         activeGraphId: prev.activeGraphId
       };
       saveToStorage(next);
@@ -72109,6 +72078,10 @@ function useMarkdownEditor() {
       const action = { type: "create", node: node2, parentId: null };
       setSession((prev) => {
         if (prev.nodes.has(id2)) return prev;
+        const nameExists = Array.from(prev.nodes.values()).some(
+          (n2) => n2.nodeType === "curation" && n2.name === name
+        );
+        if (nameExists) return prev;
         const nodes = new Map(prev.nodes);
         nodes.set(id2, node2);
         const newSession = {
@@ -72575,11 +72548,11 @@ function applyInverseAction(action, nodes) {
   return next;
 }
 const CONTEXT_OPTIONS = {
-  curation: ["new-swarm", "rename", "delete", "publish"],
-  swarm: ["new-location", "rename", "delete"],
-  location: ["new-law-entity", "rename", "delete"],
-  lawEntity: ["new-file", "rename", "delete"],
-  interpEntity: ["rename", "delete"]
+  curation: ["new-swarm", "rename", "delete", "publish", "view-graph"],
+  swarm: ["new-location", "rename", "delete", "view-graph"],
+  location: ["new-law-entity", "rename", "delete", "view-graph"],
+  lawEntity: ["new-file", "rename", "delete", "view-graph"],
+  interpEntity: ["rename", "delete", "view-graph"]
 };
 const OPTION_LABELS = {
   "new-swarm": "New Swarm",
@@ -72588,7 +72561,8 @@ const OPTION_LABELS = {
   "new-file": "New File",
   rename: "Rename",
   delete: "Delete",
-  publish: "Publish"
+  publish: "Publish",
+  "view-graph": "View Graph"
 };
 function InlineDialog({
   label,
@@ -72692,7 +72666,7 @@ function EditorView() {
     canUndo,
     canRedo
   } = useMarkdownEditor();
-  const { saveGraph } = useSourceGraphs();
+  const { saveGraph, graphs } = useSourceGraphs();
   const [isSaving, setIsSaving] = reactExports.useState(false);
   const savingTimerRef = reactExports.useRef(null);
   const [contextMenu, setContextMenu] = reactExports.useState(null);
@@ -72701,6 +72675,22 @@ function EditorView() {
   const [showCreateCuration, setShowCreateCuration] = reactExports.useState(false);
   const [renameTarget, setRenameTarget] = reactExports.useState(null);
   const [createChild, setCreateChild] = reactExports.useState(null);
+  const [isGraphModalOpen, setIsGraphModalOpen] = reactExports.useState(false);
+  const [modalCurationName, setModalCurationName] = reactExports.useState(
+    null
+  );
+  const [graphFilterState, setGraphFilterState] = reactExports.useState({
+    searchText: "",
+    visibleNodeTypes: /* @__PURE__ */ new Set([
+      "curation",
+      "swarm",
+      "location",
+      "lawEntity",
+      "interpEntity"
+    ]),
+    isCollapsed: false
+  });
+  const [graphFitFn, setGraphFitFn] = reactExports.useState(null);
   const fileInputRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     const handler = (e2) => {
@@ -72711,9 +72701,6 @@ function EditorView() {
       } else if (e2.key === "m") {
         e2.preventDefault();
         setViewMode("markdown");
-      } else if (e2.key === "g") {
-        e2.preventDefault();
-        setViewMode("graph");
       }
     };
     window.addEventListener("keydown", handler);
@@ -72741,6 +72728,37 @@ function EditorView() {
     },
     []
   );
+  const handleViewGraph = reactExports.useCallback(() => {
+    if (!contextMenu || !session) return;
+    const { nodeId } = contextMenu;
+    setContextMenu(null);
+    let currentId = nodeId;
+    let node2 = session.nodes.get(currentId);
+    while (node2 == null ? void 0 : node2.parentId) {
+      currentId = node2.parentId;
+      node2 = session.nodes.get(currentId);
+    }
+    if ((node2 == null ? void 0 : node2.nodeType) === "curation") {
+      setModalCurationName(node2.name);
+      setIsGraphModalOpen(true);
+    }
+  }, [contextMenu, session]);
+  const handleCloseGraphModal = reactExports.useCallback(() => {
+    setIsGraphModalOpen(false);
+    setModalCurationName(null);
+    setGraphFilterState({
+      searchText: "",
+      visibleNodeTypes: /* @__PURE__ */ new Set([
+        "curation",
+        "swarm",
+        "location",
+        "lawEntity",
+        "interpEntity"
+      ]),
+      isCollapsed: false
+    });
+    setGraphFitFn(null);
+  }, []);
   const handleContextOption = reactExports.useCallback(
     (option) => {
       if (!contextMenu) return;
@@ -72782,9 +72800,12 @@ function EditorView() {
         case "publish":
           publishCuration(nodeId);
           break;
+        case "view-graph":
+          handleViewGraph();
+          break;
       }
     },
-    [contextMenu, session, publishCuration]
+    [contextMenu, session, publishCuration, handleViewGraph]
   );
   const handleFileChange = reactExports.useCallback(
     async (e2) => {
@@ -72818,25 +72839,24 @@ function EditorView() {
     },
     [session, updateFile]
   );
-  const handleNodeClickInGraph = reactExports.useCallback((_node) => {
-  }, []);
   const activeNode = (session == null ? void 0 : session.activeFileId) ? session.nodes.get(session.activeFileId) ?? null : null;
-  const activeCurationId = (() => {
-    if (!session || !session.activeFileId) return (session == null ? void 0 : session.rootIds[0]) ?? null;
-    let node2 = session.nodes.get(session.activeFileId);
-    while (node2 == null ? void 0 : node2.parentId) {
-      node2 = session.nodes.get(node2.parentId);
-    }
-    return (node2 == null ? void 0 : node2.nodeType) === "curation" ? node2.id : session.rootIds[0] ?? null;
-  })();
-  const graphForPanel = (() => {
-    if (!session || !activeCurationId) return null;
-    try {
-      return editorToSourceGraph(session.nodes, activeCurationId);
-    } catch {
-      return null;
-    }
-  })();
+  const activeGraphForModal = reactExports.useMemo(() => {
+    if (!isGraphModalOpen || !modalCurationName) return null;
+    return graphs.find((g2) => g2.name === modalCurationName) ?? null;
+  }, [isGraphModalOpen, modalCurationName, graphs]);
+  const visibleNodeCount = reactExports.useMemo(() => {
+    if (!activeGraphForModal) return 0;
+    const search2 = graphFilterState.searchText.trim().toLowerCase();
+    const types = graphFilterState.visibleNodeTypes;
+    const allTypes = types.size >= 5;
+    const noSearch = search2.length === 0;
+    if (allTypes && noSearch) return activeGraphForModal.nodes.length;
+    return activeGraphForModal.nodes.filter((n2) => {
+      const typeOk = allTypes || types.has(n2.nodeType);
+      const searchOk = noSearch || n2.name.toLowerCase().includes(search2);
+      return typeOk && searchOk;
+    }).length;
+  }, [activeGraphForModal, graphFilterState]);
   const viewMode = (session == null ? void 0 : session.viewMode) ?? "edit";
   const isEmpty = !session || session.rootIds.length === 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -72859,7 +72879,7 @@ function EditorView() {
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "editor" }),
-          !isEmpty && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "markdown", "graph"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          !isEmpty && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "markdown"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
@@ -72960,13 +72980,6 @@ function EditorView() {
               MarkdownPreview,
               {
                 content: (activeNode == null ? void 0 : activeNode.type) === "file" ? activeNode.content ?? "" : ""
-              }
-            ),
-            viewMode === "graph" && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              GraphPanel,
-              {
-                graph: graphForPanel,
-                onNodeClick: handleNodeClickInGraph
               }
             )
           ] }) }),
@@ -73077,7 +73090,69 @@ function EditorView() {
             },
             onCancel: () => setDeleteTarget(null)
           }
-        )
+        ),
+        isGraphModalOpen && activeGraphForModal && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "fixed inset-0 z-50 flex flex-col bg-background font-mono", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: handleCloseGraphModal,
+                className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
+                children: "← back to editor"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-border", children: "|" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground", children: activeGraphForModal.name }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground ml-auto", children: [
+              activeGraphForModal.nodes.length,
+              " nodes"
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0 h-full", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0 min-h-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              SourceGraphDiagram,
+              {
+                graph: activeGraphForModal,
+                graphId: activeGraphForModal.id,
+                searchText: graphFilterState.searchText,
+                visibleNodeTypes: graphFilterState.visibleNodeTypes,
+                onFitToVisible: setGraphFitFn
+              }
+            ) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              FilterPanel,
+              {
+                searchText: graphFilterState.searchText,
+                onSearchChange: (text) => setGraphFilterState((prev) => ({ ...prev, searchText: text })),
+                visibleNodeTypes: graphFilterState.visibleNodeTypes,
+                onNodeTypesChange: (types) => setGraphFilterState((prev) => ({
+                  ...prev,
+                  visibleNodeTypes: types
+                })),
+                totalNodes: activeGraphForModal.nodes.length,
+                visibleNodes: visibleNodeCount,
+                onReset: () => setGraphFilterState({
+                  searchText: "",
+                  visibleNodeTypes: /* @__PURE__ */ new Set([
+                    "curation",
+                    "swarm",
+                    "location",
+                    "lawEntity",
+                    "interpEntity"
+                  ]),
+                  isCollapsed: false
+                }),
+                onFitToVisible: () => graphFitFn == null ? void 0 : graphFitFn(),
+                isCollapsed: graphFilterState.isCollapsed,
+                onToggleCollapsed: () => setGraphFilterState((prev) => ({
+                  ...prev,
+                  isCollapsed: !prev.isCollapsed
+                }))
+              }
+            )
+          ] })
+        ] })
       ]
     }
   );

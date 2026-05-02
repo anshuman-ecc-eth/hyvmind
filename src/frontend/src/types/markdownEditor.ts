@@ -4,7 +4,7 @@
 
 export type EditorNodeType = "folder" | "file";
 
-export type EditorViewMode = "edit" | "markdown" | "graph";
+export type EditorViewMode = "edit" | "markdown";
 
 /**
  * A single node in the editor's virtual file tree.

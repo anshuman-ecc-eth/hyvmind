@@ -54,8 +54,13 @@ export default function useSourceGraphs() {
 
   const saveGraph = useCallback((graph: SourceGraph) => {
     setStore((prev) => {
+      const existingIndex = prev.graphs.findIndex((g) => g.id === graph.id);
+      const newGraphs =
+        existingIndex >= 0
+          ? prev.graphs.map((g, i) => (i === existingIndex ? graph : g))
+          : [...prev.graphs, graph];
       const next: SourceGraphsStore = {
-        graphs: [...prev.graphs, graph],
+        graphs: newGraphs,
         activeGraphId: prev.activeGraphId,
       };
       saveToStorage(next);

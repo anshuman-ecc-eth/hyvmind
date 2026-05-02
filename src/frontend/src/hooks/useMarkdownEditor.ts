@@ -222,6 +222,11 @@ export function useMarkdownEditor() {
       setSession((prev) => {
         // Guard: don't create duplicate curation ids
         if (prev.nodes.has(id)) return prev;
+        // Guard: don't create duplicate curation names
+        const nameExists = Array.from(prev.nodes.values()).some(
+          (n) => n.nodeType === "curation" && n.name === name,
+        );
+        if (nameExists) return prev;
         const nodes = new Map(prev.nodes);
         nodes.set(id, node);
         const newSession = {
