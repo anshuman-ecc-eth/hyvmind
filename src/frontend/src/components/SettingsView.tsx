@@ -18,6 +18,7 @@ import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
 import {
   useGetCallerUserProfile,
+  useGetMyTextGameBuzz,
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useSettings";
@@ -30,6 +31,7 @@ import {
   getBaseTheme,
   getVariant,
 } from "../lib/themes";
+import { CreateBuzzModal } from "./CreateBuzzModal";
 
 function maskApiKey(key: string): string {
   if (key.length < 8) return "••••••••••••••••";
@@ -44,6 +46,9 @@ export function SettingsView() {
   const rawActor = useActor(createActor as Parameters<typeof useActor>[0]);
   const actor = rawActor.actor as backendInterface | null;
   const { fontPairing, setFontPairing, fontSize, setFontSize } = useSettings();
+
+  const [createBuzzOpen, setCreateBuzzOpen] = useState(false);
+  const { data: textGameBuzz } = useGetMyTextGameBuzz();
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
@@ -429,6 +434,48 @@ export function SettingsView() {
             )}
           </div>
         </section>
+
+        <Separator />
+
+        {/* Wallet Section */}
+        <section className="space-y-4" data-ocid="settings.wallet.section">
+          <h2 className="text-lg font-medium">Wallet</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage your Buzz balance.
+          </p>
+          <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p
+                  className="text-sm font-medium"
+                  data-ocid="settings.wallet.buzz_balance"
+                >
+                  {textGameBuzz !== undefined ? textGameBuzz.toString() : "0"}{" "}
+                  <span className="text-muted-foreground">Buzz</span>
+                </p>
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-ocid="settings.wallet.trust_balance"
+                >
+                  0 <span>Trust</span>
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreateBuzzOpen(true)}
+                data-ocid="settings.wallet.create_buzz_button"
+              >
+                Create Buzz
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <CreateBuzzModal
+          isOpen={createBuzzOpen}
+          onClose={() => setCreateBuzzOpen(false)}
+        />
       </div>
     </div>
   );

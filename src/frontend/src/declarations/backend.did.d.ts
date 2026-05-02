@@ -271,6 +271,7 @@ export interface _SERVICE {
       { 'err' : string }
   >,
   'generateApiKey' : ActorMethod<[], string>,
+  'generateBuzzSecret' : ActorMethod<[bigint], string>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],
     Array<PublishedSourceGraphMeta>
@@ -288,6 +289,7 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
+  'getMyTextGameBuzz' : ActorMethod<[], bigint>,
   'getPublishedPaths' : ActorMethod<
     [],
     Array<
@@ -337,6 +339,11 @@ export interface _SERVICE {
     PublishPreviewResult
   >,
   'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
+  'redeemBuzzSecret' : ActorMethod<
+    [string],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'requestApproval' : ActorMethod<[], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,

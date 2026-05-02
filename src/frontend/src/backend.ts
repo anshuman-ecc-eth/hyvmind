@@ -394,6 +394,7 @@ export interface backendInterface {
         err: string;
     }>;
     generateApiKey(): Promise<string>;
+    generateBuzzSecret(score: bigint): Promise<string>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -410,6 +411,7 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyTextGameBuzz(): Promise<bigint>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -445,6 +447,13 @@ export interface backendInterface {
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
+    redeemBuzzSecret(secret: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
@@ -653,6 +662,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async generateBuzzSecret(arg0: bigint): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateBuzzSecret(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateBuzzSecret(arg0);
+            return result;
+        }
+    }
     async getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>> {
         if (this.processError) {
             try {
@@ -796,6 +819,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getMyBuzzBalance();
+            return result;
+        }
+    }
+    async getMyTextGameBuzz(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyTextGameBuzz();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyTextGameBuzz();
             return result;
         }
     }
@@ -1120,6 +1157,26 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async redeemBuzzSecret(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.redeemBuzzSecret(arg0);
+                return from_candid_variant_n70(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.redeemBuzzSecret(arg0);
+            return from_candid_variant_n70(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async requestApproval(): Promise<void> {
         if (this.processError) {
             try {
@@ -1165,14 +1222,14 @@ export class Backend implements backendInterface {
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n70(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n71(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n70(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n71(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -1186,27 +1243,27 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.sendMessage(arg0, arg1);
-                return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.sendMessage(arg0, arg1);
-            return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
         }
     }
     async setApproval(arg0: Principal, arg1: ApprovalStatus): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n73(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n74(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n73(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n74(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -1234,14 +1291,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.setTelegramConfig(arg0, arg1);
-                return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.setTelegramConfig(arg0, arg1);
-            return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
         }
     }
     async track_api_request(arg0: string): Promise<void> {
@@ -1916,7 +1973,26 @@ function from_candid_variant_n69(_uploadFile: (file: ExternalBlob) => Promise<Ui
         update: value.update
     } : value;
 }
-function from_candid_variant_n72(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n70(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: string;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_variant_n73(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     ok: null;
 } | {
     err: string;
@@ -2001,8 +2077,8 @@ function from_candid_vec_n62(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_vec_n66(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_NodeOperation>): Array<NodeOperation> {
     return value.map((x)=>from_candid_NodeOperation_n67(_uploadFile, _downloadFile, x));
 }
-function to_candid_ApprovalStatus_n73(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
-    return to_candid_variant_n74(_uploadFile, _downloadFile, value);
+function to_candid_ApprovalStatus_n74(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
+    return to_candid_variant_n75(_uploadFile, _downloadFile, value);
 }
 function to_candid_MintCollectibleRequest_n55(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: MintCollectibleRequest): _MintCollectibleRequest {
     return to_candid_record_n56(_uploadFile, _downloadFile, value);
@@ -2013,8 +2089,8 @@ function to_candid_PublishSourceGraphInput_n3(_uploadFile: (file: ExternalBlob) 
 function to_candid_SourceGraphNodeInput_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: SourceGraphNodeInput): _SourceGraphNodeInput {
     return to_candid_record_n7(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n70(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
-    return to_candid_record_n71(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n71(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
+    return to_candid_record_n72(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
@@ -2077,7 +2153,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         nodeType: value.nodeType
     };
 }
-function to_candid_record_n71(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n72(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     socialUrl?: string;
 }): {
@@ -2115,7 +2191,7 @@ function to_candid_variant_n57(_uploadFile: (file: ExternalBlob) => Promise<Uint
         interpretationToken: null
     } : value;
 }
-function to_candid_variant_n74(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
+function to_candid_variant_n75(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
     pending: null;
 } | {
     approved: null;

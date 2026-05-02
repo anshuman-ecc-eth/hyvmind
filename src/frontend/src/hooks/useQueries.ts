@@ -432,6 +432,50 @@ export function useGetMyBuzzBalance() {
   });
 }
 
+import type { BuzzBackendExtensions } from "../types/buzzExtensions.d";
+
+type BuzzActor = backendInterface & BuzzBackendExtensions;
+
+export function useGenerateBuzzSecret() {
+  const { actor } = useBackendActor();
+
+  return useMutation({
+    mutationFn: async (score: bigint) => {
+      if (!actor) throw new Error("Actor not available");
+      return (actor as unknown as BuzzActor).generateBuzzSecret(score);
+    },
+  });
+}
+
+export function useRedeemBuzzSecret() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (secret: string) => {
+      if (!actor) throw new Error("Actor not available");
+      return (actor as unknown as BuzzActor).redeemBuzzSecret(secret);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["myTextGameBuzz"] });
+    },
+  });
+}
+
+export function useGetMyTextGameBuzz() {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<bigint>({
+    queryKey: ["myTextGameBuzz"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return (actor as unknown as BuzzActor).getMyTextGameBuzz();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
 export function useGetMintSettings() {
   const { actor, isFetching } = useBackendActor();
 

@@ -1,6 +1,8 @@
 // Version: 1.0.0
 type ApprovalStatus__575141016 = {#approved; #pending; #rejected};
 type BuzzScore__18805602 = Int;
+type BuzzSecretRecord__379904131 =
+  {createdAt : Int; expiresAt : Int; isUsed : Bool; points : Int};
 type ChatChannel__15553035 =
   {
     id : Text;
@@ -197,6 +199,11 @@ actor {
       var root : Node__46230540<Principal, BuzzScore__18805602>;
       var size : Nat__490723111
     };
+  stable var buzzSecrets :
+    {
+      var root : Node__46230540<Text, BuzzSecretRecord__379904131>;
+      var size : Nat__490723111
+    };
   stable var chatChannels :
     {
       var root : Node__46230540<Text, ChatChannel__15553035>;
@@ -300,6 +307,8 @@ actor {
       var size : Nat__490723111
     };
   stable var telegramConfig : ?TelegramConfig__326514849;
+  stable var textGameBuzz :
+    {var root : Node__46230540<Principal, Int>; var size : Nat__490723111};
   stable var userProfiles :
     {
       var root : Node__46230540<Principal, UserProfile__491224006>;

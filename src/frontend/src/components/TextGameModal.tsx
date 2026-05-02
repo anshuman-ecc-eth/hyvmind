@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useGenerateBuzzSecret } from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -894,6 +895,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
 
+  // Secret code generated after game completion
+  const [secretCode, setSecretCode] = useState<string | null>(null);
+  const generateBuzzSecret = useGenerateBuzzSecret();
+
   // Phase state
   const [phase, setPhase] = useState<Phase>({ type: "idle" });
   const [scrambleComplete, setScrambleComplete] = useState(false);
@@ -1009,7 +1014,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   }, []);
 
   const handleNameSubmit = useCallback(
-    (name: string) => {
+    async (name: string) => {
       if (pendingScore !== null) {
         const newEntry: LeaderboardEntry = {
           name,
@@ -1019,11 +1024,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         setLeaderboard((prev) =>
           [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 3),
         );
+        // Generate a Buzz secret for the score
+        try {
+          const secret = await generateBuzzSecret.mutateAsync(
+            BigInt(Math.round(pendingScore)),
+          );
+          setSecretCode(secret);
+        } catch (err) {
+          console.error("Failed to generate buzz secret:", err);
+        }
         setPendingScore(null);
       }
       setPhase({ type: "idle" });
     },
-    [pendingScore],
+    [pendingScore, generateBuzzSecret],
   );
 
   // ── Phase: idle → intro (or game1 if skipMessages) ────────────────────────
@@ -1512,6 +1526,63 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         </div>
 
         {renderContent()}
+
+        {/* Buzz Secret Banner — persists until dismissed */}
+        {secretCode && (
+          <div
+            className="border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0"
+            data-ocid="text_game.buzz_secret_panel"
+          >
+            <div
+              className="text-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.45rem",
+                letterSpacing: "0.2em",
+              }}
+            >
+              YOUR BUZZ SECRET
+            </div>
+            <div className="flex items-center gap-2">
+              <code
+                className="flex-1 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-xs tracking-wide text-foreground select-all break-all min-w-0"
+                data-ocid="text_game.buzz_secret_code"
+              >
+                {secretCode}
+              </code>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0"
+                data-ocid="text_game.buzz_secret_copy_button"
+                aria-label="Copy secret code"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(secretCode);
+                }}
+              >
+                [COPY]
+              </button>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0"
+                data-ocid="text_game.buzz_secret_dismiss_button"
+                aria-label="Dismiss secret code"
+                onClick={() => setSecretCode(null)}
+              >
+                [×]
+              </button>
+            </div>
+            <div
+              className="text-muted-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.35rem",
+                letterSpacing: "0.1em",
+              }}
+            >
+              SAVE THIS CODE! VALID FOR 24 HOURS. REDEEM IN SETTINGS → WALLET.
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

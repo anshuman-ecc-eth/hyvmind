@@ -28465,6 +28465,7 @@ Service({
     []
   ),
   "generateApiKey": Func([], [Text], []),
+  "generateBuzzSecret": Func([Int], [Text], []),
   "getAllPublishedSourceGraphs": Func(
     [],
     [Vec(PublishedSourceGraphMeta)],
@@ -28487,6 +28488,7 @@ Service({
   "getMintSettings": Func([], [MintSettings], ["query"]),
   "getMyApiKey": Func([], [Opt(Text)], ["query"]),
   "getMyBuzzBalance": Func([], [BuzzScore], ["query"]),
+  "getMyTextGameBuzz": Func([], [Int], ["query"]),
   "getPublishedPaths": Func(
     [],
     [
@@ -28553,6 +28555,11 @@ Service({
     []
   ),
   "pullFromSwarm": Func([NodeId], [NodeId], []),
+  "redeemBuzzSecret": Func(
+    [Text],
+    [Variant({ "ok": Text, "err": Text })],
+    []
+  ),
   "requestApproval": Func([], [], []),
   "resetAllData": Func([], [], []),
   "revokeApiKey": Func([], [], []),
@@ -28880,6 +28887,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       []
     ),
     "generateApiKey": IDL2.Func([], [IDL2.Text], []),
+    "generateBuzzSecret": IDL2.Func([IDL2.Int], [IDL2.Text], []),
     "getAllPublishedSourceGraphs": IDL2.Func(
       [],
       [IDL2.Vec(PublishedSourceGraphMeta2)],
@@ -28902,6 +28910,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "getMintSettings": IDL2.Func([], [MintSettings2], ["query"]),
     "getMyApiKey": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
     "getMyBuzzBalance": IDL2.Func([], [BuzzScore2], ["query"]),
+    "getMyTextGameBuzz": IDL2.Func([], [IDL2.Int], ["query"]),
     "getPublishedPaths": IDL2.Func(
       [],
       [
@@ -28968,6 +28977,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
       []
     ),
     "pullFromSwarm": IDL2.Func([NodeId2], [NodeId2], []),
+    "redeemBuzzSecret": IDL2.Func(
+      [IDL2.Text],
+      [IDL2.Variant({ "ok": IDL2.Text, "err": IDL2.Text })],
+      []
+    ),
     "requestApproval": IDL2.Func([], [], []),
     "resetAllData": IDL2.Func([], [], []),
     "revokeApiKey": IDL2.Func([], [], []),
@@ -29185,6 +29199,20 @@ class Backend {
       return result;
     }
   }
+  async generateBuzzSecret(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.generateBuzzSecret(arg0);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.generateBuzzSecret(arg0);
+      return result;
+    }
+  }
   async getAllPublishedSourceGraphs() {
     if (this.processError) {
       try {
@@ -29322,6 +29350,20 @@ class Backend {
       }
     } else {
       const result = await this.actor.getMyBuzzBalance();
+      return result;
+    }
+  }
+  async getMyTextGameBuzz() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getMyTextGameBuzz();
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getMyTextGameBuzz();
       return result;
     }
   }
@@ -29633,6 +29675,20 @@ class Backend {
       return result;
     }
   }
+  async redeemBuzzSecret(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.redeemBuzzSecret(arg0);
+        return from_candid_variant_n70(this._uploadFile, this._downloadFile, result);
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.redeemBuzzSecret(arg0);
+      return from_candid_variant_n70(this._uploadFile, this._downloadFile, result);
+    }
+  }
   async requestApproval() {
     if (this.processError) {
       try {
@@ -29678,14 +29734,14 @@ class Backend {
   async saveCallerUserProfile(arg0) {
     if (this.processError) {
       try {
-        const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n70(this._uploadFile, this._downloadFile, arg0));
+        const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n71(this._uploadFile, this._downloadFile, arg0));
         return result;
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n70(this._uploadFile, this._downloadFile, arg0));
+      const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n71(this._uploadFile, this._downloadFile, arg0));
       return result;
     }
   }
@@ -29693,27 +29749,27 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.sendMessage(arg0, arg1);
-        return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+        return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.sendMessage(arg0, arg1);
-      return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+      return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
     }
   }
   async setApproval(arg0, arg1) {
     if (this.processError) {
       try {
-        const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n73(this._uploadFile, this._downloadFile, arg1));
+        const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n74(this._uploadFile, this._downloadFile, arg1));
         return result;
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n73(this._uploadFile, this._downloadFile, arg1));
+      const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n74(this._uploadFile, this._downloadFile, arg1));
       return result;
     }
   }
@@ -29735,14 +29791,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.setTelegramConfig(arg0, arg1);
-        return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+        return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.setTelegramConfig(arg0, arg1);
-      return from_candid_variant_n72(this._uploadFile, this._downloadFile, result);
+      return from_candid_variant_n73(this._uploadFile, this._downloadFile, result);
     }
   }
   async track_api_request(arg0) {
@@ -30079,7 +30135,16 @@ function from_candid_variant_n69(_uploadFile, _downloadFile, value) {
     update: value.update
   } : value;
 }
-function from_candid_variant_n72(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n70(_uploadFile, _downloadFile, value) {
+  return "ok" in value ? {
+    __kind__: "ok",
+    ok: value.ok
+  } : "err" in value ? {
+    __kind__: "err",
+    err: value.err
+  } : value;
+}
+function from_candid_variant_n73(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -30124,8 +30189,8 @@ function from_candid_vec_n62(_uploadFile, _downloadFile, value) {
 function from_candid_vec_n66(_uploadFile, _downloadFile, value) {
   return value.map((x3) => from_candid_NodeOperation_n67(_uploadFile, _downloadFile, x3));
 }
-function to_candid_ApprovalStatus_n73(_uploadFile, _downloadFile, value) {
-  return to_candid_variant_n74(_uploadFile, _downloadFile, value);
+function to_candid_ApprovalStatus_n74(_uploadFile, _downloadFile, value) {
+  return to_candid_variant_n75(_uploadFile, _downloadFile, value);
 }
 function to_candid_MintCollectibleRequest_n55(_uploadFile, _downloadFile, value) {
   return to_candid_record_n56(_uploadFile, _downloadFile, value);
@@ -30136,8 +30201,8 @@ function to_candid_PublishSourceGraphInput_n3(_uploadFile, _downloadFile, value)
 function to_candid_SourceGraphNodeInput_n6(_uploadFile, _downloadFile, value) {
   return to_candid_record_n7(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n70(_uploadFile, _downloadFile, value) {
-  return to_candid_record_n71(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n71(_uploadFile, _downloadFile, value) {
+  return to_candid_record_n72(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile, _downloadFile, value) {
   return to_candid_variant_n2(_uploadFile, _downloadFile, value);
@@ -30166,7 +30231,7 @@ function to_candid_record_n7(_uploadFile, _downloadFile, value) {
     nodeType: value.nodeType
   };
 }
-function to_candid_record_n71(_uploadFile, _downloadFile, value) {
+function to_candid_record_n72(_uploadFile, _downloadFile, value) {
   return {
     name: value.name,
     socialUrl: value.socialUrl ? candid_some(value.socialUrl) : candid_none()
@@ -30188,7 +30253,7 @@ function to_candid_variant_n57(_uploadFile, _downloadFile, value) {
     interpretationToken: null
   } : value;
 }
-function to_candid_variant_n74(_uploadFile, _downloadFile, value) {
+function to_candid_variant_n75(_uploadFile, _downloadFile, value) {
   return value == "pending" ? {
     pending: null
   } : value == "approved" ? {
@@ -32742,54 +32807,77 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$i = [
+const __iconNode$k = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-const ArrowLeft = createLucideIcon("arrow-left", __iconNode$i);
+const ArrowLeft = createLucideIcon("arrow-left", __iconNode$k);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$h = [
+const __iconNode$j = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "m12 5 7 7-7 7", key: "xquz4c" }]
 ];
-const ArrowRight = createLucideIcon("arrow-right", __iconNode$h);
+const ArrowRight = createLucideIcon("arrow-right", __iconNode$j);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$g = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$g);
+const __iconNode$i = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$i);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$f = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$f);
+const __iconNode$h = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$h);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$e = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-const ChevronRight = createLucideIcon("chevron-right", __iconNode$e);
+const __iconNode$g = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+const ChevronRight = createLucideIcon("chevron-right", __iconNode$g);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$d = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
-const ChevronUp = createLucideIcon("chevron-up", __iconNode$d);
+const __iconNode$f = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
+const ChevronUp = createLucideIcon("chevron-up", __iconNode$f);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$e = [
+  ["path", { d: "M21.801 10A10 10 0 1 1 17 3.335", key: "yps3ct" }],
+  ["path", { d: "m9 11 3 3L22 4", key: "1pflzl" }]
+];
+const CircleCheckBig = createLucideIcon("circle-check-big", __iconNode$e);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$d = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
+  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
+];
+const CircleX = createLucideIcon("circle-x", __iconNode$d);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -35734,6 +35822,40 @@ function useIsCallerAdmin() {
       return actor.isCallerAdmin();
     },
     enabled: !!actor && !isFetching
+  });
+}
+function useGenerateBuzzSecret() {
+  const { actor } = useBackendActor$1();
+  return useMutation({
+    mutationFn: async (score) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.generateBuzzSecret(score);
+    }
+  });
+}
+function useRedeemBuzzSecret() {
+  const { actor } = useBackendActor$1();
+  const queryClient2 = useQueryClient();
+  return useMutation({
+    mutationFn: async (secret) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.redeemBuzzSecret(secret);
+    },
+    onSuccess: () => {
+      void queryClient2.invalidateQueries({ queryKey: ["myTextGameBuzz"] });
+    }
+  });
+}
+function useGetMyTextGameBuzz() {
+  const { actor, isFetching } = useBackendActor$1();
+  const { identity: identity2 } = useInternetIdentity();
+  return useQuery({
+    queryKey: ["myTextGameBuzz"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return actor.getMyTextGameBuzz();
+    },
+    enabled: !!actor && !isFetching && !!identity2
   });
 }
 function useResetAllData() {
@@ -56034,6 +56156,120 @@ function useSettings() {
     setFontSize
   };
 }
+function CreateBuzzModal({ isOpen, onClose }) {
+  const [secret, setSecret] = reactExports.useState("");
+  const [successMsg, setSuccessMsg] = reactExports.useState(null);
+  const [errorMsg, setErrorMsg] = reactExports.useState(null);
+  const redeemBuzzSecret = useRedeemBuzzSecret();
+  const handleSubmit = async (e2) => {
+    e2.preventDefault();
+    if (!secret.trim()) return;
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    try {
+      const result = await redeemBuzzSecret.mutateAsync(secret.trim());
+      if ("ok" in result) {
+        setSuccessMsg(result.ok);
+        setSecret("");
+      } else {
+        setErrorMsg(result.err);
+      }
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Failed to redeem secret"
+      );
+    }
+  };
+  const handleOpenChange = (open) => {
+    if (!open) {
+      setSecret("");
+      setSuccessMsg(null);
+      setErrorMsg(null);
+      onClose();
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open: isOpen, onOpenChange: handleOpenChange, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "sm:max-w-md", "data-ocid": "create_buzz.dialog", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(DialogHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogTitle, { children: "Create Buzz" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4 pt-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Enter a Buzz secret code from the text game to add Buzz to your wallet. Codes are valid for 24 hours and can only be used once." }),
+      successMsg && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "flex items-start gap-2 rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400",
+          "data-ocid": "create_buzz.success_state",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheckBig, { className: "mt-0.5 h-4 w-4 shrink-0" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: successMsg })
+          ]
+        }
+      ),
+      errorMsg && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive",
+          "data-ocid": "create_buzz.error_state",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CircleX, { className: "mt-0.5 h-4 w-4 shrink-0" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: errorMsg })
+          ]
+        }
+      ),
+      !successMsg && /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { htmlFor: "buzz-secret-input", children: "Secret Code" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Input,
+            {
+              id: "buzz-secret-input",
+              value: secret,
+              onChange: (e2) => setSecret(e2.target.value),
+              placeholder: "buzz-xxxxxx-xxxxxxxxxx",
+              className: "font-mono text-sm",
+              disabled: redeemBuzzSecret.isPending,
+              "data-ocid": "create_buzz.input",
+              autoComplete: "off",
+              autoFocus: true
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-end gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Button,
+            {
+              type: "button",
+              variant: "outline",
+              onClick: handleOpenChange.bind(null, false),
+              disabled: redeemBuzzSecret.isPending,
+              "data-ocid": "create_buzz.cancel_button",
+              children: "Cancel"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            Button,
+            {
+              type: "submit",
+              disabled: !secret.trim() || redeemBuzzSecret.isPending,
+              "data-ocid": "create_buzz.submit_button",
+              children: redeemBuzzSecret.isPending ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-4 w-4 animate-spin" }),
+                "Redeeming..."
+              ] }) : "Create Buzz"
+            }
+          )
+        ] })
+      ] }),
+      successMsg && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Button,
+        {
+          type: "button",
+          onClick: handleOpenChange.bind(null, false),
+          "data-ocid": "create_buzz.close_button",
+          children: "Done"
+        }
+      ) })
+    ] })
+  ] }) });
+}
 function maskApiKey(key) {
   if (key.length < 8) return "••••••••••••••••";
   return `${key.slice(0, 4)}••••••••••••••••${key.slice(-4)}`;
@@ -56045,6 +56281,8 @@ function SettingsView() {
   const rawActor = useActor(createActor);
   const actor = rawActor.actor;
   const { fontPairing, setFontPairing, fontSize, setFontSize } = useSettings();
+  const [createBuzzOpen, setCreateBuzzOpen] = reactExports.useState(false);
+  const { data: textGameBuzz } = useGetMyTextGameBuzz();
   const [profileName, setProfileName] = reactExports.useState("");
   const [socialUrl, setSocialUrl] = reactExports.useState("");
   const [apiKey, setApiKey] = reactExports.useState(null);
@@ -56368,7 +56606,56 @@ function SettingsView() {
           }
         )
       ] })
-    ] })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-4", "data-ocid": "settings.wallet.section", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Wallet" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Manage your Buzz balance." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "p",
+            {
+              className: "text-sm font-medium",
+              "data-ocid": "settings.wallet.buzz_balance",
+              children: [
+                textGameBuzz !== void 0 ? textGameBuzz.toString() : "0",
+                " ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", children: "Buzz" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "p",
+            {
+              className: "text-sm text-muted-foreground",
+              "data-ocid": "settings.wallet.trust_balance",
+              children: [
+                "0 ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Trust" })
+              ]
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Button,
+          {
+            variant: "outline",
+            size: "sm",
+            onClick: () => setCreateBuzzOpen(true),
+            "data-ocid": "settings.wallet.create_buzz_button",
+            children: "Create Buzz"
+          }
+        )
+      ] }) })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      CreateBuzzModal,
+      {
+        isOpen: createBuzzOpen,
+        onClose: () => setCreateBuzzOpen(false)
+      }
+    )
   ] }) });
 }
 const TABS = [
@@ -67641,6 +67928,8 @@ function TextGameModal({ onComplete }) {
   onCompleteRef.current = onComplete;
   const { resolvedTheme } = z$2();
   const isLight2 = resolvedTheme === "light";
+  const [secretCode, setSecretCode] = reactExports.useState(null);
+  const generateBuzzSecret = useGenerateBuzzSecret();
   const [phase, setPhase] = reactExports.useState({ type: "idle" });
   const [scrambleComplete, setScrambleComplete] = reactExports.useState(false);
   const [settings, setSettings] = reactExports.useState(() => {
@@ -67721,7 +68010,7 @@ function TextGameModal({ onComplete }) {
     setPhase({ type: "idle" });
   }, []);
   const handleNameSubmit = reactExports.useCallback(
-    (name) => {
+    async (name) => {
       if (pendingScore !== null) {
         const newEntry = {
           name,
@@ -67731,11 +68020,19 @@ function TextGameModal({ onComplete }) {
         setLeaderboard(
           (prev) => [...prev, newEntry].sort((a2, b2) => b2.score - a2.score).slice(0, 3)
         );
+        try {
+          const secret = await generateBuzzSecret.mutateAsync(
+            BigInt(Math.round(pendingScore))
+          );
+          setSecretCode(secret);
+        } catch (err) {
+          console.error("Failed to generate buzz secret:", err);
+        }
         setPendingScore(null);
       }
       setPhase({ type: "idle" });
     },
-    [pendingScore]
+    [pendingScore, generateBuzzSecret]
   );
   const handleStart = reactExports.useCallback(() => {
     if (settings.skipMessages) {
@@ -68182,7 +68479,74 @@ function TextGameModal({ onComplete }) {
               }
             )
           ] }),
-          renderContent()
+          renderContent(),
+          secretCode && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0",
+              "data-ocid": "text_game.buzz_secret_panel",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "div",
+                  {
+                    className: "text-foreground",
+                    style: {
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.45rem",
+                      letterSpacing: "0.2em"
+                    },
+                    children: "YOUR BUZZ SECRET"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "code",
+                    {
+                      className: "flex-1 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-xs tracking-wide text-foreground select-all break-all min-w-0",
+                      "data-ocid": "text_game.buzz_secret_code",
+                      children: secretCode
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "button",
+                    {
+                      type: "button",
+                      className: "text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0",
+                      "data-ocid": "text_game.buzz_secret_copy_button",
+                      "aria-label": "Copy secret code",
+                      onClick: async () => {
+                        await navigator.clipboard.writeText(secretCode);
+                      },
+                      children: "[COPY]"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "button",
+                    {
+                      type: "button",
+                      className: "text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0",
+                      "data-ocid": "text_game.buzz_secret_dismiss_button",
+                      "aria-label": "Dismiss secret code",
+                      onClick: () => setSecretCode(null),
+                      children: "[×]"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "div",
+                  {
+                    className: "text-muted-foreground",
+                    style: {
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.35rem",
+                      letterSpacing: "0.1em"
+                    },
+                    children: "SAVE THIS CODE! VALID FOR 24 HOURS. REDEEM IN SETTINGS → WALLET."
+                  }
+                )
+              ]
+            }
+          )
         ]
       }
     )

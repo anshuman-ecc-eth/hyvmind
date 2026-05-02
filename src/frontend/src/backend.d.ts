@@ -311,6 +311,7 @@ export interface backendInterface {
         err: string;
     }>;
     generateApiKey(): Promise<string>;
+    generateBuzzSecret(score: bigint): Promise<string>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -327,6 +328,7 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyTextGameBuzz(): Promise<bigint>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -362,6 +364,13 @@ export interface backendInterface {
     mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
+    redeemBuzzSecret(secret: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     requestApproval(): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;

@@ -13,7 +13,6 @@ import Order "mo:core/Order";
 import Set "mo:core/Set";
 import Blob "mo:core/Blob";
 
-import Result "mo:core/Result";
 
 import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
@@ -32,6 +31,13 @@ actor {
   type Directionality = { #none; #unidirectional; #bidirectional };
   type Tag = Text;
   type BuzzScore = Int;
+
+  type BuzzSecretRecord = {
+    points : Int;
+    createdAt : Int;
+    expiresAt : Int;
+    isUsed : Bool;
+  };
 
   // Weighted types for deduplication
   type WeightedValue = {
@@ -383,6 +389,8 @@ actor {
   var swarmUpdates = Map.empty<Principal, List.List<SwarmUpdate>>();
   var voteDataMap = Map.empty<Text, VoteData>();
   var buzzScores = Map.empty<Principal, BuzzScore>();
+  var textGameBuzz = Map.empty<Principal, Int>();
+  var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
   let accessControlState = AccessControl.initState();
   let approvalState = UserApproval.initState(accessControlState);
   include MixinAuthorization(accessControlState);
@@ -1571,8 +1579,53 @@ actor {
     // Implementation needed
   };
 
-  func updateBuzzScore(user : Principal, delta : BuzzScore) {
-    // Implementation needed
+  func updateBuzzScore(user : Principal, delta : Int) {
+    let currentBalance = switch (textGameBuzz.get(user)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
+    textGameBuzz.add(user, currentBalance + delta);
+  };
+
+  public shared (msg) func generateBuzzSecret(score : Int) : async Text {
+    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText();
+    let now = Time.now();
+    let expiryTime = now + 86_400_000_000_000;
+    let record : BuzzSecretRecord = {
+      points = score;
+      createdAt = now;
+      expiresAt = expiryTime;
+      isUsed = false;
+    };
+    buzzSecrets.add(secretId, record);
+    secretId;
+  };
+
+  public shared (msg) func redeemBuzzSecret(secret : Text) : async { #ok : Text; #err : Text } {
+    if (msg.caller.isAnonymous()) {
+      return #err("Authentication required");
+    };
+    switch (buzzSecrets.get(secret)) {
+      case (null) { #err("Invalid secret code") };
+      case (?record) {
+        if (record.isUsed) {
+          return #err("Secret code already used");
+        };
+        if (Time.now() >= record.expiresAt) {
+          return #err("Secret code has expired");
+        };
+        updateBuzzScore(msg.caller, record.points);
+        buzzSecrets.add(secret, { record with isUsed = true });
+        #ok("Added " # record.points.toText() # " Buzz to your wallet");
+      };
+    };
+  };
+
+  public query (msg) func getMyTextGameBuzz() : async Int {
+    switch (textGameBuzz.get(msg.caller)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
   };
 
   func generateId(nodeType : Text, name : Text, creator : Principal) : NodeId {
