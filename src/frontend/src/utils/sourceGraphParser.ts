@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { parse as yamlParse } from "yaml";
 import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
@@ -6,18 +7,18 @@ import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
 // ---------------------------------------------------------------------------
 
 /** Parse minimal YAML-ish frontmatter (key: value lines only) */
-export function parseFrontmatter(text: string): Record<string, string> {
-  const result: Record<string, string> = {};
+export function parseFrontmatter(text: string): Record<string, unknown> {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return result;
-  for (const line of match[1].split(/\r?\n/)) {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
-    const key = line.slice(0, colonIdx).trim();
-    const value = line.slice(colonIdx + 1).trim();
-    if (key) result[key] = value;
+  if (!match) return {};
+  try {
+    const parsed = yamlParse(match[1]);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+    return {};
+  } catch {
+    return {};
   }
-  return result;
 }
 
 /** Strip frontmatter block from markdown text */
@@ -53,11 +54,12 @@ export const RESERVED_KEYS = new Set([
 
 /** Extract non-reserved frontmatter keys as custom attributes */
 export function extractCustomAttributes(
-  fm: Record<string, string>,
+  fm: Record<string, unknown>,
 ): Record<string, string> | undefined {
   const attrs: Record<string, string> = {};
   for (const [k, v] of Object.entries(fm)) {
-    if (!RESERVED_KEYS.has(k)) attrs[k] = v;
+    if (!RESERVED_KEYS.has(k))
+      attrs[k] = typeof v === "string" ? v : JSON.stringify(v);
   }
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
@@ -101,9 +103,9 @@ function extractInterpEntityReferences(content: string): string[] {
 async function getInheritedAttributes(
   zip: JSZip,
   folderPath: string,
-): Promise<Record<string, string>> {
+): Promise<Record<string, unknown>> {
   const segments = folderPath.split("/").filter(Boolean);
-  let merged: Record<string, string> = {};
+  let merged: Record<string, unknown> = {};
 
   for (let i = 1; i <= segments.length; i++) {
     const prefix = `${segments.slice(0, i).join("/")}/`;
@@ -158,7 +160,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       id: curationName,
       name: curationName,
       nodeType: "curation",
-      jurisdiction: curationAttrs.jurisdiction,
+      jurisdiction:
+        typeof curationAttrs.jurisdiction === "string"
+          ? curationAttrs.jurisdiction
+          : undefined,
       attributes: extractCustomAttributes(curationAttrs),
     };
     nodes.push(curationNode);
@@ -183,7 +188,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       const swarmPath = `${curationName}/${swarmName}`;
       const swarmAttrs = await getInheritedAttributes(zip, swarmPath);
 
-      const tagsRaw = swarmAttrs.tags ?? "";
+      const tagsRaw =
+        typeof swarmAttrs.tags === "string" ? swarmAttrs.tags : "";
       const tags = tagsRaw
         ? tagsRaw
             .split(",")
@@ -269,7 +275,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           id: `${curationName}@${swarmName}@${locationName}`,
           name: locationName,
           nodeType: "location",
-          source: locationAttrs.source,
+          source:
+            typeof locationAttrs.source === "string"
+              ? locationAttrs.source
+              : undefined,
           parentName: swarmName,
           attributes: extractCustomAttributes(locationAttrs),
         };
@@ -318,7 +327,10 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             name: entry.name,
             nodeType: "lawEntity",
             parentName: locationName,
-            jurisdiction: lawEntityAttrs.jurisdiction,
+            jurisdiction:
+              typeof lawEntityAttrs.jurisdiction === "string"
+                ? lawEntityAttrs.jurisdiction
+                : undefined,
             attributes: extractCustomAttributes(lawEntityAttrs),
           });
           edges.push({

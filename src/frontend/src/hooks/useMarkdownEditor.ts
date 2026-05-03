@@ -293,7 +293,7 @@ export function useMarkdownEditor() {
   const updateFile = useCallback(
     (
       fileId: string,
-      updates: { content?: string; frontmatter?: Record<string, string> },
+      updates: { content?: string; frontmatter?: Record<string, unknown> },
     ) => {
       setSession((prev) => {
         const existing = prev.nodes.get(fileId);

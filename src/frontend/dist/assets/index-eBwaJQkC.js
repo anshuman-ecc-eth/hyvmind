@@ -6378,13 +6378,13 @@ function createBlsPairing(fields, G1, G2, params) {
     }
     return ell;
   });
-  function millerLoopBatch(pairs, withFinalExponent = false) {
+  function millerLoopBatch(pairs2, withFinalExponent = false) {
     let f12 = Fp122.ONE;
-    if (pairs.length) {
-      const ellLen = pairs[0][0].length;
+    if (pairs2.length) {
+      const ellLen = pairs2[0][0].length;
       for (let i2 = 0; i2 < ellLen; i2++) {
         f12 = Fp122.sqr(f12);
-        for (const [ell, Px, Py] of pairs) {
+        for (const [ell, Px, Py] of pairs2) {
           for (const [c0, c1, c2] of ell[i2])
             f12 = lineFunction(c0, c1, c2, f12, Px, Py);
         }
@@ -6394,11 +6394,11 @@ function createBlsPairing(fields, G1, G2, params) {
       f12 = Fp122.conjugate(f12);
     return withFinalExponent ? Fp122.finalExponentiate(f12) : f12;
   }
-  function pairingBatch(pairs, withFinalExponent = true) {
+  function pairingBatch(pairs2, withFinalExponent = true) {
     const res = [];
-    normalizeZ(G1, pairs.map(({ g1 }) => g1));
-    normalizeZ(G2, pairs.map(({ g2 }) => g2));
-    for (const { g1, g2 } of pairs) {
+    normalizeZ(G1, pairs2.map(({ g1 }) => g1));
+    normalizeZ(G2, pairs2.map(({ g2 }) => g2));
+    for (const { g1, g2 } of pairs2) {
       if (g1.is0() || g2.is0())
         throw new Error("pairing is not available for ZERO point");
       g1.assertValidity();
@@ -9574,7 +9574,7 @@ const _HttpAgent = class _HttpAgent {
       }
       const { status, signatures = [], requestId } = queryResponse;
       for (const sig of signatures) {
-        const { timestamp, identity: identity2 } = sig;
+        const { timestamp: timestamp2, identity: identity2 } = sig;
         const nodeId = Principal$1.fromUint8Array(identity2).toText();
         let hash;
         if (status === QueryResponseStatus.Replied) {
@@ -9582,7 +9582,7 @@ const _HttpAgent = class _HttpAgent {
           hash = hashOfMap({
             status,
             reply,
-            timestamp: BigInt(timestamp),
+            timestamp: BigInt(timestamp2),
             request_id: requestId
           });
         } else if (status === QueryResponseStatus.Rejected) {
@@ -9592,7 +9592,7 @@ const _HttpAgent = class _HttpAgent {
             reject_code,
             reject_message,
             error_code,
-            timestamp: BigInt(timestamp),
+            timestamp: BigInt(timestamp2),
             request_id: requestId
           });
         } else {
@@ -31029,7 +31029,7 @@ function arrayRemove(array2, item) {
 function removeLinks(items) {
   return items.filter((item) => item.tagName !== "A");
 }
-var PORTAL_NAME$4 = "Portal";
+var PORTAL_NAME$5 = "Portal";
 var Portal$3 = reactExports.forwardRef((props, forwardedRef) => {
   var _a3;
   const { container: containerProp, ...portalProps } = props;
@@ -31038,7 +31038,7 @@ var Portal$3 = reactExports.forwardRef((props, forwardedRef) => {
   const container = containerProp || mounted && ((_a3 = globalThis == null ? void 0 : globalThis.document) == null ? void 0 : _a3.body);
   return container ? ReactDOM$2.createPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...portalProps, ref: forwardedRef }), container) : null;
 });
-Portal$3.displayName = PORTAL_NAME$4;
+Portal$3.displayName = PORTAL_NAME$5;
 function useStateMachine$1(initialState2, machine) {
   return reactExports.useReducer((state, event) => {
     const nextState = machine[state][event];
@@ -31494,7 +31494,7 @@ var zeroGap = {
   right: 0,
   gap: 0
 };
-var parse$2 = function(x3) {
+var parse$3 = function(x3) {
   return parseInt(x3 || "", 10) || 0;
 };
 var getOffset = function(gapMode) {
@@ -31502,7 +31502,7 @@ var getOffset = function(gapMode) {
   var left = cs[gapMode === "padding" ? "paddingLeft" : "marginLeft"];
   var top = cs[gapMode === "padding" ? "paddingTop" : "marginTop"];
   var right = cs[gapMode === "padding" ? "paddingRight" : "marginRight"];
-  return [parse$2(left), parse$2(top), parse$2(right)];
+  return [parse$3(left), parse$3(top), parse$3(right)];
 };
 var getGapWidth = function(gapMode) {
   if (gapMode === void 0) {
@@ -32004,11 +32004,11 @@ var Dialog$1 = (props) => {
   );
 };
 Dialog$1.displayName = DIALOG_NAME;
-var TRIGGER_NAME$2 = "DialogTrigger";
+var TRIGGER_NAME$3 = "DialogTrigger";
 var DialogTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...triggerProps } = props;
-    const context = useDialogContext(TRIGGER_NAME$2, __scopeDialog);
+    const context = useDialogContext(TRIGGER_NAME$3, __scopeDialog);
     const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
@@ -32025,17 +32025,17 @@ var DialogTrigger = reactExports.forwardRef(
     );
   }
 );
-DialogTrigger.displayName = TRIGGER_NAME$2;
-var PORTAL_NAME$3 = "DialogPortal";
-var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$3, {
+DialogTrigger.displayName = TRIGGER_NAME$3;
+var PORTAL_NAME$4 = "DialogPortal";
+var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$4, {
   forceMount: void 0
 });
 var DialogPortal$1 = (props) => {
   const { __scopeDialog, forceMount, children: children2, container } = props;
-  const context = useDialogContext(PORTAL_NAME$3, __scopeDialog);
+  const context = useDialogContext(PORTAL_NAME$4, __scopeDialog);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children2, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
 };
-DialogPortal$1.displayName = PORTAL_NAME$3;
+DialogPortal$1.displayName = PORTAL_NAME$4;
 var OVERLAY_NAME = "DialogOverlay";
 var DialogOverlay$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
@@ -32066,19 +32066,19 @@ var DialogOverlayImpl = reactExports.forwardRef(
     );
   }
 );
-var CONTENT_NAME$4 = "DialogContent";
+var CONTENT_NAME$5 = "DialogContent";
 var DialogContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const portalContext = usePortalContext$1(CONTENT_NAME$4, props.__scopeDialog);
+    const portalContext = usePortalContext$1(CONTENT_NAME$5, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const context = useDialogContext(CONTENT_NAME$5, props.__scopeDialog);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
   }
 );
-DialogContent$1.displayName = CONTENT_NAME$4;
+DialogContent$1.displayName = CONTENT_NAME$5;
 var DialogContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const context = useDialogContext(CONTENT_NAME$5, props.__scopeDialog);
     const contentRef = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
     reactExports.useEffect(() => {
@@ -32113,7 +32113,7 @@ var DialogContentModal = reactExports.forwardRef(
 );
 var DialogContentNonModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$4, props.__scopeDialog);
+    const context = useDialogContext(CONTENT_NAME$5, props.__scopeDialog);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     const hasPointerDownOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -32156,7 +32156,7 @@ var DialogContentNonModal = reactExports.forwardRef(
 var DialogContentImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$4, __scopeDialog);
+    const context = useDialogContext(CONTENT_NAME$5, __scopeDialog);
     const contentRef = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, contentRef);
     useFocusGuards();
@@ -32231,7 +32231,7 @@ function getState(open) {
 }
 var TITLE_WARNING_NAME = "DialogTitleWarning";
 var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
-  contentName: CONTENT_NAME$4,
+  contentName: CONTENT_NAME$5,
   titleName: TITLE_NAME,
   docsSlug: "dialog"
 });
@@ -38521,7 +38521,7 @@ function hasWindow() {
   return typeof window !== "undefined";
 }
 function getNodeName(node2) {
-  if (isNode(node2)) {
+  if (isNode$1(node2)) {
     return (node2.nodeName || "").toLowerCase();
   }
   return "#document";
@@ -38532,9 +38532,9 @@ function getWindow(node2) {
 }
 function getDocumentElement(node2) {
   var _ref;
-  return (_ref = (isNode(node2) ? node2.ownerDocument : node2.document) || window.document) == null ? void 0 : _ref.documentElement;
+  return (_ref = (isNode$1(node2) ? node2.ownerDocument : node2.document) || window.document) == null ? void 0 : _ref.documentElement;
 }
-function isNode(value) {
+function isNode$1(value) {
   if (!hasWindow()) {
     return false;
   }
@@ -39670,8 +39670,8 @@ var PopperAnchor = reactExports.forwardRef(
   }
 );
 PopperAnchor.displayName = ANCHOR_NAME$1;
-var CONTENT_NAME$3 = "PopperContent";
-var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$3);
+var CONTENT_NAME$4 = "PopperContent";
+var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$4);
 var PopperContent = reactExports.forwardRef(
   (props, forwardedRef) => {
     var _a3, _b3, _c2, _d2, _e3, _f2;
@@ -39691,7 +39691,7 @@ var PopperContent = reactExports.forwardRef(
       onPlaced,
       ...contentProps
     } = props;
-    const context = usePopperContext(CONTENT_NAME$3, __scopePopper);
+    const context = usePopperContext(CONTENT_NAME$4, __scopePopper);
     const [content2, setContent] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node2) => setContent(node2));
     const [arrow$12, setArrow] = reactExports.useState(null);
@@ -39814,8 +39814,8 @@ var PopperContent = reactExports.forwardRef(
     );
   }
 );
-PopperContent.displayName = CONTENT_NAME$3;
-var ARROW_NAME$3 = "PopperArrow";
+PopperContent.displayName = CONTENT_NAME$4;
+var ARROW_NAME$4 = "PopperArrow";
 var OPPOSITE_SIDE = {
   top: "bottom",
   right: "left",
@@ -39824,7 +39824,7 @@ var OPPOSITE_SIDE = {
 };
 var PopperArrow = reactExports.forwardRef(function PopperArrow2(props, forwardedRef) {
   const { __scopePopper, ...arrowProps } = props;
-  const contentContext = useContentContext(ARROW_NAME$3, __scopePopper);
+  const contentContext = useContentContext(ARROW_NAME$4, __scopePopper);
   const baseSide = OPPOSITE_SIDE[contentContext.placedSide];
   return (
     // we have to use an extra wrapper because `ResizeObserver` (used by `useSize`)
@@ -39869,7 +39869,7 @@ var PopperArrow = reactExports.forwardRef(function PopperArrow2(props, forwarded
     )
   );
 });
-PopperArrow.displayName = ARROW_NAME$3;
+PopperArrow.displayName = ARROW_NAME$4;
 function isNotNull(value) {
   return value !== null;
 }
@@ -39909,25 +39909,25 @@ function getSideAndAlignFromPlacement(placement) {
   const [side, align = "center"] = placement.split("-");
   return [side, align];
 }
-var Root2$2 = Popper;
+var Root2$3 = Popper;
 var Anchor = PopperAnchor;
 var Content = PopperContent;
 var Arrow = PopperArrow;
 var ENTRY_FOCUS = "rovingFocusGroup.onEntryFocus";
 var EVENT_OPTIONS = { bubbles: false, cancelable: true };
-var GROUP_NAME$3 = "RovingFocusGroup";
-var [Collection$2, useCollection$2, createCollectionScope$2] = createCollection(GROUP_NAME$3);
+var GROUP_NAME$4 = "RovingFocusGroup";
+var [Collection$3, useCollection$2, createCollectionScope$2] = createCollection(GROUP_NAME$4);
 var [createRovingFocusGroupContext, createRovingFocusGroupScope] = createContextScope(
-  GROUP_NAME$3,
+  GROUP_NAME$4,
   [createCollectionScope$2]
 );
-var [RovingFocusProvider, useRovingFocusContext] = createRovingFocusGroupContext(GROUP_NAME$3);
+var [RovingFocusProvider, useRovingFocusContext] = createRovingFocusGroupContext(GROUP_NAME$4);
 var RovingFocusGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeRovingFocusGroup, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeRovingFocusGroup, children: /* @__PURE__ */ jsxRuntimeExports.jsx(RovingFocusGroupImpl, { ...props, ref: forwardedRef }) }) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$3.Provider, { scope: props.__scopeRovingFocusGroup, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$3.Slot, { scope: props.__scopeRovingFocusGroup, children: /* @__PURE__ */ jsxRuntimeExports.jsx(RovingFocusGroupImpl, { ...props, ref: forwardedRef }) }) });
   }
 );
-RovingFocusGroup.displayName = GROUP_NAME$3;
+RovingFocusGroup.displayName = GROUP_NAME$4;
 var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
   const {
     __scopeRovingFocusGroup,
@@ -39948,7 +39948,7 @@ var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
     prop: currentTabStopIdProp,
     defaultProp: defaultCurrentTabStopId ?? null,
     onChange: onCurrentTabStopIdChange,
-    caller: GROUP_NAME$3
+    caller: GROUP_NAME$4
   });
   const [isTabbingBackOut, setIsTabbingBackOut] = reactExports.useState(false);
   const handleEntryFocus = useCallbackRef$1(onEntryFocus);
@@ -40018,7 +40018,7 @@ var RovingFocusGroupImpl = reactExports.forwardRef((props, forwardedRef) => {
     }
   );
 });
-var ITEM_NAME$3 = "RovingFocusGroupItem";
+var ITEM_NAME$4 = "RovingFocusGroupItem";
 var RovingFocusGroupItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const {
@@ -40031,7 +40031,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     } = props;
     const autoId = useId();
     const id2 = tabStopId || autoId;
-    const context = useRovingFocusContext(ITEM_NAME$3, __scopeRovingFocusGroup);
+    const context = useRovingFocusContext(ITEM_NAME$4, __scopeRovingFocusGroup);
     const isCurrentTabStop = context.currentTabStopId === id2;
     const getItems = useCollection$2(__scopeRovingFocusGroup);
     const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context;
@@ -40042,7 +40042,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
       }
     }, [focusable, onFocusableItemAdd, onFocusableItemRemove]);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Collection$2.ItemSlot,
+      Collection$3.ItemSlot,
       {
         scope: __scopeRovingFocusGroup,
         id: id2,
@@ -40088,7 +40088,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     );
   }
 );
-RovingFocusGroupItem.displayName = ITEM_NAME$3;
+RovingFocusGroupItem.displayName = ITEM_NAME$4;
 var MAP_KEY_TO_FOCUS_INTENT = {
   ArrowLeft: "prev",
   ArrowUp: "prev",
@@ -40135,7 +40135,7 @@ var SUB_CLOSE_KEYS = {
   rtl: ["ArrowRight"]
 };
 var MENU_NAME = "Menu";
-var [Collection$1, useCollection$1, createCollectionScope$1] = createCollection(MENU_NAME);
+var [Collection$2, useCollection$1, createCollectionScope$1] = createCollection(MENU_NAME);
 var [createMenuContext, createMenuScope] = createContextScope(MENU_NAME, [
   createCollectionScope$1,
   createPopperScope,
@@ -40166,7 +40166,7 @@ var Menu = (props) => {
       document.removeEventListener("pointermove", handlePointer, { capture: true });
     };
   }, []);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$2, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$3, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     MenuProvider,
     {
       scope: __scopeMenu,
@@ -40198,30 +40198,30 @@ var MenuAnchor = reactExports.forwardRef(
   }
 );
 MenuAnchor.displayName = ANCHOR_NAME;
-var PORTAL_NAME$2 = "MenuPortal";
-var [PortalProvider, usePortalContext] = createMenuContext(PORTAL_NAME$2, {
+var PORTAL_NAME$3 = "MenuPortal";
+var [PortalProvider, usePortalContext] = createMenuContext(PORTAL_NAME$3, {
   forceMount: void 0
 });
 var MenuPortal = (props) => {
   const { __scopeMenu, forceMount, children: children2, container } = props;
-  const context = useMenuContext(PORTAL_NAME$2, __scopeMenu);
+  const context = useMenuContext(PORTAL_NAME$3, __scopeMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeMenu, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: children2 }) }) });
 };
-MenuPortal.displayName = PORTAL_NAME$2;
-var CONTENT_NAME$2 = "MenuContent";
-var [MenuContentProvider, useMenuContentContext] = createMenuContext(CONTENT_NAME$2);
+MenuPortal.displayName = PORTAL_NAME$3;
+var CONTENT_NAME$3 = "MenuContent";
+var [MenuContentProvider, useMenuContentContext] = createMenuContext(CONTENT_NAME$3);
 var MenuContent = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const portalContext = usePortalContext(CONTENT_NAME$2, props.__scopeMenu);
+    const portalContext = usePortalContext(CONTENT_NAME$3, props.__scopeMenu);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useMenuContext(CONTENT_NAME$2, props.__scopeMenu);
-    const rootContext = useMenuRootContext(CONTENT_NAME$2, props.__scopeMenu);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
+    const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
+    const rootContext = useMenuRootContext(CONTENT_NAME$3, props.__scopeMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
   }
 );
 var MenuRootContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useMenuContext(CONTENT_NAME$2, props.__scopeMenu);
+    const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
     reactExports.useEffect(() => {
@@ -40247,7 +40247,7 @@ var MenuRootContentModal = reactExports.forwardRef(
   }
 );
 var MenuRootContentNonModal = reactExports.forwardRef((props, forwardedRef) => {
-  const context = useMenuContext(CONTENT_NAME$2, props.__scopeMenu);
+  const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     MenuContentImpl,
     {
@@ -40279,8 +40279,8 @@ var MenuContentImpl = reactExports.forwardRef(
       disableOutsideScroll,
       ...contentProps
     } = props;
-    const context = useMenuContext(CONTENT_NAME$2, __scopeMenu);
-    const rootContext = useMenuRootContext(CONTENT_NAME$2, __scopeMenu);
+    const context = useMenuContext(CONTENT_NAME$3, __scopeMenu);
+    const rootContext = useMenuRootContext(CONTENT_NAME$3, __scopeMenu);
     const popperScope = usePopperScope$1(__scopeMenu);
     const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeMenu);
     const getItems = useCollection$1(__scopeMenu);
@@ -40447,31 +40447,31 @@ var MenuContentImpl = reactExports.forwardRef(
     );
   }
 );
-MenuContent.displayName = CONTENT_NAME$2;
-var GROUP_NAME$2 = "MenuGroup";
+MenuContent.displayName = CONTENT_NAME$3;
+var GROUP_NAME$3 = "MenuGroup";
 var MenuGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...groupProps } = props;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { role: "group", ...groupProps, ref: forwardedRef });
   }
 );
-MenuGroup.displayName = GROUP_NAME$2;
-var LABEL_NAME$2 = "MenuLabel";
+MenuGroup.displayName = GROUP_NAME$3;
+var LABEL_NAME$3 = "MenuLabel";
 var MenuLabel = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...labelProps } = props;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...labelProps, ref: forwardedRef });
   }
 );
-MenuLabel.displayName = LABEL_NAME$2;
-var ITEM_NAME$2 = "MenuItem";
+MenuLabel.displayName = LABEL_NAME$3;
+var ITEM_NAME$3 = "MenuItem";
 var ITEM_SELECT = "menu.itemSelect";
 var MenuItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { disabled = false, onSelect, ...itemProps } = props;
     const ref = reactExports.useRef(null);
-    const rootContext = useMenuRootContext(ITEM_NAME$2, props.__scopeMenu);
-    const contentContext = useMenuContentContext(ITEM_NAME$2, props.__scopeMenu);
+    const rootContext = useMenuRootContext(ITEM_NAME$3, props.__scopeMenu);
+    const contentContext = useMenuContentContext(ITEM_NAME$3, props.__scopeMenu);
     const composedRefs = useComposedRefs(forwardedRef, ref);
     const isPointerDownRef = reactExports.useRef(false);
     const handleSelect = () => {
@@ -40515,11 +40515,11 @@ var MenuItem = reactExports.forwardRef(
     );
   }
 );
-MenuItem.displayName = ITEM_NAME$2;
+MenuItem.displayName = ITEM_NAME$3;
 var MenuItemImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, disabled = false, textValue, ...itemProps } = props;
-    const contentContext = useMenuContentContext(ITEM_NAME$2, __scopeMenu);
+    const contentContext = useMenuContentContext(ITEM_NAME$3, __scopeMenu);
     const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeMenu);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
@@ -40532,7 +40532,7 @@ var MenuItemImpl = reactExports.forwardRef(
       }
     }, [itemProps.children]);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Collection$1.ItemSlot,
+      Collection$2.ItemSlot,
       {
         scope: __scopeMenu,
         disabled,
@@ -40572,7 +40572,7 @@ var MenuItemImpl = reactExports.forwardRef(
     );
   }
 );
-var CHECKBOX_ITEM_NAME$1 = "MenuCheckboxItem";
+var CHECKBOX_ITEM_NAME$2 = "MenuCheckboxItem";
 var MenuCheckboxItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { checked = false, onCheckedChange, ...checkboxItemProps } = props;
@@ -40593,10 +40593,10 @@ var MenuCheckboxItem = reactExports.forwardRef(
     ) });
   }
 );
-MenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME$1;
-var RADIO_GROUP_NAME$1 = "MenuRadioGroup";
+MenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME$2;
+var RADIO_GROUP_NAME$2 = "MenuRadioGroup";
 var [RadioGroupProvider, useRadioGroupContext] = createMenuContext(
-  RADIO_GROUP_NAME$1,
+  RADIO_GROUP_NAME$2,
   { value: void 0, onValueChange: () => {
   } }
 );
@@ -40607,12 +40607,12 @@ var MenuRadioGroup = reactExports.forwardRef(
     return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroupProvider, { scope: props.__scopeMenu, value, onValueChange: handleValueChange, children: /* @__PURE__ */ jsxRuntimeExports.jsx(MenuGroup, { ...groupProps, ref: forwardedRef }) });
   }
 );
-MenuRadioGroup.displayName = RADIO_GROUP_NAME$1;
-var RADIO_ITEM_NAME$1 = "MenuRadioItem";
+MenuRadioGroup.displayName = RADIO_GROUP_NAME$2;
+var RADIO_ITEM_NAME$2 = "MenuRadioItem";
 var MenuRadioItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { value, ...radioItemProps } = props;
-    const context = useRadioGroupContext(RADIO_ITEM_NAME$1, props.__scopeMenu);
+    const context = useRadioGroupContext(RADIO_ITEM_NAME$2, props.__scopeMenu);
     const checked = value === context.value;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicatorProvider, { scope: props.__scopeMenu, checked, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuItem,
@@ -40634,7 +40634,7 @@ var MenuRadioItem = reactExports.forwardRef(
     ) });
   }
 );
-MenuRadioItem.displayName = RADIO_ITEM_NAME$1;
+MenuRadioItem.displayName = RADIO_ITEM_NAME$2;
 var ITEM_INDICATOR_NAME$1 = "MenuItemIndicator";
 var [ItemIndicatorProvider, useItemIndicatorContext] = createMenuContext(
   ITEM_INDICATOR_NAME$1,
@@ -40661,7 +40661,7 @@ var MenuItemIndicator = reactExports.forwardRef(
   }
 );
 MenuItemIndicator.displayName = ITEM_INDICATOR_NAME$1;
-var SEPARATOR_NAME$2 = "MenuSeparator";
+var SEPARATOR_NAME$3 = "MenuSeparator";
 var MenuSeparator = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...separatorProps } = props;
@@ -40676,8 +40676,8 @@ var MenuSeparator = reactExports.forwardRef(
     );
   }
 );
-MenuSeparator.displayName = SEPARATOR_NAME$2;
-var ARROW_NAME$2 = "MenuArrow";
+MenuSeparator.displayName = SEPARATOR_NAME$3;
+var ARROW_NAME$3 = "MenuArrow";
 var MenuArrow = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeMenu, ...arrowProps } = props;
@@ -40685,16 +40685,50 @@ var MenuArrow = reactExports.forwardRef(
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef });
   }
 );
-MenuArrow.displayName = ARROW_NAME$2;
-var SUB_NAME = "MenuSub";
-var [MenuSubProvider, useMenuSubContext] = createMenuContext(SUB_NAME);
-var SUB_TRIGGER_NAME$1 = "MenuSubTrigger";
+MenuArrow.displayName = ARROW_NAME$3;
+var SUB_NAME$1 = "MenuSub";
+var [MenuSubProvider, useMenuSubContext] = createMenuContext(SUB_NAME$1);
+var MenuSub = (props) => {
+  const { __scopeMenu, children: children2, open = false, onOpenChange } = props;
+  const parentMenuContext = useMenuContext(SUB_NAME$1, __scopeMenu);
+  const popperScope = usePopperScope$1(__scopeMenu);
+  const [trigger, setTrigger] = reactExports.useState(null);
+  const [content2, setContent] = reactExports.useState(null);
+  const handleOpenChange = useCallbackRef$1(onOpenChange);
+  reactExports.useEffect(() => {
+    if (parentMenuContext.open === false) handleOpenChange(false);
+    return () => handleOpenChange(false);
+  }, [parentMenuContext.open, handleOpenChange]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$3, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    MenuProvider,
+    {
+      scope: __scopeMenu,
+      open,
+      onOpenChange: handleOpenChange,
+      content: content2,
+      onContentChange: setContent,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        MenuSubProvider,
+        {
+          scope: __scopeMenu,
+          contentId: useId(),
+          triggerId: useId(),
+          trigger,
+          onTriggerChange: setTrigger,
+          children: children2
+        }
+      )
+    }
+  ) });
+};
+MenuSub.displayName = SUB_NAME$1;
+var SUB_TRIGGER_NAME$2 = "MenuSubTrigger";
 var MenuSubTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useMenuContext(SUB_TRIGGER_NAME$1, props.__scopeMenu);
-    const rootContext = useMenuRootContext(SUB_TRIGGER_NAME$1, props.__scopeMenu);
-    const subContext = useMenuSubContext(SUB_TRIGGER_NAME$1, props.__scopeMenu);
-    const contentContext = useMenuContentContext(SUB_TRIGGER_NAME$1, props.__scopeMenu);
+    const context = useMenuContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
+    const rootContext = useMenuRootContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
+    const subContext = useMenuSubContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
+    const contentContext = useMenuContentContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
     const openTimerRef = reactExports.useRef(null);
     const { pointerGraceTimerRef, onPointerGraceIntentChange } = contentContext;
     const scope = { __scopeMenu: props.__scopeMenu };
@@ -40791,18 +40825,18 @@ var MenuSubTrigger = reactExports.forwardRef(
     ) });
   }
 );
-MenuSubTrigger.displayName = SUB_TRIGGER_NAME$1;
-var SUB_CONTENT_NAME$1 = "MenuSubContent";
+MenuSubTrigger.displayName = SUB_TRIGGER_NAME$2;
+var SUB_CONTENT_NAME$2 = "MenuSubContent";
 var MenuSubContent = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const portalContext = usePortalContext(CONTENT_NAME$2, props.__scopeMenu);
+    const portalContext = usePortalContext(CONTENT_NAME$3, props.__scopeMenu);
     const { forceMount = portalContext.forceMount, ...subContentProps } = props;
-    const context = useMenuContext(CONTENT_NAME$2, props.__scopeMenu);
-    const rootContext = useMenuRootContext(CONTENT_NAME$2, props.__scopeMenu);
-    const subContext = useMenuSubContext(SUB_CONTENT_NAME$1, props.__scopeMenu);
+    const context = useMenuContext(CONTENT_NAME$3, props.__scopeMenu);
+    const rootContext = useMenuRootContext(CONTENT_NAME$3, props.__scopeMenu);
+    const subContext = useMenuSubContext(SUB_CONTENT_NAME$2, props.__scopeMenu);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuContentImpl,
       {
         id: subContext.contentId,
@@ -40841,7 +40875,7 @@ var MenuSubContent = reactExports.forwardRef(
     ) }) }) });
   }
 );
-MenuSubContent.displayName = SUB_CONTENT_NAME$1;
+MenuSubContent.displayName = SUB_CONTENT_NAME$2;
 function getOpenState(open) {
   return open ? "open" : "closed";
 }
@@ -40900,16 +40934,17 @@ function whenMouse(handler) {
 var Root3 = Menu;
 var Anchor2 = MenuAnchor;
 var Portal$1 = MenuPortal;
-var Content2$2 = MenuContent;
+var Content2$3 = MenuContent;
 var Group$1 = MenuGroup;
 var Label$2 = MenuLabel;
-var Item2$1 = MenuItem;
+var Item2$2 = MenuItem;
 var CheckboxItem = MenuCheckboxItem;
 var RadioGroup = MenuRadioGroup;
 var RadioItem = MenuRadioItem;
 var ItemIndicator$1 = MenuItemIndicator;
 var Separator$2 = MenuSeparator;
 var Arrow2 = MenuArrow;
+var Sub = MenuSub;
 var SubTrigger = MenuSubTrigger;
 var SubContent = MenuSubContent;
 var DROPDOWN_MENU_NAME = "DropdownMenu";
@@ -40917,7 +40952,7 @@ var [createDropdownMenuContext] = createContextScope(
   DROPDOWN_MENU_NAME,
   [createMenuScope]
 );
-var useMenuScope = createMenuScope();
+var useMenuScope$1 = createMenuScope();
 var [DropdownMenuProvider, useDropdownMenuContext] = createDropdownMenuContext(DROPDOWN_MENU_NAME);
 var DropdownMenu$1 = (props) => {
   const {
@@ -40929,7 +40964,7 @@ var DropdownMenu$1 = (props) => {
     onOpenChange,
     modal = true
   } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   const triggerRef = reactExports.useRef(null);
   const [open, setOpen] = useControllableState({
     prop: openProp,
@@ -40953,12 +40988,12 @@ var DropdownMenu$1 = (props) => {
   );
 };
 DropdownMenu$1.displayName = DROPDOWN_MENU_NAME;
-var TRIGGER_NAME$1 = "DropdownMenuTrigger";
+var TRIGGER_NAME$2 = "DropdownMenuTrigger";
 var DropdownMenuTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, disabled = false, ...triggerProps } = props;
-    const context = useDropdownMenuContext(TRIGGER_NAME$1, __scopeDropdownMenu);
-    const menuScope = useMenuScope(__scopeDropdownMenu);
+    const context = useDropdownMenuContext(TRIGGER_NAME$2, __scopeDropdownMenu);
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Anchor2, { asChild: true, ...menuScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
@@ -40988,23 +41023,23 @@ var DropdownMenuTrigger$1 = reactExports.forwardRef(
     ) });
   }
 );
-DropdownMenuTrigger$1.displayName = TRIGGER_NAME$1;
-var PORTAL_NAME$1 = "DropdownMenuPortal";
+DropdownMenuTrigger$1.displayName = TRIGGER_NAME$2;
+var PORTAL_NAME$2 = "DropdownMenuPortal";
 var DropdownMenuPortal = (props) => {
   const { __scopeDropdownMenu, ...portalProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$1, { ...menuScope, ...portalProps });
 };
-DropdownMenuPortal.displayName = PORTAL_NAME$1;
-var CONTENT_NAME$1 = "DropdownMenuContent";
+DropdownMenuPortal.displayName = PORTAL_NAME$2;
+var CONTENT_NAME$2 = "DropdownMenuContent";
 var DropdownMenuContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...contentProps } = props;
-    const context = useDropdownMenuContext(CONTENT_NAME$1, __scopeDropdownMenu);
-    const menuScope = useMenuScope(__scopeDropdownMenu);
+    const context = useDropdownMenuContext(CONTENT_NAME$2, __scopeDropdownMenu);
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Content2$2,
+      Content2$3,
       {
         id: context.contentId,
         "aria-labelledby": context.triggerId,
@@ -41038,89 +41073,89 @@ var DropdownMenuContent$1 = reactExports.forwardRef(
     );
   }
 );
-DropdownMenuContent$1.displayName = CONTENT_NAME$1;
-var GROUP_NAME$1 = "DropdownMenuGroup";
+DropdownMenuContent$1.displayName = CONTENT_NAME$2;
+var GROUP_NAME$2 = "DropdownMenuGroup";
 var DropdownMenuGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...groupProps } = props;
-    const menuScope = useMenuScope(__scopeDropdownMenu);
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Group$1, { ...menuScope, ...groupProps, ref: forwardedRef });
   }
 );
-DropdownMenuGroup.displayName = GROUP_NAME$1;
-var LABEL_NAME$1 = "DropdownMenuLabel";
+DropdownMenuGroup.displayName = GROUP_NAME$2;
+var LABEL_NAME$2 = "DropdownMenuLabel";
 var DropdownMenuLabel = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...labelProps } = props;
-    const menuScope = useMenuScope(__scopeDropdownMenu);
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Label$2, { ...menuScope, ...labelProps, ref: forwardedRef });
   }
 );
-DropdownMenuLabel.displayName = LABEL_NAME$1;
-var ITEM_NAME$1 = "DropdownMenuItem";
+DropdownMenuLabel.displayName = LABEL_NAME$2;
+var ITEM_NAME$2 = "DropdownMenuItem";
 var DropdownMenuItem$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...itemProps } = props;
-    const menuScope = useMenuScope(__scopeDropdownMenu);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Item2$1, { ...menuScope, ...itemProps, ref: forwardedRef });
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Item2$2, { ...menuScope, ...itemProps, ref: forwardedRef });
   }
 );
-DropdownMenuItem$1.displayName = ITEM_NAME$1;
-var CHECKBOX_ITEM_NAME = "DropdownMenuCheckboxItem";
+DropdownMenuItem$1.displayName = ITEM_NAME$2;
+var CHECKBOX_ITEM_NAME$1 = "DropdownMenuCheckboxItem";
 var DropdownMenuCheckboxItem = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...checkboxItemProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(CheckboxItem, { ...menuScope, ...checkboxItemProps, ref: forwardedRef });
 });
-DropdownMenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME;
-var RADIO_GROUP_NAME = "DropdownMenuRadioGroup";
+DropdownMenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME$1;
+var RADIO_GROUP_NAME$1 = "DropdownMenuRadioGroup";
 var DropdownMenuRadioGroup = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...radioGroupProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroup, { ...menuScope, ...radioGroupProps, ref: forwardedRef });
 });
-DropdownMenuRadioGroup.displayName = RADIO_GROUP_NAME;
-var RADIO_ITEM_NAME = "DropdownMenuRadioItem";
+DropdownMenuRadioGroup.displayName = RADIO_GROUP_NAME$1;
+var RADIO_ITEM_NAME$1 = "DropdownMenuRadioItem";
 var DropdownMenuRadioItem = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...radioItemProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioItem, { ...menuScope, ...radioItemProps, ref: forwardedRef });
 });
-DropdownMenuRadioItem.displayName = RADIO_ITEM_NAME;
-var INDICATOR_NAME = "DropdownMenuItemIndicator";
+DropdownMenuRadioItem.displayName = RADIO_ITEM_NAME$1;
+var INDICATOR_NAME$1 = "DropdownMenuItemIndicator";
 var DropdownMenuItemIndicator = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...itemIndicatorProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicator$1, { ...menuScope, ...itemIndicatorProps, ref: forwardedRef });
 });
-DropdownMenuItemIndicator.displayName = INDICATOR_NAME;
-var SEPARATOR_NAME$1 = "DropdownMenuSeparator";
+DropdownMenuItemIndicator.displayName = INDICATOR_NAME$1;
+var SEPARATOR_NAME$2 = "DropdownMenuSeparator";
 var DropdownMenuSeparator = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...separatorProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Separator$2, { ...menuScope, ...separatorProps, ref: forwardedRef });
 });
-DropdownMenuSeparator.displayName = SEPARATOR_NAME$1;
-var ARROW_NAME$1 = "DropdownMenuArrow";
+DropdownMenuSeparator.displayName = SEPARATOR_NAME$2;
+var ARROW_NAME$2 = "DropdownMenuArrow";
 var DropdownMenuArrow = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...arrowProps } = props;
-    const menuScope = useMenuScope(__scopeDropdownMenu);
+    const menuScope = useMenuScope$1(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow2, { ...menuScope, ...arrowProps, ref: forwardedRef });
   }
 );
-DropdownMenuArrow.displayName = ARROW_NAME$1;
-var SUB_TRIGGER_NAME = "DropdownMenuSubTrigger";
+DropdownMenuArrow.displayName = ARROW_NAME$2;
+var SUB_TRIGGER_NAME$1 = "DropdownMenuSubTrigger";
 var DropdownMenuSubTrigger = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...subTriggerProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(SubTrigger, { ...menuScope, ...subTriggerProps, ref: forwardedRef });
 });
-DropdownMenuSubTrigger.displayName = SUB_TRIGGER_NAME;
-var SUB_CONTENT_NAME = "DropdownMenuSubContent";
+DropdownMenuSubTrigger.displayName = SUB_TRIGGER_NAME$1;
+var SUB_CONTENT_NAME$1 = "DropdownMenuSubContent";
 var DropdownMenuSubContent = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeDropdownMenu, ...subContentProps } = props;
-  const menuScope = useMenuScope(__scopeDropdownMenu);
+  const menuScope = useMenuScope$1(__scopeDropdownMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     SubContent,
     {
@@ -41141,22 +41176,22 @@ var DropdownMenuSubContent = reactExports.forwardRef((props, forwardedRef) => {
     }
   );
 });
-DropdownMenuSubContent.displayName = SUB_CONTENT_NAME;
-var Root2$1 = DropdownMenu$1;
-var Trigger$1 = DropdownMenuTrigger$1;
-var Portal2 = DropdownMenuPortal;
-var Content2$1 = DropdownMenuContent$1;
-var Item2 = DropdownMenuItem$1;
+DropdownMenuSubContent.displayName = SUB_CONTENT_NAME$1;
+var Root2$2 = DropdownMenu$1;
+var Trigger$2 = DropdownMenuTrigger$1;
+var Portal2$1 = DropdownMenuPortal;
+var Content2$2 = DropdownMenuContent$1;
+var Item2$1 = DropdownMenuItem$1;
 function DropdownMenu({
   ...props
 }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$1, { "data-slot": "dropdown-menu", ...props });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$2, { "data-slot": "dropdown-menu", ...props });
 }
 function DropdownMenuTrigger({
   ...props
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Trigger$1,
+    Trigger$2,
     {
       "data-slot": "dropdown-menu-trigger",
       ...props
@@ -41168,8 +41203,8 @@ function DropdownMenuContent({
   sideOffset = 4,
   ...props
 }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal2, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Content2$1,
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal2$1, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Content2$2,
     {
       "data-slot": "dropdown-menu-content",
       sideOffset,
@@ -41188,7 +41223,7 @@ function DropdownMenuItem({
   ...props
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Item2,
+    Item2$1,
     {
       "data-slot": "dropdown-menu-item",
       "data-inset": inset,
@@ -42770,7 +42805,7 @@ const convertToExplicit = (query) => ({
     [key2]: query[key2]
   }))
 });
-function parse$1(query, options, {
+function parse$2(query, options, {
   auto = true
 } = {}) {
   const next = (query2) => {
@@ -43291,7 +43326,7 @@ class Fuse {
     return results;
   }
   _searchLogical(query) {
-    const expression = parse$1(query, this.options);
+    const expression = parse$2(query, this.options);
     const evaluate2 = (node2, item, idx) => {
       if (!("children" in node2)) {
         const {
@@ -43582,7 +43617,7 @@ Fuse.match = function(pattern, text2, options) {
   return searcher.searchIn(text2);
 };
 {
-  Fuse.parseQuery = parse$1;
+  Fuse.parseQuery = parse$2;
 }
 {
   register(ExtendedSearch);
@@ -44926,8 +44961,8 @@ Dispatch.prototype = dispatch.prototype = {
     }
     if (callback != null && typeof callback !== "function") throw new Error("invalid callback: " + callback);
     while (++i2 < n2) {
-      if (t2 = (typename = T2[i2]).type) _2[t2] = set$1(_2[t2], typename.name, callback);
-      else if (callback == null) for (t2 in _2) _2[t2] = set$1(_2[t2], typename.name, null);
+      if (t2 = (typename = T2[i2]).type) _2[t2] = set$2(_2[t2], typename.name, callback);
+      else if (callback == null) for (t2 in _2) _2[t2] = set$2(_2[t2], typename.name, null);
     }
     return this;
   },
@@ -44953,7 +44988,7 @@ function get$1(type, name) {
     }
   }
 }
-function set$1(type, name, callback) {
+function set$2(type, name, callback) {
   for (var i2 = 0, n2 = type.length; i2 < n2; ++i2) {
     if (type[i2].name === name) {
       type[i2] = noop2, type = type.slice(0, i2).concat(type.slice(i2 + 1));
@@ -45849,7 +45884,7 @@ function init(node2, id2) {
   if (schedule2.state > CREATED) throw new Error("too late; already scheduled");
   return schedule2;
 }
-function set(node2, id2) {
+function set$1(node2, id2) {
   var schedule2 = get(node2, id2);
   if (schedule2.state > STARTED) throw new Error("too late; already running");
   return schedule2;
@@ -45949,7 +45984,7 @@ function selection_interrupt(name) {
 function tweenRemove(id2, name) {
   var tween0, tween1;
   return function() {
-    var schedule2 = set(this, id2), tween = schedule2.tween;
+    var schedule2 = set$1(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = tween0 = tween;
       for (var i2 = 0, n2 = tween1.length; i2 < n2; ++i2) {
@@ -45967,7 +46002,7 @@ function tweenFunction(id2, name, value) {
   var tween0, tween1;
   if (typeof value !== "function") throw new Error();
   return function() {
-    var schedule2 = set(this, id2), tween = schedule2.tween;
+    var schedule2 = set$1(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = (tween0 = tween).slice();
       for (var t2 = { name, value }, i2 = 0, n2 = tween1.length; i2 < n2; ++i2) {
@@ -45998,7 +46033,7 @@ function transition_tween(name, value) {
 function tweenValue(transition, name, value) {
   var id2 = transition._id;
   transition.each(function() {
-    var schedule2 = set(this, id2);
+    var schedule2 = set$1(this, id2);
     (schedule2.value || (schedule2.value = {}))[name] = value.apply(this, arguments);
   });
   return function(node2) {
@@ -46111,12 +46146,12 @@ function transition_delay(value) {
 }
 function durationFunction(id2, value) {
   return function() {
-    set(this, id2).duration = +value.apply(this, arguments);
+    set$1(this, id2).duration = +value.apply(this, arguments);
   };
 }
 function durationConstant(id2, value) {
   return value = +value, function() {
-    set(this, id2).duration = value;
+    set$1(this, id2).duration = value;
   };
 }
 function transition_duration(value) {
@@ -46126,7 +46161,7 @@ function transition_duration(value) {
 function easeConstant(id2, value) {
   if (typeof value !== "function") throw new Error();
   return function() {
-    set(this, id2).ease = value;
+    set$1(this, id2).ease = value;
   };
 }
 function transition_ease(value) {
@@ -46137,7 +46172,7 @@ function easeVarying(id2, value) {
   return function() {
     var v2 = value.apply(this, arguments);
     if (typeof v2 !== "function") throw new Error();
-    set(this, id2).ease = v2;
+    set$1(this, id2).ease = v2;
   };
 }
 function transition_easeVarying(value) {
@@ -46177,7 +46212,7 @@ function start(name) {
   });
 }
 function onFunction(id2, name, listener) {
-  var on0, on1, sit = start(name) ? init : set;
+  var on0, on1, sit = start(name) ? init : set$1;
   return function() {
     var schedule2 = sit(this, id2), on = schedule2.on;
     if (on !== on0) (on1 = (on0 = on).copy()).on(name, listener);
@@ -46264,7 +46299,7 @@ function styleFunction(name, interpolate2, value) {
 function styleMaybeRemove(id2, name) {
   var on0, on1, listener0, key2 = "style." + name, event = "end." + key2, remove2;
   return function() {
-    var schedule2 = set(this, id2), on = schedule2.on, listener = schedule2.value[key2] == null ? remove2 || (remove2 = styleRemove(name)) : void 0;
+    var schedule2 = set$1(this, id2), on = schedule2.on, listener = schedule2.value[key2] == null ? remove2 || (remove2 = styleRemove(name)) : void 0;
     if (on !== on0 || listener0 !== listener) (on1 = (on0 = on).copy()).on(event, listener0 = listener);
     schedule2.on = on1;
   };
@@ -46355,7 +46390,7 @@ function transition_end() {
       if (--size2 === 0) resolve();
     } };
     that.each(function() {
-      var schedule2 = set(this, id2), on = schedule2.on;
+      var schedule2 = set$1(this, id2), on = schedule2.on;
       if (on !== on0) {
         on1 = (on0 = on).copy();
         on1._.cancel.push(cancel);
@@ -46945,11 +46980,11 @@ var nativeObjectToString = objectProto.toString;
 function objectToString(value) {
   return nativeObjectToString.call(value);
 }
-var nullTag = "[object Null]", undefinedTag = "[object Undefined]";
+var nullTag$1 = "[object Null]", undefinedTag = "[object Undefined]";
 var symToStringTag = Symbol$1 ? Symbol$1.toStringTag : void 0;
 function baseGetTag(value) {
   if (value == null) {
-    return value === void 0 ? undefinedTag : nullTag;
+    return value === void 0 ? undefinedTag : nullTag$1;
   }
   return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
 }
@@ -51372,18 +51407,18 @@ const utils = {
         (r2 * (c1._t1 + c1._t2) / 2 | 0) / r2 + "/" + (r2 * (c2._t1 + c2._t2) / 2 | 0) / r2
       ];
     }
-    let cc1 = c1.split(0.5), cc2 = c2.split(0.5), pairs = [
+    let cc1 = c1.split(0.5), cc2 = c2.split(0.5), pairs2 = [
       { left: cc1.left, right: cc2.left },
       { left: cc1.left, right: cc2.right },
       { left: cc1.right, right: cc2.right },
       { left: cc1.right, right: cc2.left }
     ];
-    pairs = pairs.filter(function(pair) {
+    pairs2 = pairs2.filter(function(pair) {
       return utils.bboxoverlap(pair.left.bbox(), pair.right.bbox());
     });
     let results = [];
-    if (pairs.length === 0) return results;
-    pairs.forEach(function(pair) {
+    if (pairs2.length === 0) return results;
+    pairs2.forEach(function(pair) {
       results = results.concat(
         utils.pairiteration(pair.left, pair.right, threshold)
       );
@@ -52119,16 +52154,16 @@ class Bezier {
     return results;
   }
   curveintersects(c1, c2, curveIntersectionThreshold) {
-    const pairs = [];
+    const pairs2 = [];
     c1.forEach(function(l2) {
       c2.forEach(function(r2) {
         if (l2.overlaps(r2)) {
-          pairs.push({ left: l2, right: r2 });
+          pairs2.push({ left: l2, right: r2 });
         }
       });
     });
     let intersections = [];
-    pairs.forEach(function(pair) {
+    pairs2.forEach(function(pair) {
       const result = utils.pairiteration(
         pair.left,
         pair.right,
@@ -54690,7 +54725,7 @@ VisuallyHidden.displayName = NAME$1;
 var OPEN_KEYS = [" ", "Enter", "ArrowUp", "ArrowDown"];
 var SELECTION_KEYS = [" ", "Enter"];
 var SELECT_NAME = "Select";
-var [Collection, useCollection, createCollectionScope] = createCollection(SELECT_NAME);
+var [Collection$1, useCollection, createCollectionScope] = createCollection(SELECT_NAME);
 var [createSelectContext] = createContextScope(SELECT_NAME, [
   createCollectionScope,
   createPopperScope
@@ -54736,7 +54771,7 @@ var Select$1 = (props) => {
   const isFormControl = trigger ? form || !!trigger.closest("form") : true;
   const [nativeOptionsSet, setNativeOptionsSet] = reactExports.useState(/* @__PURE__ */ new Set());
   const nativeSelectKey = Array.from(nativeOptionsSet).map((option2) => option2.props.value).join(";");
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$2, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$3, { ...popperScope, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
     SelectProvider,
     {
       required,
@@ -54756,7 +54791,7 @@ var Select$1 = (props) => {
       triggerPointerDownPosRef,
       disabled,
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Collection.Provider, { scope: __scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Provider, { scope: __scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
           SelectNativeOptionsProvider,
           {
             scope: props.__scopeSelect,
@@ -54797,12 +54832,12 @@ var Select$1 = (props) => {
   ) });
 };
 Select$1.displayName = SELECT_NAME;
-var TRIGGER_NAME = "SelectTrigger";
+var TRIGGER_NAME$1 = "SelectTrigger";
 var SelectTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, disabled = false, ...triggerProps } = props;
     const popperScope = usePopperScope(__scopeSelect);
-    const context = useSelectContext(TRIGGER_NAME, __scopeSelect);
+    const context = useSelectContext(TRIGGER_NAME$1, __scopeSelect);
     const isDisabled = context.disabled || disabled;
     const composedRefs = useComposedRefs(forwardedRef, context.onTriggerChange);
     const getItems = useCollection(__scopeSelect);
@@ -54874,7 +54909,7 @@ var SelectTrigger$1 = reactExports.forwardRef(
     ) });
   }
 );
-SelectTrigger$1.displayName = TRIGGER_NAME;
+SelectTrigger$1.displayName = TRIGGER_NAME$1;
 var VALUE_NAME = "SelectValue";
 var SelectValue$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
@@ -54906,15 +54941,15 @@ var SelectIcon = reactExports.forwardRef(
   }
 );
 SelectIcon.displayName = ICON_NAME;
-var PORTAL_NAME = "SelectPortal";
+var PORTAL_NAME$1 = "SelectPortal";
 var SelectPortal = (props) => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, ...props });
 };
-SelectPortal.displayName = PORTAL_NAME;
-var CONTENT_NAME = "SelectContent";
+SelectPortal.displayName = PORTAL_NAME$1;
+var CONTENT_NAME$1 = "SelectContent";
 var SelectContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useSelectContext(CONTENT_NAME, props.__scopeSelect);
+    const context = useSelectContext(CONTENT_NAME$1, props.__scopeSelect);
     const [fragment, setFragment] = reactExports.useState();
     useLayoutEffect2(() => {
       setFragment(new DocumentFragment());
@@ -54922,16 +54957,16 @@ var SelectContent$1 = reactExports.forwardRef(
     if (!context.open) {
       const frag = fragment;
       return frag ? reactDomExports.createPortal(
-        /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContentProvider, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection.Slot, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: props.children }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContentProvider, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: props.children }) }) }),
         frag
       ) : null;
     }
     return /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContentImpl, { ...props, ref: forwardedRef });
   }
 );
-SelectContent$1.displayName = CONTENT_NAME;
+SelectContent$1.displayName = CONTENT_NAME$1;
 var CONTENT_MARGIN = 10;
-var [SelectContentProvider, useSelectContentContext] = createSelectContext(CONTENT_NAME);
+var [SelectContentProvider, useSelectContentContext] = createSelectContext(CONTENT_NAME$1);
 var CONTENT_IMPL_NAME = "SelectContentImpl";
 var Slot = /* @__PURE__ */ createSlot$1("SelectContent.RemoveScroll");
 var SelectContentImpl = reactExports.forwardRef(
@@ -54957,7 +54992,7 @@ var SelectContentImpl = reactExports.forwardRef(
       //
       ...contentProps
     } = props;
-    const context = useSelectContext(CONTENT_NAME, __scopeSelect);
+    const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
     const [content2, setContent] = reactExports.useState(null);
     const [viewport, setViewport] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node2) => setContent(node2));
@@ -55172,8 +55207,8 @@ SelectContentImpl.displayName = CONTENT_IMPL_NAME;
 var ITEM_ALIGNED_POSITION_NAME = "SelectItemAlignedPosition";
 var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeSelect, onPlaced, ...popperProps } = props;
-  const context = useSelectContext(CONTENT_NAME, __scopeSelect);
-  const contentContext = useSelectContentContext(CONTENT_NAME, __scopeSelect);
+  const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
+  const contentContext = useSelectContentContext(CONTENT_NAME$1, __scopeSelect);
   const [contentWrapper, setContentWrapper] = reactExports.useState(null);
   const [content2, setContent] = reactExports.useState(null);
   const composedRefs = useComposedRefs(forwardedRef, (node2) => setContent(node2));
@@ -55367,7 +55402,7 @@ var SelectPopperPosition = reactExports.forwardRef((props, forwardedRef) => {
   );
 });
 SelectPopperPosition.displayName = POPPER_POSITION_NAME;
-var [SelectViewportProvider, useSelectViewportContext] = createSelectContext(CONTENT_NAME, {});
+var [SelectViewportProvider, useSelectViewportContext] = createSelectContext(CONTENT_NAME$1, {});
 var VIEWPORT_NAME$1 = "SelectViewport";
 var SelectViewport = reactExports.forwardRef(
   (props, forwardedRef) => {
@@ -55386,7 +55421,7 @@ var SelectViewport = reactExports.forwardRef(
           nonce
         }
       ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Collection.Slot, { scope: __scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$1.Slot, { scope: __scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         Primitive$1.div,
         {
           "data-radix-select-viewport": "",
@@ -55436,8 +55471,8 @@ var SelectViewport = reactExports.forwardRef(
   }
 );
 SelectViewport.displayName = VIEWPORT_NAME$1;
-var GROUP_NAME = "SelectGroup";
-var [SelectGroupContextProvider, useSelectGroupContext] = createSelectContext(GROUP_NAME);
+var GROUP_NAME$1 = "SelectGroup";
+var [SelectGroupContextProvider, useSelectGroupContext] = createSelectContext(GROUP_NAME$1);
 var SelectGroup = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...groupProps } = props;
@@ -55445,18 +55480,18 @@ var SelectGroup = reactExports.forwardRef(
     return /* @__PURE__ */ jsxRuntimeExports.jsx(SelectGroupContextProvider, { scope: __scopeSelect, id: groupId, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { role: "group", "aria-labelledby": groupId, ...groupProps, ref: forwardedRef }) });
   }
 );
-SelectGroup.displayName = GROUP_NAME;
-var LABEL_NAME = "SelectLabel";
+SelectGroup.displayName = GROUP_NAME$1;
+var LABEL_NAME$1 = "SelectLabel";
 var SelectLabel = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...labelProps } = props;
-    const groupContext = useSelectGroupContext(LABEL_NAME, __scopeSelect);
+    const groupContext = useSelectGroupContext(LABEL_NAME$1, __scopeSelect);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { id: groupContext.id, ...labelProps, ref: forwardedRef });
   }
 );
-SelectLabel.displayName = LABEL_NAME;
-var ITEM_NAME = "SelectItem";
-var [SelectItemContextProvider, useSelectItemContext] = createSelectContext(ITEM_NAME);
+SelectLabel.displayName = LABEL_NAME$1;
+var ITEM_NAME$1 = "SelectItem";
+var [SelectItemContextProvider, useSelectItemContext] = createSelectContext(ITEM_NAME$1);
 var SelectItem$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const {
@@ -55466,8 +55501,8 @@ var SelectItem$1 = reactExports.forwardRef(
       textValue: textValueProp,
       ...itemProps
     } = props;
-    const context = useSelectContext(ITEM_NAME, __scopeSelect);
-    const contentContext = useSelectContentContext(ITEM_NAME, __scopeSelect);
+    const context = useSelectContext(ITEM_NAME$1, __scopeSelect);
+    const contentContext = useSelectContentContext(ITEM_NAME$1, __scopeSelect);
     const isSelected = context.value === value;
     const [textValue, setTextValue] = reactExports.useState(textValueProp ?? "");
     const [isFocused, setIsFocused] = reactExports.useState(false);
@@ -55503,7 +55538,7 @@ var SelectItem$1 = reactExports.forwardRef(
           setTextValue((prevTextValue) => prevTextValue || ((node2 == null ? void 0 : node2.textContent) ?? "").trim());
         }, []),
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Collection.ItemSlot,
+          Collection$1.ItemSlot,
           {
             scope: __scopeSelect,
             value,
@@ -55563,7 +55598,7 @@ var SelectItem$1 = reactExports.forwardRef(
     );
   }
 );
-SelectItem$1.displayName = ITEM_NAME;
+SelectItem$1.displayName = ITEM_NAME$1;
 var ITEM_TEXT_NAME = "SelectItemText";
 var SelectItemText = reactExports.forwardRef(
   (props, forwardedRef) => {
@@ -55719,25 +55754,25 @@ var SelectScrollButtonImpl = reactExports.forwardRef((props, forwardedRef) => {
     }
   );
 });
-var SEPARATOR_NAME = "SelectSeparator";
+var SEPARATOR_NAME$1 = "SelectSeparator";
 var SelectSeparator = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...separatorProps } = props;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { "aria-hidden": true, ...separatorProps, ref: forwardedRef });
   }
 );
-SelectSeparator.displayName = SEPARATOR_NAME;
-var ARROW_NAME = "SelectArrow";
+SelectSeparator.displayName = SEPARATOR_NAME$1;
+var ARROW_NAME$1 = "SelectArrow";
 var SelectArrow = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...arrowProps } = props;
     const popperScope = usePopperScope(__scopeSelect);
-    const context = useSelectContext(ARROW_NAME, __scopeSelect);
-    const contentContext = useSelectContentContext(ARROW_NAME, __scopeSelect);
+    const context = useSelectContext(ARROW_NAME$1, __scopeSelect);
+    const contentContext = useSelectContentContext(ARROW_NAME$1, __scopeSelect);
     return context.open && contentContext.position === "popper" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef }) : null;
   }
 );
-SelectArrow.displayName = ARROW_NAME;
+SelectArrow.displayName = ARROW_NAME$1;
 var BUBBLE_INPUT_NAME = "SelectBubbleInput";
 var SelectBubbleInput = reactExports.forwardRef(
   ({ __scopeSelect, value, ...props }, forwardedRef) => {
@@ -55814,12 +55849,12 @@ function findNextItem(items, search2, currentItem) {
 function wrapArray(array2, startIndex) {
   return array2.map((_2, index2) => array2[(startIndex + index2) % array2.length]);
 }
-var Root2 = Select$1;
-var Trigger = SelectTrigger$1;
+var Root2$1 = Select$1;
+var Trigger$1 = SelectTrigger$1;
 var Value = SelectValue$1;
 var Icon = SelectIcon;
 var Portal = SelectPortal;
-var Content2 = SelectContent$1;
+var Content2$1 = SelectContent$1;
 var Viewport$1 = SelectViewport;
 var Item = SelectItem$1;
 var ItemText = SelectItemText;
@@ -55829,7 +55864,7 @@ var ScrollDownButton = SelectScrollDownButton$1;
 function Select({
   ...props
 }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2, { "data-slot": "select", ...props });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2$1, { "data-slot": "select", ...props });
 }
 function SelectValue({
   ...props
@@ -55843,7 +55878,7 @@ function SelectTrigger({
   ...props
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    Trigger,
+    Trigger$1,
     {
       "data-slot": "select-trigger",
       "data-size": size2,
@@ -55866,7 +55901,7 @@ function SelectContent({
   ...props
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    Content2,
+    Content2$1,
     {
       "data-slot": "select-content",
       className: cn(
@@ -68769,6 +68804,17 @@ function FileTree({
     }
   );
 }
+function formatValue(value) {
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
+}
+function parseValue(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return str;
+  }
+}
 function FrontmatterEditor({
   frontmatter,
   onChange: onChange15
@@ -68782,7 +68828,7 @@ function FrontmatterEditor({
     onChange15(updated);
   };
   const handleValueChange = (key2, value) => {
-    onChange15({ ...frontmatter, [key2]: value });
+    onChange15({ ...frontmatter, [key2]: parseValue(value) });
   };
   const handleRemove = (key2) => {
     const updated = { ...frontmatter };
@@ -68844,7 +68890,7 @@ function FrontmatterEditor({
                 {
                   type: "text",
                   "aria-label": "Frontmatter value",
-                  value,
+                  value: formatValue(value),
                   "data-ocid": `frontmatter_editor.value_input.${idx + 1}`,
                   className: "flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm",
                   onChange: (e2) => handleValueChange(key2, e2.target.value)
@@ -68915,6 +68961,428 @@ function GettingStarted({ onCreate, onImport }) {
     }
   );
 }
+var CONTEXT_MENU_NAME = "ContextMenu";
+var [createContextMenuContext] = createContextScope(CONTEXT_MENU_NAME, [
+  createMenuScope
+]);
+var useMenuScope = createMenuScope();
+var [ContextMenuProvider, useContextMenuContext] = createContextMenuContext(CONTEXT_MENU_NAME);
+var ContextMenu$1 = (props) => {
+  const { __scopeContextMenu, children: children2, onOpenChange, dir, modal = true } = props;
+  const [open, setOpen] = reactExports.useState(false);
+  const menuScope = useMenuScope(__scopeContextMenu);
+  const handleOpenChangeProp = useCallbackRef$1(onOpenChange);
+  const handleOpenChange = reactExports.useCallback(
+    (open2) => {
+      setOpen(open2);
+      handleOpenChangeProp(open2);
+    },
+    [handleOpenChangeProp]
+  );
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    ContextMenuProvider,
+    {
+      scope: __scopeContextMenu,
+      open,
+      onOpenChange: handleOpenChange,
+      modal,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Root3,
+        {
+          ...menuScope,
+          dir,
+          open,
+          onOpenChange: handleOpenChange,
+          modal,
+          children: children2
+        }
+      )
+    }
+  );
+};
+ContextMenu$1.displayName = CONTEXT_MENU_NAME;
+var TRIGGER_NAME = "ContextMenuTrigger";
+var ContextMenuTrigger$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, disabled = false, ...triggerProps } = props;
+    const context = useContextMenuContext(TRIGGER_NAME, __scopeContextMenu);
+    const menuScope = useMenuScope(__scopeContextMenu);
+    const pointRef = reactExports.useRef({ x: 0, y: 0 });
+    const virtualRef = reactExports.useRef({
+      getBoundingClientRect: () => DOMRect.fromRect({ width: 0, height: 0, ...pointRef.current })
+    });
+    const longPressTimerRef = reactExports.useRef(0);
+    const clearLongPress = reactExports.useCallback(
+      () => window.clearTimeout(longPressTimerRef.current),
+      []
+    );
+    const handleOpen = (event) => {
+      pointRef.current = { x: event.clientX, y: event.clientY };
+      context.onOpenChange(true);
+    };
+    reactExports.useEffect(() => clearLongPress, [clearLongPress]);
+    reactExports.useEffect(() => void (disabled && clearLongPress()), [disabled, clearLongPress]);
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Anchor2, { ...menuScope, virtualRef }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Primitive$1.span,
+        {
+          "data-state": context.open ? "open" : "closed",
+          "data-disabled": disabled ? "" : void 0,
+          ...triggerProps,
+          ref: forwardedRef,
+          style: { WebkitTouchCallout: "none", ...props.style },
+          onContextMenu: disabled ? props.onContextMenu : composeEventHandlers(props.onContextMenu, (event) => {
+            clearLongPress();
+            handleOpen(event);
+            event.preventDefault();
+          }),
+          onPointerDown: disabled ? props.onPointerDown : composeEventHandlers(
+            props.onPointerDown,
+            whenTouchOrPen((event) => {
+              clearLongPress();
+              longPressTimerRef.current = window.setTimeout(() => handleOpen(event), 700);
+            })
+          ),
+          onPointerMove: disabled ? props.onPointerMove : composeEventHandlers(props.onPointerMove, whenTouchOrPen(clearLongPress)),
+          onPointerCancel: disabled ? props.onPointerCancel : composeEventHandlers(props.onPointerCancel, whenTouchOrPen(clearLongPress)),
+          onPointerUp: disabled ? props.onPointerUp : composeEventHandlers(props.onPointerUp, whenTouchOrPen(clearLongPress))
+        }
+      )
+    ] });
+  }
+);
+ContextMenuTrigger$1.displayName = TRIGGER_NAME;
+var PORTAL_NAME = "ContextMenuPortal";
+var ContextMenuPortal = (props) => {
+  const { __scopeContextMenu, ...portalProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$1, { ...menuScope, ...portalProps });
+};
+ContextMenuPortal.displayName = PORTAL_NAME;
+var CONTENT_NAME = "ContextMenuContent";
+var ContextMenuContent$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, ...contentProps } = props;
+    const context = useContextMenuContext(CONTENT_NAME, __scopeContextMenu);
+    const menuScope = useMenuScope(__scopeContextMenu);
+    const hasInteractedOutsideRef = reactExports.useRef(false);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Content2$3,
+      {
+        ...menuScope,
+        ...contentProps,
+        ref: forwardedRef,
+        side: "right",
+        sideOffset: 2,
+        align: "start",
+        onCloseAutoFocus: (event) => {
+          var _a3;
+          (_a3 = props.onCloseAutoFocus) == null ? void 0 : _a3.call(props, event);
+          if (!event.defaultPrevented && hasInteractedOutsideRef.current) {
+            event.preventDefault();
+          }
+          hasInteractedOutsideRef.current = false;
+        },
+        onInteractOutside: (event) => {
+          var _a3;
+          (_a3 = props.onInteractOutside) == null ? void 0 : _a3.call(props, event);
+          if (!event.defaultPrevented && !context.modal) hasInteractedOutsideRef.current = true;
+        },
+        style: {
+          ...props.style,
+          // re-namespace exposed content custom properties
+          ...{
+            "--radix-context-menu-content-transform-origin": "var(--radix-popper-transform-origin)",
+            "--radix-context-menu-content-available-width": "var(--radix-popper-available-width)",
+            "--radix-context-menu-content-available-height": "var(--radix-popper-available-height)",
+            "--radix-context-menu-trigger-width": "var(--radix-popper-anchor-width)",
+            "--radix-context-menu-trigger-height": "var(--radix-popper-anchor-height)"
+          }
+        }
+      }
+    );
+  }
+);
+ContextMenuContent$1.displayName = CONTENT_NAME;
+var GROUP_NAME = "ContextMenuGroup";
+var ContextMenuGroup = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, ...groupProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Group$1, { ...menuScope, ...groupProps, ref: forwardedRef });
+  }
+);
+ContextMenuGroup.displayName = GROUP_NAME;
+var LABEL_NAME = "ContextMenuLabel";
+var ContextMenuLabel = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, ...labelProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Label$2, { ...menuScope, ...labelProps, ref: forwardedRef });
+  }
+);
+ContextMenuLabel.displayName = LABEL_NAME;
+var ITEM_NAME = "ContextMenuItem";
+var ContextMenuItem$1 = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, ...itemProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Item2$2, { ...menuScope, ...itemProps, ref: forwardedRef });
+  }
+);
+ContextMenuItem$1.displayName = ITEM_NAME;
+var CHECKBOX_ITEM_NAME = "ContextMenuCheckboxItem";
+var ContextMenuCheckboxItem = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...checkboxItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(CheckboxItem, { ...menuScope, ...checkboxItemProps, ref: forwardedRef });
+});
+ContextMenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME;
+var RADIO_GROUP_NAME = "ContextMenuRadioGroup";
+var ContextMenuRadioGroup = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...radioGroupProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioGroup, { ...menuScope, ...radioGroupProps, ref: forwardedRef });
+});
+ContextMenuRadioGroup.displayName = RADIO_GROUP_NAME;
+var RADIO_ITEM_NAME = "ContextMenuRadioItem";
+var ContextMenuRadioItem = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...radioItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(RadioItem, { ...menuScope, ...radioItemProps, ref: forwardedRef });
+});
+ContextMenuRadioItem.displayName = RADIO_ITEM_NAME;
+var INDICATOR_NAME = "ContextMenuItemIndicator";
+var ContextMenuItemIndicator = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...itemIndicatorProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicator$1, { ...menuScope, ...itemIndicatorProps, ref: forwardedRef });
+});
+ContextMenuItemIndicator.displayName = INDICATOR_NAME;
+var SEPARATOR_NAME = "ContextMenuSeparator";
+var ContextMenuSeparator$1 = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...separatorProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Separator$2, { ...menuScope, ...separatorProps, ref: forwardedRef });
+});
+ContextMenuSeparator$1.displayName = SEPARATOR_NAME;
+var ARROW_NAME = "ContextMenuArrow";
+var ContextMenuArrow = reactExports.forwardRef(
+  (props, forwardedRef) => {
+    const { __scopeContextMenu, ...arrowProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow2, { ...menuScope, ...arrowProps, ref: forwardedRef });
+  }
+);
+ContextMenuArrow.displayName = ARROW_NAME;
+var SUB_NAME = "ContextMenuSub";
+var ContextMenuSub$1 = (props) => {
+  const { __scopeContextMenu, children: children2, onOpenChange, open: openProp, defaultOpen } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  const [open, setOpen] = useControllableState({
+    prop: openProp,
+    defaultProp: defaultOpen ?? false,
+    onChange: onOpenChange,
+    caller: SUB_NAME
+  });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Sub, { ...menuScope, open, onOpenChange: setOpen, children: children2 });
+};
+ContextMenuSub$1.displayName = SUB_NAME;
+var SUB_TRIGGER_NAME = "ContextMenuSubTrigger";
+var ContextMenuSubTrigger$1 = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...triggerItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SubTrigger, { ...menuScope, ...triggerItemProps, ref: forwardedRef });
+});
+ContextMenuSubTrigger$1.displayName = SUB_TRIGGER_NAME;
+var SUB_CONTENT_NAME = "ContextMenuSubContent";
+var ContextMenuSubContent$1 = reactExports.forwardRef((props, forwardedRef) => {
+  const { __scopeContextMenu, ...subContentProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    SubContent,
+    {
+      ...menuScope,
+      ...subContentProps,
+      ref: forwardedRef,
+      style: {
+        ...props.style,
+        // re-namespace exposed content custom properties
+        ...{
+          "--radix-context-menu-content-transform-origin": "var(--radix-popper-transform-origin)",
+          "--radix-context-menu-content-available-width": "var(--radix-popper-available-width)",
+          "--radix-context-menu-content-available-height": "var(--radix-popper-available-height)",
+          "--radix-context-menu-trigger-width": "var(--radix-popper-anchor-width)",
+          "--radix-context-menu-trigger-height": "var(--radix-popper-anchor-height)"
+        }
+      }
+    }
+  );
+});
+ContextMenuSubContent$1.displayName = SUB_CONTENT_NAME;
+function whenTouchOrPen(handler) {
+  return (event) => event.pointerType !== "mouse" ? handler(event) : void 0;
+}
+var Root2 = ContextMenu$1;
+var Trigger = ContextMenuTrigger$1;
+var Portal2 = ContextMenuPortal;
+var Content2 = ContextMenuContent$1;
+var Item2 = ContextMenuItem$1;
+var Separator2 = ContextMenuSeparator$1;
+var Sub2 = ContextMenuSub$1;
+var SubTrigger2 = ContextMenuSubTrigger$1;
+var SubContent2 = ContextMenuSubContent$1;
+function ContextMenu({
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Root2, { "data-slot": "context-menu", ...props });
+}
+function ContextMenuTrigger({
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Trigger, { "data-slot": "context-menu-trigger", ...props });
+}
+function ContextMenuSub({
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Sub2, { "data-slot": "context-menu-sub", ...props });
+}
+function ContextMenuSubTrigger({
+  className,
+  inset,
+  children: children2,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    SubTrigger2,
+    {
+      "data-slot": "context-menu-sub-trigger",
+      "data-inset": inset,
+      className: cn(
+        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      ),
+      ...props,
+      children: [
+        children2,
+        /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { className: "ml-auto" })
+      ]
+    }
+  );
+}
+function ContextMenuSubContent({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    SubContent2,
+    {
+      "data-slot": "context-menu-sub-content",
+      className: cn(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function ContextMenuContent({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Portal2, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Content2,
+    {
+      "data-slot": "context-menu-content",
+      className: cn(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+        className
+      ),
+      ...props
+    }
+  ) });
+}
+function ContextMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Item2,
+    {
+      "data-slot": "context-menu-item",
+      "data-inset": inset,
+      "data-variant": variant,
+      className: cn(
+        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      ),
+      ...props
+    }
+  );
+}
+function ContextMenuSeparator({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Separator2,
+    {
+      "data-slot": "context-menu-separator",
+      className: cn("bg-border -mx-1 my-1 h-px", className),
+      ...props
+    }
+  );
+}
+function wrapSelection(content2, start2, end, prefix2, suffix2) {
+  const before = content2.slice(0, start2);
+  const selected = content2.slice(start2, end);
+  const after = content2.slice(end);
+  const newContent = `${before}${prefix2}${selected}${suffix2}${after}`;
+  return {
+    newContent,
+    newStart: start2 + prefix2.length,
+    newEnd: end + prefix2.length
+  };
+}
+function insertAtCursor(content2, position2, insert, before, after) {
+  const head2 = content2.slice(0, position2);
+  const tail = content2.slice(position2);
+  const prefix2 = before ?? "";
+  const suffix2 = after ?? "";
+  const chunk = `${prefix2}${insert}${suffix2}`;
+  return {
+    newContent: `${head2}${chunk}${tail}`,
+    newCursor: position2 + chunk.length
+  };
+}
+function generateTable() {
+  return [
+    "| Column 1 | Column 2 | Column 3 |",
+    "| -------- | -------- | -------- |",
+    "| Cell     | Cell     | Cell     |",
+    "| Cell     | Cell     | Cell     |"
+  ].join("\n");
+}
+function findFootnoteIndex(content2) {
+  const matches = content2.match(/\[\^(\d+)\]/g);
+  if (!matches) return 1;
+  const indices = matches.map((m2) => Number.parseInt(m2.slice(2, -1), 10));
+  return Math.max(...indices) + 1;
+}
+function generateFootnote(content2) {
+  const idx = findFootnoteIndex(content2);
+  return `[^${idx}]`;
+}
+function generateCallout(type) {
+  return `> [!${type.toUpperCase()}]
+> Content`;
+}
+function generateTaskItem(checked) {
+  return checked ? "- [x] " : "- [ ] ";
+}
 function MarkdownEditor({
   content: content2,
   onChange: onChange15,
@@ -68926,6 +69394,24 @@ function MarkdownEditor({
       textareaRef.current.focus();
     }
   }, []);
+  const handleInsert = reactExports.useCallback(
+    (transform2) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start2 = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const result = transform2(content2, start2, end);
+      onChange15(result.newContent);
+      setTimeout(() => {
+        if (!textareaRef.current) return;
+        const newStart = result.newStart ?? result.newCursor ?? start2;
+        const newEnd = result.newEnd ?? result.newCursor ?? newStart;
+        textareaRef.current.setSelectionRange(newStart, newEnd);
+        textareaRef.current.focus();
+      }, 0);
+    },
+    [content2, onChange15]
+  );
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -68941,33 +69427,206 @@ function MarkdownEditor({
             "data-ocid": "markdown_editor.loading_state",
             children: isSaving ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { size: 11, className: "animate-spin" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Saving…" })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Saving\\u2026" })
             ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { size: 11 }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Saved" })
             ] })
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "textarea",
-          {
-            ref: textareaRef,
-            "aria-label": "Markdown editor",
-            spellCheck: false,
-            "data-ocid": "markdown_editor.textarea",
-            value: content2,
-            onChange: (e2) => onChange15(e2.target.value),
-            className: [
-              "flex-1 w-full h-full resize-none bg-background text-foreground",
-              "font-mono text-sm leading-relaxed",
-              "px-4 py-4 pr-20",
-              // right padding to avoid save indicator overlap
-              "border-none outline-none focus:outline-none",
-              "placeholder:text-muted-foreground"
-            ].join(" "),
-            placeholder: "Start writing markdown…"
-          }
-        )
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(ContextMenu, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "textarea",
+            {
+              ref: textareaRef,
+              "aria-label": "Markdown editor",
+              spellCheck: false,
+              "data-ocid": "markdown_editor.textarea",
+              value: content2,
+              onChange: (e2) => onChange15(e2.target.value),
+              onContextMenu: (e2) => e2.stopPropagation(),
+              className: [
+                "flex-1 w-full h-full resize-none bg-background text-foreground",
+                "font-mono text-sm leading-relaxed",
+                "px-4 py-4 pr-20",
+                "border-none outline-none focus:outline-none",
+                "placeholder:text-muted-foreground"
+              ].join(" "),
+              placeholder: "Start writing markdown\\u2026"
+            }
+          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(ContextMenuContent, { className: "w-52 font-mono text-xs", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "# ", "\n", "")),
+                children: "Heading 1"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "## ", "\n", "")),
+                children: "Heading 2"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "### ", "\n", "")),
+                children: "Heading 3"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSeparator, {}),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "**", "**")),
+                children: "Bold"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "_", "_")),
+                children: "Italic"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "~~", "~~")),
+                children: "Strikethrough"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "==", "==")),
+                children: "Highlight"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "`", "`")),
+                children: "Inline Code"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSeparator, {}),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "- ", "\n", "")),
+                children: "Bullet List"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "1. ", "\n", "")),
+                children: "Numbered List"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert(
+                  (c2, s2) => insertAtCursor(c2, s2, generateTaskItem(false), "\n", "")
+                ),
+                children: "Task Item"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert(
+                  (c2, s2) => insertAtCursor(c2, s2, generateTaskItem(true), "\n", "")
+                ),
+                children: "Checked Task"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSeparator, {}),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert(
+                  (c2, s2) => insertAtCursor(c2, s2, generateTable(), "\n\n", "\n\n")
+                ),
+                children: "Table"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert(
+                  (c2, s2) => insertAtCursor(c2, s2, generateFootnote(c2), "", "")
+                ),
+                children: "Footnote"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2) => insertAtCursor(c2, s2, "---", "\n", "\n")),
+                children: "Horizontal Rule"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSeparator, {}),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(ContextMenuSub, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSubTrigger, { children: "Callout" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSubContent, { className: "font-mono text-xs", children: [
+                "Note",
+                "Warning",
+                "Tip",
+                "Important",
+                "Caution",
+                "Info",
+                "Success",
+                "Danger"
+              ].map((type) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                ContextMenuItem,
+                {
+                  onSelect: () => handleInsert(
+                    (c2, s2) => insertAtCursor(
+                      c2,
+                      s2,
+                      generateCallout(type.toLowerCase()),
+                      "\n\n",
+                      "\n\n"
+                    )
+                  ),
+                  children: type
+                },
+                type
+              )) })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuSeparator, {}),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "[", "](url)")),
+                children: "Link"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert((c2, s2, e2) => wrapSelection(c2, s2, e2, "[[", "]]")),
+                children: "Wikilink"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ContextMenuItem,
+              {
+                onSelect: () => handleInsert(
+                  (c2, s2) => insertAtCursor(c2, s2, "![alt](url)", "", "")
+                ),
+                children: "Image"
+              }
+            )
+          ] })
+        ] })
       ]
     }
   );
@@ -69084,7 +69743,7 @@ const htmlVoidElements = [
   "track",
   "wbr"
 ];
-class Schema {
+let Schema$1 = class Schema {
   /**
    * @param {SchemaType['property']} property
    *   Property.
@@ -69102,18 +69761,18 @@ class Schema {
       this.space = space2;
     }
   }
-}
-Schema.prototype.normal = {};
-Schema.prototype.property = {};
-Schema.prototype.space = void 0;
-function merge(definitions, space2) {
+};
+Schema$1.prototype.normal = {};
+Schema$1.prototype.property = {};
+Schema$1.prototype.space = void 0;
+function merge$1(definitions, space2) {
   const property = {};
   const normal = {};
   for (const definition2 of definitions) {
     Object.assign(property, definition2.property);
     Object.assign(normal, definition2.normal);
   }
-  return new Schema(property, normal, space2);
+  return new Schema$1(property, normal, space2);
 }
 function normalize$1(value) {
   return value.toLowerCase();
@@ -69218,7 +69877,7 @@ function create$1(definition2) {
     normals[normalize$1(property)] = property;
     normals[normalize$1(info.attribute)] = property;
   }
-  return new Schema(properties, normals, definition2.space);
+  return new Schema$1(properties, normals, definition2.space);
 }
 const aria = create$1({
   properties: {
@@ -70235,12 +70894,12 @@ const xml = create$1({
 const cap = /[A-Z]/g;
 const dash = /-[a-z]/g;
 const valid = /^data[-\w.:]+$/i;
-function find(schema, value) {
+function find(schema2, value) {
   const normal = normalize$1(value);
   let property = value;
   let Type2 = Info;
-  if (normal in schema.normal) {
-    return schema.property[schema.normal[normal]];
+  if (normal in schema2.normal) {
+    return schema2.property[schema2.normal[normal]];
   }
   if (normal.length > 4 && normal.slice(0, 4) === "data" && valid.test(value)) {
     if (value.charAt(4) === "-") {
@@ -70266,8 +70925,8 @@ function kebab($0) {
 function camelcase($0) {
   return $0.charAt(1).toUpperCase();
 }
-const html$4 = merge([aria, html$5, xlink, xmlns, xml], "html");
-const svg = merge([aria, svg$1, xlink, xmlns, xml], "svg");
+const html$4 = merge$1([aria, html$5, xlink, xmlns, xml], "html");
+const svg = merge$1([aria, svg$1, xlink, xmlns, xml], "svg");
 const own$5 = {}.hasOwnProperty;
 function zwitch(key2, options) {
   const settings = options || {};
@@ -70795,14 +71454,14 @@ function ccount(value, character) {
   }
   return count2;
 }
-function stringify$1(values, options) {
+function stringify$2(values, options) {
   const settings = options || {};
   const input = values[values.length - 1] === "" ? [...values, ""] : values;
   return input.join(
     (settings.padRight ? " " : "") + "," + (settings.padLeft === false ? "" : " ")
   ).trim();
 }
-function stringify(values) {
+function stringify$1(values) {
   return values.join(" ").trim();
 }
 const re = /[ \t\n\f\r]/g;
@@ -70988,23 +71647,23 @@ const constants = {
   ]
 };
 function element$1(node2, index2, parent, state) {
-  const schema = state.schema;
-  const omit = schema.space === "svg" ? false : state.settings.omitOptionalTags;
-  let selfClosing = schema.space === "svg" ? state.settings.closeEmptyElements : state.settings.voids.includes(node2.tagName.toLowerCase());
+  const schema2 = state.schema;
+  const omit = schema2.space === "svg" ? false : state.settings.omitOptionalTags;
+  let selfClosing = schema2.space === "svg" ? state.settings.closeEmptyElements : state.settings.voids.includes(node2.tagName.toLowerCase());
   const parts = [];
   let last;
-  if (schema.space === "html" && node2.tagName === "svg") {
+  if (schema2.space === "html" && node2.tagName === "svg") {
     state.schema = svg;
   }
   const attributes = serializeAttributes(state, node2.properties);
   const content2 = state.all(
-    schema.space === "html" && node2.tagName === "template" ? node2.content : node2
+    schema2.space === "html" && node2.tagName === "template" ? node2.content : node2
   );
-  state.schema = schema;
+  state.schema = schema2;
   if (content2) selfClosing = false;
   if (attributes || !omit || !opening(node2, index2, parent)) {
     parts.push("<", node2.tagName, attributes ? " " + attributes : "");
-    if (selfClosing && (schema.space === "svg" || state.settings.closeSelfClosing)) {
+    if (selfClosing && (schema2.space === "svg" || state.settings.closeSelfClosing)) {
       last = attributes.charAt(attributes.length - 1);
       if (!state.settings.tightSelfClosing || last === "/" || last && last !== '"' && last !== "'") {
         parts.push(" ");
@@ -71061,7 +71720,7 @@ function serializeAttribute(state, key2, value) {
     })
   );
   if (value === true) return name;
-  value = Array.isArray(value) ? (info.commaSeparated ? stringify$1 : stringify)(value, {
+  value = Array.isArray(value) ? (info.commaSeparated ? stringify$2 : stringify$1)(value, {
     padLeft: !state.settings.tightCommaSeparatedLists
   }) : String(value);
   if (state.settings.collapseEmptyAttributes && !value) return name;
@@ -71322,7 +71981,7 @@ function color(d2) {
 const empty = [];
 const CONTINUE = true;
 const EXIT = false;
-const SKIP = "skip";
+const SKIP$1 = "skip";
 function visitParents(tree, test, visitor, reverse) {
   let check;
   if (typeof test === "function" && typeof visitor !== "function") {
@@ -71368,7 +72027,7 @@ function visitParents(tree, test, visitor, reverse) {
           /** @type {UnistParent} */
           node2
         );
-        if (nodeAsParent.children && result[0] !== SKIP) {
+        if (nodeAsParent.children && result[0] !== SKIP$1) {
           offset2 = (reverse ? nodeAsParent.children.length : -1) + step;
           grandparents = parents.concat(nodeAsParent);
           while (offset2 > -1 && offset2 < nodeAsParent.children.length) {
@@ -71397,9 +72056,9 @@ function toResult(value) {
 function findAndReplace(tree, list2, options) {
   const settings = options || {};
   const ignored = convert(settings.ignore || []);
-  const pairs = toPairs(list2);
+  const pairs2 = toPairs(list2);
   let pairIndex = -1;
-  while (++pairIndex < pairs.length) {
+  while (++pairIndex < pairs2.length) {
     visitParents(tree, "text", visitor);
   }
   function visitor(node2, parents) {
@@ -71423,8 +72082,8 @@ function findAndReplace(tree, list2, options) {
   }
   function handler(node2, parents) {
     const parent = parents[parents.length - 1];
-    const find2 = pairs[pairIndex][0];
-    const replace2 = pairs[pairIndex][1];
+    const find2 = pairs2[pairIndex][0];
+    const replace2 = pairs2[pairIndex][1];
     let start2 = 0;
     const siblings2 = parent.children;
     const index2 = siblings2.indexOf(node2);
@@ -71955,12 +72614,12 @@ function blockquote$1(node2, _2, state, info) {
   tracker.shift(2);
   const value = state.indentLines(
     state.containerFlow(node2, tracker.current()),
-    map$1
+    map$2
   );
   exit2();
   return value;
 }
-function map$1(line, _2, blank) {
+function map$2(line, _2, blank) {
   return ">" + (blank ? "" : " ") + line;
 }
 function patternInScope(stack, pattern) {
@@ -72035,7 +72694,7 @@ function code$2(node2, _2, state, info) {
   const suffix2 = marker === "`" ? "GraveAccent" : "Tilde";
   if (formatCodeAsIndented(node2, state)) {
     const exit3 = state.enter("codeIndented");
-    const value2 = state.indentLines(raw2, map);
+    const value2 = state.indentLines(raw2, map$1);
     exit3();
     return value2;
   }
@@ -72076,7 +72735,7 @@ function code$2(node2, _2, state, info) {
   exit2();
   return value;
 }
-function map(line, _2, blank) {
+function map$1(line, _2, blank) {
   return (blank ? "" : "    ") + line;
 }
 function checkQuote(state) {
@@ -72240,7 +72899,7 @@ function emphasis$1(node2, _2, state, info) {
 function emphasisPeek(_2, _1, state) {
   return state.options.emphasis || "*";
 }
-function visit(tree, testOrVisitor, visitorOrReverse, maybeReverse) {
+function visit$1(tree, testOrVisitor, visitorOrReverse, maybeReverse) {
   let reverse;
   let test;
   let visitor;
@@ -72297,7 +72956,7 @@ function node(value) {
 }
 function formatHeadingAsSetext(node2, state) {
   let literalWithBreak = false;
-  visit(node2, function(node3) {
+  visit$1(node2, function(node3) {
     if ("value" in node3 && /\r?\n|\r/.test(node3.value) || node3.type === "break") {
       literalWithBreak = true;
       return EXIT;
@@ -77677,7 +78336,7 @@ function initializeFlow(effects) {
 const resolver = {
   resolveAll: createResolver()
 };
-const string$1 = initializeFactory("string");
+const string$2 = initializeFactory("string");
 const text$2 = initializeFactory("text");
 function initializeFactory(field) {
   return {
@@ -77845,7 +78504,7 @@ const flow = {
   [96]: codeFenced,
   [126]: codeFenced
 };
-const string = {
+const string$1 = {
   [38]: characterReference,
   [92]: characterEscape
 };
@@ -77881,7 +78540,7 @@ const defaultConstructs = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.d
   flow,
   flowInitial,
   insideSpan,
-  string,
+  string: string$1,
   text: text$1
 }, Symbol.toStringTag, { value: "Module" }));
 function createTokenizer(parser, initialize, from) {
@@ -78198,7 +78857,7 @@ function serializeChunks(chunks, expandTabs) {
   }
   return result.join("");
 }
-function parse(options) {
+function parse$1(options) {
   const settings = options || {};
   const constructs2 = (
     /** @type {FullNormalizedExtension} */
@@ -78211,7 +78870,7 @@ function parse(options) {
     document: create2(document$2),
     flow: create2(flow$1),
     lazy: {},
-    string: create2(string$1),
+    string: create2(string$2),
     text: create2(text$2)
   };
   return parser;
@@ -78334,7 +78993,7 @@ function fromMarkdown(value, encoding, options) {
     options = encoding;
     encoding = void 0;
   }
-  return compiler(options)(postprocess(parse(options).document().write(preprocess()(value, encoding, true))));
+  return compiler(options)(postprocess(parse$1(options).document().write(preprocess()(value, encoding, true))));
 }
 function compiler(options) {
   const config = {
@@ -79560,7 +80219,7 @@ const ARRAY = 1;
 const OBJECT = 2;
 const DATE = 3;
 const REGEXP = 4;
-const MAP = 5;
+const MAP$1 = 5;
 const SET = 6;
 const ERROR = 7;
 const BIGINT = 8;
@@ -79596,7 +80255,7 @@ const deserializer = ($2, _2) => {
         const { source, flags } = value;
         return as(new RegExp(source, flags), index2);
       }
-      case MAP: {
+      case MAP$1: {
         const map2 = as(/* @__PURE__ */ new Map(), index2);
         for (const [key2, index3] of value)
           map2.set(unpair(key2), unpair(index3));
@@ -79646,7 +80305,7 @@ const typeOf = (value) => {
     case "RegExp":
       return [REGEXP, EMPTY];
     case "Map":
-      return [MAP, EMPTY];
+      return [MAP$1, EMPTY];
     case "Set":
       return [SET, EMPTY];
     case "DataView":
@@ -79731,7 +80390,7 @@ const serializer = (strict, json, $2, _2) => {
         const { source, flags } = value;
         return as([TYPE, { source, flags }], value);
       }
-      case MAP: {
+      case MAP$1: {
         const entries = [];
         const index2 = as([TYPE, entries], value);
         for (const [key2, entry] of value) {
@@ -79892,7 +80551,7 @@ function createState(tree, options) {
     patch,
     wrap: wrap$1
   };
-  visit(tree, function(node2) {
+  visit$1(tree, function(node2) {
     if (node2.type === "definition" || node2.type === "footnoteDefinition") {
       const map2 = node2.type === "definition" ? definitionById : footnoteById;
       const id2 = String(node2.identifier).toUpperCase();
@@ -81781,7 +82440,7 @@ function MarkdownPreview({ content: content2 }) {
 function serialiseFrontmatter(fm) {
   const entries = Object.entries(fm);
   if (entries.length === 0) return "";
-  const yaml = entries.map(([k2, v2]) => `${k2}: ${v2}`).join("\n");
+  const yaml = entries.map(([k2, v2]) => `${k2}: ${typeof v2 === "string" ? v2 : JSON.stringify(v2)}`).join("\n");
   return `---
 ${yaml}
 ---
@@ -81846,7 +82505,12 @@ function editorToSourceGraph(nodes, rootId) {
       const body2 = node2.content ?? "";
       content2 = fmBlock ? `${fmBlock}${body2}` : body2 || void 0;
     }
-    const attributes = node2.nodeType !== "interpEntity" && Object.keys(node2.inheritedAttributes).length > 0 ? { ...node2.inheritedAttributes } : node2.nodeType === "interpEntity" && Object.keys(node2.frontmatter).length > 0 ? { ...node2.frontmatter } : void 0;
+    const attributes = node2.nodeType !== "interpEntity" && Object.keys(node2.inheritedAttributes).length > 0 ? { ...node2.inheritedAttributes } : node2.nodeType === "interpEntity" && Object.keys(node2.frontmatter).length > 0 ? Object.fromEntries(
+      Object.entries(node2.frontmatter).map(([k2, v2]) => [
+        k2,
+        typeof v2 === "string" ? v2 : JSON.stringify(v2)
+      ])
+    ) : void 0;
     const sourceNode = {
       id: fullPath,
       name: node2.name,
@@ -84227,18 +84891,6036 @@ const jszip_min = /* @__PURE__ */ _mergeNamespaces({
   __proto__: null,
   default: JSZip
 }, [jszip_minExports]);
-function parseFrontmatter(text2) {
-  const result = {};
-  const match = text2.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return result;
-  for (const line of match[1].split(/\r?\n/)) {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
-    const key2 = line.slice(0, colonIdx).trim();
-    const value = line.slice(colonIdx + 1).trim();
-    if (key2) result[key2] = value;
+const ALIAS = Symbol.for("yaml.alias");
+const DOC = Symbol.for("yaml.document");
+const MAP = Symbol.for("yaml.map");
+const PAIR = Symbol.for("yaml.pair");
+const SCALAR$1 = Symbol.for("yaml.scalar");
+const SEQ = Symbol.for("yaml.seq");
+const NODE_TYPE = Symbol.for("yaml.node.type");
+const isAlias = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === ALIAS;
+const isDocument = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === DOC;
+const isMap = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === MAP;
+const isPair = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === PAIR;
+const isScalar = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SCALAR$1;
+const isSeq = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SEQ;
+function isCollection(node2) {
+  if (node2 && typeof node2 === "object")
+    switch (node2[NODE_TYPE]) {
+      case MAP:
+      case SEQ:
+        return true;
+    }
+  return false;
+}
+function isNode(node2) {
+  if (node2 && typeof node2 === "object")
+    switch (node2[NODE_TYPE]) {
+      case ALIAS:
+      case MAP:
+      case SCALAR$1:
+      case SEQ:
+        return true;
+    }
+  return false;
+}
+const hasAnchor = (node2) => (isScalar(node2) || isCollection(node2)) && !!node2.anchor;
+const BREAK = Symbol("break visit");
+const SKIP = Symbol("skip children");
+const REMOVE = Symbol("remove node");
+function visit(node2, visitor) {
+  const visitor_ = initVisitor(visitor);
+  if (isDocument(node2)) {
+    const cd = visit_(null, node2.contents, visitor_, Object.freeze([node2]));
+    if (cd === REMOVE)
+      node2.contents = null;
+  } else
+    visit_(null, node2, visitor_, Object.freeze([]));
+}
+visit.BREAK = BREAK;
+visit.SKIP = SKIP;
+visit.REMOVE = REMOVE;
+function visit_(key2, node2, visitor, path2) {
+  const ctrl = callVisitor(key2, node2, visitor, path2);
+  if (isNode(ctrl) || isPair(ctrl)) {
+    replaceNode(key2, path2, ctrl);
+    return visit_(key2, ctrl, visitor, path2);
   }
-  return result;
+  if (typeof ctrl !== "symbol") {
+    if (isCollection(node2)) {
+      path2 = Object.freeze(path2.concat(node2));
+      for (let i2 = 0; i2 < node2.items.length; ++i2) {
+        const ci = visit_(i2, node2.items[i2], visitor, path2);
+        if (typeof ci === "number")
+          i2 = ci - 1;
+        else if (ci === BREAK)
+          return BREAK;
+        else if (ci === REMOVE) {
+          node2.items.splice(i2, 1);
+          i2 -= 1;
+        }
+      }
+    } else if (isPair(node2)) {
+      path2 = Object.freeze(path2.concat(node2));
+      const ck = visit_("key", node2.key, visitor, path2);
+      if (ck === BREAK)
+        return BREAK;
+      else if (ck === REMOVE)
+        node2.key = null;
+      const cv = visit_("value", node2.value, visitor, path2);
+      if (cv === BREAK)
+        return BREAK;
+      else if (cv === REMOVE)
+        node2.value = null;
+    }
+  }
+  return ctrl;
+}
+function initVisitor(visitor) {
+  if (typeof visitor === "object" && (visitor.Collection || visitor.Node || visitor.Value)) {
+    return Object.assign({
+      Alias: visitor.Node,
+      Map: visitor.Node,
+      Scalar: visitor.Node,
+      Seq: visitor.Node
+    }, visitor.Value && {
+      Map: visitor.Value,
+      Scalar: visitor.Value,
+      Seq: visitor.Value
+    }, visitor.Collection && {
+      Map: visitor.Collection,
+      Seq: visitor.Collection
+    }, visitor);
+  }
+  return visitor;
+}
+function callVisitor(key2, node2, visitor, path2) {
+  var _a3, _b3, _c2, _d2, _e3;
+  if (typeof visitor === "function")
+    return visitor(key2, node2, path2);
+  if (isMap(node2))
+    return (_a3 = visitor.Map) == null ? void 0 : _a3.call(visitor, key2, node2, path2);
+  if (isSeq(node2))
+    return (_b3 = visitor.Seq) == null ? void 0 : _b3.call(visitor, key2, node2, path2);
+  if (isPair(node2))
+    return (_c2 = visitor.Pair) == null ? void 0 : _c2.call(visitor, key2, node2, path2);
+  if (isScalar(node2))
+    return (_d2 = visitor.Scalar) == null ? void 0 : _d2.call(visitor, key2, node2, path2);
+  if (isAlias(node2))
+    return (_e3 = visitor.Alias) == null ? void 0 : _e3.call(visitor, key2, node2, path2);
+  return void 0;
+}
+function replaceNode(key2, path2, node2) {
+  const parent = path2[path2.length - 1];
+  if (isCollection(parent)) {
+    parent.items[key2] = node2;
+  } else if (isPair(parent)) {
+    if (key2 === "key")
+      parent.key = node2;
+    else
+      parent.value = node2;
+  } else if (isDocument(parent)) {
+    parent.contents = node2;
+  } else {
+    const pt = isAlias(parent) ? "alias" : "scalar";
+    throw new Error(`Cannot replace node with ${pt} parent`);
+  }
+}
+const escapeChars = {
+  "!": "%21",
+  ",": "%2C",
+  "[": "%5B",
+  "]": "%5D",
+  "{": "%7B",
+  "}": "%7D"
+};
+const escapeTagName = (tn) => tn.replace(/[!,[\]{}]/g, (ch) => escapeChars[ch]);
+class Directives {
+  constructor(yaml, tags) {
+    this.docStart = null;
+    this.docEnd = false;
+    this.yaml = Object.assign({}, Directives.defaultYaml, yaml);
+    this.tags = Object.assign({}, Directives.defaultTags, tags);
+  }
+  clone() {
+    const copy = new Directives(this.yaml, this.tags);
+    copy.docStart = this.docStart;
+    return copy;
+  }
+  /**
+   * During parsing, get a Directives instance for the current document and
+   * update the stream state according to the current version's spec.
+   */
+  atDocument() {
+    const res = new Directives(this.yaml, this.tags);
+    switch (this.yaml.version) {
+      case "1.1":
+        this.atNextDocument = true;
+        break;
+      case "1.2":
+        this.atNextDocument = false;
+        this.yaml = {
+          explicit: Directives.defaultYaml.explicit,
+          version: "1.2"
+        };
+        this.tags = Object.assign({}, Directives.defaultTags);
+        break;
+    }
+    return res;
+  }
+  /**
+   * @param onError - May be called even if the action was successful
+   * @returns `true` on success
+   */
+  add(line, onError) {
+    if (this.atNextDocument) {
+      this.yaml = { explicit: Directives.defaultYaml.explicit, version: "1.1" };
+      this.tags = Object.assign({}, Directives.defaultTags);
+      this.atNextDocument = false;
+    }
+    const parts = line.trim().split(/[ \t]+/);
+    const name = parts.shift();
+    switch (name) {
+      case "%TAG": {
+        if (parts.length !== 2) {
+          onError(0, "%TAG directive should contain exactly two parts");
+          if (parts.length < 2)
+            return false;
+        }
+        const [handle2, prefix2] = parts;
+        this.tags[handle2] = prefix2;
+        return true;
+      }
+      case "%YAML": {
+        this.yaml.explicit = true;
+        if (parts.length !== 1) {
+          onError(0, "%YAML directive should contain exactly one part");
+          return false;
+        }
+        const [version] = parts;
+        if (version === "1.1" || version === "1.2") {
+          this.yaml.version = version;
+          return true;
+        } else {
+          const isValid3 = /^\d+\.\d+$/.test(version);
+          onError(6, `Unsupported YAML version ${version}`, isValid3);
+          return false;
+        }
+      }
+      default:
+        onError(0, `Unknown directive ${name}`, true);
+        return false;
+    }
+  }
+  /**
+   * Resolves a tag, matching handles to those defined in %TAG directives.
+   *
+   * @returns Resolved tag, which may also be the non-specific tag `'!'` or a
+   *   `'!local'` tag, or `null` if unresolvable.
+   */
+  tagName(source, onError) {
+    if (source === "!")
+      return "!";
+    if (source[0] !== "!") {
+      onError(`Not a valid tag: ${source}`);
+      return null;
+    }
+    if (source[1] === "<") {
+      const verbatim = source.slice(2, -1);
+      if (verbatim === "!" || verbatim === "!!") {
+        onError(`Verbatim tags aren't resolved, so ${source} is invalid.`);
+        return null;
+      }
+      if (source[source.length - 1] !== ">")
+        onError("Verbatim tags must end with a >");
+      return verbatim;
+    }
+    const [, handle2, suffix2] = source.match(/^(.*!)([^!]*)$/s);
+    if (!suffix2)
+      onError(`The ${source} tag has no suffix`);
+    const prefix2 = this.tags[handle2];
+    if (prefix2) {
+      try {
+        return prefix2 + decodeURIComponent(suffix2);
+      } catch (error) {
+        onError(String(error));
+        return null;
+      }
+    }
+    if (handle2 === "!")
+      return source;
+    onError(`Could not resolve tag: ${source}`);
+    return null;
+  }
+  /**
+   * Given a fully resolved tag, returns its printable string form,
+   * taking into account current tag prefixes and defaults.
+   */
+  tagString(tag) {
+    for (const [handle2, prefix2] of Object.entries(this.tags)) {
+      if (tag.startsWith(prefix2))
+        return handle2 + escapeTagName(tag.substring(prefix2.length));
+    }
+    return tag[0] === "!" ? tag : `!<${tag}>`;
+  }
+  toString(doc) {
+    const lines = this.yaml.explicit ? [`%YAML ${this.yaml.version || "1.2"}`] : [];
+    const tagEntries = Object.entries(this.tags);
+    let tagNames;
+    if (doc && tagEntries.length > 0 && isNode(doc.contents)) {
+      const tags = {};
+      visit(doc.contents, (_key, node2) => {
+        if (isNode(node2) && node2.tag)
+          tags[node2.tag] = true;
+      });
+      tagNames = Object.keys(tags);
+    } else
+      tagNames = [];
+    for (const [handle2, prefix2] of tagEntries) {
+      if (handle2 === "!!" && prefix2 === "tag:yaml.org,2002:")
+        continue;
+      if (!doc || tagNames.some((tn) => tn.startsWith(prefix2)))
+        lines.push(`%TAG ${handle2} ${prefix2}`);
+    }
+    return lines.join("\n");
+  }
+}
+Directives.defaultYaml = { explicit: false, version: "1.2" };
+Directives.defaultTags = { "!!": "tag:yaml.org,2002:" };
+function anchorIsValid(anchor) {
+  if (/[\x00-\x19\s,[\]{}]/.test(anchor)) {
+    const sa = JSON.stringify(anchor);
+    const msg = `Anchor must not contain whitespace or control characters: ${sa}`;
+    throw new Error(msg);
+  }
+  return true;
+}
+function anchorNames(root2) {
+  const anchors = /* @__PURE__ */ new Set();
+  visit(root2, {
+    Value(_key, node2) {
+      if (node2.anchor)
+        anchors.add(node2.anchor);
+    }
+  });
+  return anchors;
+}
+function findNewAnchor(prefix2, exclude) {
+  for (let i2 = 1; true; ++i2) {
+    const name = `${prefix2}${i2}`;
+    if (!exclude.has(name))
+      return name;
+  }
+}
+function createNodeAnchors(doc, prefix2) {
+  const aliasObjects = [];
+  const sourceObjects = /* @__PURE__ */ new Map();
+  let prevAnchors = null;
+  return {
+    onAnchor: (source) => {
+      aliasObjects.push(source);
+      prevAnchors ?? (prevAnchors = anchorNames(doc));
+      const anchor = findNewAnchor(prefix2, prevAnchors);
+      prevAnchors.add(anchor);
+      return anchor;
+    },
+    /**
+     * With circular references, the source node is only resolved after all
+     * of its child nodes are. This is why anchors are set only after all of
+     * the nodes have been created.
+     */
+    setAnchors: () => {
+      for (const source of aliasObjects) {
+        const ref = sourceObjects.get(source);
+        if (typeof ref === "object" && ref.anchor && (isScalar(ref.node) || isCollection(ref.node))) {
+          ref.node.anchor = ref.anchor;
+        } else {
+          const error = new Error("Failed to resolve repeated object (this should not happen)");
+          error.source = source;
+          throw error;
+        }
+      }
+    },
+    sourceObjects
+  };
+}
+function applyReviver(reviver, obj, key2, val) {
+  if (val && typeof val === "object") {
+    if (Array.isArray(val)) {
+      for (let i2 = 0, len = val.length; i2 < len; ++i2) {
+        const v0 = val[i2];
+        const v1 = applyReviver(reviver, val, String(i2), v0);
+        if (v1 === void 0)
+          delete val[i2];
+        else if (v1 !== v0)
+          val[i2] = v1;
+      }
+    } else if (val instanceof Map) {
+      for (const k2 of Array.from(val.keys())) {
+        const v0 = val.get(k2);
+        const v1 = applyReviver(reviver, val, k2, v0);
+        if (v1 === void 0)
+          val.delete(k2);
+        else if (v1 !== v0)
+          val.set(k2, v1);
+      }
+    } else if (val instanceof Set) {
+      for (const v0 of Array.from(val)) {
+        const v1 = applyReviver(reviver, val, v0, v0);
+        if (v1 === void 0)
+          val.delete(v0);
+        else if (v1 !== v0) {
+          val.delete(v0);
+          val.add(v1);
+        }
+      }
+    } else {
+      for (const [k2, v0] of Object.entries(val)) {
+        const v1 = applyReviver(reviver, val, k2, v0);
+        if (v1 === void 0)
+          delete val[k2];
+        else if (v1 !== v0)
+          val[k2] = v1;
+      }
+    }
+  }
+  return reviver.call(obj, key2, val);
+}
+function toJS(value, arg, ctx) {
+  if (Array.isArray(value))
+    return value.map((v2, i2) => toJS(v2, String(i2), ctx));
+  if (value && typeof value.toJSON === "function") {
+    if (!ctx || !hasAnchor(value))
+      return value.toJSON(arg, ctx);
+    const data = { aliasCount: 0, count: 1, res: void 0 };
+    ctx.anchors.set(value, data);
+    ctx.onCreate = (res2) => {
+      data.res = res2;
+      delete ctx.onCreate;
+    };
+    const res = value.toJSON(arg, ctx);
+    if (ctx.onCreate)
+      ctx.onCreate(res);
+    return res;
+  }
+  if (typeof value === "bigint" && !(ctx == null ? void 0 : ctx.keep))
+    return Number(value);
+  return value;
+}
+class NodeBase {
+  constructor(type) {
+    Object.defineProperty(this, NODE_TYPE, { value: type });
+  }
+  /** Create a copy of this node.  */
+  clone() {
+    const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
+    if (this.range)
+      copy.range = this.range.slice();
+    return copy;
+  }
+  /** A plain JavaScript representation of this node. */
+  toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+    if (!isDocument(doc))
+      throw new TypeError("A document argument is required");
+    const ctx = {
+      anchors: /* @__PURE__ */ new Map(),
+      doc,
+      keep: true,
+      mapAsMap: mapAsMap === true,
+      mapKeyWarned: false,
+      maxAliasCount: typeof maxAliasCount === "number" ? maxAliasCount : 100
+    };
+    const res = toJS(this, "", ctx);
+    if (typeof onAnchor === "function")
+      for (const { count: count2, res: res2 } of ctx.anchors.values())
+        onAnchor(res2, count2);
+    return typeof reviver === "function" ? applyReviver(reviver, { "": res }, "", res) : res;
+  }
+}
+class Alias extends NodeBase {
+  constructor(source) {
+    super(ALIAS);
+    this.source = source;
+    Object.defineProperty(this, "tag", {
+      set() {
+        throw new Error("Alias nodes cannot have tags");
+      }
+    });
+  }
+  /**
+   * Resolve the value of this alias within `doc`, finding the last
+   * instance of the `source` anchor before this node.
+   */
+  resolve(doc, ctx) {
+    if ((ctx == null ? void 0 : ctx.maxAliasCount) === 0)
+      throw new ReferenceError("Alias resolution is disabled");
+    let nodes;
+    if (ctx == null ? void 0 : ctx.aliasResolveCache) {
+      nodes = ctx.aliasResolveCache;
+    } else {
+      nodes = [];
+      visit(doc, {
+        Node: (_key, node2) => {
+          if (isAlias(node2) || hasAnchor(node2))
+            nodes.push(node2);
+        }
+      });
+      if (ctx)
+        ctx.aliasResolveCache = nodes;
+    }
+    let found = void 0;
+    for (const node2 of nodes) {
+      if (node2 === this)
+        break;
+      if (node2.anchor === this.source)
+        found = node2;
+    }
+    return found;
+  }
+  toJSON(_arg, ctx) {
+    if (!ctx)
+      return { source: this.source };
+    const { anchors, doc, maxAliasCount } = ctx;
+    const source = this.resolve(doc, ctx);
+    if (!source) {
+      const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
+      throw new ReferenceError(msg);
+    }
+    let data = anchors.get(source);
+    if (!data) {
+      toJS(source, null, ctx);
+      data = anchors.get(source);
+    }
+    if ((data == null ? void 0 : data.res) === void 0) {
+      const msg = "This should not happen: Alias anchor was not resolved?";
+      throw new ReferenceError(msg);
+    }
+    if (maxAliasCount >= 0) {
+      data.count += 1;
+      if (data.aliasCount === 0)
+        data.aliasCount = getAliasCount(doc, source, anchors);
+      if (data.count * data.aliasCount > maxAliasCount) {
+        const msg = "Excessive alias count indicates a resource exhaustion attack";
+        throw new ReferenceError(msg);
+      }
+    }
+    return data.res;
+  }
+  toString(ctx, _onComment, _onChompKeep) {
+    const src = `*${this.source}`;
+    if (ctx) {
+      anchorIsValid(this.source);
+      if (ctx.options.verifyAliasOrder && !ctx.anchors.has(this.source)) {
+        const msg = `Unresolved alias (the anchor must be set before the alias): ${this.source}`;
+        throw new Error(msg);
+      }
+      if (ctx.implicitKey)
+        return `${src} `;
+    }
+    return src;
+  }
+}
+function getAliasCount(doc, node2, anchors) {
+  if (isAlias(node2)) {
+    const source = node2.resolve(doc);
+    const anchor = anchors && source && anchors.get(source);
+    return anchor ? anchor.count * anchor.aliasCount : 0;
+  } else if (isCollection(node2)) {
+    let count2 = 0;
+    for (const item of node2.items) {
+      const c2 = getAliasCount(doc, item, anchors);
+      if (c2 > count2)
+        count2 = c2;
+    }
+    return count2;
+  } else if (isPair(node2)) {
+    const kc = getAliasCount(doc, node2.key, anchors);
+    const vc = getAliasCount(doc, node2.value, anchors);
+    return Math.max(kc, vc);
+  }
+  return 1;
+}
+const isScalarValue = (value) => !value || typeof value !== "function" && typeof value !== "object";
+class Scalar extends NodeBase {
+  constructor(value) {
+    super(SCALAR$1);
+    this.value = value;
+  }
+  toJSON(arg, ctx) {
+    return (ctx == null ? void 0 : ctx.keep) ? this.value : toJS(this.value, arg, ctx);
+  }
+  toString() {
+    return String(this.value);
+  }
+}
+Scalar.BLOCK_FOLDED = "BLOCK_FOLDED";
+Scalar.BLOCK_LITERAL = "BLOCK_LITERAL";
+Scalar.PLAIN = "PLAIN";
+Scalar.QUOTE_DOUBLE = "QUOTE_DOUBLE";
+Scalar.QUOTE_SINGLE = "QUOTE_SINGLE";
+const defaultTagPrefix = "tag:yaml.org,2002:";
+function findTagObject(value, tagName, tags) {
+  if (tagName) {
+    const match = tags.filter((t2) => t2.tag === tagName);
+    const tagObj = match.find((t2) => !t2.format) ?? match[0];
+    if (!tagObj)
+      throw new Error(`Tag ${tagName} not found`);
+    return tagObj;
+  }
+  return tags.find((t2) => {
+    var _a3;
+    return ((_a3 = t2.identify) == null ? void 0 : _a3.call(t2, value)) && !t2.format;
+  });
+}
+function createNode(value, tagName, ctx) {
+  var _a3, _b3, _c2;
+  if (isDocument(value))
+    value = value.contents;
+  if (isNode(value))
+    return value;
+  if (isPair(value)) {
+    const map2 = (_b3 = (_a3 = ctx.schema[MAP]).createNode) == null ? void 0 : _b3.call(_a3, ctx.schema, null, ctx);
+    map2.items.push(value);
+    return map2;
+  }
+  if (value instanceof String || value instanceof Number || value instanceof Boolean || typeof BigInt !== "undefined" && value instanceof BigInt) {
+    value = value.valueOf();
+  }
+  const { aliasDuplicateObjects, onAnchor, onTagObj, schema: schema2, sourceObjects } = ctx;
+  let ref = void 0;
+  if (aliasDuplicateObjects && value && typeof value === "object") {
+    ref = sourceObjects.get(value);
+    if (ref) {
+      ref.anchor ?? (ref.anchor = onAnchor(value));
+      return new Alias(ref.anchor);
+    } else {
+      ref = { anchor: null, node: null };
+      sourceObjects.set(value, ref);
+    }
+  }
+  if (tagName == null ? void 0 : tagName.startsWith("!!"))
+    tagName = defaultTagPrefix + tagName.slice(2);
+  let tagObj = findTagObject(value, tagName, schema2.tags);
+  if (!tagObj) {
+    if (value && typeof value.toJSON === "function") {
+      value = value.toJSON();
+    }
+    if (!value || typeof value !== "object") {
+      const node3 = new Scalar(value);
+      if (ref)
+        ref.node = node3;
+      return node3;
+    }
+    tagObj = value instanceof Map ? schema2[MAP] : Symbol.iterator in Object(value) ? schema2[SEQ] : schema2[MAP];
+  }
+  if (onTagObj) {
+    onTagObj(tagObj);
+    delete ctx.onTagObj;
+  }
+  const node2 = (tagObj == null ? void 0 : tagObj.createNode) ? tagObj.createNode(ctx.schema, value, ctx) : typeof ((_c2 = tagObj == null ? void 0 : tagObj.nodeClass) == null ? void 0 : _c2.from) === "function" ? tagObj.nodeClass.from(ctx.schema, value, ctx) : new Scalar(value);
+  if (tagName)
+    node2.tag = tagName;
+  else if (!tagObj.default)
+    node2.tag = tagObj.tag;
+  if (ref)
+    ref.node = node2;
+  return node2;
+}
+function collectionFromPath(schema2, path2, value) {
+  let v2 = value;
+  for (let i2 = path2.length - 1; i2 >= 0; --i2) {
+    const k2 = path2[i2];
+    if (typeof k2 === "number" && Number.isInteger(k2) && k2 >= 0) {
+      const a2 = [];
+      a2[k2] = v2;
+      v2 = a2;
+    } else {
+      v2 = /* @__PURE__ */ new Map([[k2, v2]]);
+    }
+  }
+  return createNode(v2, void 0, {
+    aliasDuplicateObjects: false,
+    keepUndefined: false,
+    onAnchor: () => {
+      throw new Error("This should not happen, please report a bug.");
+    },
+    schema: schema2,
+    sourceObjects: /* @__PURE__ */ new Map()
+  });
+}
+const isEmptyPath = (path2) => path2 == null || typeof path2 === "object" && !!path2[Symbol.iterator]().next().done;
+class Collection extends NodeBase {
+  constructor(type, schema2) {
+    super(type);
+    Object.defineProperty(this, "schema", {
+      value: schema2,
+      configurable: true,
+      enumerable: false,
+      writable: true
+    });
+  }
+  /**
+   * Create a copy of this collection.
+   *
+   * @param schema - If defined, overwrites the original's schema
+   */
+  clone(schema2) {
+    const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
+    if (schema2)
+      copy.schema = schema2;
+    copy.items = copy.items.map((it2) => isNode(it2) || isPair(it2) ? it2.clone(schema2) : it2);
+    if (this.range)
+      copy.range = this.range.slice();
+    return copy;
+  }
+  /**
+   * Adds a value to the collection. For `!!map` and `!!omap` the value must
+   * be a Pair instance or a `{ key, value }` object, which may not have a key
+   * that already exists in the map.
+   */
+  addIn(path2, value) {
+    if (isEmptyPath(path2))
+      this.add(value);
+    else {
+      const [key2, ...rest] = path2;
+      const node2 = this.get(key2, true);
+      if (isCollection(node2))
+        node2.addIn(rest, value);
+      else if (node2 === void 0 && this.schema)
+        this.set(key2, collectionFromPath(this.schema, rest, value));
+      else
+        throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+    }
+  }
+  /**
+   * Removes a value from the collection.
+   * @returns `true` if the item was found and removed.
+   */
+  deleteIn(path2) {
+    const [key2, ...rest] = path2;
+    if (rest.length === 0)
+      return this.delete(key2);
+    const node2 = this.get(key2, true);
+    if (isCollection(node2))
+      return node2.deleteIn(rest);
+    else
+      throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+  }
+  /**
+   * Returns item at `key`, or `undefined` if not found. By default unwraps
+   * scalar values from their surrounding node; to disable set `keepScalar` to
+   * `true` (collections are always returned intact).
+   */
+  getIn(path2, keepScalar) {
+    const [key2, ...rest] = path2;
+    const node2 = this.get(key2, true);
+    if (rest.length === 0)
+      return !keepScalar && isScalar(node2) ? node2.value : node2;
+    else
+      return isCollection(node2) ? node2.getIn(rest, keepScalar) : void 0;
+  }
+  hasAllNullValues(allowScalar) {
+    return this.items.every((node2) => {
+      if (!isPair(node2))
+        return false;
+      const n2 = node2.value;
+      return n2 == null || allowScalar && isScalar(n2) && n2.value == null && !n2.commentBefore && !n2.comment && !n2.tag;
+    });
+  }
+  /**
+   * Checks if the collection includes a value with the key `key`.
+   */
+  hasIn(path2) {
+    const [key2, ...rest] = path2;
+    if (rest.length === 0)
+      return this.has(key2);
+    const node2 = this.get(key2, true);
+    return isCollection(node2) ? node2.hasIn(rest) : false;
+  }
+  /**
+   * Sets a value in this collection. For `!!set`, `value` needs to be a
+   * boolean to add/remove the item from the set.
+   */
+  setIn(path2, value) {
+    const [key2, ...rest] = path2;
+    if (rest.length === 0) {
+      this.set(key2, value);
+    } else {
+      const node2 = this.get(key2, true);
+      if (isCollection(node2))
+        node2.setIn(rest, value);
+      else if (node2 === void 0 && this.schema)
+        this.set(key2, collectionFromPath(this.schema, rest, value));
+      else
+        throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+    }
+  }
+}
+const stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
+function indentComment(comment2, indent2) {
+  if (/^\n+$/.test(comment2))
+    return comment2.substring(1);
+  return indent2 ? comment2.replace(/^(?! *$)/gm, indent2) : comment2;
+}
+const lineComment = (str, indent2, comment2) => str.endsWith("\n") ? indentComment(comment2, indent2) : comment2.includes("\n") ? "\n" + indentComment(comment2, indent2) : (str.endsWith(" ") ? "" : " ") + comment2;
+const FOLD_FLOW = "flow";
+const FOLD_BLOCK = "block";
+const FOLD_QUOTED = "quoted";
+function foldFlowLines(text2, indent2, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+  if (!lineWidth || lineWidth < 0)
+    return text2;
+  if (lineWidth < minContentWidth)
+    minContentWidth = 0;
+  const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent2.length);
+  if (text2.length <= endStep)
+    return text2;
+  const folds = [];
+  const escapedFolds = {};
+  let end = lineWidth - indent2.length;
+  if (typeof indentAtStart === "number") {
+    if (indentAtStart > lineWidth - Math.max(2, minContentWidth))
+      folds.push(0);
+    else
+      end = lineWidth - indentAtStart;
+  }
+  let split2 = void 0;
+  let prev = void 0;
+  let overflow = false;
+  let i2 = -1;
+  let escStart = -1;
+  let escEnd = -1;
+  if (mode === FOLD_BLOCK) {
+    i2 = consumeMoreIndentedLines(text2, i2, indent2.length);
+    if (i2 !== -1)
+      end = i2 + endStep;
+  }
+  for (let ch; ch = text2[i2 += 1]; ) {
+    if (mode === FOLD_QUOTED && ch === "\\") {
+      escStart = i2;
+      switch (text2[i2 + 1]) {
+        case "x":
+          i2 += 3;
+          break;
+        case "u":
+          i2 += 5;
+          break;
+        case "U":
+          i2 += 9;
+          break;
+        default:
+          i2 += 1;
+      }
+      escEnd = i2;
+    }
+    if (ch === "\n") {
+      if (mode === FOLD_BLOCK)
+        i2 = consumeMoreIndentedLines(text2, i2, indent2.length);
+      end = i2 + indent2.length + endStep;
+      split2 = void 0;
+    } else {
+      if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
+        const next = text2[i2 + 1];
+        if (next && next !== " " && next !== "\n" && next !== "	")
+          split2 = i2;
+      }
+      if (i2 >= end) {
+        if (split2) {
+          folds.push(split2);
+          end = split2 + endStep;
+          split2 = void 0;
+        } else if (mode === FOLD_QUOTED) {
+          while (prev === " " || prev === "	") {
+            prev = ch;
+            ch = text2[i2 += 1];
+            overflow = true;
+          }
+          const j2 = i2 > escEnd + 1 ? i2 - 2 : escStart - 1;
+          if (escapedFolds[j2])
+            return text2;
+          folds.push(j2);
+          escapedFolds[j2] = true;
+          end = j2 + endStep;
+          split2 = void 0;
+        } else {
+          overflow = true;
+        }
+      }
+    }
+    prev = ch;
+  }
+  if (overflow && onOverflow)
+    onOverflow();
+  if (folds.length === 0)
+    return text2;
+  if (onFold)
+    onFold();
+  let res = text2.slice(0, folds[0]);
+  for (let i3 = 0; i3 < folds.length; ++i3) {
+    const fold = folds[i3];
+    const end2 = folds[i3 + 1] || text2.length;
+    if (fold === 0)
+      res = `
+${indent2}${text2.slice(0, end2)}`;
+    else {
+      if (mode === FOLD_QUOTED && escapedFolds[fold])
+        res += `${text2[fold]}\\`;
+      res += `
+${indent2}${text2.slice(fold + 1, end2)}`;
+    }
+  }
+  return res;
+}
+function consumeMoreIndentedLines(text2, i2, indent2) {
+  let end = i2;
+  let start2 = i2 + 1;
+  let ch = text2[start2];
+  while (ch === " " || ch === "	") {
+    if (i2 < start2 + indent2) {
+      ch = text2[++i2];
+    } else {
+      do {
+        ch = text2[++i2];
+      } while (ch && ch !== "\n");
+      end = i2;
+      start2 = i2 + 1;
+      ch = text2[start2];
+    }
+  }
+  return end;
+}
+const getFoldOptions = (ctx, isBlock2) => ({
+  indentAtStart: isBlock2 ? ctx.indent.length : ctx.indentAtStart,
+  lineWidth: ctx.options.lineWidth,
+  minContentWidth: ctx.options.minContentWidth
+});
+const containsDocumentMarker = (str) => /^(%|---|\.\.\.)/m.test(str);
+function lineLengthOverLimit(str, lineWidth, indentLength) {
+  if (!lineWidth || lineWidth < 0)
+    return false;
+  const limit = lineWidth - indentLength;
+  const strLen = str.length;
+  if (strLen <= limit)
+    return false;
+  for (let i2 = 0, start2 = 0; i2 < strLen; ++i2) {
+    if (str[i2] === "\n") {
+      if (i2 - start2 > limit)
+        return true;
+      start2 = i2 + 1;
+      if (strLen - start2 <= limit)
+        return false;
+    }
+  }
+  return true;
+}
+function doubleQuotedString(value, ctx) {
+  const json = JSON.stringify(value);
+  if (ctx.options.doubleQuotedAsJSON)
+    return json;
+  const { implicitKey } = ctx;
+  const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
+  const indent2 = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
+  let str = "";
+  let start2 = 0;
+  for (let i2 = 0, ch = json[i2]; ch; ch = json[++i2]) {
+    if (ch === " " && json[i2 + 1] === "\\" && json[i2 + 2] === "n") {
+      str += json.slice(start2, i2) + "\\ ";
+      i2 += 1;
+      start2 = i2;
+      ch = "\\";
+    }
+    if (ch === "\\")
+      switch (json[i2 + 1]) {
+        case "u":
+          {
+            str += json.slice(start2, i2);
+            const code2 = json.substr(i2 + 2, 4);
+            switch (code2) {
+              case "0000":
+                str += "\\0";
+                break;
+              case "0007":
+                str += "\\a";
+                break;
+              case "000b":
+                str += "\\v";
+                break;
+              case "001b":
+                str += "\\e";
+                break;
+              case "0085":
+                str += "\\N";
+                break;
+              case "00a0":
+                str += "\\_";
+                break;
+              case "2028":
+                str += "\\L";
+                break;
+              case "2029":
+                str += "\\P";
+                break;
+              default:
+                if (code2.substr(0, 2) === "00")
+                  str += "\\x" + code2.substr(2);
+                else
+                  str += json.substr(i2, 6);
+            }
+            i2 += 5;
+            start2 = i2 + 1;
+          }
+          break;
+        case "n":
+          if (implicitKey || json[i2 + 2] === '"' || json.length < minMultiLineLength) {
+            i2 += 1;
+          } else {
+            str += json.slice(start2, i2) + "\n\n";
+            while (json[i2 + 2] === "\\" && json[i2 + 3] === "n" && json[i2 + 4] !== '"') {
+              str += "\n";
+              i2 += 2;
+            }
+            str += indent2;
+            if (json[i2 + 2] === " ")
+              str += "\\";
+            i2 += 1;
+            start2 = i2 + 1;
+          }
+          break;
+        default:
+          i2 += 1;
+      }
+  }
+  str = start2 ? str + json.slice(start2) : json;
+  return implicitKey ? str : foldFlowLines(str, indent2, FOLD_QUOTED, getFoldOptions(ctx, false));
+}
+function singleQuotedString(value, ctx) {
+  if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes("\n") || /[ \t]\n|\n[ \t]/.test(value))
+    return doubleQuotedString(value, ctx);
+  const indent2 = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
+  const res = "'" + value.replace(/'/g, "''").replace(/\n+/g, `$&
+${indent2}`) + "'";
+  return ctx.implicitKey ? res : foldFlowLines(res, indent2, FOLD_FLOW, getFoldOptions(ctx, false));
+}
+function quotedString(value, ctx) {
+  const { singleQuote } = ctx.options;
+  let qs;
+  if (singleQuote === false)
+    qs = doubleQuotedString;
+  else {
+    const hasDouble = value.includes('"');
+    const hasSingle = value.includes("'");
+    if (hasDouble && !hasSingle)
+      qs = singleQuotedString;
+    else if (hasSingle && !hasDouble)
+      qs = doubleQuotedString;
+    else
+      qs = singleQuote ? singleQuotedString : doubleQuotedString;
+  }
+  return qs(value, ctx);
+}
+let blockEndNewlines;
+try {
+  blockEndNewlines = new RegExp("(^|(?<!\n))\n+(?!\n|$)", "g");
+} catch {
+  blockEndNewlines = /\n+(?!\n|$)/g;
+}
+function blockString({ comment: comment2, type, value }, ctx, onComment, onChompKeep) {
+  const { blockQuote: blockQuote2, commentString, lineWidth } = ctx.options;
+  if (!blockQuote2 || /\n[\t ]+$/.test(value)) {
+    return quotedString(value, ctx);
+  }
+  const indent2 = ctx.indent || (ctx.forceBlockIndent || containsDocumentMarker(value) ? "  " : "");
+  const literal = blockQuote2 === "literal" ? true : blockQuote2 === "folded" || type === Scalar.BLOCK_FOLDED ? false : type === Scalar.BLOCK_LITERAL ? true : !lineLengthOverLimit(value, lineWidth, indent2.length);
+  if (!value)
+    return literal ? "|\n" : ">\n";
+  let chomp;
+  let endStart;
+  for (endStart = value.length; endStart > 0; --endStart) {
+    const ch = value[endStart - 1];
+    if (ch !== "\n" && ch !== "	" && ch !== " ")
+      break;
+  }
+  let end = value.substring(endStart);
+  const endNlPos = end.indexOf("\n");
+  if (endNlPos === -1) {
+    chomp = "-";
+  } else if (value === end || endNlPos !== end.length - 1) {
+    chomp = "+";
+    if (onChompKeep)
+      onChompKeep();
+  } else {
+    chomp = "";
+  }
+  if (end) {
+    value = value.slice(0, -end.length);
+    if (end[end.length - 1] === "\n")
+      end = end.slice(0, -1);
+    end = end.replace(blockEndNewlines, `$&${indent2}`);
+  }
+  let startWithSpace = false;
+  let startEnd;
+  let startNlPos = -1;
+  for (startEnd = 0; startEnd < value.length; ++startEnd) {
+    const ch = value[startEnd];
+    if (ch === " ")
+      startWithSpace = true;
+    else if (ch === "\n")
+      startNlPos = startEnd;
+    else
+      break;
+  }
+  let start2 = value.substring(0, startNlPos < startEnd ? startNlPos + 1 : startEnd);
+  if (start2) {
+    value = value.substring(start2.length);
+    start2 = start2.replace(/\n+/g, `$&${indent2}`);
+  }
+  const indentSize = indent2 ? "2" : "1";
+  let header = (startWithSpace ? indentSize : "") + chomp;
+  if (comment2) {
+    header += " " + commentString(comment2.replace(/ ?[\r\n]+/g, " "));
+    if (onComment)
+      onComment();
+  }
+  if (!literal) {
+    const foldedValue = value.replace(/\n+/g, "\n$&").replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, "$1$2").replace(/\n+/g, `$&${indent2}`);
+    let literalFallback = false;
+    const foldOptions = getFoldOptions(ctx, true);
+    if (blockQuote2 !== "folded" && type !== Scalar.BLOCK_FOLDED) {
+      foldOptions.onOverflow = () => {
+        literalFallback = true;
+      };
+    }
+    const body2 = foldFlowLines(`${start2}${foldedValue}${end}`, indent2, FOLD_BLOCK, foldOptions);
+    if (!literalFallback)
+      return `>${header}
+${indent2}${body2}`;
+  }
+  value = value.replace(/\n+/g, `$&${indent2}`);
+  return `|${header}
+${indent2}${start2}${value}${end}`;
+}
+function plainString(item, ctx, onComment, onChompKeep) {
+  const { type, value } = item;
+  const { actualString, implicitKey, indent: indent2, indentStep, inFlow } = ctx;
+  if (implicitKey && value.includes("\n") || inFlow && /[[\]{},]/.test(value)) {
+    return quotedString(value, ctx);
+  }
+  if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
+    return implicitKey || inFlow || !value.includes("\n") ? quotedString(value, ctx) : blockString(item, ctx, onComment, onChompKeep);
+  }
+  if (!implicitKey && !inFlow && type !== Scalar.PLAIN && value.includes("\n")) {
+    return blockString(item, ctx, onComment, onChompKeep);
+  }
+  if (containsDocumentMarker(value)) {
+    if (indent2 === "") {
+      ctx.forceBlockIndent = true;
+      return blockString(item, ctx, onComment, onChompKeep);
+    } else if (implicitKey && indent2 === indentStep) {
+      return quotedString(value, ctx);
+    }
+  }
+  const str = value.replace(/\n+/g, `$&
+${indent2}`);
+  if (actualString) {
+    const test = (tag) => {
+      var _a3;
+      return tag.default && tag.tag !== "tag:yaml.org,2002:str" && ((_a3 = tag.test) == null ? void 0 : _a3.test(str));
+    };
+    const { compat, tags } = ctx.doc.schema;
+    if (tags.some(test) || (compat == null ? void 0 : compat.some(test)))
+      return quotedString(value, ctx);
+  }
+  return implicitKey ? str : foldFlowLines(str, indent2, FOLD_FLOW, getFoldOptions(ctx, false));
+}
+function stringifyString(item, ctx, onComment, onChompKeep) {
+  const { implicitKey, inFlow } = ctx;
+  const ss = typeof item.value === "string" ? item : Object.assign({}, item, { value: String(item.value) });
+  let { type } = item;
+  if (type !== Scalar.QUOTE_DOUBLE) {
+    if (/[\x00-\x08\x0b-\x1f\x7f-\x9f\u{D800}-\u{DFFF}]/u.test(ss.value))
+      type = Scalar.QUOTE_DOUBLE;
+  }
+  const _stringify = (_type) => {
+    switch (_type) {
+      case Scalar.BLOCK_FOLDED:
+      case Scalar.BLOCK_LITERAL:
+        return implicitKey || inFlow ? quotedString(ss.value, ctx) : blockString(ss, ctx, onComment, onChompKeep);
+      case Scalar.QUOTE_DOUBLE:
+        return doubleQuotedString(ss.value, ctx);
+      case Scalar.QUOTE_SINGLE:
+        return singleQuotedString(ss.value, ctx);
+      case Scalar.PLAIN:
+        return plainString(ss, ctx, onComment, onChompKeep);
+      default:
+        return null;
+    }
+  };
+  let res = _stringify(type);
+  if (res === null) {
+    const { defaultKeyType, defaultStringType } = ctx.options;
+    const t2 = implicitKey && defaultKeyType || defaultStringType;
+    res = _stringify(t2);
+    if (res === null)
+      throw new Error(`Unsupported default string type ${t2}`);
+  }
+  return res;
+}
+function createStringifyContext(doc, options) {
+  const opt = Object.assign({
+    blockQuote: true,
+    commentString: stringifyComment,
+    defaultKeyType: null,
+    defaultStringType: "PLAIN",
+    directives: null,
+    doubleQuotedAsJSON: false,
+    doubleQuotedMinMultiLineLength: 40,
+    falseStr: "false",
+    flowCollectionPadding: true,
+    indentSeq: true,
+    lineWidth: 80,
+    minContentWidth: 20,
+    nullStr: "null",
+    simpleKeys: false,
+    singleQuote: null,
+    trailingComma: false,
+    trueStr: "true",
+    verifyAliasOrder: true
+  }, doc.schema.toStringOptions, options);
+  let inFlow;
+  switch (opt.collectionStyle) {
+    case "block":
+      inFlow = false;
+      break;
+    case "flow":
+      inFlow = true;
+      break;
+    default:
+      inFlow = null;
+  }
+  return {
+    anchors: /* @__PURE__ */ new Set(),
+    doc,
+    flowCollectionPadding: opt.flowCollectionPadding ? " " : "",
+    indent: "",
+    indentStep: typeof opt.indent === "number" ? " ".repeat(opt.indent) : "  ",
+    inFlow,
+    options: opt
+  };
+}
+function getTagObject(tags, item) {
+  var _a3;
+  if (item.tag) {
+    const match = tags.filter((t2) => t2.tag === item.tag);
+    if (match.length > 0)
+      return match.find((t2) => t2.format === item.format) ?? match[0];
+  }
+  let tagObj = void 0;
+  let obj;
+  if (isScalar(item)) {
+    obj = item.value;
+    let match = tags.filter((t2) => {
+      var _a4;
+      return (_a4 = t2.identify) == null ? void 0 : _a4.call(t2, obj);
+    });
+    if (match.length > 1) {
+      const testMatch = match.filter((t2) => t2.test);
+      if (testMatch.length > 0)
+        match = testMatch;
+    }
+    tagObj = match.find((t2) => t2.format === item.format) ?? match.find((t2) => !t2.format);
+  } else {
+    obj = item;
+    tagObj = tags.find((t2) => t2.nodeClass && obj instanceof t2.nodeClass);
+  }
+  if (!tagObj) {
+    const name = ((_a3 = obj == null ? void 0 : obj.constructor) == null ? void 0 : _a3.name) ?? (obj === null ? "null" : typeof obj);
+    throw new Error(`Tag not resolved for ${name} value`);
+  }
+  return tagObj;
+}
+function stringifyProps(node2, tagObj, { anchors, doc }) {
+  if (!doc.directives)
+    return "";
+  const props = [];
+  const anchor = (isScalar(node2) || isCollection(node2)) && node2.anchor;
+  if (anchor && anchorIsValid(anchor)) {
+    anchors.add(anchor);
+    props.push(`&${anchor}`);
+  }
+  const tag = node2.tag ?? (tagObj.default ? null : tagObj.tag);
+  if (tag)
+    props.push(doc.directives.tagString(tag));
+  return props.join(" ");
+}
+function stringify(item, ctx, onComment, onChompKeep) {
+  var _a3;
+  if (isPair(item))
+    return item.toString(ctx, onComment, onChompKeep);
+  if (isAlias(item)) {
+    if (ctx.doc.directives)
+      return item.toString(ctx);
+    if ((_a3 = ctx.resolvedAliases) == null ? void 0 : _a3.has(item)) {
+      throw new TypeError(`Cannot stringify circular structure without alias nodes`);
+    } else {
+      if (ctx.resolvedAliases)
+        ctx.resolvedAliases.add(item);
+      else
+        ctx.resolvedAliases = /* @__PURE__ */ new Set([item]);
+      item = item.resolve(ctx.doc);
+    }
+  }
+  let tagObj = void 0;
+  const node2 = isNode(item) ? item : ctx.doc.createNode(item, { onTagObj: (o2) => tagObj = o2 });
+  tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node2));
+  const props = stringifyProps(node2, tagObj, ctx);
+  if (props.length > 0)
+    ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
+  const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node2, ctx, onComment, onChompKeep) : isScalar(node2) ? stringifyString(node2, ctx, onComment, onChompKeep) : node2.toString(ctx, onComment, onChompKeep);
+  if (!props)
+    return str;
+  return isScalar(node2) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
+${ctx.indent}${str}`;
+}
+function stringifyPair({ key: key2, value }, ctx, onComment, onChompKeep) {
+  const { allNullValues, doc, indent: indent2, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
+  let keyComment = isNode(key2) && key2.comment || null;
+  if (simpleKeys) {
+    if (keyComment) {
+      throw new Error("With simple keys, key nodes cannot have comments");
+    }
+    if (isCollection(key2) || !isNode(key2) && typeof key2 === "object") {
+      const msg = "With simple keys, collection cannot be used as a key value";
+      throw new Error(msg);
+    }
+  }
+  let explicitKey = !simpleKeys && (!key2 || keyComment && value == null && !ctx.inFlow || isCollection(key2) || (isScalar(key2) ? key2.type === Scalar.BLOCK_FOLDED || key2.type === Scalar.BLOCK_LITERAL : typeof key2 === "object"));
+  ctx = Object.assign({}, ctx, {
+    allNullValues: false,
+    implicitKey: !explicitKey && (simpleKeys || !allNullValues),
+    indent: indent2 + indentStep
+  });
+  let keyCommentDone = false;
+  let chompKeep = false;
+  let str = stringify(key2, ctx, () => keyCommentDone = true, () => chompKeep = true);
+  if (!explicitKey && !ctx.inFlow && str.length > 1024) {
+    if (simpleKeys)
+      throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
+    explicitKey = true;
+  }
+  if (ctx.inFlow) {
+    if (allNullValues || value == null) {
+      if (keyCommentDone && onComment)
+        onComment();
+      return str === "" ? "?" : explicitKey ? `? ${str}` : str;
+    }
+  } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
+    str = `? ${str}`;
+    if (keyComment && !keyCommentDone) {
+      str += lineComment(str, ctx.indent, commentString(keyComment));
+    } else if (chompKeep && onChompKeep)
+      onChompKeep();
+    return str;
+  }
+  if (keyCommentDone)
+    keyComment = null;
+  if (explicitKey) {
+    if (keyComment)
+      str += lineComment(str, ctx.indent, commentString(keyComment));
+    str = `? ${str}
+${indent2}:`;
+  } else {
+    str = `${str}:`;
+    if (keyComment)
+      str += lineComment(str, ctx.indent, commentString(keyComment));
+  }
+  let vsb, vcb, valueComment;
+  if (isNode(value)) {
+    vsb = !!value.spaceBefore;
+    vcb = value.commentBefore;
+    valueComment = value.comment;
+  } else {
+    vsb = false;
+    vcb = null;
+    valueComment = null;
+    if (value && typeof value === "object")
+      value = doc.createNode(value);
+  }
+  ctx.implicitKey = false;
+  if (!explicitKey && !keyComment && isScalar(value))
+    ctx.indentAtStart = str.length + 1;
+  chompKeep = false;
+  if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && isSeq(value) && !value.flow && !value.tag && !value.anchor) {
+    ctx.indent = ctx.indent.substring(2);
+  }
+  let valueCommentDone = false;
+  const valueStr = stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
+  let ws = " ";
+  if (keyComment || vsb || vcb) {
+    ws = vsb ? "\n" : "";
+    if (vcb) {
+      const cs = commentString(vcb);
+      ws += `
+${indentComment(cs, ctx.indent)}`;
+    }
+    if (valueStr === "" && !ctx.inFlow) {
+      if (ws === "\n" && valueComment)
+        ws = "\n\n";
+    } else {
+      ws += `
+${ctx.indent}`;
+    }
+  } else if (!explicitKey && isCollection(value)) {
+    const vs0 = valueStr[0];
+    const nl0 = valueStr.indexOf("\n");
+    const hasNewline = nl0 !== -1;
+    const flow2 = ctx.inFlow ?? value.flow ?? value.items.length === 0;
+    if (hasNewline || !flow2) {
+      let hasPropsLine = false;
+      if (hasNewline && (vs0 === "&" || vs0 === "!")) {
+        let sp0 = valueStr.indexOf(" ");
+        if (vs0 === "&" && sp0 !== -1 && sp0 < nl0 && valueStr[sp0 + 1] === "!") {
+          sp0 = valueStr.indexOf(" ", sp0 + 1);
+        }
+        if (sp0 === -1 || nl0 < sp0)
+          hasPropsLine = true;
+      }
+      if (!hasPropsLine)
+        ws = `
+${ctx.indent}`;
+    }
+  } else if (valueStr === "" || valueStr[0] === "\n") {
+    ws = "";
+  }
+  str += ws + valueStr;
+  if (ctx.inFlow) {
+    if (valueCommentDone && onComment)
+      onComment();
+  } else if (valueComment && !valueCommentDone) {
+    str += lineComment(str, ctx.indent, commentString(valueComment));
+  } else if (chompKeep && onChompKeep) {
+    onChompKeep();
+  }
+  return str;
+}
+function warn(logLevel, warning) {
+  if (logLevel === "debug" || logLevel === "warn") {
+    console.warn(warning);
+  }
+}
+const MERGE_KEY = "<<";
+const merge = {
+  identify: (value) => value === MERGE_KEY || typeof value === "symbol" && value.description === MERGE_KEY,
+  default: "key",
+  tag: "tag:yaml.org,2002:merge",
+  test: /^<<$/,
+  resolve: () => Object.assign(new Scalar(Symbol(MERGE_KEY)), {
+    addToJSMap: addMergeToJSMap
+  }),
+  stringify: () => MERGE_KEY
+};
+const isMergeKey = (ctx, key2) => (merge.identify(key2) || isScalar(key2) && (!key2.type || key2.type === Scalar.PLAIN) && merge.identify(key2.value)) && (ctx == null ? void 0 : ctx.doc.schema.tags.some((tag) => tag.tag === merge.tag && tag.default));
+function addMergeToJSMap(ctx, map2, value) {
+  const source = resolveAliasValue(ctx, value);
+  if (isSeq(source))
+    for (const it2 of source.items)
+      mergeValue(ctx, map2, it2);
+  else if (Array.isArray(source))
+    for (const it2 of source)
+      mergeValue(ctx, map2, it2);
+  else
+    mergeValue(ctx, map2, source);
+}
+function mergeValue(ctx, map2, value) {
+  const source = resolveAliasValue(ctx, value);
+  if (!isMap(source))
+    throw new Error("Merge sources must be maps or map aliases");
+  const srcMap = source.toJSON(null, ctx, Map);
+  for (const [key2, value2] of srcMap) {
+    if (map2 instanceof Map) {
+      if (!map2.has(key2))
+        map2.set(key2, value2);
+    } else if (map2 instanceof Set) {
+      map2.add(key2);
+    } else if (!Object.prototype.hasOwnProperty.call(map2, key2)) {
+      Object.defineProperty(map2, key2, {
+        value: value2,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
+  }
+  return map2;
+}
+function resolveAliasValue(ctx, value) {
+  return ctx && isAlias(value) ? value.resolve(ctx.doc, ctx) : value;
+}
+function addPairToJSMap(ctx, map2, { key: key2, value }) {
+  if (isNode(key2) && key2.addToJSMap)
+    key2.addToJSMap(ctx, map2, value);
+  else if (isMergeKey(ctx, key2))
+    addMergeToJSMap(ctx, map2, value);
+  else {
+    const jsKey = toJS(key2, "", ctx);
+    if (map2 instanceof Map) {
+      map2.set(jsKey, toJS(value, jsKey, ctx));
+    } else if (map2 instanceof Set) {
+      map2.add(jsKey);
+    } else {
+      const stringKey = stringifyKey(key2, jsKey, ctx);
+      const jsValue = toJS(value, stringKey, ctx);
+      if (stringKey in map2)
+        Object.defineProperty(map2, stringKey, {
+          value: jsValue,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
+      else
+        map2[stringKey] = jsValue;
+    }
+  }
+  return map2;
+}
+function stringifyKey(key2, jsKey, ctx) {
+  if (jsKey === null)
+    return "";
+  if (typeof jsKey !== "object")
+    return String(jsKey);
+  if (isNode(key2) && (ctx == null ? void 0 : ctx.doc)) {
+    const strCtx = createStringifyContext(ctx.doc, {});
+    strCtx.anchors = /* @__PURE__ */ new Set();
+    for (const node2 of ctx.anchors.keys())
+      strCtx.anchors.add(node2.anchor);
+    strCtx.inFlow = true;
+    strCtx.inStringifyKey = true;
+    const strKey = key2.toString(strCtx);
+    if (!ctx.mapKeyWarned) {
+      let jsonStr = JSON.stringify(strKey);
+      if (jsonStr.length > 40)
+        jsonStr = jsonStr.substring(0, 36) + '..."';
+      warn(ctx.doc.options.logLevel, `Keys with collection values will be stringified due to JS Object restrictions: ${jsonStr}. Set mapAsMap: true to use object keys.`);
+      ctx.mapKeyWarned = true;
+    }
+    return strKey;
+  }
+  return JSON.stringify(jsKey);
+}
+function createPair(key2, value, ctx) {
+  const k2 = createNode(key2, void 0, ctx);
+  const v2 = createNode(value, void 0, ctx);
+  return new Pair(k2, v2);
+}
+class Pair {
+  constructor(key2, value = null) {
+    Object.defineProperty(this, NODE_TYPE, { value: PAIR });
+    this.key = key2;
+    this.value = value;
+  }
+  clone(schema2) {
+    let { key: key2, value } = this;
+    if (isNode(key2))
+      key2 = key2.clone(schema2);
+    if (isNode(value))
+      value = value.clone(schema2);
+    return new Pair(key2, value);
+  }
+  toJSON(_2, ctx) {
+    const pair = (ctx == null ? void 0 : ctx.mapAsMap) ? /* @__PURE__ */ new Map() : {};
+    return addPairToJSMap(ctx, pair, this);
+  }
+  toString(ctx, onComment, onChompKeep) {
+    return (ctx == null ? void 0 : ctx.doc) ? stringifyPair(this, ctx, onComment, onChompKeep) : JSON.stringify(this);
+  }
+}
+function stringifyCollection(collection, ctx, options) {
+  const flow2 = ctx.inFlow ?? collection.flow;
+  const stringify2 = flow2 ? stringifyFlowCollection : stringifyBlockCollection;
+  return stringify2(collection, ctx, options);
+}
+function stringifyBlockCollection({ comment: comment2, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
+  const { indent: indent2, options: { commentString } } = ctx;
+  const itemCtx = Object.assign({}, ctx, { indent: itemIndent, type: null });
+  let chompKeep = false;
+  const lines = [];
+  for (let i2 = 0; i2 < items.length; ++i2) {
+    const item = items[i2];
+    let comment3 = null;
+    if (isNode(item)) {
+      if (!chompKeep && item.spaceBefore)
+        lines.push("");
+      addCommentBefore(ctx, lines, item.commentBefore, chompKeep);
+      if (item.comment)
+        comment3 = item.comment;
+    } else if (isPair(item)) {
+      const ik = isNode(item.key) ? item.key : null;
+      if (ik) {
+        if (!chompKeep && ik.spaceBefore)
+          lines.push("");
+        addCommentBefore(ctx, lines, ik.commentBefore, chompKeep);
+      }
+    }
+    chompKeep = false;
+    let str2 = stringify(item, itemCtx, () => comment3 = null, () => chompKeep = true);
+    if (comment3)
+      str2 += lineComment(str2, itemIndent, commentString(comment3));
+    if (chompKeep && comment3)
+      chompKeep = false;
+    lines.push(blockItemPrefix + str2);
+  }
+  let str;
+  if (lines.length === 0) {
+    str = flowChars.start + flowChars.end;
+  } else {
+    str = lines[0];
+    for (let i2 = 1; i2 < lines.length; ++i2) {
+      const line = lines[i2];
+      str += line ? `
+${indent2}${line}` : "\n";
+    }
+  }
+  if (comment2) {
+    str += "\n" + indentComment(commentString(comment2), indent2);
+    if (onComment)
+      onComment();
+  } else if (chompKeep && onChompKeep)
+    onChompKeep();
+  return str;
+}
+function stringifyFlowCollection({ items }, ctx, { flowChars, itemIndent }) {
+  const { indent: indent2, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
+  itemIndent += indentStep;
+  const itemCtx = Object.assign({}, ctx, {
+    indent: itemIndent,
+    inFlow: true,
+    type: null
+  });
+  let reqNewline = false;
+  let linesAtValue = 0;
+  const lines = [];
+  for (let i2 = 0; i2 < items.length; ++i2) {
+    const item = items[i2];
+    let comment2 = null;
+    if (isNode(item)) {
+      if (item.spaceBefore)
+        lines.push("");
+      addCommentBefore(ctx, lines, item.commentBefore, false);
+      if (item.comment)
+        comment2 = item.comment;
+    } else if (isPair(item)) {
+      const ik = isNode(item.key) ? item.key : null;
+      if (ik) {
+        if (ik.spaceBefore)
+          lines.push("");
+        addCommentBefore(ctx, lines, ik.commentBefore, false);
+        if (ik.comment)
+          reqNewline = true;
+      }
+      const iv = isNode(item.value) ? item.value : null;
+      if (iv) {
+        if (iv.comment)
+          comment2 = iv.comment;
+        if (iv.commentBefore)
+          reqNewline = true;
+      } else if (item.value == null && (ik == null ? void 0 : ik.comment)) {
+        comment2 = ik.comment;
+      }
+    }
+    if (comment2)
+      reqNewline = true;
+    let str = stringify(item, itemCtx, () => comment2 = null);
+    reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
+    if (i2 < items.length - 1) {
+      str += ",";
+    } else if (ctx.options.trailingComma) {
+      if (ctx.options.lineWidth > 0) {
+        reqNewline || (reqNewline = lines.reduce((sum2, line) => sum2 + line.length + 2, 2) + (str.length + 2) > ctx.options.lineWidth);
+      }
+      if (reqNewline) {
+        str += ",";
+      }
+    }
+    if (comment2)
+      str += lineComment(str, itemIndent, commentString(comment2));
+    lines.push(str);
+    linesAtValue = lines.length;
+  }
+  const { start: start2, end } = flowChars;
+  if (lines.length === 0) {
+    return start2 + end;
+  } else {
+    if (!reqNewline) {
+      const len = lines.reduce((sum2, line) => sum2 + line.length + 2, 2);
+      reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
+    }
+    if (reqNewline) {
+      let str = start2;
+      for (const line of lines)
+        str += line ? `
+${indentStep}${indent2}${line}` : "\n";
+      return `${str}
+${indent2}${end}`;
+    } else {
+      return `${start2}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
+    }
+  }
+}
+function addCommentBefore({ indent: indent2, options: { commentString } }, lines, comment2, chompKeep) {
+  if (comment2 && chompKeep)
+    comment2 = comment2.replace(/^\n+/, "");
+  if (comment2) {
+    const ic = indentComment(commentString(comment2), indent2);
+    lines.push(ic.trimStart());
+  }
+}
+function findPair(items, key2) {
+  const k2 = isScalar(key2) ? key2.value : key2;
+  for (const it2 of items) {
+    if (isPair(it2)) {
+      if (it2.key === key2 || it2.key === k2)
+        return it2;
+      if (isScalar(it2.key) && it2.key.value === k2)
+        return it2;
+    }
+  }
+  return void 0;
+}
+class YAMLMap extends Collection {
+  static get tagName() {
+    return "tag:yaml.org,2002:map";
+  }
+  constructor(schema2) {
+    super(MAP, schema2);
+    this.items = [];
+  }
+  /**
+   * A generic collection parsing method that can be extended
+   * to other node classes that inherit from YAMLMap
+   */
+  static from(schema2, obj, ctx) {
+    const { keepUndefined, replacer } = ctx;
+    const map2 = new this(schema2);
+    const add2 = (key2, value) => {
+      if (typeof replacer === "function")
+        value = replacer.call(obj, key2, value);
+      else if (Array.isArray(replacer) && !replacer.includes(key2))
+        return;
+      if (value !== void 0 || keepUndefined)
+        map2.items.push(createPair(key2, value, ctx));
+    };
+    if (obj instanceof Map) {
+      for (const [key2, value] of obj)
+        add2(key2, value);
+    } else if (obj && typeof obj === "object") {
+      for (const key2 of Object.keys(obj))
+        add2(key2, obj[key2]);
+    }
+    if (typeof schema2.sortMapEntries === "function") {
+      map2.items.sort(schema2.sortMapEntries);
+    }
+    return map2;
+  }
+  /**
+   * Adds a value to the collection.
+   *
+   * @param overwrite - If not set `true`, using a key that is already in the
+   *   collection will throw. Otherwise, overwrites the previous value.
+   */
+  add(pair, overwrite) {
+    var _a3;
+    let _pair;
+    if (isPair(pair))
+      _pair = pair;
+    else if (!pair || typeof pair !== "object" || !("key" in pair)) {
+      _pair = new Pair(pair, pair == null ? void 0 : pair.value);
+    } else
+      _pair = new Pair(pair.key, pair.value);
+    const prev = findPair(this.items, _pair.key);
+    const sortEntries = (_a3 = this.schema) == null ? void 0 : _a3.sortMapEntries;
+    if (prev) {
+      if (!overwrite)
+        throw new Error(`Key ${_pair.key} already set`);
+      if (isScalar(prev.value) && isScalarValue(_pair.value))
+        prev.value.value = _pair.value;
+      else
+        prev.value = _pair.value;
+    } else if (sortEntries) {
+      const i2 = this.items.findIndex((item) => sortEntries(_pair, item) < 0);
+      if (i2 === -1)
+        this.items.push(_pair);
+      else
+        this.items.splice(i2, 0, _pair);
+    } else {
+      this.items.push(_pair);
+    }
+  }
+  delete(key2) {
+    const it2 = findPair(this.items, key2);
+    if (!it2)
+      return false;
+    const del = this.items.splice(this.items.indexOf(it2), 1);
+    return del.length > 0;
+  }
+  get(key2, keepScalar) {
+    const it2 = findPair(this.items, key2);
+    const node2 = it2 == null ? void 0 : it2.value;
+    return (!keepScalar && isScalar(node2) ? node2.value : node2) ?? void 0;
+  }
+  has(key2) {
+    return !!findPair(this.items, key2);
+  }
+  set(key2, value) {
+    this.add(new Pair(key2, value), true);
+  }
+  /**
+   * @param ctx - Conversion context, originally set in Document#toJS()
+   * @param {Class} Type - If set, forces the returned collection type
+   * @returns Instance of Type, Map, or Object
+   */
+  toJSON(_2, ctx, Type2) {
+    const map2 = Type2 ? new Type2() : (ctx == null ? void 0 : ctx.mapAsMap) ? /* @__PURE__ */ new Map() : {};
+    if (ctx == null ? void 0 : ctx.onCreate)
+      ctx.onCreate(map2);
+    for (const item of this.items)
+      addPairToJSMap(ctx, map2, item);
+    return map2;
+  }
+  toString(ctx, onComment, onChompKeep) {
+    if (!ctx)
+      return JSON.stringify(this);
+    for (const item of this.items) {
+      if (!isPair(item))
+        throw new Error(`Map items must all be pairs; found ${JSON.stringify(item)} instead`);
+    }
+    if (!ctx.allNullValues && this.hasAllNullValues(false))
+      ctx = Object.assign({}, ctx, { allNullValues: true });
+    return stringifyCollection(this, ctx, {
+      blockItemPrefix: "",
+      flowChars: { start: "{", end: "}" },
+      itemIndent: ctx.indent || "",
+      onChompKeep,
+      onComment
+    });
+  }
+}
+const map = {
+  collection: "map",
+  default: true,
+  nodeClass: YAMLMap,
+  tag: "tag:yaml.org,2002:map",
+  resolve(map2, onError) {
+    if (!isMap(map2))
+      onError("Expected a mapping for this tag");
+    return map2;
+  },
+  createNode: (schema2, obj, ctx) => YAMLMap.from(schema2, obj, ctx)
+};
+class YAMLSeq extends Collection {
+  static get tagName() {
+    return "tag:yaml.org,2002:seq";
+  }
+  constructor(schema2) {
+    super(SEQ, schema2);
+    this.items = [];
+  }
+  add(value) {
+    this.items.push(value);
+  }
+  /**
+   * Removes a value from the collection.
+   *
+   * `key` must contain a representation of an integer for this to succeed.
+   * It may be wrapped in a `Scalar`.
+   *
+   * @returns `true` if the item was found and removed.
+   */
+  delete(key2) {
+    const idx = asItemIndex(key2);
+    if (typeof idx !== "number")
+      return false;
+    const del = this.items.splice(idx, 1);
+    return del.length > 0;
+  }
+  get(key2, keepScalar) {
+    const idx = asItemIndex(key2);
+    if (typeof idx !== "number")
+      return void 0;
+    const it2 = this.items[idx];
+    return !keepScalar && isScalar(it2) ? it2.value : it2;
+  }
+  /**
+   * Checks if the collection includes a value with the key `key`.
+   *
+   * `key` must contain a representation of an integer for this to succeed.
+   * It may be wrapped in a `Scalar`.
+   */
+  has(key2) {
+    const idx = asItemIndex(key2);
+    return typeof idx === "number" && idx < this.items.length;
+  }
+  /**
+   * Sets a value in this collection. For `!!set`, `value` needs to be a
+   * boolean to add/remove the item from the set.
+   *
+   * If `key` does not contain a representation of an integer, this will throw.
+   * It may be wrapped in a `Scalar`.
+   */
+  set(key2, value) {
+    const idx = asItemIndex(key2);
+    if (typeof idx !== "number")
+      throw new Error(`Expected a valid index, not ${key2}.`);
+    const prev = this.items[idx];
+    if (isScalar(prev) && isScalarValue(value))
+      prev.value = value;
+    else
+      this.items[idx] = value;
+  }
+  toJSON(_2, ctx) {
+    const seq2 = [];
+    if (ctx == null ? void 0 : ctx.onCreate)
+      ctx.onCreate(seq2);
+    let i2 = 0;
+    for (const item of this.items)
+      seq2.push(toJS(item, String(i2++), ctx));
+    return seq2;
+  }
+  toString(ctx, onComment, onChompKeep) {
+    if (!ctx)
+      return JSON.stringify(this);
+    return stringifyCollection(this, ctx, {
+      blockItemPrefix: "- ",
+      flowChars: { start: "[", end: "]" },
+      itemIndent: (ctx.indent || "") + "  ",
+      onChompKeep,
+      onComment
+    });
+  }
+  static from(schema2, obj, ctx) {
+    const { replacer } = ctx;
+    const seq2 = new this(schema2);
+    if (obj && Symbol.iterator in Object(obj)) {
+      let i2 = 0;
+      for (let it2 of obj) {
+        if (typeof replacer === "function") {
+          const key2 = obj instanceof Set ? it2 : String(i2++);
+          it2 = replacer.call(obj, key2, it2);
+        }
+        seq2.items.push(createNode(it2, void 0, ctx));
+      }
+    }
+    return seq2;
+  }
+}
+function asItemIndex(key2) {
+  let idx = isScalar(key2) ? key2.value : key2;
+  if (idx && typeof idx === "string")
+    idx = Number(idx);
+  return typeof idx === "number" && Number.isInteger(idx) && idx >= 0 ? idx : null;
+}
+const seq = {
+  collection: "seq",
+  default: true,
+  nodeClass: YAMLSeq,
+  tag: "tag:yaml.org,2002:seq",
+  resolve(seq2, onError) {
+    if (!isSeq(seq2))
+      onError("Expected a sequence for this tag");
+    return seq2;
+  },
+  createNode: (schema2, obj, ctx) => YAMLSeq.from(schema2, obj, ctx)
+};
+const string = {
+  identify: (value) => typeof value === "string",
+  default: true,
+  tag: "tag:yaml.org,2002:str",
+  resolve: (str) => str,
+  stringify(item, ctx, onComment, onChompKeep) {
+    ctx = Object.assign({ actualString: true }, ctx);
+    return stringifyString(item, ctx, onComment, onChompKeep);
+  }
+};
+const nullTag = {
+  identify: (value) => value == null,
+  createNode: () => new Scalar(null),
+  default: true,
+  tag: "tag:yaml.org,2002:null",
+  test: /^(?:~|[Nn]ull|NULL)?$/,
+  resolve: () => new Scalar(null),
+  stringify: ({ source }, ctx) => typeof source === "string" && nullTag.test.test(source) ? source : ctx.options.nullStr
+};
+const boolTag = {
+  identify: (value) => typeof value === "boolean",
+  default: true,
+  tag: "tag:yaml.org,2002:bool",
+  test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
+  resolve: (str) => new Scalar(str[0] === "t" || str[0] === "T"),
+  stringify({ source, value }, ctx) {
+    if (source && boolTag.test.test(source)) {
+      const sv = source[0] === "t" || source[0] === "T";
+      if (value === sv)
+        return source;
+    }
+    return value ? ctx.options.trueStr : ctx.options.falseStr;
+  }
+};
+function stringifyNumber({ format: format2, minFractionDigits, tag, value }) {
+  if (typeof value === "bigint")
+    return String(value);
+  const num = typeof value === "number" ? value : Number(value);
+  if (!isFinite(num))
+    return isNaN(num) ? ".nan" : num < 0 ? "-.inf" : ".inf";
+  let n2 = Object.is(value, -0) ? "-0" : JSON.stringify(value);
+  if (!format2 && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n2) && !n2.includes("e")) {
+    let i2 = n2.indexOf(".");
+    if (i2 < 0) {
+      i2 = n2.length;
+      n2 += ".";
+    }
+    let d2 = minFractionDigits - (n2.length - i2 - 1);
+    while (d2-- > 0)
+      n2 += "0";
+  }
+  return n2;
+}
+const floatNaN$1 = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
+  resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+  stringify: stringifyNumber
+};
+const floatExp$1 = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  format: "EXP",
+  test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
+  resolve: (str) => parseFloat(str),
+  stringify(node2) {
+    const num = Number(node2.value);
+    return isFinite(num) ? num.toExponential() : stringifyNumber(node2);
+  }
+};
+const float$1 = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
+  resolve(str) {
+    const node2 = new Scalar(parseFloat(str));
+    const dot = str.indexOf(".");
+    if (dot !== -1 && str[str.length - 1] === "0")
+      node2.minFractionDigits = str.length - dot - 1;
+    return node2;
+  },
+  stringify: stringifyNumber
+};
+const intIdentify$2 = (value) => typeof value === "bigint" || Number.isInteger(value);
+const intResolve$1 = (str, offset2, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset2), radix);
+function intStringify$1(node2, radix, prefix2) {
+  const { value } = node2;
+  if (intIdentify$2(value) && value >= 0)
+    return prefix2 + value.toString(radix);
+  return stringifyNumber(node2);
+}
+const intOct$1 = {
+  identify: (value) => intIdentify$2(value) && value >= 0,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "OCT",
+  test: /^0o[0-7]+$/,
+  resolve: (str, _onError, opt) => intResolve$1(str, 2, 8, opt),
+  stringify: (node2) => intStringify$1(node2, 8, "0o")
+};
+const int$1 = {
+  identify: intIdentify$2,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  test: /^[-+]?[0-9]+$/,
+  resolve: (str, _onError, opt) => intResolve$1(str, 0, 10, opt),
+  stringify: stringifyNumber
+};
+const intHex$1 = {
+  identify: (value) => intIdentify$2(value) && value >= 0,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "HEX",
+  test: /^0x[0-9a-fA-F]+$/,
+  resolve: (str, _onError, opt) => intResolve$1(str, 2, 16, opt),
+  stringify: (node2) => intStringify$1(node2, 16, "0x")
+};
+const schema$2 = [
+  map,
+  seq,
+  string,
+  nullTag,
+  boolTag,
+  intOct$1,
+  int$1,
+  intHex$1,
+  floatNaN$1,
+  floatExp$1,
+  float$1
+];
+function intIdentify$1(value) {
+  return typeof value === "bigint" || Number.isInteger(value);
+}
+const stringifyJSON = ({ value }) => JSON.stringify(value);
+const jsonScalars = [
+  {
+    identify: (value) => typeof value === "string",
+    default: true,
+    tag: "tag:yaml.org,2002:str",
+    resolve: (str) => str,
+    stringify: stringifyJSON
+  },
+  {
+    identify: (value) => value == null,
+    createNode: () => new Scalar(null),
+    default: true,
+    tag: "tag:yaml.org,2002:null",
+    test: /^null$/,
+    resolve: () => null,
+    stringify: stringifyJSON
+  },
+  {
+    identify: (value) => typeof value === "boolean",
+    default: true,
+    tag: "tag:yaml.org,2002:bool",
+    test: /^true$|^false$/,
+    resolve: (str) => str === "true",
+    stringify: stringifyJSON
+  },
+  {
+    identify: intIdentify$1,
+    default: true,
+    tag: "tag:yaml.org,2002:int",
+    test: /^-?(?:0|[1-9][0-9]*)$/,
+    resolve: (str, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str, 10),
+    stringify: ({ value }) => intIdentify$1(value) ? value.toString() : JSON.stringify(value)
+  },
+  {
+    identify: (value) => typeof value === "number",
+    default: true,
+    tag: "tag:yaml.org,2002:float",
+    test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
+    resolve: (str) => parseFloat(str),
+    stringify: stringifyJSON
+  }
+];
+const jsonError = {
+  default: true,
+  tag: "",
+  test: /^/,
+  resolve(str, onError) {
+    onError(`Unresolved plain scalar ${JSON.stringify(str)}`);
+    return str;
+  }
+};
+const schema$1 = [map, seq].concat(jsonScalars, jsonError);
+const binary = {
+  identify: (value) => value instanceof Uint8Array,
+  // Buffer inherits from Uint8Array
+  default: false,
+  tag: "tag:yaml.org,2002:binary",
+  /**
+   * Returns a Buffer in node and an Uint8Array in browsers
+   *
+   * To use the resulting buffer as an image, you'll want to do something like:
+   *
+   *   const blob = new Blob([buffer], { type: 'image/jpeg' })
+   *   document.querySelector('#photo').src = URL.createObjectURL(blob)
+   */
+  resolve(src, onError) {
+    if (typeof atob === "function") {
+      const str = atob(src.replace(/[\n\r]/g, ""));
+      const buffer = new Uint8Array(str.length);
+      for (let i2 = 0; i2 < str.length; ++i2)
+        buffer[i2] = str.charCodeAt(i2);
+      return buffer;
+    } else {
+      onError("This environment does not support reading binary tags; either Buffer or atob is required");
+      return src;
+    }
+  },
+  stringify({ comment: comment2, type, value }, ctx, onComment, onChompKeep) {
+    if (!value)
+      return "";
+    const buf = value;
+    let str;
+    if (typeof btoa === "function") {
+      let s2 = "";
+      for (let i2 = 0; i2 < buf.length; ++i2)
+        s2 += String.fromCharCode(buf[i2]);
+      str = btoa(s2);
+    } else {
+      throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
+    }
+    type ?? (type = Scalar.BLOCK_LITERAL);
+    if (type !== Scalar.QUOTE_DOUBLE) {
+      const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
+      const n2 = Math.ceil(str.length / lineWidth);
+      const lines = new Array(n2);
+      for (let i2 = 0, o2 = 0; i2 < n2; ++i2, o2 += lineWidth) {
+        lines[i2] = str.substr(o2, lineWidth);
+      }
+      str = lines.join(type === Scalar.BLOCK_LITERAL ? "\n" : " ");
+    }
+    return stringifyString({ comment: comment2, type, value: str }, ctx, onComment, onChompKeep);
+  }
+};
+function resolvePairs(seq2, onError) {
+  if (isSeq(seq2)) {
+    for (let i2 = 0; i2 < seq2.items.length; ++i2) {
+      let item = seq2.items[i2];
+      if (isPair(item))
+        continue;
+      else if (isMap(item)) {
+        if (item.items.length > 1)
+          onError("Each pair must have its own sequence indicator");
+        const pair = item.items[0] || new Pair(new Scalar(null));
+        if (item.commentBefore)
+          pair.key.commentBefore = pair.key.commentBefore ? `${item.commentBefore}
+${pair.key.commentBefore}` : item.commentBefore;
+        if (item.comment) {
+          const cn2 = pair.value ?? pair.key;
+          cn2.comment = cn2.comment ? `${item.comment}
+${cn2.comment}` : item.comment;
+        }
+        item = pair;
+      }
+      seq2.items[i2] = isPair(item) ? item : new Pair(item);
+    }
+  } else
+    onError("Expected a sequence for this tag");
+  return seq2;
+}
+function createPairs(schema2, iterable, ctx) {
+  const { replacer } = ctx;
+  const pairs2 = new YAMLSeq(schema2);
+  pairs2.tag = "tag:yaml.org,2002:pairs";
+  let i2 = 0;
+  if (iterable && Symbol.iterator in Object(iterable))
+    for (let it2 of iterable) {
+      if (typeof replacer === "function")
+        it2 = replacer.call(iterable, String(i2++), it2);
+      let key2, value;
+      if (Array.isArray(it2)) {
+        if (it2.length === 2) {
+          key2 = it2[0];
+          value = it2[1];
+        } else
+          throw new TypeError(`Expected [key, value] tuple: ${it2}`);
+      } else if (it2 && it2 instanceof Object) {
+        const keys2 = Object.keys(it2);
+        if (keys2.length === 1) {
+          key2 = keys2[0];
+          value = it2[key2];
+        } else {
+          throw new TypeError(`Expected tuple with one key, not ${keys2.length} keys`);
+        }
+      } else {
+        key2 = it2;
+      }
+      pairs2.items.push(createPair(key2, value, ctx));
+    }
+  return pairs2;
+}
+const pairs = {
+  collection: "seq",
+  default: false,
+  tag: "tag:yaml.org,2002:pairs",
+  resolve: resolvePairs,
+  createNode: createPairs
+};
+class YAMLOMap extends YAMLSeq {
+  constructor() {
+    super();
+    this.add = YAMLMap.prototype.add.bind(this);
+    this.delete = YAMLMap.prototype.delete.bind(this);
+    this.get = YAMLMap.prototype.get.bind(this);
+    this.has = YAMLMap.prototype.has.bind(this);
+    this.set = YAMLMap.prototype.set.bind(this);
+    this.tag = YAMLOMap.tag;
+  }
+  /**
+   * If `ctx` is given, the return type is actually `Map<unknown, unknown>`,
+   * but TypeScript won't allow widening the signature of a child method.
+   */
+  toJSON(_2, ctx) {
+    if (!ctx)
+      return super.toJSON(_2);
+    const map2 = /* @__PURE__ */ new Map();
+    if (ctx == null ? void 0 : ctx.onCreate)
+      ctx.onCreate(map2);
+    for (const pair of this.items) {
+      let key2, value;
+      if (isPair(pair)) {
+        key2 = toJS(pair.key, "", ctx);
+        value = toJS(pair.value, key2, ctx);
+      } else {
+        key2 = toJS(pair, "", ctx);
+      }
+      if (map2.has(key2))
+        throw new Error("Ordered maps must not include duplicate keys");
+      map2.set(key2, value);
+    }
+    return map2;
+  }
+  static from(schema2, iterable, ctx) {
+    const pairs2 = createPairs(schema2, iterable, ctx);
+    const omap2 = new this();
+    omap2.items = pairs2.items;
+    return omap2;
+  }
+}
+YAMLOMap.tag = "tag:yaml.org,2002:omap";
+const omap = {
+  collection: "seq",
+  identify: (value) => value instanceof Map,
+  nodeClass: YAMLOMap,
+  default: false,
+  tag: "tag:yaml.org,2002:omap",
+  resolve(seq2, onError) {
+    const pairs2 = resolvePairs(seq2, onError);
+    const seenKeys = [];
+    for (const { key: key2 } of pairs2.items) {
+      if (isScalar(key2)) {
+        if (seenKeys.includes(key2.value)) {
+          onError(`Ordered maps must not include duplicate keys: ${key2.value}`);
+        } else {
+          seenKeys.push(key2.value);
+        }
+      }
+    }
+    return Object.assign(new YAMLOMap(), pairs2);
+  },
+  createNode: (schema2, iterable, ctx) => YAMLOMap.from(schema2, iterable, ctx)
+};
+function boolStringify({ value, source }, ctx) {
+  const boolObj = value ? trueTag : falseTag;
+  if (source && boolObj.test.test(source))
+    return source;
+  return value ? ctx.options.trueStr : ctx.options.falseStr;
+}
+const trueTag = {
+  identify: (value) => value === true,
+  default: true,
+  tag: "tag:yaml.org,2002:bool",
+  test: /^(?:Y|y|[Yy]es|YES|[Tt]rue|TRUE|[Oo]n|ON)$/,
+  resolve: () => new Scalar(true),
+  stringify: boolStringify
+};
+const falseTag = {
+  identify: (value) => value === false,
+  default: true,
+  tag: "tag:yaml.org,2002:bool",
+  test: /^(?:N|n|[Nn]o|NO|[Ff]alse|FALSE|[Oo]ff|OFF)$/,
+  resolve: () => new Scalar(false),
+  stringify: boolStringify
+};
+const floatNaN = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
+  resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+  stringify: stringifyNumber
+};
+const floatExp = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  format: "EXP",
+  test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
+  resolve: (str) => parseFloat(str.replace(/_/g, "")),
+  stringify(node2) {
+    const num = Number(node2.value);
+    return isFinite(num) ? num.toExponential() : stringifyNumber(node2);
+  }
+};
+const float = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
+  resolve(str) {
+    const node2 = new Scalar(parseFloat(str.replace(/_/g, "")));
+    const dot = str.indexOf(".");
+    if (dot !== -1) {
+      const f2 = str.substring(dot + 1).replace(/_/g, "");
+      if (f2[f2.length - 1] === "0")
+        node2.minFractionDigits = f2.length;
+    }
+    return node2;
+  },
+  stringify: stringifyNumber
+};
+const intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
+function intResolve(str, offset2, radix, { intAsBigInt }) {
+  const sign = str[0];
+  if (sign === "-" || sign === "+")
+    offset2 += 1;
+  str = str.substring(offset2).replace(/_/g, "");
+  if (intAsBigInt) {
+    switch (radix) {
+      case 2:
+        str = `0b${str}`;
+        break;
+      case 8:
+        str = `0o${str}`;
+        break;
+      case 16:
+        str = `0x${str}`;
+        break;
+    }
+    const n3 = BigInt(str);
+    return sign === "-" ? BigInt(-1) * n3 : n3;
+  }
+  const n2 = parseInt(str, radix);
+  return sign === "-" ? -1 * n2 : n2;
+}
+function intStringify(node2, radix, prefix2) {
+  const { value } = node2;
+  if (intIdentify(value)) {
+    const str = value.toString(radix);
+    return value < 0 ? "-" + prefix2 + str.substr(1) : prefix2 + str;
+  }
+  return stringifyNumber(node2);
+}
+const intBin = {
+  identify: intIdentify,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "BIN",
+  test: /^[-+]?0b[0-1_]+$/,
+  resolve: (str, _onError, opt) => intResolve(str, 2, 2, opt),
+  stringify: (node2) => intStringify(node2, 2, "0b")
+};
+const intOct = {
+  identify: intIdentify,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "OCT",
+  test: /^[-+]?0[0-7_]+$/,
+  resolve: (str, _onError, opt) => intResolve(str, 1, 8, opt),
+  stringify: (node2) => intStringify(node2, 8, "0")
+};
+const int = {
+  identify: intIdentify,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  test: /^[-+]?[0-9][0-9_]*$/,
+  resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+  stringify: stringifyNumber
+};
+const intHex = {
+  identify: intIdentify,
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "HEX",
+  test: /^[-+]?0x[0-9a-fA-F_]+$/,
+  resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+  stringify: (node2) => intStringify(node2, 16, "0x")
+};
+class YAMLSet extends YAMLMap {
+  constructor(schema2) {
+    super(schema2);
+    this.tag = YAMLSet.tag;
+  }
+  add(key2) {
+    let pair;
+    if (isPair(key2))
+      pair = key2;
+    else if (key2 && typeof key2 === "object" && "key" in key2 && "value" in key2 && key2.value === null)
+      pair = new Pair(key2.key, null);
+    else
+      pair = new Pair(key2, null);
+    const prev = findPair(this.items, pair.key);
+    if (!prev)
+      this.items.push(pair);
+  }
+  /**
+   * If `keepPair` is `true`, returns the Pair matching `key`.
+   * Otherwise, returns the value of that Pair's key.
+   */
+  get(key2, keepPair) {
+    const pair = findPair(this.items, key2);
+    return !keepPair && isPair(pair) ? isScalar(pair.key) ? pair.key.value : pair.key : pair;
+  }
+  set(key2, value) {
+    if (typeof value !== "boolean")
+      throw new Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof value}`);
+    const prev = findPair(this.items, key2);
+    if (prev && !value) {
+      this.items.splice(this.items.indexOf(prev), 1);
+    } else if (!prev && value) {
+      this.items.push(new Pair(key2));
+    }
+  }
+  toJSON(_2, ctx) {
+    return super.toJSON(_2, ctx, Set);
+  }
+  toString(ctx, onComment, onChompKeep) {
+    if (!ctx)
+      return JSON.stringify(this);
+    if (this.hasAllNullValues(true))
+      return super.toString(Object.assign({}, ctx, { allNullValues: true }), onComment, onChompKeep);
+    else
+      throw new Error("Set items must all have null values");
+  }
+  static from(schema2, iterable, ctx) {
+    const { replacer } = ctx;
+    const set2 = new this(schema2);
+    if (iterable && Symbol.iterator in Object(iterable))
+      for (let value of iterable) {
+        if (typeof replacer === "function")
+          value = replacer.call(iterable, value, value);
+        set2.items.push(createPair(value, null, ctx));
+      }
+    return set2;
+  }
+}
+YAMLSet.tag = "tag:yaml.org,2002:set";
+const set = {
+  collection: "map",
+  identify: (value) => value instanceof Set,
+  nodeClass: YAMLSet,
+  default: false,
+  tag: "tag:yaml.org,2002:set",
+  createNode: (schema2, iterable, ctx) => YAMLSet.from(schema2, iterable, ctx),
+  resolve(map2, onError) {
+    if (isMap(map2)) {
+      if (map2.hasAllNullValues(true))
+        return Object.assign(new YAMLSet(), map2);
+      else
+        onError("Set items must all have null values");
+    } else
+      onError("Expected a mapping for this tag");
+    return map2;
+  }
+};
+function parseSexagesimal(str, asBigInt) {
+  const sign = str[0];
+  const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
+  const num = (n2) => asBigInt ? BigInt(n2) : Number(n2);
+  const res = parts.replace(/_/g, "").split(":").reduce((res2, p2) => res2 * num(60) + num(p2), num(0));
+  return sign === "-" ? num(-1) * res : res;
+}
+function stringifySexagesimal(node2) {
+  let { value } = node2;
+  let num = (n2) => n2;
+  if (typeof value === "bigint")
+    num = (n2) => BigInt(n2);
+  else if (isNaN(value) || !isFinite(value))
+    return stringifyNumber(node2);
+  let sign = "";
+  if (value < 0) {
+    sign = "-";
+    value *= num(-1);
+  }
+  const _60 = num(60);
+  const parts = [value % _60];
+  if (value < 60) {
+    parts.unshift(0);
+  } else {
+    value = (value - parts[0]) / _60;
+    parts.unshift(value % _60);
+    if (value >= 60) {
+      value = (value - parts[0]) / _60;
+      parts.unshift(value);
+    }
+  }
+  return sign + parts.map((n2) => String(n2).padStart(2, "0")).join(":").replace(/000000\d*$/, "");
+}
+const intTime = {
+  identify: (value) => typeof value === "bigint" || Number.isInteger(value),
+  default: true,
+  tag: "tag:yaml.org,2002:int",
+  format: "TIME",
+  test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
+  resolve: (str, _onError, { intAsBigInt }) => parseSexagesimal(str, intAsBigInt),
+  stringify: stringifySexagesimal
+};
+const floatTime = {
+  identify: (value) => typeof value === "number",
+  default: true,
+  tag: "tag:yaml.org,2002:float",
+  format: "TIME",
+  test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
+  resolve: (str) => parseSexagesimal(str, false),
+  stringify: stringifySexagesimal
+};
+const timestamp = {
+  identify: (value) => value instanceof Date,
+  default: true,
+  tag: "tag:yaml.org,2002:timestamp",
+  // If the time zone is omitted, the timestamp is assumed to be specified in UTC. The time part
+  // may be omitted altogether, resulting in a date format. In such a case, the time part is
+  // assumed to be 00:00:00Z (start of day, UTC).
+  test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
+  resolve(str) {
+    const match = str.match(timestamp.test);
+    if (!match)
+      throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
+    const [, year, month, day, hour, minute, second] = match.map(Number);
+    const millisec = match[7] ? Number((match[7] + "00").substr(1, 3)) : 0;
+    let date = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second || 0, millisec);
+    const tz = match[8];
+    if (tz && tz !== "Z") {
+      let d2 = parseSexagesimal(tz, false);
+      if (Math.abs(d2) < 30)
+        d2 *= 60;
+      date -= 6e4 * d2;
+    }
+    return new Date(date);
+  },
+  stringify: ({ value }) => (value == null ? void 0 : value.toISOString().replace(/(T00:00:00)?\.000Z$/, "")) ?? ""
+};
+const schema = [
+  map,
+  seq,
+  string,
+  nullTag,
+  trueTag,
+  falseTag,
+  intBin,
+  intOct,
+  int,
+  intHex,
+  floatNaN,
+  floatExp,
+  float,
+  binary,
+  merge,
+  omap,
+  pairs,
+  set,
+  intTime,
+  floatTime,
+  timestamp
+];
+const schemas = /* @__PURE__ */ new Map([
+  ["core", schema$2],
+  ["failsafe", [map, seq, string]],
+  ["json", schema$1],
+  ["yaml11", schema],
+  ["yaml-1.1", schema]
+]);
+const tagsByName = {
+  binary,
+  bool: boolTag,
+  float: float$1,
+  floatExp: floatExp$1,
+  floatNaN: floatNaN$1,
+  floatTime,
+  int: int$1,
+  intHex: intHex$1,
+  intOct: intOct$1,
+  intTime,
+  map,
+  merge,
+  null: nullTag,
+  omap,
+  pairs,
+  seq,
+  set,
+  timestamp
+};
+const coreKnownTags = {
+  "tag:yaml.org,2002:binary": binary,
+  "tag:yaml.org,2002:merge": merge,
+  "tag:yaml.org,2002:omap": omap,
+  "tag:yaml.org,2002:pairs": pairs,
+  "tag:yaml.org,2002:set": set,
+  "tag:yaml.org,2002:timestamp": timestamp
+};
+function getTags(customTags, schemaName, addMergeTag) {
+  const schemaTags = schemas.get(schemaName);
+  if (schemaTags && !customTags) {
+    return addMergeTag && !schemaTags.includes(merge) ? schemaTags.concat(merge) : schemaTags.slice();
+  }
+  let tags = schemaTags;
+  if (!tags) {
+    if (Array.isArray(customTags))
+      tags = [];
+    else {
+      const keys2 = Array.from(schemas.keys()).filter((key2) => key2 !== "yaml11").map((key2) => JSON.stringify(key2)).join(", ");
+      throw new Error(`Unknown schema "${schemaName}"; use one of ${keys2} or define customTags array`);
+    }
+  }
+  if (Array.isArray(customTags)) {
+    for (const tag of customTags)
+      tags = tags.concat(tag);
+  } else if (typeof customTags === "function") {
+    tags = customTags(tags.slice());
+  }
+  if (addMergeTag)
+    tags = tags.concat(merge);
+  return tags.reduce((tags2, tag) => {
+    const tagObj = typeof tag === "string" ? tagsByName[tag] : tag;
+    if (!tagObj) {
+      const tagName = JSON.stringify(tag);
+      const keys2 = Object.keys(tagsByName).map((key2) => JSON.stringify(key2)).join(", ");
+      throw new Error(`Unknown custom tag ${tagName}; use one of ${keys2}`);
+    }
+    if (!tags2.includes(tagObj))
+      tags2.push(tagObj);
+    return tags2;
+  }, []);
+}
+const sortMapEntriesByKey = (a2, b2) => a2.key < b2.key ? -1 : a2.key > b2.key ? 1 : 0;
+class Schema2 {
+  constructor({ compat, customTags, merge: merge2, resolveKnownTags, schema: schema2, sortMapEntries, toStringDefaults }) {
+    this.compat = Array.isArray(compat) ? getTags(compat, "compat") : compat ? getTags(null, compat) : null;
+    this.name = typeof schema2 === "string" && schema2 || "core";
+    this.knownTags = resolveKnownTags ? coreKnownTags : {};
+    this.tags = getTags(customTags, this.name, merge2);
+    this.toStringOptions = toStringDefaults ?? null;
+    Object.defineProperty(this, MAP, { value: map });
+    Object.defineProperty(this, SCALAR$1, { value: string });
+    Object.defineProperty(this, SEQ, { value: seq });
+    this.sortMapEntries = typeof sortMapEntries === "function" ? sortMapEntries : sortMapEntries === true ? sortMapEntriesByKey : null;
+  }
+  clone() {
+    const copy = Object.create(Schema2.prototype, Object.getOwnPropertyDescriptors(this));
+    copy.tags = this.tags.slice();
+    return copy;
+  }
+}
+function stringifyDocument(doc, options) {
+  var _a3;
+  const lines = [];
+  let hasDirectives = options.directives === true;
+  if (options.directives !== false && doc.directives) {
+    const dir = doc.directives.toString(doc);
+    if (dir) {
+      lines.push(dir);
+      hasDirectives = true;
+    } else if (doc.directives.docStart)
+      hasDirectives = true;
+  }
+  if (hasDirectives)
+    lines.push("---");
+  const ctx = createStringifyContext(doc, options);
+  const { commentString } = ctx.options;
+  if (doc.commentBefore) {
+    if (lines.length !== 1)
+      lines.unshift("");
+    const cs = commentString(doc.commentBefore);
+    lines.unshift(indentComment(cs, ""));
+  }
+  let chompKeep = false;
+  let contentComment = null;
+  if (doc.contents) {
+    if (isNode(doc.contents)) {
+      if (doc.contents.spaceBefore && hasDirectives)
+        lines.push("");
+      if (doc.contents.commentBefore) {
+        const cs = commentString(doc.contents.commentBefore);
+        lines.push(indentComment(cs, ""));
+      }
+      ctx.forceBlockIndent = !!doc.comment;
+      contentComment = doc.contents.comment;
+    }
+    const onChompKeep = contentComment ? void 0 : () => chompKeep = true;
+    let body2 = stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
+    if (contentComment)
+      body2 += lineComment(body2, "", commentString(contentComment));
+    if ((body2[0] === "|" || body2[0] === ">") && lines[lines.length - 1] === "---") {
+      lines[lines.length - 1] = `--- ${body2}`;
+    } else
+      lines.push(body2);
+  } else {
+    lines.push(stringify(doc.contents, ctx));
+  }
+  if ((_a3 = doc.directives) == null ? void 0 : _a3.docEnd) {
+    if (doc.comment) {
+      const cs = commentString(doc.comment);
+      if (cs.includes("\n")) {
+        lines.push("...");
+        lines.push(indentComment(cs, ""));
+      } else {
+        lines.push(`... ${cs}`);
+      }
+    } else {
+      lines.push("...");
+    }
+  } else {
+    let dc = doc.comment;
+    if (dc && chompKeep)
+      dc = dc.replace(/^\n+/, "");
+    if (dc) {
+      if ((!chompKeep || contentComment) && lines[lines.length - 1] !== "")
+        lines.push("");
+      lines.push(indentComment(commentString(dc), ""));
+    }
+  }
+  return lines.join("\n") + "\n";
+}
+class Document {
+  constructor(value, replacer, options) {
+    this.commentBefore = null;
+    this.comment = null;
+    this.errors = [];
+    this.warnings = [];
+    Object.defineProperty(this, NODE_TYPE, { value: DOC });
+    let _replacer = null;
+    if (typeof replacer === "function" || Array.isArray(replacer)) {
+      _replacer = replacer;
+    } else if (options === void 0 && replacer) {
+      options = replacer;
+      replacer = void 0;
+    }
+    const opt = Object.assign({
+      intAsBigInt: false,
+      keepSourceTokens: false,
+      logLevel: "warn",
+      prettyErrors: true,
+      strict: true,
+      stringKeys: false,
+      uniqueKeys: true,
+      version: "1.2"
+    }, options);
+    this.options = opt;
+    let { version } = opt;
+    if (options == null ? void 0 : options._directives) {
+      this.directives = options._directives.atDocument();
+      if (this.directives.yaml.explicit)
+        version = this.directives.yaml.version;
+    } else
+      this.directives = new Directives({ version });
+    this.setSchema(version, options);
+    this.contents = value === void 0 ? null : this.createNode(value, _replacer, options);
+  }
+  /**
+   * Create a deep copy of this Document and its contents.
+   *
+   * Custom Node values that inherit from `Object` still refer to their original instances.
+   */
+  clone() {
+    const copy = Object.create(Document.prototype, {
+      [NODE_TYPE]: { value: DOC }
+    });
+    copy.commentBefore = this.commentBefore;
+    copy.comment = this.comment;
+    copy.errors = this.errors.slice();
+    copy.warnings = this.warnings.slice();
+    copy.options = Object.assign({}, this.options);
+    if (this.directives)
+      copy.directives = this.directives.clone();
+    copy.schema = this.schema.clone();
+    copy.contents = isNode(this.contents) ? this.contents.clone(copy.schema) : this.contents;
+    if (this.range)
+      copy.range = this.range.slice();
+    return copy;
+  }
+  /** Adds a value to the document. */
+  add(value) {
+    if (assertCollection(this.contents))
+      this.contents.add(value);
+  }
+  /** Adds a value to the document. */
+  addIn(path2, value) {
+    if (assertCollection(this.contents))
+      this.contents.addIn(path2, value);
+  }
+  /**
+   * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
+   *
+   * If `node` already has an anchor, `name` is ignored.
+   * Otherwise, the `node.anchor` value will be set to `name`,
+   * or if an anchor with that name is already present in the document,
+   * `name` will be used as a prefix for a new unique anchor.
+   * If `name` is undefined, the generated anchor will use 'a' as a prefix.
+   */
+  createAlias(node2, name) {
+    if (!node2.anchor) {
+      const prev = anchorNames(this);
+      node2.anchor = // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      !name || prev.has(name) ? findNewAnchor(name || "a", prev) : name;
+    }
+    return new Alias(node2.anchor);
+  }
+  createNode(value, replacer, options) {
+    let _replacer = void 0;
+    if (typeof replacer === "function") {
+      value = replacer.call({ "": value }, "", value);
+      _replacer = replacer;
+    } else if (Array.isArray(replacer)) {
+      const keyToStr = (v2) => typeof v2 === "number" || v2 instanceof String || v2 instanceof Number;
+      const asStr = replacer.filter(keyToStr).map(String);
+      if (asStr.length > 0)
+        replacer = replacer.concat(asStr);
+      _replacer = replacer;
+    } else if (options === void 0 && replacer) {
+      options = replacer;
+      replacer = void 0;
+    }
+    const { aliasDuplicateObjects, anchorPrefix, flow: flow2, keepUndefined, onTagObj, tag } = options ?? {};
+    const { onAnchor, setAnchors, sourceObjects } = createNodeAnchors(
+      this,
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      anchorPrefix || "a"
+    );
+    const ctx = {
+      aliasDuplicateObjects: aliasDuplicateObjects ?? true,
+      keepUndefined: keepUndefined ?? false,
+      onAnchor,
+      onTagObj,
+      replacer: _replacer,
+      schema: this.schema,
+      sourceObjects
+    };
+    const node2 = createNode(value, tag, ctx);
+    if (flow2 && isCollection(node2))
+      node2.flow = true;
+    setAnchors();
+    return node2;
+  }
+  /**
+   * Convert a key and a value into a `Pair` using the current schema,
+   * recursively wrapping all values as `Scalar` or `Collection` nodes.
+   */
+  createPair(key2, value, options = {}) {
+    const k2 = this.createNode(key2, null, options);
+    const v2 = this.createNode(value, null, options);
+    return new Pair(k2, v2);
+  }
+  /**
+   * Removes a value from the document.
+   * @returns `true` if the item was found and removed.
+   */
+  delete(key2) {
+    return assertCollection(this.contents) ? this.contents.delete(key2) : false;
+  }
+  /**
+   * Removes a value from the document.
+   * @returns `true` if the item was found and removed.
+   */
+  deleteIn(path2) {
+    if (isEmptyPath(path2)) {
+      if (this.contents == null)
+        return false;
+      this.contents = null;
+      return true;
+    }
+    return assertCollection(this.contents) ? this.contents.deleteIn(path2) : false;
+  }
+  /**
+   * Returns item at `key`, or `undefined` if not found. By default unwraps
+   * scalar values from their surrounding node; to disable set `keepScalar` to
+   * `true` (collections are always returned intact).
+   */
+  get(key2, keepScalar) {
+    return isCollection(this.contents) ? this.contents.get(key2, keepScalar) : void 0;
+  }
+  /**
+   * Returns item at `path`, or `undefined` if not found. By default unwraps
+   * scalar values from their surrounding node; to disable set `keepScalar` to
+   * `true` (collections are always returned intact).
+   */
+  getIn(path2, keepScalar) {
+    if (isEmptyPath(path2))
+      return !keepScalar && isScalar(this.contents) ? this.contents.value : this.contents;
+    return isCollection(this.contents) ? this.contents.getIn(path2, keepScalar) : void 0;
+  }
+  /**
+   * Checks if the document includes a value with the key `key`.
+   */
+  has(key2) {
+    return isCollection(this.contents) ? this.contents.has(key2) : false;
+  }
+  /**
+   * Checks if the document includes a value at `path`.
+   */
+  hasIn(path2) {
+    if (isEmptyPath(path2))
+      return this.contents !== void 0;
+    return isCollection(this.contents) ? this.contents.hasIn(path2) : false;
+  }
+  /**
+   * Sets a value in this document. For `!!set`, `value` needs to be a
+   * boolean to add/remove the item from the set.
+   */
+  set(key2, value) {
+    if (this.contents == null) {
+      this.contents = collectionFromPath(this.schema, [key2], value);
+    } else if (assertCollection(this.contents)) {
+      this.contents.set(key2, value);
+    }
+  }
+  /**
+   * Sets a value in this document. For `!!set`, `value` needs to be a
+   * boolean to add/remove the item from the set.
+   */
+  setIn(path2, value) {
+    if (isEmptyPath(path2)) {
+      this.contents = value;
+    } else if (this.contents == null) {
+      this.contents = collectionFromPath(this.schema, Array.from(path2), value);
+    } else if (assertCollection(this.contents)) {
+      this.contents.setIn(path2, value);
+    }
+  }
+  /**
+   * Change the YAML version and schema used by the document.
+   * A `null` version disables support for directives, explicit tags, anchors, and aliases.
+   * It also requires the `schema` option to be given as a `Schema` instance value.
+   *
+   * Overrides all previously set schema options.
+   */
+  setSchema(version, options = {}) {
+    if (typeof version === "number")
+      version = String(version);
+    let opt;
+    switch (version) {
+      case "1.1":
+        if (this.directives)
+          this.directives.yaml.version = "1.1";
+        else
+          this.directives = new Directives({ version: "1.1" });
+        opt = { resolveKnownTags: false, schema: "yaml-1.1" };
+        break;
+      case "1.2":
+      case "next":
+        if (this.directives)
+          this.directives.yaml.version = version;
+        else
+          this.directives = new Directives({ version });
+        opt = { resolveKnownTags: true, schema: "core" };
+        break;
+      case null:
+        if (this.directives)
+          delete this.directives;
+        opt = null;
+        break;
+      default: {
+        const sv = JSON.stringify(version);
+        throw new Error(`Expected '1.1', '1.2' or null as first argument, but found: ${sv}`);
+      }
+    }
+    if (options.schema instanceof Object)
+      this.schema = options.schema;
+    else if (opt)
+      this.schema = new Schema2(Object.assign(opt, options));
+    else
+      throw new Error(`With a null YAML version, the { schema: Schema } option is required`);
+  }
+  // json & jsonArg are only used from toJSON()
+  toJS({ json, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+    const ctx = {
+      anchors: /* @__PURE__ */ new Map(),
+      doc: this,
+      keep: !json,
+      mapAsMap: mapAsMap === true,
+      mapKeyWarned: false,
+      maxAliasCount: typeof maxAliasCount === "number" ? maxAliasCount : 100
+    };
+    const res = toJS(this.contents, jsonArg ?? "", ctx);
+    if (typeof onAnchor === "function")
+      for (const { count: count2, res: res2 } of ctx.anchors.values())
+        onAnchor(res2, count2);
+    return typeof reviver === "function" ? applyReviver(reviver, { "": res }, "", res) : res;
+  }
+  /**
+   * A JSON representation of the document `contents`.
+   *
+   * @param jsonArg Used by `JSON.stringify` to indicate the array index or
+   *   property name.
+   */
+  toJSON(jsonArg, onAnchor) {
+    return this.toJS({ json: true, jsonArg, mapAsMap: false, onAnchor });
+  }
+  /** A YAML representation of the document. */
+  toString(options = {}) {
+    if (this.errors.length > 0)
+      throw new Error("Document with errors cannot be stringified");
+    if ("indent" in options && (!Number.isInteger(options.indent) || Number(options.indent) <= 0)) {
+      const s2 = JSON.stringify(options.indent);
+      throw new Error(`"indent" option must be a positive integer, not ${s2}`);
+    }
+    return stringifyDocument(this, options);
+  }
+}
+function assertCollection(contents) {
+  if (isCollection(contents))
+    return true;
+  throw new Error("Expected a YAML collection as document contents");
+}
+class YAMLError extends Error {
+  constructor(name, pos, code2, message) {
+    super();
+    this.name = name;
+    this.code = code2;
+    this.message = message;
+    this.pos = pos;
+  }
+}
+class YAMLParseError extends YAMLError {
+  constructor(pos, code2, message) {
+    super("YAMLParseError", pos, code2, message);
+  }
+}
+class YAMLWarning extends YAMLError {
+  constructor(pos, code2, message) {
+    super("YAMLWarning", pos, code2, message);
+  }
+}
+const prettifyError = (src, lc) => (error) => {
+  if (error.pos[0] === -1)
+    return;
+  error.linePos = error.pos.map((pos) => lc.linePos(pos));
+  const { line, col } = error.linePos[0];
+  error.message += ` at line ${line}, column ${col}`;
+  let ci = col - 1;
+  let lineStr = src.substring(lc.lineStarts[line - 1], lc.lineStarts[line]).replace(/[\n\r]+$/, "");
+  if (ci >= 60 && lineStr.length > 80) {
+    const trimStart = Math.min(ci - 39, lineStr.length - 79);
+    lineStr = "…" + lineStr.substring(trimStart);
+    ci -= trimStart - 1;
+  }
+  if (lineStr.length > 80)
+    lineStr = lineStr.substring(0, 79) + "…";
+  if (line > 1 && /^ *$/.test(lineStr.substring(0, ci))) {
+    let prev = src.substring(lc.lineStarts[line - 2], lc.lineStarts[line - 1]);
+    if (prev.length > 80)
+      prev = prev.substring(0, 79) + "…\n";
+    lineStr = prev + lineStr;
+  }
+  if (/[^ ]/.test(lineStr)) {
+    let count2 = 1;
+    const end = error.linePos[1];
+    if ((end == null ? void 0 : end.line) === line && end.col > col) {
+      count2 = Math.max(1, Math.min(end.col - col, 80 - ci));
+    }
+    const pointer2 = " ".repeat(ci) + "^".repeat(count2);
+    error.message += `:
+
+${lineStr}
+${pointer2}
+`;
+  }
+};
+function resolveProps(tokens, { flow: flow2, indicator, next, offset: offset2, onError, parentIndent, startOnNewline }) {
+  let spaceBefore = false;
+  let atNewline = startOnNewline;
+  let hasSpace = startOnNewline;
+  let comment2 = "";
+  let commentSep = "";
+  let hasNewline = false;
+  let reqSpace = false;
+  let tab2 = null;
+  let anchor = null;
+  let tag = null;
+  let newlineAfterProp = null;
+  let comma = null;
+  let found = null;
+  let start2 = null;
+  for (const token of tokens) {
+    if (reqSpace) {
+      if (token.type !== "space" && token.type !== "newline" && token.type !== "comma")
+        onError(token.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
+      reqSpace = false;
+    }
+    if (tab2) {
+      if (atNewline && token.type !== "comment" && token.type !== "newline") {
+        onError(tab2, "TAB_AS_INDENT", "Tabs are not allowed as indentation");
+      }
+      tab2 = null;
+    }
+    switch (token.type) {
+      case "space":
+        if (!flow2 && (indicator !== "doc-start" || (next == null ? void 0 : next.type) !== "flow-collection") && token.source.includes("	")) {
+          tab2 = token;
+        }
+        hasSpace = true;
+        break;
+      case "comment": {
+        if (!hasSpace)
+          onError(token, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
+        const cb = token.source.substring(1) || " ";
+        if (!comment2)
+          comment2 = cb;
+        else
+          comment2 += commentSep + cb;
+        commentSep = "";
+        atNewline = false;
+        break;
+      }
+      case "newline":
+        if (atNewline) {
+          if (comment2)
+            comment2 += token.source;
+          else if (!found || indicator !== "seq-item-ind")
+            spaceBefore = true;
+        } else
+          commentSep += token.source;
+        atNewline = true;
+        hasNewline = true;
+        if (anchor || tag)
+          newlineAfterProp = token;
+        hasSpace = true;
+        break;
+      case "anchor":
+        if (anchor)
+          onError(token, "MULTIPLE_ANCHORS", "A node can have at most one anchor");
+        if (token.source.endsWith(":"))
+          onError(token.offset + token.source.length - 1, "BAD_ALIAS", "Anchor ending in : is ambiguous", true);
+        anchor = token;
+        start2 ?? (start2 = token.offset);
+        atNewline = false;
+        hasSpace = false;
+        reqSpace = true;
+        break;
+      case "tag": {
+        if (tag)
+          onError(token, "MULTIPLE_TAGS", "A node can have at most one tag");
+        tag = token;
+        start2 ?? (start2 = token.offset);
+        atNewline = false;
+        hasSpace = false;
+        reqSpace = true;
+        break;
+      }
+      case indicator:
+        if (anchor || tag)
+          onError(token, "BAD_PROP_ORDER", `Anchors and tags must be after the ${token.source} indicator`);
+        if (found)
+          onError(token, "UNEXPECTED_TOKEN", `Unexpected ${token.source} in ${flow2 ?? "collection"}`);
+        found = token;
+        atNewline = indicator === "seq-item-ind" || indicator === "explicit-key-ind";
+        hasSpace = false;
+        break;
+      case "comma":
+        if (flow2) {
+          if (comma)
+            onError(token, "UNEXPECTED_TOKEN", `Unexpected , in ${flow2}`);
+          comma = token;
+          atNewline = false;
+          hasSpace = false;
+          break;
+        }
+      default:
+        onError(token, "UNEXPECTED_TOKEN", `Unexpected ${token.type} token`);
+        atNewline = false;
+        hasSpace = false;
+    }
+  }
+  const last = tokens[tokens.length - 1];
+  const end = last ? last.offset + last.source.length : offset2;
+  if (reqSpace && next && next.type !== "space" && next.type !== "newline" && next.type !== "comma" && (next.type !== "scalar" || next.source !== "")) {
+    onError(next.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
+  }
+  if (tab2 && (atNewline && tab2.indent <= parentIndent || (next == null ? void 0 : next.type) === "block-map" || (next == null ? void 0 : next.type) === "block-seq"))
+    onError(tab2, "TAB_AS_INDENT", "Tabs are not allowed as indentation");
+  return {
+    comma,
+    found,
+    spaceBefore,
+    comment: comment2,
+    hasNewline,
+    anchor,
+    tag,
+    newlineAfterProp,
+    end,
+    start: start2 ?? end
+  };
+}
+function containsNewline(key2) {
+  if (!key2)
+    return null;
+  switch (key2.type) {
+    case "alias":
+    case "scalar":
+    case "double-quoted-scalar":
+    case "single-quoted-scalar":
+      if (key2.source.includes("\n"))
+        return true;
+      if (key2.end) {
+        for (const st2 of key2.end)
+          if (st2.type === "newline")
+            return true;
+      }
+      return false;
+    case "flow-collection":
+      for (const it2 of key2.items) {
+        for (const st2 of it2.start)
+          if (st2.type === "newline")
+            return true;
+        if (it2.sep) {
+          for (const st2 of it2.sep)
+            if (st2.type === "newline")
+              return true;
+        }
+        if (containsNewline(it2.key) || containsNewline(it2.value))
+          return true;
+      }
+      return false;
+    default:
+      return true;
+  }
+}
+function flowIndentCheck(indent2, fc, onError) {
+  if ((fc == null ? void 0 : fc.type) === "flow-collection") {
+    const end = fc.end[0];
+    if (end.indent === indent2 && (end.source === "]" || end.source === "}") && containsNewline(fc)) {
+      const msg = "Flow end indicator should be more indented than parent";
+      onError(end, "BAD_INDENT", msg, true);
+    }
+  }
+}
+function mapIncludes(ctx, items, search2) {
+  const { uniqueKeys } = ctx.options;
+  if (uniqueKeys === false)
+    return false;
+  const isEqual = typeof uniqueKeys === "function" ? uniqueKeys : (a2, b2) => a2 === b2 || isScalar(a2) && isScalar(b2) && a2.value === b2.value;
+  return items.some((pair) => isEqual(pair.key, search2));
+}
+const startColMsg = "All mapping items must start at the same column";
+function resolveBlockMap({ composeNode: composeNode2, composeEmptyNode: composeEmptyNode2 }, ctx, bm, onError, tag) {
+  var _a3;
+  const NodeClass = (tag == null ? void 0 : tag.nodeClass) ?? YAMLMap;
+  const map2 = new NodeClass(ctx.schema);
+  if (ctx.atRoot)
+    ctx.atRoot = false;
+  let offset2 = bm.offset;
+  let commentEnd = null;
+  for (const collItem of bm.items) {
+    const { start: start2, key: key2, sep, value } = collItem;
+    const keyProps = resolveProps(start2, {
+      indicator: "explicit-key-ind",
+      next: key2 ?? (sep == null ? void 0 : sep[0]),
+      offset: offset2,
+      onError,
+      parentIndent: bm.indent,
+      startOnNewline: true
+    });
+    const implicitKey = !keyProps.found;
+    if (implicitKey) {
+      if (key2) {
+        if (key2.type === "block-seq")
+          onError(offset2, "BLOCK_AS_IMPLICIT_KEY", "A block sequence may not be used as an implicit map key");
+        else if ("indent" in key2 && key2.indent !== bm.indent)
+          onError(offset2, "BAD_INDENT", startColMsg);
+      }
+      if (!keyProps.anchor && !keyProps.tag && !sep) {
+        commentEnd = keyProps.end;
+        if (keyProps.comment) {
+          if (map2.comment)
+            map2.comment += "\n" + keyProps.comment;
+          else
+            map2.comment = keyProps.comment;
+        }
+        continue;
+      }
+      if (keyProps.newlineAfterProp || containsNewline(key2)) {
+        onError(key2 ?? start2[start2.length - 1], "MULTILINE_IMPLICIT_KEY", "Implicit keys need to be on a single line");
+      }
+    } else if (((_a3 = keyProps.found) == null ? void 0 : _a3.indent) !== bm.indent) {
+      onError(offset2, "BAD_INDENT", startColMsg);
+    }
+    ctx.atKey = true;
+    const keyStart = keyProps.end;
+    const keyNode = key2 ? composeNode2(ctx, key2, keyProps, onError) : composeEmptyNode2(ctx, keyStart, start2, null, keyProps, onError);
+    if (ctx.schema.compat)
+      flowIndentCheck(bm.indent, key2, onError);
+    ctx.atKey = false;
+    if (mapIncludes(ctx, map2.items, keyNode))
+      onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
+    const valueProps = resolveProps(sep ?? [], {
+      indicator: "map-value-ind",
+      next: value,
+      offset: keyNode.range[2],
+      onError,
+      parentIndent: bm.indent,
+      startOnNewline: !key2 || key2.type === "block-scalar"
+    });
+    offset2 = valueProps.end;
+    if (valueProps.found) {
+      if (implicitKey) {
+        if ((value == null ? void 0 : value.type) === "block-map" && !valueProps.hasNewline)
+          onError(offset2, "BLOCK_AS_IMPLICIT_KEY", "Nested mappings are not allowed in compact mappings");
+        if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
+          onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
+      }
+      const valueNode = value ? composeNode2(ctx, value, valueProps, onError) : composeEmptyNode2(ctx, offset2, sep, null, valueProps, onError);
+      if (ctx.schema.compat)
+        flowIndentCheck(bm.indent, value, onError);
+      offset2 = valueNode.range[2];
+      const pair = new Pair(keyNode, valueNode);
+      if (ctx.options.keepSourceTokens)
+        pair.srcToken = collItem;
+      map2.items.push(pair);
+    } else {
+      if (implicitKey)
+        onError(keyNode.range, "MISSING_CHAR", "Implicit map keys need to be followed by map values");
+      if (valueProps.comment) {
+        if (keyNode.comment)
+          keyNode.comment += "\n" + valueProps.comment;
+        else
+          keyNode.comment = valueProps.comment;
+      }
+      const pair = new Pair(keyNode);
+      if (ctx.options.keepSourceTokens)
+        pair.srcToken = collItem;
+      map2.items.push(pair);
+    }
+  }
+  if (commentEnd && commentEnd < offset2)
+    onError(commentEnd, "IMPOSSIBLE", "Map comment with trailing content");
+  map2.range = [bm.offset, offset2, commentEnd ?? offset2];
+  return map2;
+}
+function resolveBlockSeq({ composeNode: composeNode2, composeEmptyNode: composeEmptyNode2 }, ctx, bs, onError, tag) {
+  const NodeClass = (tag == null ? void 0 : tag.nodeClass) ?? YAMLSeq;
+  const seq2 = new NodeClass(ctx.schema);
+  if (ctx.atRoot)
+    ctx.atRoot = false;
+  if (ctx.atKey)
+    ctx.atKey = false;
+  let offset2 = bs.offset;
+  let commentEnd = null;
+  for (const { start: start2, value } of bs.items) {
+    const props = resolveProps(start2, {
+      indicator: "seq-item-ind",
+      next: value,
+      offset: offset2,
+      onError,
+      parentIndent: bs.indent,
+      startOnNewline: true
+    });
+    if (!props.found) {
+      if (props.anchor || props.tag || value) {
+        if ((value == null ? void 0 : value.type) === "block-seq")
+          onError(props.end, "BAD_INDENT", "All sequence items must start at the same column");
+        else
+          onError(offset2, "MISSING_CHAR", "Sequence item without - indicator");
+      } else {
+        commentEnd = props.end;
+        if (props.comment)
+          seq2.comment = props.comment;
+        continue;
+      }
+    }
+    const node2 = value ? composeNode2(ctx, value, props, onError) : composeEmptyNode2(ctx, props.end, start2, null, props, onError);
+    if (ctx.schema.compat)
+      flowIndentCheck(bs.indent, value, onError);
+    offset2 = node2.range[2];
+    seq2.items.push(node2);
+  }
+  seq2.range = [bs.offset, offset2, commentEnd ?? offset2];
+  return seq2;
+}
+function resolveEnd(end, offset2, reqSpace, onError) {
+  let comment2 = "";
+  if (end) {
+    let hasSpace = false;
+    let sep = "";
+    for (const token of end) {
+      const { source, type } = token;
+      switch (type) {
+        case "space":
+          hasSpace = true;
+          break;
+        case "comment": {
+          if (reqSpace && !hasSpace)
+            onError(token, "MISSING_CHAR", "Comments must be separated from other tokens by white space characters");
+          const cb = source.substring(1) || " ";
+          if (!comment2)
+            comment2 = cb;
+          else
+            comment2 += sep + cb;
+          sep = "";
+          break;
+        }
+        case "newline":
+          if (comment2)
+            sep += source;
+          hasSpace = true;
+          break;
+        default:
+          onError(token, "UNEXPECTED_TOKEN", `Unexpected ${type} at node end`);
+      }
+      offset2 += source.length;
+    }
+  }
+  return { comment: comment2, offset: offset2 };
+}
+const blockMsg = "Block collections are not allowed within flow collections";
+const isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
+function resolveFlowCollection({ composeNode: composeNode2, composeEmptyNode: composeEmptyNode2 }, ctx, fc, onError, tag) {
+  var _a3;
+  const isMap2 = fc.start.source === "{";
+  const fcName = isMap2 ? "flow map" : "flow sequence";
+  const NodeClass = (tag == null ? void 0 : tag.nodeClass) ?? (isMap2 ? YAMLMap : YAMLSeq);
+  const coll = new NodeClass(ctx.schema);
+  coll.flow = true;
+  const atRoot = ctx.atRoot;
+  if (atRoot)
+    ctx.atRoot = false;
+  if (ctx.atKey)
+    ctx.atKey = false;
+  let offset2 = fc.offset + fc.start.source.length;
+  for (let i2 = 0; i2 < fc.items.length; ++i2) {
+    const collItem = fc.items[i2];
+    const { start: start2, key: key2, sep, value } = collItem;
+    const props = resolveProps(start2, {
+      flow: fcName,
+      indicator: "explicit-key-ind",
+      next: key2 ?? (sep == null ? void 0 : sep[0]),
+      offset: offset2,
+      onError,
+      parentIndent: fc.indent,
+      startOnNewline: false
+    });
+    if (!props.found) {
+      if (!props.anchor && !props.tag && !sep && !value) {
+        if (i2 === 0 && props.comma)
+          onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
+        else if (i2 < fc.items.length - 1)
+          onError(props.start, "UNEXPECTED_TOKEN", `Unexpected empty item in ${fcName}`);
+        if (props.comment) {
+          if (coll.comment)
+            coll.comment += "\n" + props.comment;
+          else
+            coll.comment = props.comment;
+        }
+        offset2 = props.end;
+        continue;
+      }
+      if (!isMap2 && ctx.options.strict && containsNewline(key2))
+        onError(
+          key2,
+          // checked by containsNewline()
+          "MULTILINE_IMPLICIT_KEY",
+          "Implicit keys of flow sequence pairs need to be on a single line"
+        );
+    }
+    if (i2 === 0) {
+      if (props.comma)
+        onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
+    } else {
+      if (!props.comma)
+        onError(props.start, "MISSING_CHAR", `Missing , between ${fcName} items`);
+      if (props.comment) {
+        let prevItemComment = "";
+        loop: for (const st2 of start2) {
+          switch (st2.type) {
+            case "comma":
+            case "space":
+              break;
+            case "comment":
+              prevItemComment = st2.source.substring(1);
+              break loop;
+            default:
+              break loop;
+          }
+        }
+        if (prevItemComment) {
+          let prev = coll.items[coll.items.length - 1];
+          if (isPair(prev))
+            prev = prev.value ?? prev.key;
+          if (prev.comment)
+            prev.comment += "\n" + prevItemComment;
+          else
+            prev.comment = prevItemComment;
+          props.comment = props.comment.substring(prevItemComment.length + 1);
+        }
+      }
+    }
+    if (!isMap2 && !sep && !props.found) {
+      const valueNode = value ? composeNode2(ctx, value, props, onError) : composeEmptyNode2(ctx, props.end, sep, null, props, onError);
+      coll.items.push(valueNode);
+      offset2 = valueNode.range[2];
+      if (isBlock(value))
+        onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
+    } else {
+      ctx.atKey = true;
+      const keyStart = props.end;
+      const keyNode = key2 ? composeNode2(ctx, key2, props, onError) : composeEmptyNode2(ctx, keyStart, start2, null, props, onError);
+      if (isBlock(key2))
+        onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
+      ctx.atKey = false;
+      const valueProps = resolveProps(sep ?? [], {
+        flow: fcName,
+        indicator: "map-value-ind",
+        next: value,
+        offset: keyNode.range[2],
+        onError,
+        parentIndent: fc.indent,
+        startOnNewline: false
+      });
+      if (valueProps.found) {
+        if (!isMap2 && !props.found && ctx.options.strict) {
+          if (sep)
+            for (const st2 of sep) {
+              if (st2 === valueProps.found)
+                break;
+              if (st2.type === "newline") {
+                onError(st2, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
+                break;
+              }
+            }
+          if (props.start < valueProps.found.offset - 1024)
+            onError(valueProps.found, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit flow sequence key");
+        }
+      } else if (value) {
+        if ("source" in value && ((_a3 = value.source) == null ? void 0 : _a3[0]) === ":")
+          onError(value, "MISSING_CHAR", `Missing space after : in ${fcName}`);
+        else
+          onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
+      }
+      const valueNode = value ? composeNode2(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode2(ctx, valueProps.end, sep, null, valueProps, onError) : null;
+      if (valueNode) {
+        if (isBlock(value))
+          onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
+      } else if (valueProps.comment) {
+        if (keyNode.comment)
+          keyNode.comment += "\n" + valueProps.comment;
+        else
+          keyNode.comment = valueProps.comment;
+      }
+      const pair = new Pair(keyNode, valueNode);
+      if (ctx.options.keepSourceTokens)
+        pair.srcToken = collItem;
+      if (isMap2) {
+        const map2 = coll;
+        if (mapIncludes(ctx, map2.items, keyNode))
+          onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
+        map2.items.push(pair);
+      } else {
+        const map2 = new YAMLMap(ctx.schema);
+        map2.flow = true;
+        map2.items.push(pair);
+        const endRange = (valueNode ?? keyNode).range;
+        map2.range = [keyNode.range[0], endRange[1], endRange[2]];
+        coll.items.push(map2);
+      }
+      offset2 = valueNode ? valueNode.range[2] : valueProps.end;
+    }
+  }
+  const expectedEnd = isMap2 ? "}" : "]";
+  const [ce2, ...ee2] = fc.end;
+  let cePos = offset2;
+  if ((ce2 == null ? void 0 : ce2.source) === expectedEnd)
+    cePos = ce2.offset + ce2.source.length;
+  else {
+    const name = fcName[0].toUpperCase() + fcName.substring(1);
+    const msg = atRoot ? `${name} must end with a ${expectedEnd}` : `${name} in block collection must be sufficiently indented and end with a ${expectedEnd}`;
+    onError(offset2, atRoot ? "MISSING_CHAR" : "BAD_INDENT", msg);
+    if (ce2 && ce2.source.length !== 1)
+      ee2.unshift(ce2);
+  }
+  if (ee2.length > 0) {
+    const end = resolveEnd(ee2, cePos, ctx.options.strict, onError);
+    if (end.comment) {
+      if (coll.comment)
+        coll.comment += "\n" + end.comment;
+      else
+        coll.comment = end.comment;
+    }
+    coll.range = [fc.offset, cePos, end.offset];
+  } else {
+    coll.range = [fc.offset, cePos, cePos];
+  }
+  return coll;
+}
+function resolveCollection(CN2, ctx, token, onError, tagName, tag) {
+  const coll = token.type === "block-map" ? resolveBlockMap(CN2, ctx, token, onError, tag) : token.type === "block-seq" ? resolveBlockSeq(CN2, ctx, token, onError, tag) : resolveFlowCollection(CN2, ctx, token, onError, tag);
+  const Coll = coll.constructor;
+  if (tagName === "!" || tagName === Coll.tagName) {
+    coll.tag = Coll.tagName;
+    return coll;
+  }
+  if (tagName)
+    coll.tag = tagName;
+  return coll;
+}
+function composeCollection(CN2, ctx, token, props, onError) {
+  var _a3;
+  const tagToken = props.tag;
+  const tagName = !tagToken ? null : ctx.directives.tagName(tagToken.source, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg));
+  if (token.type === "block-seq") {
+    const { anchor, newlineAfterProp: nl } = props;
+    const lastProp = anchor && tagToken ? anchor.offset > tagToken.offset ? anchor : tagToken : anchor ?? tagToken;
+    if (lastProp && (!nl || nl.offset < lastProp.offset)) {
+      const message = "Missing newline after block sequence props";
+      onError(lastProp, "MISSING_CHAR", message);
+    }
+  }
+  const expType = token.type === "block-map" ? "map" : token.type === "block-seq" ? "seq" : token.start.source === "{" ? "map" : "seq";
+  if (!tagToken || !tagName || tagName === "!" || tagName === YAMLMap.tagName && expType === "map" || tagName === YAMLSeq.tagName && expType === "seq") {
+    return resolveCollection(CN2, ctx, token, onError, tagName);
+  }
+  let tag = ctx.schema.tags.find((t2) => t2.tag === tagName && t2.collection === expType);
+  if (!tag) {
+    const kt = ctx.schema.knownTags[tagName];
+    if ((kt == null ? void 0 : kt.collection) === expType) {
+      ctx.schema.tags.push(Object.assign({}, kt, { default: false }));
+      tag = kt;
+    } else {
+      if (kt) {
+        onError(tagToken, "BAD_COLLECTION_TYPE", `${kt.tag} used for ${expType} collection, but expects ${kt.collection ?? "scalar"}`, true);
+      } else {
+        onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, true);
+      }
+      return resolveCollection(CN2, ctx, token, onError, tagName);
+    }
+  }
+  const coll = resolveCollection(CN2, ctx, token, onError, tagName, tag);
+  const res = ((_a3 = tag.resolve) == null ? void 0 : _a3.call(tag, coll, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg), ctx.options)) ?? coll;
+  const node2 = isNode(res) ? res : new Scalar(res);
+  node2.range = coll.range;
+  node2.tag = tagName;
+  if (tag == null ? void 0 : tag.format)
+    node2.format = tag.format;
+  return node2;
+}
+function resolveBlockScalar(ctx, scalar, onError) {
+  const start2 = scalar.offset;
+  const header = parseBlockScalarHeader(scalar, ctx.options.strict, onError);
+  if (!header)
+    return { value: "", type: null, comment: "", range: [start2, start2, start2] };
+  const type = header.mode === ">" ? Scalar.BLOCK_FOLDED : Scalar.BLOCK_LITERAL;
+  const lines = scalar.source ? splitLines(scalar.source) : [];
+  let chompStart = lines.length;
+  for (let i2 = lines.length - 1; i2 >= 0; --i2) {
+    const content2 = lines[i2][1];
+    if (content2 === "" || content2 === "\r")
+      chompStart = i2;
+    else
+      break;
+  }
+  if (chompStart === 0) {
+    const value2 = header.chomp === "+" && lines.length > 0 ? "\n".repeat(Math.max(1, lines.length - 1)) : "";
+    let end2 = start2 + header.length;
+    if (scalar.source)
+      end2 += scalar.source.length;
+    return { value: value2, type, comment: header.comment, range: [start2, end2, end2] };
+  }
+  let trimIndent = scalar.indent + header.indent;
+  let offset2 = scalar.offset + header.length;
+  let contentStart = 0;
+  for (let i2 = 0; i2 < chompStart; ++i2) {
+    const [indent2, content2] = lines[i2];
+    if (content2 === "" || content2 === "\r") {
+      if (header.indent === 0 && indent2.length > trimIndent)
+        trimIndent = indent2.length;
+    } else {
+      if (indent2.length < trimIndent) {
+        const message = "Block scalars with more-indented leading empty lines must use an explicit indentation indicator";
+        onError(offset2 + indent2.length, "MISSING_CHAR", message);
+      }
+      if (header.indent === 0)
+        trimIndent = indent2.length;
+      contentStart = i2;
+      if (trimIndent === 0 && !ctx.atRoot) {
+        const message = "Block scalar values in collections must be indented";
+        onError(offset2, "BAD_INDENT", message);
+      }
+      break;
+    }
+    offset2 += indent2.length + content2.length + 1;
+  }
+  for (let i2 = lines.length - 1; i2 >= chompStart; --i2) {
+    if (lines[i2][0].length > trimIndent)
+      chompStart = i2 + 1;
+  }
+  let value = "";
+  let sep = "";
+  let prevMoreIndented = false;
+  for (let i2 = 0; i2 < contentStart; ++i2)
+    value += lines[i2][0].slice(trimIndent) + "\n";
+  for (let i2 = contentStart; i2 < chompStart; ++i2) {
+    let [indent2, content2] = lines[i2];
+    offset2 += indent2.length + content2.length + 1;
+    const crlf = content2[content2.length - 1] === "\r";
+    if (crlf)
+      content2 = content2.slice(0, -1);
+    if (content2 && indent2.length < trimIndent) {
+      const src = header.indent ? "explicit indentation indicator" : "first line";
+      const message = `Block scalar lines must not be less indented than their ${src}`;
+      onError(offset2 - content2.length - (crlf ? 2 : 1), "BAD_INDENT", message);
+      indent2 = "";
+    }
+    if (type === Scalar.BLOCK_LITERAL) {
+      value += sep + indent2.slice(trimIndent) + content2;
+      sep = "\n";
+    } else if (indent2.length > trimIndent || content2[0] === "	") {
+      if (sep === " ")
+        sep = "\n";
+      else if (!prevMoreIndented && sep === "\n")
+        sep = "\n\n";
+      value += sep + indent2.slice(trimIndent) + content2;
+      sep = "\n";
+      prevMoreIndented = true;
+    } else if (content2 === "") {
+      if (sep === "\n")
+        value += "\n";
+      else
+        sep = "\n";
+    } else {
+      value += sep + content2;
+      sep = " ";
+      prevMoreIndented = false;
+    }
+  }
+  switch (header.chomp) {
+    case "-":
+      break;
+    case "+":
+      for (let i2 = chompStart; i2 < lines.length; ++i2)
+        value += "\n" + lines[i2][0].slice(trimIndent);
+      if (value[value.length - 1] !== "\n")
+        value += "\n";
+      break;
+    default:
+      value += "\n";
+  }
+  const end = start2 + header.length + scalar.source.length;
+  return { value, type, comment: header.comment, range: [start2, end, end] };
+}
+function parseBlockScalarHeader({ offset: offset2, props }, strict, onError) {
+  if (props[0].type !== "block-scalar-header") {
+    onError(props[0], "IMPOSSIBLE", "Block scalar header not found");
+    return null;
+  }
+  const { source } = props[0];
+  const mode = source[0];
+  let indent2 = 0;
+  let chomp = "";
+  let error = -1;
+  for (let i2 = 1; i2 < source.length; ++i2) {
+    const ch = source[i2];
+    if (!chomp && (ch === "-" || ch === "+"))
+      chomp = ch;
+    else {
+      const n2 = Number(ch);
+      if (!indent2 && n2)
+        indent2 = n2;
+      else if (error === -1)
+        error = offset2 + i2;
+    }
+  }
+  if (error !== -1)
+    onError(error, "UNEXPECTED_TOKEN", `Block scalar header includes extra characters: ${source}`);
+  let hasSpace = false;
+  let comment2 = "";
+  let length = source.length;
+  for (let i2 = 1; i2 < props.length; ++i2) {
+    const token = props[i2];
+    switch (token.type) {
+      case "space":
+        hasSpace = true;
+      case "newline":
+        length += token.source.length;
+        break;
+      case "comment":
+        if (strict && !hasSpace) {
+          const message = "Comments must be separated from other tokens by white space characters";
+          onError(token, "MISSING_CHAR", message);
+        }
+        length += token.source.length;
+        comment2 = token.source.substring(1);
+        break;
+      case "error":
+        onError(token, "UNEXPECTED_TOKEN", token.message);
+        length += token.source.length;
+        break;
+      default: {
+        const message = `Unexpected token in block scalar header: ${token.type}`;
+        onError(token, "UNEXPECTED_TOKEN", message);
+        const ts = token.source;
+        if (ts && typeof ts === "string")
+          length += ts.length;
+      }
+    }
+  }
+  return { mode, indent: indent2, chomp, comment: comment2, length };
+}
+function splitLines(source) {
+  const split2 = source.split(/\n( *)/);
+  const first = split2[0];
+  const m2 = first.match(/^( *)/);
+  const line0 = (m2 == null ? void 0 : m2[1]) ? [m2[1], first.slice(m2[1].length)] : ["", first];
+  const lines = [line0];
+  for (let i2 = 1; i2 < split2.length; i2 += 2)
+    lines.push([split2[i2], split2[i2 + 1]]);
+  return lines;
+}
+function resolveFlowScalar(scalar, strict, onError) {
+  const { offset: offset2, type, source, end } = scalar;
+  let _type;
+  let value;
+  const _onError = (rel, code2, msg) => onError(offset2 + rel, code2, msg);
+  switch (type) {
+    case "scalar":
+      _type = Scalar.PLAIN;
+      value = plainValue(source, _onError);
+      break;
+    case "single-quoted-scalar":
+      _type = Scalar.QUOTE_SINGLE;
+      value = singleQuotedValue(source, _onError);
+      break;
+    case "double-quoted-scalar":
+      _type = Scalar.QUOTE_DOUBLE;
+      value = doubleQuotedValue(source, _onError);
+      break;
+    default:
+      onError(scalar, "UNEXPECTED_TOKEN", `Expected a flow scalar value, but found: ${type}`);
+      return {
+        value: "",
+        type: null,
+        comment: "",
+        range: [offset2, offset2 + source.length, offset2 + source.length]
+      };
+  }
+  const valueEnd = offset2 + source.length;
+  const re2 = resolveEnd(end, valueEnd, strict, onError);
+  return {
+    value,
+    type: _type,
+    comment: re2.comment,
+    range: [offset2, valueEnd, re2.offset]
+  };
+}
+function plainValue(source, onError) {
+  let badChar = "";
+  switch (source[0]) {
+    case "	":
+      badChar = "a tab character";
+      break;
+    case ",":
+      badChar = "flow indicator character ,";
+      break;
+    case "%":
+      badChar = "directive indicator character %";
+      break;
+    case "|":
+    case ">": {
+      badChar = `block scalar indicator ${source[0]}`;
+      break;
+    }
+    case "@":
+    case "`": {
+      badChar = `reserved character ${source[0]}`;
+      break;
+    }
+  }
+  if (badChar)
+    onError(0, "BAD_SCALAR_START", `Plain value cannot start with ${badChar}`);
+  return foldLines(source);
+}
+function singleQuotedValue(source, onError) {
+  if (source[source.length - 1] !== "'" || source.length === 1)
+    onError(source.length, "MISSING_CHAR", "Missing closing 'quote");
+  return foldLines(source.slice(1, -1)).replace(/''/g, "'");
+}
+function foldLines(source) {
+  let first, line;
+  try {
+    first = new RegExp("(.*?)(?<![ 	])[ 	]*\r?\n", "sy");
+    line = new RegExp("[ 	]*(.*?)(?:(?<![ 	])[ 	]*)?\r?\n", "sy");
+  } catch {
+    first = /(.*?)[ \t]*\r?\n/sy;
+    line = /[ \t]*(.*?)[ \t]*\r?\n/sy;
+  }
+  let match = first.exec(source);
+  if (!match)
+    return source;
+  let res = match[1];
+  let sep = " ";
+  let pos = first.lastIndex;
+  line.lastIndex = pos;
+  while (match = line.exec(source)) {
+    if (match[1] === "") {
+      if (sep === "\n")
+        res += sep;
+      else
+        sep = "\n";
+    } else {
+      res += sep + match[1];
+      sep = " ";
+    }
+    pos = line.lastIndex;
+  }
+  const last = /[ \t]*(.*)/sy;
+  last.lastIndex = pos;
+  match = last.exec(source);
+  return res + sep + ((match == null ? void 0 : match[1]) ?? "");
+}
+function doubleQuotedValue(source, onError) {
+  let res = "";
+  for (let i2 = 1; i2 < source.length - 1; ++i2) {
+    const ch = source[i2];
+    if (ch === "\r" && source[i2 + 1] === "\n")
+      continue;
+    if (ch === "\n") {
+      const { fold, offset: offset2 } = foldNewline(source, i2);
+      res += fold;
+      i2 = offset2;
+    } else if (ch === "\\") {
+      let next = source[++i2];
+      const cc = escapeCodes[next];
+      if (cc)
+        res += cc;
+      else if (next === "\n") {
+        next = source[i2 + 1];
+        while (next === " " || next === "	")
+          next = source[++i2 + 1];
+      } else if (next === "\r" && source[i2 + 1] === "\n") {
+        next = source[++i2 + 1];
+        while (next === " " || next === "	")
+          next = source[++i2 + 1];
+      } else if (next === "x" || next === "u" || next === "U") {
+        const length = next === "x" ? 2 : next === "u" ? 4 : 8;
+        res += parseCharCode(source, i2 + 1, length, onError);
+        i2 += length;
+      } else {
+        const raw2 = source.substr(i2 - 1, 2);
+        onError(i2 - 1, "BAD_DQ_ESCAPE", `Invalid escape sequence ${raw2}`);
+        res += raw2;
+      }
+    } else if (ch === " " || ch === "	") {
+      const wsStart = i2;
+      let next = source[i2 + 1];
+      while (next === " " || next === "	")
+        next = source[++i2 + 1];
+      if (next !== "\n" && !(next === "\r" && source[i2 + 2] === "\n"))
+        res += i2 > wsStart ? source.slice(wsStart, i2 + 1) : ch;
+    } else {
+      res += ch;
+    }
+  }
+  if (source[source.length - 1] !== '"' || source.length === 1)
+    onError(source.length, "MISSING_CHAR", 'Missing closing "quote');
+  return res;
+}
+function foldNewline(source, offset2) {
+  let fold = "";
+  let ch = source[offset2 + 1];
+  while (ch === " " || ch === "	" || ch === "\n" || ch === "\r") {
+    if (ch === "\r" && source[offset2 + 2] !== "\n")
+      break;
+    if (ch === "\n")
+      fold += "\n";
+    offset2 += 1;
+    ch = source[offset2 + 1];
+  }
+  if (!fold)
+    fold = " ";
+  return { fold, offset: offset2 };
+}
+const escapeCodes = {
+  "0": "\0",
+  // null character
+  a: "\x07",
+  // bell character
+  b: "\b",
+  // backspace
+  e: "\x1B",
+  // escape character
+  f: "\f",
+  // form feed
+  n: "\n",
+  // line feed
+  r: "\r",
+  // carriage return
+  t: "	",
+  // horizontal tab
+  v: "\v",
+  // vertical tab
+  N: "",
+  // Unicode next line
+  _: " ",
+  // Unicode non-breaking space
+  L: "\u2028",
+  // Unicode line separator
+  P: "\u2029",
+  // Unicode paragraph separator
+  " ": " ",
+  '"': '"',
+  "/": "/",
+  "\\": "\\",
+  "	": "	"
+};
+function parseCharCode(source, offset2, length, onError) {
+  const cc = source.substr(offset2, length);
+  const ok2 = cc.length === length && /^[0-9a-fA-F]+$/.test(cc);
+  const code2 = ok2 ? parseInt(cc, 16) : NaN;
+  try {
+    return String.fromCodePoint(code2);
+  } catch {
+    const raw2 = source.substr(offset2 - 2, length + 2);
+    onError(offset2 - 2, "BAD_DQ_ESCAPE", `Invalid escape sequence ${raw2}`);
+    return raw2;
+  }
+}
+function composeScalar(ctx, token, tagToken, onError) {
+  const { value, type, comment: comment2, range } = token.type === "block-scalar" ? resolveBlockScalar(ctx, token, onError) : resolveFlowScalar(token, ctx.options.strict, onError);
+  const tagName = tagToken ? ctx.directives.tagName(tagToken.source, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg)) : null;
+  let tag;
+  if (ctx.options.stringKeys && ctx.atKey) {
+    tag = ctx.schema[SCALAR$1];
+  } else if (tagName)
+    tag = findScalarTagByName(ctx.schema, value, tagName, tagToken, onError);
+  else if (token.type === "scalar")
+    tag = findScalarTagByTest(ctx, value, token, onError);
+  else
+    tag = ctx.schema[SCALAR$1];
+  let scalar;
+  try {
+    const res = tag.resolve(value, (msg) => onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg), ctx.options);
+    scalar = isScalar(res) ? res : new Scalar(res);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg);
+    scalar = new Scalar(value);
+  }
+  scalar.range = range;
+  scalar.source = value;
+  if (type)
+    scalar.type = type;
+  if (tagName)
+    scalar.tag = tagName;
+  if (tag.format)
+    scalar.format = tag.format;
+  if (comment2)
+    scalar.comment = comment2;
+  return scalar;
+}
+function findScalarTagByName(schema2, value, tagName, tagToken, onError) {
+  var _a3;
+  if (tagName === "!")
+    return schema2[SCALAR$1];
+  const matchWithTest = [];
+  for (const tag of schema2.tags) {
+    if (!tag.collection && tag.tag === tagName) {
+      if (tag.default && tag.test)
+        matchWithTest.push(tag);
+      else
+        return tag;
+    }
+  }
+  for (const tag of matchWithTest)
+    if ((_a3 = tag.test) == null ? void 0 : _a3.test(value))
+      return tag;
+  const kt = schema2.knownTags[tagName];
+  if (kt && !kt.collection) {
+    schema2.tags.push(Object.assign({}, kt, { default: false, test: void 0 }));
+    return kt;
+  }
+  onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, tagName !== "tag:yaml.org,2002:str");
+  return schema2[SCALAR$1];
+}
+function findScalarTagByTest({ atKey, directives, schema: schema2 }, value, token, onError) {
+  const tag = schema2.tags.find((tag2) => {
+    var _a3;
+    return (tag2.default === true || atKey && tag2.default === "key") && ((_a3 = tag2.test) == null ? void 0 : _a3.test(value));
+  }) || schema2[SCALAR$1];
+  if (schema2.compat) {
+    const compat = schema2.compat.find((tag2) => {
+      var _a3;
+      return tag2.default && ((_a3 = tag2.test) == null ? void 0 : _a3.test(value));
+    }) ?? schema2[SCALAR$1];
+    if (tag.tag !== compat.tag) {
+      const ts = directives.tagString(tag.tag);
+      const cs = directives.tagString(compat.tag);
+      const msg = `Value may be parsed as either ${ts} or ${cs}`;
+      onError(token, "TAG_RESOLVE_FAILED", msg, true);
+    }
+  }
+  return tag;
+}
+function emptyScalarPosition(offset2, before, pos) {
+  if (before) {
+    pos ?? (pos = before.length);
+    for (let i2 = pos - 1; i2 >= 0; --i2) {
+      let st2 = before[i2];
+      switch (st2.type) {
+        case "space":
+        case "comment":
+        case "newline":
+          offset2 -= st2.source.length;
+          continue;
+      }
+      st2 = before[++i2];
+      while ((st2 == null ? void 0 : st2.type) === "space") {
+        offset2 += st2.source.length;
+        st2 = before[++i2];
+      }
+      break;
+    }
+  }
+  return offset2;
+}
+const CN = { composeNode, composeEmptyNode };
+function composeNode(ctx, token, props, onError) {
+  const atKey = ctx.atKey;
+  const { spaceBefore, comment: comment2, anchor, tag } = props;
+  let node2;
+  let isSrcToken = true;
+  switch (token.type) {
+    case "alias":
+      node2 = composeAlias(ctx, token, onError);
+      if (anchor || tag)
+        onError(token, "ALIAS_PROPS", "An alias node must not specify any properties");
+      break;
+    case "scalar":
+    case "single-quoted-scalar":
+    case "double-quoted-scalar":
+    case "block-scalar":
+      node2 = composeScalar(ctx, token, tag, onError);
+      if (anchor)
+        node2.anchor = anchor.source.substring(1);
+      break;
+    case "block-map":
+    case "block-seq":
+    case "flow-collection":
+      try {
+        node2 = composeCollection(CN, ctx, token, props, onError);
+        if (anchor)
+          node2.anchor = anchor.source.substring(1);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        onError(token, "RESOURCE_EXHAUSTION", message);
+      }
+      break;
+    default: {
+      const message = token.type === "error" ? token.message : `Unsupported token (type: ${token.type})`;
+      onError(token, "UNEXPECTED_TOKEN", message);
+      isSrcToken = false;
+    }
+  }
+  node2 ?? (node2 = composeEmptyNode(ctx, token.offset, void 0, null, props, onError));
+  if (anchor && node2.anchor === "")
+    onError(anchor, "BAD_ALIAS", "Anchor cannot be an empty string");
+  if (atKey && ctx.options.stringKeys && (!isScalar(node2) || typeof node2.value !== "string" || node2.tag && node2.tag !== "tag:yaml.org,2002:str")) {
+    const msg = "With stringKeys, all keys must be strings";
+    onError(tag ?? token, "NON_STRING_KEY", msg);
+  }
+  if (spaceBefore)
+    node2.spaceBefore = true;
+  if (comment2) {
+    if (token.type === "scalar" && token.source === "")
+      node2.comment = comment2;
+    else
+      node2.commentBefore = comment2;
+  }
+  if (ctx.options.keepSourceTokens && isSrcToken)
+    node2.srcToken = token;
+  return node2;
+}
+function composeEmptyNode(ctx, offset2, before, pos, { spaceBefore, comment: comment2, anchor, tag, end }, onError) {
+  const token = {
+    type: "scalar",
+    offset: emptyScalarPosition(offset2, before, pos),
+    indent: -1,
+    source: ""
+  };
+  const node2 = composeScalar(ctx, token, tag, onError);
+  if (anchor) {
+    node2.anchor = anchor.source.substring(1);
+    if (node2.anchor === "")
+      onError(anchor, "BAD_ALIAS", "Anchor cannot be an empty string");
+  }
+  if (spaceBefore)
+    node2.spaceBefore = true;
+  if (comment2) {
+    node2.comment = comment2;
+    node2.range[2] = end;
+  }
+  return node2;
+}
+function composeAlias({ options }, { offset: offset2, source, end }, onError) {
+  const alias = new Alias(source.substring(1));
+  if (alias.source === "")
+    onError(offset2, "BAD_ALIAS", "Alias cannot be an empty string");
+  if (alias.source.endsWith(":"))
+    onError(offset2 + source.length - 1, "BAD_ALIAS", "Alias ending in : is ambiguous", true);
+  const valueEnd = offset2 + source.length;
+  const re2 = resolveEnd(end, valueEnd, options.strict, onError);
+  alias.range = [offset2, valueEnd, re2.offset];
+  if (re2.comment)
+    alias.comment = re2.comment;
+  return alias;
+}
+function composeDoc(options, directives, { offset: offset2, start: start2, value, end }, onError) {
+  const opts = Object.assign({ _directives: directives }, options);
+  const doc = new Document(void 0, opts);
+  const ctx = {
+    atKey: false,
+    atRoot: true,
+    directives: doc.directives,
+    options: doc.options,
+    schema: doc.schema
+  };
+  const props = resolveProps(start2, {
+    indicator: "doc-start",
+    next: value ?? (end == null ? void 0 : end[0]),
+    offset: offset2,
+    onError,
+    parentIndent: 0,
+    startOnNewline: true
+  });
+  if (props.found) {
+    doc.directives.docStart = true;
+    if (value && (value.type === "block-map" || value.type === "block-seq") && !props.hasNewline)
+      onError(props.end, "MISSING_CHAR", "Block collection cannot start on same line with directives-end marker");
+  }
+  doc.contents = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, start2, null, props, onError);
+  const contentEnd = doc.contents.range[2];
+  const re2 = resolveEnd(end, contentEnd, false, onError);
+  if (re2.comment)
+    doc.comment = re2.comment;
+  doc.range = [offset2, contentEnd, re2.offset];
+  return doc;
+}
+function getErrorPos(src) {
+  if (typeof src === "number")
+    return [src, src + 1];
+  if (Array.isArray(src))
+    return src.length === 2 ? src : [src[0], src[1]];
+  const { offset: offset2, source } = src;
+  return [offset2, offset2 + (typeof source === "string" ? source.length : 1)];
+}
+function parsePrelude(prelude) {
+  var _a3;
+  let comment2 = "";
+  let atComment = false;
+  let afterEmptyLine = false;
+  for (let i2 = 0; i2 < prelude.length; ++i2) {
+    const source = prelude[i2];
+    switch (source[0]) {
+      case "#":
+        comment2 += (comment2 === "" ? "" : afterEmptyLine ? "\n\n" : "\n") + (source.substring(1) || " ");
+        atComment = true;
+        afterEmptyLine = false;
+        break;
+      case "%":
+        if (((_a3 = prelude[i2 + 1]) == null ? void 0 : _a3[0]) !== "#")
+          i2 += 1;
+        atComment = false;
+        break;
+      default:
+        if (!atComment)
+          afterEmptyLine = true;
+        atComment = false;
+    }
+  }
+  return { comment: comment2, afterEmptyLine };
+}
+class Composer {
+  constructor(options = {}) {
+    this.doc = null;
+    this.atDirectives = false;
+    this.prelude = [];
+    this.errors = [];
+    this.warnings = [];
+    this.onError = (source, code2, message, warning) => {
+      const pos = getErrorPos(source);
+      if (warning)
+        this.warnings.push(new YAMLWarning(pos, code2, message));
+      else
+        this.errors.push(new YAMLParseError(pos, code2, message));
+    };
+    this.directives = new Directives({ version: options.version || "1.2" });
+    this.options = options;
+  }
+  decorate(doc, afterDoc) {
+    const { comment: comment2, afterEmptyLine } = parsePrelude(this.prelude);
+    if (comment2) {
+      const dc = doc.contents;
+      if (afterDoc) {
+        doc.comment = doc.comment ? `${doc.comment}
+${comment2}` : comment2;
+      } else if (afterEmptyLine || doc.directives.docStart || !dc) {
+        doc.commentBefore = comment2;
+      } else if (isCollection(dc) && !dc.flow && dc.items.length > 0) {
+        let it2 = dc.items[0];
+        if (isPair(it2))
+          it2 = it2.key;
+        const cb = it2.commentBefore;
+        it2.commentBefore = cb ? `${comment2}
+${cb}` : comment2;
+      } else {
+        const cb = dc.commentBefore;
+        dc.commentBefore = cb ? `${comment2}
+${cb}` : comment2;
+      }
+    }
+    if (afterDoc) {
+      Array.prototype.push.apply(doc.errors, this.errors);
+      Array.prototype.push.apply(doc.warnings, this.warnings);
+    } else {
+      doc.errors = this.errors;
+      doc.warnings = this.warnings;
+    }
+    this.prelude = [];
+    this.errors = [];
+    this.warnings = [];
+  }
+  /**
+   * Current stream status information.
+   *
+   * Mostly useful at the end of input for an empty stream.
+   */
+  streamInfo() {
+    return {
+      comment: parsePrelude(this.prelude).comment,
+      directives: this.directives,
+      errors: this.errors,
+      warnings: this.warnings
+    };
+  }
+  /**
+   * Compose tokens into documents.
+   *
+   * @param forceDoc - If the stream contains no document, still emit a final document including any comments and directives that would be applied to a subsequent document.
+   * @param endOffset - Should be set if `forceDoc` is also set, to set the document range end and to indicate errors correctly.
+   */
+  *compose(tokens, forceDoc = false, endOffset = -1) {
+    for (const token of tokens)
+      yield* this.next(token);
+    yield* this.end(forceDoc, endOffset);
+  }
+  /** Advance the composer by one CST token. */
+  *next(token) {
+    switch (token.type) {
+      case "directive":
+        this.directives.add(token.source, (offset2, message, warning) => {
+          const pos = getErrorPos(token);
+          pos[0] += offset2;
+          this.onError(pos, "BAD_DIRECTIVE", message, warning);
+        });
+        this.prelude.push(token.source);
+        this.atDirectives = true;
+        break;
+      case "document": {
+        const doc = composeDoc(this.options, this.directives, token, this.onError);
+        if (this.atDirectives && !doc.directives.docStart)
+          this.onError(token, "MISSING_CHAR", "Missing directives-end/doc-start indicator line");
+        this.decorate(doc, false);
+        if (this.doc)
+          yield this.doc;
+        this.doc = doc;
+        this.atDirectives = false;
+        break;
+      }
+      case "byte-order-mark":
+      case "space":
+        break;
+      case "comment":
+      case "newline":
+        this.prelude.push(token.source);
+        break;
+      case "error": {
+        const msg = token.source ? `${token.message}: ${JSON.stringify(token.source)}` : token.message;
+        const error = new YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", msg);
+        if (this.atDirectives || !this.doc)
+          this.errors.push(error);
+        else
+          this.doc.errors.push(error);
+        break;
+      }
+      case "doc-end": {
+        if (!this.doc) {
+          const msg = "Unexpected doc-end without preceding document";
+          this.errors.push(new YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", msg));
+          break;
+        }
+        this.doc.directives.docEnd = true;
+        const end = resolveEnd(token.end, token.offset + token.source.length, this.doc.options.strict, this.onError);
+        this.decorate(this.doc, true);
+        if (end.comment) {
+          const dc = this.doc.comment;
+          this.doc.comment = dc ? `${dc}
+${end.comment}` : end.comment;
+        }
+        this.doc.range[2] = end.offset;
+        break;
+      }
+      default:
+        this.errors.push(new YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", `Unsupported token ${token.type}`));
+    }
+  }
+  /**
+   * Call at end of input to yield any remaining document.
+   *
+   * @param forceDoc - If the stream contains no document, still emit a final document including any comments and directives that would be applied to a subsequent document.
+   * @param endOffset - Should be set if `forceDoc` is also set, to set the document range end and to indicate errors correctly.
+   */
+  *end(forceDoc = false, endOffset = -1) {
+    if (this.doc) {
+      this.decorate(this.doc, true);
+      yield this.doc;
+      this.doc = null;
+    } else if (forceDoc) {
+      const opts = Object.assign({ _directives: this.directives }, this.options);
+      const doc = new Document(void 0, opts);
+      if (this.atDirectives)
+        this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
+      doc.range = [0, endOffset, endOffset];
+      this.decorate(doc, false);
+      yield doc;
+    }
+  }
+}
+const BOM = "\uFEFF";
+const DOCUMENT = "";
+const FLOW_END = "";
+const SCALAR = "";
+function tokenType(source) {
+  switch (source) {
+    case BOM:
+      return "byte-order-mark";
+    case DOCUMENT:
+      return "doc-mode";
+    case FLOW_END:
+      return "flow-error-end";
+    case SCALAR:
+      return "scalar";
+    case "---":
+      return "doc-start";
+    case "...":
+      return "doc-end";
+    case "":
+    case "\n":
+    case "\r\n":
+      return "newline";
+    case "-":
+      return "seq-item-ind";
+    case "?":
+      return "explicit-key-ind";
+    case ":":
+      return "map-value-ind";
+    case "{":
+      return "flow-map-start";
+    case "}":
+      return "flow-map-end";
+    case "[":
+      return "flow-seq-start";
+    case "]":
+      return "flow-seq-end";
+    case ",":
+      return "comma";
+  }
+  switch (source[0]) {
+    case " ":
+    case "	":
+      return "space";
+    case "#":
+      return "comment";
+    case "%":
+      return "directive-line";
+    case "*":
+      return "alias";
+    case "&":
+      return "anchor";
+    case "!":
+      return "tag";
+    case "'":
+      return "single-quoted-scalar";
+    case '"':
+      return "double-quoted-scalar";
+    case "|":
+    case ">":
+      return "block-scalar-header";
+  }
+  return null;
+}
+function isEmpty(ch) {
+  switch (ch) {
+    case void 0:
+    case " ":
+    case "\n":
+    case "\r":
+    case "	":
+      return true;
+    default:
+      return false;
+  }
+}
+const hexDigits = new Set("0123456789ABCDEFabcdef");
+const tagChars = new Set("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-#;/?:@&=+$_.!~*'()");
+const flowIndicatorChars = new Set(",[]{}");
+const invalidAnchorChars = new Set(" ,[]{}\n\r	");
+const isNotAnchorChar = (ch) => !ch || invalidAnchorChars.has(ch);
+class Lexer {
+  constructor() {
+    this.atEnd = false;
+    this.blockScalarIndent = -1;
+    this.blockScalarKeep = false;
+    this.buffer = "";
+    this.flowKey = false;
+    this.flowLevel = 0;
+    this.indentNext = 0;
+    this.indentValue = 0;
+    this.lineEndPos = null;
+    this.next = null;
+    this.pos = 0;
+  }
+  /**
+   * Generate YAML tokens from the `source` string. If `incomplete`,
+   * a part of the last line may be left as a buffer for the next call.
+   *
+   * @returns A generator of lexical tokens
+   */
+  *lex(source, incomplete = false) {
+    if (source) {
+      if (typeof source !== "string")
+        throw TypeError("source is not a string");
+      this.buffer = this.buffer ? this.buffer + source : source;
+      this.lineEndPos = null;
+    }
+    this.atEnd = !incomplete;
+    let next = this.next ?? "stream";
+    while (next && (incomplete || this.hasChars(1)))
+      next = yield* this.parseNext(next);
+  }
+  atLineEnd() {
+    let i2 = this.pos;
+    let ch = this.buffer[i2];
+    while (ch === " " || ch === "	")
+      ch = this.buffer[++i2];
+    if (!ch || ch === "#" || ch === "\n")
+      return true;
+    if (ch === "\r")
+      return this.buffer[i2 + 1] === "\n";
+    return false;
+  }
+  charAt(n2) {
+    return this.buffer[this.pos + n2];
+  }
+  continueScalar(offset2) {
+    let ch = this.buffer[offset2];
+    if (this.indentNext > 0) {
+      let indent2 = 0;
+      while (ch === " ")
+        ch = this.buffer[++indent2 + offset2];
+      if (ch === "\r") {
+        const next = this.buffer[indent2 + offset2 + 1];
+        if (next === "\n" || !next && !this.atEnd)
+          return offset2 + indent2 + 1;
+      }
+      return ch === "\n" || indent2 >= this.indentNext || !ch && !this.atEnd ? offset2 + indent2 : -1;
+    }
+    if (ch === "-" || ch === ".") {
+      const dt2 = this.buffer.substr(offset2, 3);
+      if ((dt2 === "---" || dt2 === "...") && isEmpty(this.buffer[offset2 + 3]))
+        return -1;
+    }
+    return offset2;
+  }
+  getLine() {
+    let end = this.lineEndPos;
+    if (typeof end !== "number" || end !== -1 && end < this.pos) {
+      end = this.buffer.indexOf("\n", this.pos);
+      this.lineEndPos = end;
+    }
+    if (end === -1)
+      return this.atEnd ? this.buffer.substring(this.pos) : null;
+    if (this.buffer[end - 1] === "\r")
+      end -= 1;
+    return this.buffer.substring(this.pos, end);
+  }
+  hasChars(n2) {
+    return this.pos + n2 <= this.buffer.length;
+  }
+  setNext(state) {
+    this.buffer = this.buffer.substring(this.pos);
+    this.pos = 0;
+    this.lineEndPos = null;
+    this.next = state;
+    return null;
+  }
+  peek(n2) {
+    return this.buffer.substr(this.pos, n2);
+  }
+  *parseNext(next) {
+    switch (next) {
+      case "stream":
+        return yield* this.parseStream();
+      case "line-start":
+        return yield* this.parseLineStart();
+      case "block-start":
+        return yield* this.parseBlockStart();
+      case "doc":
+        return yield* this.parseDocument();
+      case "flow":
+        return yield* this.parseFlowCollection();
+      case "quoted-scalar":
+        return yield* this.parseQuotedScalar();
+      case "block-scalar":
+        return yield* this.parseBlockScalar();
+      case "plain-scalar":
+        return yield* this.parsePlainScalar();
+    }
+  }
+  *parseStream() {
+    let line = this.getLine();
+    if (line === null)
+      return this.setNext("stream");
+    if (line[0] === BOM) {
+      yield* this.pushCount(1);
+      line = line.substring(1);
+    }
+    if (line[0] === "%") {
+      let dirEnd = line.length;
+      let cs = line.indexOf("#");
+      while (cs !== -1) {
+        const ch = line[cs - 1];
+        if (ch === " " || ch === "	") {
+          dirEnd = cs - 1;
+          break;
+        } else {
+          cs = line.indexOf("#", cs + 1);
+        }
+      }
+      while (true) {
+        const ch = line[dirEnd - 1];
+        if (ch === " " || ch === "	")
+          dirEnd -= 1;
+        else
+          break;
+      }
+      const n2 = (yield* this.pushCount(dirEnd)) + (yield* this.pushSpaces(true));
+      yield* this.pushCount(line.length - n2);
+      this.pushNewline();
+      return "stream";
+    }
+    if (this.atLineEnd()) {
+      const sp = yield* this.pushSpaces(true);
+      yield* this.pushCount(line.length - sp);
+      yield* this.pushNewline();
+      return "stream";
+    }
+    yield DOCUMENT;
+    return yield* this.parseLineStart();
+  }
+  *parseLineStart() {
+    const ch = this.charAt(0);
+    if (!ch && !this.atEnd)
+      return this.setNext("line-start");
+    if (ch === "-" || ch === ".") {
+      if (!this.atEnd && !this.hasChars(4))
+        return this.setNext("line-start");
+      const s2 = this.peek(3);
+      if ((s2 === "---" || s2 === "...") && isEmpty(this.charAt(3))) {
+        yield* this.pushCount(3);
+        this.indentValue = 0;
+        this.indentNext = 0;
+        return s2 === "---" ? "doc" : "stream";
+      }
+    }
+    this.indentValue = yield* this.pushSpaces(false);
+    if (this.indentNext > this.indentValue && !isEmpty(this.charAt(1)))
+      this.indentNext = this.indentValue;
+    return yield* this.parseBlockStart();
+  }
+  *parseBlockStart() {
+    const [ch0, ch1] = this.peek(2);
+    if (!ch1 && !this.atEnd)
+      return this.setNext("block-start");
+    if ((ch0 === "-" || ch0 === "?" || ch0 === ":") && isEmpty(ch1)) {
+      const n2 = (yield* this.pushCount(1)) + (yield* this.pushSpaces(true));
+      this.indentNext = this.indentValue + 1;
+      this.indentValue += n2;
+      return yield* this.parseBlockStart();
+    }
+    return "doc";
+  }
+  *parseDocument() {
+    yield* this.pushSpaces(true);
+    const line = this.getLine();
+    if (line === null)
+      return this.setNext("doc");
+    let n2 = yield* this.pushIndicators();
+    switch (line[n2]) {
+      case "#":
+        yield* this.pushCount(line.length - n2);
+      case void 0:
+        yield* this.pushNewline();
+        return yield* this.parseLineStart();
+      case "{":
+      case "[":
+        yield* this.pushCount(1);
+        this.flowKey = false;
+        this.flowLevel = 1;
+        return "flow";
+      case "}":
+      case "]":
+        yield* this.pushCount(1);
+        return "doc";
+      case "*":
+        yield* this.pushUntil(isNotAnchorChar);
+        return "doc";
+      case '"':
+      case "'":
+        return yield* this.parseQuotedScalar();
+      case "|":
+      case ">":
+        n2 += yield* this.parseBlockScalarHeader();
+        n2 += yield* this.pushSpaces(true);
+        yield* this.pushCount(line.length - n2);
+        yield* this.pushNewline();
+        return yield* this.parseBlockScalar();
+      default:
+        return yield* this.parsePlainScalar();
+    }
+  }
+  *parseFlowCollection() {
+    let nl, sp;
+    let indent2 = -1;
+    do {
+      nl = yield* this.pushNewline();
+      if (nl > 0) {
+        sp = yield* this.pushSpaces(false);
+        this.indentValue = indent2 = sp;
+      } else {
+        sp = 0;
+      }
+      sp += yield* this.pushSpaces(true);
+    } while (nl + sp > 0);
+    const line = this.getLine();
+    if (line === null)
+      return this.setNext("flow");
+    if (indent2 !== -1 && indent2 < this.indentNext && line[0] !== "#" || indent2 === 0 && (line.startsWith("---") || line.startsWith("...")) && isEmpty(line[3])) {
+      const atFlowEndMarker = indent2 === this.indentNext - 1 && this.flowLevel === 1 && (line[0] === "]" || line[0] === "}");
+      if (!atFlowEndMarker) {
+        this.flowLevel = 0;
+        yield FLOW_END;
+        return yield* this.parseLineStart();
+      }
+    }
+    let n2 = 0;
+    while (line[n2] === ",") {
+      n2 += yield* this.pushCount(1);
+      n2 += yield* this.pushSpaces(true);
+      this.flowKey = false;
+    }
+    n2 += yield* this.pushIndicators();
+    switch (line[n2]) {
+      case void 0:
+        return "flow";
+      case "#":
+        yield* this.pushCount(line.length - n2);
+        return "flow";
+      case "{":
+      case "[":
+        yield* this.pushCount(1);
+        this.flowKey = false;
+        this.flowLevel += 1;
+        return "flow";
+      case "}":
+      case "]":
+        yield* this.pushCount(1);
+        this.flowKey = true;
+        this.flowLevel -= 1;
+        return this.flowLevel ? "flow" : "doc";
+      case "*":
+        yield* this.pushUntil(isNotAnchorChar);
+        return "flow";
+      case '"':
+      case "'":
+        this.flowKey = true;
+        return yield* this.parseQuotedScalar();
+      case ":": {
+        const next = this.charAt(1);
+        if (this.flowKey || isEmpty(next) || next === ",") {
+          this.flowKey = false;
+          yield* this.pushCount(1);
+          yield* this.pushSpaces(true);
+          return "flow";
+        }
+      }
+      default:
+        this.flowKey = false;
+        return yield* this.parsePlainScalar();
+    }
+  }
+  *parseQuotedScalar() {
+    const quote = this.charAt(0);
+    let end = this.buffer.indexOf(quote, this.pos + 1);
+    if (quote === "'") {
+      while (end !== -1 && this.buffer[end + 1] === "'")
+        end = this.buffer.indexOf("'", end + 2);
+    } else {
+      while (end !== -1) {
+        let n2 = 0;
+        while (this.buffer[end - 1 - n2] === "\\")
+          n2 += 1;
+        if (n2 % 2 === 0)
+          break;
+        end = this.buffer.indexOf('"', end + 1);
+      }
+    }
+    const qb = this.buffer.substring(0, end);
+    let nl = qb.indexOf("\n", this.pos);
+    if (nl !== -1) {
+      while (nl !== -1) {
+        const cs = this.continueScalar(nl + 1);
+        if (cs === -1)
+          break;
+        nl = qb.indexOf("\n", cs);
+      }
+      if (nl !== -1) {
+        end = nl - (qb[nl - 1] === "\r" ? 2 : 1);
+      }
+    }
+    if (end === -1) {
+      if (!this.atEnd)
+        return this.setNext("quoted-scalar");
+      end = this.buffer.length;
+    }
+    yield* this.pushToIndex(end + 1, false);
+    return this.flowLevel ? "flow" : "doc";
+  }
+  *parseBlockScalarHeader() {
+    this.blockScalarIndent = -1;
+    this.blockScalarKeep = false;
+    let i2 = this.pos;
+    while (true) {
+      const ch = this.buffer[++i2];
+      if (ch === "+")
+        this.blockScalarKeep = true;
+      else if (ch > "0" && ch <= "9")
+        this.blockScalarIndent = Number(ch) - 1;
+      else if (ch !== "-")
+        break;
+    }
+    return yield* this.pushUntil((ch) => isEmpty(ch) || ch === "#");
+  }
+  *parseBlockScalar() {
+    let nl = this.pos - 1;
+    let indent2 = 0;
+    let ch;
+    loop: for (let i3 = this.pos; ch = this.buffer[i3]; ++i3) {
+      switch (ch) {
+        case " ":
+          indent2 += 1;
+          break;
+        case "\n":
+          nl = i3;
+          indent2 = 0;
+          break;
+        case "\r": {
+          const next = this.buffer[i3 + 1];
+          if (!next && !this.atEnd)
+            return this.setNext("block-scalar");
+          if (next === "\n")
+            break;
+        }
+        default:
+          break loop;
+      }
+    }
+    if (!ch && !this.atEnd)
+      return this.setNext("block-scalar");
+    if (indent2 >= this.indentNext) {
+      if (this.blockScalarIndent === -1)
+        this.indentNext = indent2;
+      else {
+        this.indentNext = this.blockScalarIndent + (this.indentNext === 0 ? 1 : this.indentNext);
+      }
+      do {
+        const cs = this.continueScalar(nl + 1);
+        if (cs === -1)
+          break;
+        nl = this.buffer.indexOf("\n", cs);
+      } while (nl !== -1);
+      if (nl === -1) {
+        if (!this.atEnd)
+          return this.setNext("block-scalar");
+        nl = this.buffer.length;
+      }
+    }
+    let i2 = nl + 1;
+    ch = this.buffer[i2];
+    while (ch === " ")
+      ch = this.buffer[++i2];
+    if (ch === "	") {
+      while (ch === "	" || ch === " " || ch === "\r" || ch === "\n")
+        ch = this.buffer[++i2];
+      nl = i2 - 1;
+    } else if (!this.blockScalarKeep) {
+      do {
+        let i3 = nl - 1;
+        let ch2 = this.buffer[i3];
+        if (ch2 === "\r")
+          ch2 = this.buffer[--i3];
+        const lastChar = i3;
+        while (ch2 === " ")
+          ch2 = this.buffer[--i3];
+        if (ch2 === "\n" && i3 >= this.pos && i3 + 1 + indent2 > lastChar)
+          nl = i3;
+        else
+          break;
+      } while (true);
+    }
+    yield SCALAR;
+    yield* this.pushToIndex(nl + 1, true);
+    return yield* this.parseLineStart();
+  }
+  *parsePlainScalar() {
+    const inFlow = this.flowLevel > 0;
+    let end = this.pos - 1;
+    let i2 = this.pos - 1;
+    let ch;
+    while (ch = this.buffer[++i2]) {
+      if (ch === ":") {
+        const next = this.buffer[i2 + 1];
+        if (isEmpty(next) || inFlow && flowIndicatorChars.has(next))
+          break;
+        end = i2;
+      } else if (isEmpty(ch)) {
+        let next = this.buffer[i2 + 1];
+        if (ch === "\r") {
+          if (next === "\n") {
+            i2 += 1;
+            ch = "\n";
+            next = this.buffer[i2 + 1];
+          } else
+            end = i2;
+        }
+        if (next === "#" || inFlow && flowIndicatorChars.has(next))
+          break;
+        if (ch === "\n") {
+          const cs = this.continueScalar(i2 + 1);
+          if (cs === -1)
+            break;
+          i2 = Math.max(i2, cs - 2);
+        }
+      } else {
+        if (inFlow && flowIndicatorChars.has(ch))
+          break;
+        end = i2;
+      }
+    }
+    if (!ch && !this.atEnd)
+      return this.setNext("plain-scalar");
+    yield SCALAR;
+    yield* this.pushToIndex(end + 1, true);
+    return inFlow ? "flow" : "doc";
+  }
+  *pushCount(n2) {
+    if (n2 > 0) {
+      yield this.buffer.substr(this.pos, n2);
+      this.pos += n2;
+      return n2;
+    }
+    return 0;
+  }
+  *pushToIndex(i2, allowEmpty) {
+    const s2 = this.buffer.slice(this.pos, i2);
+    if (s2) {
+      yield s2;
+      this.pos += s2.length;
+      return s2.length;
+    } else if (allowEmpty)
+      yield "";
+    return 0;
+  }
+  *pushIndicators() {
+    switch (this.charAt(0)) {
+      case "!":
+        return (yield* this.pushTag()) + (yield* this.pushSpaces(true)) + (yield* this.pushIndicators());
+      case "&":
+        return (yield* this.pushUntil(isNotAnchorChar)) + (yield* this.pushSpaces(true)) + (yield* this.pushIndicators());
+      case "-":
+      case "?":
+      case ":": {
+        const inFlow = this.flowLevel > 0;
+        const ch1 = this.charAt(1);
+        if (isEmpty(ch1) || inFlow && flowIndicatorChars.has(ch1)) {
+          if (!inFlow)
+            this.indentNext = this.indentValue + 1;
+          else if (this.flowKey)
+            this.flowKey = false;
+          return (yield* this.pushCount(1)) + (yield* this.pushSpaces(true)) + (yield* this.pushIndicators());
+        }
+      }
+    }
+    return 0;
+  }
+  *pushTag() {
+    if (this.charAt(1) === "<") {
+      let i2 = this.pos + 2;
+      let ch = this.buffer[i2];
+      while (!isEmpty(ch) && ch !== ">")
+        ch = this.buffer[++i2];
+      return yield* this.pushToIndex(ch === ">" ? i2 + 1 : i2, false);
+    } else {
+      let i2 = this.pos + 1;
+      let ch = this.buffer[i2];
+      while (ch) {
+        if (tagChars.has(ch))
+          ch = this.buffer[++i2];
+        else if (ch === "%" && hexDigits.has(this.buffer[i2 + 1]) && hexDigits.has(this.buffer[i2 + 2])) {
+          ch = this.buffer[i2 += 3];
+        } else
+          break;
+      }
+      return yield* this.pushToIndex(i2, false);
+    }
+  }
+  *pushNewline() {
+    const ch = this.buffer[this.pos];
+    if (ch === "\n")
+      return yield* this.pushCount(1);
+    else if (ch === "\r" && this.charAt(1) === "\n")
+      return yield* this.pushCount(2);
+    else
+      return 0;
+  }
+  *pushSpaces(allowTabs) {
+    let i2 = this.pos - 1;
+    let ch;
+    do {
+      ch = this.buffer[++i2];
+    } while (ch === " " || allowTabs && ch === "	");
+    const n2 = i2 - this.pos;
+    if (n2 > 0) {
+      yield this.buffer.substr(this.pos, n2);
+      this.pos = i2;
+    }
+    return n2;
+  }
+  *pushUntil(test) {
+    let i2 = this.pos;
+    let ch = this.buffer[i2];
+    while (!test(ch))
+      ch = this.buffer[++i2];
+    return yield* this.pushToIndex(i2, false);
+  }
+}
+class LineCounter {
+  constructor() {
+    this.lineStarts = [];
+    this.addNewLine = (offset2) => this.lineStarts.push(offset2);
+    this.linePos = (offset2) => {
+      let low = 0;
+      let high = this.lineStarts.length;
+      while (low < high) {
+        const mid = low + high >> 1;
+        if (this.lineStarts[mid] < offset2)
+          low = mid + 1;
+        else
+          high = mid;
+      }
+      if (this.lineStarts[low] === offset2)
+        return { line: low + 1, col: 1 };
+      if (low === 0)
+        return { line: 0, col: offset2 };
+      const start2 = this.lineStarts[low - 1];
+      return { line: low, col: offset2 - start2 + 1 };
+    };
+  }
+}
+function includesToken(list2, type) {
+  for (let i2 = 0; i2 < list2.length; ++i2)
+    if (list2[i2].type === type)
+      return true;
+  return false;
+}
+function findNonEmptyIndex(list2) {
+  for (let i2 = 0; i2 < list2.length; ++i2) {
+    switch (list2[i2].type) {
+      case "space":
+      case "comment":
+      case "newline":
+        break;
+      default:
+        return i2;
+    }
+  }
+  return -1;
+}
+function isFlowToken(token) {
+  switch (token == null ? void 0 : token.type) {
+    case "alias":
+    case "scalar":
+    case "single-quoted-scalar":
+    case "double-quoted-scalar":
+    case "flow-collection":
+      return true;
+    default:
+      return false;
+  }
+}
+function getPrevProps(parent) {
+  switch (parent.type) {
+    case "document":
+      return parent.start;
+    case "block-map": {
+      const it2 = parent.items[parent.items.length - 1];
+      return it2.sep ?? it2.start;
+    }
+    case "block-seq":
+      return parent.items[parent.items.length - 1].start;
+    default:
+      return [];
+  }
+}
+function getFirstKeyStartProps(prev) {
+  var _a3;
+  if (prev.length === 0)
+    return [];
+  let i2 = prev.length;
+  loop: while (--i2 >= 0) {
+    switch (prev[i2].type) {
+      case "doc-start":
+      case "explicit-key-ind":
+      case "map-value-ind":
+      case "seq-item-ind":
+      case "newline":
+        break loop;
+    }
+  }
+  while (((_a3 = prev[++i2]) == null ? void 0 : _a3.type) === "space") {
+  }
+  return prev.splice(i2, prev.length);
+}
+function fixFlowSeqItems(fc) {
+  if (fc.start.type === "flow-seq-start") {
+    for (const it2 of fc.items) {
+      if (it2.sep && !it2.value && !includesToken(it2.start, "explicit-key-ind") && !includesToken(it2.sep, "map-value-ind")) {
+        if (it2.key)
+          it2.value = it2.key;
+        delete it2.key;
+        if (isFlowToken(it2.value)) {
+          if (it2.value.end)
+            Array.prototype.push.apply(it2.value.end, it2.sep);
+          else
+            it2.value.end = it2.sep;
+        } else
+          Array.prototype.push.apply(it2.start, it2.sep);
+        delete it2.sep;
+      }
+    }
+  }
+}
+class Parser {
+  /**
+   * @param onNewLine - If defined, called separately with the start position of
+   *   each new line (in `parse()`, including the start of input).
+   */
+  constructor(onNewLine) {
+    this.atNewLine = true;
+    this.atScalar = false;
+    this.indent = 0;
+    this.offset = 0;
+    this.onKeyLine = false;
+    this.stack = [];
+    this.source = "";
+    this.type = "";
+    this.lexer = new Lexer();
+    this.onNewLine = onNewLine;
+  }
+  /**
+   * Parse `source` as a YAML stream.
+   * If `incomplete`, a part of the last line may be left as a buffer for the next call.
+   *
+   * Errors are not thrown, but yielded as `{ type: 'error', message }` tokens.
+   *
+   * @returns A generator of tokens representing each directive, document, and other structure.
+   */
+  *parse(source, incomplete = false) {
+    if (this.onNewLine && this.offset === 0)
+      this.onNewLine(0);
+    for (const lexeme of this.lexer.lex(source, incomplete))
+      yield* this.next(lexeme);
+    if (!incomplete)
+      yield* this.end();
+  }
+  /**
+   * Advance the parser by the `source` of one lexical token.
+   */
+  *next(source) {
+    this.source = source;
+    if (this.atScalar) {
+      this.atScalar = false;
+      yield* this.step();
+      this.offset += source.length;
+      return;
+    }
+    const type = tokenType(source);
+    if (!type) {
+      const message = `Not a YAML token: ${source}`;
+      yield* this.pop({ type: "error", offset: this.offset, message, source });
+      this.offset += source.length;
+    } else if (type === "scalar") {
+      this.atNewLine = false;
+      this.atScalar = true;
+      this.type = "scalar";
+    } else {
+      this.type = type;
+      yield* this.step();
+      switch (type) {
+        case "newline":
+          this.atNewLine = true;
+          this.indent = 0;
+          if (this.onNewLine)
+            this.onNewLine(this.offset + source.length);
+          break;
+        case "space":
+          if (this.atNewLine && source[0] === " ")
+            this.indent += source.length;
+          break;
+        case "explicit-key-ind":
+        case "map-value-ind":
+        case "seq-item-ind":
+          if (this.atNewLine)
+            this.indent += source.length;
+          break;
+        case "doc-mode":
+        case "flow-error-end":
+          return;
+        default:
+          this.atNewLine = false;
+      }
+      this.offset += source.length;
+    }
+  }
+  /** Call at end of input to push out any remaining constructions */
+  *end() {
+    while (this.stack.length > 0)
+      yield* this.pop();
+  }
+  get sourceToken() {
+    const st2 = {
+      type: this.type,
+      offset: this.offset,
+      indent: this.indent,
+      source: this.source
+    };
+    return st2;
+  }
+  *step() {
+    const top = this.peek(1);
+    if (this.type === "doc-end" && (top == null ? void 0 : top.type) !== "doc-end") {
+      while (this.stack.length > 0)
+        yield* this.pop();
+      this.stack.push({
+        type: "doc-end",
+        offset: this.offset,
+        source: this.source
+      });
+      return;
+    }
+    if (!top)
+      return yield* this.stream();
+    switch (top.type) {
+      case "document":
+        return yield* this.document(top);
+      case "alias":
+      case "scalar":
+      case "single-quoted-scalar":
+      case "double-quoted-scalar":
+        return yield* this.scalar(top);
+      case "block-scalar":
+        return yield* this.blockScalar(top);
+      case "block-map":
+        return yield* this.blockMap(top);
+      case "block-seq":
+        return yield* this.blockSequence(top);
+      case "flow-collection":
+        return yield* this.flowCollection(top);
+      case "doc-end":
+        return yield* this.documentEnd(top);
+    }
+    yield* this.pop();
+  }
+  peek(n2) {
+    return this.stack[this.stack.length - n2];
+  }
+  *pop(error) {
+    const token = error ?? this.stack.pop();
+    if (!token) {
+      const message = "Tried to pop an empty stack";
+      yield { type: "error", offset: this.offset, source: "", message };
+    } else if (this.stack.length === 0) {
+      yield token;
+    } else {
+      const top = this.peek(1);
+      if (token.type === "block-scalar") {
+        token.indent = "indent" in top ? top.indent : 0;
+      } else if (token.type === "flow-collection" && top.type === "document") {
+        token.indent = 0;
+      }
+      if (token.type === "flow-collection")
+        fixFlowSeqItems(token);
+      switch (top.type) {
+        case "document":
+          top.value = token;
+          break;
+        case "block-scalar":
+          top.props.push(token);
+          break;
+        case "block-map": {
+          const it2 = top.items[top.items.length - 1];
+          if (it2.value) {
+            top.items.push({ start: [], key: token, sep: [] });
+            this.onKeyLine = true;
+            return;
+          } else if (it2.sep) {
+            it2.value = token;
+          } else {
+            Object.assign(it2, { key: token, sep: [] });
+            this.onKeyLine = !it2.explicitKey;
+            return;
+          }
+          break;
+        }
+        case "block-seq": {
+          const it2 = top.items[top.items.length - 1];
+          if (it2.value)
+            top.items.push({ start: [], value: token });
+          else
+            it2.value = token;
+          break;
+        }
+        case "flow-collection": {
+          const it2 = top.items[top.items.length - 1];
+          if (!it2 || it2.value)
+            top.items.push({ start: [], key: token, sep: [] });
+          else if (it2.sep)
+            it2.value = token;
+          else
+            Object.assign(it2, { key: token, sep: [] });
+          return;
+        }
+        default:
+          yield* this.pop();
+          yield* this.pop(token);
+      }
+      if ((top.type === "document" || top.type === "block-map" || top.type === "block-seq") && (token.type === "block-map" || token.type === "block-seq")) {
+        const last = token.items[token.items.length - 1];
+        if (last && !last.sep && !last.value && last.start.length > 0 && findNonEmptyIndex(last.start) === -1 && (token.indent === 0 || last.start.every((st2) => st2.type !== "comment" || st2.indent < token.indent))) {
+          if (top.type === "document")
+            top.end = last.start;
+          else
+            top.items.push({ start: last.start });
+          token.items.splice(-1, 1);
+        }
+      }
+    }
+  }
+  *stream() {
+    switch (this.type) {
+      case "directive-line":
+        yield { type: "directive", offset: this.offset, source: this.source };
+        return;
+      case "byte-order-mark":
+      case "space":
+      case "comment":
+      case "newline":
+        yield this.sourceToken;
+        return;
+      case "doc-mode":
+      case "doc-start": {
+        const doc = {
+          type: "document",
+          offset: this.offset,
+          start: []
+        };
+        if (this.type === "doc-start")
+          doc.start.push(this.sourceToken);
+        this.stack.push(doc);
+        return;
+      }
+    }
+    yield {
+      type: "error",
+      offset: this.offset,
+      message: `Unexpected ${this.type} token in YAML stream`,
+      source: this.source
+    };
+  }
+  *document(doc) {
+    if (doc.value)
+      return yield* this.lineEnd(doc);
+    switch (this.type) {
+      case "doc-start": {
+        if (findNonEmptyIndex(doc.start) !== -1) {
+          yield* this.pop();
+          yield* this.step();
+        } else
+          doc.start.push(this.sourceToken);
+        return;
+      }
+      case "anchor":
+      case "tag":
+      case "space":
+      case "comment":
+      case "newline":
+        doc.start.push(this.sourceToken);
+        return;
+    }
+    const bv = this.startBlockValue(doc);
+    if (bv)
+      this.stack.push(bv);
+    else {
+      yield {
+        type: "error",
+        offset: this.offset,
+        message: `Unexpected ${this.type} token in YAML document`,
+        source: this.source
+      };
+    }
+  }
+  *scalar(scalar) {
+    if (this.type === "map-value-ind") {
+      const prev = getPrevProps(this.peek(2));
+      const start2 = getFirstKeyStartProps(prev);
+      let sep;
+      if (scalar.end) {
+        sep = scalar.end;
+        sep.push(this.sourceToken);
+        delete scalar.end;
+      } else
+        sep = [this.sourceToken];
+      const map2 = {
+        type: "block-map",
+        offset: scalar.offset,
+        indent: scalar.indent,
+        items: [{ start: start2, key: scalar, sep }]
+      };
+      this.onKeyLine = true;
+      this.stack[this.stack.length - 1] = map2;
+    } else
+      yield* this.lineEnd(scalar);
+  }
+  *blockScalar(scalar) {
+    switch (this.type) {
+      case "space":
+      case "comment":
+      case "newline":
+        scalar.props.push(this.sourceToken);
+        return;
+      case "scalar":
+        scalar.source = this.source;
+        this.atNewLine = true;
+        this.indent = 0;
+        if (this.onNewLine) {
+          let nl = this.source.indexOf("\n") + 1;
+          while (nl !== 0) {
+            this.onNewLine(this.offset + nl);
+            nl = this.source.indexOf("\n", nl) + 1;
+          }
+        }
+        yield* this.pop();
+        break;
+      default:
+        yield* this.pop();
+        yield* this.step();
+    }
+  }
+  *blockMap(map2) {
+    var _a3;
+    const it2 = map2.items[map2.items.length - 1];
+    switch (this.type) {
+      case "newline":
+        this.onKeyLine = false;
+        if (it2.value) {
+          const end = "end" in it2.value ? it2.value.end : void 0;
+          const last = Array.isArray(end) ? end[end.length - 1] : void 0;
+          if ((last == null ? void 0 : last.type) === "comment")
+            end == null ? void 0 : end.push(this.sourceToken);
+          else
+            map2.items.push({ start: [this.sourceToken] });
+        } else if (it2.sep) {
+          it2.sep.push(this.sourceToken);
+        } else {
+          it2.start.push(this.sourceToken);
+        }
+        return;
+      case "space":
+      case "comment":
+        if (it2.value) {
+          map2.items.push({ start: [this.sourceToken] });
+        } else if (it2.sep) {
+          it2.sep.push(this.sourceToken);
+        } else {
+          if (this.atIndentedComment(it2.start, map2.indent)) {
+            const prev = map2.items[map2.items.length - 2];
+            const end = (_a3 = prev == null ? void 0 : prev.value) == null ? void 0 : _a3.end;
+            if (Array.isArray(end)) {
+              Array.prototype.push.apply(end, it2.start);
+              end.push(this.sourceToken);
+              map2.items.pop();
+              return;
+            }
+          }
+          it2.start.push(this.sourceToken);
+        }
+        return;
+    }
+    if (this.indent >= map2.indent) {
+      const atMapIndent = !this.onKeyLine && this.indent === map2.indent;
+      const atNextItem = atMapIndent && (it2.sep || it2.explicitKey) && this.type !== "seq-item-ind";
+      let start2 = [];
+      if (atNextItem && it2.sep && !it2.value) {
+        const nl = [];
+        for (let i2 = 0; i2 < it2.sep.length; ++i2) {
+          const st2 = it2.sep[i2];
+          switch (st2.type) {
+            case "newline":
+              nl.push(i2);
+              break;
+            case "space":
+              break;
+            case "comment":
+              if (st2.indent > map2.indent)
+                nl.length = 0;
+              break;
+            default:
+              nl.length = 0;
+          }
+        }
+        if (nl.length >= 2)
+          start2 = it2.sep.splice(nl[1]);
+      }
+      switch (this.type) {
+        case "anchor":
+        case "tag":
+          if (atNextItem || it2.value) {
+            start2.push(this.sourceToken);
+            map2.items.push({ start: start2 });
+            this.onKeyLine = true;
+          } else if (it2.sep) {
+            it2.sep.push(this.sourceToken);
+          } else {
+            it2.start.push(this.sourceToken);
+          }
+          return;
+        case "explicit-key-ind":
+          if (!it2.sep && !it2.explicitKey) {
+            it2.start.push(this.sourceToken);
+            it2.explicitKey = true;
+          } else if (atNextItem || it2.value) {
+            start2.push(this.sourceToken);
+            map2.items.push({ start: start2, explicitKey: true });
+          } else {
+            this.stack.push({
+              type: "block-map",
+              offset: this.offset,
+              indent: this.indent,
+              items: [{ start: [this.sourceToken], explicitKey: true }]
+            });
+          }
+          this.onKeyLine = true;
+          return;
+        case "map-value-ind":
+          if (it2.explicitKey) {
+            if (!it2.sep) {
+              if (includesToken(it2.start, "newline")) {
+                Object.assign(it2, { key: null, sep: [this.sourceToken] });
+              } else {
+                const start3 = getFirstKeyStartProps(it2.start);
+                this.stack.push({
+                  type: "block-map",
+                  offset: this.offset,
+                  indent: this.indent,
+                  items: [{ start: start3, key: null, sep: [this.sourceToken] }]
+                });
+              }
+            } else if (it2.value) {
+              map2.items.push({ start: [], key: null, sep: [this.sourceToken] });
+            } else if (includesToken(it2.sep, "map-value-ind")) {
+              this.stack.push({
+                type: "block-map",
+                offset: this.offset,
+                indent: this.indent,
+                items: [{ start: start2, key: null, sep: [this.sourceToken] }]
+              });
+            } else if (isFlowToken(it2.key) && !includesToken(it2.sep, "newline")) {
+              const start3 = getFirstKeyStartProps(it2.start);
+              const key2 = it2.key;
+              const sep = it2.sep;
+              sep.push(this.sourceToken);
+              delete it2.key;
+              delete it2.sep;
+              this.stack.push({
+                type: "block-map",
+                offset: this.offset,
+                indent: this.indent,
+                items: [{ start: start3, key: key2, sep }]
+              });
+            } else if (start2.length > 0) {
+              it2.sep = it2.sep.concat(start2, this.sourceToken);
+            } else {
+              it2.sep.push(this.sourceToken);
+            }
+          } else {
+            if (!it2.sep) {
+              Object.assign(it2, { key: null, sep: [this.sourceToken] });
+            } else if (it2.value || atNextItem) {
+              map2.items.push({ start: start2, key: null, sep: [this.sourceToken] });
+            } else if (includesToken(it2.sep, "map-value-ind")) {
+              this.stack.push({
+                type: "block-map",
+                offset: this.offset,
+                indent: this.indent,
+                items: [{ start: [], key: null, sep: [this.sourceToken] }]
+              });
+            } else {
+              it2.sep.push(this.sourceToken);
+            }
+          }
+          this.onKeyLine = true;
+          return;
+        case "alias":
+        case "scalar":
+        case "single-quoted-scalar":
+        case "double-quoted-scalar": {
+          const fs = this.flowScalar(this.type);
+          if (atNextItem || it2.value) {
+            map2.items.push({ start: start2, key: fs, sep: [] });
+            this.onKeyLine = true;
+          } else if (it2.sep) {
+            this.stack.push(fs);
+          } else {
+            Object.assign(it2, { key: fs, sep: [] });
+            this.onKeyLine = true;
+          }
+          return;
+        }
+        default: {
+          const bv = this.startBlockValue(map2);
+          if (bv) {
+            if (bv.type === "block-seq") {
+              if (!it2.explicitKey && it2.sep && !includesToken(it2.sep, "newline")) {
+                yield* this.pop({
+                  type: "error",
+                  offset: this.offset,
+                  message: "Unexpected block-seq-ind on same line with key",
+                  source: this.source
+                });
+                return;
+              }
+            } else if (atMapIndent) {
+              map2.items.push({ start: start2 });
+            }
+            this.stack.push(bv);
+            return;
+          }
+        }
+      }
+    }
+    yield* this.pop();
+    yield* this.step();
+  }
+  *blockSequence(seq2) {
+    var _a3;
+    const it2 = seq2.items[seq2.items.length - 1];
+    switch (this.type) {
+      case "newline":
+        if (it2.value) {
+          const end = "end" in it2.value ? it2.value.end : void 0;
+          const last = Array.isArray(end) ? end[end.length - 1] : void 0;
+          if ((last == null ? void 0 : last.type) === "comment")
+            end == null ? void 0 : end.push(this.sourceToken);
+          else
+            seq2.items.push({ start: [this.sourceToken] });
+        } else
+          it2.start.push(this.sourceToken);
+        return;
+      case "space":
+      case "comment":
+        if (it2.value)
+          seq2.items.push({ start: [this.sourceToken] });
+        else {
+          if (this.atIndentedComment(it2.start, seq2.indent)) {
+            const prev = seq2.items[seq2.items.length - 2];
+            const end = (_a3 = prev == null ? void 0 : prev.value) == null ? void 0 : _a3.end;
+            if (Array.isArray(end)) {
+              Array.prototype.push.apply(end, it2.start);
+              end.push(this.sourceToken);
+              seq2.items.pop();
+              return;
+            }
+          }
+          it2.start.push(this.sourceToken);
+        }
+        return;
+      case "anchor":
+      case "tag":
+        if (it2.value || this.indent <= seq2.indent)
+          break;
+        it2.start.push(this.sourceToken);
+        return;
+      case "seq-item-ind":
+        if (this.indent !== seq2.indent)
+          break;
+        if (it2.value || includesToken(it2.start, "seq-item-ind"))
+          seq2.items.push({ start: [this.sourceToken] });
+        else
+          it2.start.push(this.sourceToken);
+        return;
+    }
+    if (this.indent > seq2.indent) {
+      const bv = this.startBlockValue(seq2);
+      if (bv) {
+        this.stack.push(bv);
+        return;
+      }
+    }
+    yield* this.pop();
+    yield* this.step();
+  }
+  *flowCollection(fc) {
+    const it2 = fc.items[fc.items.length - 1];
+    if (this.type === "flow-error-end") {
+      let top;
+      do {
+        yield* this.pop();
+        top = this.peek(1);
+      } while ((top == null ? void 0 : top.type) === "flow-collection");
+    } else if (fc.end.length === 0) {
+      switch (this.type) {
+        case "comma":
+        case "explicit-key-ind":
+          if (!it2 || it2.sep)
+            fc.items.push({ start: [this.sourceToken] });
+          else
+            it2.start.push(this.sourceToken);
+          return;
+        case "map-value-ind":
+          if (!it2 || it2.value)
+            fc.items.push({ start: [], key: null, sep: [this.sourceToken] });
+          else if (it2.sep)
+            it2.sep.push(this.sourceToken);
+          else
+            Object.assign(it2, { key: null, sep: [this.sourceToken] });
+          return;
+        case "space":
+        case "comment":
+        case "newline":
+        case "anchor":
+        case "tag":
+          if (!it2 || it2.value)
+            fc.items.push({ start: [this.sourceToken] });
+          else if (it2.sep)
+            it2.sep.push(this.sourceToken);
+          else
+            it2.start.push(this.sourceToken);
+          return;
+        case "alias":
+        case "scalar":
+        case "single-quoted-scalar":
+        case "double-quoted-scalar": {
+          const fs = this.flowScalar(this.type);
+          if (!it2 || it2.value)
+            fc.items.push({ start: [], key: fs, sep: [] });
+          else if (it2.sep)
+            this.stack.push(fs);
+          else
+            Object.assign(it2, { key: fs, sep: [] });
+          return;
+        }
+        case "flow-map-end":
+        case "flow-seq-end":
+          fc.end.push(this.sourceToken);
+          return;
+      }
+      const bv = this.startBlockValue(fc);
+      if (bv)
+        this.stack.push(bv);
+      else {
+        yield* this.pop();
+        yield* this.step();
+      }
+    } else {
+      const parent = this.peek(2);
+      if (parent.type === "block-map" && (this.type === "map-value-ind" && parent.indent === fc.indent || this.type === "newline" && !parent.items[parent.items.length - 1].sep)) {
+        yield* this.pop();
+        yield* this.step();
+      } else if (this.type === "map-value-ind" && parent.type !== "flow-collection") {
+        const prev = getPrevProps(parent);
+        const start2 = getFirstKeyStartProps(prev);
+        fixFlowSeqItems(fc);
+        const sep = fc.end.splice(1, fc.end.length);
+        sep.push(this.sourceToken);
+        const map2 = {
+          type: "block-map",
+          offset: fc.offset,
+          indent: fc.indent,
+          items: [{ start: start2, key: fc, sep }]
+        };
+        this.onKeyLine = true;
+        this.stack[this.stack.length - 1] = map2;
+      } else {
+        yield* this.lineEnd(fc);
+      }
+    }
+  }
+  flowScalar(type) {
+    if (this.onNewLine) {
+      let nl = this.source.indexOf("\n") + 1;
+      while (nl !== 0) {
+        this.onNewLine(this.offset + nl);
+        nl = this.source.indexOf("\n", nl) + 1;
+      }
+    }
+    return {
+      type,
+      offset: this.offset,
+      indent: this.indent,
+      source: this.source
+    };
+  }
+  startBlockValue(parent) {
+    switch (this.type) {
+      case "alias":
+      case "scalar":
+      case "single-quoted-scalar":
+      case "double-quoted-scalar":
+        return this.flowScalar(this.type);
+      case "block-scalar-header":
+        return {
+          type: "block-scalar",
+          offset: this.offset,
+          indent: this.indent,
+          props: [this.sourceToken],
+          source: ""
+        };
+      case "flow-map-start":
+      case "flow-seq-start":
+        return {
+          type: "flow-collection",
+          offset: this.offset,
+          indent: this.indent,
+          start: this.sourceToken,
+          items: [],
+          end: []
+        };
+      case "seq-item-ind":
+        return {
+          type: "block-seq",
+          offset: this.offset,
+          indent: this.indent,
+          items: [{ start: [this.sourceToken] }]
+        };
+      case "explicit-key-ind": {
+        this.onKeyLine = true;
+        const prev = getPrevProps(parent);
+        const start2 = getFirstKeyStartProps(prev);
+        start2.push(this.sourceToken);
+        return {
+          type: "block-map",
+          offset: this.offset,
+          indent: this.indent,
+          items: [{ start: start2, explicitKey: true }]
+        };
+      }
+      case "map-value-ind": {
+        this.onKeyLine = true;
+        const prev = getPrevProps(parent);
+        const start2 = getFirstKeyStartProps(prev);
+        return {
+          type: "block-map",
+          offset: this.offset,
+          indent: this.indent,
+          items: [{ start: start2, key: null, sep: [this.sourceToken] }]
+        };
+      }
+    }
+    return null;
+  }
+  atIndentedComment(start2, indent2) {
+    if (this.type !== "comment")
+      return false;
+    if (this.indent <= indent2)
+      return false;
+    return start2.every((st2) => st2.type === "newline" || st2.type === "space");
+  }
+  *documentEnd(docEnd) {
+    if (this.type !== "doc-mode") {
+      if (docEnd.end)
+        docEnd.end.push(this.sourceToken);
+      else
+        docEnd.end = [this.sourceToken];
+      if (this.type === "newline")
+        yield* this.pop();
+    }
+  }
+  *lineEnd(token) {
+    switch (this.type) {
+      case "comma":
+      case "doc-start":
+      case "doc-end":
+      case "flow-seq-end":
+      case "flow-map-end":
+      case "map-value-ind":
+        yield* this.pop();
+        yield* this.step();
+        break;
+      case "newline":
+        this.onKeyLine = false;
+      case "space":
+      case "comment":
+      default:
+        if (token.end)
+          token.end.push(this.sourceToken);
+        else
+          token.end = [this.sourceToken];
+        if (this.type === "newline")
+          yield* this.pop();
+    }
+  }
+}
+function parseOptions(options) {
+  const prettyErrors = options.prettyErrors !== false;
+  const lineCounter = options.lineCounter || prettyErrors && new LineCounter() || null;
+  return { lineCounter, prettyErrors };
+}
+function parseDocument(source, options = {}) {
+  const { lineCounter, prettyErrors } = parseOptions(options);
+  const parser = new Parser(lineCounter == null ? void 0 : lineCounter.addNewLine);
+  const composer = new Composer(options);
+  let doc = null;
+  for (const _doc of composer.compose(parser.parse(source), true, source.length)) {
+    if (!doc)
+      doc = _doc;
+    else if (doc.options.logLevel !== "silent") {
+      doc.errors.push(new YAMLParseError(_doc.range.slice(0, 2), "MULTIPLE_DOCS", "Source contains multiple documents; please use YAML.parseAllDocuments()"));
+      break;
+    }
+  }
+  if (prettyErrors && lineCounter) {
+    doc.errors.forEach(prettifyError(source, lineCounter));
+    doc.warnings.forEach(prettifyError(source, lineCounter));
+  }
+  return doc;
+}
+function parse(src, reviver, options) {
+  let _reviver = void 0;
+  const doc = parseDocument(src, options);
+  if (!doc)
+    return null;
+  doc.warnings.forEach((warning) => warn(doc.options.logLevel, warning));
+  if (doc.errors.length > 0) {
+    if (doc.options.logLevel !== "silent")
+      throw doc.errors[0];
+    else
+      doc.errors = [];
+  }
+  return doc.toJS(Object.assign({ reviver: _reviver }, options));
+}
+function parseFrontmatter(text2) {
+  const match = text2.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return {};
+  try {
+    const parsed = parse(match[1]);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    return {};
+  } catch {
+    return {};
+  }
 }
 function stripFrontmatter(text2) {
   return text2.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").trim();
@@ -84265,7 +90947,8 @@ const RESERVED_KEYS = /* @__PURE__ */ new Set([
 function extractCustomAttributes(fm) {
   const attrs = {};
   for (const [k2, v2] of Object.entries(fm)) {
-    if (!RESERVED_KEYS.has(k2)) attrs[k2] = v2;
+    if (!RESERVED_KEYS.has(k2))
+      attrs[k2] = typeof v2 === "string" ? v2 : JSON.stringify(v2);
   }
   return Object.keys(attrs).length > 0 ? attrs : void 0;
 }
@@ -84316,7 +90999,7 @@ async function parseSourceGraphZip(file2) {
       id: curationName,
       name: curationName,
       nodeType: "curation",
-      jurisdiction: curationAttrs.jurisdiction,
+      jurisdiction: typeof curationAttrs.jurisdiction === "string" ? curationAttrs.jurisdiction : void 0,
       attributes: extractCustomAttributes(curationAttrs)
     };
     nodes.push(curationNode);
@@ -84333,7 +91016,7 @@ async function parseSourceGraphZip(file2) {
     for (const swarmName of swarmFolders) {
       const swarmPath = `${curationName}/${swarmName}`;
       const swarmAttrs = await getInheritedAttributes(zip, swarmPath);
-      const tagsRaw = swarmAttrs.tags ?? "";
+      const tagsRaw = typeof swarmAttrs.tags === "string" ? swarmAttrs.tags : "";
       const tags = tagsRaw ? tagsRaw.split(",").map((t2) => t2.trim()).filter(Boolean) : void 0;
       const swarmNode = {
         id: `${curationName}@${swarmName}`,
@@ -84392,7 +91075,7 @@ async function parseSourceGraphZip(file2) {
           id: `${curationName}@${swarmName}@${locationName}`,
           name: locationName,
           nodeType: "location",
-          source: locationAttrs.source,
+          source: typeof locationAttrs.source === "string" ? locationAttrs.source : void 0,
           parentName: swarmName,
           attributes: extractCustomAttributes(locationAttrs)
         };
@@ -84429,7 +91112,7 @@ async function parseSourceGraphZip(file2) {
             name: entry.name,
             nodeType: "lawEntity",
             parentName: locationName,
-            jurisdiction: lawEntityAttrs.jurisdiction,
+            jurisdiction: typeof lawEntityAttrs.jurisdiction === "string" ? lawEntityAttrs.jurisdiction : void 0,
             attributes: extractCustomAttributes(lawEntityAttrs)
           });
           edges.push({
@@ -84847,7 +91530,7 @@ function useMarkdownEditor() {
       return newSession;
     });
   }, []);
-  const createNode = reactExports.useCallback(
+  const createNode2 = reactExports.useCallback(
     (parentId, name, type) => {
       setSession((prev) => {
         const parent = prev.nodes.get(parentId);
@@ -85130,7 +91813,7 @@ function useMarkdownEditor() {
     session,
     loadGraphs,
     createCuration,
-    createNode,
+    createNode: createNode2,
     updateFile,
     renameNode,
     deleteNode,
@@ -85414,7 +92097,7 @@ function EditorView() {
   const {
     session,
     createCuration,
-    createNode,
+    createNode: createNode2,
     updateFile,
     renameNode,
     deleteNode,
@@ -85645,7 +92328,7 @@ function EditorView() {
   );
   const activeNode = (session == null ? void 0 : session.activeFileId) ? session.nodes.get(session.activeFileId) ?? null : null;
   const viewMode = (session == null ? void 0 : session.viewMode) ?? "edit";
-  const isEmpty = !session || session.rootIds.length === 0;
+  const isEmpty2 = !session || session.rootIds.length === 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -85666,7 +92349,7 @@ function EditorView() {
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "notes" }),
-          !isEmpty && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "preview"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          !isEmpty2 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "preview"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
@@ -85729,7 +92412,7 @@ function EditorView() {
           )
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0 overflow-hidden", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden", children: isEmpty ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden", children: isEmpty2 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
             GettingStarted,
             {
               onCreate: () => setShowCreateCuration(true),
@@ -85770,7 +92453,7 @@ function EditorView() {
               }
             )
           ] }) }),
-          !isEmpty && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          !isEmpty2 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "div",
             {
               className: "w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden",
@@ -85784,7 +92467,7 @@ function EditorView() {
                     rootIds: session.rootIds,
                     activeFileId: session.activeFileId,
                     onSelectFile: setActiveFile,
-                    onCreateNode: createNode,
+                    onCreateNode: createNode2,
                     onRenameNode: renameNode,
                     onDeleteNode: (id2) => setDeleteTarget(id2),
                     onContextMenu: handleContextMenu
@@ -85860,7 +92543,7 @@ function EditorView() {
             placeholder: "Name",
             onClose: () => setCreateChild(null),
             onSubmit: (name) => {
-              createNode(createChild.parentId, name, createChild.type);
+              createNode2(createChild.parentId, name, createChild.type);
               setCreateChild(null);
             },
             ocidPrefix: "editor.create_child_dialog"
@@ -89307,8 +95990,8 @@ function CurationGroup({
     )) })
   ] });
 }
-function formatTime(timestamp) {
-  const ms = Number(timestamp / BigInt(1e6));
+function formatTime(timestamp2) {
+  const ms = Number(timestamp2 / BigInt(1e6));
   const d2 = new Date(ms);
   return `${d2.getHours().toString().padStart(2, "0")}:${d2.getMinutes().toString().padStart(2, "0")}`;
 }

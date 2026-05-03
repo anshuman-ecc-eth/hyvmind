@@ -5,8 +5,25 @@ import { Plus, X } from "lucide-react";
 // ---------------------------------------------------------------------------
 
 interface FrontmatterEditorProps {
-  frontmatter: Record<string, string>;
-  onChange: (frontmatter: Record<string, string>) => void;
+  frontmatter: Record<string, unknown>;
+  onChange: (frontmatter: Record<string, unknown>) => void;
+}
+
+// ---------------------------------------------------------------------------
+// Value helpers
+// ---------------------------------------------------------------------------
+
+function formatValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
+}
+
+function parseValue(str: string): unknown {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return str;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -20,7 +37,7 @@ export function FrontmatterEditor({
   const entries = Object.entries(frontmatter);
 
   const handleKeyChange = (oldKey: string, newKey: string) => {
-    const updated: Record<string, string> = {};
+    const updated: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(frontmatter)) {
       updated[k === oldKey ? newKey : k] = v;
     }
@@ -28,11 +45,11 @@ export function FrontmatterEditor({
   };
 
   const handleValueChange = (key: string, value: string) => {
-    onChange({ ...frontmatter, [key]: value });
+    onChange({ ...frontmatter, [key]: parseValue(value) });
   };
 
   const handleRemove = (key: string) => {
-    const updated = { ...frontmatter };
+    const updated: Record<string, unknown> = { ...frontmatter };
     delete updated[key];
     onChange(updated);
   };
@@ -99,7 +116,7 @@ export function FrontmatterEditor({
               <input
                 type="text"
                 aria-label="Frontmatter value"
-                value={value}
+                value={formatValue(value)}
                 data-ocid={`frontmatter_editor.value_input.${idx + 1}`}
                 className="flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
                 onChange={(e) => handleValueChange(key, e.target.value)}

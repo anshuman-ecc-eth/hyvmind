@@ -317,7 +317,7 @@ export default function EditorView() {
           const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
           let content: string | undefined;
-          let frontmatterData: Record<string, string> = {};
+          let frontmatterData: Record<string, unknown> = {};
           if (!isDirectory && name.endsWith(".md")) {
             try {
               const rawContent = await zipEntry.async("string");
@@ -414,7 +414,7 @@ export default function EditorView() {
   );
 
   const handleFrontmatterChange = useCallback(
-    (frontmatter: Record<string, string>) => {
+    (frontmatter: Record<string, unknown>) => {
       if (!session?.activeFileId) return;
       updateFile(session.activeFileId, { frontmatter });
     },

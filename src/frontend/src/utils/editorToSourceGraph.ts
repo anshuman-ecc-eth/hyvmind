@@ -9,10 +9,12 @@ import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
  * Serialise a frontmatter record back to a YAML front-matter block.
  * Returns an empty string when the record is empty.
  */
-function serialiseFrontmatter(fm: Record<string, string>): string {
+function serialiseFrontmatter(fm: Record<string, unknown>): string {
   const entries = Object.entries(fm);
   if (entries.length === 0) return "";
-  const yaml = entries.map(([k, v]) => `${k}: ${v}`).join("\n");
+  const yaml = entries
+    .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .join("\n");
   return `---\n${yaml}\n---\n`;
 }
 
@@ -116,13 +118,18 @@ export function editorToSourceGraph(
     }
 
     // For non-interp nodes, attributes come from inheritedAttributes
-    const attributes =
+    const attributes: Record<string, string> | undefined =
       node.nodeType !== "interpEntity" &&
       Object.keys(node.inheritedAttributes).length > 0
         ? { ...node.inheritedAttributes }
         : node.nodeType === "interpEntity" &&
             Object.keys(node.frontmatter).length > 0
-          ? { ...node.frontmatter }
+          ? Object.fromEntries(
+              Object.entries(node.frontmatter).map(([k, v]) => [
+                k,
+                typeof v === "string" ? v : JSON.stringify(v),
+              ]),
+            )
           : undefined;
 
     const sourceNode: SourceNode = {

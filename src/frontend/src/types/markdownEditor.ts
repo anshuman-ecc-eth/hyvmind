@@ -25,7 +25,7 @@ export interface EditorNode {
   /** Markdown body (files only) */
   content?: string;
   /** Parsed YAML frontmatter key-value pairs (files only) */
-  frontmatter: Record<string, string>;
+  frontmatter: Record<string, unknown>;
   /** Attributes inherited from ancestor _attributes.md files */
   inheritedAttributes: Record<string, string>;
   /** Ordered ids of direct children */
@@ -66,8 +66,8 @@ export type EditorAction =
   | {
       type: "updateFrontmatter";
       nodeId: string;
-      oldFrontmatter: Record<string, string>;
-      newFrontmatter: Record<string, string>;
+      oldFrontmatter: Record<string, unknown>;
+      newFrontmatter: Record<string, unknown>;
     };
 
 // ---------------------------------------------------------------------------

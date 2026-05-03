@@ -75,7 +75,7 @@ export function sourceGraphToEditor(graph: SourceGraph): EditorNode[] {
     const parentId = parentIdFromPath(id);
 
     let content: string | undefined;
-    let frontmatter: Record<string, string> = {};
+    let frontmatter: Record<string, unknown> = {};
 
     if (node.nodeType === "interpEntity") {
       const raw = node.content ?? "";
