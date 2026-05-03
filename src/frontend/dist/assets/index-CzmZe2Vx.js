@@ -18782,15 +18782,15 @@ function readContextForConsumer(consumer, context) {
   return value;
 }
 var AbortControllerLocal = "undefined" !== typeof AbortController ? AbortController : function() {
-  var listeners = [], signal = this.signal = {
+  var listeners2 = [], signal = this.signal = {
     aborted: false,
     addEventListener: function(type, listener) {
-      listeners.push(listener);
+      listeners2.push(listener);
     }
   };
   this.abort = function() {
     signal.aborted = true;
-    listeners.forEach(function(listener) {
+    listeners2.forEach(function(listener) {
       return listener();
     });
   };
@@ -18836,33 +18836,33 @@ function entangleAsyncAction(transition, thenable) {
 function pingEngtangledActionScope() {
   if (0 === --currentEntangledPendingCount && null !== currentEntangledListeners) {
     null !== currentEntangledActionThenable && (currentEntangledActionThenable.status = "fulfilled");
-    var listeners = currentEntangledListeners;
+    var listeners2 = currentEntangledListeners;
     currentEntangledListeners = null;
     currentEntangledLane = 0;
     currentEntangledActionThenable = null;
-    for (var i2 = 0; i2 < listeners.length; i2++) (0, listeners[i2])();
+    for (var i2 = 0; i2 < listeners2.length; i2++) (0, listeners2[i2])();
   }
 }
 function chainThenableValue(thenable, result) {
-  var listeners = [], thenableWithOverride = {
+  var listeners2 = [], thenableWithOverride = {
     status: "pending",
     value: null,
     reason: null,
     then: function(resolve) {
-      listeners.push(resolve);
+      listeners2.push(resolve);
     }
   };
   thenable.then(
     function() {
       thenableWithOverride.status = "fulfilled";
       thenableWithOverride.value = result;
-      for (var i2 = 0; i2 < listeners.length; i2++) (0, listeners[i2])(result);
+      for (var i2 = 0; i2 < listeners2.length; i2++) (0, listeners2[i2])(result);
     },
     function(error) {
       thenableWithOverride.status = "rejected";
       thenableWithOverride.reason = error;
-      for (error = 0; error < listeners.length; error++)
-        (0, listeners[error])(void 0);
+      for (error = 0; error < listeners2.length; error++)
+        (0, listeners2[error])(void 0);
     }
   );
   return thenableWithOverride;
@@ -25525,15 +25525,15 @@ function createDispatchListener(instance, listener, currentTarget) {
   };
 }
 function accumulateTwoPhaseListeners(targetFiber, reactName) {
-  for (var captureName = reactName + "Capture", listeners = []; null !== targetFiber; ) {
+  for (var captureName = reactName + "Capture", listeners2 = []; null !== targetFiber; ) {
     var _instance2 = targetFiber, stateNode = _instance2.stateNode;
     _instance2 = _instance2.tag;
-    5 !== _instance2 && 26 !== _instance2 && 27 !== _instance2 || null === stateNode || (_instance2 = getListener(targetFiber, captureName), null != _instance2 && listeners.unshift(
+    5 !== _instance2 && 26 !== _instance2 && 27 !== _instance2 || null === stateNode || (_instance2 = getListener(targetFiber, captureName), null != _instance2 && listeners2.unshift(
       createDispatchListener(targetFiber, _instance2, stateNode)
-    ), _instance2 = getListener(targetFiber, reactName), null != _instance2 && listeners.push(
+    ), _instance2 = getListener(targetFiber, reactName), null != _instance2 && listeners2.push(
       createDispatchListener(targetFiber, _instance2, stateNode)
     ));
-    if (3 === targetFiber.tag) return listeners;
+    if (3 === targetFiber.tag) return listeners2;
     targetFiber = targetFiber.return;
   }
   return [];
@@ -25546,18 +25546,18 @@ function getParent(inst) {
   return inst ? inst : null;
 }
 function accumulateEnterLeaveListenersForEvent(dispatchQueue, event, target, common, inCapturePhase) {
-  for (var registrationName = event._reactName, listeners = []; null !== target && target !== common; ) {
+  for (var registrationName = event._reactName, listeners2 = []; null !== target && target !== common; ) {
     var _instance3 = target, alternate = _instance3.alternate, stateNode = _instance3.stateNode;
     _instance3 = _instance3.tag;
     if (null !== alternate && alternate === common) break;
-    5 !== _instance3 && 26 !== _instance3 && 27 !== _instance3 || null === stateNode || (alternate = stateNode, inCapturePhase ? (stateNode = getListener(target, registrationName), null != stateNode && listeners.unshift(
+    5 !== _instance3 && 26 !== _instance3 && 27 !== _instance3 || null === stateNode || (alternate = stateNode, inCapturePhase ? (stateNode = getListener(target, registrationName), null != stateNode && listeners2.unshift(
       createDispatchListener(target, stateNode, alternate)
-    )) : inCapturePhase || (stateNode = getListener(target, registrationName), null != stateNode && listeners.push(
+    )) : inCapturePhase || (stateNode = getListener(target, registrationName), null != stateNode && listeners2.push(
       createDispatchListener(target, stateNode, alternate)
     )));
     target = target.return;
   }
-  0 !== listeners.length && dispatchQueue.push({ event, listeners });
+  0 !== listeners2.length && dispatchQueue.push({ event, listeners: listeners2 });
 }
 var NORMALIZE_NEWLINES_REGEX = /\r\n?/g, NORMALIZE_NULL_AND_REPLACEMENT_REGEX = /\u0000|\uFFFD/g;
 function normalizeMarkupForTextOrAttribute(markup) {
@@ -45040,7 +45040,7 @@ function defaultTouchable$1() {
   return navigator.maxTouchPoints || "ontouchstart" in this;
 }
 function drag() {
-  var filter2 = defaultFilter$1, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable$1, gestures = {}, listeners = dispatch("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
+  var filter2 = defaultFilter$1, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable$1, gestures = {}, listeners2 = dispatch("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
   function drag2(selection2) {
     selection2.on("mousedown.drag", mousedowned).filter(touchable).on("touchstart.drag", touchstarted).on("touchmove.drag", touchmoved, nonpassive).on("touchend.drag touchcancel.drag", touchended).style("touch-action", "none").style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
@@ -45103,7 +45103,7 @@ function drag() {
     }
   }
   function beforestart(that, container2, event, d2, identifier, touch) {
-    var dispatch2 = listeners.copy(), p2 = pointer(touch || event, container2), dx, dy, s2;
+    var dispatch2 = listeners2.copy(), p2 = pointer(touch || event, container2), dx, dy, s2;
     if ((s2 = subject.call(that, new DragEvent("beforestart", {
       sourceEvent: event,
       target: drag2,
@@ -45161,8 +45161,8 @@ function drag() {
     return arguments.length ? (touchable = typeof _2 === "function" ? _2 : constant$3(!!_2), drag2) : touchable;
   };
   drag2.on = function() {
-    var value = listeners.on.apply(listeners, arguments);
-    return value === listeners ? drag2 : value;
+    var value = listeners2.on.apply(listeners2, arguments);
+    return value === listeners2 ? drag2 : value;
   };
   drag2.clickDistance = function(_2) {
     return arguments.length ? (clickDistance2 = (_2 = +_2) * _2, drag2) : Math.sqrt(clickDistance2);
@@ -46548,7 +46548,7 @@ function defaultConstrain(transform2, extent, translateExtent) {
   );
 }
 function zoom() {
-  var filter2 = defaultFilter, extent = defaultExtent, constrain = defaultConstrain, wheelDelta = defaultWheelDelta, touchable = defaultTouchable, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate2 = interpolateZoom, listeners = dispatch("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
+  var filter2 = defaultFilter, extent = defaultExtent, constrain = defaultConstrain, wheelDelta = defaultWheelDelta, touchable = defaultTouchable, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate2 = interpolateZoom, listeners2 = dispatch("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
   function zoom3(selection2) {
     selection2.property("__zoom", defaultTransform).on("wheel.zoom", wheeled, { passive: false }).on("mousedown.zoom", mousedowned).on("dblclick.zoom", dblclicked).filter(touchable).on("touchstart.zoom", touchstarted).on("touchmove.zoom", touchmoved).on("touchend.zoom touchcancel.zoom", touchended).style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
@@ -46660,14 +46660,14 @@ function zoom() {
     },
     emit: function(type) {
       var d2 = select(this.that).datum();
-      listeners.call(
+      listeners2.call(
         type,
         this.that,
         new ZoomEvent(type, {
           sourceEvent: this.sourceEvent,
           target: zoom3,
           transform: this.that.__zoom,
-          dispatch: listeners
+          dispatch: listeners2
         }),
         d2
       );
@@ -46817,8 +46817,8 @@ function zoom() {
     return arguments.length ? (interpolate2 = _2, zoom3) : interpolate2;
   };
   zoom3.on = function() {
-    var value = listeners.on.apply(listeners, arguments);
-    return value === listeners ? zoom3 : value;
+    var value = listeners2.on.apply(listeners2, arguments);
+    return value === listeners2 ? zoom3 : value;
   };
   zoom3.clickDistance = function(_2) {
     return arguments.length ? (clickDistance2 = (_2 = +_2) * _2, zoom3) : Math.sqrt(clickDistance2);
@@ -69093,6 +69093,16 @@ function buildFullPath(nodeId, nodes) {
   }
   return segments.join("@");
 }
+function extractLawEntityReferences$1(content) {
+  const matches = content.match(/\{([^}]+)\}/g);
+  if (!matches) return [];
+  return matches.map((m2) => m2.slice(1, -1).trim());
+}
+function extractInterpEntityReferences$1(content) {
+  const matches = content.match(/\{\{([^}]+)\}\}/g);
+  if (!matches) return [];
+  return matches.map((m2) => m2.slice(2, -2).trim()).filter((s2) => s2.length > 0);
+}
 function editorToSourceGraph(nodes, rootId) {
   var _a3;
   const root2 = nodes.get(rootId);
@@ -69101,8 +69111,18 @@ function editorToSourceGraph(nodes, rootId) {
   }
   const allNodes = collectDescendants(rootId, nodes);
   const sourceNodes = [];
+  const lawEntityNames = /* @__PURE__ */ new Map();
+  const interpFilenames = /* @__PURE__ */ new Map();
+  const nodeFullPaths = /* @__PURE__ */ new Map();
   for (const node2 of allNodes) {
     const fullPath = buildFullPath(node2.id, nodes);
+    nodeFullPaths.set(node2.id, fullPath);
+    if (node2.nodeType === "lawEntity") {
+      lawEntityNames.set(node2.name, fullPath);
+    }
+    if (node2.nodeType === "interpEntity") {
+      interpFilenames.set(node2.name, fullPath);
+    }
     let content;
     if (node2.nodeType === "interpEntity") {
       const fmBlock = serialiseFrontmatter(node2.frontmatter);
@@ -69120,14 +69140,48 @@ function editorToSourceGraph(nodes, rootId) {
     };
     sourceNodes.push(sourceNode);
   }
+  const edges = [];
+  for (const node2 of allNodes) {
+    if (node2.parentId) {
+      const parentPath = nodeFullPaths.get(node2.parentId);
+      const childPath = nodeFullPaths.get(node2.id);
+      if (parentPath && childPath) {
+        edges.push({ source: parentPath, target: childPath });
+      }
+    }
+  }
+  for (const node2 of allNodes) {
+    if (node2.nodeType === "interpEntity" && node2.content) {
+      const nodePath = nodeFullPaths.get(node2.id);
+      if (!nodePath) continue;
+      const refs = extractLawEntityReferences$1(node2.content);
+      for (const ref of refs) {
+        const refPath = lawEntityNames.get(ref);
+        if (refPath && refPath !== nodePath) {
+          edges.push({ source: nodePath, target: refPath });
+        }
+      }
+    }
+  }
+  for (const node2 of allNodes) {
+    if (node2.nodeType === "interpEntity" && node2.content) {
+      const nodePath = nodeFullPaths.get(node2.id);
+      if (!nodePath) continue;
+      const refs = extractInterpEntityReferences$1(node2.content);
+      for (const ref of refs) {
+        const refPath = interpFilenames.get(ref);
+        if (refPath && refPath !== nodePath) {
+          edges.push({ source: nodePath, target: refPath });
+        }
+      }
+    }
+  }
   const now2 = Date.now();
   return {
     id: `${now2}-${Math.random().toString(36).slice(2)}`,
     name: root2.name,
     nodes: sourceNodes,
-    // Edges are not reconstructed in this MVP conversion — they will be
-    // re-derived by the backend parser when the graph is published.
-    edges: [],
+    edges,
     createdAt: now2
   };
 }
@@ -71860,79 +71914,71 @@ function saveToStorage(store) {
     throw e2;
   }
 }
+let globalStore = loadFromStorage();
+const listeners = /* @__PURE__ */ new Set();
+function notify() {
+  for (const fn of listeners) fn();
+}
 function useSourceGraphs() {
-  const [store, setStore] = reactExports.useState(
-    () => loadFromStorage()
-  );
+  const [, forceUpdate] = reactExports.useState(0);
   reactExports.useEffect(() => {
-    const onFocus = () => {
-      const fresh = loadFromStorage();
-      setStore((prev) => {
-        const prevJson = JSON.stringify(prev);
-        const freshJson = JSON.stringify(fresh);
-        return prevJson === freshJson ? prev : fresh;
-      });
+    const fn = () => forceUpdate((n2) => n2 + 1);
+    listeners.add(fn);
+    return () => {
+      listeners.delete(fn);
     };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
   }, []);
   const saveGraph = reactExports.useCallback((graph) => {
-    setStore((prev) => {
-      const existingIndex = prev.graphs.findIndex((g2) => g2.id === graph.id);
-      const newGraphs = existingIndex >= 0 ? prev.graphs.map((g2, i2) => i2 === existingIndex ? graph : g2) : [...prev.graphs, graph];
-      const next = {
-        graphs: newGraphs,
-        activeGraphId: prev.activeGraphId
-      };
-      saveToStorage(next);
-      return next;
-    });
+    const existingIndex = globalStore.graphs.findIndex(
+      (g2) => g2.id === graph.id
+    );
+    const newGraphs = existingIndex >= 0 ? globalStore.graphs.map((g2, i2) => i2 === existingIndex ? graph : g2) : [...globalStore.graphs, graph];
+    globalStore = {
+      graphs: newGraphs,
+      activeGraphId: globalStore.activeGraphId
+    };
+    saveToStorage(globalStore);
+    notify();
   }, []);
   const deleteGraph = reactExports.useCallback((id2) => {
-    setStore((prev) => {
-      const next = {
-        graphs: prev.graphs.filter((g2) => g2.id !== id2),
-        activeGraphId: prev.activeGraphId === id2 ? null : prev.activeGraphId
-      };
-      saveToStorage(next);
-      return next;
-    });
+    globalStore = {
+      graphs: globalStore.graphs.filter((g2) => g2.id !== id2),
+      activeGraphId: globalStore.activeGraphId === id2 ? null : globalStore.activeGraphId
+    };
+    saveToStorage(globalStore);
+    notify();
   }, []);
   const setActiveGraph = reactExports.useCallback((id2) => {
-    setStore((prev) => {
-      const next = { ...prev, activeGraphId: id2 };
-      saveToStorage(next);
-      return next;
-    });
+    globalStore = { ...globalStore, activeGraphId: id2 };
+    saveToStorage(globalStore);
+    notify();
   }, []);
   const updateNode = reactExports.useCallback(
     (graphId, nodeName, updates) => {
-      setStore((prev) => {
-        const next = {
-          ...prev,
-          graphs: prev.graphs.map(
-            (g2) => g2.id !== graphId ? g2 : {
-              ...g2,
-              nodes: g2.nodes.map(
-                (n2) => n2.name !== nodeName ? n2 : { ...n2, ...updates }
-              )
-            }
-          )
-        };
-        saveToStorage(next);
-        return next;
-      });
+      globalStore = {
+        ...globalStore,
+        graphs: globalStore.graphs.map(
+          (g2) => g2.id !== graphId ? g2 : {
+            ...g2,
+            nodes: g2.nodes.map(
+              (n2) => n2.name !== nodeName ? n2 : { ...n2, ...updates }
+            )
+          }
+        )
+      };
+      saveToStorage(globalStore);
+      notify();
     },
     []
   );
   const loadGraphs = reactExports.useCallback(() => {
-    const current = loadFromStorage();
-    setStore(current);
-    return current.graphs;
+    globalStore = loadFromStorage();
+    notify();
+    return globalStore.graphs;
   }, []);
   return {
-    graphs: store.graphs,
-    activeGraphId: store.activeGraphId,
+    graphs: globalStore.graphs,
+    activeGraphId: globalStore.activeGraphId,
     loadGraphs,
     saveGraph,
     deleteGraph,
@@ -71941,6 +71987,25 @@ function useSourceGraphs() {
   };
 }
 const ACTIVE_FILE_KEY = "editor-active-file-id";
+const SESSION_STORAGE_KEY = "hyvmind-session";
+function serializeSession(session) {
+  const serializable = {
+    ...session,
+    nodes: Array.from(session.nodes.entries())
+  };
+  return JSON.stringify(serializable);
+}
+function deserializeSession(json) {
+  try {
+    const parsed = JSON.parse(json);
+    return {
+      ...parsed,
+      nodes: new Map(parsed.nodes)
+    };
+  } catch {
+    return null;
+  }
+}
 const MAX_UNDO = 50;
 function slugify(name) {
   return name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "");
@@ -71992,6 +72057,11 @@ function emptySession() {
 function useMarkdownEditor() {
   const { graphs, saveGraph } = useSourceGraphs();
   const [session, setSession] = reactExports.useState(() => {
+    const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (saved) {
+      const loaded = deserializeSession(saved);
+      if (loaded) return loaded;
+    }
     const s2 = emptySession();
     const savedFile = localStorage.getItem(ACTIVE_FILE_KEY);
     if (savedFile) s2.activeFileId = savedFile;
@@ -72056,6 +72126,7 @@ function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now2
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
       return newSession;
     });
   }, []);
@@ -72101,6 +72172,7 @@ function useMarkdownEditor() {
           redoStack: [],
           lastSavedAt: now2
         };
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
         return newSession;
       });
     },
@@ -72143,13 +72215,15 @@ function useMarkdownEditor() {
         for (const a2 of actions) {
           undoStack = pushCapped(undoStack, a2);
         }
-        return {
+        const newSession = {
           ...prev,
           nodes,
           undoStack,
           redoStack: [],
           lastSavedAt: now2
         };
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+        return newSession;
       });
     },
     []
@@ -72182,7 +72256,7 @@ function useMarkdownEditor() {
       if (activeFileId !== prev.activeFileId && activeFileId) {
         localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
       }
-      return {
+      const newSession = {
         ...prev,
         nodes,
         rootIds,
@@ -72191,6 +72265,8 @@ function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now2
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
   const deleteNode = reactExports.useCallback((nodeId) => {
@@ -72224,7 +72300,7 @@ function useMarkdownEditor() {
         if (activeFileId) localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
         else localStorage.removeItem(ACTIVE_FILE_KEY);
       }
-      return {
+      const newSession = {
         ...prev,
         nodes,
         rootIds,
@@ -72233,17 +72309,25 @@ function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now2
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
   const setActiveFile = reactExports.useCallback((fileId) => {
     setSession((prev) => {
       if (fileId) localStorage.setItem(ACTIVE_FILE_KEY, fileId);
       else localStorage.removeItem(ACTIVE_FILE_KEY);
-      return { ...prev, activeFileId: fileId };
+      const newSession = { ...prev, activeFileId: fileId };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
   const setViewMode = reactExports.useCallback((mode) => {
-    setSession((prev) => ({ ...prev, viewMode: mode }));
+    setSession((prev) => {
+      const newSession = { ...prev, viewMode: mode };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
+    });
   }, []);
   const undo = reactExports.useCallback(() => {
     setSession((prev) => {
@@ -72253,7 +72337,9 @@ function useMarkdownEditor() {
       const redoStack = [...prev.redoStack, action];
       const nodes = applyInverseAction(action, prev.nodes);
       const rootIds = rebuildRootIds(nodes);
-      return { ...prev, nodes, rootIds, undoStack, redoStack };
+      const newSession = { ...prev, nodes, rootIds, undoStack, redoStack };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
   const redo = reactExports.useCallback(() => {
@@ -72264,7 +72350,9 @@ function useMarkdownEditor() {
       const undoStack = pushCapped(prev.undoStack, action);
       const nodes = applyAction(action, prev.nodes);
       const rootIds = rebuildRootIds(nodes);
-      return { ...prev, nodes, rootIds, undoStack, redoStack };
+      const newSession = { ...prev, nodes, rootIds, undoStack, redoStack };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
   const convertToSourceGraph = reactExports.useCallback(
@@ -72285,7 +72373,14 @@ function useMarkdownEditor() {
           graphName = `${graphName} (${counter})`;
         }
         saveGraph({ ...sourceGraph, name: graphName });
-        setSession((prev) => ({ ...prev, lastSavedAt: Date.now() }));
+        setSession((prev) => {
+          const newSession = { ...prev, lastSavedAt: Date.now() };
+          localStorage.setItem(
+            SESSION_STORAGE_KEY,
+            serializeSession(newSession)
+          );
+          return newSession;
+        });
         return { success: true, graphName };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Conversion failed";
@@ -72303,11 +72398,13 @@ function useMarkdownEditor() {
         for (const [id2, node2] of nodes) {
           mergedNodes.set(id2, node2);
         }
-        return {
+        const newSession = {
           ...prev,
           nodes: mergedNodes,
           rootIds: [...prev.rootIds, ...newRootIds]
         };
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+        return newSession;
       });
     },
     []
@@ -76163,20 +76260,20 @@ async function sendMessage(botToken, chatId, text, threadId) {
 }
 const createStoreImpl = (createState) => {
   let state;
-  const listeners = /* @__PURE__ */ new Set();
+  const listeners2 = /* @__PURE__ */ new Set();
   const setState = (partial, replace) => {
     const nextState = typeof partial === "function" ? partial(state) : partial;
     if (!Object.is(nextState, state)) {
       const previousState = state;
       state = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state, nextState);
-      listeners.forEach((listener) => listener(state, previousState));
+      listeners2.forEach((listener) => listener(state, previousState));
     }
   };
   const getState2 = () => state;
   const getInitialState = () => initialState2;
   const subscribe = (listener) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
+    listeners2.add(listener);
+    return () => listeners2.delete(listener);
   };
   const api = { setState, getState: getState2, getInitialState, subscribe };
   const initialState2 = state = createState(setState, getState2, api);

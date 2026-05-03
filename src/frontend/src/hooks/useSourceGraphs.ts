@@ -31,94 +31,90 @@ function saveToStorage(store: SourceGraphsStore): void {
   }
 }
 
-export default function useSourceGraphs() {
-  const [store, setStore] = useState<SourceGraphsStore>(() =>
-    loadFromStorage(),
-  );
+// ---------------------------------------------------------------------------
+// Singleton store — shared across all hook instances in the same tab
+// ---------------------------------------------------------------------------
 
-  // Sync state from storage on focus (multi-tab support).
-  // Only update if the serialized data has actually changed to avoid
-  // creating new object references (which would remount SourceGraphDiagram).
+let globalStore: SourceGraphsStore = loadFromStorage();
+const listeners = new Set<() => void>();
+function notify() {
+  for (const fn of listeners) fn();
+}
+
+export default function useSourceGraphs() {
+  const [, forceUpdate] = useState(0);
+
+  // Subscribe / unsubscribe on mount / unmount
   useEffect(() => {
-    const onFocus = () => {
-      const fresh = loadFromStorage();
-      setStore((prev) => {
-        const prevJson = JSON.stringify(prev);
-        const freshJson = JSON.stringify(fresh);
-        return prevJson === freshJson ? prev : fresh;
-      });
+    const fn = () => forceUpdate((n) => n + 1);
+    listeners.add(fn);
+    return () => {
+      listeners.delete(fn);
     };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   const saveGraph = useCallback((graph: SourceGraph) => {
-    setStore((prev) => {
-      const existingIndex = prev.graphs.findIndex((g) => g.id === graph.id);
-      const newGraphs =
-        existingIndex >= 0
-          ? prev.graphs.map((g, i) => (i === existingIndex ? graph : g))
-          : [...prev.graphs, graph];
-      const next: SourceGraphsStore = {
-        graphs: newGraphs,
-        activeGraphId: prev.activeGraphId,
-      };
-      saveToStorage(next);
-      return next;
-    });
+    const existingIndex = globalStore.graphs.findIndex(
+      (g) => g.id === graph.id,
+    );
+    const newGraphs =
+      existingIndex >= 0
+        ? globalStore.graphs.map((g, i) => (i === existingIndex ? graph : g))
+        : [...globalStore.graphs, graph];
+    globalStore = {
+      graphs: newGraphs,
+      activeGraphId: globalStore.activeGraphId,
+    };
+    saveToStorage(globalStore);
+    notify();
   }, []);
 
   const deleteGraph = useCallback((id: string) => {
-    setStore((prev) => {
-      const next: SourceGraphsStore = {
-        graphs: prev.graphs.filter((g) => g.id !== id),
-        activeGraphId: prev.activeGraphId === id ? null : prev.activeGraphId,
-      };
-      saveToStorage(next);
-      return next;
-    });
+    globalStore = {
+      graphs: globalStore.graphs.filter((g) => g.id !== id),
+      activeGraphId:
+        globalStore.activeGraphId === id ? null : globalStore.activeGraphId,
+    };
+    saveToStorage(globalStore);
+    notify();
   }, []);
 
   const setActiveGraph = useCallback((id: string | null) => {
-    setStore((prev) => {
-      const next: SourceGraphsStore = { ...prev, activeGraphId: id };
-      saveToStorage(next);
-      return next;
-    });
+    globalStore = { ...globalStore, activeGraphId: id };
+    saveToStorage(globalStore);
+    notify();
   }, []);
 
   const updateNode = useCallback(
     (graphId: string, nodeName: string, updates: Partial<SourceNode>) => {
-      setStore((prev) => {
-        const next: SourceGraphsStore = {
-          ...prev,
-          graphs: prev.graphs.map((g) =>
-            g.id !== graphId
-              ? g
-              : {
-                  ...g,
-                  nodes: g.nodes.map((n) =>
-                    n.name !== nodeName ? n : { ...n, ...updates },
-                  ),
-                },
-          ),
-        };
-        saveToStorage(next);
-        return next;
-      });
+      globalStore = {
+        ...globalStore,
+        graphs: globalStore.graphs.map((g) =>
+          g.id !== graphId
+            ? g
+            : {
+                ...g,
+                nodes: g.nodes.map((n) =>
+                  n.name !== nodeName ? n : { ...n, ...updates },
+                ),
+              },
+        ),
+      };
+      saveToStorage(globalStore);
+      notify();
     },
     [],
   );
 
   const loadGraphs = useCallback((): SourceGraph[] => {
-    const current = loadFromStorage();
-    setStore(current);
-    return current.graphs;
+    globalStore = loadFromStorage();
+    notify();
+    return globalStore.graphs;
   }, []);
 
   return {
-    graphs: store.graphs,
-    activeGraphId: store.activeGraphId,
+    graphs: globalStore.graphs,
+    activeGraphId: globalStore.activeGraphId,
     loadGraphs,
     saveGraph,
     deleteGraph,

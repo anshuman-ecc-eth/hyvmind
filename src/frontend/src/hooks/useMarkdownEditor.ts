@@ -14,6 +14,30 @@ import useSourceGraphs from "./useSourceGraphs";
 // ---------------------------------------------------------------------------
 
 const ACTIVE_FILE_KEY = "editor-active-file-id";
+const SESSION_STORAGE_KEY = "hyvmind-session";
+
+function serializeSession(session: EditorSession): string {
+  const serializable = {
+    ...session,
+    nodes: Array.from(session.nodes.entries()),
+  };
+  return JSON.stringify(serializable);
+}
+
+function deserializeSession(json: string): EditorSession | null {
+  try {
+    const parsed = JSON.parse(json) as {
+      nodes: [string, EditorNode][];
+      [key: string]: unknown;
+    };
+    return {
+      ...(parsed as unknown as EditorSession),
+      nodes: new Map(parsed.nodes),
+    };
+  } catch {
+    return null;
+  }
+}
 const MAX_UNDO = 50;
 
 // ---------------------------------------------------------------------------
@@ -98,6 +122,11 @@ export function useMarkdownEditor() {
   const { graphs, saveGraph } = useSourceGraphs();
 
   const [session, setSession] = useState<EditorSession>(() => {
+    const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (saved) {
+      const loaded = deserializeSession(saved);
+      if (loaded) return loaded;
+    }
     const s = emptySession();
     const savedFile = localStorage.getItem(ACTIVE_FILE_KEY);
     if (savedFile) s.activeFileId = savedFile;
@@ -193,6 +222,7 @@ export function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now,
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
       return newSession;
     });
   }, []);
@@ -242,8 +272,6 @@ export function useMarkdownEditor() {
           updatedAt: now,
         });
 
-        // no auto-save
-
         const newSession = {
           ...prev,
           nodes,
@@ -251,9 +279,7 @@ export function useMarkdownEditor() {
           redoStack: [],
           lastSavedAt: now,
         };
-
-        // no auto-save
-
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
         return newSession;
       });
     },
@@ -323,15 +349,15 @@ export function useMarkdownEditor() {
         }
         void lastAction; // used above
 
-        // no auto-save
-
-        return {
+        const newSession = {
           ...prev,
           nodes,
           undoStack,
           redoStack: [],
           lastSavedAt: now,
         };
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+        return newSession;
       });
     },
     [],
@@ -383,9 +409,7 @@ export function useMarkdownEditor() {
         localStorage.setItem(ACTIVE_FILE_KEY, activeFileId);
       }
 
-      // no auto-save after rename
-
-      return {
+      const newSession = {
         ...prev,
         nodes,
         rootIds,
@@ -394,6 +418,8 @@ export function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now,
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
 
@@ -442,9 +468,7 @@ export function useMarkdownEditor() {
         else localStorage.removeItem(ACTIVE_FILE_KEY);
       }
 
-      // No auto-sync with Graphs — Notes and Graphs are independent
-
-      return {
+      const newSession = {
         ...prev,
         nodes,
         rootIds,
@@ -453,6 +477,8 @@ export function useMarkdownEditor() {
         redoStack: [],
         lastSavedAt: now,
       };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
 
@@ -464,7 +490,9 @@ export function useMarkdownEditor() {
     setSession((prev) => {
       if (fileId) localStorage.setItem(ACTIVE_FILE_KEY, fileId);
       else localStorage.removeItem(ACTIVE_FILE_KEY);
-      return { ...prev, activeFileId: fileId };
+      const newSession = { ...prev, activeFileId: fileId };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
 
@@ -473,7 +501,11 @@ export function useMarkdownEditor() {
   // ---------------------------------------------------------------------------
 
   const setViewMode = useCallback((mode: EditorViewMode) => {
-    setSession((prev) => ({ ...prev, viewMode: mode }));
+    setSession((prev) => {
+      const newSession = { ...prev, viewMode: mode };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
+    });
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -488,7 +520,9 @@ export function useMarkdownEditor() {
       const redoStack = [...prev.redoStack, action];
       const nodes = applyInverseAction(action, prev.nodes);
       const rootIds = rebuildRootIds(nodes);
-      return { ...prev, nodes, rootIds, undoStack, redoStack };
+      const newSession = { ...prev, nodes, rootIds, undoStack, redoStack };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
 
@@ -500,7 +534,9 @@ export function useMarkdownEditor() {
       const undoStack = pushCapped(prev.undoStack, action);
       const nodes = applyAction(action, prev.nodes);
       const rootIds = rebuildRootIds(nodes);
-      return { ...prev, nodes, rootIds, undoStack, redoStack };
+      const newSession = { ...prev, nodes, rootIds, undoStack, redoStack };
+      localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+      return newSession;
     });
   }, []);
 
@@ -531,7 +567,14 @@ export function useMarkdownEditor() {
           graphName = `${graphName} (${counter})`;
         }
         saveGraph({ ...sourceGraph, name: graphName });
-        setSession((prev) => ({ ...prev, lastSavedAt: Date.now() }));
+        setSession((prev) => {
+          const newSession = { ...prev, lastSavedAt: Date.now() };
+          localStorage.setItem(
+            SESSION_STORAGE_KEY,
+            serializeSession(newSession),
+          );
+          return newSession;
+        });
         return { success: true, graphName };
       } catch (err) {
         const message =
@@ -555,11 +598,13 @@ export function useMarkdownEditor() {
         for (const [id, node] of nodes) {
           mergedNodes.set(id, node);
         }
-        return {
+        const newSession = {
           ...prev,
           nodes: mergedNodes,
           rootIds: [...prev.rootIds, ...newRootIds],
         };
+        localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(newSession));
+        return newSession;
       });
     },
     [],
