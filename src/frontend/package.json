@@ -105,11 +105,18 @@
     "react-text-annotate": "^0.3.0",
     "react-use": "~17.6.0",
     "recharts": "^2.15.1",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-obsidian": "^1.11.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.2",
     "three": "^0.176.0",
     "three-spritetext": "^1.10.0",
+    "unified": "^11.0.5",
     "vaul": "^1.1.2",
+    "yaml": "^2.8.4",
     "zustand": "~5.0.5"
   }
 }

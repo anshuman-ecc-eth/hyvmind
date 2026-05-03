@@ -258,6 +258,88 @@ body > img[data-piece] {
   box-shadow: none !important;
 }
 
+/* ===========================================================================
+   Obsidian Markdown feature styles
+   =========================================================================== */
+
+/* Callout blocks */
+.callout {
+  border-left: 4px solid var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.callout-icon {
+  font-style: normal;
+}
+.callout.note {
+  border-left-color: oklch(0.6 0.15 250);
+}
+.callout.warning {
+  border-left-color: oklch(0.7 0.18 80);
+  background: color-mix(in oklch, oklch(0.7 0.18 80) 10%, transparent);
+}
+.callout.tip {
+  border-left-color: oklch(0.65 0.15 150);
+  background: color-mix(in oklch, oklch(0.65 0.15 150) 10%, transparent);
+}
+.callout.danger {
+  border-left-color: oklch(0.6 0.2 25);
+  background: color-mix(in oklch, oklch(0.6 0.2 25) 10%, transparent);
+}
+.callout.info {
+  border-left-color: oklch(0.65 0.15 220);
+  background: color-mix(in oklch, oklch(0.65 0.15 220) 10%, transparent);
+}
+.callout.success {
+  border-left-color: oklch(0.65 0.15 145);
+  background: color-mix(in oklch, oklch(0.65 0.15 145) 10%, transparent);
+}
+.callout.quote {
+  border-left-color: oklch(0.55 0.0 0);
+  font-style: italic;
+}
+
+/* Highlight ==text== */
+mark {
+  background: oklch(0.9 0.15 90 / 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Tag styles #tag */
+.tag {
+  display: inline-block;
+  background: color-mix(in oklch, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 0.85em;
+  font-family: monospace;
+  text-decoration: none;
+}
+
+/* Wikilink styles */
+.wikilink {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: pointer;
+}
+.wikilink.not-found {
+  color: oklch(0.55 0.12 25);
+  text-decoration-color: oklch(0.55 0.12 25);
+}
+
 /* Theme-independent Voronoi diagram styles */
 .voronoi-diagram-container {
   background: #ffffff !important;

@@ -8,6 +8,7 @@ import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { parseFrontmatter, stripFrontmatter } from "../utils/sourceGraphParser";
 
 // ---------------------------------------------------------------------------
 // Context menu state
@@ -182,21 +183,20 @@ export default function EditorView() {
   // File input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcuts: Ctrl+E, Ctrl+M
+  // Keyboard shortcuts: Ctrl+E toggles edit/preview
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.key === "e") {
         e.preventDefault();
-        setViewMode("edit");
-      } else if (e.key === "m") {
-        e.preventDefault();
-        setViewMode("markdown");
+        setViewMode(
+          (session?.viewMode ?? "edit") === "edit" ? "preview" : "edit",
+        );
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setViewMode]);
+  }, [setViewMode, session?.viewMode]);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -317,9 +317,12 @@ export default function EditorView() {
           const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
           let content: string | undefined;
+          let frontmatterData: Record<string, string> = {};
           if (!isDirectory && name.endsWith(".md")) {
             try {
-              content = await zipEntry.async("string");
+              const rawContent = await zipEntry.async("string");
+              frontmatterData = parseFrontmatter(rawContent);
+              content = stripFrontmatter(rawContent);
             } catch {
               content = "";
             }
@@ -361,7 +364,7 @@ export default function EditorView() {
             parentId,
             nodeType,
             content,
-            frontmatter: {},
+            frontmatter: frontmatterData,
             inheritedAttributes: {},
             children: [],
             createdAt: Date.now(),
@@ -458,7 +461,7 @@ export default function EditorView() {
         {/* View mode tabs */}
         {!isEmpty && (
           <div className="flex items-center gap-0.5 mr-2">
-            {(["edit", "markdown"] as const).map((mode) => (
+            {(["edit", "preview"] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
@@ -556,7 +559,7 @@ export default function EditorView() {
                 </div>
               )}
 
-              {viewMode === "markdown" && (
+              {viewMode === "preview" && (
                 <MarkdownPreview
                   content={
                     activeNode?.type === "file"

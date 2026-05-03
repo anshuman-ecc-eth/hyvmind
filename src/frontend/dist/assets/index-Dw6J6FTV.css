@@ -5174,6 +5174,83 @@ body > img[data-piece] {
   outline: none !important;
   box-shadow: none !important;
 }
+/* ===========================================================================
+   Obsidian Markdown feature styles
+   =========================================================================== */
+/* Callout blocks */
+.callout {
+  border-left: 4px solid var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.callout-icon {
+  font-style: normal;
+}
+.callout.note {
+  border-left-color: oklch(0.6 0.15 250);
+}
+.callout.warning {
+  border-left-color: oklch(0.7 0.18 80);
+  background: color-mix(in oklch, oklch(0.7 0.18 80) 10%, transparent);
+}
+.callout.tip {
+  border-left-color: oklch(0.65 0.15 150);
+  background: color-mix(in oklch, oklch(0.65 0.15 150) 10%, transparent);
+}
+.callout.danger {
+  border-left-color: oklch(0.6 0.2 25);
+  background: color-mix(in oklch, oklch(0.6 0.2 25) 10%, transparent);
+}
+.callout.info {
+  border-left-color: oklch(0.65 0.15 220);
+  background: color-mix(in oklch, oklch(0.65 0.15 220) 10%, transparent);
+}
+.callout.success {
+  border-left-color: oklch(0.65 0.15 145);
+  background: color-mix(in oklch, oklch(0.65 0.15 145) 10%, transparent);
+}
+.callout.quote {
+  border-left-color: oklch(0.55 0.0 0);
+  font-style: italic;
+}
+/* Highlight ==text== */
+mark {
+  background: oklch(0.9 0.15 90 / 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+/* Tag styles #tag */
+.tag {
+  display: inline-block;
+  background: color-mix(in oklch, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 0.85em;
+  font-family: monospace;
+  text-decoration: none;
+}
+/* Wikilink styles */
+.wikilink {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: pointer;
+}
+.wikilink.not-found {
+  color: oklch(0.55 0.12 25);
+  text-decoration-color: oklch(0.55 0.12 25);
+}
 /* Theme-independent Voronoi diagram styles */
 .voronoi-diagram-container {
   background: #ffffff !important;
@@ -6533,6 +6610,37 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .\[\&_\[cmdk-item\]_svg\]\:w-5 [cmdk-item] svg{
   width: 1.25rem;
 }
+.\[\&_a\]\:text-primary a{
+  color: var(--primary);
+}
+.\[\&_a\]\:underline a{
+  text-decoration-line: underline;
+}
+.\[\&_a\]\:underline-offset-2 a{
+  text-underline-offset: 2px;
+}
+.\[\&_a\]\:hover\:opacity-80:hover a{
+  opacity: 0.8;
+}
+.\[\&_blockquote\]\:my-3 blockquote{
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.\[\&_blockquote\]\:border-l-2 blockquote{
+  border-left-width: 2px;
+}
+.\[\&_blockquote\]\:border-border blockquote{
+  border-color: var(--border);
+}
+.\[\&_blockquote\]\:pl-4 blockquote{
+  padding-left: 1rem;
+}
+.\[\&_blockquote\]\:italic blockquote{
+  font-style: italic;
+}
+.\[\&_blockquote\]\:text-muted-foreground blockquote{
+  color: var(--muted-foreground);
+}
 .\[\&_code\]\:rounded-sm code{
   border-radius: calc(var(--radius) - 4px);
 }
@@ -6556,6 +6664,12 @@ html[class*="-dark"] .voronoi-tooltip-type {
 }
 .\[\&_code\]\:text-foreground code{
   color: var(--foreground);
+}
+.\[\&_del\]\:text-muted-foreground del{
+  color: var(--muted-foreground);
+}
+.\[\&_del\]\:line-through del{
+  text-decoration-line: line-through;
 }
 .\[\&_em\]\:italic em{
   font-style: italic;
@@ -6663,6 +6777,27 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .\[\&_hr\]\:border-border hr{
   border-color: var(--border);
 }
+.\[\&_img\]\:max-w-full img{
+  max-width: 100%;
+}
+.\[\&_img\]\:rounded img{
+  border-radius: 0.25rem;
+}
+.\[\&_li\]\:mb-1 li{
+  margin-bottom: 0.25rem;
+}
+.\[\&_li\]\:text-foreground li{
+  color: var(--foreground);
+}
+.\[\&_ol\]\:mb-3 ol{
+  margin-bottom: 0.75rem;
+}
+.\[\&_ol\]\:list-decimal ol{
+  list-style-type: decimal;
+}
+.\[\&_ol\]\:pl-5 ol{
+  padding-left: 1.25rem;
+}
 .\[\&_p\]\:mb-3 p{
   margin-bottom: 0.75rem;
 }
@@ -6671,6 +6806,28 @@ html[class*="-dark"] .voronoi-tooltip-type {
 }
 .\[\&_p\]\:text-foreground p{
   color: var(--foreground);
+}
+.\[\&_pre\]\:my-3 pre{
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.\[\&_pre\]\:overflow-x-auto pre{
+  overflow-x: auto;
+}
+.\[\&_pre\]\:rounded pre{
+  border-radius: 0.25rem;
+}
+.\[\&_pre\]\:bg-muted pre{
+  background-color: var(--muted);
+}
+.\[\&_pre\]\:p-3 pre{
+  padding: 0.75rem;
+}
+.\[\&_pre_code\]\:bg-transparent pre code{
+  background-color: transparent;
+}
+.\[\&_pre_code\]\:p-0 pre code{
+  padding: 0px;
 }
 .\[\&_strong\]\:font-bold strong{
   font-weight: 700;
@@ -6691,11 +6848,67 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .\[\&_svg\]\:shrink-0 svg{
   flex-shrink: 0;
 }
+.\[\&_table\]\:my-3 table{
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.\[\&_table\]\:w-full table{
+  width: 100%;
+}
+.\[\&_table\]\:border-collapse table{
+  border-collapse: collapse;
+}
+.\[\&_td\]\:border td{
+  border-width: 1px;
+}
+.\[\&_td\]\:border-border td{
+  border-color: var(--border);
+}
+.\[\&_td\]\:px-3 td{
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.\[\&_td\]\:py-1\.5 td{
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.\[\&_th\]\:border th{
+  border-width: 1px;
+}
+.\[\&_th\]\:border-border th{
+  border-color: var(--border);
+}
+.\[\&_th\]\:bg-muted th{
+  background-color: var(--muted);
+}
+.\[\&_th\]\:px-3 th{
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.\[\&_th\]\:py-1\.5 th{
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.\[\&_th\]\:text-left th{
+  text-align: left;
+}
+.\[\&_th\]\:font-semibold th{
+  font-weight: 600;
+}
 .\[\&_tr\:last-child\]\:border-0 tr:last-child{
   border-width: 0px;
 }
 .\[\&_tr\]\:border-b tr{
   border-bottom-width: 1px;
+}
+.\[\&_ul\]\:mb-3 ul{
+  margin-bottom: 0.75rem;
+}
+.\[\&_ul\]\:list-disc ul{
+  list-style-type: disc;
+}
+.\[\&_ul\]\:pl-5 ul{
+  padding-left: 1.25rem;
 }
 [data-side=left][data-collapsible=offcanvas] .\[\[data-side\=left\]\[data-collapsible\=offcanvas\]_\&\]\:-right-2{
   right: -0.5rem;
