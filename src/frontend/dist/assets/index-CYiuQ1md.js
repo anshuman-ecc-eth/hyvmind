@@ -72834,7 +72834,6 @@ function EditorView() {
           const name = parts[parts.length - 1];
           if (!name) continue;
           const parentPath = parts.slice(0, -1).join("/");
-          const isTopLevel = parentPath === "";
           const isDirectory = zipEntry.dir || entryPath.endsWith("/");
           const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
           let content;
@@ -72845,15 +72844,31 @@ function EditorView() {
               content = "";
             }
           }
+          const depth = parts.length - 1;
           let nodeType;
-          if (isTopLevel && isDirectory) {
-            nodeType = "curation";
+          if (!isDirectory && name.endsWith(".md")) {
+            nodeType = "interpEntity";
           } else if (isDirectory) {
-            nodeType = "swarm";
+            switch (depth) {
+              case 0:
+                nodeType = "curation";
+                break;
+              case 1:
+                nodeType = "swarm";
+                break;
+              case 2:
+                nodeType = "location";
+                break;
+              case 3:
+                nodeType = "lawEntity";
+                break;
+              default:
+                nodeType = "swarm";
+            }
           } else {
             nodeType = "interpEntity";
           }
-          const parentId = isTopLevel ? null : idMap.get(parentPath) ?? null;
+          const parentId = parentPath === "" ? null : idMap.get(parentPath) ?? null;
           const node2 = {
             id: nodeId,
             name,
@@ -72875,7 +72890,7 @@ function EditorView() {
               parent.children.push(nodeId);
             }
           }
-          if (isTopLevel && isDirectory) {
+          if (depth === 0 && isDirectory) {
             topLevelFolderIds.push(nodeId);
           }
         }

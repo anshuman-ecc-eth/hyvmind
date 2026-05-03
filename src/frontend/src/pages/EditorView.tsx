@@ -313,7 +313,6 @@ export default function EditorView() {
           if (!name) continue;
 
           const parentPath = parts.slice(0, -1).join("/");
-          const isTopLevel = parentPath === "";
           const isDirectory = zipEntry.dir || entryPath.endsWith("/");
           const nodeId = `import-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -326,17 +325,34 @@ export default function EditorView() {
             }
           }
 
-          // Top-level folders become curations; nested dirs become swarms
+          // Depth-based nodeType inference
+          const depth = parts.length - 1;
           let nodeType: EditorNode["nodeType"];
-          if (isTopLevel && isDirectory) {
-            nodeType = "curation";
+          if (!isDirectory && name.endsWith(".md")) {
+            nodeType = "interpEntity";
           } else if (isDirectory) {
-            nodeType = "swarm";
+            switch (depth) {
+              case 0:
+                nodeType = "curation";
+                break;
+              case 1:
+                nodeType = "swarm";
+                break;
+              case 2:
+                nodeType = "location";
+                break;
+              case 3:
+                nodeType = "lawEntity";
+                break;
+              default:
+                nodeType = "swarm"; // fallback
+            }
           } else {
             nodeType = "interpEntity";
           }
 
-          const parentId = isTopLevel ? null : (idMap.get(parentPath) ?? null);
+          const parentId =
+            parentPath === "" ? null : (idMap.get(parentPath) ?? null);
 
           const node: EditorNode = {
             id: nodeId,
@@ -362,7 +378,7 @@ export default function EditorView() {
             }
           }
 
-          if (isTopLevel && isDirectory) {
+          if (depth === 0 && isDirectory) {
             topLevelFolderIds.push(nodeId);
           }
         }
