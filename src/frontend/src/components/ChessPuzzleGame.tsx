@@ -17,6 +17,7 @@ if (typeof window !== "undefined") {
 interface ChessPuzzleGameProps {
   onComplete: (score: number) => void;
   onExit: () => void;
+  heading?: string;
 }
 
 // Lazily inject the chessboard.js UMD script once and resolve when ready
@@ -51,6 +52,7 @@ function getChessboard(): typeof Chessboard {
 export default function ChessPuzzleGame({
   onComplete,
   onExit,
+  heading = "Chess",
 }: ChessPuzzleGameProps) {
   const { puzzle, loading, error, fetchNext } = useLichessPuzzles();
 
@@ -319,19 +321,45 @@ export default function ChessPuzzleGame({
   if (loading || !boardReady || (!puzzle && !error)) {
     return (
       <div
-        className="flex flex-col items-center justify-center py-12 font-mono gap-4"
+        className="flex flex-col items-center justify-center py-12 gap-4"
         data-ocid="chess_puzzle.loading_state"
       >
-        <div className="text-foreground text-sm animate-pulse">
+        <div
+          className="text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "1rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          {heading}
+        </div>
+        <div
+          className="text-foreground animate-pulse"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.6rem",
+            letterSpacing: "0.1em",
+          }}
+        >
           Loading puzzle...
         </div>
         <button
           type="button"
           onClick={onExit}
-          className="text-muted-foreground text-xs underline hover:text-foreground transition-colors"
+          className="transition-colors hover:text-muted-foreground text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.6rem",
+            letterSpacing: "0.15em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0",
+          }}
           data-ocid="chess_puzzle.cancel_button"
         >
-          BACK
+          [BACK]
         </button>
       </div>
     );
@@ -341,26 +369,63 @@ export default function ChessPuzzleGame({
   if (error) {
     return (
       <div
-        className="flex flex-col items-center justify-center gap-4 py-12 font-mono"
+        className="flex flex-col items-center justify-center gap-4 py-12"
         data-ocid="chess_puzzle.error_state"
       >
-        <div className="text-destructive text-sm text-center px-4">{error}</div>
+        <div
+          className="text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "1rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          {heading}
+        </div>
+        <div
+          className="text-destructive text-center px-4"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55rem",
+            letterSpacing: "0.1em",
+          }}
+        >
+          {error}
+        </div>
         <div className="flex gap-4">
           <button
             type="button"
             onClick={onExit}
-            className="text-muted-foreground text-xs underline hover:text-foreground transition-colors"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.cancel_button"
           >
-            BACK
+            [BACK]
           </button>
           <button
             type="button"
             onClick={() => void fetchNext()}
-            className="text-primary text-xs underline hover:opacity-80 transition-opacity"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.retry_button"
           >
-            RETRY
+            [RETRY]
           </button>
         </div>
       </div>
@@ -371,13 +436,30 @@ export default function ChessPuzzleGame({
   if (gameOver && !showingSolution) {
     return (
       <div
-        className="flex flex-col items-center gap-4 py-4 font-mono w-full"
+        className="flex flex-col items-center gap-4 py-4 w-full"
         data-ocid="chess_puzzle.game_over"
       >
-        <div className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground">
+        <div
+          className="text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "1rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          {heading}
+        </div>
+        <div
+          className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55rem",
+            letterSpacing: "0.1em",
+          }}
+        >
           <span>Puzzle #{puzzleNumber}</span>
           <span>
-            Score: <span className="text-foreground font-bold">{score}</span>
+            Score: <span className="text-foreground">{score}</span>
           </span>
         </div>
         <div
@@ -386,25 +468,51 @@ export default function ChessPuzzleGame({
         />
         <div className="flex flex-col items-center gap-1">
           <div
-            className="text-destructive font-bold text-lg tracking-widest"
+            className="text-destructive"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+            }}
             data-ocid="chess_puzzle.error_state"
           >
             {feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"}
           </div>
-          <div className="text-muted-foreground text-sm">
+          <div
+            className="text-muted-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.55rem",
+              letterSpacing: "0.1em",
+            }}
+          >
             Puzzles solved:{" "}
-            <span className="text-foreground font-bold">
-              {puzzleNumber - 1}
-            </span>
+            <span className="text-foreground">{puzzleNumber - 1}</span>
           </div>
-          <div className="text-muted-foreground text-sm">
-            Final score: <span className="text-primary font-bold">{score}</span>
+          <div
+            className="text-muted-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.55rem",
+              letterSpacing: "0.1em",
+            }}
+          >
+            Score: <span className="text-foreground">{score}</span>
           </div>
         </div>
-        <div className="flex gap-3 mt-1">
+        <div className="flex gap-4 mt-1">
           <button
             type="button"
-            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.cancel_button"
             onClick={() => {
               if (timerRef.current) clearInterval(timerRef.current);
@@ -422,25 +530,43 @@ export default function ChessPuzzleGame({
               void fetchNext();
             }}
           >
-            TRY AGAIN
+            [TRY AGAIN]
           </button>
           {score > 0 && (
             <button
               type="button"
-              className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+              className="transition-colors hover:text-muted-foreground text-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.15em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
               data-ocid="chess_puzzle.submit_button"
               onClick={() => onComplete(score)}
             >
-              SUBMIT SCORE
+              [SUBMIT SCORE]
             </button>
           )}
           <button
             type="button"
-            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.exit_button"
             onClick={onExit}
           >
-            BACK
+            [BACK]
           </button>
         </div>
       </div>
@@ -451,13 +577,30 @@ export default function ChessPuzzleGame({
   if (showingSolution) {
     return (
       <div
-        className="flex flex-col items-center gap-3 py-4 font-mono w-full"
+        className="flex flex-col items-center gap-3 py-4 w-full"
         data-ocid="chess_puzzle.solution_animation"
       >
-        <div className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground">
+        <div
+          className="text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "1rem",
+            letterSpacing: "0.15em",
+          }}
+        >
+          {heading}
+        </div>
+        <div
+          className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55rem",
+            letterSpacing: "0.1em",
+          }}
+        >
           <span>#{puzzleNumber}</span>
           <span>
-            Score: <span className="text-foreground font-bold">{score}</span>
+            Score: <span className="text-foreground">{score}</span>
           </span>
         </div>
         <div
@@ -465,15 +608,29 @@ export default function ChessPuzzleGame({
           style={{ width: "min(88vw, 400px)", pointerEvents: "none" }}
         />
         <div
-          className="text-sm text-center text-muted-foreground animate-pulse"
+          className="text-center text-muted-foreground animate-pulse"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.6rem",
+            letterSpacing: "0.1em",
+          }}
           data-ocid="chess_puzzle.feedback"
         >
           Showing solution...
         </div>
-        <div className="flex gap-3 mt-1">
+        <div className="flex gap-4 mt-1">
           <button
             type="button"
-            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.retry_button"
             onClick={() => {
               if (timerRef.current) clearInterval(timerRef.current);
@@ -484,25 +641,43 @@ export default function ChessPuzzleGame({
               void fetchNext();
             }}
           >
-            TRY AGAIN
+            [TRY AGAIN]
           </button>
           {score > 0 && (
             <button
               type="button"
-              className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+              className="transition-colors hover:text-muted-foreground text-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.15em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
               data-ocid="chess_puzzle.submit_button"
               onClick={() => onComplete(score)}
             >
-              SUBMIT SCORE
+              [SUBMIT SCORE]
             </button>
           )}
           <button
             type="button"
-            className="px-4 py-2 border border-border text-xs hover:bg-accent transition-colors"
+            className="transition-colors hover:text-muted-foreground text-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
             data-ocid="chess_puzzle.exit_button"
             onClick={onExit}
           >
-            BACK
+            [BACK]
           </button>
         </div>
       </div>
@@ -512,16 +687,34 @@ export default function ChessPuzzleGame({
   // Active game
   return (
     <div
-      className="flex flex-col items-center gap-3 py-4 font-mono w-full"
+      className="flex flex-col items-center gap-3 py-4 w-full"
       data-ocid="chess_puzzle.panel"
     >
-      <div className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground">
+      <div
+        className="text-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1rem",
+          letterSpacing: "0.15em",
+        }}
+      >
+        {heading}
+      </div>
+      <div
+        className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55rem",
+          letterSpacing: "0.1em",
+        }}
+      >
         <span data-ocid="chess_puzzle.puzzle_number">#{puzzleNumber}</span>
         <span>
-          Score: <span className="text-foreground font-bold">{score}</span>
+          Score: <span className="text-foreground">{score}</span>
         </span>
         <span
-          className={`text-xl font-bold tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`}
+          className={`tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`}
+          style={{ fontSize: "0.8rem" }}
           data-ocid="chess_puzzle.timer"
         >
           {timeLeft}s
@@ -530,11 +723,16 @@ export default function ChessPuzzleGame({
       <div id="chess-board-container" style={{ width: "min(88vw, 400px)" }} />
       {feedback && (
         <div
-          className={`text-sm text-center min-h-[1.5rem] ${
+          className={`text-center min-h-[1.5rem] ${
             feedback.startsWith("+") || feedback === "Correct!"
-              ? "text-green-500 font-bold"
+              ? "text-green-500"
               : "text-destructive"
           }`}
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.6rem",
+            letterSpacing: "0.1em",
+          }}
           data-ocid="chess_puzzle.feedback"
         >
           {feedback}
@@ -543,10 +741,19 @@ export default function ChessPuzzleGame({
       <button
         type="button"
         onClick={onExit}
-        className="text-muted-foreground text-xs underline hover:text-foreground transition-colors mt-1"
+        className="transition-colors hover:text-muted-foreground text-foreground mt-1"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.6rem",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+        }}
         data-ocid="chess_puzzle.cancel_button"
       >
-        BACK
+        [BACK]
       </button>
     </div>
   );

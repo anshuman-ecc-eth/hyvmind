@@ -66769,7 +66769,8 @@ function getChessboard() {
 }
 function ChessPuzzleGame({
   onComplete,
-  onExit
+  onExit,
+  heading: heading2 = "Chess"
 }) {
   const { puzzle, loading, error, fetchNext } = useLichessPuzzles();
   const [score, setScore] = reactExports.useState(0);
@@ -66978,18 +66979,50 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center justify-center py-12 font-mono gap-4",
+        className: "flex flex-col items-center justify-center py-12 gap-4",
         "data-ocid": "chess_puzzle.loading_state",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-foreground text-sm animate-pulse", children: "Loading puzzle..." }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1rem",
+                letterSpacing: "0.15em"
+              },
+              children: heading2
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground animate-pulse",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.1em"
+              },
+              children: "Loading puzzle..."
+            }
+          ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
               onClick: onExit,
-              className: "text-muted-foreground text-xs underline hover:text-foreground transition-colors",
+              className: "transition-colors hover:text-muted-foreground text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.15em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0"
+              },
               "data-ocid": "chess_puzzle.cancel_button",
-              children: "BACK"
+              children: "[BACK]"
             }
           )
         ]
@@ -67000,19 +67033,51 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center justify-center gap-4 py-12 font-mono",
+        className: "flex flex-col items-center justify-center gap-4 py-12",
         "data-ocid": "chess_puzzle.error_state",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-destructive text-sm text-center px-4", children: error }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1rem",
+                letterSpacing: "0.15em"
+              },
+              children: heading2
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-destructive text-center px-4",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.55rem",
+                letterSpacing: "0.1em"
+              },
+              children: error
+            }
+          ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
                 onClick: onExit,
-                className: "text-muted-foreground text-xs underline hover:text-foreground transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.cancel_button",
-                children: "BACK"
+                children: "[BACK]"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67020,9 +67085,18 @@ function ChessPuzzleGame({
               {
                 type: "button",
                 onClick: () => void fetchNext(),
-                className: "text-primary text-xs underline hover:opacity-80 transition-opacity",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.retry_button",
-                children: "RETRY"
+                children: "[RETRY]"
               }
             )
           ] })
@@ -67034,19 +67108,42 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center gap-4 py-4 font-mono w-full",
+        className: "flex flex-col items-center gap-4 py-4 w-full",
         "data-ocid": "chess_puzzle.game_over",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-              "Puzzle #",
-              puzzleNumber
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-              "Score: ",
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: score })
-            ] })
-          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1rem",
+                letterSpacing: "0.15em"
+              },
+              children: heading2
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.55rem",
+                letterSpacing: "0.1em"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  "Puzzle #",
+                  puzzleNumber
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  "Score: ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: score })
+                ] })
+              ]
+            }
+          ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
@@ -67058,27 +67155,63 @@ function ChessPuzzleGame({
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "div",
               {
-                className: "text-destructive font-bold text-lg tracking-widest",
+                className: "text-destructive",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em"
+                },
                 "data-ocid": "chess_puzzle.error_state",
                 children: feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"
               }
             ),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-muted-foreground text-sm", children: [
-              "Puzzles solved:",
-              " ",
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: puzzleNumber - 1 })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-muted-foreground text-sm", children: [
-              "Final score: ",
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-primary font-bold", children: score })
-            ] })
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "div",
+              {
+                className: "text-muted-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.55rem",
+                  letterSpacing: "0.1em"
+                },
+                children: [
+                  "Puzzles solved:",
+                  " ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: puzzleNumber - 1 })
+                ]
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "div",
+              {
+                className: "text-muted-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.55rem",
+                  letterSpacing: "0.1em"
+                },
+                children: [
+                  "Score: ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: score })
+                ]
+              }
+            )
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3 mt-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4 mt-1", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.cancel_button",
                 onClick: () => {
                   if (timerRef.current) clearInterval(timerRef.current);
@@ -67095,27 +67228,45 @@ function ChessPuzzleGame({
                   setTimeLeft(60);
                   void fetchNext();
                 },
-                children: "TRY AGAIN"
+                children: "[TRY AGAIN]"
               }
             ),
             score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.submit_button",
                 onClick: () => onComplete(score),
-                children: "SUBMIT SCORE"
+                children: "[SUBMIT SCORE]"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.exit_button",
                 onClick: onExit,
-                children: "BACK"
+                children: "[BACK]"
               }
             )
           ] })
@@ -67127,19 +67278,42 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center gap-3 py-4 font-mono w-full",
+        className: "flex flex-col items-center gap-3 py-4 w-full",
         "data-ocid": "chess_puzzle.solution_animation",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-              "#",
-              puzzleNumber
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-              "Score: ",
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: score })
-            ] })
-          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1rem",
+                letterSpacing: "0.15em"
+              },
+              children: heading2
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.55rem",
+                letterSpacing: "0.1em"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  "#",
+                  puzzleNumber
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  "Score: ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: score })
+                ] })
+              ]
+            }
+          ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
@@ -67150,17 +67324,31 @@ function ChessPuzzleGame({
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
-              className: "text-sm text-center text-muted-foreground animate-pulse",
+              className: "text-center text-muted-foreground animate-pulse",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.1em"
+              },
               "data-ocid": "chess_puzzle.feedback",
               children: "Showing solution..."
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3 mt-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4 mt-1", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.retry_button",
                 onClick: () => {
                   if (timerRef.current) clearInterval(timerRef.current);
@@ -67170,27 +67358,45 @@ function ChessPuzzleGame({
                   setTimeLeft(60);
                   void fetchNext();
                 },
-                children: "TRY AGAIN"
+                children: "[TRY AGAIN]"
               }
             ),
             score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.submit_button",
                 onClick: () => onComplete(score),
-                children: "SUBMIT SCORE"
+                children: "[SUBMIT SCORE]"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
                 type: "button",
-                className: "px-4 py-2 border border-border text-xs hover:bg-accent transition-colors",
+                className: "transition-colors hover:text-muted-foreground text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0"
+                },
                 "data-ocid": "chess_puzzle.exit_button",
                 onClick: onExit,
-                children: "BACK"
+                children: "[BACK]"
               }
             )
           ] })
@@ -67201,35 +67407,64 @@ function ChessPuzzleGame({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
-      className: "flex flex-col items-center gap-3 py-4 font-mono w-full",
+      className: "flex flex-col items-center gap-3 py-4 w-full",
       "data-ocid": "chess_puzzle.panel",
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-xs text-muted-foreground", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "chess_puzzle.puzzle_number", children: [
-            "#",
-            puzzleNumber
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-            "Score: ",
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-bold", children: score })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "span",
-            {
-              className: `text-xl font-bold tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`,
-              "data-ocid": "chess_puzzle.timer",
-              children: [
-                timeLeft,
-                "s"
-              ]
-            }
-          )
-        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "text-foreground",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "1rem",
+              letterSpacing: "0.15em"
+            },
+            children: heading2
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.55rem",
+              letterSpacing: "0.1em"
+            },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "chess_puzzle.puzzle_number", children: [
+                "#",
+                puzzleNumber
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                "Score: ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: score })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "span",
+                {
+                  className: `tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`,
+                  style: { fontSize: "0.8rem" },
+                  "data-ocid": "chess_puzzle.timer",
+                  children: [
+                    timeLeft,
+                    "s"
+                  ]
+                }
+              )
+            ]
+          }
+        ),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "chess-board-container", style: { width: "min(88vw, 400px)" } }),
         feedback && /* @__PURE__ */ jsxRuntimeExports.jsx(
           "div",
           {
-            className: `text-sm text-center min-h-[1.5rem] ${feedback.startsWith("+") || feedback === "Correct!" ? "text-green-500 font-bold" : "text-destructive"}`,
+            className: `text-center min-h-[1.5rem] ${feedback.startsWith("+") || feedback === "Correct!" ? "text-green-500" : "text-destructive"}`,
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.1em"
+            },
             "data-ocid": "chess_puzzle.feedback",
             children: feedback
           }
@@ -67239,9 +67474,18 @@ function ChessPuzzleGame({
           {
             type: "button",
             onClick: onExit,
-            className: "text-muted-foreground text-xs underline hover:text-foreground transition-colors mt-1",
+            className: "transition-colors hover:text-muted-foreground text-foreground mt-1",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0"
+            },
             "data-ocid": "chess_puzzle.cancel_button",
-            children: "BACK"
+            children: "[BACK]"
           }
         )
       ]
@@ -67352,7 +67596,8 @@ function getCurrentMessage(phase) {
 function SettingsScreen({
   settings,
   onUpdateSettings,
-  onBack
+  onBack,
+  heading: heading2
 }) {
   const SETTINGS_ITEMS = ["skipMessages", "music", "back"];
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
@@ -67387,11 +67632,11 @@ function SettingsScreen({
   const rows = [
     {
       key: "skipMessages",
-      label: "NARRATIVE",
+      label: "Narrative",
       value: settings.skipMessages ? "ON" : "OFF"
     },
-    { key: "music", label: "SOUND", value: settings.music.toUpperCase() },
-    { key: "back", label: "BACK" }
+    { key: "music", label: "Sound", value: settings.music.toUpperCase() },
+    { key: "back", label: "Back" }
   ];
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-8 select-none", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67399,7 +67644,7 @@ function SettingsScreen({
       {
         className: "text-foreground tracking-widest",
         style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" },
-        children: "SETTINGS"
+        children: heading2 ?? "Settings"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-start gap-4", children: rows.map((row, idx) => {
@@ -67448,7 +67693,11 @@ function SettingsScreen({
     }) })
   ] });
 }
-function LeaderboardScreen({ leaderboard, onBack }) {
+function LeaderboardScreen({
+  leaderboard,
+  onBack,
+  heading: heading2
+}) {
   reactExports.useEffect(() => {
     const handler = (e2) => {
       if (e2.key === "Enter") onBack();
@@ -67462,7 +67711,7 @@ function LeaderboardScreen({ leaderboard, onBack }) {
       {
         className: "text-foreground tracking-widest",
         style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" },
-        children: "HIGH SCORES"
+        children: heading2 ?? "Leaderboard"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -68354,7 +68603,8 @@ function TextGameModal({ onComplete }) {
           {
             settings,
             onUpdateSettings: setSettings,
-            onBack: handleCloseSubScreen
+            onBack: handleCloseSubScreen,
+            heading: "Settings"
           }
         );
       case "leaderboard":
@@ -68362,7 +68612,8 @@ function TextGameModal({ onComplete }) {
           LeaderboardScreen,
           {
             leaderboard,
-            onBack: handleCloseSubScreen
+            onBack: handleCloseSubScreen,
+            heading: "Leaderboard"
           }
         );
       case "nameEntry":
@@ -68503,7 +68754,8 @@ function TextGameModal({ onComplete }) {
           ChessPuzzleGame,
           {
             onComplete: handleChessComplete,
-            onExit: () => setPhase({ type: "idle" })
+            onExit: () => setPhase({ type: "idle" }),
+            heading: "Chess"
           }
         );
       default:

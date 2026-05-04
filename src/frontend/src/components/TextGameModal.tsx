@@ -165,12 +165,14 @@ interface SettingsScreenProps {
   settings: GameSettings;
   onUpdateSettings: (settings: GameSettings) => void;
   onBack: () => void;
+  heading?: string;
 }
 
 function SettingsScreen({
   settings,
   onUpdateSettings,
   onBack,
+  heading,
 }: SettingsScreenProps) {
   const SETTINGS_ITEMS = ["skipMessages", "music", "back"] as const;
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -211,11 +213,11 @@ function SettingsScreen({
   }[] = [
     {
       key: "skipMessages",
-      label: "NARRATIVE",
+      label: "Narrative",
       value: settings.skipMessages ? "ON" : "OFF",
     },
-    { key: "music", label: "SOUND", value: settings.music.toUpperCase() },
-    { key: "back", label: "BACK" },
+    { key: "music", label: "Sound", value: settings.music.toUpperCase() },
+    { key: "back", label: "Back" },
   ];
 
   return (
@@ -224,7 +226,7 @@ function SettingsScreen({
         className="text-foreground tracking-widest"
         style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
       >
-        SETTINGS
+        {heading ?? "Settings"}
       </div>
       <div className="flex flex-col items-start gap-4">
         {rows.map((row, idx) => {
@@ -279,9 +281,14 @@ function SettingsScreen({
 interface LeaderboardScreenProps {
   leaderboard: LeaderboardEntry[];
   onBack: () => void;
+  heading?: string;
 }
 
-function LeaderboardScreen({ leaderboard, onBack }: LeaderboardScreenProps) {
+function LeaderboardScreen({
+  leaderboard,
+  onBack,
+  heading,
+}: LeaderboardScreenProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Enter") onBack();
@@ -296,7 +303,7 @@ function LeaderboardScreen({ leaderboard, onBack }: LeaderboardScreenProps) {
         className="text-foreground tracking-widest"
         style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
       >
-        HIGH SCORES
+        {heading ?? "Leaderboard"}
       </div>
       <div
         className="flex flex-col items-start gap-4"
@@ -1334,6 +1341,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             settings={settings}
             onUpdateSettings={setSettings}
             onBack={handleCloseSubScreen}
+            heading="Settings"
           />
         );
 
@@ -1342,6 +1350,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <LeaderboardScreen
             leaderboard={leaderboard}
             onBack={handleCloseSubScreen}
+            heading="Leaderboard"
           />
         );
 
@@ -1495,6 +1504,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <ChessPuzzleGame
             onComplete={handleChessComplete}
             onExit={() => setPhase({ type: "idle" })}
+            heading="Chess"
           />
         );
 
