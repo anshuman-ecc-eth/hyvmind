@@ -515,7 +515,7 @@ function StartScreen({
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
       {/* Content box — flat, no card */}
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center">
         {/* Title */}
         <div className="flex flex-col items-center gap-3">
           <div
@@ -557,18 +557,18 @@ function StartScreen({
 
         {/* Subtitle */}
         <div
-          className="text-muted-foreground text-center mt-2"
+          className="text-muted-foreground text-center mt-3"
           style={{
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.5rem",
             letterSpacing: "0.05em",
           }}
         >
-          / a digital sanctuary for legal researchers \
+          a digital sanctuary for legal researchers
         </div>
 
         {/* Menu */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 mt-6">
           {subMenu === "main"
             ? MENU_ITEMS.map((item, activeIdx) => {
                 const isSelected = activeIdx === selectedIdx;

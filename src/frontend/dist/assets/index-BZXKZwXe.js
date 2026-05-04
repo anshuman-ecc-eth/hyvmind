@@ -56101,12 +56101,12 @@ const FONT_PAIRINGS = [
   }
 ];
 const FONT_SIZE_OPTIONS = {
-  small: "87.5%",
-  medium: "100%",
-  large: "112.5%"
+  small: "100%",
+  medium: "112.5%",
+  large: "137.5%"
 };
 const DEFAULT_FONT_PAIRING = "system-default";
-const DEFAULT_FONT_SIZE = "small";
+const DEFAULT_FONT_SIZE = "medium";
 function getGoogleFontsUrl(pairingId) {
   if (pairingId === "system-default") return "";
   const pairing = FONT_PAIRINGS.find((p2) => p2.id === pairingId);
@@ -67663,7 +67663,7 @@ function StartScreen({
     onHiScores,
     onExit
   ]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-6", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
@@ -67704,16 +67704,16 @@ function StartScreen({
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
-        className: "text-muted-foreground text-center mt-2",
+        className: "text-muted-foreground text-center mt-3",
         style: {
           fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.5rem",
           letterSpacing: "0.05em"
         },
-        children: "/ a digital sanctuary for legal researchers \\"
+        children: "a digital sanctuary for legal researchers"
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
       const isSelected = activeIdx === selectedIdx;
       return /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",

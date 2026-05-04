@@ -85,13 +85,13 @@ export const FONT_PAIRINGS: FontPairing[] = [
 ];
 
 export const FONT_SIZE_OPTIONS: Record<FontSize, string> = {
-  small: "87.5%",
-  medium: "100%",
-  large: "112.5%",
+  small: "100%",
+  medium: "112.5%",
+  large: "137.5%",
 };
 
 export const DEFAULT_FONT_PAIRING = "system-default";
-export const DEFAULT_FONT_SIZE: FontSize = "small";
+export const DEFAULT_FONT_SIZE: FontSize = "medium";
 
 export function getGoogleFontsUrl(pairingId: string): string {
   if (pairingId === "system-default") return "";
