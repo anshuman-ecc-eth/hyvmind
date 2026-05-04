@@ -79992,16 +79992,23 @@ function WordlePuzzleGame({
     {
       className: "flex-1 flex flex-col items-center justify-start gap-3 pt-4 pb-4 px-2 select-none overflow-auto",
       "data-ocid": "wordle_puzzle.game",
+      onClick: () => {
+        var _a3;
+        return (_a3 = inputRef.current) == null ? void 0 : _a3.focus();
+      },
+      onKeyDown: () => {
+        var _a3;
+        return (_a3 = inputRef.current) == null ? void 0 : _a3.focus();
+      },
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "input",
           {
             ref: inputRef,
             type: "text",
-            className: "opacity-0 absolute pointer-events-none",
+            className: "opacity-0 absolute",
             style: { width: 1, height: 1 },
             value: currentGuess,
-            readOnly: true,
             onChange: (e2) => {
               const val = e2.target.value.toUpperCase().slice(0, WORD_LENGTH);
               setCurrentGuess(val);

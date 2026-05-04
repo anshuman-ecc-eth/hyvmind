@@ -217,15 +217,16 @@ export default function WordlePuzzleGame({
     <div
       className="flex-1 flex flex-col items-center justify-start gap-3 pt-4 pb-4 px-2 select-none overflow-auto"
       data-ocid="wordle_puzzle.game"
+      onClick={() => inputRef.current?.focus()}
+      onKeyDown={() => inputRef.current?.focus()}
     >
       {/* Hidden input for mobile keyboard */}
       <input
         ref={inputRef}
         type="text"
-        className="opacity-0 absolute pointer-events-none"
+        className="opacity-0 absolute"
         style={{ width: 1, height: 1 }}
         value={currentGuess}
-        readOnly
         onChange={(e) => {
           const val = e.target.value.toUpperCase().slice(0, WORD_LENGTH);
           setCurrentGuess(val);
