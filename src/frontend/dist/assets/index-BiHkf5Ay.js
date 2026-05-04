@@ -80982,6 +80982,7 @@ function TextGameModal({ onComplete }) {
   const { resolvedTheme } = z$2();
   const isLight2 = resolvedTheme === "light";
   const [secretCode, setSecretCode] = reactExports.useState(null);
+  const [copiedCode, setCopiedCode] = reactExports.useState(false);
   const [showScoreConfirmation, setShowScoreConfirmation] = reactExports.useState(false);
   const generateBuzzSecret = useGenerateBuzzSecret();
   const [phase, setPhase] = reactExports.useState({ type: "idle" });
@@ -81561,13 +81562,20 @@ function TextGameModal({ onComplete }) {
                     "button",
                     {
                       type: "button",
-                      className: "text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0",
+                      className: `transition-colors px-2 py-1 border border-border text-xs shrink-0 ${copiedCode ? "opacity-50 pointer-events-none text-muted-foreground" : "text-muted-foreground hover:text-foreground"}`,
+                      style: { fontFamily: '"Press Start 2P", monospace' },
                       "data-ocid": "text_game.buzz_secret_copy_button",
-                      "aria-label": "Copy secret code",
+                      "aria-label": copiedCode ? "Copied" : "Copy secret code",
+                      disabled: copiedCode,
                       onClick: async () => {
-                        await navigator.clipboard.writeText(secretCode);
+                        try {
+                          await navigator.clipboard.writeText(secretCode);
+                          setCopiedCode(true);
+                          setTimeout(() => setCopiedCode(false), 2e3);
+                        } catch {
+                        }
                       },
-                      children: "Copy"
+                      children: copiedCode ? "Copied" : "Copy"
                     }
                   ),
                   /* @__PURE__ */ jsxRuntimeExports.jsx(

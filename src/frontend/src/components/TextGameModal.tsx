@@ -972,6 +972,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // Secret code generated after game completion
   const [secretCode, setSecretCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [showScoreConfirmation, setShowScoreConfirmation] = useState(false);
   const generateBuzzSecret = useGenerateBuzzSecret();
 
@@ -1622,14 +1623,26 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               </code>
               <button
                 type="button"
-                className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0"
+                className={`transition-colors px-2 py-1 border border-border text-xs shrink-0 ${
+                  copiedCode
+                    ? "opacity-50 pointer-events-none text-muted-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                style={{ fontFamily: '"Press Start 2P", monospace' }}
                 data-ocid="text_game.buzz_secret_copy_button"
-                aria-label="Copy secret code"
+                aria-label={copiedCode ? "Copied" : "Copy secret code"}
+                disabled={copiedCode}
                 onClick={async () => {
-                  await navigator.clipboard.writeText(secretCode);
+                  try {
+                    await navigator.clipboard.writeText(secretCode);
+                    setCopiedCode(true);
+                    setTimeout(() => setCopiedCode(false), 2000);
+                  } catch {
+                    // clipboard unavailable — silently ignore
+                  }
                 }}
               >
-                Copy
+                {copiedCode ? "Copied" : "Copy"}
               </button>
               <button
                 type="button"
