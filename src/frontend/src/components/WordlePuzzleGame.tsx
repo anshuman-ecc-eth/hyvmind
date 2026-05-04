@@ -150,24 +150,6 @@ export default function WordlePuzzleGame({
     }
   }, [currentGuess, guesses, colors, targetWord, timeLeft]);
 
-  // ── Keyboard handler ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (gameOver) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        submitGuess();
-      } else if (e.key === "Backspace") {
-        setCurrentGuess((prev) => prev.slice(0, -1));
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        setCurrentGuess((prev) =>
-          prev.length < WORD_LENGTH ? prev + e.key.toUpperCase() : prev,
-        );
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [gameOver, submitGuess]);
-
   // ── Reset (try again) ──────────────────────────────────────────────────────
   const handleTryAgain = useCallback(() => {
     setScore(0);
@@ -230,6 +212,14 @@ export default function WordlePuzzleGame({
         onChange={(e) => {
           const val = e.target.value.toUpperCase().slice(0, WORD_LENGTH);
           setCurrentGuess(val);
+        }}
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === "Enter") {
+            submitGuess();
+          } else if (e.key === "Backspace") {
+            e.preventDefault();
+            setCurrentGuess((prev) => prev.slice(0, -1));
+          }
         }}
       />
 

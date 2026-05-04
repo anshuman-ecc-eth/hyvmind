@@ -79935,22 +79935,6 @@ function WordlePuzzleGame({
       setFeedback(targetWord);
     }
   }, [currentGuess, guesses, colors2, targetWord, timeLeft]);
-  reactExports.useEffect(() => {
-    if (gameOver) return;
-    const handler = (e2) => {
-      if (e2.key === "Enter") {
-        submitGuess();
-      } else if (e2.key === "Backspace") {
-        setCurrentGuess((prev) => prev.slice(0, -1));
-      } else if (/^[a-zA-Z]$/.test(e2.key)) {
-        setCurrentGuess(
-          (prev) => prev.length < WORD_LENGTH ? prev + e2.key.toUpperCase() : prev
-        );
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [gameOver, submitGuess]);
   const handleTryAgain = reactExports.useCallback(() => {
     setScore(0);
     setPuzzleNumber(1);
@@ -80013,6 +79997,14 @@ function WordlePuzzleGame({
             onChange: (e2) => {
               const val = e2.target.value.toUpperCase().slice(0, WORD_LENGTH);
               setCurrentGuess(val);
+            },
+            onKeyDown: (e2) => {
+              if (e2.key === "Enter") {
+                submitGuess();
+              } else if (e2.key === "Backspace") {
+                e2.preventDefault();
+                setCurrentGuess((prev) => prev.slice(0, -1));
+              }
             }
           }
         ),
