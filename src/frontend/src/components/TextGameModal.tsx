@@ -6,13 +6,13 @@ import ChessPuzzleGame from "./ChessPuzzleGame";
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const MENU_ITEMS = [
-  "STORY",
-  "PUZZLES",
-  "SETTINGS",
-  "LEADERBOARD",
-  "EXIT",
+  "Story",
+  "Puzzles",
+  "Settings",
+  "Leaderboard",
+  "Exit",
 ] as const;
-const PUZZLE_MENU_ITEMS = ["CHESS", "BACK"] as const;
+const PUZZLE_MENU_ITEMS = ["Chess", "Back"] as const;
 
 const CONTENT = {
   intro: [
@@ -407,6 +407,16 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
         {score}
       </div>
       <div className="flex flex-col items-center gap-3">
+        <input
+          type="text"
+          maxLength={10}
+          className="opacity-0 absolute"
+          value={name}
+          onChange={(e) => {
+            const val = e.target.value.toUpperCase().slice(0, 10);
+            setName(val);
+          }}
+        />
         <div
           className="text-muted-foreground"
           style={{
@@ -428,6 +438,20 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
         >
           {`> ${paddedName}`}
         </div>
+        <button
+          type="button"
+          className="text-foreground text-xs mt-2 hover:text-muted-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            letterSpacing: "0.1em",
+          }}
+          disabled={name.length === 0}
+          onClick={() => {
+            if (name.length > 0) onSubmit(name);
+          }}
+        >
+          [SUBMIT]
+        </button>
       </div>
       <div
         className="text-muted-foreground"
@@ -437,7 +461,7 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
           letterSpacing: "0.15em",
         }}
       >
-        PRESS ENTER TO SAVE
+        PRESS ENTER OR TAP SUBMIT TO SAVE
       </div>
     </div>
   );
@@ -476,13 +500,13 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "STORY") onStart();
-          else if (chosen === "PUZZLES") {
+          if (chosen === "Story") onStart();
+          else if (chosen === "Puzzles") {
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
-          } else if (chosen === "SETTINGS") onSettings();
-          else if (chosen === "LEADERBOARD") onHiScores();
-          else if (chosen === "EXIT") onExit();
+          } else if (chosen === "Settings") onSettings();
+          else if (chosen === "Leaderboard") onHiScores();
+          else if (chosen === "Exit") onExit();
         }
       } else {
         if (e.key === "ArrowUp") {
@@ -494,8 +518,8 @@ function StartScreen({
           setPuzzleSelectedIdx((prev) => (prev + 1) % PUZZLE_MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
-          if (chosen === "CHESS") onChess();
-          else if (chosen === "BACK") setSubMenu("main");
+          if (chosen === "Chess") onChess();
+          else if (chosen === "Back") setSubMenu("main");
         }
       }
     };
@@ -577,7 +601,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65rem",
@@ -589,13 +613,13 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
-                      if (item === "STORY") onStart();
-                      else if (item === "PUZZLES") {
+                      if (item === "Story") onStart();
+                      else if (item === "Puzzles") {
                         setSubMenu("puzzles");
                         setPuzzleSelectedIdx(0);
-                      } else if (item === "SETTINGS") onSettings();
-                      else if (item === "LEADERBOARD") onHiScores();
-                      else if (item === "EXIT") onExit();
+                      } else if (item === "Settings") onSettings();
+                      else if (item === "Leaderboard") onHiScores();
+                      else if (item === "Exit") onExit();
                     }}
                   >
                     {isSelected ? `> ${item}` : `  ${item}`}
@@ -609,7 +633,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.puzzle_${item.toLowerCase()}`}
-                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65rem",
@@ -621,8 +645,8 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setPuzzleSelectedIdx(activeIdx);
-                      if (item === "CHESS") onChess();
-                      else if (item === "BACK") setSubMenu("main");
+                      if (item === "Chess") onChess();
+                      else if (item === "Back") setSubMenu("main");
                     }}
                   >
                     {isSelected ? `> ${item}` : `  ${item}`}

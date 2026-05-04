@@ -67249,13 +67249,13 @@ function ChessPuzzleGame({
   );
 }
 const MENU_ITEMS = [
-  "STORY",
-  "PUZZLES",
-  "SETTINGS",
-  "LEADERBOARD",
-  "EXIT"
+  "Story",
+  "Puzzles",
+  "Settings",
+  "Leaderboard",
+  "Exit"
 ];
-const PUZZLE_MENU_ITEMS = ["CHESS", "BACK"];
+const PUZZLE_MENU_ITEMS = ["Chess", "Back"];
 const CONTENT = {
   intro: [
     "welcome, fellow researcher",
@@ -67569,6 +67569,19 @@ function NameEntryScreen({ score, onSubmit }) {
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "input",
+        {
+          type: "text",
+          maxLength: 10,
+          className: "opacity-0 absolute",
+          value: name,
+          onChange: (e2) => {
+            const val = e2.target.value.toUpperCase().slice(0, 10);
+            setName(val);
+          }
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
         "div",
         {
           className: "text-muted-foreground",
@@ -67592,6 +67605,22 @@ function NameEntryScreen({ score, onSubmit }) {
           },
           children: `> ${paddedName}`
         }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: "text-foreground text-xs mt-2 hover:text-muted-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            letterSpacing: "0.1em"
+          },
+          disabled: name.length === 0,
+          onClick: () => {
+            if (name.length > 0) onSubmit(name);
+          },
+          children: "[SUBMIT]"
+        }
       )
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67603,7 +67632,7 @@ function NameEntryScreen({ score, onSubmit }) {
           fontSize: "0.45rem",
           letterSpacing: "0.15em"
         },
-        children: "PRESS ENTER TO SAVE"
+        children: "PRESS ENTER OR TAP SUBMIT TO SAVE"
       }
     )
   ] });
@@ -67629,13 +67658,13 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e2.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "STORY") onStart();
-          else if (chosen === "PUZZLES") {
+          if (chosen === "Story") onStart();
+          else if (chosen === "Puzzles") {
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
-          } else if (chosen === "SETTINGS") onSettings();
-          else if (chosen === "LEADERBOARD") onHiScores();
-          else if (chosen === "EXIT") onExit();
+          } else if (chosen === "Settings") onSettings();
+          else if (chosen === "Leaderboard") onHiScores();
+          else if (chosen === "Exit") onExit();
         }
       } else {
         if (e2.key === "ArrowUp") {
@@ -67646,8 +67675,8 @@ function StartScreen({
           setPuzzleSelectedIdx((prev) => (prev + 1) % PUZZLE_MENU_ITEMS.length);
         } else if (e2.key === "Enter") {
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
-          if (chosen === "CHESS") onChess();
-          else if (chosen === "BACK") setSubMenu("main");
+          if (chosen === "Chess") onChess();
+          else if (chosen === "Back") setSubMenu("main");
         }
       }
     };
@@ -67720,7 +67749,7 @@ function StartScreen({
         {
           type: "button",
           "data-ocid": `text_game.start_screen.${item.toLowerCase().replace("-", "_")}`,
-          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`,
+          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
           style: {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.65rem",
@@ -67732,13 +67761,13 @@ function StartScreen({
           },
           onClick: () => {
             setSelectedIdx(activeIdx);
-            if (item === "STORY") onStart();
-            else if (item === "PUZZLES") {
+            if (item === "Story") onStart();
+            else if (item === "Puzzles") {
               setSubMenu("puzzles");
               setPuzzleSelectedIdx(0);
-            } else if (item === "SETTINGS") onSettings();
-            else if (item === "LEADERBOARD") onHiScores();
-            else if (item === "EXIT") onExit();
+            } else if (item === "Settings") onSettings();
+            else if (item === "Leaderboard") onHiScores();
+            else if (item === "Exit") onExit();
           },
           children: isSelected ? `> ${item}` : `  ${item}`
         },
@@ -67751,7 +67780,7 @@ function StartScreen({
         {
           type: "button",
           "data-ocid": `text_game.start_screen.puzzle_${item.toLowerCase()}`,
-          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`,
+          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
           style: {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.65rem",
@@ -67763,8 +67792,8 @@ function StartScreen({
           },
           onClick: () => {
             setPuzzleSelectedIdx(activeIdx);
-            if (item === "CHESS") onChess();
-            else if (item === "BACK") setSubMenu("main");
+            if (item === "Chess") onChess();
+            else if (item === "Back") setSubMenu("main");
           },
           children: isSelected ? `> ${item}` : `  ${item}`
         },
