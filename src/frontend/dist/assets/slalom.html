@@ -35,6 +35,11 @@ options = {
   seed: 14,
   theme: "pixel",
 };
+// Check URL for bgm=off and disable sound if present
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('bgm') === 'off') {
+  options.isSoundEnabled = false;
+}
 
 let walls;
 let wallSide;

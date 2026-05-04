@@ -483,6 +483,9 @@ interface StartScreenProps {
   onHiScores: () => void;
   onExit: () => void;
   leaderboard: LeaderboardEntry[];
+  showScoreConfirmation?: boolean;
+  setShowScoreConfirmation?: (v: boolean) => void;
+  setSecretCode?: (v: string | null) => void;
 }
 
 function StartScreen({
@@ -491,6 +494,9 @@ function StartScreen({
   onSettings,
   onHiScores,
   onExit,
+  showScoreConfirmation,
+  setShowScoreConfirmation,
+  setSecretCode,
 }: StartScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [subMenu, setSubMenu] = useState<"main" | "puzzles">("main");
@@ -674,6 +680,34 @@ function StartScreen({
                 );
               })}
         </div>
+        {showScoreConfirmation && (
+          <div
+            className="text-foreground text-center mt-4"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.5rem",
+              letterSpacing: "0.1em",
+            }}
+          >
+            <div className="mb-2">SCORE SAVED!</div>
+            <div className="text-yellow-500 mb-2">
+              COPY YOUR BUZZ SECRET ABOVE NOW!
+            </div>
+            <div className="text-muted-foreground text-[0.4rem]">
+              IT WILL DISAPPEAR WHEN YOU LEAVE THIS SCREEN
+            </div>
+            <button
+              type="button"
+              className="mt-3 text-muted-foreground hover:text-foreground text-xs"
+              onClick={() => {
+                setShowScoreConfirmation?.(false);
+                setSecretCode?.(null);
+              }}
+            >
+              [DISMISS]
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -936,6 +970,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // Secret code generated after game completion
   const [secretCode, setSecretCode] = useState<string | null>(null);
+  const [showScoreConfirmation, setShowScoreConfirmation] = useState(false);
   const generateBuzzSecret = useGenerateBuzzSecret();
 
   // Phase state
@@ -1033,20 +1068,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "chess" });
   }, []);
 
-  const handleChessComplete = useCallback(
-    (score: number) => {
-      const qualifies =
-        leaderboard.length < 3 ||
-        score > leaderboard[leaderboard.length - 1].score;
-      if (qualifies) {
-        setPendingScore(score);
-        setPhase({ type: "nameEntry", score });
-      } else {
-        setPhase({ type: "idle" });
-      }
-    },
-    [leaderboard],
-  );
+  const handleChessComplete = useCallback((score: number) => {
+    setPendingScore(score);
+    setPhase({ type: "nameEntry", score });
+  }, []);
 
   const handleCloseSubScreen = useCallback(() => {
     setPhase({ type: "idle" });
@@ -1069,6 +1094,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             BigInt(Math.round(pendingScore)),
           );
           setSecretCode(secret);
+          setShowScoreConfirmation(true);
         } catch (err) {
           console.error("Failed to generate buzz secret:", err);
         }
@@ -1118,27 +1144,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         setGameScores((prev) => {
           const totalScore = prev.game1 + prev.game2 + score3;
           const newScores = { ...prev, game3: score3 };
-
-          const qualifies =
-            leaderboard.length < 3 ||
-            totalScore > leaderboard[leaderboard.length - 1].score;
-
-          if (qualifies) {
-            setPendingScore(totalScore);
-            setPhase({ type: "nameEntry", score: totalScore });
-          } else if (settings.skipMessages) {
-            onCompleteRef.current();
-          } else {
-            setPhase({ type: "postGame3", step: 0 });
-            setScrambleComplete(false);
-          }
+          setPendingScore(totalScore);
+          setPhase({ type: "nameEntry", score: totalScore });
           return newScores;
         });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, leaderboard]);
+  }, [settings]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -1346,6 +1360,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
             leaderboard={leaderboard}
+            showScoreConfirmation={showScoreConfirmation}
+            setShowScoreConfirmation={setShowScoreConfirmation}
+            setSecretCode={setSecretCode}
           />
         );
 

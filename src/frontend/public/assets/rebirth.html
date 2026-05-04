@@ -92,6 +92,11 @@ options = {
   isDrawingScoreFront: true,
   seed: 2000,
 };
+// Check URL for bgm=off and disable sound if present
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('bgm') === 'off') {
+  options.isSoundEnabled = false;
+}
 
 /** @type {{x: number, vx: number, world: -1 | 1}[]} */
 let tracks;

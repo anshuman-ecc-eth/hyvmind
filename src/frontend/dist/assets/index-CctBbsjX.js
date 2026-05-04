@@ -67909,7 +67909,10 @@ function StartScreen({
   onChess,
   onSettings,
   onHiScores,
-  onExit
+  onExit,
+  showScoreConfirmation,
+  setShowScoreConfirmation,
+  setSecretCode
 }) {
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
@@ -68079,7 +68082,35 @@ function StartScreen({
         },
         item
       );
-    }) })
+    }) }),
+    showScoreConfirmation && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "text-foreground text-center mt-4",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.5rem",
+          letterSpacing: "0.1em"
+        },
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-2", children: "SCORE SAVED!" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-yellow-500 mb-2", children: "COPY YOUR BUZZ SECRET ABOVE NOW!" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-muted-foreground text-[0.4rem]", children: "IT WILL DISAPPEAR WHEN YOU LEAVE THIS SCREEN" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              className: "mt-3 text-muted-foreground hover:text-foreground text-xs",
+              onClick: () => {
+                setShowScoreConfirmation == null ? void 0 : setShowScoreConfirmation(false);
+                setSecretCode == null ? void 0 : setSecretCode(null);
+              },
+              children: "[DISMISS]"
+            }
+          )
+        ]
+      }
+    )
   ] }) });
 }
 function ChoiceMenu({
@@ -68281,6 +68312,7 @@ function TextGameModal({ onComplete }) {
   const { resolvedTheme } = z$2();
   const isLight2 = resolvedTheme === "light";
   const [secretCode, setSecretCode] = reactExports.useState(null);
+  const [showScoreConfirmation, setShowScoreConfirmation] = reactExports.useState(false);
   const generateBuzzSecret = useGenerateBuzzSecret();
   const [phase, setPhase] = reactExports.useState({ type: "idle" });
   const [scrambleComplete, setScrambleComplete] = reactExports.useState(false);
@@ -68346,18 +68378,10 @@ function TextGameModal({ onComplete }) {
   const handleStartChess = reactExports.useCallback(() => {
     setPhase({ type: "chess" });
   }, []);
-  const handleChessComplete = reactExports.useCallback(
-    (score) => {
-      const qualifies = leaderboard.length < 3 || score > leaderboard[leaderboard.length - 1].score;
-      if (qualifies) {
-        setPendingScore(score);
-        setPhase({ type: "nameEntry", score });
-      } else {
-        setPhase({ type: "idle" });
-      }
-    },
-    [leaderboard]
-  );
+  const handleChessComplete = reactExports.useCallback((score) => {
+    setPendingScore(score);
+    setPhase({ type: "nameEntry", score });
+  }, []);
   const handleCloseSubScreen = reactExports.useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
@@ -68377,6 +68401,7 @@ function TextGameModal({ onComplete }) {
             BigInt(Math.round(pendingScore))
           );
           setSecretCode(secret);
+          setShowScoreConfirmation(true);
         } catch (err) {
           console.error("Failed to generate buzz secret:", err);
         }
@@ -68421,23 +68446,15 @@ function TextGameModal({ onComplete }) {
         setGameScores((prev) => {
           const totalScore = prev.game1 + prev.game2 + score3;
           const newScores = { ...prev, game3: score3 };
-          const qualifies = leaderboard.length < 3 || totalScore > leaderboard[leaderboard.length - 1].score;
-          if (qualifies) {
-            setPendingScore(totalScore);
-            setPhase({ type: "nameEntry", score: totalScore });
-          } else if (settings.skipMessages) {
-            onCompleteRef.current();
-          } else {
-            setPhase({ type: "postGame3", step: 0 });
-            setScrambleComplete(false);
-          }
+          setPendingScore(totalScore);
+          setPhase({ type: "nameEntry", score: totalScore });
           return newScores;
         });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, leaderboard]);
+  }, [settings]);
   const handleAdvance = reactExports.useCallback(() => {
     if (!scrambleComplete) return;
     switch (phase.type) {
@@ -68626,7 +68643,10 @@ function TextGameModal({ onComplete }) {
             onSettings: handleOpenSettings,
             onHiScores: handleOpenLeaderboard,
             onExit: handleExit,
-            leaderboard
+            leaderboard,
+            showScoreConfirmation,
+            setShowScoreConfirmation,
+            setSecretCode
           }
         );
       case "settings":

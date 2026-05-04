@@ -4320,6 +4320,9 @@ body{
   font-size: 2.25rem;
   line-height: 2.5rem;
 }
+.text-\[0\.4rem\]{
+  font-size: 0.4rem;
+}
 .text-\[0\.8rem\]{
   font-size: 0.8rem;
 }
@@ -4514,6 +4517,10 @@ body{
 .text-yellow-400{
   --tw-text-opacity: 1;
   color: rgb(250 204 21 / var(--tw-text-opacity, 1));
+}
+.text-yellow-500{
+  --tw-text-opacity: 1;
+  color: rgb(234 179 8 / var(--tw-text-opacity, 1));
 }
 .text-yellow-500\/60{
   color: rgb(234 179 8 / 0.6);
