@@ -68094,8 +68094,7 @@ function StartScreen({
         },
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-2", children: "SCORE SAVED!" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-yellow-500 mb-2", children: "COPY YOUR BUZZ SECRET ABOVE NOW!" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-muted-foreground text-[0.4rem]", children: "IT WILL DISAPPEAR WHEN YOU LEAVE THIS SCREEN" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-yellow-500 mb-2", children: "BUZZ CODE GENERATED" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
@@ -68861,18 +68860,6 @@ function TextGameModal({ onComplete }) {
               className: "border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0",
               "data-ocid": "text_game.buzz_secret_panel",
               children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "div",
-                  {
-                    className: "text-foreground",
-                    style: {
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.45rem",
-                      letterSpacing: "0.2em"
-                    },
-                    children: "YOUR BUZZ SECRET"
-                  }
-                ),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
                     "code",

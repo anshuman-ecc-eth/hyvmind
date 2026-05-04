@@ -690,12 +690,7 @@ function StartScreen({
             }}
           >
             <div className="mb-2">SCORE SAVED!</div>
-            <div className="text-yellow-500 mb-2">
-              COPY YOUR BUZZ SECRET ABOVE NOW!
-            </div>
-            <div className="text-muted-foreground text-[0.4rem]">
-              IT WILL DISAPPEAR WHEN YOU LEAVE THIS SCREEN
-            </div>
+            <div className="text-yellow-500 mb-2">BUZZ CODE GENERATED</div>
             <button
               type="button"
               className="mt-3 text-muted-foreground hover:text-foreground text-xs"
@@ -1592,16 +1587,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             className="border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0"
             data-ocid="text_game.buzz_secret_panel"
           >
-            <div
-              className="text-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.45rem",
-                letterSpacing: "0.2em",
-              }}
-            >
-              YOUR BUZZ SECRET
-            </div>
             <div className="flex items-center gap-2">
               <code
                 className="flex-1 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-xs tracking-wide text-foreground select-all break-all min-w-0"
