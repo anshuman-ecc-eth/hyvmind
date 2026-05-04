@@ -435,7 +435,7 @@ export default function ChessPuzzleGame({
   if (gameOver && !showingSolution) {
     return (
       <div
-        className="flex flex-col items-center gap-4 py-4 w-full"
+        className="flex-1 overflow-y-auto flex flex-col items-center gap-4 py-4 w-full"
         data-ocid="chess_puzzle.game_over"
       >
         <div
@@ -579,7 +579,7 @@ export default function ChessPuzzleGame({
   if (showingSolution) {
     return (
       <div
-        className="flex flex-col items-center gap-3 py-4 w-full"
+        className="flex-1 overflow-y-auto flex flex-col items-center gap-3 py-4 w-full"
         data-ocid="chess_puzzle.solution_animation"
       >
         <div
@@ -692,7 +692,7 @@ export default function ChessPuzzleGame({
   // Active game
   return (
     <div
-      className="flex flex-col items-center gap-3 py-4 w-full"
+      className="flex-1 overflow-y-auto flex flex-col items-center gap-3 py-4 w-full"
       data-ocid="chess_puzzle.panel"
     >
       <div

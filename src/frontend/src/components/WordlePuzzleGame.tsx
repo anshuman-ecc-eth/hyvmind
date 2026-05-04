@@ -139,8 +139,8 @@ export default function WordlePuzzleGame({
         setCurrentGuess("");
         setFeedback("");
         setTargetWord(getRandomWord());
+        setTimeLeft(TIMER_START);
         setPuzzleNumber((n) => n + 1);
-        // NOTE: timer intentionally NOT reset between puzzles per spec
       }, 1200);
     } else if (newGuesses.length >= MAX_GUESSES) {
       if (timerRef.current) clearInterval(timerRef.current);

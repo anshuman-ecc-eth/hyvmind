@@ -67107,7 +67107,7 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center gap-4 py-4 w-full",
+        className: "flex-1 overflow-y-auto flex flex-col items-center gap-4 py-4 w-full",
         "data-ocid": "chess_puzzle.game_over",
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67280,7 +67280,7 @@ function ChessPuzzleGame({
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-center gap-3 py-4 w-full",
+        className: "flex-1 overflow-y-auto flex flex-col items-center gap-3 py-4 w-full",
         "data-ocid": "chess_puzzle.solution_animation",
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67412,7 +67412,7 @@ function ChessPuzzleGame({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
-      className: "flex flex-col items-center gap-3 py-4 w-full",
+      className: "flex-1 overflow-y-auto flex flex-col items-center gap-3 py-4 w-full",
       "data-ocid": "chess_puzzle.panel",
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -79925,6 +79925,7 @@ function WordlePuzzleGame({
         setCurrentGuess("");
         setFeedback("");
         setTargetWord(getRandomWord());
+        setTimeLeft(TIMER_START);
         setPuzzleNumber((n2) => n2 + 1);
       }, 1200);
     } else if (newGuesses.length >= MAX_GUESSES) {
