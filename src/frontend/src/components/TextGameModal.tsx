@@ -2,6 +2,7 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGenerateBuzzSecret } from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
+import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -12,7 +13,7 @@ const MENU_ITEMS = [
   "Leaderboard",
   "Exit",
 ] as const;
-const PUZZLE_MENU_ITEMS = ["Chess", "Back"] as const;
+const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
 const CONTENT = {
   intro: [
@@ -116,6 +117,7 @@ type Phase =
   | { type: "outro"; step: number }
   | { type: "chess" }
   | { type: "chessGameOver"; score: number }
+  | { type: "wordle" }
   | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -479,6 +481,7 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
 interface StartScreenProps {
   onStart: () => void;
   onChess: () => void;
+  onWordle: () => void;
   onSettings: () => void;
   onHiScores: () => void;
   onExit: () => void;
@@ -491,6 +494,7 @@ interface StartScreenProps {
 function StartScreen({
   onStart,
   onChess,
+  onWordle,
   onSettings,
   onHiScores,
   onExit,
@@ -532,6 +536,7 @@ function StartScreen({
         } else if (e.key === "Enter") {
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
           if (chosen === "Chess") onChess();
+          else if (chosen === "Wordle") onWordle();
           else if (chosen === "Back") setSubMenu("main");
         }
       }
@@ -544,6 +549,7 @@ function StartScreen({
     subMenu,
     onStart,
     onChess,
+    onWordle,
     onSettings,
     onHiScores,
     onExit,
@@ -672,6 +678,7 @@ function StartScreen({
                     onClick={() => {
                       setPuzzleSelectedIdx(activeIdx);
                       if (item === "Chess") onChess();
+                      else if (item === "Wordle") onWordle();
                       else if (item === "Back") setSubMenu("main");
                     }}
                   >
@@ -1068,6 +1075,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "nameEntry", score });
   }, []);
 
+  const handleStartWordle = useCallback(() => {
+    setPhase({ type: "wordle" });
+  }, []);
+
+  const handleWordleComplete = useCallback((score: number) => {
+    setPendingScore(score);
+    setPhase({ type: "nameEntry", score });
+  }, []);
+
   const handleCloseSubScreen = useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
@@ -1351,6 +1367,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <StartScreen
             onStart={handleStart}
             onChess={handleStartChess}
+            onWordle={handleStartWordle}
             onSettings={handleOpenSettings}
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
@@ -1531,6 +1548,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onComplete={handleChessComplete}
             onExit={() => setPhase({ type: "idle" })}
             heading="Chess"
+          />
+        );
+
+      case "wordle":
+        return (
+          <WordlePuzzleGame
+            onComplete={handleWordleComplete}
+            onExit={() => setPhase({ type: "idle" })}
+            heading="Wordle"
           />
         );
 

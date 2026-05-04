@@ -66906,9 +66906,8 @@ function ChessPuzzleGame({
       }
       if (playerSolution.length === 1) {
         if (timerRef.current) clearInterval(timerRef.current);
-        const points = 15;
-        setScore((s2) => s2 + points);
-        setFeedback(`+${points}!`);
+        setScore((s2) => s2 + timeLeft);
+        setFeedback(`+${timeLeft}!`);
         setTimeout(() => {
           setPuzzleNumber((n2) => n2 + 1);
           setGameOver(false);
@@ -66935,7 +66934,7 @@ function ChessPuzzleGame({
         }, 500);
       }
     },
-    [fetchNext]
+    [fetchNext, timeLeft]
   );
   applyMoveRef.current = applyMove;
   reactExports.useEffect(() => {
@@ -67510,6 +67509,1103 @@ function ChessPuzzleGame({
     }
   );
 }
+const WORDS = [
+  "ABOUT",
+  "ABOVE",
+  "ABUSE",
+  "ACTOR",
+  "ACUTE",
+  "ADMIT",
+  "ADOPT",
+  "ADULT",
+  "AFTER",
+  "AGAIN",
+  "AGENT",
+  "AGREE",
+  "AHEAD",
+  "ALARM",
+  "ALBUM",
+  "ALERT",
+  "ALIKE",
+  "ALIGN",
+  "ALIVE",
+  "ALLEY",
+  "ALLOW",
+  "ALONE",
+  "ALONG",
+  "ALTER",
+  "ANGEL",
+  "ANGER",
+  "ANGLE",
+  "ANGRY",
+  "ANIME",
+  "ANKLE",
+  "ANNEX",
+  "APART",
+  "APPLE",
+  "APPLY",
+  "ARENA",
+  "ARGUE",
+  "ARISE",
+  "ARMOR",
+  "ARMY",
+  "AROMA",
+  "AROSE",
+  "ARRAY",
+  "ARROW",
+  "ASIDE",
+  "ASSET",
+  "ATLAS",
+  "ATTIC",
+  "AUDIO",
+  "AUDIT",
+  "AVOID",
+  "AWAKE",
+  "AWARD",
+  "AWARE",
+  "AWFUL",
+  "BADLY",
+  "BAKER",
+  "BASIC",
+  "BASIS",
+  "BATCH",
+  "BEACH",
+  "BEARD",
+  "BEAST",
+  "BEGIN",
+  "BEING",
+  "BELOW",
+  "BENCH",
+  "BERRY",
+  "BLACK",
+  "BLADE",
+  "BLAME",
+  "BLAND",
+  "BLANK",
+  "BLAST",
+  "BLAZE",
+  "BLEED",
+  "BLEND",
+  "BLESS",
+  "BLIND",
+  "BLOCK",
+  "BLOOD",
+  "BLOOM",
+  "BLOWN",
+  "BOARD",
+  "BONUS",
+  "BOOST",
+  "BOUND",
+  "BRAVE",
+  "BREAD",
+  "BREAK",
+  "BREED",
+  "BRICK",
+  "BRIDE",
+  "BRIEF",
+  "BRING",
+  "BROKE",
+  "BROWN",
+  "BRUSH",
+  "BUILD",
+  "BUILT",
+  "BURST",
+  "BUYER",
+  "CABIN",
+  "CABLE",
+  "CAMEL",
+  "CANDY",
+  "CARGO",
+  "CARRY",
+  "CATCH",
+  "CAUSE",
+  "CHAIN",
+  "CHAIR",
+  "CHAOS",
+  "CHARM",
+  "CHASE",
+  "CHEAP",
+  "CHECK",
+  "CHEEK",
+  "CHESS",
+  "CHEST",
+  "CHIEF",
+  "CHILD",
+  "CHINA",
+  "CIVIL",
+  "CLAIM",
+  "CLASH",
+  "CLASS",
+  "CLEAN",
+  "CLEAR",
+  "CLIMB",
+  "CLING",
+  "CLOCK",
+  "CLOSE",
+  "CLOUD",
+  "COACH",
+  "COAST",
+  "COLOR",
+  "COMIC",
+  "COMMA",
+  "CORAL",
+  "COUNT",
+  "COURT",
+  "COVER",
+  "CRAFT",
+  "CRANE",
+  "CRASH",
+  "CRAZY",
+  "CREAM",
+  "CREEK",
+  "CRISP",
+  "CROSS",
+  "CROWD",
+  "CROWN",
+  "CRUMB",
+  "CRUSH",
+  "CURVE",
+  "CYCLE",
+  "DAILY",
+  "DANCE",
+  "DATUM",
+  "DEALT",
+  "DECAY",
+  "DELAY",
+  "DEPOT",
+  "DEPTH",
+  "DERBY",
+  "DEVIL",
+  "DIRTY",
+  "DISCO",
+  "DIVER",
+  "DIZZY",
+  "DODGE",
+  "DOING",
+  "DONNA",
+  "DOUBT",
+  "DOUGH",
+  "DRAFT",
+  "DRAIN",
+  "DRAMA",
+  "DRANK",
+  "DREAD",
+  "DREAM",
+  "DRESS",
+  "DRIED",
+  "DRINK",
+  "DRIVE",
+  "DROVE",
+  "DROWN",
+  "DRUNK",
+  "DRYER",
+  "DUMMY",
+  "DUNNO",
+  "DWELL",
+  "DYING",
+  "EAGER",
+  "EARLY",
+  "EARTH",
+  "EIGHT",
+  "ELITE",
+  "EMPTY",
+  "ENEMY",
+  "ENJOY",
+  "ENTER",
+  "ENTRY",
+  "EQUAL",
+  "ERROR",
+  "ESSAY",
+  "EVENT",
+  "EVERY",
+  "EXACT",
+  "EXIST",
+  "EXTRA",
+  "FABLE",
+  "FAINT",
+  "FAIRY",
+  "FAITH",
+  "FALSE",
+  "FANCY",
+  "FANNY",
+  "FATAL",
+  "FAULT",
+  "FEAST",
+  "FENCE",
+  "FEVER",
+  "FIBER",
+  "FIELD",
+  "FIERY",
+  "FIFTH",
+  "FIFTY",
+  "FIGHT",
+  "FILED",
+  "FINAL",
+  "FIRST",
+  "FIXED",
+  "FLAME",
+  "FLASH",
+  "FLASK",
+  "FLEET",
+  "FLESH",
+  "FLOAT",
+  "FLOOD",
+  "FLOOR",
+  "FLOUR",
+  "FLUID",
+  "FLUTE",
+  "FOCAL",
+  "FOCUS",
+  "FOGGY",
+  "FORCE",
+  "FORGE",
+  "FOUND",
+  "FRAME",
+  "FRANK",
+  "FRAUD",
+  "FRESH",
+  "FRONT",
+  "FROST",
+  "FROZE",
+  "FRUIT",
+  "FULLY",
+  "FUNNY",
+  "GHOST",
+  "GIANT",
+  "GIVEN",
+  "GLAND",
+  "GLASS",
+  "GLIDE",
+  "GLOBE",
+  "GLOOM",
+  "GLOSS",
+  "GLOVE",
+  "GOING",
+  "GRACE",
+  "GRADE",
+  "GRAIN",
+  "GRAND",
+  "GRANT",
+  "GRAPH",
+  "GRASP",
+  "GRASS",
+  "GRAVE",
+  "GREAT",
+  "GREED",
+  "GREEN",
+  "GREET",
+  "GRIEF",
+  "GRILL",
+  "GRIME",
+  "GRIND",
+  "GROAN",
+  "GROPE",
+  "GROUP",
+  "GROVE",
+  "GROWN",
+  "GUARD",
+  "GUEST",
+  "GUIDE",
+  "GUILD",
+  "GUILE",
+  "GUISE",
+  "GULCH",
+  "GUSTO",
+  "HABIT",
+  "HAPPY",
+  "HARSH",
+  "HEART",
+  "HEAVY",
+  "HEDGE",
+  "HEIST",
+  "HELLO",
+  "HENCE",
+  "HERBY",
+  "HEROIC",
+  "HINGE",
+  "HIRED",
+  "HOLLY",
+  "HONOR",
+  "HOPED",
+  "HORSE",
+  "HOTEL",
+  "HOUSE",
+  "HUMID",
+  "HUMOR",
+  "HURRY",
+  "IDEAL",
+  "IMAGE",
+  "IMPLY",
+  "INDEX",
+  "INFER",
+  "INPUT",
+  "INTER",
+  "INTRO",
+  "IRONY",
+  "ISSUE",
+  "JOKER",
+  "JOLLY",
+  "JUDGE",
+  "JUICE",
+  "JUICY",
+  "JUMBO",
+  "KARMA",
+  "KAYAK",
+  "KNACK",
+  "KNEEL",
+  "KNIFE",
+  "KNOCK",
+  "KNOWN",
+  "LABEL",
+  "LANCE",
+  "LARGE",
+  "LASER",
+  "LATER",
+  "LAUGH",
+  "LAYER",
+  "LEAFY",
+  "LEARN",
+  "LEGAL",
+  "LEVEL",
+  "LIGHT",
+  "LIKED",
+  "LIMIT",
+  "LINER",
+  "LOCAL",
+  "LODGE",
+  "LOGIC",
+  "LOOSE",
+  "LOWER",
+  "LUCKY",
+  "LUNAR",
+  "LYRIC",
+  "MAGIC",
+  "MAJOR",
+  "MAKER",
+  "MANOR",
+  "MAPLE",
+  "MARCH",
+  "MARRY",
+  "MATCH",
+  "MAYOR",
+  "MEDIA",
+  "MERCY",
+  "MERGE",
+  "MERIT",
+  "METAL",
+  "METER",
+  "MIGHT",
+  "MINOR",
+  "MINUS",
+  "MIXED",
+  "MODEL",
+  "MONEY",
+  "MONTH",
+  "MORAL",
+  "MOUNT",
+  "MOUSE",
+  "MOUTH",
+  "MOVED",
+  "MOVIE",
+  "MURKY",
+  "MUSIC",
+  "NAIVE",
+  "NAVAL",
+  "NERVE",
+  "NEVER",
+  "NIGHT",
+  "NOBLE",
+  "NOISE",
+  "NORTH",
+  "NOTED",
+  "NOVEL",
+  "NYLON",
+  "OCCUR",
+  "OCTAL",
+  "OFFER",
+  "OFTEN",
+  "OLIVE",
+  "ORDER",
+  "OTHER",
+  "OUGHT",
+  "OUTER",
+  "OWNER",
+  "OXIDE",
+  "OZONE",
+  "PAINT",
+  "PANIC",
+  "PAPER",
+  "PARTY",
+  "PASTA",
+  "PATCH",
+  "PAUSE",
+  "PEACE",
+  "PEARL",
+  "PEDAL",
+  "PENNY",
+  "PETAL",
+  "PHASE",
+  "PHONE",
+  "PHOTO",
+  "PIANO",
+  "PIECE",
+  "PILOT",
+  "PIXEL",
+  "PIZZA",
+  "PLACE",
+  "PLAIN",
+  "PLANE",
+  "PLANT",
+  "PLATE",
+  "PLAZA",
+  "PLEAD",
+  "PLUCK",
+  "PLUMB",
+  "PLUME",
+  "PLUMP",
+  "PLUNGE",
+  "POEM",
+  "POINT",
+  "POLAR",
+  "POSED",
+  "POWER",
+  "PRESS",
+  "PRICE",
+  "PRIDE",
+  "PRIME",
+  "PRINT",
+  "PRIOR",
+  "PRIZE",
+  "PROBE",
+  "PRONE",
+  "PROUD",
+  "PROVE",
+  "PROWL",
+  "PULSE",
+  "PUPIL",
+  "PURSE",
+  "QUEEN",
+  "QUERY",
+  "QUEST",
+  "QUEUE",
+  "QUICK",
+  "QUIET",
+  "QUOTA",
+  "QUOTE",
+  "RADAR",
+  "RAISE",
+  "RANGE",
+  "RAPID",
+  "RATIO",
+  "REACH",
+  "READY",
+  "REALM",
+  "REBEL",
+  "RECUR",
+  "REGAL",
+  "REIGN",
+  "RELAX",
+  "REMIX",
+  "REPAY",
+  "REPEL",
+  "REPLY",
+  "RIDER",
+  "RIDGE",
+  "RIGHT",
+  "RISKY",
+  "RIVAL",
+  "RIVET",
+  "ROBOT",
+  "ROCKY",
+  "ROUGE",
+  "ROUGH",
+  "ROUND",
+  "ROUTE",
+  "ROWDY",
+  "ROYAL",
+  "RUGBY",
+  "RULER",
+  "RURAL",
+  "SADLY",
+  "SAINT",
+  "SALAD",
+  "SAUCE",
+  "SAVED",
+  "SCALE",
+  "SCARE",
+  "SCENE",
+  "SCOPE",
+  "SCORE",
+  "SCOUT",
+  "SEIZE",
+  "SENSE",
+  "SERVE",
+  "SETUP",
+  "SEVEN",
+  "SHADE",
+  "SHAKE",
+  "SHALL",
+  "SHAME",
+  "SHAPE",
+  "SHARE",
+  "SHARK",
+  "SHARP",
+  "SHEEP",
+  "SHEER",
+  "SHELF",
+  "SHIFT",
+  "SHINE",
+  "SHIRT",
+  "SHOCK",
+  "SHOOT",
+  "SHORT",
+  "SHOUT",
+  "SIGHT",
+  "SINCE",
+  "SIXTH",
+  "SKILL",
+  "SKULL",
+  "SLATE",
+  "SLAVE",
+  "SLEEK",
+  "SLEEP",
+  "SLICE",
+  "SLIDE",
+  "SLOPE",
+  "SMART",
+  "SMILE",
+  "SMOKE",
+  "SNACK",
+  "SNAKE",
+  "SOLAR",
+  "SOLID",
+  "SOLVE",
+  "SORRY",
+  "SOUND",
+  "SOUTH",
+  "SPACE",
+  "SPARK",
+  "SPEAK",
+  "SPEED",
+  "SPEND",
+  "SPICE",
+  "SPILL",
+  "SPINE",
+  "SPORT",
+  "SPRAY",
+  "SQUAD",
+  "STACK",
+  "STAFF",
+  "STAGE",
+  "STAKE",
+  "STAND",
+  "STARE",
+  "START",
+  "STATE",
+  "STAVE",
+  "STEAL",
+  "STEEL",
+  "STEEP",
+  "STERN",
+  "STICK",
+  "STILL",
+  "STOCK",
+  "STONE",
+  "STOOD",
+  "STORE",
+  "STORM",
+  "STORY",
+  "STOVE",
+  "STRAP",
+  "STRAY",
+  "STRIP",
+  "STUDY",
+  "STUCK",
+  "STYLE",
+  "SUGAR",
+  "SUITE",
+  "SUNNY",
+  "SUPER",
+  "SURGE",
+  "SWAMP",
+  "SWEAR",
+  "SWEEP",
+  "SWEET",
+  "SWEPT",
+  "SWIFT",
+  "SWORD",
+  "SWORN",
+  "TABLE",
+  "TASTE",
+  "TEACH",
+  "THEME",
+  "THERE",
+  "THESE",
+  "THING",
+  "THINK",
+  "THIRD",
+  "THORN",
+  "THOSE",
+  "THREE",
+  "THREW",
+  "THROW",
+  "THUMB",
+  "TIGER",
+  "TIGHT",
+  "TIMER",
+  "TIRED",
+  "TITLE",
+  "TODAY",
+  "TOKEN",
+  "TORCH",
+  "TOTAL",
+  "TOUCH",
+  "TOUGH",
+  "TOWER",
+  "TOXIC",
+  "TRACE",
+  "TRACK",
+  "TRADE",
+  "TRAIL",
+  "TRAIN",
+  "TRAIT",
+  "TRAMP",
+  "TRASH",
+  "TREAT",
+  "TREND",
+  "TRIAL",
+  "TRICK",
+  "TRIED",
+  "TROOP",
+  "TRUCK",
+  "TRULY",
+  "TRUMP",
+  "TRUST",
+  "TRUTH",
+  "TULIP",
+  "TUMOR",
+  "TWIST",
+  "TYPED",
+  "ULTRA",
+  "UNDER",
+  "UNIFY",
+  "UNION",
+  "UNITE",
+  "UNTIL",
+  "UPPER",
+  "UPSET",
+  "URBAN",
+  "USAGE",
+  "USHER",
+  "UTTER",
+  "VAGUE",
+  "VALID",
+  "VALOR",
+  "VALUE",
+  "VALVE",
+  "VAULT",
+  "VERSE",
+  "VIRAL",
+  "VISIT",
+  "VISTA",
+  "VITAL",
+  "VIVID",
+  "VOCAL",
+  "VOICE",
+  "VOTER",
+  "WAGON",
+  "WASTE",
+  "WATCH",
+  "WATER",
+  "WEARY",
+  "WEAVE",
+  "WEDGE",
+  "WEIRD",
+  "WHACK",
+  "WHALE",
+  "WHEAT",
+  "WHEEL",
+  "WHERE",
+  "WHILE",
+  "WHITE",
+  "WHOLE",
+  "WHOSE",
+  "WIDER",
+  "WITCH",
+  "WOMAN",
+  "WOMEN",
+  "WORLD",
+  "WORRY",
+  "WORSE",
+  "WORST",
+  "WORTH",
+  "WOULD",
+  "WRITE",
+  "WRONG",
+  "WROTE",
+  "YACHT",
+  "YIELD",
+  "YOUNG",
+  "YOUTH",
+  "ZEBRA",
+  "ZONAL"
+];
+const MAX_GUESSES = 6;
+const WORD_LENGTH = 5;
+const TIMER_START = 60;
+const ROW_KEYS = ["r0", "r1", "r2", "r3", "r4", "r5"];
+const CELL_KEYS = ["c0", "c1", "c2", "c3", "c4"];
+const BTN_STYLE = {
+  fontFamily: '"Press Start 2P", monospace',
+  fontSize: "0.6rem",
+  letterSpacing: "0.15em",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  padding: "0"
+};
+function getRandomWord() {
+  return WORDS[Math.floor(Math.random() * WORDS.length)];
+}
+function checkGuess(guess, target) {
+  const result = Array(WORD_LENGTH).fill("gray");
+  const targetArr = target.split("");
+  const guessArr = guess.split("");
+  for (let i2 = 0; i2 < WORD_LENGTH; i2++) {
+    if (guessArr[i2] === targetArr[i2]) {
+      result[i2] = "green";
+      targetArr[i2] = "#";
+      guessArr[i2] = "*";
+    }
+  }
+  for (let i2 = 0; i2 < WORD_LENGTH; i2++) {
+    if (guessArr[i2] === "*") continue;
+    const idx = targetArr.indexOf(guessArr[i2]);
+    if (idx !== -1) {
+      result[i2] = "yellow";
+      targetArr[idx] = "#";
+    }
+  }
+  return result;
+}
+const CELL_COLOR = {
+  green: "#6aaa64",
+  yellow: "#c9b458",
+  gray: "#787c7e",
+  empty: "transparent"
+};
+function WordlePuzzleGame({
+  onComplete,
+  onExit,
+  heading: heading2 = "Wordle"
+}) {
+  const [score, setScore] = reactExports.useState(0);
+  const [puzzleNumber, setPuzzleNumber] = reactExports.useState(1);
+  const [timeLeft, setTimeLeft] = reactExports.useState(TIMER_START);
+  const [gameOver, setGameOver] = reactExports.useState(false);
+  const [gameOverReason, setGameOverReason] = reactExports.useState(
+    "guesses"
+  );
+  const [guesses, setGuesses] = reactExports.useState([]);
+  const [colors2, setColors] = reactExports.useState([]);
+  const [currentGuess, setCurrentGuess] = reactExports.useState("");
+  const [targetWord, setTargetWord] = reactExports.useState(() => getRandomWord());
+  const [feedback, setFeedback] = reactExports.useState("");
+  const [solved, setSolved] = reactExports.useState(false);
+  const inputRef = reactExports.useRef(null);
+  const timerRef = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    if (gameOver || solved) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t2) => {
+        if (t2 <= 1) {
+          clearInterval(timerRef.current);
+          setGameOver(true);
+          setGameOverReason("time");
+          return 0;
+        }
+        return t2 - 1;
+      });
+    }, 1e3);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [gameOver, solved]);
+  reactExports.useEffect(() => {
+    var _a3;
+    if (!gameOver) (_a3 = inputRef.current) == null ? void 0 : _a3.focus();
+  }, [gameOver]);
+  const submitGuess = reactExports.useCallback(() => {
+    const g2 = currentGuess.toUpperCase();
+    if (g2.length !== WORD_LENGTH) return;
+    if (!WORDS.includes(g2)) {
+      setFeedback("Not in word list");
+      setTimeout(() => setFeedback(""), 1200);
+      return;
+    }
+    const result = checkGuess(g2, targetWord);
+    const newGuesses = [...guesses, g2];
+    const newColors = [...colors2, result];
+    setGuesses(newGuesses);
+    setColors(newColors);
+    setCurrentGuess("");
+    if (g2 === targetWord) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      const pts = timeLeft;
+      setScore((s2) => s2 + pts);
+      setSolved(true);
+      setFeedback(`+${pts}!`);
+      setTimeout(() => {
+        setSolved(false);
+        setGuesses([]);
+        setColors([]);
+        setCurrentGuess("");
+        setFeedback("");
+        setTargetWord(getRandomWord());
+        setPuzzleNumber((n2) => n2 + 1);
+      }, 1200);
+    } else if (newGuesses.length >= MAX_GUESSES) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setGameOver(true);
+      setGameOverReason("guesses");
+      setFeedback(targetWord);
+    }
+  }, [currentGuess, guesses, colors2, targetWord, timeLeft]);
+  reactExports.useEffect(() => {
+    if (gameOver) return;
+    const handler = (e2) => {
+      if (e2.key === "Enter") {
+        submitGuess();
+      } else if (e2.key === "Backspace") {
+        setCurrentGuess((prev) => prev.slice(0, -1));
+      } else if (/^[a-zA-Z]$/.test(e2.key)) {
+        setCurrentGuess(
+          (prev) => prev.length < WORD_LENGTH ? prev + e2.key.toUpperCase() : prev
+        );
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [gameOver, submitGuess]);
+  const handleTryAgain = reactExports.useCallback(() => {
+    setScore(0);
+    setPuzzleNumber(1);
+    setGuesses([]);
+    setColors([]);
+    setCurrentGuess("");
+    setFeedback("");
+    setTargetWord(getRandomWord());
+    setTimeLeft(TIMER_START);
+    setGameOver(false);
+    setSolved(false);
+  }, []);
+  const pxStyle = {
+    fontFamily: '"Press Start 2P", monospace'
+  };
+  const cellSize = "min(13vw, 48px)";
+  const rows = [];
+  for (let r2 = 0; r2 < MAX_GUESSES; r2++) {
+    if (r2 < guesses.length) {
+      rows.push({
+        letters: guesses[r2].split(""),
+        rowColors: colors2[r2]
+      });
+    } else if (r2 === guesses.length && !gameOver) {
+      const letters = currentGuess.split("");
+      while (letters.length < WORD_LENGTH) letters.push("");
+      rows.push({
+        letters,
+        rowColors: Array(WORD_LENGTH).fill("empty")
+      });
+    } else {
+      rows.push({
+        letters: ["", "", "", "", ""],
+        rowColors: Array(WORD_LENGTH).fill("empty")
+      });
+    }
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      className: "flex-1 flex flex-col items-center justify-start gap-3 pt-4 pb-4 px-2 select-none overflow-auto",
+      "data-ocid": "wordle_puzzle.game",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "input",
+          {
+            ref: inputRef,
+            type: "text",
+            className: "opacity-0 absolute pointer-events-none",
+            style: { width: 1, height: 1 },
+            value: currentGuess,
+            readOnly: true,
+            onChange: (e2) => {
+              const val = e2.target.value.toUpperCase().slice(0, WORD_LENGTH);
+              setCurrentGuess(val);
+            }
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "text-foreground",
+            style: { ...pxStyle, fontSize: "1rem", letterSpacing: "0.15em" },
+            children: heading2
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "flex gap-5 text-muted-foreground",
+            style: { ...pxStyle, fontSize: "0.55rem", letterSpacing: "0.1em" },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "wordle_puzzle.puzzle_number", children: [
+                "#",
+                puzzleNumber
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "wordle_puzzle.score", children: [
+                "Score: ",
+                score
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "span",
+                {
+                  "data-ocid": "wordle_puzzle.timer",
+                  style: { color: timeLeft <= 10 ? "var(--destructive)" : void 0 },
+                  children: [
+                    timeLeft,
+                    "s"
+                  ]
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            style: {
+              ...pxStyle,
+              fontSize: "0.55rem",
+              letterSpacing: "0.1em",
+              minHeight: "1.4em",
+              color: feedback.startsWith("+") ? "var(--primary)" : feedback === "" ? "transparent" : "var(--destructive)"
+            },
+            "data-ocid": "wordle_puzzle.feedback",
+            children: feedback || "."
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-1", "data-ocid": "wordle_puzzle.grid", children: rows.map((row, ri) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-1", children: row.letters.map((letter, ci) => {
+          const col = row.rowColors[ci];
+          const isEmpty2 = col === "empty";
+          return /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              style: {
+                width: cellSize,
+                height: cellSize,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: isEmpty2 ? "transparent" : CELL_COLOR[col],
+                border: isEmpty2 ? "2px solid var(--border)" : `2px solid ${CELL_COLOR[col]}`,
+                ...pxStyle,
+                fontSize: "calc(min(13vw, 48px) * 0.35)",
+                color: isEmpty2 ? "var(--foreground)" : "#ffffff",
+                fontWeight: "bold",
+                transition: "background-color 0.15s"
+              },
+              children: letter
+            },
+            `${ROW_KEYS[ri]}-${CELL_KEYS[ci]}`
+          );
+        }) }, ROW_KEYS[ri])) }),
+        !gameOver && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "data-ocid": "wordle_puzzle.cancel_button",
+            className: "transition-colors hover:text-muted-foreground text-foreground mt-1",
+            style: BTN_STYLE,
+            onClick: onExit,
+            children: "Back"
+          }
+        ),
+        gameOver && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "flex flex-col items-center gap-4 mt-2",
+            "data-ocid": "wordle_puzzle.game_over",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "div",
+                {
+                  style: {
+                    ...pxStyle,
+                    fontSize: "0.65rem",
+                    letterSpacing: "0.15em",
+                    color: "var(--destructive)"
+                  },
+                  children: gameOverReason === "time" ? "Time's up!" : "No more guesses!"
+                }
+              ),
+              gameOverReason === "guesses" && feedback && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "div",
+                {
+                  style: {
+                    ...pxStyle,
+                    fontSize: "0.55rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--muted-foreground)"
+                  },
+                  children: [
+                    "Word: ",
+                    feedback
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-6", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    "data-ocid": "wordle_puzzle.try_again_button",
+                    className: "transition-colors hover:text-muted-foreground text-foreground",
+                    style: BTN_STYLE,
+                    onClick: handleTryAgain,
+                    children: "Try again"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    "data-ocid": "wordle_puzzle.submit_button",
+                    className: "transition-colors hover:text-muted-foreground text-foreground",
+                    style: BTN_STYLE,
+                    onClick: () => onComplete(score),
+                    children: "Submit score"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    "data-ocid": "wordle_puzzle.back_button",
+                    className: "transition-colors hover:text-muted-foreground text-foreground",
+                    style: BTN_STYLE,
+                    onClick: onExit,
+                    children: "Back"
+                  }
+                )
+              ] })
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
 const MENU_ITEMS = [
   "Story",
   "Puzzles",
@@ -67517,7 +68613,7 @@ const MENU_ITEMS = [
   "Leaderboard",
   "Exit"
 ];
-const PUZZLE_MENU_ITEMS = ["Chess", "Back"];
+const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"];
 const CONTENT = {
   intro: [
     "welcome, fellow researcher",
@@ -67907,6 +69003,7 @@ function NameEntryScreen({ score, onSubmit }) {
 function StartScreen({
   onStart,
   onChess,
+  onWordle,
   onSettings,
   onHiScores,
   onExit,
@@ -67946,6 +69043,7 @@ function StartScreen({
         } else if (e2.key === "Enter") {
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
           if (chosen === "Chess") onChess();
+          else if (chosen === "Wordle") onWordle();
           else if (chosen === "Back") setSubMenu("main");
         }
       }
@@ -67958,6 +69056,7 @@ function StartScreen({
     subMenu,
     onStart,
     onChess,
+    onWordle,
     onSettings,
     onHiScores,
     onExit
@@ -68076,6 +69175,7 @@ function StartScreen({
           onClick: () => {
             setPuzzleSelectedIdx(activeIdx);
             if (item === "Chess") onChess();
+            else if (item === "Wordle") onWordle();
             else if (item === "Back") setSubMenu("main");
           },
           children: isSelected ? `> ${item}` : `  ${item}`
@@ -68381,6 +69481,13 @@ function TextGameModal({ onComplete }) {
     setPendingScore(score);
     setPhase({ type: "nameEntry", score });
   }, []);
+  const handleStartWordle = reactExports.useCallback(() => {
+    setPhase({ type: "wordle" });
+  }, []);
+  const handleWordleComplete = reactExports.useCallback((score) => {
+    setPendingScore(score);
+    setPhase({ type: "nameEntry", score });
+  }, []);
   const handleCloseSubScreen = reactExports.useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
@@ -68639,6 +69746,7 @@ function TextGameModal({ onComplete }) {
           {
             onStart: handleStart,
             onChess: handleStartChess,
+            onWordle: handleStartWordle,
             onSettings: handleOpenSettings,
             onHiScores: handleOpenLeaderboard,
             onExit: handleExit,
@@ -68807,6 +69915,15 @@ function TextGameModal({ onComplete }) {
             onComplete: handleChessComplete,
             onExit: () => setPhase({ type: "idle" }),
             heading: "Chess"
+          }
+        );
+      case "wordle":
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(
+          WordlePuzzleGame,
+          {
+            onComplete: handleWordleComplete,
+            onExit: () => setPhase({ type: "idle" }),
+            heading: "Wordle"
           }
         );
       default:

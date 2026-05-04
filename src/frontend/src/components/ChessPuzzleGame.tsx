@@ -233,9 +233,8 @@ export default function ChessPuzzleGame({
       if (playerSolution.length === 1) {
         // Puzzle complete
         if (timerRef.current) clearInterval(timerRef.current);
-        const points = 15;
-        setScore((s) => s + points);
-        setFeedback(`+${points}!`);
+        setScore((s) => s + timeLeft);
+        setFeedback(`+${timeLeft}!`);
         setTimeout(() => {
           setPuzzleNumber((n) => n + 1);
           setGameOver(false);
@@ -262,7 +261,7 @@ export default function ChessPuzzleGame({
         }, 500);
       }
     },
-    [fetchNext],
+    [fetchNext, timeLeft],
   );
 
   applyMoveRef.current = applyMove;
