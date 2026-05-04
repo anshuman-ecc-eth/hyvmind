@@ -318,7 +318,7 @@ function LeaderboardScreen({
               letterSpacing: "0.1em",
             }}
           >
-            NO SCORES YET
+            No scores yet
           </div>
         ) : (
           leaderboard.map((entry, idx) => (
@@ -356,7 +356,7 @@ function LeaderboardScreen({
         }}
         onClick={onBack}
       >
-        {"> BACK"}
+        {"> Back"}
       </button>
     </div>
   );
@@ -457,7 +457,7 @@ function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
             if (name.length > 0) onSubmit(name);
           }}
         >
-          [SUBMIT]
+          Submit
         </button>
       </div>
       <div
@@ -547,56 +547,69 @@ function StartScreen({
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
       {/* Content box — flat, no card */}
       <div className="flex flex-col items-center">
-        {/* Title */}
-        <div className="flex flex-col items-center gap-3">
+        {/* Title / Puzzles heading */}
+        {subMenu === "main" ? (
+          <>
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="text-foreground tracking-widest"
+                style={{
+                  fontFamily: '"Press Start 2P", monospace',
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                aria-label="HYVMIND"
+              >
+                {"HYVMIND".split("").map((letter) =>
+                  letter === "Y" ? (
+                    <span
+                      key={letter}
+                      style={{
+                        fontSize: "2.5rem",
+                        verticalAlign: "middle",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {letter}
+                    </span>
+                  ) : (
+                    <span
+                      key={letter}
+                      style={{
+                        fontSize: "2rem",
+                        verticalAlign: "middle",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {letter}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+            <div
+              className="text-muted-foreground text-center mt-3"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.5rem",
+                letterSpacing: "0.05em",
+              }}
+            >
+              a digital sanctuary for legal researchers
+            </div>
+          </>
+        ) : (
           <div
             className="text-foreground tracking-widest"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              display: "flex",
-              alignItems: "center",
+              fontSize: "1rem",
+              letterSpacing: "0.15em",
             }}
-            aria-label="HYVMIND"
           >
-            {"HYVMIND".split("").map((letter) =>
-              letter === "Y" ? (
-                <span
-                  key={letter}
-                  style={{
-                    fontSize: "2.5rem",
-                    verticalAlign: "middle",
-                    lineHeight: 1,
-                  }}
-                >
-                  {letter}
-                </span>
-              ) : (
-                <span
-                  key={letter}
-                  style={{
-                    fontSize: "2rem",
-                    verticalAlign: "middle",
-                    lineHeight: 1,
-                  }}
-                >
-                  {letter}
-                </span>
-              ),
-            )}
+            Puzzles
           </div>
-        </div>
-
-        {/* Subtitle */}
-        <div
-          className="text-muted-foreground text-center mt-3"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.5rem",
-            letterSpacing: "0.05em",
-          }}
-        >
-          a digital sanctuary for legal researchers
-        </div>
+        )}
 
         {/* Menu */}
         <div className="flex flex-col items-center gap-3 mt-6">
@@ -1549,7 +1562,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             }}
             aria-label="Close text game"
           >
-            [×]
+            ×
           </button>
         </div>
 
@@ -1587,7 +1600,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   await navigator.clipboard.writeText(secretCode);
                 }}
               >
-                [COPY]
+                Copy
               </button>
               <button
                 type="button"

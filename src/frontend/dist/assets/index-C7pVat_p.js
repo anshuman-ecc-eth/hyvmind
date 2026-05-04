@@ -66901,12 +66901,12 @@ function ChessPuzzleGame({
         if (timerRef.current) clearInterval(timerRef.current);
         setGameOver(true);
         setFeedback("Incorrect!");
-        animateSolutionRef.current();
+        setTimeout(() => animateSolutionRef.current(), 500);
         return;
       }
       if (playerSolution.length === 1) {
         if (timerRef.current) clearInterval(timerRef.current);
-        const points = 50;
+        const points = 15;
         setScore((s2) => s2 + points);
         setFeedback(`+${points}!`);
         setTimeout(() => {
@@ -67022,7 +67022,7 @@ function ChessPuzzleGame({
                 padding: "0"
               },
               "data-ocid": "chess_puzzle.cancel_button",
-              children: "[BACK]"
+              children: "Back"
             }
           )
         ]
@@ -67077,7 +67077,7 @@ function ChessPuzzleGame({
                   padding: "0"
                 },
                 "data-ocid": "chess_puzzle.cancel_button",
-                children: "[BACK]"
+                children: "Back"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67096,7 +67096,7 @@ function ChessPuzzleGame({
                   padding: "0"
                 },
                 "data-ocid": "chess_puzzle.retry_button",
-                children: "[RETRY]"
+                children: "Retry"
               }
             )
           ] })
@@ -67148,18 +67148,21 @@ function ChessPuzzleGame({
             "div",
             {
               id: "chess-board-container",
-              style: { width: "min(88vw, 400px)", pointerEvents: "none" }
+              style: {
+                width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)",
+                pointerEvents: "none"
+              }
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-1", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "div",
               {
-                className: "text-destructive",
                 style: {
                   fontFamily: '"Press Start 2P", monospace',
                   fontSize: "0.6rem",
-                  letterSpacing: "0.15em"
+                  letterSpacing: "0.15em",
+                  color: "var(--destructive)"
                 },
                 "data-ocid": "chess_puzzle.error_state",
                 children: feedback === "Time's up!" ? "TIME'S UP!" : "INCORRECT!"
@@ -67228,7 +67231,7 @@ function ChessPuzzleGame({
                   setTimeLeft(60);
                   void fetchNext();
                 },
-                children: "[TRY AGAIN]"
+                children: "Try again"
               }
             ),
             score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67247,7 +67250,7 @@ function ChessPuzzleGame({
                 },
                 "data-ocid": "chess_puzzle.submit_button",
                 onClick: () => onComplete(score),
-                children: "[SUBMIT SCORE]"
+                children: "Submit score"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67266,7 +67269,7 @@ function ChessPuzzleGame({
                 },
                 "data-ocid": "chess_puzzle.exit_button",
                 onClick: onExit,
-                children: "[BACK]"
+                children: "Back"
               }
             )
           ] })
@@ -67318,7 +67321,10 @@ function ChessPuzzleGame({
             "div",
             {
               id: "chess-board-container",
-              style: { width: "min(88vw, 400px)", pointerEvents: "none" }
+              style: {
+                width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)",
+                pointerEvents: "none"
+              }
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67358,7 +67364,7 @@ function ChessPuzzleGame({
                   setTimeLeft(60);
                   void fetchNext();
                 },
-                children: "[TRY AGAIN]"
+                children: "Try again"
               }
             ),
             score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67377,7 +67383,7 @@ function ChessPuzzleGame({
                 },
                 "data-ocid": "chess_puzzle.submit_button",
                 onClick: () => onComplete(score),
-                children: "[SUBMIT SCORE]"
+                children: "Submit score"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -67396,7 +67402,7 @@ function ChessPuzzleGame({
                 },
                 "data-ocid": "chess_puzzle.exit_button",
                 onClick: onExit,
-                children: "[BACK]"
+                children: "Back"
               }
             )
           ] })
@@ -67443,8 +67449,13 @@ function ChessPuzzleGame({
               /* @__PURE__ */ jsxRuntimeExports.jsxs(
                 "span",
                 {
-                  className: `tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`,
-                  style: { fontSize: "0.8rem" },
+                  className: "tabular-nums",
+                  style: {
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.15em",
+                    color: timeLeft <= 10 ? "var(--destructive)" : void 0
+                  },
                   "data-ocid": "chess_puzzle.timer",
                   children: [
                     timeLeft,
@@ -67455,15 +67466,22 @@ function ChessPuzzleGame({
             ]
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "chess-board-container", style: { width: "min(88vw, 400px)" } }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            id: "chess-board-container",
+            style: { width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)" }
+          }
+        ),
         feedback && /* @__PURE__ */ jsxRuntimeExports.jsx(
           "div",
           {
-            className: `text-center min-h-[1.5rem] ${feedback.startsWith("+") || feedback === "Correct!" ? "text-green-500" : "text-destructive"}`,
+            className: "text-center min-h-[1.5rem]",
             style: {
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
-              letterSpacing: "0.1em"
+              letterSpacing: "0.1em",
+              color: feedback.startsWith("+") || feedback === "Correct!" ? "var(--primary)" : "var(--destructive)"
             },
             "data-ocid": "chess_puzzle.feedback",
             children: feedback
@@ -67485,7 +67503,7 @@ function ChessPuzzleGame({
               padding: "0"
             },
             "data-ocid": "chess_puzzle.cancel_button",
-            children: "[BACK]"
+            children: "Back"
           }
         )
       ]
@@ -67728,7 +67746,7 @@ function LeaderboardScreen({
               fontSize: "0.55rem",
               letterSpacing: "0.1em"
             },
-            children: "NO SCORES YET"
+            children: "No scores yet"
           }
         ) : leaderboard.map((entry, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "div",
@@ -67771,7 +67789,7 @@ function LeaderboardScreen({
           padding: "0"
         },
         onClick: onBack,
-        children: "> BACK"
+        children: "> Back"
       }
     )
   ] });
@@ -67868,7 +67886,7 @@ function NameEntryScreen({ score, onSubmit }) {
           onClick: () => {
             if (name.length > 0) onSubmit(name);
           },
-          children: "[SUBMIT]"
+          children: "Submit"
         }
       )
     ] }),
@@ -67942,53 +67960,66 @@ function StartScreen({
     onExit
   ]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    subMenu === "main" ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "text-foreground tracking-widest",
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            display: "flex",
+            alignItems: "center"
+          },
+          "aria-label": "HYVMIND",
+          children: "HYVMIND".split("").map(
+            (letter) => letter === "Y" ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                style: {
+                  fontSize: "2.5rem",
+                  verticalAlign: "middle",
+                  lineHeight: 1
+                },
+                children: letter
+              },
+              letter
+            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                style: {
+                  fontSize: "2rem",
+                  verticalAlign: "middle",
+                  lineHeight: 1
+                },
+                children: letter
+              },
+              letter
+            )
+          )
+        }
+      ) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "text-muted-foreground text-center mt-3",
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.5rem",
+            letterSpacing: "0.05em"
+          },
+          children: "a digital sanctuary for legal researchers"
+        }
+      )
+    ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
         className: "text-foreground tracking-widest",
         style: {
           fontFamily: '"Press Start 2P", monospace',
-          display: "flex",
-          alignItems: "center"
+          fontSize: "1rem",
+          letterSpacing: "0.15em"
         },
-        "aria-label": "HYVMIND",
-        children: "HYVMIND".split("").map(
-          (letter) => letter === "Y" ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "span",
-            {
-              style: {
-                fontSize: "2.5rem",
-                verticalAlign: "middle",
-                lineHeight: 1
-              },
-              children: letter
-            },
-            letter
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "span",
-            {
-              style: {
-                fontSize: "2rem",
-                verticalAlign: "middle",
-                lineHeight: 1
-              },
-              children: letter
-            },
-            letter
-          )
-        )
-      }
-    ) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-muted-foreground text-center mt-3",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.5rem",
-          letterSpacing: "0.05em"
-        },
-        children: "a digital sanctuary for legal researchers"
+        children: "Puzzles"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
@@ -68798,7 +68829,7 @@ function TextGameModal({ onComplete }) {
                   onComplete();
                 },
                 "aria-label": "Close text game",
-                children: "[×]"
+                children: "×"
               }
             )
           ] }),
@@ -68840,7 +68871,7 @@ function TextGameModal({ onComplete }) {
                       onClick: async () => {
                         await navigator.clipboard.writeText(secretCode);
                       },
-                      children: "[COPY]"
+                      children: "Copy"
                     }
                   ),
                   /* @__PURE__ */ jsxRuntimeExports.jsx(

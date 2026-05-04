@@ -225,7 +225,7 @@ export default function ChessPuzzleGame({
         if (timerRef.current) clearInterval(timerRef.current);
         setGameOver(true);
         setFeedback("Incorrect!");
-        animateSolutionRef.current();
+        setTimeout(() => animateSolutionRef.current(), 500);
         return;
       }
 
@@ -233,7 +233,7 @@ export default function ChessPuzzleGame({
       if (playerSolution.length === 1) {
         // Puzzle complete
         if (timerRef.current) clearInterval(timerRef.current);
-        const points = 50;
+        const points = 15;
         setScore((s) => s + points);
         setFeedback(`+${points}!`);
         setTimeout(() => {
@@ -359,7 +359,7 @@ export default function ChessPuzzleGame({
           }}
           data-ocid="chess_puzzle.cancel_button"
         >
-          [BACK]
+          Back
         </button>
       </div>
     );
@@ -408,7 +408,7 @@ export default function ChessPuzzleGame({
             }}
             data-ocid="chess_puzzle.cancel_button"
           >
-            [BACK]
+            Back
           </button>
           <button
             type="button"
@@ -425,7 +425,7 @@ export default function ChessPuzzleGame({
             }}
             data-ocid="chess_puzzle.retry_button"
           >
-            [RETRY]
+            Retry
           </button>
         </div>
       </div>
@@ -464,15 +464,18 @@ export default function ChessPuzzleGame({
         </div>
         <div
           id="chess-board-container"
-          style={{ width: "min(88vw, 400px)", pointerEvents: "none" }}
+          style={{
+            width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)",
+            pointerEvents: "none",
+          }}
         />
         <div className="flex flex-col items-center gap-1">
           <div
-            className="text-destructive"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
+              color: "var(--destructive)",
             }}
             data-ocid="chess_puzzle.error_state"
           >
@@ -530,7 +533,7 @@ export default function ChessPuzzleGame({
               void fetchNext();
             }}
           >
-            [TRY AGAIN]
+            Try again
           </button>
           {score > 0 && (
             <button
@@ -548,7 +551,7 @@ export default function ChessPuzzleGame({
               data-ocid="chess_puzzle.submit_button"
               onClick={() => onComplete(score)}
             >
-              [SUBMIT SCORE]
+              Submit score
             </button>
           )}
           <button
@@ -566,7 +569,7 @@ export default function ChessPuzzleGame({
             data-ocid="chess_puzzle.exit_button"
             onClick={onExit}
           >
-            [BACK]
+            Back
           </button>
         </div>
       </div>
@@ -605,7 +608,10 @@ export default function ChessPuzzleGame({
         </div>
         <div
           id="chess-board-container"
-          style={{ width: "min(88vw, 400px)", pointerEvents: "none" }}
+          style={{
+            width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)",
+            pointerEvents: "none",
+          }}
         />
         <div
           className="text-center text-muted-foreground animate-pulse"
@@ -641,7 +647,7 @@ export default function ChessPuzzleGame({
               void fetchNext();
             }}
           >
-            [TRY AGAIN]
+            Try again
           </button>
           {score > 0 && (
             <button
@@ -659,7 +665,7 @@ export default function ChessPuzzleGame({
               data-ocid="chess_puzzle.submit_button"
               onClick={() => onComplete(score)}
             >
-              [SUBMIT SCORE]
+              Submit score
             </button>
           )}
           <button
@@ -677,7 +683,7 @@ export default function ChessPuzzleGame({
             data-ocid="chess_puzzle.exit_button"
             onClick={onExit}
           >
-            [BACK]
+            Back
           </button>
         </div>
       </div>
@@ -713,25 +719,33 @@ export default function ChessPuzzleGame({
           Score: <span className="text-foreground">{score}</span>
         </span>
         <span
-          className={`tabular-nums ${timeLeft <= 10 ? "text-destructive" : "text-foreground"}`}
-          style={{ fontSize: "0.8rem" }}
+          className="tabular-nums"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.8rem",
+            letterSpacing: "0.15em",
+            color: timeLeft <= 10 ? "var(--destructive)" : undefined,
+          }}
           data-ocid="chess_puzzle.timer"
         >
           {timeLeft}s
         </span>
       </div>
-      <div id="chess-board-container" style={{ width: "min(88vw, 400px)" }} />
+      <div
+        id="chess-board-container"
+        style={{ width: "min(calc(90vw - 32px), calc(90vh - 180px), 400px)" }}
+      />
       {feedback && (
         <div
-          className={`text-center min-h-[1.5rem] ${
-            feedback.startsWith("+") || feedback === "Correct!"
-              ? "text-green-500"
-              : "text-destructive"
-          }`}
+          className="text-center min-h-[1.5rem]"
           style={{
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
             letterSpacing: "0.1em",
+            color:
+              feedback.startsWith("+") || feedback === "Correct!"
+                ? "var(--primary)"
+                : "var(--destructive)",
           }}
           data-ocid="chess_puzzle.feedback"
         >
@@ -753,7 +767,7 @@ export default function ChessPuzzleGame({
         }}
         data-ocid="chess_puzzle.cancel_button"
       >
-        [BACK]
+        Back
       </button>
     </div>
   );
