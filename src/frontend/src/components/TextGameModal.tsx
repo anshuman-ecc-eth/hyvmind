@@ -214,7 +214,7 @@ function SettingsScreen({
     {
       key: "skipMessages",
       label: "Narrative",
-      value: settings.skipMessages ? "ON" : "OFF",
+      value: settings.skipMessages ? "OFF" : "ON",
     },
     { key: "music", label: "Sound", value: settings.music.toUpperCase() },
     { key: "back", label: "Back" },
@@ -896,6 +896,7 @@ function ScrambleDisplay({
           letterSpacing: "0.05em",
           lineHeight: "2",
           maxWidth: "80%",
+          fontWeight: "400",
         }}
       >
         {display.join("")}
