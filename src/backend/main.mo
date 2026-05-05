@@ -21,6 +21,7 @@ import Runtime "mo:core/Runtime";
 
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
+import Debug "mo:core/Debug";
 
 
 
@@ -1779,6 +1780,34 @@ actor {
     changes.toArray();
   };
 
+  // ─── Helper: check if attributes have actual value changes ──────────────────
+  func hasActualChanges(existingAttrs : [WeightedAttribute], newAttrs : [(Text, [Text])]) : Bool {
+    for ((key, values) in newAttrs.values()) {
+      // Find matching WeightedAttribute in existing
+      var foundExisting : ?WeightedAttribute = null;
+      for (wa in existingAttrs.values()) {
+        if (wa.key == key) { foundExisting := ?wa };
+      };
+      switch (foundExisting) {
+        case (null) {
+          // Key doesn't exist in existing → that's a change
+          return true;
+        };
+        case (?wa) {
+          // Key exists: check if any new value is missing from existing weightedValues
+          for (newVal in values.values()) {
+            var found = false;
+            for (wv in wa.weightedValues.values()) {
+              if (wv.value == newVal) { found := true };
+            };
+            if (not found) { return true };
+          };
+        };
+      };
+    };
+    false
+  };
+
   // ─── Helper: build full hierarchical path ────────────────────────────────────
   func buildFullPath(parentPath : ?Text, name : Text) : Text {
     switch (parentPath) {
@@ -1927,6 +1956,44 @@ actor {
     };
     null
   };
+  // ─── Helper: detect if input is extending an existing published graph ──────
+  func detectExtension(
+    input : PublishSourceGraphInput,
+    curations : Map.Map<NodeId, Curation>,
+    curationToPublished : Map.Map<NodeId, Text>,
+    publishedGraphs : Map.Map<Text, PublishedSourceGraphMeta>
+  ) : (Bool, ?Text) {
+    // Find first curation node in input
+    var curationNode : ?SourceGraphNodeInput = null;
+    for (node in input.nodes.values()) {
+      if (node.nodeType == "curation" and curationNode == null) {
+        curationNode := ?node;
+      };
+    };
+    switch (curationNode) {
+      case (null) { return (false, null) };
+      case (?cn) {
+        // Iterate through curationMap looking for name match
+        var result : (Bool, ?Text) = (false, null);
+        for ((cid, existingCuration) in curations.entries()) {
+          if (existingCuration.name == cn.name and result.0 == false) {
+            switch (curationToPublished.get(cid)) {
+              case (?pid) {
+                // Validate the published graph still exists
+                switch (publishedGraphs.get(pid)) {
+                  case (?_meta) { result := (true, ?pid) };
+                  case (null) {};
+                };
+              };
+              case (null) {};
+            };
+          };
+        };
+        result
+      };
+    };
+  };
+
   func previewLogic(
     caller : Principal,
     input : PublishSourceGraphInput,
@@ -1939,19 +2006,16 @@ actor {
     var edgesToCreate : Nat = 0;
     var edgesToUpdate : Nat = 0;
 
-    // ── Early extension detection: find publishedId by matching curation name ───
-    var earlyPublishedId : ?Text = null;
-    label previewExtDetect for (node in input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" }).values()) {
-      for ((cid, existingCuration) in curationMap.entries()) {
-        if (existingCuration.name == node.name) {
-          switch (curationToPublishedGraphId.get(cid)) {
-            case (?pid) {
-              earlyPublishedId := ?pid;
-              break previewExtDetect;
-            };
-            case (null) {};
-          };
-        };
+    // ── Extension detection ──────────────────────────────────────────────────
+    let (isExtension, publishedGraphId) = detectExtension(
+      input, curationMap, curationToPublishedGraphId, publishedSourceGraphs
+    );
+    switch (publishedGraphId) {
+      case (?pid) {
+        Debug.print("Preview: Extension detected - publishedGraphId = " # pid);
+      };
+      case (null) {
+        Debug.print("Preview: No extension detected (first publish)");
       };
     };
 
@@ -1979,7 +2043,7 @@ actor {
     let lawEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "lawEntity" });
     let interpEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "interpEntity" });
 
-    // Process curations
+    // ── Process curations ────────────────────────────────────────────────────
     for (node in curationNodes.values()) {
       let fullPath = buildFullPath(null, node.name);
       var foundId : ?NodeId = null;
@@ -2006,20 +2070,30 @@ actor {
             case (?c) { computeAttributeChanges(c.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          // Hierarchical check: only count as update if it belongs to this published graph
-          switch (earlyPublishedId) {
+          switch (publishedGraphId) {
             case (?pid) {
-              if (belongsToPublishedGraph(existingId, pid)) {
-                nodeOps.add({
-                  nodeType = "curation";
-                  localName = node.name;
-                  backendId = ?existingId;
-                  parentName = null;
-                  action = #update(changes);
-                  attributes = node.attributes;
-                });
-                if (changes.size() > 0) { nodesToUpdate += 1 };
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (curation) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let hasChanges = hasActualChanges(
+                  switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } },
+                  node.attributes
+                );
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "curation";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = null;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                  });
+                  nodesToUpdate += 1;
+                };
+                // If no changes: skip entirely (no op, no count)
               } else {
+                // Belongs to a different published graph → treat as create (fork)
                 nodeOps.add({
                   nodeType = "curation";
                   localName = node.name;
@@ -2032,15 +2106,16 @@ actor {
               };
             };
             case (null) {
+              // No published graph match → first publish, treat as create
               nodeOps.add({
                 nodeType = "curation";
                 localName = node.name;
                 backendId = ?existingId;
                 parentName = null;
-                action = #update(changes);
+                action = #create;
                 attributes = node.attributes;
               });
-              nodesToUpdate += 1;
+              nodesToCreate += 1;
             };
           };
         };
@@ -2069,7 +2144,7 @@ actor {
       };
     };
 
-    // Process swarms
+    // ── Process swarms ───────────────────────────────────────────────────────
     for (node in swarmNodes.values()) {
       let parentName = switch (node.parentName) {
         case (null) { "" };
@@ -2109,19 +2184,27 @@ actor {
             case (?s) { computeAttributeChanges(s.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          // Hierarchical check: only count as update if it belongs to this published graph
-          switch (earlyPublishedId) {
+          switch (publishedGraphId) {
             case (?pid) {
-              if (belongsToPublishedGraph(existingId, pid)) {
-                nodeOps.add({
-                  nodeType = "swarm";
-                  localName = node.name;
-                  backendId = ?existingId;
-                  parentName = node.parentName;
-                  action = #update(changes);
-                  attributes = node.attributes;
-                });
-                if (changes.size() > 0) { nodesToUpdate += 1 };
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (swarm) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let hasChanges = hasActualChanges(
+                  switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } },
+                  node.attributes
+                );
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "swarm";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                  });
+                  nodesToUpdate += 1;
+                };
               } else {
                 nodeOps.add({
                   nodeType = "swarm";
@@ -2140,10 +2223,10 @@ actor {
                 localName = node.name;
                 backendId = ?existingId;
                 parentName = node.parentName;
-                action = #update(changes);
+                action = #create;
                 attributes = node.attributes;
               });
-              nodesToUpdate += 1;
+              nodesToCreate += 1;
             };
           };
         };
@@ -2173,7 +2256,7 @@ actor {
       };
     };
 
-    // Process locations
+    // ── Process locations ────────────────────────────────────────────────────
     for (node in locationNodes.values()) {
       let parentName = switch (node.parentName) {
         case (null) { "" };
@@ -2213,19 +2296,27 @@ actor {
             case (?l) { computeAttributeChanges(l.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          // Hierarchical check: only count as update if it belongs to this published graph
-          switch (earlyPublishedId) {
+          switch (publishedGraphId) {
             case (?pid) {
-              if (belongsToPublishedGraph(existingId, pid)) {
-                nodeOps.add({
-                  nodeType = "location";
-                  localName = node.name;
-                  backendId = ?existingId;
-                  parentName = node.parentName;
-                  action = #update(changes);
-                  attributes = node.attributes;
-                });
-                if (changes.size() > 0) { nodesToUpdate += 1 };
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (location) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let hasChanges = hasActualChanges(
+                  switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } },
+                  node.attributes
+                );
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "location";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                  });
+                  nodesToUpdate += 1;
+                };
               } else {
                 nodeOps.add({
                   nodeType = "location";
@@ -2244,10 +2335,10 @@ actor {
                 localName = node.name;
                 backendId = ?existingId;
                 parentName = node.parentName;
-                action = #update(changes);
+                action = #create;
                 attributes = node.attributes;
               });
-              nodesToUpdate += 1;
+              nodesToCreate += 1;
             };
           };
         };
@@ -2277,7 +2368,7 @@ actor {
       };
     };
 
-    // Process law entities
+    // ── Process law entities ─────────────────────────────────────────────────
     for (node in lawEntityNodes.values()) {
       let parentName = switch (node.parentName) {
         case (null) { "" };
@@ -2317,19 +2408,27 @@ actor {
             case (?lt) { computeAttributeChanges(lt.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          // Hierarchical check: only count as update if it belongs to this published graph
-          switch (earlyPublishedId) {
+          switch (publishedGraphId) {
             case (?pid) {
-              if (belongsToPublishedGraph(existingId, pid)) {
-                nodeOps.add({
-                  nodeType = "lawEntity";
-                  localName = node.name;
-                  backendId = ?existingId;
-                  parentName = node.parentName;
-                  action = #update(changes);
-                  attributes = node.attributes;
-                });
-                if (changes.size() > 0) { nodesToUpdate += 1 };
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (lawEntity) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let hasChanges = hasActualChanges(
+                  switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } },
+                  node.attributes
+                );
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "lawEntity";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                  });
+                  nodesToUpdate += 1;
+                };
               } else {
                 nodeOps.add({
                   nodeType = "lawEntity";
@@ -2348,10 +2447,10 @@ actor {
                 localName = node.name;
                 backendId = ?existingId;
                 parentName = node.parentName;
-                action = #update(changes);
+                action = #create;
                 attributes = node.attributes;
               });
-              nodesToUpdate += 1;
+              nodesToCreate += 1;
             };
           };
         };
@@ -2381,7 +2480,7 @@ actor {
       };
     };
 
-    // Process interpretation entities
+    // ── Process interpretation entities ──────────────────────────────────────
     for (node in interpEntityNodes.values()) {
       let parentName = switch (node.parentName) {
         case (null) { "" };
@@ -2421,19 +2520,27 @@ actor {
             case (?it) { computeAttributeChanges(it.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          // Hierarchical check: only count as update if it belongs to this published graph
-          switch (earlyPublishedId) {
+          switch (publishedGraphId) {
             case (?pid) {
-              if (belongsToPublishedGraph(existingId, pid)) {
-                nodeOps.add({
-                  nodeType = "interpEntity";
-                  localName = node.name;
-                  backendId = ?existingId;
-                  parentName = node.parentName;
-                  action = #update(changes);
-                  attributes = node.attributes;
-                });
-                if (changes.size() > 0) { nodesToUpdate += 1 };
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (interpEntity) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let hasChanges = hasActualChanges(
+                  switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } },
+                  node.attributes
+                );
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "interpEntity";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                  });
+                  nodesToUpdate += 1;
+                };
               } else {
                 nodeOps.add({
                   nodeType = "interpEntity";
@@ -2452,10 +2559,10 @@ actor {
                 localName = node.name;
                 backendId = ?existingId;
                 parentName = node.parentName;
-                action = #update(changes);
+                action = #create;
                 attributes = node.attributes;
               });
-              nodesToUpdate += 1;
+              nodesToCreate += 1;
             };
           };
         };
@@ -2485,13 +2592,12 @@ actor {
       };
     };
 
-    // Process edges with scope-aware target resolution
+    // ── Process edges with scope-aware target resolution ─────────────────────
     for (edge in input.edges.values()) {
       let sourceId = switch (nameToId.get(edge.sourceName)) {
         case (null) { "" };
         case (?id) { id };
       };
-      // Scope-aware target resolution
       let sourceFullPath = switch (simpleToFullPath.get(edge.sourceName)) {
         case (?fp) { fp };
         case (null) { edge.sourceName };
@@ -2517,7 +2623,6 @@ actor {
           };
         };
         if (not isHierarchyEdge) {
-          // Check if edge already exists
           var existingEdge : ?SourceGraphEdge = null;
           switch (sourceEdges.get(sourceId)) {
             case (null) {};
@@ -2527,10 +2632,13 @@ actor {
           };
           switch (existingEdge) {
             case (?_existing) {
-              // Hierarchical check: update only if both nodes belong to this published graph
-              switch (earlyPublishedId) {
+              switch (publishedGraphId) {
                 case (?pid) {
-                  if (belongsToPublishedGraph(sourceId, pid) and belongsToPublishedGraph(targetId, pid)) {
+                  let srcBelongs = belongsToPublishedGraph(sourceId, pid);
+                  let tgtBelongs = belongsToPublishedGraph(targetId, pid);
+                  let bothBelong = srcBelongs and tgtBelongs;
+                  Debug.print("Preview: Edge " # edge.sourceName # " -> " # edge.targetName # " belongsToPublishedGraph = " # bothBelong.toText());
+                  if (srcBelongs and tgtBelongs) {
                     edgeOps.add({
                       sourceName = edge.sourceName;
                       targetName = edge.targetName;
@@ -2555,16 +2663,17 @@ actor {
                   };
                 };
                 case (null) {
+                  // No published graph → first publish, treat as create
                   edgeOps.add({
                     sourceName = edge.sourceName;
                     targetName = edge.targetName;
                     sourceId = ?sourceId;
                     targetId = ?targetId;
-                    action = #update({ newLabels = [edge.edgeLabel] });
+                    action = #create;
                     labels = [edge.edgeLabel];
                     bidirectional = edge.bidirectional;
                   });
-                  edgesToUpdate += 1;
+                  edgesToCreate += 1;
                 };
               };
             };
@@ -2584,6 +2693,14 @@ actor {
         };
       };
     };
+
+    // ── Early exit check ─────────────────────────────────────────────────────
+    if (nodesToCreate == 0 and nodesToUpdate == 0 and edgesToCreate == 0 and edgesToUpdate == 0) {
+      Debug.print("Preview: Nothing to update - all counts are zero");
+    };
+
+    // ── Final debug log ──────────────────────────────────────────────────────
+    Debug.print("Preview: Final counts - nodesToCreate: " # nodesToCreate.toText() # ", nodesToUpdate: " # nodesToUpdate.toText() # ", edgesToCreate: " # edgesToCreate.toText() # ", edgesToUpdate: " # edgesToUpdate.toText());
 
     {
       nodeOperations = nodeOps.toArray();
