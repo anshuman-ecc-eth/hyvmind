@@ -1662,10 +1662,10 @@ actor {
     for ((key, values) in newAttributes.values()) {
       switch (keyMap.get(key)) {
         case (?valueMap) {
-          // Key exists — increment weights or add new values
+          // Key exists — add only genuinely new values (do not increment existing weights)
           for (v in values.values()) {
             switch (valueMap.get(v)) {
-              case (?w) { valueMap.add(v, w + 1) };
+              case (?_) { /* already exists — keep existing weight unchanged */ };
               case (null) { valueMap.add(v, 1) };
             };
           };
@@ -3158,6 +3158,10 @@ actor {
           };
         };
       };
+    };
+
+    if (nodesToCreate == 0 and edgesToCreate == 0 and attributesAdded == 0) {
+      return #error({ message = "nothing to update"; failedAt = null });
     };
 
     // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
