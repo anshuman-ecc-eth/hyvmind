@@ -91,7 +91,9 @@ export default function GraphFuzzyFinder({
 
         // Attributes — one item per key
         if (node.attributes) {
-          for (const [key, value] of Object.entries(node.attributes)) {
+          for (const [key, rawVal] of Object.entries(node.attributes)) {
+            const value =
+              typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal);
             out.push({
               type: "attribute",
               graphId,

@@ -43750,7 +43750,6 @@ function graphDataToSourceGraph(data, name, id2) {
     name: s2.name,
     nodeType: "swarm",
     parentName: idToName.get(s2.parentCurationId),
-    tags: s2.tags,
     attributes: convertWeightedAttributes(s2.customAttributes)
   }));
   const locationNodes = data.locations.map((l2) => ({
@@ -43840,7 +43839,8 @@ function GraphFuzzyFinder({
           description: `${node2.nodeType}${node2.parentName ? ` in ${node2.parentName}` : ""}`
         });
         if (node2.attributes) {
-          for (const [key2, value] of Object.entries(node2.attributes)) {
+          for (const [key2, rawVal] of Object.entries(node2.attributes)) {
+            const value = typeof rawVal === "string" ? rawVal : JSON.stringify(rawVal);
             out.push({
               type: "attribute",
               graphId,
@@ -44115,19 +44115,17 @@ function PublicNodeDetailsPanel({
   node: node2,
   onClose
 }) {
+  var _a3;
   const typeLabel = NODE_TYPE_LABELS$1[node2.nodeType] ?? node2.nodeType.toUpperCase();
   const attrs = node2.attributes ? Object.entries(node2.attributes).filter(([, v2]) => v2 !== "") : [];
   const optionalFields = [
-    { label: "JURISDICTION", value: node2.jurisdiction },
-    { label: "SOURCE", value: node2.source },
-    { label: "CONTENT", value: node2.content },
-    { label: "FROM", value: node2.from },
-    { label: "TO", value: node2.to }
+    { label: "CONTENT", value: node2.content }
   ];
   const presentOptional = optionalFields.filter(
     (f2) => f2.value && f2.value.trim() !== ""
   );
-  const tagList = node2.tags && node2.tags.length > 0 ? node2.tags : null;
+  const rawTags = (_a3 = node2.attributes) == null ? void 0 : _a3.tags;
+  const tagList = Array.isArray(rawTags) ? rawTags : typeof rawTags === "string" && rawTags.trim() !== "" ? [rawTags] : null;
   return (
     /* Overlay backdrop */
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -44192,7 +44190,7 @@ function PublicNodeDetailsPanel({
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "ATTRIBUTES" }),
                   attrs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-muted-foreground italic", children: "No attributes" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 border border-border divide-y divide-border", children: attrs.map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 px-2 py-1", children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground shrink-0 min-w-0 break-words", children: key2 }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80 ml-auto text-right break-words", children: value })
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80 ml-auto text-right break-words", children: typeof value === "string" ? value : JSON.stringify(value) })
                   ] }, key2)) })
                 ] })
               ] }),
@@ -53968,12 +53966,7 @@ function SourceGraphDiagram({
         id: n2.id ?? n2.name,
         name: n2.name,
         nodeType: n2.nodeType,
-        jurisdiction: n2.jurisdiction,
-        tags: n2.tags,
-        source: n2.source,
         content: n2.content,
-        from: n2.from,
-        to: n2.to,
         parentName: n2.parentName,
         attributes: n2.attributes
       };
@@ -54042,12 +54035,7 @@ function SourceGraphDiagram({
           id: node2.id,
           name: node2.name,
           nodeType: node2.nodeType,
-          jurisdiction: node2.jurisdiction,
-          tags: node2.tags,
-          source: node2.source,
           content: node2.content,
-          from: node2.from,
-          to: node2.to,
           parentName: node2.parentName,
           attributes: node2.attributes
         };
@@ -103922,7 +103910,7 @@ function parseFrontmatter(text2) {
   if (!match) return {};
   try {
     const parsed = parse(match[1]);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    if (parsed && typeof parsed === "object") {
       return parsed;
     }
     return {};
@@ -103938,25 +103926,10 @@ async function readText(zip, path2) {
   if (!file2) return "";
   return file2.async("string");
 }
-const RESERVED_KEYS = /* @__PURE__ */ new Set([
-  "type",
-  "id",
-  "name",
-  "title",
-  "from",
-  "to",
-  "label",
-  "jurisdiction",
-  "tags",
-  "source",
-  "content",
-  "tokenLabel"
-]);
-function extractCustomAttributes(fm) {
+function extractAllAttributes(fm) {
   const attrs = {};
   for (const [k2, v2] of Object.entries(fm)) {
-    if (!RESERVED_KEYS.has(k2))
-      attrs[k2] = typeof v2 === "string" ? v2 : JSON.stringify(v2);
+    attrs[k2] = v2;
   }
   return Object.keys(attrs).length > 0 ? attrs : void 0;
 }
@@ -103970,19 +103943,11 @@ function extractInterpEntityReferences(content2) {
   if (!matches) return [];
   return matches.map((m2) => m2.slice(2, -2).trim()).filter((s2) => s2.length > 0);
 }
-async function getInheritedAttributes(zip, folderPath) {
-  const segments = folderPath.split("/").filter(Boolean);
-  let merged = {};
-  for (let i2 = 1; i2 <= segments.length; i2++) {
-    const prefix2 = `${segments.slice(0, i2).join("/")}/`;
-    const attrPath = `${prefix2}_attributes.md`;
-    const raw2 = await readText(zip, attrPath);
-    if (raw2) {
-      const fm = parseFrontmatter(raw2);
-      merged = { ...merged, ...fm };
-    }
-  }
-  return merged;
+async function getDirectAttributes(zip, folderPath) {
+  const base = folderPath.replace(/\/+$/, "");
+  const attrPath = `${base}/_attributes.md`;
+  const raw2 = await readText(zip, attrPath);
+  return raw2 ? parseFrontmatter(raw2) : {};
 }
 async function parseSourceGraphZip(file2) {
   const zip = await JSZip.loadAsync(file2);
@@ -104002,13 +103967,13 @@ async function parseSourceGraphZip(file2) {
   const graphName = [...curationFolders][0];
   for (const curationName of curationFolders) {
     const curationPath = curationName;
-    const curationAttrs = await getInheritedAttributes(zip, curationPath);
     const curationNode = {
       id: curationName,
       name: curationName,
       nodeType: "curation",
-      jurisdiction: typeof curationAttrs.jurisdiction === "string" ? curationAttrs.jurisdiction : void 0,
-      attributes: extractCustomAttributes(curationAttrs)
+      attributes: extractAllAttributes(
+        await getDirectAttributes(zip, curationPath)
+      )
     };
     nodes.push(curationNode);
     const curationPrefix = `${curationName}/`;
@@ -104023,16 +103988,14 @@ async function parseSourceGraphZip(file2) {
     }
     for (const swarmName of swarmFolders) {
       const swarmPath = `${curationName}/${swarmName}`;
-      const swarmAttrs = await getInheritedAttributes(zip, swarmPath);
-      const tagsRaw = typeof swarmAttrs.tags === "string" ? swarmAttrs.tags : "";
-      const tags = tagsRaw ? tagsRaw.split(",").map((t2) => t2.trim()).filter(Boolean) : void 0;
       const swarmNode = {
         id: `${curationName}@${swarmName}`,
         name: swarmName,
         nodeType: "swarm",
-        tags,
         parentName: curationName,
-        attributes: extractCustomAttributes(swarmAttrs)
+        attributes: extractAllAttributes(
+          await getDirectAttributes(zip, swarmPath)
+        )
       };
       nodes.push(swarmNode);
       edges.push({
@@ -104078,14 +104041,14 @@ async function parseSourceGraphZip(file2) {
       );
       for (const locationName of locationFolders) {
         const locationPath = `${swarmPath}/${locationName}`;
-        const locationAttrs = await getInheritedAttributes(zip, locationPath);
         const locationNode = {
           id: `${curationName}@${swarmName}@${locationName}`,
           name: locationName,
           nodeType: "location",
-          source: typeof locationAttrs.source === "string" ? locationAttrs.source : void 0,
           parentName: swarmName,
-          attributes: extractCustomAttributes(locationAttrs)
+          attributes: extractAllAttributes(
+            await getDirectAttributes(zip, locationPath)
+          )
         };
         nodes.push(locationNode);
         edges.push({
@@ -104111,17 +104074,14 @@ async function parseSourceGraphZip(file2) {
         }
         for (const entry of lawEntityList) {
           const lawEntityFolder = entry.folderPath;
-          const lawEntityAttrs = await getInheritedAttributes(
-            zip,
-            lawEntityFolder
-          );
           nodes.push({
             id: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
             name: entry.name,
             nodeType: "lawEntity",
             parentName: locationName,
-            jurisdiction: typeof lawEntityAttrs.jurisdiction === "string" ? lawEntityAttrs.jurisdiction : void 0,
-            attributes: extractCustomAttributes(lawEntityAttrs)
+            attributes: extractAllAttributes(
+              await getDirectAttributes(zip, lawEntityFolder)
+            )
           });
           edges.push({
             source: `${curationName}@${swarmName}@${locationName}`,
@@ -104139,13 +104099,11 @@ async function parseSourceGraphZip(file2) {
             const fm = parseFrontmatter(raw2);
             const body2 = stripFrontmatter(raw2);
             const filename = interpPath.slice(lawEntityFolder.length).replace(/\.md$/, "");
-            const inheritedAttrs = await getInheritedAttributes(
-              zip,
-              lawEntityFolder
-            );
-            const fileCustomAttrs = extractCustomAttributes(fm);
-            const mergedAttrs = fileCustomAttrs || Object.keys(inheritedAttrs).length > 0 ? {
-              ...extractCustomAttributes(inheritedAttrs),
+            const directAttrs = await getDirectAttributes(zip, lawEntityFolder);
+            const fileCustomAttrs = extractAllAttributes(fm);
+            const baseAttrs = extractAllAttributes(directAttrs);
+            const mergedAttrs = fileCustomAttrs || baseAttrs ? {
+              ...baseAttrs,
               ...fileCustomAttrs
             } : void 0;
             const fullInterpPath = interpPath.replace(/\//g, "@").replace(/\.md$/, "");
@@ -104281,7 +104239,12 @@ function sourceGraphToEditor(graph) {
       );
       content2 = Object.keys(parseFrontmatter(raw2)).length > 0 ? stripFrontmatter(raw2) : raw2;
     }
-    const inheritedAttributes = node2.nodeType !== "interpEntity" ? { ...node2.attributes ?? {} } : {};
+    const inheritedAttributes = node2.nodeType !== "interpEntity" ? Object.fromEntries(
+      Object.entries(node2.attributes ?? {}).map(([k2, v2]) => [
+        k2,
+        typeof v2 === "string" ? v2 : JSON.stringify(v2)
+      ])
+    ) : {};
     const editorNode = {
       id: id2,
       name: node2.name,
@@ -106435,7 +106398,12 @@ function buildInheritedAttributes(node2, nodeMap) {
   for (let i2 = chain2.length - 1; i2 >= 0; i2--) {
     Object.assign(merged, chain2[i2]);
   }
-  return merged;
+  return Object.fromEntries(
+    Object.entries(merged).map(([k2, v2]) => [
+      k2,
+      typeof v2 === "string" ? v2 : JSON.stringify(v2)
+    ])
+  );
 }
 function NodeDetailsModal({
   node: node2,
@@ -106447,7 +106415,7 @@ function NodeDetailsModal({
   const [existingRows, setExistingRows] = reactExports.useState(
     () => Object.entries(node2.attributes ?? {}).map(([key2, value]) => ({
       key: key2,
-      value,
+      value: typeof value === "string" ? value : JSON.stringify(value),
       isNew: false
     }))
   );
@@ -107134,12 +107102,11 @@ function sourceGraphToInput(graph) {
     id: node2.id ?? void 0,
     name: node2.name,
     nodeType: node2.nodeType,
-    jurisdiction: node2.jurisdiction ?? void 0,
-    tags: node2.tags ?? [],
+    tags: [],
     content: node2.content ?? void 0,
     parentName: node2.parentName ?? void 0,
     attributes: Object.entries(node2.attributes ?? {}).map(
-      ([key2, value]) => [key2, [value]]
+      ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
     )
   }));
   const edges = graph.edges.map((edge) => ({

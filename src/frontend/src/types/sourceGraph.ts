@@ -9,14 +9,9 @@ export interface SourceNode {
   id?: string;
   name: string;
   nodeType: NodeType;
-  jurisdiction?: string;
-  tags?: string[];
-  source?: string;
   content?: string;
-  from?: string;
-  to?: string;
   parentName?: string;
-  attributes?: Record<string, string>;
+  attributes?: Record<string, unknown>;
 }
 
 export interface Edge {

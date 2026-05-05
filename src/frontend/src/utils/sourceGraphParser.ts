@@ -12,7 +12,7 @@ export function parseFrontmatter(text: string): Record<string, unknown> {
   if (!match) return {};
   try {
     const parsed = yamlParse(match[1]);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    if (parsed && typeof parsed === "object") {
       return parsed as Record<string, unknown>;
     }
     return {};
@@ -33,33 +33,13 @@ export async function readText(zip: JSZip, path: string): Promise<string> {
   return file.async("string");
 }
 
-/**
- * Reserved frontmatter keys — excluded from node.attributes.
- * Everything else is treated as a custom attribute.
- */
-export const RESERVED_KEYS = new Set([
-  "type",
-  "id",
-  "name",
-  "title",
-  "from",
-  "to",
-  "label",
-  "jurisdiction",
-  "tags",
-  "source",
-  "content",
-  "tokenLabel",
-]);
-
-/** Extract non-reserved frontmatter keys as custom attributes */
-export function extractCustomAttributes(
+/** Extract all frontmatter keys as attributes (no reserved key filtering) */
+export function extractAllAttributes(
   fm: Record<string, unknown>,
-): Record<string, string> | undefined {
-  const attrs: Record<string, string> = {};
+): Record<string, unknown> | undefined {
+  const attrs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fm)) {
-    if (!RESERVED_KEYS.has(k))
-      attrs[k] = typeof v === "string" ? v : JSON.stringify(v);
+    attrs[k] = v;
   }
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
@@ -88,36 +68,22 @@ function extractInterpEntityReferences(content: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Cumulative attribute inheritance
+// Direct attribute reading (own folder only)
 // ---------------------------------------------------------------------------
 
 /**
- * Build cumulative inherited attributes for a given folder path by reading
- * _attributes.md at every ancestor level from root down to the given path.
- * Closer ancestors override more distant ones.
- *
- * @param zip       - The loaded JSZip instance
- * @param folderPath - Path relative to zip root, e.g. "curation/swarm/location/lawToken"
- *                    (no trailing slash)
+ * Read only the direct _attributes.md for a given folder path,
+ * without accumulating from ancestors.
  */
-async function getInheritedAttributes(
+async function getDirectAttributes(
   zip: JSZip,
   folderPath: string,
 ): Promise<Record<string, unknown>> {
-  const segments = folderPath.split("/").filter(Boolean);
-  let merged: Record<string, unknown> = {};
-
-  for (let i = 1; i <= segments.length; i++) {
-    const prefix = `${segments.slice(0, i).join("/")}/`;
-    const attrPath = `${prefix}_attributes.md`;
-    const raw = await readText(zip, attrPath);
-    if (raw) {
-      const fm = parseFrontmatter(raw);
-      merged = { ...merged, ...fm };
-    }
-  }
-
-  return merged;
+  // Normalise: strip any trailing slash before appending filename
+  const base = folderPath.replace(/\/+$/, "");
+  const attrPath = `${base}/_attributes.md`;
+  const raw = await readText(zip, attrPath);
+  return raw ? parseFrontmatter(raw) : {};
 }
 
 // ---------------------------------------------------------------------------
@@ -154,17 +120,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
   for (const curationName of curationFolders) {
     const curationPath = curationName; // e.g. "myCuration"
-    const curationAttrs = await getInheritedAttributes(zip, curationPath);
 
     const curationNode: SourceNode = {
       id: curationName,
       name: curationName,
       nodeType: "curation",
-      jurisdiction:
-        typeof curationAttrs.jurisdiction === "string"
-          ? curationAttrs.jurisdiction
-          : undefined,
-      attributes: extractCustomAttributes(curationAttrs),
+      attributes: extractAllAttributes(
+        await getDirectAttributes(zip, curationPath),
+      ),
     };
     nodes.push(curationNode);
 
@@ -186,24 +149,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
     for (const swarmName of swarmFolders) {
       const swarmPath = `${curationName}/${swarmName}`;
-      const swarmAttrs = await getInheritedAttributes(zip, swarmPath);
-
-      const tagsRaw =
-        typeof swarmAttrs.tags === "string" ? swarmAttrs.tags : "";
-      const tags = tagsRaw
-        ? tagsRaw
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
-        : undefined;
-
       const swarmNode: SourceNode = {
         id: `${curationName}@${swarmName}`,
         name: swarmName,
         nodeType: "swarm",
-        tags,
         parentName: curationName,
-        attributes: extractCustomAttributes(swarmAttrs),
+        attributes: extractAllAttributes(
+          await getDirectAttributes(zip, swarmPath),
+        ),
       };
       nodes.push(swarmNode);
       edges.push({
@@ -269,18 +222,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
       for (const locationName of locationFolders) {
         const locationPath = `${swarmPath}/${locationName}`;
-        const locationAttrs = await getInheritedAttributes(zip, locationPath);
-
         const locationNode: SourceNode = {
           id: `${curationName}@${swarmName}@${locationName}`,
           name: locationName,
           nodeType: "location",
-          source:
-            typeof locationAttrs.source === "string"
-              ? locationAttrs.source
-              : undefined,
           parentName: swarmName,
-          attributes: extractCustomAttributes(locationAttrs),
+          attributes: extractAllAttributes(
+            await getDirectAttributes(zip, locationPath),
+          ),
         };
         nodes.push(locationNode);
         edges.push({
@@ -317,21 +266,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         // Create lawEntity nodes + Level 5 interpEntity files
         for (const entry of lawEntityList) {
           const lawEntityFolder = entry.folderPath;
-          const lawEntityAttrs = await getInheritedAttributes(
-            zip,
-            lawEntityFolder,
-          );
-
           nodes.push({
             id: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
             name: entry.name,
             nodeType: "lawEntity",
             parentName: locationName,
-            jurisdiction:
-              typeof lawEntityAttrs.jurisdiction === "string"
-                ? lawEntityAttrs.jurisdiction
-                : undefined,
-            attributes: extractCustomAttributes(lawEntityAttrs),
+            attributes: extractAllAttributes(
+              await getDirectAttributes(zip, lawEntityFolder),
+            ),
           });
           edges.push({
             source: `${curationName}@${swarmName}@${locationName}`,
@@ -363,16 +305,14 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               .slice(lawEntityFolder.length)
               .replace(/\.md$/, "");
 
-            // Inherited attributes merged with file-level frontmatter custom attrs
-            const inheritedAttrs = await getInheritedAttributes(
-              zip,
-              lawEntityFolder,
-            );
-            const fileCustomAttrs = extractCustomAttributes(fm);
+            // Direct attributes for lawEntity folder merged with file-level frontmatter attrs
+            const directAttrs = await getDirectAttributes(zip, lawEntityFolder);
+            const fileCustomAttrs = extractAllAttributes(fm);
+            const baseAttrs = extractAllAttributes(directAttrs);
             const mergedAttrs =
-              fileCustomAttrs || Object.keys(inheritedAttrs).length > 0
+              fileCustomAttrs || baseAttrs
                 ? {
-                    ...extractCustomAttributes(inheritedAttrs),
+                    ...baseAttrs,
                     ...fileCustomAttrs,
                   }
                 : undefined;

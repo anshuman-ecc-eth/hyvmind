@@ -14,14 +14,9 @@ interface FGNode extends NodeObject {
   id: string;
   name: string;
   nodeType: string;
-  jurisdiction?: string;
-  tags?: string[];
-  source?: string;
   content?: string;
-  from?: string;
-  to?: string;
   parentName?: string;
-  attributes?: Record<string, string>;
+  attributes?: Record<string, unknown>;
 }
 
 interface FGLink extends LinkObject<FGNode> {
@@ -136,12 +131,7 @@ export function SourceGraphDiagram({
         id: n.id ?? n.name,
         name: n.name,
         nodeType: n.nodeType,
-        jurisdiction: n.jurisdiction,
-        tags: n.tags,
-        source: n.source,
         content: n.content,
-        from: n.from,
-        to: n.to,
         parentName: n.parentName,
         attributes: n.attributes,
       };
@@ -242,12 +232,7 @@ export function SourceGraphDiagram({
             id: node.id,
             name: node.name,
             nodeType: node.nodeType as SourceNode["nodeType"],
-            jurisdiction: node.jurisdiction,
-            tags: node.tags,
-            source: node.source,
             content: node.content,
-            from: node.from,
-            to: node.to,
             parentName: node.parentName,
             attributes: node.attributes,
           };

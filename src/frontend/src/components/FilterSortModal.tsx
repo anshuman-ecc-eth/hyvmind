@@ -114,15 +114,6 @@ function FlatNodeItem({
 
         <span className="text-sm font-medium">{node.tokenLabel}</span>
 
-        {node.nodeType === "curation" && node.jurisdiction && (
-          <Badge
-            variant="outline"
-            className="text-xs bg-muted text-foreground border-border"
-          >
-            {node.jurisdiction}
-          </Badge>
-        )}
-
         {node.nodeType === "swarm" && parentCurationName && (
           <Badge
             variant="outline"

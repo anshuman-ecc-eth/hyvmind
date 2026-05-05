@@ -39,7 +39,7 @@ function buildInheritedAttributes(
   nodeMap: Map<string, SourceNode>,
 ): Record<string, string> {
   // Walk ancestor chain via parentName; closer ancestors take priority
-  const chain: Record<string, string>[] = [];
+  const chain: Record<string, unknown>[] = [];
   let currentName = node.parentName;
   const visited = new Set<string>();
 
@@ -54,11 +54,17 @@ function buildInheritedAttributes(
   }
 
   // Merge: later entries (closer ancestors) override earlier (further ancestors)
-  const merged: Record<string, string> = {};
+  const merged: Record<string, unknown> = {};
   for (let i = chain.length - 1; i >= 0; i--) {
     Object.assign(merged, chain[i]);
   }
-  return merged;
+  // Stringify any non-string values for display
+  return Object.fromEntries(
+    Object.entries(merged).map(([k, v]) => [
+      k,
+      typeof v === "string" ? v : JSON.stringify(v),
+    ]),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +83,7 @@ export default function NodeDetailsModal({
   const [existingRows, setExistingRows] = useState<AttributeRow[]>(() =>
     Object.entries(node.attributes ?? {}).map(([key, value]) => ({
       key,
-      value,
+      value: typeof value === "string" ? value : JSON.stringify(value),
       isNew: false,
     })),
   );

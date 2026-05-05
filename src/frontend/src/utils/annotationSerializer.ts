@@ -45,7 +45,7 @@ export function annotationsToSourceGraph(
     name: path.location,
     nodeType: "location",
     parentName: path.swarm,
-    source: url,
+    attributes: { source: url },
   });
 
   // Track law token full IDs by annotation id for cross-references

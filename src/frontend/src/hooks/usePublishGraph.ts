@@ -26,12 +26,15 @@ export function sourceGraphToInput(graph: SourceGraph) {
     id: node.id ?? undefined,
     name: node.name,
     nodeType: node.nodeType,
-    jurisdiction: node.jurisdiction ?? undefined,
-    tags: node.tags ?? [],
+    tags: [],
     content: node.content ?? undefined,
     parentName: node.parentName ?? undefined,
     attributes: Object.entries(node.attributes ?? {}).map(
-      ([key, value]) => [key, [value]] as [string, string[]],
+      ([key, value]) =>
+        [key, Array.isArray(value) ? value.map(String) : [String(value)]] as [
+          string,
+          string[],
+        ],
     ),
   }));
 

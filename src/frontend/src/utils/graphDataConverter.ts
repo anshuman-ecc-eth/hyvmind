@@ -145,7 +145,6 @@ export function graphDataToSourceGraph(
     name: s.name,
     nodeType: "swarm" as const,
     parentName: idToName.get(s.parentCurationId),
-    tags: s.tags,
     attributes: convertWeightedAttributes(s.customAttributes),
   }));
 

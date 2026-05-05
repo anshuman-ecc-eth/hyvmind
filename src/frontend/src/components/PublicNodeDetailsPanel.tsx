@@ -24,18 +24,19 @@ export default function PublicNodeDetailsPanel({
     : [];
 
   const optionalFields: { label: string; value: string | undefined }[] = [
-    { label: "JURISDICTION", value: node.jurisdiction },
-    { label: "SOURCE", value: node.source },
     { label: "CONTENT", value: node.content },
-    { label: "FROM", value: node.from },
-    { label: "TO", value: node.to },
   ];
 
   const presentOptional = optionalFields.filter(
     (f) => f.value && f.value.trim() !== "",
   );
 
-  const tagList = node.tags && node.tags.length > 0 ? node.tags : null;
+  const rawTags = node.attributes?.tags;
+  const tagList: string[] | null = Array.isArray(rawTags)
+    ? (rawTags as string[])
+    : typeof rawTags === "string" && rawTags.trim() !== ""
+      ? [rawTags as string]
+      : null;
 
   return (
     /* Overlay backdrop */
@@ -153,7 +154,9 @@ export default function PublicNodeDetailsPanel({
                       {key}
                     </span>
                     <span className="text-foreground/80 ml-auto text-right break-words">
-                      {value}
+                      {typeof value === "string"
+                        ? value
+                        : JSON.stringify(value)}
                     </span>
                   </div>
                 ))}

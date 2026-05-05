@@ -95,7 +95,14 @@ export function sourceGraphToEditor(graph: SourceGraph): EditorNode[] {
 
     // Inherited attributes come from node.attributes for non-interp nodes
     const inheritedAttributes: Record<string, string> =
-      node.nodeType !== "interpEntity" ? { ...(node.attributes ?? {}) } : {};
+      node.nodeType !== "interpEntity"
+        ? Object.fromEntries(
+            Object.entries(node.attributes ?? {}).map(([k, v]) => [
+              k,
+              typeof v === "string" ? v : JSON.stringify(v),
+            ]),
+          )
+        : {};
 
     const editorNode: EditorNode = {
       id,
