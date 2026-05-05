@@ -1939,6 +1939,22 @@ actor {
     var edgesToCreate : Nat = 0;
     var edgesToUpdate : Nat = 0;
 
+    // ── Early extension detection: find publishedId by matching curation name ───
+    var earlyPublishedId : ?Text = null;
+    label previewExtDetect for (node in input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" }).values()) {
+      for ((cid, existingCuration) in curationMap.entries()) {
+        if (existingCuration.name == node.name) {
+          switch (curationToPublishedGraphId.get(cid)) {
+            case (?pid) {
+              earlyPublishedId := ?pid;
+              break previewExtDetect;
+            };
+            case (null) {};
+          };
+        };
+      };
+    };
+
     // Build name -> NodeId from existingMappings
     let nameToId = Map.empty<Text, NodeId>();
     for ((name, id) in existingMappings.values()) {
@@ -1990,15 +2006,43 @@ actor {
             case (?c) { computeAttributeChanges(c.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          nodeOps.add({
-            nodeType = "curation";
-            localName = node.name;
-            backendId = ?existingId;
-            parentName = null;
-            action = #update(changes);
-            attributes = node.attributes;
-          });
-          nodesToUpdate += 1;
+          // Hierarchical check: only count as update if it belongs to this published graph
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodeOps.add({
+                  nodeType = "curation";
+                  localName = node.name;
+                  backendId = ?existingId;
+                  parentName = null;
+                  action = #update(changes);
+                  attributes = node.attributes;
+                });
+                if (changes.size() > 0) { nodesToUpdate += 1 };
+              } else {
+                nodeOps.add({
+                  nodeType = "curation";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = null;
+                  action = #create;
+                  attributes = node.attributes;
+                });
+                nodesToCreate += 1;
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "curation";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = null;
+                action = #update(changes);
+                attributes = node.attributes;
+              });
+              nodesToUpdate += 1;
+            };
+          };
         };
         case (null) {
           let placeholderId = "preview-" # node.name;
@@ -2065,15 +2109,43 @@ actor {
             case (?s) { computeAttributeChanges(s.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          nodeOps.add({
-            nodeType = "swarm";
-            localName = node.name;
-            backendId = ?existingId;
-            parentName = node.parentName;
-            action = #update(changes);
-            attributes = node.attributes;
-          });
-          nodesToUpdate += 1;
+          // Hierarchical check: only count as update if it belongs to this published graph
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodeOps.add({
+                  nodeType = "swarm";
+                  localName = node.name;
+                  backendId = ?existingId;
+                  parentName = node.parentName;
+                  action = #update(changes);
+                  attributes = node.attributes;
+                });
+                if (changes.size() > 0) { nodesToUpdate += 1 };
+              } else {
+                nodeOps.add({
+                  nodeType = "swarm";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                  attributes = node.attributes;
+                });
+                nodesToCreate += 1;
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "swarm";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #update(changes);
+                attributes = node.attributes;
+              });
+              nodesToUpdate += 1;
+            };
+          };
         };
         case (null) {
           let placeholderId = "preview-" # node.name;
@@ -2141,15 +2213,43 @@ actor {
             case (?l) { computeAttributeChanges(l.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          nodeOps.add({
-            nodeType = "location";
-            localName = node.name;
-            backendId = ?existingId;
-            parentName = node.parentName;
-            action = #update(changes);
-            attributes = node.attributes;
-          });
-          nodesToUpdate += 1;
+          // Hierarchical check: only count as update if it belongs to this published graph
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodeOps.add({
+                  nodeType = "location";
+                  localName = node.name;
+                  backendId = ?existingId;
+                  parentName = node.parentName;
+                  action = #update(changes);
+                  attributes = node.attributes;
+                });
+                if (changes.size() > 0) { nodesToUpdate += 1 };
+              } else {
+                nodeOps.add({
+                  nodeType = "location";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                  attributes = node.attributes;
+                });
+                nodesToCreate += 1;
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "location";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #update(changes);
+                attributes = node.attributes;
+              });
+              nodesToUpdate += 1;
+            };
+          };
         };
         case (null) {
           let placeholderId = "preview-" # node.name;
@@ -2217,15 +2317,43 @@ actor {
             case (?lt) { computeAttributeChanges(lt.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          nodeOps.add({
-            nodeType = "lawEntity";
-            localName = node.name;
-            backendId = ?existingId;
-            parentName = node.parentName;
-            action = #update(changes);
-            attributes = node.attributes;
-          });
-          nodesToUpdate += 1;
+          // Hierarchical check: only count as update if it belongs to this published graph
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodeOps.add({
+                  nodeType = "lawEntity";
+                  localName = node.name;
+                  backendId = ?existingId;
+                  parentName = node.parentName;
+                  action = #update(changes);
+                  attributes = node.attributes;
+                });
+                if (changes.size() > 0) { nodesToUpdate += 1 };
+              } else {
+                nodeOps.add({
+                  nodeType = "lawEntity";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                  attributes = node.attributes;
+                });
+                nodesToCreate += 1;
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "lawEntity";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #update(changes);
+                attributes = node.attributes;
+              });
+              nodesToUpdate += 1;
+            };
+          };
         };
         case (null) {
           let placeholderId = "preview-" # node.name;
@@ -2293,15 +2421,43 @@ actor {
             case (?it) { computeAttributeChanges(it.customAttributes, node.attributes) };
             case (null) { [] };
           };
-          nodeOps.add({
-            nodeType = "interpEntity";
-            localName = node.name;
-            backendId = ?existingId;
-            parentName = node.parentName;
-            action = #update(changes);
-            attributes = node.attributes;
-          });
-          nodesToUpdate += 1;
+          // Hierarchical check: only count as update if it belongs to this published graph
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodeOps.add({
+                  nodeType = "interpEntity";
+                  localName = node.name;
+                  backendId = ?existingId;
+                  parentName = node.parentName;
+                  action = #update(changes);
+                  attributes = node.attributes;
+                });
+                if (changes.size() > 0) { nodesToUpdate += 1 };
+              } else {
+                nodeOps.add({
+                  nodeType = "interpEntity";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                  attributes = node.attributes;
+                });
+                nodesToCreate += 1;
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "interpEntity";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #update(changes);
+                attributes = node.attributes;
+              });
+              nodesToUpdate += 1;
+            };
+          };
         };
         case (null) {
           let placeholderId = "preview-" # node.name;
@@ -2371,16 +2527,46 @@ actor {
           };
           switch (existingEdge) {
             case (?_existing) {
-              edgeOps.add({
-                sourceName = edge.sourceName;
-                targetName = edge.targetName;
-                sourceId = ?sourceId;
-                targetId = ?targetId;
-                action = #update({ newLabels = [edge.edgeLabel] });
-                labels = [edge.edgeLabel];
-                bidirectional = edge.bidirectional;
-              });
-              edgesToUpdate += 1;
+              // Hierarchical check: update only if both nodes belong to this published graph
+              switch (earlyPublishedId) {
+                case (?pid) {
+                  if (belongsToPublishedGraph(sourceId, pid) and belongsToPublishedGraph(targetId, pid)) {
+                    edgeOps.add({
+                      sourceName = edge.sourceName;
+                      targetName = edge.targetName;
+                      sourceId = ?sourceId;
+                      targetId = ?targetId;
+                      action = #update({ newLabels = [edge.edgeLabel] });
+                      labels = [edge.edgeLabel];
+                      bidirectional = edge.bidirectional;
+                    });
+                    edgesToUpdate += 1;
+                  } else {
+                    edgeOps.add({
+                      sourceName = edge.sourceName;
+                      targetName = edge.targetName;
+                      sourceId = ?sourceId;
+                      targetId = ?targetId;
+                      action = #create;
+                      labels = [edge.edgeLabel];
+                      bidirectional = edge.bidirectional;
+                    });
+                    edgesToCreate += 1;
+                  };
+                };
+                case (null) {
+                  edgeOps.add({
+                    sourceName = edge.sourceName;
+                    targetName = edge.targetName;
+                    sourceId = ?sourceId;
+                    targetId = ?targetId;
+                    action = #update({ newLabels = [edge.edgeLabel] });
+                    labels = [edge.edgeLabel];
+                    bidirectional = edge.bidirectional;
+                  });
+                  edgesToUpdate += 1;
+                };
+              };
             };
             case (null) {
               edgeOps.add({
