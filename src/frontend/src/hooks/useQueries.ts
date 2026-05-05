@@ -49,6 +49,7 @@ const EMPTY_GRAPH_DATA: GraphData = {
   interpretationTokens: [],
   rootNodes: [],
   edges: [],
+  sources: [],
 };
 
 // Returns an empty graph — getOwnedData was removed from the backend.

@@ -1,6 +1,7 @@
 import type {
   GraphData,
   GraphEdge,
+  SourceRef,
   WeightedAttribute,
   WeightedValue,
 } from "../backend.d";
@@ -31,6 +32,17 @@ function convertWeightedAttributes(
     result[attr.key] = attr.weightedValues.map(formatWeightedValue).join(", ");
   }
   return result;
+}
+
+/**
+ * Converts backend SourceRef[] to frontend SourceRef[]. Simple passthrough
+ * mapping — kept as a typed conversion so future backend changes are isolated.
+ */
+function convertSources(
+  sources: SourceRef[] | undefined,
+): import("../types/sourceGraph").SourceRef[] | undefined {
+  if (!sources || sources.length === 0) return undefined;
+  return sources.map((s) => ({ name: s.name, url: s.url }));
 }
 
 /**
@@ -138,6 +150,7 @@ export function graphDataToSourceGraph(
     name: c.name,
     nodeType: "curation" as const,
     attributes: convertWeightedAttributes(c.customAttributes),
+    sources: convertSources(c.sources),
   }));
 
   const swarmNodes: SourceNode[] = data.swarms.map((s) => ({
@@ -146,6 +159,7 @@ export function graphDataToSourceGraph(
     nodeType: "swarm" as const,
     parentName: idToName.get(s.parentCurationId),
     attributes: convertWeightedAttributes(s.customAttributes),
+    sources: convertSources(s.sources),
   }));
 
   const locationNodes: SourceNode[] = data.locations.map((l) => ({
@@ -154,6 +168,7 @@ export function graphDataToSourceGraph(
     nodeType: "location" as const,
     parentName: idToName.get(l.parentSwarmId),
     attributes: convertWeightedAttributes(l.customAttributes),
+    sources: convertSources(l.sources),
   }));
 
   const lawTokenNodes: SourceNode[] = data.lawTokens.map((lt) => ({
@@ -162,6 +177,7 @@ export function graphDataToSourceGraph(
     nodeType: "lawEntity" as const,
     parentName: idToName.get(lt.parentLocationId),
     attributes: convertWeightedAttributes(lt.customAttributes),
+    sources: convertSources(lt.sources),
   }));
 
   const interpNodes: SourceNode[] = data.interpretationTokens.map((it) => ({
@@ -175,6 +191,7 @@ export function graphDataToSourceGraph(
         ? it.contentVersions[it.contentVersions.length - 1].content
         : undefined,
     attributes: convertWeightedAttributes(it.customAttributes),
+    sources: convertSources(it.sources),
   }));
 
   // ------------------------------------------------------------------

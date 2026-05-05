@@ -142,6 +142,11 @@ export function editorToSourceGraph(
           ? attributes
           : undefined,
       parentName: node.parentId ? nodes.get(node.parentId)?.name : undefined,
+      ...(node.nodeType !== "interpEntity" &&
+      node.inheritedSources &&
+      node.inheritedSources.length > 0
+        ? { sources: node.inheritedSources.map((s) => ({ ...s })) }
+        : {}),
     };
 
     sourceNodes.push(sourceNode);

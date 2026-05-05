@@ -28176,6 +28176,7 @@ const SourceGraphEdgeInput = Record({
   "targetName": Text,
   "edgeLabel": Text
 });
+const SourceRef = Record({ "url": Text, "name": Text });
 const SourceGraphNodeInput = Record({
   "id": Opt(Text),
   "content": Opt(Text),
@@ -28183,6 +28184,7 @@ const SourceGraphNodeInput = Record({
   "tags": Vec(Text),
   "jurisdiction": Opt(Text),
   "attributes": Vec(Tuple(Text, Vec(Text))),
+  "sources": Vec(SourceRef),
   "parentName": Opt(Text),
   "nodeType": Text
 });
@@ -28266,7 +28268,8 @@ const Curation = Record({
   "creator": Principal2,
   "customAttributes": Vec(WeightedAttribute),
   "name": Text,
-  "timestamps": Timestamps
+  "timestamps": Timestamps,
+  "sources": Vec(SourceRef)
 });
 GraphNode.fill(
   Record({
@@ -28274,6 +28277,7 @@ GraphNode.fill(
     "customAttributes": Vec(WeightedAttribute),
     "children": Vec(GraphNode),
     "jurisdiction": Opt(Text),
+    "sources": Vec(SourceRef),
     "parentId": Opt(NodeId),
     "tokenLabel": Text,
     "nodeType": Text
@@ -28296,7 +28300,8 @@ const Location = Record({
   "creator": Principal2,
   "customAttributes": Vec(WeightedAttribute),
   "timestamps": Timestamps,
-  "parentSwarmId": NodeId
+  "parentSwarmId": NodeId,
+  "sources": Vec(SourceRef)
 });
 const Swarm = Record({
   "id": NodeId,
@@ -28307,6 +28312,7 @@ const Swarm = Record({
   "forkSource": Opt(NodeId),
   "timestamps": Timestamps,
   "parentCurationId": NodeId,
+  "sources": Vec(SourceRef),
   "forkPrincipal": Opt(Principal2)
 });
 const LawToken = Record({
@@ -28315,6 +28321,7 @@ const LawToken = Record({
   "creator": Principal2,
   "customAttributes": Vec(WeightedAttribute),
   "timestamps": Timestamps,
+  "sources": Vec(SourceRef),
   "tokenLabel": Text
 });
 const ContentVersion = Record({
@@ -28329,6 +28336,7 @@ const InterpretationToken = Record({
   "customAttributes": Vec(WeightedAttribute),
   "timestamps": Timestamps,
   "contentVersions": Vec(ContentVersion),
+  "sources": Vec(SourceRef),
   "parentLawTokenId": NodeId
 });
 const GraphData = Record({
@@ -28336,6 +28344,7 @@ const GraphData = Record({
   "rootNodes": Vec(GraphNode),
   "edges": Vec(GraphEdge),
   "locations": Vec(Location),
+  "sources": Vec(SourceRef),
   "swarms": Vec(Swarm),
   "lawTokens": Vec(LawToken),
   "interpretationTokens": Vec(InterpretationToken)
@@ -28604,6 +28613,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "targetName": IDL2.Text,
     "edgeLabel": IDL2.Text
   });
+  const SourceRef2 = IDL2.Record({ "url": IDL2.Text, "name": IDL2.Text });
   const SourceGraphNodeInput2 = IDL2.Record({
     "id": IDL2.Opt(IDL2.Text),
     "content": IDL2.Opt(IDL2.Text),
@@ -28611,6 +28621,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "tags": IDL2.Vec(IDL2.Text),
     "jurisdiction": IDL2.Opt(IDL2.Text),
     "attributes": IDL2.Vec(IDL2.Tuple(IDL2.Text, IDL2.Vec(IDL2.Text))),
+    "sources": IDL2.Vec(SourceRef2),
     "parentName": IDL2.Opt(IDL2.Text),
     "nodeType": IDL2.Text
   });
@@ -28691,7 +28702,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "creator": IDL2.Principal,
     "customAttributes": IDL2.Vec(WeightedAttribute2),
     "name": IDL2.Text,
-    "timestamps": Timestamps2
+    "timestamps": Timestamps2,
+    "sources": IDL2.Vec(SourceRef2)
   });
   GraphNode2.fill(
     IDL2.Record({
@@ -28699,6 +28711,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       "customAttributes": IDL2.Vec(WeightedAttribute2),
       "children": IDL2.Vec(GraphNode2),
       "jurisdiction": IDL2.Opt(IDL2.Text),
+      "sources": IDL2.Vec(SourceRef2),
       "parentId": IDL2.Opt(NodeId2),
       "tokenLabel": IDL2.Text,
       "nodeType": IDL2.Text
@@ -28721,7 +28734,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "creator": IDL2.Principal,
     "customAttributes": IDL2.Vec(WeightedAttribute2),
     "timestamps": Timestamps2,
-    "parentSwarmId": NodeId2
+    "parentSwarmId": NodeId2,
+    "sources": IDL2.Vec(SourceRef2)
   });
   const Swarm2 = IDL2.Record({
     "id": NodeId2,
@@ -28732,6 +28746,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "forkSource": IDL2.Opt(NodeId2),
     "timestamps": Timestamps2,
     "parentCurationId": NodeId2,
+    "sources": IDL2.Vec(SourceRef2),
     "forkPrincipal": IDL2.Opt(IDL2.Principal)
   });
   const LawToken2 = IDL2.Record({
@@ -28740,6 +28755,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "creator": IDL2.Principal,
     "customAttributes": IDL2.Vec(WeightedAttribute2),
     "timestamps": Timestamps2,
+    "sources": IDL2.Vec(SourceRef2),
     "tokenLabel": IDL2.Text
   });
   const ContentVersion2 = IDL2.Record({
@@ -28754,6 +28770,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "customAttributes": IDL2.Vec(WeightedAttribute2),
     "timestamps": Timestamps2,
     "contentVersions": IDL2.Vec(ContentVersion2),
+    "sources": IDL2.Vec(SourceRef2),
     "parentLawTokenId": NodeId2
   });
   const GraphData2 = IDL2.Record({
@@ -28761,6 +28778,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "rootNodes": IDL2.Vec(GraphNode2),
     "edges": IDL2.Vec(GraphEdge2),
     "locations": IDL2.Vec(Location2),
+    "sources": IDL2.Vec(SourceRef2),
     "swarms": IDL2.Vec(Swarm2),
     "lawTokens": IDL2.Vec(LawToken2),
     "interpretationTokens": IDL2.Vec(InterpretationToken2)
@@ -29990,6 +30008,7 @@ function from_candid_record_n33(_uploadFile, _downloadFile, value) {
     rootNodes: from_candid_vec_n34(_uploadFile, _downloadFile, value.rootNodes),
     edges: from_candid_vec_n38(_uploadFile, _downloadFile, value.edges),
     locations: value.locations,
+    sources: value.sources,
     swarms: from_candid_vec_n43(_uploadFile, _downloadFile, value.swarms),
     lawTokens: value.lawTokens,
     interpretationTokens: value.interpretationTokens
@@ -30001,6 +30020,7 @@ function from_candid_record_n36(_uploadFile, _downloadFile, value) {
     customAttributes: value.customAttributes,
     children: from_candid_vec_n34(_uploadFile, _downloadFile, value.children),
     jurisdiction: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.jurisdiction)),
+    sources: value.sources,
     parentId: record_opt_to_undefined(from_candid_opt_n37(_uploadFile, _downloadFile, value.parentId)),
     tokenLabel: value.tokenLabel,
     nodeType: value.nodeType
@@ -30024,6 +30044,7 @@ function from_candid_record_n45(_uploadFile, _downloadFile, value) {
     forkSource: record_opt_to_undefined(from_candid_opt_n37(_uploadFile, _downloadFile, value.forkSource)),
     timestamps: value.timestamps,
     parentCurationId: value.parentCurationId,
+    sources: value.sources,
     forkPrincipal: record_opt_to_undefined(from_candid_opt_n46(_uploadFile, _downloadFile, value.forkPrincipal))
   };
 }
@@ -30227,6 +30248,7 @@ function to_candid_record_n7(_uploadFile, _downloadFile, value) {
     tags: value.tags,
     jurisdiction: value.jurisdiction ? candid_some(value.jurisdiction) : candid_none(),
     attributes: value.attributes,
+    sources: value.sources,
     parentName: value.parentName ? candid_some(value.parentName) : candid_none(),
     nodeType: value.nodeType
   };
@@ -35783,7 +35805,8 @@ const EMPTY_GRAPH_DATA = {
   lawTokens: [],
   interpretationTokens: [],
   rootNodes: [],
-  edges: []
+  edges: [],
+  sources: []
 };
 function useGetOwnedData() {
   return useQuery({
@@ -43689,6 +43712,10 @@ function convertWeightedAttributes(attrs) {
   }
   return result;
 }
+function convertSources(sources) {
+  if (!sources || sources.length === 0) return void 0;
+  return sources.map((s2) => ({ name: s2.name, url: s2.url }));
+}
 function isBidirectional(directionality) {
   if (directionality === Directionality.bidirectional) return true;
   if (typeof directionality === "object" && directionality !== null && "bidirectional" in directionality)
@@ -43743,28 +43770,32 @@ function graphDataToSourceGraph(data, name, id2) {
     id: c2.id,
     name: c2.name,
     nodeType: "curation",
-    attributes: convertWeightedAttributes(c2.customAttributes)
+    attributes: convertWeightedAttributes(c2.customAttributes),
+    sources: convertSources(c2.sources)
   }));
   const swarmNodes = data.swarms.map((s2) => ({
     id: s2.id,
     name: s2.name,
     nodeType: "swarm",
     parentName: idToName.get(s2.parentCurationId),
-    attributes: convertWeightedAttributes(s2.customAttributes)
+    attributes: convertWeightedAttributes(s2.customAttributes),
+    sources: convertSources(s2.sources)
   }));
   const locationNodes = data.locations.map((l2) => ({
     id: l2.id,
     name: l2.title,
     nodeType: "location",
     parentName: idToName.get(l2.parentSwarmId),
-    attributes: convertWeightedAttributes(l2.customAttributes)
+    attributes: convertWeightedAttributes(l2.customAttributes),
+    sources: convertSources(l2.sources)
   }));
   const lawTokenNodes = data.lawTokens.map((lt) => ({
     id: lt.id,
     name: lt.tokenLabel,
     nodeType: "lawEntity",
     parentName: idToName.get(lt.parentLocationId),
-    attributes: convertWeightedAttributes(lt.customAttributes)
+    attributes: convertWeightedAttributes(lt.customAttributes),
+    sources: convertSources(lt.sources)
   }));
   const interpNodes = data.interpretationTokens.map((it2) => ({
     id: it2.id,
@@ -43773,7 +43804,8 @@ function graphDataToSourceGraph(data, name, id2) {
     parentName: idToName.get(it2.parentLawTokenId),
     // contentVersions holds historical content; use most recent version if available
     content: it2.contentVersions.length > 0 ? it2.contentVersions[it2.contentVersions.length - 1].content : void 0,
-    attributes: convertWeightedAttributes(it2.customAttributes)
+    attributes: convertWeightedAttributes(it2.customAttributes),
+    sources: convertSources(it2.sources)
   }));
   const hierarchyEdges = generateHierarchyEdges(data);
   const edges = [
@@ -44192,6 +44224,22 @@ function PublicNodeDetailsPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground shrink-0 min-w-0 break-words", children: key2 }),
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80 ml-auto text-right break-words", children: typeof value === "string" ? value : JSON.stringify(value) })
                   ] }, key2)) })
+                ] }),
+                node2.sources !== void 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "SOURCES" }),
+                  node2.sources.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-muted-foreground italic", children: "No sources" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 space-y-1", children: node2.sources.map((s2, i2) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: flat list, no stable key
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs break-words", children: s2.url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "a",
+                      {
+                        href: s2.url,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        className: "text-foreground/80 underline hover:text-foreground transition-colors",
+                        children: s2.name
+                      }
+                    ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80", children: s2.name }) }, i2)
+                  )) })
                 ] })
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border px-4 py-2 flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -53968,7 +54016,8 @@ function SourceGraphDiagram({
         nodeType: n2.nodeType,
         content: n2.content,
         parentName: n2.parentName,
-        attributes: n2.attributes
+        attributes: n2.attributes,
+        sources: n2.sources
       };
     });
     const effectiveGraphId = graphId ?? "";
@@ -54037,7 +54086,8 @@ function SourceGraphDiagram({
           nodeType: node2.nodeType,
           content: node2.content,
           parentName: node2.parentName,
-          attributes: node2.attributes
+          attributes: node2.attributes,
+          sources: node2.sources
         };
         onNodeClickRef.current(sourceNode);
       }
@@ -95513,7 +95563,8 @@ function editorToSourceGraph(nodes, rootId) {
       nodeType: node2.nodeType,
       content: content2 || void 0,
       attributes: attributes && Object.keys(attributes).length > 0 ? attributes : void 0,
-      parentName: node2.parentId ? (_a3 = nodes.get(node2.parentId)) == null ? void 0 : _a3.name : void 0
+      parentName: node2.parentId ? (_a3 = nodes.get(node2.parentId)) == null ? void 0 : _a3.name : void 0,
+      ...node2.nodeType !== "interpEntity" && node2.inheritedSources && node2.inheritedSources.length > 0 ? { sources: node2.inheritedSources.map((s2) => ({ ...s2 })) } : {}
     };
     sourceNodes.push(sourceNode);
   }
@@ -103949,6 +104000,27 @@ async function getDirectAttributes(zip, folderPath) {
   const raw2 = await readText(zip, attrPath);
   return raw2 ? parseFrontmatter(raw2) : {};
 }
+function parseMarkdownLinks(text2) {
+  const lines = text2.split(/\r?\n/);
+  const results = [];
+  for (const raw2 of lines) {
+    const line = raw2.trim();
+    if (!line) continue;
+    const match = line.match(/^\[(.+?)\]\((.+?)\)$/);
+    if (match) {
+      results.push({ name: match[1], url: match[2] });
+    } else {
+      results.push({ name: line, url: "" });
+    }
+  }
+  return results;
+}
+async function getDirectSources(zip, folderPath) {
+  const base = folderPath.replace(/\/+$/, "");
+  const srcPath = `${base}/_sources.md`;
+  const raw2 = await readText(zip, srcPath);
+  return raw2 ? parseMarkdownLinks(raw2) : [];
+}
 async function parseSourceGraphZip(file2) {
   const zip = await JSZip.loadAsync(file2);
   const nodes = [];
@@ -103973,7 +104045,8 @@ async function parseSourceGraphZip(file2) {
       nodeType: "curation",
       attributes: extractAllAttributes(
         await getDirectAttributes(zip, curationPath)
-      )
+      ),
+      sources: await getDirectSources(zip, curationPath)
     };
     nodes.push(curationNode);
     const curationPrefix = `${curationName}/`;
@@ -103995,7 +104068,8 @@ async function parseSourceGraphZip(file2) {
         parentName: curationName,
         attributes: extractAllAttributes(
           await getDirectAttributes(zip, swarmPath)
-        )
+        ),
+        sources: await getDirectSources(zip, swarmPath)
       };
       nodes.push(swarmNode);
       edges.push({
@@ -104048,7 +104122,8 @@ async function parseSourceGraphZip(file2) {
           parentName: swarmName,
           attributes: extractAllAttributes(
             await getDirectAttributes(zip, locationPath)
-          )
+          ),
+          sources: await getDirectSources(zip, locationPath)
         };
         nodes.push(locationNode);
         edges.push({
@@ -104081,7 +104156,8 @@ async function parseSourceGraphZip(file2) {
             parentName: locationName,
             attributes: extractAllAttributes(
               await getDirectAttributes(zip, lawEntityFolder)
-            )
+            ),
+            sources: await getDirectSources(zip, lawEntityFolder)
           });
           edges.push({
             source: `${curationName}@${swarmName}@${locationName}`,
@@ -104254,6 +104330,7 @@ function sourceGraphToEditor(graph) {
       content: content2 || void 0,
       frontmatter,
       inheritedAttributes,
+      inheritedSources: node2.nodeType !== "interpEntity" ? (node2.sources ?? []).map((s2) => ({ ...s2 })) : [],
       children: childrenMap.get(id2) ?? [],
       createdAt: graph.createdAt ?? now2,
       updatedAt: now2
@@ -104476,6 +104553,7 @@ function useMarkdownEditor() {
       nodeType: "curation",
       frontmatter: {},
       inheritedAttributes: {},
+      inheritedSources: [],
       children: [],
       createdAt: now2,
       updatedAt: now2
@@ -104523,6 +104601,7 @@ function useMarkdownEditor() {
           nodeType: nt2,
           frontmatter: {},
           inheritedAttributes: {},
+          inheritedSources: [],
           children: [],
           createdAt: now2,
           updatedAt: now2,
@@ -105251,6 +105330,7 @@ function EditorView() {
             content: content2,
             frontmatter: frontmatterData,
             inheritedAttributes: {},
+            inheritedSources: [],
             children: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -106405,6 +106485,22 @@ function buildInheritedAttributes(node2, nodeMap) {
     ])
   );
 }
+function buildInheritedSources(node2, nodeMap) {
+  const chain2 = [];
+  let currentName = node2.parentName;
+  const visited = /* @__PURE__ */ new Set();
+  while (currentName && !visited.has(currentName)) {
+    visited.add(currentName);
+    const ancestor = nodeMap.get(currentName);
+    if (!ancestor) break;
+    if (ancestor.sources && ancestor.sources.length > 0) {
+      chain2.push(ancestor.sources);
+    }
+    currentName = ancestor.parentName;
+  }
+  chain2.reverse();
+  return chain2.flat();
+}
 function NodeDetailsModal({
   node: node2,
   graph,
@@ -106423,6 +106519,14 @@ function NodeDetailsModal({
   const nodeMap = reactExports.useRef(new Map(graph.nodes.map((n2) => [n2.name, n2])));
   const inheritedAttributes = buildInheritedAttributes(node2, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
+  const [sourceRows, setSourceRows] = reactExports.useState(
+    () => (node2.sources ?? []).map((s2) => ({
+      name: s2.name,
+      url: s2.url,
+      isNew: false
+    }))
+  );
+  const inheritedSources = buildInheritedSources(node2, nodeMap.current);
   const overlayRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     var _a3;
@@ -106460,6 +106564,22 @@ function NodeDetailsModal({
   const handleAddAttribute = () => {
     setNewRows((rows) => [...rows, { key: "", value: "", isNew: true }]);
   };
+  const handleSourceNameChange = (index2, value) => {
+    setSourceRows(
+      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, name: value } : r2)
+    );
+  };
+  const handleSourceUrlChange = (index2, value) => {
+    setSourceRows(
+      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, url: value } : r2)
+    );
+  };
+  const handleAddSource = () => {
+    setSourceRows((rows) => [...rows, { name: "", url: "", isNew: true }]);
+  };
+  const handleRemoveSource = (index2) => {
+    setSourceRows((rows) => rows.filter((_2, i2) => i2 !== index2));
+  };
   const handleSave = () => {
     const merged = {};
     for (const row of existingRows) {
@@ -106468,7 +106588,8 @@ function NodeDetailsModal({
     for (const row of newRows) {
       if (row.key.trim()) merged[row.key.trim()] = row.value;
     }
-    onSave(node2.name, { name: editedName, attributes: merged });
+    const sources = sourceRows.filter((r2) => r2.name.trim() !== "").map((r2) => ({ name: r2.name.trim(), url: r2.url.trim() }));
+    onSave(node2.name, { name: editedName, attributes: merged, sources });
     onClose();
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -106624,6 +106745,77 @@ function NodeDetailsModal({
                   ),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground break-words min-w-0", children: value })
                 ] }, key2)) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "own sources" }),
+                sourceRows.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" }),
+                sourceRows.map((row, i2) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: source rows have no stable key
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "input",
+                      {
+                        type: "text",
+                        placeholder: "name",
+                        value: row.name,
+                        onChange: (e2) => handleSourceNameChange(i2, e2.target.value),
+                        className: "\n                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
+                        "data-ocid": `source-name-${i2}`
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "input",
+                      {
+                        type: "text",
+                        placeholder: "url",
+                        value: row.url,
+                        onChange: (e2) => handleSourceUrlChange(i2, e2.target.value),
+                        className: "\n                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
+                        "data-ocid": `source-url-${i2}`
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "button",
+                      {
+                        type: "button",
+                        className: "text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0",
+                        onClick: () => handleRemoveSource(i2),
+                        "data-ocid": `source-remove-${i2}`,
+                        children: "[–]"
+                      }
+                    )
+                  ] }, i2)
+                )),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors",
+                    onClick: handleAddSource,
+                    "data-ocid": "add-source-btn",
+                    children: "[+ add source]"
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "inherited sources" }),
+                inheritedSources.length > 0 ? inheritedSources.map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "div",
+                  {
+                    className: "text-xs text-foreground break-words min-w-0",
+                    children: s2.url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "a",
+                      {
+                        href: s2.url,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        className: "underline hover:text-primary transition-colors",
+                        children: s2.name
+                      }
+                    ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: s2.name })
+                  },
+                  `${s2.name}-${s2.url}`
+                )) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
               ] })
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-end gap-3 px-4 py-3 border-t border-dashed border-border shrink-0", children: [
@@ -107104,6 +107296,7 @@ function sourceGraphToInput(graph) {
   }
   const nodes = graph.nodes.map((node2) => {
     const ancestorChain = [];
+    const ancestorSourceChain = [];
     let currentName = node2.parentName;
     const visited = /* @__PURE__ */ new Set();
     while (currentName && !visited.has(currentName)) {
@@ -107113,6 +107306,9 @@ function sourceGraphToInput(graph) {
       if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
         ancestorChain.push(ancestor.attributes);
       }
+      if (ancestor.sources && ancestor.sources.length > 0) {
+        ancestorSourceChain.push(ancestor.sources);
+      }
       currentName = ancestor.parentName;
     }
     const merged = {};
@@ -107120,6 +107316,13 @@ function sourceGraphToInput(graph) {
       Object.assign(merged, ancestorChain[i2]);
     }
     Object.assign(merged, node2.attributes ?? {});
+    const mergedSources = [];
+    for (let i2 = ancestorSourceChain.length - 1; i2 >= 0; i2--) {
+      mergedSources.push(...ancestorSourceChain[i2]);
+    }
+    if (node2.sources && node2.sources.length > 0) {
+      mergedSources.push(...node2.sources);
+    }
     return {
       id: node2.id ?? void 0,
       name: node2.name,
@@ -107129,7 +107332,8 @@ function sourceGraphToInput(graph) {
       parentName: node2.parentName ?? void 0,
       attributes: Object.entries(merged).map(
         ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
-      )
+      ),
+      sources: mergedSources
     };
   });
   const edges = graph.edges.map((edge) => ({

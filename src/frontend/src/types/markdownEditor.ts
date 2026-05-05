@@ -1,3 +1,5 @@
+import type { SourceRef } from "./sourceGraph";
+
 // ---------------------------------------------------------------------------
 // Markdown Editor Types
 // ---------------------------------------------------------------------------
@@ -28,6 +30,8 @@ export interface EditorNode {
   frontmatter: Record<string, unknown>;
   /** Attributes inherited from ancestor _attributes.md files */
   inheritedAttributes: Record<string, string>;
+  /** Sources inherited from ancestor _sources.md files */
+  inheritedSources: SourceRef[];
   /** Ordered ids of direct children */
   children: string[];
   createdAt: number;

@@ -4,6 +4,7 @@ import type { LinkObject, NodeObject } from "force-graph";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { getVariant } from "../lib/themes";
+import type { SourceRef } from "../types/sourceGraph";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,7 @@ interface FGNode extends NodeObject {
   content?: string;
   parentName?: string;
   attributes?: Record<string, unknown>;
+  sources?: SourceRef[];
 }
 
 interface FGLink extends LinkObject<FGNode> {
@@ -134,6 +136,7 @@ export function SourceGraphDiagram({
         content: n.content,
         parentName: n.parentName,
         attributes: n.attributes,
+        sources: n.sources,
       };
     });
 
@@ -235,6 +238,7 @@ export function SourceGraphDiagram({
             content: node.content,
             parentName: node.parentName,
             attributes: node.attributes,
+            sources: node.sources,
           };
           onNodeClickRef.current(sourceNode);
         }

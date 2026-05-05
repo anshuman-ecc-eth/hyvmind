@@ -5452,6 +5452,9 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .hover\:text-muted-foreground:hover{
   color: var(--muted-foreground);
 }
+.hover\:text-primary:hover{
+  color: var(--primary);
+}
 .hover\:text-sidebar-accent-foreground:hover{
   color: var(--sidebar-accent-foreground);
 }

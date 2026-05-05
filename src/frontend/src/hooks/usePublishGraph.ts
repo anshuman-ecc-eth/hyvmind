@@ -35,6 +35,8 @@ export function sourceGraphToInput(graph: SourceGraph) {
   const nodes = graph.nodes.map((node) => {
     // Walk ancestor chain (same logic as buildInheritedAttributes in NodeDetailsModal)
     const ancestorChain: Record<string, unknown>[] = [];
+    const ancestorSourceChain: import("../types/sourceGraph").SourceRef[][] =
+      [];
     let currentName = node.parentName;
     const visited = new Set<string>();
 
@@ -45,15 +47,27 @@ export function sourceGraphToInput(graph: SourceGraph) {
       if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
         ancestorChain.push(ancestor.attributes);
       }
+      if (ancestor.sources && ancestor.sources.length > 0) {
+        ancestorSourceChain.push(ancestor.sources);
+      }
       currentName = ancestor.parentName;
     }
 
-    // Merge: farthest ancestor first, own attributes override all
+    // Merge attributes: farthest ancestor first, own attributes override all
     const merged: Record<string, unknown> = {};
     for (let i = ancestorChain.length - 1; i >= 0; i--) {
       Object.assign(merged, ancestorChain[i]);
     }
     Object.assign(merged, node.attributes ?? {});
+
+    // Merge sources: farthest ancestor first, then closer ancestors, then own
+    const mergedSources: import("../types/sourceGraph").SourceRef[] = [];
+    for (let i = ancestorSourceChain.length - 1; i >= 0; i--) {
+      mergedSources.push(...ancestorSourceChain[i]);
+    }
+    if (node.sources && node.sources.length > 0) {
+      mergedSources.push(...node.sources);
+    }
 
     return {
       id: node.id ?? undefined,
@@ -69,6 +83,7 @@ export function sourceGraphToInput(graph: SourceGraph) {
             string[],
           ],
       ),
+      sources: mergedSources,
     };
   });
 

@@ -178,6 +178,7 @@ export default function VoronoiDiagram() {
           interpretationTokens: [],
           rootNodes: [],
           edges: [],
+          sources: [],
         };
 
         // Step 3: Store fresh data in cache
@@ -242,6 +243,7 @@ export default function VoronoiDiagram() {
         interpretationTokens: [],
         rootNodes: [],
         edges: [],
+        sources: [],
       };
 
       // Update cache

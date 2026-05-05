@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { parse as yamlParse } from "yaml";
+import type { SourceRef } from "../types/sourceGraph";
 import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,39 @@ async function getDirectAttributes(
   const raw = await readText(zip, attrPath);
   return raw ? parseFrontmatter(raw) : {};
 }
+/**
+ * Parse a _sources.md text into an array of SourceRef objects.
+ * Each non-empty line is either a markdown link [name](url) or plain text.
+ */
+export function parseMarkdownLinks(text: string): SourceRef[] {
+  const lines = text.split(/\r?\n/);
+  const results: SourceRef[] = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const match = line.match(/^\[(.+?)\]\((.+?)\)$/);
+    if (match) {
+      results.push({ name: match[1], url: match[2] });
+    } else {
+      results.push({ name: line, url: "" });
+    }
+  }
+  return results;
+}
+
+/**
+ * Read the direct _sources.md for a given folder path,
+ * returning an empty array if the file is absent.
+ */
+async function getDirectSources(
+  zip: JSZip,
+  folderPath: string,
+): Promise<SourceRef[]> {
+  const base = folderPath.replace(/\/+$/, "");
+  const srcPath = `${base}/_sources.md`;
+  const raw = await readText(zip, srcPath);
+  return raw ? parseMarkdownLinks(raw) : [];
+}
 
 // ---------------------------------------------------------------------------
 // Main parser
@@ -128,6 +162,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       attributes: extractAllAttributes(
         await getDirectAttributes(zip, curationPath),
       ),
+      sources: await getDirectSources(zip, curationPath),
     };
     nodes.push(curationNode);
 
@@ -157,6 +192,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         attributes: extractAllAttributes(
           await getDirectAttributes(zip, swarmPath),
         ),
+        sources: await getDirectSources(zip, swarmPath),
       };
       nodes.push(swarmNode);
       edges.push({
@@ -230,6 +266,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           attributes: extractAllAttributes(
             await getDirectAttributes(zip, locationPath),
           ),
+          sources: await getDirectSources(zip, locationPath),
         };
         nodes.push(locationNode);
         edges.push({
@@ -274,6 +311,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             attributes: extractAllAttributes(
               await getDirectAttributes(zip, lawEntityFolder),
             ),
+            sources: await getDirectSources(zip, lawEntityFolder),
           });
           edges.push({
             source: `${curationName}@${swarmName}@${locationName}`,

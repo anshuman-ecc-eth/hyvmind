@@ -113,6 +113,10 @@ export function sourceGraphToEditor(graph: SourceGraph): EditorNode[] {
       content: content || undefined,
       frontmatter,
       inheritedAttributes,
+      inheritedSources:
+        node.nodeType !== "interpEntity"
+          ? (node.sources ?? []).map((s) => ({ ...s }))
+          : [],
       children: childrenMap.get(id) ?? [],
       createdAt: graph.createdAt ?? now,
       updatedAt: now,

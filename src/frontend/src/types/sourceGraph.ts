@@ -5,6 +5,11 @@ export type NodeType =
   | "lawEntity"
   | "interpEntity";
 
+export interface SourceRef {
+  name: string;
+  url: string;
+}
+
 export interface SourceNode {
   id?: string;
   name: string;
@@ -12,6 +17,7 @@ export interface SourceNode {
   content?: string;
   parentName?: string;
   attributes?: Record<string, unknown>;
+  sources?: SourceRef[];
 }
 
 export interface Edge {

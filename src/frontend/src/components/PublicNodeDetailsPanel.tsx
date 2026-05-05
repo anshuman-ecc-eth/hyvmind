@@ -163,6 +163,40 @@ export default function PublicNodeDetailsPanel({
               </div>
             )}
           </div>
+
+          {/* Sources */}
+          {node.sources !== undefined && (
+            <div>
+              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+                SOURCES
+              </span>
+              {node.sources.length === 0 ? (
+                <p className="mt-0.5 text-muted-foreground italic">
+                  No sources
+                </p>
+              ) : (
+                <div className="mt-1 space-y-1">
+                  {node.sources.map((s, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: flat list, no stable key
+                    <div key={i} className="text-xs break-words">
+                      {s.url ? (
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground/80 underline hover:text-foreground transition-colors"
+                        >
+                          {s.name}
+                        </a>
+                      ) : (
+                        <span className="text-foreground/80">{s.name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

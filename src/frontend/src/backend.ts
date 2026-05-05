@@ -96,6 +96,7 @@ export interface Location {
     customAttributes: Array<WeightedAttribute>;
     timestamps: Timestamps;
     parentSwarmId: NodeId;
+    sources: Array<SourceRef>;
 }
 export type MintCollectibleResult = {
     __kind__: "editionLimitReached";
@@ -119,6 +120,7 @@ export interface LawToken {
     creator: Principal;
     customAttributes: Array<WeightedAttribute>;
     timestamps: Timestamps;
+    sources: Array<SourceRef>;
     tokenLabel: string;
 }
 export type Time = bigint;
@@ -187,6 +189,7 @@ export interface GraphNode {
     customAttributes: Array<WeightedAttribute>;
     children: Array<GraphNode>;
     jurisdiction?: string;
+    sources: Array<SourceRef>;
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
@@ -233,6 +236,11 @@ export interface Curation {
     customAttributes: Array<WeightedAttribute>;
     name: string;
     timestamps: Timestamps;
+    sources: Array<SourceRef>;
+}
+export interface SourceRef {
+    url: string;
+    name: string;
 }
 export interface InterpretationToken {
     id: NodeId;
@@ -241,6 +249,7 @@ export interface InterpretationToken {
     customAttributes: Array<WeightedAttribute>;
     timestamps: Timestamps;
     contentVersions: Array<ContentVersion>;
+    sources: Array<SourceRef>;
     parentLawTokenId: NodeId;
 }
 export interface PublishSourceGraphInput {
@@ -258,6 +267,7 @@ export interface SourceGraphNodeInput {
     tags: Array<string>;
     jurisdiction?: string;
     attributes: Array<[string, Array<string>]>;
+    sources: Array<SourceRef>;
     parentName?: string;
     nodeType: string;
 }
@@ -296,6 +306,7 @@ export interface GraphData {
     rootNodes: Array<GraphNode>;
     edges: Array<GraphEdge>;
     locations: Array<Location>;
+    sources: Array<SourceRef>;
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
@@ -320,6 +331,7 @@ export interface Swarm {
     forkSource?: NodeId;
     timestamps: Timestamps;
     parentCurationId: NodeId;
+    sources: Array<SourceRef>;
     forkPrincipal?: Principal;
 }
 export interface EdgeOperation {
@@ -482,7 +494,7 @@ export interface backendInterface {
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
-import type { ApprovalStatus as _ApprovalStatus, AttributeChange as _AttributeChange, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CollectibleEdition as _CollectibleEdition, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
+import type { ApprovalStatus as _ApprovalStatus, AttributeChange as _AttributeChange, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CollectibleEdition as _CollectibleEdition, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControl(): Promise<void> {
@@ -1580,6 +1592,7 @@ function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uin
     rootNodes: Array<_GraphNode>;
     edges: Array<_GraphEdge>;
     locations: Array<_Location>;
+    sources: Array<_SourceRef>;
     swarms: Array<_Swarm>;
     lawTokens: Array<_LawToken>;
     interpretationTokens: Array<_InterpretationToken>;
@@ -1588,6 +1601,7 @@ function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uin
     rootNodes: Array<GraphNode>;
     edges: Array<GraphEdge>;
     locations: Array<Location>;
+    sources: Array<SourceRef>;
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
@@ -1597,6 +1611,7 @@ function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uin
         rootNodes: from_candid_vec_n34(_uploadFile, _downloadFile, value.rootNodes),
         edges: from_candid_vec_n38(_uploadFile, _downloadFile, value.edges),
         locations: value.locations,
+        sources: value.sources,
         swarms: from_candid_vec_n43(_uploadFile, _downloadFile, value.swarms),
         lawTokens: value.lawTokens,
         interpretationTokens: value.interpretationTokens
@@ -1607,6 +1622,7 @@ function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uin
     customAttributes: Array<_WeightedAttribute>;
     children: Array<_GraphNode>;
     jurisdiction: [] | [string];
+    sources: Array<_SourceRef>;
     parentId: [] | [_NodeId];
     tokenLabel: string;
     nodeType: string;
@@ -1615,6 +1631,7 @@ function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uin
     customAttributes: Array<WeightedAttribute>;
     children: Array<GraphNode>;
     jurisdiction?: string;
+    sources: Array<SourceRef>;
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
@@ -1624,6 +1641,7 @@ function from_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uin
         customAttributes: value.customAttributes,
         children: from_candid_vec_n34(_uploadFile, _downloadFile, value.children),
         jurisdiction: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.jurisdiction)),
+        sources: value.sources,
         parentId: record_opt_to_undefined(from_candid_opt_n37(_uploadFile, _downloadFile, value.parentId)),
         tokenLabel: value.tokenLabel,
         nodeType: value.nodeType
@@ -1656,6 +1674,7 @@ function from_candid_record_n45(_uploadFile: (file: ExternalBlob) => Promise<Uin
     forkSource: [] | [_NodeId];
     timestamps: _Timestamps;
     parentCurationId: _NodeId;
+    sources: Array<_SourceRef>;
     forkPrincipal: [] | [Principal];
 }): {
     id: NodeId;
@@ -1666,6 +1685,7 @@ function from_candid_record_n45(_uploadFile: (file: ExternalBlob) => Promise<Uin
     forkSource?: NodeId;
     timestamps: Timestamps;
     parentCurationId: NodeId;
+    sources: Array<SourceRef>;
     forkPrincipal?: Principal;
 } {
     return {
@@ -1677,6 +1697,7 @@ function from_candid_record_n45(_uploadFile: (file: ExternalBlob) => Promise<Uin
         forkSource: record_opt_to_undefined(from_candid_opt_n37(_uploadFile, _downloadFile, value.forkSource)),
         timestamps: value.timestamps,
         parentCurationId: value.parentCurationId,
+        sources: value.sources,
         forkPrincipal: record_opt_to_undefined(from_candid_opt_n46(_uploadFile, _downloadFile, value.forkPrincipal))
     };
 }
@@ -2130,6 +2151,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     tags: Array<string>;
     jurisdiction?: string;
     attributes: Array<[string, Array<string>]>;
+    sources: Array<SourceRef>;
     parentName?: string;
     nodeType: string;
 }): {
@@ -2139,6 +2161,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     tags: Array<string>;
     jurisdiction: [] | [string];
     attributes: Array<[string, Array<string>]>;
+    sources: Array<_SourceRef>;
     parentName: [] | [string];
     nodeType: string;
 } {
@@ -2149,6 +2172,7 @@ function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         tags: value.tags,
         jurisdiction: value.jurisdiction ? candid_some(value.jurisdiction) : candid_none(),
         attributes: value.attributes,
+        sources: value.sources,
         parentName: value.parentName ? candid_some(value.parentName) : candid_none(),
         nodeType: value.nodeType
     };

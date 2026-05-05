@@ -6,6 +6,7 @@ module {
   // CurationShape/SwarmShape/LocationShape are structurally compatible.
   public type WeightedValue = { value : Text; weight : Nat };
   public type WeightedAttribute = { key : Text; weightedValues : [WeightedValue] };
+  public type SourceRef = { name : Text; url : Text };
   public type Timestamps = { createdAt : Time.Time };
 
   // Exact structural matches for main.mo's Curation, Swarm, Location types
@@ -15,6 +16,7 @@ module {
     name : Text;
     creator : Principal;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     timestamps : Timestamps;
   };
 
@@ -25,6 +27,7 @@ module {
     parentCurationId : Text;
     creator : Principal;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     timestamps : Timestamps;
     forkSource : ?Text;
     forkPrincipal : ?Principal;
@@ -34,6 +37,7 @@ module {
     id : Text;
     title : Text;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     parentSwarmId : Text;
     creator : Principal;
     timestamps : Timestamps;

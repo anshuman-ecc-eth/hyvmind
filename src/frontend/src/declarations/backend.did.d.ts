@@ -52,6 +52,7 @@ export interface Curation {
   'customAttributes' : Array<WeightedAttribute>,
   'name' : string,
   'timestamps' : Timestamps,
+  'sources' : Array<SourceRef>,
 }
 export type Directionality = { 'none' : null } |
   { 'bidirectional' : null } |
@@ -77,6 +78,7 @@ export interface GraphData {
   'rootNodes' : Array<GraphNode>,
   'edges' : Array<GraphEdge>,
   'locations' : Array<Location>,
+  'sources' : Array<SourceRef>,
   'swarms' : Array<Swarm>,
   'lawTokens' : Array<LawToken>,
   'interpretationTokens' : Array<InterpretationToken>,
@@ -92,6 +94,7 @@ export interface GraphNode {
   'customAttributes' : Array<WeightedAttribute>,
   'children' : Array<GraphNode>,
   'jurisdiction' : [] | [string],
+  'sources' : Array<SourceRef>,
   'parentId' : [] | [NodeId],
   'tokenLabel' : string,
   'nodeType' : string,
@@ -120,6 +123,7 @@ export interface InterpretationToken {
   'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
   'contentVersions' : Array<ContentVersion>,
+  'sources' : Array<SourceRef>,
   'parentLawTokenId' : NodeId,
 }
 export interface LawToken {
@@ -128,6 +132,7 @@ export interface LawToken {
   'creator' : Principal,
   'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
+  'sources' : Array<SourceRef>,
   'tokenLabel' : string,
 }
 export interface Location {
@@ -137,6 +142,7 @@ export interface Location {
   'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
   'parentSwarmId' : NodeId,
+  'sources' : Array<SourceRef>,
 }
 export interface MintCollectibleRequest {
   'tokenId' : NodeId,
@@ -211,9 +217,11 @@ export interface SourceGraphNodeInput {
   'tags' : Array<string>,
   'jurisdiction' : [] | [string],
   'attributes' : Array<[string, Array<string>]>,
+  'sources' : Array<SourceRef>,
   'parentName' : [] | [string],
   'nodeType' : string,
 }
+export interface SourceRef { 'url' : string, 'name' : string }
 export interface Swarm {
   'id' : NodeId,
   'creator' : Principal,
@@ -223,6 +231,7 @@ export interface Swarm {
   'forkSource' : [] | [NodeId],
   'timestamps' : Timestamps,
   'parentCurationId' : NodeId,
+  'sources' : Array<SourceRef>,
   'forkPrincipal' : [] | [Principal],
 }
 export type Tag = string;

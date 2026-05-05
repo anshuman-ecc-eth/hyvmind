@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
+import type { SourceRef } from "../types/sourceGraph";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +16,12 @@ interface NodeDetailsModalProps {
 interface AttributeRow {
   key: string;
   value: string;
+  isNew: boolean;
+}
+
+interface SourceRow {
+  name: string;
+  url: string;
   isNew: boolean;
 }
 
@@ -66,6 +73,29 @@ function buildInheritedAttributes(
     ]),
   );
 }
+function buildInheritedSources(
+  node: SourceNode,
+  nodeMap: Map<string, SourceNode>,
+): SourceRef[] {
+  // Walk ancestor chain via parentName; collect sources farthest-first
+  const chain: SourceRef[][] = [];
+  let currentName = node.parentName;
+  const visited = new Set<string>();
+
+  while (currentName && !visited.has(currentName)) {
+    visited.add(currentName);
+    const ancestor = nodeMap.get(currentName);
+    if (!ancestor) break;
+    if (ancestor.sources && ancestor.sources.length > 0) {
+      chain.push(ancestor.sources);
+    }
+    currentName = ancestor.parentName;
+  }
+
+  // chain[0] = closest ancestor; reverse so farthest is first in result
+  chain.reverse();
+  return chain.flat();
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -95,6 +125,16 @@ export default function NodeDetailsModal({
 
   const inheritedAttributes = buildInheritedAttributes(node, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
+
+  const [sourceRows, setSourceRows] = useState<SourceRow[]>(() =>
+    (node.sources ?? []).map((s) => ({
+      name: s.name,
+      url: s.url,
+      isNew: false,
+    })),
+  );
+
+  const inheritedSources = buildInheritedSources(node, nodeMap.current);
 
   // Trap focus inside modal
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -145,6 +185,26 @@ export default function NodeDetailsModal({
     setNewRows((rows) => [...rows, { key: "", value: "", isNew: true }]);
   };
 
+  const handleSourceNameChange = (index: number, value: string) => {
+    setSourceRows((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, name: value } : r)),
+    );
+  };
+
+  const handleSourceUrlChange = (index: number, value: string) => {
+    setSourceRows((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, url: value } : r)),
+    );
+  };
+
+  const handleAddSource = () => {
+    setSourceRows((rows) => [...rows, { name: "", url: "", isNew: true }]);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    setSourceRows((rows) => rows.filter((_, i) => i !== index));
+  };
+
   const handleSave = () => {
     const merged: Record<string, string> = {};
     for (const row of existingRows) {
@@ -153,7 +213,10 @@ export default function NodeDetailsModal({
     for (const row of newRows) {
       if (row.key.trim()) merged[row.key.trim()] = row.value;
     }
-    onSave(node.name, { name: editedName, attributes: merged });
+    const sources: SourceRef[] = sourceRows
+      .filter((r) => r.name.trim() !== "")
+      .map((r) => ({ name: r.name.trim(), url: r.url.trim() }));
+    onSave(node.name, { name: editedName, attributes: merged, sources });
     onClose();
   };
 
@@ -334,6 +397,94 @@ export default function NodeDetailsModal({
                   <span className="text-foreground break-words min-w-0">
                     {value}
                   </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground italic">(none)</p>
+            )}
+          </div>
+
+          {/* Own Sources */}
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground border-b border-dashed border-border pb-1">
+              own sources
+            </div>
+
+            {sourceRows.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">(none)</p>
+            )}
+
+            {sourceRows.map((row, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: source rows have no stable key
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="name"
+                  value={row.name}
+                  onChange={(e) => handleSourceNameChange(i, e.target.value)}
+                  className="
+                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border
+                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
+                    focus:outline-none focus:border-foreground
+                  "
+                  data-ocid={`source-name-${i}`}
+                />
+                <input
+                  type="text"
+                  placeholder="url"
+                  value={row.url}
+                  onChange={(e) => handleSourceUrlChange(i, e.target.value)}
+                  className="
+                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border
+                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
+                    focus:outline-none focus:border-foreground
+                  "
+                  data-ocid={`source-url-${i}`}
+                />
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                  onClick={() => handleRemoveSource(i)}
+                  data-ocid={`source-remove-${i}`}
+                >
+                  [–]
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors"
+              onClick={handleAddSource}
+              data-ocid="add-source-btn"
+            >
+              [+ add source]
+            </button>
+          </div>
+
+          {/* Inherited Sources */}
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground border-b border-dashed border-border pb-1">
+              inherited sources
+            </div>
+            {inheritedSources.length > 0 ? (
+              inheritedSources.map((s) => (
+                <div
+                  key={`${s.name}-${s.url}`}
+                  className="text-xs text-foreground break-words min-w-0"
+                >
+                  {s.url ? (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-primary transition-colors"
+                    >
+                      {s.name}
+                    </a>
+                  ) : (
+                    <span>{s.name}</span>
+                  )}
                 </div>
               ))
             ) : (

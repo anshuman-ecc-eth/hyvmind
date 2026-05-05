@@ -22,10 +22,12 @@ import Runtime "mo:core/Runtime";
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
+import Migration "migration";
 
 
 
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -51,6 +53,11 @@ actor {
     weightedValues : [WeightedValue];
   };
 
+  type SourceRef = {
+    name : Text;
+    url : Text;
+  };
+
   type ContentVersion = {
     content : Text;
     contributor : Principal;
@@ -67,6 +74,7 @@ actor {
     name : Text;
     creator : Principal;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     timestamps : Timestamps;
   };
 
@@ -77,6 +85,7 @@ actor {
     parentCurationId : NodeId;
     creator : Principal;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     timestamps : Timestamps;
     forkSource : ?NodeId;
     forkPrincipal : ?Principal;
@@ -86,6 +95,7 @@ actor {
     id : NodeId;
     title : Text;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     parentSwarmId : NodeId;
     creator : Principal;
     timestamps : Timestamps;
@@ -97,6 +107,7 @@ actor {
     parentLocationId : NodeId;
     creator : Principal;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     timestamps : Timestamps;
   };
 
@@ -106,6 +117,7 @@ actor {
     contentVersions : [ContentVersion];
     parentLawTokenId : NodeId;
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
     creator : Principal;
     timestamps : Timestamps;
   };
@@ -201,6 +213,7 @@ actor {
     parentId : ?NodeId;
     children : [GraphNode];
     customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
   };
 
   type GraphEdge = {
@@ -218,6 +231,7 @@ actor {
     interpretationTokens : [InterpretationToken];
     rootNodes : [GraphNode];
     edges : [GraphEdge];
+    sources : [SourceRef];
   };
 
   // OwnedGraphData type for only caller-owned nodes
@@ -268,6 +282,7 @@ actor {
     content : ?Text;
     parentName : ?Text;
     attributes : [(Text, [Text])];
+    sources : [SourceRef];
   };
 
   type SourceGraphEdgeInput = {
@@ -743,6 +758,7 @@ actor {
       name = "My Forks";
       creator = caller;
       customAttributes = [];
+      sources = [];
       timestamps = { createdAt = Time.now(); };
     };
     curationMap.add(id, newCuration);
@@ -761,6 +777,7 @@ actor {
           id = newLocId;
           title = loc.title;
           customAttributes = loc.customAttributes;
+          sources = loc.sources;
           parentSwarmId = targetSwarmId;
           creator = caller;
           timestamps = { createdAt = Time.now(); };
@@ -783,6 +800,7 @@ actor {
             parentLocationId = newLocId;
             creator = caller;
             customAttributes = token.customAttributes;
+            sources = token.sources;
             timestamps = { createdAt = Time.now(); };
           };
           lawTokenMap.add(newTokenId, newToken);
@@ -803,6 +821,7 @@ actor {
             contentVersions = it.contentVersions;
             parentLawTokenId = newParentLawTokenId;
             customAttributes = it.customAttributes;
+            sources = it.sources;
             creator = caller;
             timestamps = { createdAt = Time.now(); };
           };
@@ -838,6 +857,7 @@ actor {
       name;
       creator = caller;
       customAttributes;
+      sources = [];
       timestamps = {
         createdAt = Time.now();
       };
@@ -870,6 +890,7 @@ actor {
       parentCurationId;
       creator = caller;
       customAttributes;
+      sources = [];
       timestamps = {
         createdAt = Time.now();
       };
@@ -913,6 +934,7 @@ actor {
       id;
       title = finalTitle;
       customAttributes;
+      sources = [];
       parentSwarmId;
       creator = caller;
       timestamps = {
@@ -960,6 +982,7 @@ actor {
       contentVersions = [{ content; contributor = caller; timestamp = Time.now() }];
       parentLawTokenId;
       customAttributes;
+      sources = [];
       creator = caller;
       timestamps = {
         createdAt = Time.now();
@@ -1289,6 +1312,7 @@ actor {
       parentCurationId = myForksCurationId;
       creator = caller;
       customAttributes = swarm.customAttributes;
+      sources = swarm.sources;
       timestamps = { createdAt = Time.now(); };
       forkSource = ?swarmId;
       forkPrincipal = ?caller;
@@ -1433,6 +1457,7 @@ actor {
           id = newLocId;
           title = loc.title;
           customAttributes = loc.customAttributes;
+          sources = loc.sources;
           parentSwarmId = activeForkId;
           creator = caller;
           timestamps = { createdAt = Time.now(); };
@@ -1456,6 +1481,7 @@ actor {
               parentLocationId = newLocId;
               creator = caller;
               customAttributes = token.customAttributes;
+              sources = token.sources;
               timestamps = { createdAt = Time.now(); };
             };
             lawTokenMap.add(newTokenId, newToken);
@@ -1479,6 +1505,7 @@ actor {
               contentVersions = it.contentVersions;
               parentLawTokenId = newParentLawTokenId;
               customAttributes = it.customAttributes;
+              sources = it.sources;
               creator = caller;
               timestamps = { createdAt = Time.now(); };
             };
@@ -1897,6 +1924,22 @@ actor {
     false
   };
 
+  // ─── Helper: count sources ─────────────────────────────────────────────────────
+  func countSources(srcs : [SourceRef]) : Nat { srcs.size() };
+
+  // ─── Helper: detect changes between two SourceRef arrays ──────────────────────
+  func hasSourceChanges(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : Bool {
+    if (existingSrcs.size() != newSrcs.size()) { return true };
+    var i = 0;
+    while (i < newSrcs.size()) {
+      if (newSrcs[i].name != existingSrcs[i].name or newSrcs[i].url != existingSrcs[i].url) {
+        return true;
+      };
+      i += 1;
+    };
+    false
+  };
+
   // Derives parent full path by stripping the last @-segment from node.id.
   // Primary lookup — avoids bare-name map collisions when siblings share names.
   func parentPathFromId(nodeId : ?Text) : ?Text {
@@ -2078,6 +2121,9 @@ actor {
                 let hasChanges = hasActualChanges(
                   switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } },
                   node.attributes
+                ) or hasSourceChanges(
+                  switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } },
+                  node.sources
                 );
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
@@ -2192,6 +2238,9 @@ actor {
                 let hasChanges = hasActualChanges(
                   switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } },
                   node.attributes
+                ) or hasSourceChanges(
+                  switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } },
+                  node.sources
                 );
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
@@ -2304,6 +2353,9 @@ actor {
                 let hasChanges = hasActualChanges(
                   switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } },
                   node.attributes
+                ) or hasSourceChanges(
+                  switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } },
+                  node.sources
                 );
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
@@ -2416,6 +2468,9 @@ actor {
                 let hasChanges = hasActualChanges(
                   switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } },
                   node.attributes
+                ) or hasSourceChanges(
+                  switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } },
+                  node.sources
                 );
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
@@ -2528,6 +2583,9 @@ actor {
                 let hasChanges = hasActualChanges(
                   switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } },
                   node.attributes
+                ) or hasSourceChanges(
+                  switch (foundIt) { case (?it) { it.sources }; case (null) { [] } },
+                  node.sources
                 );
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
@@ -2854,7 +2912,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedCuration = switch (foundCuration) {
-            case (?c) { { c with customAttributes = mergedAttrs } };
+            case (?c) { { c with customAttributes = mergedAttrs; sources = c.sources.concat(node.sources) } };
             case (null) {
               return #error({ message = "Curation disappeared during staging"; failedAt = ?{ nodeType = "curation"; name = node.name } });
             };
@@ -2877,14 +2935,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(curationExistingAttrs, node.attributes);
+                attributesAdded += countSources(node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
+                attributesAdded += countSources(node.sources);
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
+              attributesAdded += countSources(node.sources);
             };
           };
         };
@@ -2896,6 +2957,7 @@ actor {
             name = node.name;
             creator = caller;
             customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
             timestamps = { createdAt = Time.now(); };
           };
           stagingCurations.add(newId, newCuration);
@@ -2967,7 +3029,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedSwarm = switch (foundSwarm) {
-            case (?s) { { s with customAttributes = mergedAttrs } };
+            case (?s) { { s with customAttributes = mergedAttrs; sources = s.sources.concat(node.sources) } };
             case (null) {
               return #error({ message = "Swarm disappeared during staging"; failedAt = ?{ nodeType = "swarm"; name = node.name } });
             };
@@ -2987,19 +3049,23 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
           let swarmExistingAttrs = switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } };
+          let swarmExistingSources = switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } };
           switch (earlyPublishedId) {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(swarmExistingAttrs, node.attributes);
+                attributesAdded += countSources(node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
+                attributesAdded += countSources(node.sources);
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
+              attributesAdded += countSources(node.sources);
             };
           };
         };
@@ -3012,6 +3078,7 @@ actor {
             parentCurationId;
             creator = caller;
             customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
             timestamps = { createdAt = Time.now(); };
             forkSource = null;
             forkPrincipal = null;
@@ -3077,7 +3144,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedLocation = switch (foundLocation) {
-            case (?l) { { l with customAttributes = mergedAttrs } };
+            case (?l) { { l with customAttributes = mergedAttrs; sources = l.sources.concat(node.sources) } };
             case (null) {
               return #error({ message = "Location disappeared during staging"; failedAt = ?{ nodeType = "location"; name = node.name } });
             };
@@ -3097,19 +3164,23 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
           let locExistingAttrs = switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } };
+          let locExistingSources = switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } };
           switch (earlyPublishedId) {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(locExistingAttrs, node.attributes);
+                attributesAdded += countSources(node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
+                attributesAdded += countSources(node.sources);
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
+              attributesAdded += countSources(node.sources);
             };
           };
         };
@@ -3119,6 +3190,7 @@ actor {
             id = newId;
             title = node.name;
             customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
             parentSwarmId;
             creator = caller;
             timestamps = { createdAt = Time.now(); };
@@ -3184,7 +3256,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedLt = switch (foundLawToken) {
-            case (?lt) { { lt with customAttributes = mergedAttrs } };
+            case (?lt) { { lt with customAttributes = mergedAttrs; sources = lt.sources.concat(node.sources) } };
             case (null) {
               return #error({ message = "LawToken disappeared during staging"; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
             };
@@ -3204,19 +3276,23 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
           let ltExistingAttrs = switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } };
+          let ltExistingSources = switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } };
           switch (earlyPublishedId) {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(ltExistingAttrs, node.attributes);
+                attributesAdded += countSources(node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
+                attributesAdded += countSources(node.sources);
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
+              attributesAdded += countSources(node.sources);
             };
           };
         };
@@ -3228,6 +3304,7 @@ actor {
             parentLocationId;
             creator = caller;
             customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
             timestamps = { createdAt = Time.now(); };
           };
           stagingLawTokens.add(newId, newLawToken);
@@ -3296,7 +3373,7 @@ actor {
             case (null) { [{ content = newContent; contributor = caller; timestamp = Time.now() }] };
           };
           let updatedIt = switch (foundIt) {
-            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions } };
+            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions; sources = it.sources.concat(node.sources) } };
             case (null) {
               return #error({ message = "InterpToken disappeared during staging"; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
             };
@@ -3316,19 +3393,23 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
           let itExistingAttrs = switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } };
+          let itExistingSources = switch (foundIt) { case (?it) { it.sources }; case (null) { [] } };
           switch (earlyPublishedId) {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(itExistingAttrs, node.attributes);
+                attributesAdded += countSources(node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
+                attributesAdded += countSources(node.sources);
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
+              attributesAdded += countSources(node.sources);
             };
           };
         };
@@ -3340,6 +3421,7 @@ actor {
             contentVersions = [{ content = newContent; contributor = caller; timestamp = Time.now() }];
             parentLawTokenId;
             customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
             creator = caller;
             timestamps = { createdAt = Time.now(); };
           };
@@ -3603,6 +3685,7 @@ actor {
           parentId = ?parentTokenId;
           children = [];
           customAttributes = interpretationToken.customAttributes;
+          sources = interpretationToken.sources;
         };
         nodes.add(node);
       };
@@ -3624,6 +3707,7 @@ actor {
           parentId = ?parentLocationId;
           children = childNodes;
           customAttributes = lawToken.customAttributes;
+          sources = lawToken.sources;
         };
         nodes.add(node);
       };
@@ -3645,6 +3729,7 @@ actor {
           parentId = ?parentSwarmId;
           children = childNodes;
           customAttributes = location.customAttributes;
+          sources = location.sources;
         };
         nodes.add(node);
       };
@@ -3666,6 +3751,7 @@ actor {
           parentId = ?parentCurationId;
           children = childNodes;
           customAttributes = swarm.customAttributes;
+          sources = swarm.sources;
         };
         nodes.add(node);
       };
@@ -3784,6 +3870,7 @@ actor {
         parentId = null;
         children = childNodes;
         customAttributes = curation.customAttributes;
+        sources = curation.sources;
       });
     };
 
@@ -3795,6 +3882,7 @@ actor {
       interpretationTokens = collectedInterpTokens.toArray();
       rootNodes = rootNodes.toArray();
       edges = collectedEdges.toArray();
+      sources = [];
     };
   };
 
@@ -4034,6 +4122,13 @@ actor {
     jsonArray(attrJsons);
   };
 
+  func serializeSources(sources : [SourceRef]) : Text {
+    let items = sources.map(func(s : SourceRef) : Text {
+      jsonObject([("name", jsonText(s.name)), ("url", jsonText(s.url))])
+    });
+    jsonArray(items);
+  };
+
   func serializeCuration(c : Curation) : Text {
     jsonObject([
       ("id", jsonText(c.id)),
@@ -4041,6 +4136,7 @@ actor {
       ("type", jsonText("curation")),
       ("creator", jsonText(c.creator.toText())),
       ("attributes", serializeWeightedAttributes(c.customAttributes)),
+      ("sources", serializeSources(c.sources)),
     ]);
   };
 
@@ -4052,6 +4148,7 @@ actor {
       ("parentId", jsonText(s.parentCurationId)),
       ("tags", jsonArray(s.tags.map<Text, Text>(jsonText))),
       ("attributes", serializeWeightedAttributes(s.customAttributes)),
+      ("sources", serializeSources(s.sources)),
     ]);
   };
 
@@ -4062,6 +4159,7 @@ actor {
       ("type", jsonText("location")),
       ("parentId", jsonText(l.parentSwarmId)),
       ("attributes", serializeWeightedAttributes(l.customAttributes)),
+      ("sources", serializeSources(l.sources)),
     ]);
   };
 
@@ -4072,6 +4170,7 @@ actor {
       ("type", jsonText("lawEntity")),
       ("parentId", jsonText(lt.parentLocationId)),
       ("attributes", serializeWeightedAttributes(lt.customAttributes)),
+      ("sources", serializeSources(lt.sources)),
     ]);
   };
 
@@ -4087,6 +4186,7 @@ actor {
       ("parentId", jsonText(it.parentLawTokenId)),
       ("content", jsonText(latestContent)),
       ("attributes", serializeWeightedAttributes(it.customAttributes)),
+      ("sources", serializeSources(it.sources)),
     ]);
   };
 
@@ -4184,6 +4284,7 @@ actor {
         parentId = null;
         children = createSwarmNodes(curation.id);
         customAttributes = curation.customAttributes;
+        sources = curation.sources;
       });
     };
 
@@ -4195,6 +4296,7 @@ actor {
       interpretationTokens = collectedInterpTokens.toArray();
       rootNodes = rootNodes.toArray();
       edges = collectedEdges.toArray();
+      sources = [];
     };
   };
 

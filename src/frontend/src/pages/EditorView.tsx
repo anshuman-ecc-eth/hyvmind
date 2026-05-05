@@ -366,6 +366,7 @@ export default function EditorView() {
             content,
             frontmatter: frontmatterData,
             inheritedAttributes: {},
+            inheritedSources: [],
             children: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
