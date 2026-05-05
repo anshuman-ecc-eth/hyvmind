@@ -1787,6 +1787,87 @@ actor {
     };
   };
 
+  // ─── Helper: check if a node belongs to a specific published graph ────────────
+  // Traces the node's root curation ID and checks curationToPublishedGraphId.
+  func belongsToPublishedGraph(nodeId : NodeId, publishedId : Text) : Bool {
+    // Step 1: check if nodeId itself is a curation
+    switch (curationToPublishedGraphId.get(nodeId)) {
+      case (?pid) { return pid == publishedId };
+      case (null) {};
+    };
+    // Step 2: try swarm -> parentCurationId
+    switch (swarmMap.get(nodeId)) {
+      case (?swarm) {
+        switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+          case (?pid) { return pid == publishedId };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 3: try location -> parentSwarmId -> parentCurationId
+    switch (locationMap.get(nodeId)) {
+      case (?location) {
+        switch (swarmMap.get(location.parentSwarmId)) {
+          case (?swarm) {
+            switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+              case (?pid) { return pid == publishedId };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 4: try lawToken -> parentLocationId -> parentSwarmId -> parentCurationId
+    switch (lawTokenMap.get(nodeId)) {
+      case (?lt) {
+        switch (locationMap.get(lt.parentLocationId)) {
+          case (?location) {
+            switch (swarmMap.get(location.parentSwarmId)) {
+              case (?swarm) {
+                switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+                  case (?pid) { return pid == publishedId };
+                  case (null) { return false };
+                };
+              };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 5: try interpToken -> parentLawTokenId -> ... -> parentCurationId
+    switch (interpretationTokenMap.get(nodeId)) {
+      case (?it) {
+        switch (lawTokenMap.get(it.parentLawTokenId)) {
+          case (?lt) {
+            switch (locationMap.get(lt.parentLocationId)) {
+              case (?location) {
+                switch (swarmMap.get(location.parentSwarmId)) {
+                  case (?swarm) {
+                    switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+                      case (?pid) { return pid == publishedId };
+                      case (null) { return false };
+                    };
+                  };
+                  case (null) { return false };
+                };
+              };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    false
+  };
+
   // Derives parent full path by stripping the last @-segment from node.id.
   // Primary lookup — avoids bare-name map collisions when siblings share names.
   func parentPathFromId(nodeId : ?Text) : ?Text {
@@ -2384,6 +2465,58 @@ actor {
     // Track simple name -> full path for scope-aware edge resolution
     let simpleToFullPath = Map.empty<Text, Text>();
 
+    // ── Early extension detection (before node processing) ──────────────────────
+    var earlyPublishedId : ?Text = null;
+    label extDetect for (node in input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" }).values()) {
+      for ((cid, existingCuration) in curationMap.entries()) {
+        if (existingCuration.name == node.name) {
+          switch (curationToPublishedGraphId.get(cid)) {
+            case (?pid) {
+              earlyPublishedId := ?pid;
+              break extDetect;
+            };
+            case (null) {};
+          };
+        };
+      };
+    };
+
+    // Tracking counters for accurate delta counting
+    var nodesToCreate : Nat = 0;
+    var nodesToUpdate : Nat = 0;
+    var edgesToCreate : Nat = 0;
+    var edgesToUpdate : Nat = 0;
+    var attributesAdded : Nat = 0;
+
+    // Helper: count new attribute entries relative to existing weighted attributes
+    // New key → all its values counted; existing key → only new distinct values counted
+    func countNewAttributes(existingAttrs : [WeightedAttribute], inputAttrs : [(Text, [Text])]) : Nat {
+      var count = 0;
+      for ((key, values) in inputAttrs.values()) {
+        let found = existingAttrs.find(func(wa : WeightedAttribute) : Bool { wa.key == key });
+        switch (found) {
+          case (null) { count += values.size() };
+          case (?wa) {
+            for (v in values.values()) {
+              let exists = wa.weightedValues.find(func(wv : WeightedValue) : Bool { wv.value == v });
+              switch (exists) {
+                case (null) { count += 1 };
+                case (?_) {};
+              };
+            };
+          };
+        };
+      };
+      count
+    };
+
+    // Helper: count total (key, value) pairs in a raw attribute list
+    func countRawAttributes(attrs : [(Text, [Text])]) : Nat {
+      var count = 0;
+      for ((_, values) in attrs.values()) { count += values.size() };
+      count
+    };
+
     // Build node input lookup
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
     for (node in input.nodes.values()) {
@@ -2412,6 +2545,7 @@ actor {
       switch (foundId) {
         case (?existingId) {
           // Update existing: merge attributes
+          let curationExistingAttrs = switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } };
           let mergedAttrs = switch (foundCuration) {
             case (?c) { mergeWeightedAttributes(c.customAttributes, node.attributes) };
             case (null) { attributesToWeighted(node.attributes) };
@@ -2435,6 +2569,21 @@ actor {
           };
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                attributesAdded += countNewAttributes(curationExistingAttrs, node.attributes);
+              } else {
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+            };
+          };
         };
         case (null) {
           // Create new
@@ -2459,6 +2608,8 @@ actor {
           };
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
         };
       };
     };
@@ -2532,6 +2683,22 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
+          let swarmExistingAttrs = switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                attributesAdded += countNewAttributes(swarmExistingAttrs, node.attributes);
+              } else {
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+            };
+          };
         };
         case (null) {
           let newId = fullPath;
@@ -2560,6 +2727,8 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
         };
       };
     };
@@ -2624,6 +2793,22 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
+          let locExistingAttrs = switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                attributesAdded += countNewAttributes(locExistingAttrs, node.attributes);
+              } else {
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+            };
+          };
         };
         case (null) {
           let newId = fullPath;
@@ -2649,6 +2834,8 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
         };
       };
     };
@@ -2713,6 +2900,22 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
+          let ltExistingAttrs = switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                attributesAdded += countNewAttributes(ltExistingAttrs, node.attributes);
+              } else {
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+            };
+          };
         };
         case (null) {
           let newId = fullPath;
@@ -2738,6 +2941,8 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
         };
       };
     };
@@ -2807,6 +3012,22 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, existingId));
+          let itExistingAttrs = switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                attributesAdded += countNewAttributes(itExistingAttrs, node.attributes);
+              } else {
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+            };
+          };
         };
         case (null) {
           let newId = fullPath;
@@ -2833,6 +3054,8 @@ actor {
           nodeInputMap.add(fullPath, node);
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
         };
       };
     };
@@ -2899,6 +3122,17 @@ actor {
                 if (e.target == targetId) { updatedEdge } else { e }
               });
               stagingEdges.add(sourceId, edgeList);
+              // Track: existing edge belonging to published graph = update, else create
+              switch (earlyPublishedId) {
+                case (?pid) {
+                  if (belongsToPublishedGraph(sourceId, pid) and belongsToPublishedGraph(targetId, pid)) {
+                    edgesToUpdate += 1;
+                  } else {
+                    edgesToCreate += 1;
+                  };
+                };
+                case (null) { edgesToCreate += 1 };
+              };
             };
             case (null) {
               // New edge
@@ -2919,6 +3153,7 @@ actor {
               };
               edgeList.add(newEdge);
               stagingEdges.add(sourceId, edgeList);
+              edgesToCreate += 1;
             };
           };
         };
@@ -2933,46 +3168,22 @@ actor {
       case (null) { "Unknown" };
     };
 
-    // Count nodes and edges in this input
-    let addedNodes = input.nodes.size();
-    let addedEdges = input.edges.size();
-    let addedAttributes = input.nodes.foldLeft(0, func(acc : Nat, n : SourceGraphNodeInput) : Nat { acc + n.attributes.size() });
-
-    // Check if any staging curation already has a publishedSourceGraphId (extension scenario)
-    var existingPublishedId : ?Text = null;
-    for ((id, curation) in stagingCurations.entries()) {
-      switch (curationToPublishedGraphId.get(id)) {
-        case (?pid) { existingPublishedId := ?pid };
-        case (null) {
-          // Check if the matching curation in curationMap already has one
-          for ((cid, existingCuration) in curationMap.entries()) {
-            if (existingCuration.name == curation.name) {
-              switch (curationToPublishedGraphId.get(cid)) {
-                case (?pid) { existingPublishedId := ?pid };
-                case (null) {};
-              };
-            };
-          };
-        };
-      };
-    };
-
-    let thePublishedId = switch (existingPublishedId) {
+    let thePublishedId = switch (earlyPublishedId) {
       case (?pid) {
-        // Extension: update existing metadata
+        // Extension: update existing metadata using accurate delta counts from tracking vars
         switch (publishedSourceGraphs.get(pid)) {
           case (?existingMeta) {
             let newEntry : ExtensionEntry = {
               extendedAt = Time.now();
-              addedNodes;
-              addedEdges;
-              addedAttributes;
+              addedNodes = nodesToCreate;
+              addedEdges = edgesToCreate;
+              addedAttributes = attributesAdded;
             };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
-              nodeCount = existingMeta.nodeCount + addedNodes;
-              edgeCount = existingMeta.edgeCount + addedEdges;
-              attributeCount = existingMeta.attributeCount + addedAttributes;
+              nodeCount = existingMeta.nodeCount + nodesToCreate;
+              edgeCount = existingMeta.edgeCount + edgesToCreate;
+              attributeCount = existingMeta.attributeCount + attributesAdded;
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
             };
             publishedSourceGraphs.add(pid, updatedMeta);
@@ -2994,9 +3205,9 @@ actor {
           creator = caller;
           creatorName;
           publishedAt = Time.now();
-          nodeCount = addedNodes;
-          edgeCount = addedEdges;
-          attributeCount = addedAttributes;
+          nodeCount = nodesToCreate;
+          edgeCount = edgesToCreate;
+          attributeCount = attributesAdded;
           extensionLog = [];
           artworkDataUrl = null;
         };
