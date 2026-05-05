@@ -80324,14 +80324,14 @@ function SettingsScreen({
         children: heading2 ?? "Settings"
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-start gap-4", children: rows.map((row, idx) => {
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-start gap-2", children: rows.map((row, idx) => {
       const isSelected = idx === selectedIdx;
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
           type: "button",
           "data-ocid": `text_game.settings.${row.key}`,
-          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`,
+          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
           style: {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
@@ -80687,7 +80687,7 @@ function StartScreen({
         children: "Puzzles"
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
       const isSelected = activeIdx === selectedIdx;
       return /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
@@ -81500,7 +81500,7 @@ function TextGameModal({ onComplete }) {
       "div",
       {
         className: "fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background",
-        style: { inset: "5%" },
+        style: { inset: "5%", fontSize: "100%" },
         "data-ocid": "text_game.modal",
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0", children: [

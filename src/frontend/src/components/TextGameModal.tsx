@@ -230,7 +230,7 @@ function SettingsScreen({
       >
         {heading ?? "Settings"}
       </div>
-      <div className="flex flex-col items-start gap-4">
+      <div className="flex flex-col items-start gap-2">
         {rows.map((row, idx) => {
           const isSelected = idx === selectedIdx;
           return (
@@ -238,7 +238,7 @@ function SettingsScreen({
               key={row.key}
               type="button"
               data-ocid={`text_game.settings.${row.key}`}
-              className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
               style={{
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6rem",
@@ -624,7 +624,7 @@ function StartScreen({
         )}
 
         {/* Menu */}
-        <div className="flex flex-col items-center gap-3 mt-6">
+        <div className="flex flex-col items-center gap-1.5 mt-6">
           {subMenu === "main"
             ? MENU_ITEMS.map((item, activeIdx) => {
                 const isSelected = activeIdx === selectedIdx;
@@ -1574,7 +1574,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       {/* Floating window */}
       <div
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
-        style={{ inset: "5%" }}
+        style={{ inset: "5%", fontSize: "100%" }}
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
