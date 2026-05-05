@@ -107098,17 +107098,40 @@ function usePublishMappings() {
   };
 }
 function sourceGraphToInput(graph) {
-  const nodes = graph.nodes.map((node2) => ({
-    id: node2.id ?? void 0,
-    name: node2.name,
-    nodeType: node2.nodeType,
-    tags: [],
-    content: node2.content ?? void 0,
-    parentName: node2.parentName ?? void 0,
-    attributes: Object.entries(node2.attributes ?? {}).map(
-      ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
-    )
-  }));
+  const nodeMap = /* @__PURE__ */ new Map();
+  for (const n2 of graph.nodes) {
+    if (n2.name) nodeMap.set(n2.name, n2);
+  }
+  const nodes = graph.nodes.map((node2) => {
+    const ancestorChain = [];
+    let currentName = node2.parentName;
+    const visited = /* @__PURE__ */ new Set();
+    while (currentName && !visited.has(currentName)) {
+      visited.add(currentName);
+      const ancestor = nodeMap.get(currentName);
+      if (!ancestor) break;
+      if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
+        ancestorChain.push(ancestor.attributes);
+      }
+      currentName = ancestor.parentName;
+    }
+    const merged = {};
+    for (let i2 = ancestorChain.length - 1; i2 >= 0; i2--) {
+      Object.assign(merged, ancestorChain[i2]);
+    }
+    Object.assign(merged, node2.attributes ?? {});
+    return {
+      id: node2.id ?? void 0,
+      name: node2.name,
+      nodeType: node2.nodeType,
+      tags: [],
+      content: node2.content ?? void 0,
+      parentName: node2.parentName ?? void 0,
+      attributes: Object.entries(merged).map(
+        ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
+      )
+    };
+  });
   const edges = graph.edges.map((edge) => ({
     sourceName: edge.source,
     targetName: edge.target,

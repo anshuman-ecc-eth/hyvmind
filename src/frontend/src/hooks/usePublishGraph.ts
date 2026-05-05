@@ -3,7 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend";
-import type { PublishedNodeInfo, SourceGraph } from "../types/sourceGraph";
+import type {
+  PublishedNodeInfo,
+  SourceGraph,
+  SourceNode,
+} from "../types/sourceGraph";
 import { generateTruchetArtwork } from "../utils/truchetGenerator";
 import { usePublishMappings } from "./usePublishMappings";
 
@@ -22,21 +26,51 @@ export type PublishCommitResult =
 
 // Exported so usePublishPreview can import it
 export function sourceGraphToInput(graph: SourceGraph) {
-  const nodes = graph.nodes.map((node) => ({
-    id: node.id ?? undefined,
-    name: node.name,
-    nodeType: node.nodeType,
-    tags: [],
-    content: node.content ?? undefined,
-    parentName: node.parentName ?? undefined,
-    attributes: Object.entries(node.attributes ?? {}).map(
-      ([key, value]) =>
-        [key, Array.isArray(value) ? value.map(String) : [String(value)]] as [
-          string,
-          string[],
-        ],
-    ),
-  }));
+  // Build a name-to-node lookup map for ancestor-walk
+  const nodeMap = new Map<string, SourceNode>();
+  for (const n of graph.nodes) {
+    if (n.name) nodeMap.set(n.name, n);
+  }
+
+  const nodes = graph.nodes.map((node) => {
+    // Walk ancestor chain (same logic as buildInheritedAttributes in NodeDetailsModal)
+    const ancestorChain: Record<string, unknown>[] = [];
+    let currentName = node.parentName;
+    const visited = new Set<string>();
+
+    while (currentName && !visited.has(currentName)) {
+      visited.add(currentName);
+      const ancestor = nodeMap.get(currentName);
+      if (!ancestor) break;
+      if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
+        ancestorChain.push(ancestor.attributes);
+      }
+      currentName = ancestor.parentName;
+    }
+
+    // Merge: farthest ancestor first, own attributes override all
+    const merged: Record<string, unknown> = {};
+    for (let i = ancestorChain.length - 1; i >= 0; i--) {
+      Object.assign(merged, ancestorChain[i]);
+    }
+    Object.assign(merged, node.attributes ?? {});
+
+    return {
+      id: node.id ?? undefined,
+      name: node.name,
+      nodeType: node.nodeType,
+      tags: [],
+      content: node.content ?? undefined,
+      parentName: node.parentName ?? undefined,
+      attributes: Object.entries(merged).map(
+        ([key, value]) =>
+          [key, Array.isArray(value) ? value.map(String) : [String(value)]] as [
+            string,
+            string[],
+          ],
+      ),
+    };
+  });
 
   const edges = graph.edges.map((edge) => ({
     sourceName: edge.source,
