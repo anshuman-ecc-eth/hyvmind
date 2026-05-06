@@ -104985,7 +104985,7 @@ function editorToSourceGraph(nodes, rootId) {
     const attributes = node2.nodeType !== "interpEntity" && Object.keys(node2.inheritedAttributes).length > 0 ? { ...node2.inheritedAttributes } : node2.nodeType === "interpEntity" && Object.keys(node2.frontmatter).length > 0 ? Object.fromEntries(
       Object.entries(node2.frontmatter).map(([k2, v2]) => [
         k2,
-        typeof v2 === "string" ? v2 : JSON.stringify(v2)
+        typeof v2 === "string" ? v2 : Array.isArray(v2) ? v2.map(String).join(", ") : JSON.stringify(v2)
       ])
     ) : void 0;
     const sourceNode = {

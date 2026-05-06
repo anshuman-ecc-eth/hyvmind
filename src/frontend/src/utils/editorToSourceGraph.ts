@@ -184,7 +184,11 @@ export function editorToSourceGraph(
           ? Object.fromEntries(
               Object.entries(node.frontmatter).map(([k, v]) => [
                 k,
-                typeof v === "string" ? v : JSON.stringify(v),
+                typeof v === "string"
+                  ? v
+                  : Array.isArray(v)
+                    ? v.map(String).join(", ")
+                    : JSON.stringify(v),
               ]),
             )
           : undefined;
