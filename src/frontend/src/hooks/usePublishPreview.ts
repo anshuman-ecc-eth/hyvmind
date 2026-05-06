@@ -89,6 +89,7 @@ function mapPreviewResult(
       nodesToUpdate: Number(raw.summary.nodesToUpdate),
       edgesToCreate: Number(raw.summary.edgesToCreate),
       edgesToUpdate: Number(raw.summary.edgesToUpdate),
+      hierarchyEdgesToCreate: Number(raw.summary.hierarchyEdgesToCreate),
     },
   };
 }

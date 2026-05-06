@@ -28220,6 +28220,7 @@ const ExtensionEntry = Record({
   "addedSources": Opt(Nat),
   "addedAttributes": Nat,
   "extendedAt": Time,
+  "addedHierarchyEdges": Nat,
   "addedEdges": Nat
 });
 const PublishedSourceGraphMeta = Record({
@@ -28233,6 +28234,7 @@ const PublishedSourceGraphMeta = Record({
   "edgeCount": Nat,
   "sourcesCount": Opt(Nat),
   "artworkDataUrl": Opt(Text),
+  "hierarchyEdgeCount": Nat,
   "nodeCount": Nat
 });
 const UserProfile = Record({
@@ -28421,6 +28423,7 @@ const NodeOperation = Record({
 });
 const PublishPreviewResult = Record({
   "summary": Record({
+    "hierarchyEdgesToCreate": Nat,
     "edgesToCreate": Nat,
     "edgesToUpdate": Nat,
     "nodesToCreate": Nat,
@@ -28657,6 +28660,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "addedSources": IDL2.Opt(IDL2.Nat),
     "addedAttributes": IDL2.Nat,
     "extendedAt": Time2,
+    "addedHierarchyEdges": IDL2.Nat,
     "addedEdges": IDL2.Nat
   });
   const PublishedSourceGraphMeta2 = IDL2.Record({
@@ -28670,6 +28674,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "edgeCount": IDL2.Nat,
     "sourcesCount": IDL2.Opt(IDL2.Nat),
     "artworkDataUrl": IDL2.Opt(IDL2.Text),
+    "hierarchyEdgeCount": IDL2.Nat,
     "nodeCount": IDL2.Nat
   });
   const UserProfile2 = IDL2.Record({
@@ -28855,6 +28860,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
   });
   const PublishPreviewResult2 = IDL2.Record({
     "summary": IDL2.Record({
+      "hierarchyEdgesToCreate": IDL2.Nat,
       "edgesToCreate": IDL2.Nat,
       "edgesToUpdate": IDL2.Nat,
       "nodesToCreate": IDL2.Nat,
@@ -29988,6 +29994,7 @@ function from_candid_record_n17(_uploadFile, _downloadFile, value) {
     edgeCount: value.edgeCount,
     sourcesCount: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.sourcesCount)),
     artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
+    hierarchyEdgeCount: value.hierarchyEdgeCount,
     nodeCount: value.nodeCount
   };
 }
@@ -29997,6 +30004,7 @@ function from_candid_record_n20(_uploadFile, _downloadFile, value) {
     addedSources: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.addedSources)),
     addedAttributes: value.addedAttributes,
     extendedAt: value.extendedAt,
+    addedHierarchyEdges: value.addedHierarchyEdges,
     addedEdges: value.addedEdges
   };
 }
@@ -54227,8 +54235,11 @@ function SourceGraphDiagram({
               " nodes"
             ] }),
             " · ",
-            graph.edges.length,
-            " edges",
+            (() => {
+              const hierarchyCount = graph.nodes.length - 1;
+              const crossRefCount = graph.edges.length - hierarchyCount;
+              return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+            })(),
             graphData.nodes.length !== graph.nodes.length && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-destructive ml-2", children: [
               "(",
               graphData.nodes.length,
@@ -54294,7 +54305,9 @@ function ExtensionHistory({ log: log2 }) {
           Number(entry.addedNodes),
           " nodes, +",
           Number(entry.addedEdges),
-          " edges, +",
+          " cross-ref, +",
+          Number(entry.addedHierarchyEdges ?? 0n),
+          " hierarchy, +",
           Number(entry.addedAttributes),
           " attrs, +",
           Number(entry.addedSources ?? 0n),
@@ -54334,8 +54347,11 @@ function GraphCard({ graph, onView }) {
             " nodes"
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "public_graph.edge_count", children: [
-            Number(graph.edgeCount),
-            " edges"
+            Number(graph.edgeCount) - Number(graph.hierarchyEdgeCount ?? 0n),
+            " ",
+            "cross-ref, ",
+            Number(graph.hierarchyEdgeCount ?? 0n),
+            " hierarchy"
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { "data-ocid": "public_graph.attr_count", children: [
             Number(graph.attributeCount),
@@ -104036,9 +104052,9 @@ function parseMarkdownLinks(text2) {
   const lines = text2.split(/\r?\n/);
   const results = [];
   for (const raw2 of lines) {
-    const line = raw2.trim();
+    const line = raw2.trim().replace(/^[-*+]\s+|\d+\.\s+/, "");
     if (!line) continue;
-    const match = line.match(/^\[(.+?)\]\((.+?)\)$/);
+    const match = line.match(/^\[(.+?)\]\((.+)\)$/);
     if (match) {
       results.push({ name: match[1], url: match[2] });
     } else {
@@ -107076,7 +107092,12 @@ function PublishConfirmDialog({
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.edgesToCreate }),
                   " ",
-                  "new edges"
+                  "cross-ref new"
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.hierarchyEdgesToCreate }),
+                  " ",
+                  "hierarchy new"
                 ] }),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.edgesToUpdate }),
@@ -107569,7 +107590,8 @@ function mapPreviewResult(raw2) {
       nodesToCreate: Number(raw2.summary.nodesToCreate),
       nodesToUpdate: Number(raw2.summary.nodesToUpdate),
       edgesToCreate: Number(raw2.summary.edgesToCreate),
-      edgesToUpdate: Number(raw2.summary.edgesToUpdate)
+      edgesToUpdate: Number(raw2.summary.edgesToUpdate),
+      hierarchyEdgesToCreate: Number(raw2.summary.hierarchyEdgesToCreate)
     }
   };
 }
@@ -107980,8 +108002,11 @@ function SourcesView() {
                 graph.nodes.length,
                 " nodes ·",
                 " ",
-                graph.edges.length,
-                " edges"
+                (() => {
+                  const hierarchyCount = graph.nodes.length - 1;
+                  const crossRefCount = graph.edges.length - hierarchyCount;
+                  return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+                })()
               ] }),
               published && publishedDate && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-[10px] text-muted-foreground mt-0.5", children: [
                 "published ",

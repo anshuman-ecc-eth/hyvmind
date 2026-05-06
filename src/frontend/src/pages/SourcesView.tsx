@@ -455,7 +455,11 @@ export default function SourcesView() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
-                    {graph.edges.length} edges
+                    {(() => {
+                      const hierarchyCount = graph.nodes.length - 1;
+                      const crossRefCount = graph.edges.length - hierarchyCount;
+                      return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+                    })()}
                   </p>
                   {published && publishedDate && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">

@@ -94,9 +94,9 @@ export function parseMarkdownLinks(text: string): SourceRef[] {
   const lines = text.split(/\r?\n/);
   const results: SourceRef[] = [];
   for (const raw of lines) {
-    const line = raw.trim();
+    const line = raw.trim().replace(/^[-*+]\s+|\d+\.\s+/, "");
     if (!line) continue;
-    const match = line.match(/^\[(.+?)\]\((.+?)\)$/);
+    const match = line.match(/^\[(.+?)\]\((.+)\)$/);
     if (match) {
       results.push({ name: match[1], url: match[2] });
     } else {

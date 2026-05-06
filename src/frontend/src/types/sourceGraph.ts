@@ -90,6 +90,7 @@ export interface PublishPreviewResult {
     nodesToUpdate: number;
     edgesToCreate: number;
     edgesToUpdate: number;
+    hierarchyEdgesToCreate: number;
   };
 }
 

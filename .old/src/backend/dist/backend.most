@@ -41,16 +41,10 @@ type ExtensionEntry__104646688 =
   {
     addedAttributes : Nat;
     addedEdges : Nat;
+    addedHierarchyEdges : Nat;
     addedNodes : Nat;
     addedSources : ?Nat;
     extendedAt : Time__900049286
-  };
-type ExtensionEntry_v0__756451335 =
-  {
-    addedAttributes : Nat;
-    addedEdges : Nat;
-    addedNodes : Nat;
-    extendedAt : Time__976142243
   };
 type ForkedSwarm__273475596 =
   {
@@ -116,6 +110,28 @@ type Nat__920180692 = Nat;
 type NodeId__811092033 = Text;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type OldExtensionEntry__187459621 =
+  {
+    addedAttributes : Nat;
+    addedEdges : Nat;
+    addedNodes : Nat;
+    addedSources : ?Nat;
+    extendedAt : Int
+  };
+type OldPublishedSourceGraphMeta__687042500 =
+  {
+    artworkDataUrl : ?Text;
+    attributeCount : Nat;
+    creator : Principal;
+    creatorName : Text;
+    edgeCount : Nat;
+    extensionLog : [OldExtensionEntry__187459621];
+    id : Text;
+    name : Text;
+    nodeCount : Nat;
+    publishedAt : Int;
+    sourcesCount : ?Nat
+  };
 type PublishedSourceGraphMeta__808509219 =
   {
     artworkDataUrl : ?Text;
@@ -124,24 +140,12 @@ type PublishedSourceGraphMeta__808509219 =
     creatorName : Text;
     edgeCount : Nat;
     extensionLog : [ExtensionEntry__104646688];
+    hierarchyEdgeCount : Nat;
     id : Text;
     name : Text;
     nodeCount : Nat;
     publishedAt : Time__900049286;
     sourcesCount : ?Nat
-  };
-type PublishedSourceGraphMeta_v0__249658681 =
-  {
-    artworkDataUrl : ?Text;
-    attributeCount : Nat;
-    creator : Principal;
-    creatorName : Text;
-    edgeCount : Nat;
-    extensionLog : [ExtensionEntry_v0__756451335];
-    id : Text;
-    name : Text;
-    nodeCount : Nat;
-    publishedAt : Time__976142243
   };
 type SourceGraphEdge__199036688 =
   {
@@ -192,7 +196,6 @@ type TelegramConfig__326514849 =
   };
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
-type Time__976142243 = Int;
 type Timestamps__70525832 = {createdAt : Time__900049286};
 type UserProfile__491224006 = {name : Text; socialUrl : ?Text};
 type UserRole__1054455867 = {#admin; #guest; #user};
@@ -303,7 +306,7 @@ actor ({
   stable var principalByApiKey :
     {var root : Node__46230540<Text, Principal>; var size : Nat__490723111};
   in var publishedSourceGraphs :
-    Map__605269027<Text, PublishedSourceGraphMeta_v0__249658681>;
+    Map__605269027<Text, OldPublishedSourceGraphMeta__687042500>;
   stable var sourceEdges :
     {
       var root :

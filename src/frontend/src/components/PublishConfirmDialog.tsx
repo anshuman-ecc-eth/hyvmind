@@ -275,7 +275,13 @@ export default function PublishConfirmDialog({
                 <span className="text-emerald-600">
                   {summary.edgesToCreate}
                 </span>{" "}
-                new edges
+                cross-ref new
+              </span>
+              <span>
+                <span className="text-emerald-600">
+                  {summary.hierarchyEdgesToCreate}
+                </span>{" "}
+                hierarchy new
               </span>
               <span>
                 <span className="text-amber-600">{summary.edgesToUpdate}</span>{" "}

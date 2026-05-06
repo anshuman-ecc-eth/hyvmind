@@ -142,6 +142,7 @@ export interface PublishedSourceGraphMeta {
     edgeCount: bigint;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
+    hierarchyEdgeCount: bigint;
     nodeCount: bigint;
 }
 export interface NodeOperation {
@@ -174,6 +175,7 @@ export interface SourceGraphEdgeInput {
 }
 export interface PublishPreviewResult {
     summary: {
+        hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
         nodesToCreate: bigint;
@@ -218,6 +220,7 @@ export interface ExtensionEntry {
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }
 export interface CollectibleEdition {
@@ -1513,6 +1516,7 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edgeCount: bigint;
     sourcesCount: [] | [bigint];
     artworkDataUrl: [] | [string];
+    hierarchyEdgeCount: bigint;
     nodeCount: bigint;
 }): {
     id: string;
@@ -1525,6 +1529,7 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edgeCount: bigint;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
+    hierarchyEdgeCount: bigint;
     nodeCount: bigint;
 } {
     return {
@@ -1538,6 +1543,7 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
         edgeCount: value.edgeCount,
         sourcesCount: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.sourcesCount)),
         artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
+        hierarchyEdgeCount: value.hierarchyEdgeCount,
         nodeCount: value.nodeCount
     };
 }
@@ -1546,12 +1552,14 @@ function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uin
     addedSources: [] | [bigint];
     addedAttributes: bigint;
     extendedAt: _Time;
+    addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }): {
     addedNodes: bigint;
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    addedHierarchyEdges: bigint;
     addedEdges: bigint;
 } {
     return {
@@ -1559,6 +1567,7 @@ function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uin
         addedSources: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.addedSources)),
         addedAttributes: value.addedAttributes,
         extendedAt: value.extendedAt,
+        addedHierarchyEdges: value.addedHierarchyEdges,
         addedEdges: value.addedEdges
     };
 }
@@ -1766,6 +1775,7 @@ function from_candid_record_n56(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     summary: {
+        hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
         nodesToCreate: bigint;
@@ -1775,6 +1785,7 @@ function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uin
     nodeOperations: Array<_NodeOperation>;
 }): {
     summary: {
+        hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
         nodesToCreate: bigint;

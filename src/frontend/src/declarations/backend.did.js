@@ -65,6 +65,7 @@ export const ExtensionEntry = IDL.Record({
   'addedSources' : IDL.Opt(IDL.Nat),
   'addedAttributes' : IDL.Nat,
   'extendedAt' : Time,
+  'addedHierarchyEdges' : IDL.Nat,
   'addedEdges' : IDL.Nat,
 });
 export const PublishedSourceGraphMeta = IDL.Record({
@@ -78,6 +79,7 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'edgeCount' : IDL.Nat,
   'sourcesCount' : IDL.Opt(IDL.Nat),
   'artworkDataUrl' : IDL.Opt(IDL.Text),
+  'hierarchyEdgeCount' : IDL.Nat,
   'nodeCount' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({
@@ -266,6 +268,7 @@ export const NodeOperation = IDL.Record({
 });
 export const PublishPreviewResult = IDL.Record({
   'summary' : IDL.Record({
+    'hierarchyEdgesToCreate' : IDL.Nat,
     'edgesToCreate' : IDL.Nat,
     'edgesToUpdate' : IDL.Nat,
     'nodesToCreate' : IDL.Nat,
@@ -506,6 +509,7 @@ export const idlFactory = ({ IDL }) => {
     'addedSources' : IDL.Opt(IDL.Nat),
     'addedAttributes' : IDL.Nat,
     'extendedAt' : Time,
+    'addedHierarchyEdges' : IDL.Nat,
     'addedEdges' : IDL.Nat,
   });
   const PublishedSourceGraphMeta = IDL.Record({
@@ -519,6 +523,7 @@ export const idlFactory = ({ IDL }) => {
     'edgeCount' : IDL.Nat,
     'sourcesCount' : IDL.Opt(IDL.Nat),
     'artworkDataUrl' : IDL.Opt(IDL.Text),
+    'hierarchyEdgeCount' : IDL.Nat,
     'nodeCount' : IDL.Nat,
   });
   const UserProfile = IDL.Record({
@@ -704,6 +709,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const PublishPreviewResult = IDL.Record({
     'summary' : IDL.Record({
+      'hierarchyEdgesToCreate' : IDL.Nat,
       'edgesToCreate' : IDL.Nat,
       'edgesToUpdate' : IDL.Nat,
       'nodesToCreate' : IDL.Nat,

@@ -60,6 +60,7 @@ export interface PublishedSourceGraphMeta {
     edgeCount: bigint;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
+    hierarchyEdgeCount: bigint;
     nodeCount: bigint;
 }
 export interface NodeOperation {
@@ -92,6 +93,7 @@ export interface SourceGraphEdgeInput {
 }
 export interface PublishPreviewResult {
     summary: {
+        hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
         nodesToCreate: bigint;
@@ -136,6 +138,7 @@ export interface ExtensionEntry {
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }
 export interface CollectibleEdition {

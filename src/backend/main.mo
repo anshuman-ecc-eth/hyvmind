@@ -22,7 +22,10 @@ import Runtime "mo:core/Runtime";
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
+
 import Migration "migration";
+
+
 
 
 
@@ -250,6 +253,7 @@ actor {
     extendedAt : Time.Time;
     addedNodes : Nat;
     addedEdges : Nat;
+    addedHierarchyEdges : Nat;
     addedAttributes : Nat;
     addedSources : ?Nat;
   };
@@ -262,6 +266,7 @@ actor {
     publishedAt : Time.Time;
     nodeCount : Nat;
     edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
     attributeCount : Nat;
     sourcesCount : ?Nat;
     extensionLog : [ExtensionEntry];
@@ -343,6 +348,7 @@ actor {
       nodesToUpdate : Nat;
       edgesToCreate : Nat;
       edgesToUpdate : Nat;
+      hierarchyEdgesToCreate : Nat;
     };
   };
 
@@ -1846,7 +1852,7 @@ actor {
         case (?w) { w };
         case (null) { 0 };
       };
-      resultMap.add(v, currentWeight + 1);
+      resultMap.add(v, if (currentWeight == 0) { 1 } else { currentWeight });
     };
     let result = List.empty<WeightedValue>();
     for ((value, weight) in resultMap.entries()) {
@@ -1867,8 +1873,24 @@ actor {
         case (?wvs) { wvs };
         case (null) { [] };
       };
-      let newWeightedValues = computeNewWeightedValuesForKey(existing, key, values);
-      changes.add({ key; oldValues; newValues = values; newWeightedValues });
+      let hasDiff = switch (existingKeyMap.get(key)) {
+        case (null) { true };
+        case (?wvs) {
+          var found = false;
+          label diffCheck for (v in values.values()) {
+            var valueExists = false;
+            for (wv in wvs.values()) {
+              if (wv.value == v) { valueExists := true };
+            };
+            if (not valueExists) { found := true; break diffCheck };
+          };
+          found
+        };
+      };
+      if (hasDiff) {
+        let newWeightedValues = computeNewWeightedValuesForKey(existing, key, values);
+        changes.add({ key; oldValues; newValues = values; newWeightedValues });
+      };
     };
     changes.toArray();
   };
@@ -2114,6 +2136,8 @@ actor {
     var nodesToUpdate : Nat = 0;
     var edgesToCreate : Nat = 0;
     var edgesToUpdate : Nat = 0;
+    var hierarchyEdgesToCreate : Nat = 0;
+    var curationsToCreate : Nat = 0;
 
     // ── Extension detection ──────────────────────────────────────────────────
     let (isExtension, publishedGraphId) = detectExtension(
@@ -2217,6 +2241,7 @@ actor {
                   sourceChanges = [];
                 });
                 nodesToCreate += 1;
+                curationsToCreate += 1;
               };
             };
             case (null) {
@@ -2231,6 +2256,7 @@ actor {
                 sourceChanges = [];
               });
               nodesToCreate += 1;
+              curationsToCreate += 1;
             };
           };
         };
@@ -2256,6 +2282,7 @@ actor {
             sourceChanges = [];
           });
           nodesToCreate += 1;
+          curationsToCreate += 1;
         };
       };
     };
@@ -2838,6 +2865,9 @@ actor {
       };
     };
 
+    // ── Compute hierarchy edges ──────────────────────────────────────────────
+    hierarchyEdgesToCreate := nodesToCreate - curationsToCreate;
+
     // ── Early exit check ─────────────────────────────────────────────────────
     if (nodesToCreate == 0 and nodesToUpdate == 0 and edgesToCreate == 0 and edgesToUpdate == 0) {
       Debug.print("Preview: Nothing to update - all counts are zero");
@@ -2854,6 +2884,7 @@ actor {
         nodesToUpdate;
         edgesToCreate;
         edgesToUpdate;
+        hierarchyEdgesToCreate;
       };
     };
   };
@@ -2935,6 +2966,8 @@ actor {
     var edgesToUpdate : Nat = 0;
     var attributesAdded : Nat = 0;
     var sourcesAdded : Nat = 0;
+    var hierarchyEdgesCreated : Nat = 0;
+    var curationsToCreate : Nat = 0;
 
     // Helper: count new attribute entries relative to existing weighted attributes
     // New key → all its values counted; existing key → only new distinct values counted
@@ -3062,6 +3095,7 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
+          curationsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
         };
       };
@@ -3160,6 +3194,7 @@ actor {
         case (null) {
           let newId = fullPath;
           let newSwarm : Swarm = {
+
             id = newId;
             name = node.name;
             tags = node.tags;
@@ -3637,6 +3672,9 @@ actor {
       return #error({ message = "nothing to update"; failedAt = null });
     };
 
+    // ── Compute hierarchy edges ───────────────────────────────────────────
+    hierarchyEdgesCreated := nodesToCreate - curationsToCreate;
+
     // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
 
     // Find root curation name (first curation in input)
@@ -3654,13 +3692,15 @@ actor {
               extendedAt = Time.now();
               addedNodes = nodesToCreate;
               addedEdges = edgesToCreate;
+              addedHierarchyEdges = hierarchyEdgesCreated;
               addedAttributes = attributesAdded;
               addedSources = ?sourcesAdded;
             };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
               nodeCount = existingMeta.nodeCount + nodesToCreate;
-              edgeCount = existingMeta.edgeCount + edgesToCreate;
+              edgeCount = existingMeta.edgeCount + edgesToCreate + hierarchyEdgesCreated;
+              hierarchyEdgeCount = existingMeta.hierarchyEdgeCount + hierarchyEdgesCreated;
               attributeCount = existingMeta.attributeCount + attributesAdded;
               sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
@@ -3685,7 +3725,8 @@ actor {
           creatorName;
           publishedAt = Time.now();
           nodeCount = nodesToCreate;
-          edgeCount = edgesToCreate;
+          edgeCount = edgesToCreate + hierarchyEdgesCreated;
+          hierarchyEdgeCount = hierarchyEdgesCreated;
           attributeCount = attributesAdded;
           sourcesCount = ?sourcesAdded;
           extensionLog = [];
@@ -4299,6 +4340,7 @@ actor {
       ("publishedAt", jsonInt(m.publishedAt)),
       ("nodeCount", jsonNat(m.nodeCount)),
       ("edgeCount", jsonNat(m.edgeCount)),
+      ("hierarchyEdgeCount", jsonNat(m.hierarchyEdgeCount)),
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
       ("extensionCount", jsonNat(m.extensionLog.size())),

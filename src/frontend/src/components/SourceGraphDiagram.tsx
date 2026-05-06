@@ -389,7 +389,11 @@ export function SourceGraphDiagram({
             <>{graph.nodes.length} nodes</>
           )}
           {" · "}
-          {graph.edges.length} edges
+          {(() => {
+            const hierarchyCount = graph.nodes.length - 1;
+            const crossRefCount = graph.edges.length - hierarchyCount;
+            return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+          })()}
           {graphData.nodes.length !== graph.nodes.length && (
             <span className="text-destructive ml-2">
               ({graphData.nodes.length} rendered)

@@ -80,6 +80,7 @@ type PublishedSourceGraphMeta =
    creatorName: text;
    edgeCount: nat;
    extensionLog: vec ExtensionEntry;
+   hierarchyEdgeCount: nat;
    id: text;
    name: text;
    nodeCount: nat;
@@ -99,6 +100,7 @@ type PublishPreviewResult =
     record {
       edgesToCreate: nat;
       edgesToUpdate: nat;
+      hierarchyEdgesToCreate: nat;
       nodesToCreate: nat;
       nodesToUpdate: nat;
     };
@@ -251,6 +253,7 @@ type ExtensionEntry =
  record {
    addedAttributes: nat;
    addedEdges: nat;
+   addedHierarchyEdges: nat;
    addedNodes: nat;
    addedSources: opt nat;
    extendedAt: Time;

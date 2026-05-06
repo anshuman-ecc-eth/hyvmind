@@ -1,97 +1,91 @@
 import Map "mo:core/Map";
-import Array "mo:core/Array";
 
 module {
 
-  // ── Old types (copied from .old/src/backend stable signature) ──────────────
+  // ── Old types (copied from pre-upgrade stable shape) ─────────────────────────
 
-  type Time = Int;
-
-  type ExtensionEntry_v0 = {
-    addedNodes : Nat;
-    addedEdges : Nat;
-    addedAttributes : Nat;
-    extendedAt : Time;
-  };
-
-  type PublishedSourceGraphMeta_v0 = {
-    id : Text;
-    name : Text;
-    creator : Principal;
-    creatorName : Text;
-    nodeCount : Nat;
-    edgeCount : Nat;
-    attributeCount : Nat;
-    publishedAt : Time;
-    extensionLog : [ExtensionEntry_v0];
-    artworkDataUrl : ?Text;
-  };
-
-  // ── New types ───────────────────────────────────────────────────────────────
-
-  type ExtensionEntry_new = {
+  type OldExtensionEntry = {
+    extendedAt : Int;
     addedNodes : Nat;
     addedEdges : Nat;
     addedAttributes : Nat;
     addedSources : ?Nat;
-    extendedAt : Time;
   };
 
-  type PublishedSourceGraphMeta_new = {
+  type OldPublishedSourceGraphMeta = {
     id : Text;
     name : Text;
     creator : Principal;
     creatorName : Text;
+    publishedAt : Int;
     nodeCount : Nat;
     edgeCount : Nat;
     attributeCount : Nat;
     sourcesCount : ?Nat;
-    publishedAt : Time;
-    extensionLog : [ExtensionEntry_new];
+    extensionLog : [OldExtensionEntry];
     artworkDataUrl : ?Text;
   };
 
-  // ── Actor stable state shapes ───────────────────────────────────────────────
+  // ── New types (must match actor field types exactly) ─────────────────────────
 
-  public type OldActor = {
-    var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMeta_v0>;
+  type NewExtensionEntry = {
+    extendedAt : Int;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
   };
 
-  public type NewActor = {
-    var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMeta_new>;
+  type NewPublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Int;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [NewExtensionEntry];
+    artworkDataUrl : ?Text;
   };
 
-  // ── Migration function ──────────────────────────────────────────────────────
+  // ── Migration input / output ─────────────────────────────────────────────────
+
+  type OldActor = {
+    var publishedSourceGraphs : Map.Map<Text, OldPublishedSourceGraphMeta>;
+  };
+
+  type NewActor = {
+    var publishedSourceGraphs : Map.Map<Text, NewPublishedSourceGraphMeta>;
+  };
+
+  // ── Migration logic ──────────────────────────────────────────────────────────
+
+  func migrateEntry(e : OldExtensionEntry) : NewExtensionEntry {
+    { e with addedHierarchyEdges = 0 }
+  };
+
+  func migrateMeta(m : OldPublishedSourceGraphMeta) : NewPublishedSourceGraphMeta {
+    // Estimate hierarchy edges: every non-curation node contributes one hierarchy edge.
+    // With nodeCount - 1 as a safe lower bound (1 curation in every valid tree).
+    let hierarchyEdgeCount = if (m.nodeCount > 0) { m.nodeCount - 1 } else { 0 };
+    let newLog = m.extensionLog.map(migrateEntry);
+    {
+      m with
+      edgeCount = m.edgeCount + hierarchyEdgeCount;
+      hierarchyEdgeCount;
+      extensionLog = newLog;
+    }
+  };
 
   public func run(old : OldActor) : NewActor {
-    let migratedGraphs = old.publishedSourceGraphs.map<Text, PublishedSourceGraphMeta_v0, PublishedSourceGraphMeta_new>(
-      func(_k, v0) {
-        {
-          id = v0.id;
-          name = v0.name;
-          creator = v0.creator;
-          creatorName = v0.creatorName;
-          nodeCount = v0.nodeCount;
-          edgeCount = v0.edgeCount;
-          attributeCount = v0.attributeCount;
-          sourcesCount = null;
-          publishedAt = v0.publishedAt;
-          extensionLog = v0.extensionLog.map<ExtensionEntry_v0, ExtensionEntry_new>(
-            func(e) : ExtensionEntry_new {
-              {
-                addedNodes = e.addedNodes;
-                addedEdges = e.addedEdges;
-                addedAttributes = e.addedAttributes;
-                addedSources = null;
-                extendedAt = e.extendedAt;
-              };
-            },
-          );
-          artworkDataUrl = v0.artworkDataUrl;
-        };
-      },
+    let newGraphs = old.publishedSourceGraphs.map<Text, OldPublishedSourceGraphMeta, NewPublishedSourceGraphMeta>(
+      func(_, meta) { migrateMeta(meta) }
     );
-    { var publishedSourceGraphs = migratedGraphs };
+    { var publishedSourceGraphs = newGraphs };
   };
 
 };
