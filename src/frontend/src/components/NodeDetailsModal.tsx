@@ -25,6 +25,11 @@ interface SourceRow {
   isNew: boolean;
 }
 
+function parentIdFromPath(id: string): string | null {
+  const lastAt = id.lastIndexOf("@");
+  return lastAt > 0 ? id.slice(0, lastAt) : null;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -45,19 +50,19 @@ function buildInheritedAttributes(
   node: SourceNode,
   nodeMap: Map<string, SourceNode>,
 ): Record<string, string> {
-  // Walk ancestor chain via parentName; closer ancestors take priority
+  // Walk ancestor chain via @-path derivation (avoids name collision bugs)
   const chain: Record<string, unknown>[] = [];
-  let currentName = node.parentName;
+  let currentId = node.id ? parentIdFromPath(node.id) : null;
   const visited = new Set<string>();
 
-  while (currentName && !visited.has(currentName)) {
-    visited.add(currentName);
-    const ancestor = nodeMap.get(currentName);
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const ancestor = nodeMap.get(currentId);
     if (!ancestor) break;
     if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
       chain.push(ancestor.attributes);
     }
-    currentName = ancestor.parentName;
+    currentId = parentIdFromPath(currentId);
   }
 
   // Merge: later entries (closer ancestors) override earlier (further ancestors)
@@ -77,19 +82,19 @@ function buildInheritedSources(
   node: SourceNode,
   nodeMap: Map<string, SourceNode>,
 ): SourceRef[] {
-  // Walk ancestor chain via parentName; collect sources farthest-first
+  // Walk ancestor chain via @-path derivation; collect sources farthest-first
   const chain: SourceRef[][] = [];
-  let currentName = node.parentName;
+  let currentId = node.id ? parentIdFromPath(node.id) : null;
   const visited = new Set<string>();
 
-  while (currentName && !visited.has(currentName)) {
-    visited.add(currentName);
-    const ancestor = nodeMap.get(currentName);
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const ancestor = nodeMap.get(currentId);
     if (!ancestor) break;
     if (ancestor.sources && ancestor.sources.length > 0) {
       chain.push(ancestor.sources);
     }
-    currentName = ancestor.parentName;
+    currentId = parentIdFromPath(currentId);
   }
 
   // chain[0] = closest ancestor; reverse so farthest is first in result
@@ -121,7 +126,7 @@ export default function NodeDetailsModal({
   // New rows added in this session (both key + value editable)
   const [newRows, setNewRows] = useState<AttributeRow[]>([]);
 
-  const nodeMap = useRef(new Map(graph.nodes.map((n) => [n.name, n])));
+  const nodeMap = useRef(new Map(graph.nodes.map((n) => [n.id ?? n.name, n])));
 
   const inheritedAttributes = buildInheritedAttributes(node, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;

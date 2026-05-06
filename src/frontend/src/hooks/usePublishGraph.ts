@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend";
+import type { SourceRef } from "../types/sourceGraph";
 import type {
   PublishedNodeInfo,
   SourceGraph,
@@ -24,25 +25,30 @@ export type PublishCommitResult =
       failedAt: { nodeType: string; name: string } | null;
     };
 
+function parentIdFromPath(id: string): string | null {
+  const lastAt = id.lastIndexOf("@");
+  return lastAt > 0 ? id.slice(0, lastAt) : null;
+}
+
 // Exported so usePublishPreview can import it
 export function sourceGraphToInput(graph: SourceGraph) {
-  // Build a name-to-node lookup map for ancestor-walk
+  // Build an id-to-node lookup map for ancestor-walk (id-keyed to avoid name collisions)
   const nodeMap = new Map<string, SourceNode>();
   for (const n of graph.nodes) {
-    if (n.name) nodeMap.set(n.name, n);
+    const key = n.id ?? n.name;
+    if (key) nodeMap.set(key, n);
   }
 
   const nodes = graph.nodes.map((node) => {
-    // Walk ancestor chain (same logic as buildInheritedAttributes in NodeDetailsModal)
+    // Walk ancestor chain via @-path derivation (avoids name collision bugs)
     const ancestorChain: Record<string, unknown>[] = [];
-    const ancestorSourceChain: import("../types/sourceGraph").SourceRef[][] =
-      [];
-    let currentName = node.parentName;
+    const ancestorSourceChain: SourceRef[][] = [];
+    let currentId = node.id ? parentIdFromPath(node.id) : null;
     const visited = new Set<string>();
 
-    while (currentName && !visited.has(currentName)) {
-      visited.add(currentName);
-      const ancestor = nodeMap.get(currentName);
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId);
+      const ancestor = nodeMap.get(currentId);
       if (!ancestor) break;
       if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
         ancestorChain.push(ancestor.attributes);
@@ -50,7 +56,7 @@ export function sourceGraphToInput(graph: SourceGraph) {
       if (ancestor.sources && ancestor.sources.length > 0) {
         ancestorSourceChain.push(ancestor.sources);
       }
-      currentName = ancestor.parentName;
+      currentId = parentIdFromPath(currentId);
     }
 
     // Merge attributes: farthest ancestor first, own attributes override all
@@ -61,7 +67,7 @@ export function sourceGraphToInput(graph: SourceGraph) {
     Object.assign(merged, node.attributes ?? {});
 
     // Merge sources: farthest ancestor first, then closer ancestors, then own
-    const rawMergedSources: import("../types/sourceGraph").SourceRef[] = [];
+    const rawMergedSources: SourceRef[] = [];
     for (let i = ancestorSourceChain.length - 1; i >= 0; i--) {
       rawMergedSources.push(...ancestorSourceChain[i]);
     }
@@ -71,7 +77,7 @@ export function sourceGraphToInput(graph: SourceGraph) {
 
     // Deduplicate sources by name|url key
     const seen = new Set<string>();
-    const mergedSources: import("../types/sourceGraph").SourceRef[] = [];
+    const mergedSources: SourceRef[] = [];
     for (const s of rawMergedSources) {
       const key = `${s.name}|${s.url}`;
       if (!seen.has(key)) {
@@ -166,8 +172,8 @@ export function usePublishGraph() {
             localName,
             backendId,
             nodeType:
-              graph.nodes.find((n) => n.name === localName)?.nodeType ??
-              "unknown",
+              graph.nodes.find((n) => (n.id ?? n.name) === localName)
+                ?.nodeType ?? "unknown",
             publishedAt: Date.now(),
           }));
 

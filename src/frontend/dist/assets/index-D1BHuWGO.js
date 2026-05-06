@@ -95801,136 +95801,6 @@ function MarkdownPreview({ content: content2 }) {
     }
   );
 }
-function serialiseFrontmatter(fm) {
-  const entries = Object.entries(fm);
-  if (entries.length === 0) return "";
-  const yaml = entries.map(([k2, v2]) => `${k2}: ${typeof v2 === "string" ? v2 : JSON.stringify(v2)}`).join("\n");
-  return `---
-${yaml}
----
-`;
-}
-function collectDescendants(nodeId, nodes) {
-  const result = [];
-  const stack = [nodeId];
-  while (stack.length > 0) {
-    const id2 = stack.pop();
-    const node2 = nodes.get(id2);
-    if (!node2) continue;
-    result.push(node2);
-    for (const childId of node2.children) {
-      stack.push(childId);
-    }
-  }
-  return result;
-}
-function buildFullPath(nodeId, nodes) {
-  const segments = [];
-  let current = nodes.get(nodeId);
-  while (current) {
-    segments.unshift(current.name);
-    current = current.parentId ? nodes.get(current.parentId) : void 0;
-  }
-  return segments.join("@");
-}
-function extractReferences$1(content2) {
-  const matches = content2.match(/\{([^}]+)\}/g);
-  if (!matches) return [];
-  return matches.map((m2) => m2.slice(1, -1).trim());
-}
-function resolveNodeRef(name, interp, law, location2, swarm, curation) {
-  return interp.get(name) ?? law.get(name) ?? location2.get(name) ?? swarm.get(name) ?? curation.get(name);
-}
-function editorToSourceGraph(nodes, rootId) {
-  var _a3;
-  const root2 = nodes.get(rootId);
-  if (!root2) {
-    throw new Error(`editorToSourceGraph: root node "${rootId}" not found`);
-  }
-  const allNodes = collectDescendants(rootId, nodes);
-  const sourceNodes = [];
-  const curationNames = /* @__PURE__ */ new Map();
-  const swarmNames = /* @__PURE__ */ new Map();
-  const locationNames = /* @__PURE__ */ new Map();
-  const lawEntityNames = /* @__PURE__ */ new Map();
-  const interpFilenames = /* @__PURE__ */ new Map();
-  const nodeFullPaths = /* @__PURE__ */ new Map();
-  for (const node2 of allNodes) {
-    const fullPath = buildFullPath(node2.id, nodes);
-    nodeFullPaths.set(node2.id, fullPath);
-    if (node2.nodeType === "curation") curationNames.set(node2.name, fullPath);
-    if (node2.nodeType === "swarm") swarmNames.set(node2.name, fullPath);
-    if (node2.nodeType === "location") locationNames.set(node2.name, fullPath);
-    if (node2.nodeType === "lawEntity") lawEntityNames.set(node2.name, fullPath);
-    if (node2.nodeType === "interpEntity")
-      interpFilenames.set(node2.name, fullPath);
-    let content2;
-    if (node2.nodeType === "interpEntity") {
-      const fmBlock = serialiseFrontmatter(node2.frontmatter);
-      const body2 = node2.content ?? "";
-      content2 = fmBlock ? `${fmBlock}${body2}` : body2 || void 0;
-    }
-    const attributes = node2.nodeType !== "interpEntity" && Object.keys(node2.inheritedAttributes).length > 0 ? { ...node2.inheritedAttributes } : node2.nodeType === "interpEntity" && Object.keys(node2.frontmatter).length > 0 ? Object.fromEntries(
-      Object.entries(node2.frontmatter).map(([k2, v2]) => [
-        k2,
-        typeof v2 === "string" ? v2 : JSON.stringify(v2)
-      ])
-    ) : void 0;
-    const sourceNode = {
-      id: fullPath,
-      name: node2.name,
-      nodeType: node2.nodeType,
-      content: content2 || void 0,
-      attributes: attributes && Object.keys(attributes).length > 0 ? attributes : void 0,
-      parentName: node2.parentId ? (_a3 = nodes.get(node2.parentId)) == null ? void 0 : _a3.name : void 0,
-      ...node2.nodeType !== "interpEntity" && node2.inheritedSources && node2.inheritedSources.length > 0 ? { sources: node2.inheritedSources.map((s2) => ({ ...s2 })) } : {}
-    };
-    sourceNodes.push(sourceNode);
-  }
-  const edges = [];
-  for (const node2 of allNodes) {
-    if (node2.parentId) {
-      const parentPath = nodeFullPaths.get(node2.parentId);
-      const childPath = nodeFullPaths.get(node2.id);
-      if (parentPath && childPath) {
-        edges.push({ source: parentPath, target: childPath });
-      }
-    }
-  }
-  for (const node2 of allNodes) {
-    if (node2.nodeType === "interpEntity" && node2.content) {
-      const nodePath = nodeFullPaths.get(node2.id);
-      if (!nodePath) continue;
-      const refs = extractReferences$1(node2.content);
-      for (const ref of refs) {
-        const refPath = resolveNodeRef(
-          ref,
-          interpFilenames,
-          lawEntityNames,
-          locationNames,
-          swarmNames,
-          curationNames
-        );
-        if (refPath && refPath !== nodePath) {
-          const alreadyExists = edges.some(
-            (e2) => e2.source === nodePath && e2.target === refPath
-          );
-          if (!alreadyExists) {
-            edges.push({ source: nodePath, target: refPath });
-          }
-        }
-      }
-    }
-  }
-  const now2 = Date.now();
-  return {
-    id: `${now2}-${Math.random().toString(36).slice(2)}`,
-    name: root2.name,
-    nodes: sourceNodes,
-    edges,
-    createdAt: now2
-  };
-}
 function commonjsRequire(path2) {
   throw new Error('Could not dynamically require "' + path2 + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
 }
@@ -104302,7 +104172,7 @@ function extractAllAttributes(fm) {
   }
   return Object.keys(attrs).length > 0 ? attrs : void 0;
 }
-function extractReferences(content2) {
+function extractReferences$1(content2) {
   const matches = content2.match(/\{([^}]+)\}/g);
   if (!matches) return [];
   return matches.map((m2) => m2.slice(1, -1).trim());
@@ -104510,7 +104380,7 @@ async function parseSourceGraphZip(file2) {
               attributes: mergedAttrs && Object.keys(mergedAttrs).length > 0 ? mergedAttrs : void 0
             };
             nodes.push(interpNode);
-            const refs = extractReferences(body2);
+            const refs = extractReferences$1(body2);
             const uniqueRefs = [...new Set(refs)];
             const hasSelfReference = uniqueRefs.some(
               (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name
@@ -104568,13 +104438,169 @@ async function parseSourceGraphZip(file2) {
     createdAt: new Date(Date.now()).getTime()
   };
 }
+function serialiseFrontmatter(fm) {
+  const entries = Object.entries(fm);
+  if (entries.length === 0) return "";
+  const yaml = entries.map(([k2, v2]) => `${k2}: ${typeof v2 === "string" ? v2 : JSON.stringify(v2)}`).join("\n");
+  return `---
+${yaml}
+---
+`;
+}
+function collectDescendants(nodeId, nodes) {
+  const result = [];
+  const stack = [nodeId];
+  while (stack.length > 0) {
+    const id2 = stack.pop();
+    const node2 = nodes.get(id2);
+    if (!node2) continue;
+    result.push(node2);
+    for (const childId of node2.children) {
+      stack.push(childId);
+    }
+  }
+  return result;
+}
+function buildFullPath(nodeId, nodes) {
+  const segments = [];
+  let current = nodes.get(nodeId);
+  while (current) {
+    segments.unshift(current.name);
+    current = current.parentId ? nodes.get(current.parentId) : void 0;
+  }
+  return segments.join("@");
+}
+function extractReferences(content2) {
+  const matches = content2.match(/\{([^}]+)\}/g);
+  if (!matches) return [];
+  return matches.map((m2) => m2.slice(1, -1).trim());
+}
+function resolveNodeRef(name, interp, law, location2, swarm, curation) {
+  return interp.get(name) ?? law.get(name) ?? location2.get(name) ?? swarm.get(name) ?? curation.get(name);
+}
+function editorToSourceGraph(nodes, rootId) {
+  var _a3;
+  const root2 = nodes.get(rootId);
+  if (!root2) {
+    throw new Error(`editorToSourceGraph: root node "${rootId}" not found`);
+  }
+  const allNodes = collectDescendants(rootId, nodes);
+  const sourceNodes = [];
+  const curationNames = /* @__PURE__ */ new Map();
+  const swarmNames = /* @__PURE__ */ new Map();
+  const locationNames = /* @__PURE__ */ new Map();
+  const lawEntityNames = /* @__PURE__ */ new Map();
+  const interpFilenames = /* @__PURE__ */ new Map();
+  const nodeFullPaths = /* @__PURE__ */ new Map();
+  const parentAttributes = /* @__PURE__ */ new Map();
+  const parentSources = /* @__PURE__ */ new Map();
+  for (const node2 of allNodes) {
+    if (node2.type === "file" && node2.name.startsWith("_")) {
+      const parentPath = node2.parentId ? buildFullPath(node2.parentId, nodes) : null;
+      if (parentPath) {
+        if (node2.name === "_attributes.md") {
+          const existing = parentAttributes.get(parentPath) ?? {};
+          parentAttributes.set(parentPath, {
+            ...existing,
+            ...node2.frontmatter
+          });
+        } else if (node2.name === "_sources.md") {
+          const parsed = parseMarkdownLinks(node2.content ?? "");
+          const existing = parentSources.get(parentPath) ?? [];
+          parentSources.set(parentPath, [...existing, ...parsed]);
+        }
+      }
+      continue;
+    }
+    const fullPath = buildFullPath(node2.id, nodes);
+    nodeFullPaths.set(node2.id, fullPath);
+    if (node2.nodeType === "curation") curationNames.set(node2.name, fullPath);
+    if (node2.nodeType === "swarm") swarmNames.set(node2.name, fullPath);
+    if (node2.nodeType === "location") locationNames.set(node2.name, fullPath);
+    if (node2.nodeType === "lawEntity") lawEntityNames.set(node2.name, fullPath);
+    if (node2.nodeType === "interpEntity")
+      interpFilenames.set(node2.name, fullPath);
+    let content2;
+    if (node2.nodeType === "interpEntity") {
+      const fmBlock = serialiseFrontmatter(node2.frontmatter);
+      const body2 = node2.content ?? "";
+      content2 = fmBlock ? `${fmBlock}${body2}` : body2 || void 0;
+    }
+    const attributes = node2.nodeType !== "interpEntity" && Object.keys(node2.inheritedAttributes).length > 0 ? { ...node2.inheritedAttributes } : node2.nodeType === "interpEntity" && Object.keys(node2.frontmatter).length > 0 ? Object.fromEntries(
+      Object.entries(node2.frontmatter).map(([k2, v2]) => [
+        k2,
+        typeof v2 === "string" ? v2 : JSON.stringify(v2)
+      ])
+    ) : void 0;
+    const sourceNode = {
+      id: fullPath,
+      name: node2.name,
+      nodeType: node2.nodeType,
+      content: content2 || void 0,
+      attributes: attributes && Object.keys(attributes).length > 0 ? attributes : void 0,
+      parentName: node2.parentId ? (_a3 = nodes.get(node2.parentId)) == null ? void 0 : _a3.name : void 0,
+      ...node2.nodeType !== "interpEntity" && node2.inheritedSources && node2.inheritedSources.length > 0 ? { sources: node2.inheritedSources.map((s2) => ({ ...s2 })) } : {}
+    };
+    sourceNodes.push(sourceNode);
+  }
+  for (const sn of sourceNodes) {
+    const key2 = sn.id ?? sn.name;
+    const attrs = parentAttributes.get(key2);
+    const srcs = parentSources.get(key2);
+    if (attrs) sn.attributes = { ...sn.attributes ?? {}, ...attrs };
+    if (srcs) sn.sources = [...sn.sources ?? [], ...srcs];
+  }
+  const edges = [];
+  for (const node2 of allNodes) {
+    if (node2.parentId) {
+      const parentPath = nodeFullPaths.get(node2.parentId);
+      const childPath = nodeFullPaths.get(node2.id);
+      if (parentPath && childPath) {
+        edges.push({ source: parentPath, target: childPath });
+      }
+    }
+  }
+  for (const node2 of allNodes) {
+    if (node2.nodeType === "interpEntity" && node2.content) {
+      const nodePath = nodeFullPaths.get(node2.id);
+      if (!nodePath) continue;
+      const refs = extractReferences(node2.content);
+      for (const ref of refs) {
+        const refPath = resolveNodeRef(
+          ref,
+          interpFilenames,
+          lawEntityNames,
+          locationNames,
+          swarmNames,
+          curationNames
+        );
+        if (refPath && refPath !== nodePath) {
+          const alreadyExists = edges.some(
+            (e2) => e2.source === nodePath && e2.target === refPath
+          );
+          if (!alreadyExists) {
+            edges.push({ source: nodePath, target: refPath });
+          }
+        }
+      }
+    }
+  }
+  const now2 = Date.now();
+  return {
+    id: `${now2}-${Math.random().toString(36).slice(2)}`,
+    name: root2.name,
+    nodes: sourceNodes,
+    edges,
+    createdAt: now2
+  };
+}
 function toEditorNodeType(nodeType) {
   return nodeType === "interpEntity" ? "file" : "folder";
 }
 function pathSegments(id2) {
   return id2.split("@");
 }
-function parentIdFromPath(id2) {
+function parentIdFromPath$2(id2) {
   const parts = pathSegments(id2);
   if (parts.length <= 1) return null;
   return parts.slice(0, -1).join("@");
@@ -104585,7 +104611,7 @@ function sourceGraphToEditor(graph) {
   for (const node2 of graph.nodes) {
     const id2 = node2.id ?? node2.name;
     if (!childrenMap.has(id2)) childrenMap.set(id2, []);
-    const pid = parentIdFromPath(id2);
+    const pid = parentIdFromPath$2(id2);
     if (pid !== null) {
       const existing = childrenMap.get(pid) ?? [];
       if (!existing.includes(id2)) {
@@ -104596,7 +104622,7 @@ function sourceGraphToEditor(graph) {
   const editorNodes = [];
   for (const node2 of graph.nodes) {
     const id2 = node2.id ?? node2.name;
-    const parentId = parentIdFromPath(id2);
+    const parentId = parentIdFromPath$2(id2);
     let content2;
     let frontmatter = {};
     if (node2.nodeType === "interpEntity") {
@@ -104695,14 +104721,14 @@ function useSourceGraphs() {
     notify();
   }, []);
   const updateNode = reactExports.useCallback(
-    (graphId, nodeName, updates) => {
+    (graphId, nodeName, updates, nodeId) => {
       globalStore = {
         ...globalStore,
         graphs: globalStore.graphs.map(
           (g2) => g2.id !== graphId ? g2 : {
             ...g2,
             nodes: g2.nodes.map(
-              (n2) => n2.name !== nodeName ? n2 : { ...n2, ...updates }
+              (n2) => nodeId && n2.id === nodeId || n2.name === nodeName ? { ...n2, ...updates } : n2
             )
           }
         )
@@ -106751,6 +106777,10 @@ function McpSetupPage() {
     }
   );
 }
+function parentIdFromPath$1(id2) {
+  const lastAt = id2.lastIndexOf("@");
+  return lastAt > 0 ? id2.slice(0, lastAt) : null;
+}
 const NODE_TYPE_LABELS = {
   curation: "Curation",
   swarm: "Swarm",
@@ -106760,16 +106790,16 @@ const NODE_TYPE_LABELS = {
 };
 function buildInheritedAttributes(node2, nodeMap) {
   const chain2 = [];
-  let currentName = node2.parentName;
+  let currentId = node2.id ? parentIdFromPath$1(node2.id) : null;
   const visited = /* @__PURE__ */ new Set();
-  while (currentName && !visited.has(currentName)) {
-    visited.add(currentName);
-    const ancestor = nodeMap.get(currentName);
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const ancestor = nodeMap.get(currentId);
     if (!ancestor) break;
     if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
       chain2.push(ancestor.attributes);
     }
-    currentName = ancestor.parentName;
+    currentId = parentIdFromPath$1(currentId);
   }
   const merged = {};
   for (let i2 = chain2.length - 1; i2 >= 0; i2--) {
@@ -106784,16 +106814,16 @@ function buildInheritedAttributes(node2, nodeMap) {
 }
 function buildInheritedSources(node2, nodeMap) {
   const chain2 = [];
-  let currentName = node2.parentName;
+  let currentId = node2.id ? parentIdFromPath$1(node2.id) : null;
   const visited = /* @__PURE__ */ new Set();
-  while (currentName && !visited.has(currentName)) {
-    visited.add(currentName);
-    const ancestor = nodeMap.get(currentName);
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const ancestor = nodeMap.get(currentId);
     if (!ancestor) break;
     if (ancestor.sources && ancestor.sources.length > 0) {
       chain2.push(ancestor.sources);
     }
-    currentName = ancestor.parentName;
+    currentId = parentIdFromPath$1(currentId);
   }
   chain2.reverse();
   return chain2.flat();
@@ -106813,7 +106843,7 @@ function NodeDetailsModal({
     }))
   );
   const [newRows, setNewRows] = reactExports.useState([]);
-  const nodeMap = reactExports.useRef(new Map(graph.nodes.map((n2) => [n2.name, n2])));
+  const nodeMap = reactExports.useRef(new Map(graph.nodes.map((n2) => [n2.id ?? n2.name, n2])));
   const inheritedAttributes = buildInheritedAttributes(node2, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
   const [sourceRows, setSourceRows] = reactExports.useState(
@@ -107599,19 +107629,24 @@ function usePublishMappings() {
     getMappingsObject
   };
 }
+function parentIdFromPath(id2) {
+  const lastAt = id2.lastIndexOf("@");
+  return lastAt > 0 ? id2.slice(0, lastAt) : null;
+}
 function sourceGraphToInput(graph) {
   const nodeMap = /* @__PURE__ */ new Map();
   for (const n2 of graph.nodes) {
-    if (n2.name) nodeMap.set(n2.name, n2);
+    const key2 = n2.id ?? n2.name;
+    if (key2) nodeMap.set(key2, n2);
   }
   const nodes = graph.nodes.map((node2) => {
     const ancestorChain = [];
     const ancestorSourceChain = [];
-    let currentName = node2.parentName;
+    let currentId = node2.id ? parentIdFromPath(node2.id) : null;
     const visited = /* @__PURE__ */ new Set();
-    while (currentName && !visited.has(currentName)) {
-      visited.add(currentName);
-      const ancestor = nodeMap.get(currentName);
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId);
+      const ancestor = nodeMap.get(currentId);
       if (!ancestor) break;
       if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
         ancestorChain.push(ancestor.attributes);
@@ -107619,7 +107654,7 @@ function sourceGraphToInput(graph) {
       if (ancestor.sources && ancestor.sources.length > 0) {
         ancestorSourceChain.push(ancestor.sources);
       }
-      currentName = ancestor.parentName;
+      currentId = parentIdFromPath(currentId);
     }
     const merged = {};
     for (let i2 = ancestorChain.length - 1; i2 >= 0; i2--) {
@@ -107713,7 +107748,7 @@ function usePublishGraph() {
           return {
             localName,
             backendId,
-            nodeType: ((_a3 = graph.nodes.find((n2) => n2.name === localName)) == null ? void 0 : _a3.nodeType) ?? "unknown",
+            nodeType: ((_a3 = graph.nodes.find((n2) => (n2.id ?? n2.name) === localName)) == null ? void 0 : _a3.nodeType) ?? "unknown",
             publishedAt: Date.now()
           };
         });
@@ -108037,8 +108072,8 @@ function SourcesView() {
     setSelectedNode(node2);
   };
   const handleNodeSave = (nodeName, updates) => {
-    if (activeGraphId) {
-      updateNode(activeGraphId, nodeName, updates);
+    if (activeGraphId && selectedNode) {
+      updateNode(activeGraphId, nodeName, updates, selectedNode.id);
     }
     setSelectedNode(null);
   };

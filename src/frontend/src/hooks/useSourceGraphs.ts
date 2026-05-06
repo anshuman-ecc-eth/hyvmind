@@ -86,7 +86,12 @@ export default function useSourceGraphs() {
   }, []);
 
   const updateNode = useCallback(
-    (graphId: string, nodeName: string, updates: Partial<SourceNode>) => {
+    (
+      graphId: string,
+      nodeName: string,
+      updates: Partial<SourceNode>,
+      nodeId?: string,
+    ) => {
       globalStore = {
         ...globalStore,
         graphs: globalStore.graphs.map((g) =>
@@ -95,7 +100,9 @@ export default function useSourceGraphs() {
             : {
                 ...g,
                 nodes: g.nodes.map((n) =>
-                  n.name !== nodeName ? n : { ...n, ...updates },
+                  (nodeId && n.id === nodeId) || n.name === nodeName
+                    ? { ...n, ...updates }
+                    : n,
                 ),
               },
         ),

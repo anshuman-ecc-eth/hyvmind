@@ -1,5 +1,11 @@
 import type { EditorNode } from "../types/markdownEditor";
-import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
+import type {
+  Edge,
+  SourceGraph,
+  SourceNode,
+  SourceRef,
+} from "../types/sourceGraph";
+import { parseMarkdownLinks } from "./sourceGraphParser";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -119,7 +125,32 @@ export function editorToSourceGraph(
   const interpFilenames = new Map<string, string>(); // name -> fullPath
   const nodeFullPaths = new Map<string, string>(); // nodeId -> fullPath
 
+  // Accumulators for metadata files (_attributes.md, _sources.md)
+  const parentAttributes = new Map<string, Record<string, unknown>>();
+  const parentSources = new Map<string, SourceRef[]>();
+
   for (const node of allNodes) {
+    // Skip metadata files — merge their data onto the parent node instead
+    if (node.type === "file" && node.name.startsWith("_")) {
+      const parentPath = node.parentId
+        ? buildFullPath(node.parentId, nodes)
+        : null;
+      if (parentPath) {
+        if (node.name === "_attributes.md") {
+          const existing = parentAttributes.get(parentPath) ?? {};
+          parentAttributes.set(parentPath, {
+            ...existing,
+            ...node.frontmatter,
+          });
+        } else if (node.name === "_sources.md") {
+          const parsed = parseMarkdownLinks(node.content ?? "");
+          const existing = parentSources.get(parentPath) ?? [];
+          parentSources.set(parentPath, [...existing, ...parsed]);
+        }
+      }
+      continue;
+    }
+
     const fullPath = buildFullPath(node.id, nodes);
     nodeFullPaths.set(node.id, fullPath);
 
@@ -171,6 +202,15 @@ export function editorToSourceGraph(
     };
 
     sourceNodes.push(sourceNode);
+  }
+
+  // Apply accumulated metadata from _attributes.md and _sources.md onto parent nodes
+  for (const sn of sourceNodes) {
+    const key = sn.id ?? sn.name;
+    const attrs = parentAttributes.get(key);
+    const srcs = parentSources.get(key);
+    if (attrs) sn.attributes = { ...(sn.attributes ?? {}), ...attrs };
+    if (srcs) sn.sources = [...(sn.sources ?? []), ...srcs];
   }
 
   // -------------------------------------------------------------------------
