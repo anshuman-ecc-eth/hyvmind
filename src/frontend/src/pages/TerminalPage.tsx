@@ -754,6 +754,220 @@ export default function TerminalPage() {
           addMessage("normal", "⚠️ Type 'yes' to confirm reset:");
           break;
         }
+        case "publishedgraphs": {
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            for (const meta of metas) {
+              addMessage("success", `Graph: ${meta.name} | id: ${meta.id}`);
+              addMessage(
+                "normal",
+                `  Published: ${new Date(Number(meta.publishedAt) / 1_000_000).toISOString()}`,
+              );
+              addMessage(
+                "normal",
+                `  Nodes: ${Number(meta.nodeCount)} | Edges: ${Number(meta.edgeCount)} | Hierarchy: ${Number((meta as { hierarchyEdgeCount?: bigint }).hierarchyEdgeCount ?? 0n)}`,
+              );
+              if (meta.extensionLog && meta.extensionLog.length > 0) {
+                addMessage(
+                  "normal",
+                  `  Extensions (${meta.extensionLog.length}):`,
+                );
+                for (const ext of meta.extensionLog) {
+                  addMessage(
+                    "normal",
+                    `    +${Number(ext.addedNodes)} nodes, +${Number(ext.addedEdges)} edges, +${Number(ext.addedAttributes)} attrs, +${Number((ext as { addedSources?: bigint }).addedSources ?? 0n)} sources at ${new Date(Number(ext.extendedAt) / 1_000_000).toISOString()}`,
+                  );
+                }
+              }
+            }
+          } catch (e) {
+            addMessage("error", formatDebugError(String(e)));
+          }
+          break;
+        }
+        case "checknode": {
+          const nodeName = fields?.name as string | undefined;
+          if (!nodeName) {
+            addMessage(
+              "error",
+              formatDebugError("Usage: /debug checknode name=<nodename>"),
+            );
+            break;
+          }
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            const sorted = [...metas].sort(
+              (a, b) => Number(b.publishedAt) - Number(a.publishedAt),
+            );
+            const mostRecent = sorted[0];
+            const graphResult = await actor.getPublishedSourceGraph(
+              mostRecent.id,
+            );
+            if (!graphResult || !graphResult[0]) {
+              addMessage(
+                "error",
+                formatDebugError(`Could not load graph: ${mostRecent.id}`),
+              );
+              break;
+            }
+            const graphData = graphResult[0];
+            const found = graphData.interpretationTokens?.find(
+              (it: { title: string }) => it.title === nodeName,
+            );
+            if (!found) {
+              addMessage(
+                "success",
+                `interpToken "${nodeName}" not found in graph "${mostRecent.name}"`,
+              );
+              break;
+            }
+            addMessage("success", `Found interpToken: "${found.title}"`);
+            addMessage("normal", `  id: ${found.id}`);
+            addMessage(
+              "normal",
+              `  parentLawTokenId: ${(found as { parentLawTokenId?: string }).parentLawTokenId ?? "(none)"}`,
+            );
+            const parentLawTokenId = (found as { parentLawTokenId?: string })
+              .parentLawTokenId;
+            const parentLaw = parentLawTokenId
+              ? graphData.lawTokens?.find(
+                  (lt: { id: string }) => lt.id === parentLawTokenId,
+                )
+              : undefined;
+            if (parentLaw) {
+              addMessage(
+                "normal",
+                `  parentLawToken: "${(parentLaw as { title?: string; tokenLabel?: string }).title ?? (parentLaw as { title?: string; tokenLabel?: string }).tokenLabel ?? parentLaw.id}" (found)`,
+              );
+              const parentLocationId = (
+                parentLaw as { parentLocationId?: string }
+              ).parentLocationId;
+              const parentLoc = parentLocationId
+                ? graphData.locations?.find(
+                    (loc: { id: string }) => loc.id === parentLocationId,
+                  )
+                : undefined;
+              if (parentLoc) {
+                addMessage(
+                  "normal",
+                  `  location: "${(parentLoc as { name?: string; title?: string }).name ?? (parentLoc as { name?: string; title?: string }).title ?? parentLoc.id}"`,
+                );
+                const parentSwarmId = (parentLoc as { parentSwarmId?: string })
+                  .parentSwarmId;
+                const parentSwarm = parentSwarmId
+                  ? graphData.swarms?.find(
+                      (s: { id: string }) => s.id === parentSwarmId,
+                    )
+                  : undefined;
+                if (parentSwarm) {
+                  addMessage("normal", `  swarm: "${parentSwarm.name}"`);
+                  const parentCurationId = (
+                    parentSwarm as { parentCurationId?: string }
+                  ).parentCurationId;
+                  const parentCuration = parentCurationId
+                    ? graphData.curations?.find(
+                        (c: { id: string }) => c.id === parentCurationId,
+                      )
+                    : undefined;
+                  if (parentCuration)
+                    addMessage(
+                      "normal",
+                      `  curation: "${parentCuration.name}"`,
+                    );
+                }
+              }
+            } else if (parentLawTokenId) {
+              addMessage(
+                "normal",
+                `  parentLawToken id ${parentLawTokenId}: NOT FOUND in graph`,
+              );
+            }
+          } catch (e) {
+            addMessage("error", formatDebugError(String(e)));
+          }
+          break;
+        }
+        case "curationtags": {
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            for (const meta of metas) {
+              const graphResult = await actor.getPublishedSourceGraph(meta.id);
+              if (!graphResult || !graphResult[0]) continue;
+              const gd = graphResult[0];
+              const rootCuration = gd.curations?.[0];
+              addMessage(
+                "normal",
+                `Graph "${meta.id}": curation = "${rootCuration?.name ?? "(unknown)"}"`,
+              );
+            }
+          } catch (e) {
+            addMessage("error", formatDebugError(String(e)));
+          }
+          break;
+        }
+        case "inputpreview": {
+          try {
+            const raw = localStorage.getItem("source_graphs");
+            const graphs = raw ? JSON.parse(raw) : [];
+            const activeId = localStorage.getItem("active_source_graph_id");
+            const activeGraph = activeId
+              ? graphs.find((g: { id: string }) => g.id === activeId)
+              : graphs[0];
+            if (!activeGraph) {
+              addMessage(
+                "success",
+                "No active source graph found in localStorage.",
+              );
+              break;
+            }
+            const { sourceGraphToInput } = await import(
+              "../hooks/usePublishGraph"
+            );
+            const input = sourceGraphToInput(activeGraph);
+            addMessage(
+              "success",
+              `Input preview for graph: ${activeGraph.name}`,
+            );
+            addMessage("normal", `Nodes (${input.nodes.length}):`);
+            for (const n of input.nodes) {
+              addMessage(
+                "normal",
+                `  [${n.nodeType}] ${n.name} | id: ${n.id} | parent: ${n.parentName ?? "(root)"}`,
+              );
+              if (n.attributes && n.attributes.length > 0) {
+                addMessage(
+                  "normal",
+                  `    attributes: ${(n.attributes as [string, unknown[]][]).map((a) => `${a[0]}:${JSON.stringify(a[1])}`).join(", ")}`,
+                );
+              }
+              if (n.sources && n.sources.length > 0) {
+                addMessage(
+                  "normal",
+                  `    sources: ${(n.sources as { name: string; url: string }[]).map((s) => s.name).join(", ")}`,
+                );
+              }
+            }
+            addMessage("normal", `Edges (${input.edges.length}):`);
+            for (const e of input.edges) {
+              addMessage("normal", `  ${e.sourceName} → ${e.targetName}`);
+            }
+          } catch (e) {
+            addMessage("error", formatDebugError(String(e)));
+          }
+          break;
+        }
         default: {
           addMessage(
             "error",

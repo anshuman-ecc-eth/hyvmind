@@ -151,7 +151,12 @@ export function editorToSourceGraph(
       continue;
     }
 
-    const fullPath = buildFullPath(node.id, nodes);
+    let fullPath = buildFullPath(node.id, nodes);
+    let nodeName = node.name;
+    if (node.nodeType === "interpEntity") {
+      fullPath = fullPath.replace(/\.md$/, "");
+      nodeName = nodeName.replace(/\.md$/, "");
+    }
     nodeFullPaths.set(node.id, fullPath);
 
     if (node.nodeType === "curation") curationNames.set(node.name, fullPath);
@@ -186,7 +191,7 @@ export function editorToSourceGraph(
 
     const sourceNode: SourceNode = {
       id: fullPath,
-      name: node.name,
+      name: nodeName,
       nodeType: node.nodeType,
       content: content || undefined,
       attributes:

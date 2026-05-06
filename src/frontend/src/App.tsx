@@ -12,6 +12,7 @@ import ProfileSetupModal from "./components/ProfileSetupModal";
 import { SettingsView } from "./components/SettingsView";
 import { Sidebar } from "./components/Sidebar";
 import TextGameModal from "./components/TextGameModal";
+import { useDebugTools } from "./hooks/useDebugHooks";
 import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
@@ -80,6 +81,7 @@ function AppShell() {
 
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
     useSettings();
+  useDebugTools();
 
   // Initialize font settings on mount
   useEffect(() => {

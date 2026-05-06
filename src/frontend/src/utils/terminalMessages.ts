@@ -141,6 +141,10 @@ Actions:
   userlawtokens           Get my law tokens
   userinterp              Get my interpretation tokens
   reset                   Reset all data (requires confirmation)
+  publishedgraphs         List all published graph metadata
+  checknode name=<name>   Inspect a specific interpToken on the backend
+  curationtags            Show which curations are associated with published graphs
+  inputpreview            Log the current publish input for the active source graph
 
 Examples:
   /debug admin
@@ -148,7 +152,10 @@ Examples:
   /debug allgraph
   /debug swarm swarmId=s_abc123
   /debug vote nodeId=t_abc123
-  /debug reset`;
+  /debug reset
+  /debug publishedgraphs
+  /debug checknode name=crossrefs
+  /debug inputpreview`;
 }
 
 export function formatTelegramConfigHelp(): string {

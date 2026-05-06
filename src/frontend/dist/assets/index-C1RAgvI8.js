@@ -36141,6 +36141,10 @@ Actions:
   userlawtokens           Get my law tokens
   userinterp              Get my interpretation tokens
   reset                   Reset all data (requires confirmation)
+  publishedgraphs         List all published graph metadata
+  checknode name=<name>   Inspect a specific interpToken on the backend
+  curationtags            Show which curations are associated with published graphs
+  inputpreview            Log the current publish input for the active source graph
 
 Examples:
   /debug admin
@@ -36148,7 +36152,10 @@ Examples:
   /debug allgraph
   /debug swarm swarmId=s_abc123
   /debug vote nodeId=t_abc123
-  /debug reset`;
+  /debug reset
+  /debug publishedgraphs
+  /debug checknode name=crossrefs
+  /debug inputpreview`;
 }
 function formatTelegramConfigHelp() {
   return [
@@ -81688,6 +81695,450 @@ function TextGameModal({ onComplete }) {
     )
   ] });
 }
+function fnv1a(str) {
+  let hash = 2166136261;
+  for (let i2 = 0; i2 < str.length; i2++) {
+    hash ^= str.charCodeAt(i2);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash >>> 0;
+}
+function makePrng(seed) {
+  let s2 = seed >>> 0;
+  return () => {
+    s2 |= 0;
+    s2 = s2 + 1831565813 | 0;
+    let t2 = Math.imul(s2 ^ s2 >>> 15, 1 | s2);
+    t2 = t2 + Math.imul(t2 ^ t2 >>> 7, 61 | t2) ^ t2;
+    return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+  };
+}
+const PALETTE = [
+  "#000000",
+  // black
+  "#4B5563",
+  // gray-600
+  "#6B7280",
+  // gray-500
+  "#9CA3AF",
+  // gray-400
+  "#D1D5DB",
+  // gray-300
+  "#E5E7EB",
+  // gray-200
+  "#FFFFFF"
+  // white
+];
+function drawTile(ctx, tileType, cellSize, fg) {
+  const half = cellSize / 2;
+  const lw = Math.max(1.5, cellSize * 0.08);
+  ctx.strokeStyle = fg;
+  ctx.lineWidth = lw;
+  ctx.lineCap = "round";
+  switch (tileType) {
+    case 0: {
+      ctx.beginPath();
+      ctx.arc(0, 0, half, 0, Math.PI / 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cellSize, cellSize, half, Math.PI, 3 * Math.PI / 2);
+      ctx.stroke();
+      break;
+    }
+    case 1: {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(cellSize, cellSize);
+      ctx.stroke();
+      break;
+    }
+    case 2: {
+      ctx.beginPath();
+      ctx.moveTo(half, 0);
+      ctx.lineTo(half, cellSize);
+      ctx.moveTo(0, half);
+      ctx.lineTo(cellSize, half);
+      ctx.stroke();
+      break;
+    }
+    case 3: {
+      const r2 = cellSize * 0.15;
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.arc(cellSize * 0.25, cellSize * 0.25, r2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cellSize * 0.75, cellSize * 0.75, r2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+  }
+}
+async function generateTruchetArtwork(curationName, size2) {
+  const canvasSize = 400;
+  const gridCount = 20;
+  const cellSize = canvasSize / gridCount;
+  const seed = fnv1a(curationName);
+  const rand2 = makePrng(seed);
+  let canvas;
+  try {
+    canvas = document.createElement("canvas");
+  } catch {
+    return "";
+  }
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.fillStyle = "#0a0a0a";
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  for (let row = 0; row < gridCount; row++) {
+    for (let col = 0; col < gridCount; col++) {
+      const x3 = col * cellSize;
+      const y2 = row * cellSize;
+      const tileType = Math.floor(rand2() * 4);
+      const rotation = Math.floor(rand2() * 4) * 90;
+      const fgIdx = Math.floor(rand2() * PALETTE.length);
+      let bgIdx = Math.floor(rand2() * (PALETTE.length - 1));
+      if (bgIdx >= fgIdx) bgIdx++;
+      const fg = PALETTE[fgIdx];
+      const bg = PALETTE[bgIdx];
+      ctx.fillStyle = bg;
+      ctx.fillRect(x3, y2, cellSize, cellSize);
+      ctx.save();
+      ctx.translate(x3 + cellSize / 2, y2 + cellSize / 2);
+      ctx.rotate(rotation * Math.PI / 180);
+      ctx.translate(-cellSize / 2, -cellSize / 2);
+      drawTile(ctx, tileType, cellSize, fg);
+      ctx.restore();
+    }
+  }
+  return canvas.toDataURL("image/jpeg", 0.7);
+}
+const MAPPINGS_KEY_PREFIX = "caffeine_published_mappings_";
+function usePublishMappings() {
+  function getMappings(graphId) {
+    const raw2 = localStorage.getItem(MAPPINGS_KEY_PREFIX + graphId);
+    if (!raw2) return [];
+    try {
+      return JSON.parse(raw2);
+    } catch {
+      return [];
+    }
+  }
+  function saveMappings(graphId, mappings) {
+    localStorage.setItem(
+      MAPPINGS_KEY_PREFIX + graphId,
+      JSON.stringify(mappings)
+    );
+  }
+  function clearMappings(graphId) {
+    localStorage.removeItem(MAPPINGS_KEY_PREFIX + graphId);
+  }
+  function isPublished(graphId) {
+    return localStorage.getItem(MAPPINGS_KEY_PREFIX + graphId) !== null;
+  }
+  function getMappingsObject(graphId) {
+    const mappings = getMappings(graphId);
+    return mappings.reduce(
+      (acc, m2) => {
+        acc[m2.localName] = m2.backendId;
+        return acc;
+      },
+      {}
+    );
+  }
+  return {
+    getMappings,
+    saveMappings,
+    clearMappings,
+    isPublished,
+    getMappingsObject
+  };
+}
+function parentIdFromPath$3(id2) {
+  const lastAt = id2.lastIndexOf("@");
+  return lastAt > 0 ? id2.slice(0, lastAt) : null;
+}
+function sourceGraphToInput(graph) {
+  const nodeMap = /* @__PURE__ */ new Map();
+  for (const n2 of graph.nodes) {
+    const key2 = n2.id ?? n2.name;
+    if (key2) nodeMap.set(key2, n2);
+  }
+  const nodes = graph.nodes.map((node2) => {
+    const ancestorChain = [];
+    const ancestorSourceChain = [];
+    let currentId = node2.id ? parentIdFromPath$3(node2.id) : null;
+    const visited = /* @__PURE__ */ new Set();
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId);
+      const ancestor = nodeMap.get(currentId);
+      if (!ancestor) break;
+      if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
+        ancestorChain.push(ancestor.attributes);
+      }
+      if (ancestor.sources && ancestor.sources.length > 0) {
+        ancestorSourceChain.push(ancestor.sources);
+      }
+      currentId = parentIdFromPath$3(currentId);
+    }
+    const merged = {};
+    for (let i2 = ancestorChain.length - 1; i2 >= 0; i2--) {
+      Object.assign(merged, ancestorChain[i2]);
+    }
+    Object.assign(merged, node2.attributes ?? {});
+    const rawMergedSources = [];
+    for (let i2 = ancestorSourceChain.length - 1; i2 >= 0; i2--) {
+      rawMergedSources.push(...ancestorSourceChain[i2]);
+    }
+    if (node2.sources && node2.sources.length > 0) {
+      rawMergedSources.push(...node2.sources);
+    }
+    const seen2 = /* @__PURE__ */ new Set();
+    const mergedSources = [];
+    for (const s2 of rawMergedSources) {
+      const key2 = `${s2.name}|${s2.url}`;
+      if (!seen2.has(key2)) {
+        seen2.add(key2);
+        mergedSources.push(s2);
+      }
+    }
+    return {
+      id: node2.id ?? void 0,
+      name: node2.name,
+      nodeType: node2.nodeType,
+      tags: [],
+      content: node2.content ?? void 0,
+      parentName: node2.parentName ?? void 0,
+      attributes: Object.entries(merged).map(
+        ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
+      ),
+      sources: mergedSources
+    };
+  });
+  const edges = graph.edges.map((edge) => ({
+    sourceName: edge.source,
+    targetName: edge.target,
+    edgeLabel: edge.label ?? "",
+    bidirectional: edge.bidirectional ?? false
+  }));
+  return { nodes, edges };
+}
+function usePublishGraph() {
+  const { actor: _rawActor } = useActor(createActor);
+  const actor = _rawActor;
+  const queryClient2 = useQueryClient();
+  const [isPublishing, setIsPublishing] = reactExports.useState(false);
+  const [error, setError] = reactExports.useState(null);
+  const [lastResult, setLastResult] = reactExports.useState(
+    null
+  );
+  const { getMappingsObject, saveMappings, getMappings } = usePublishMappings();
+  async function commit(graph, isUpdate) {
+    if (!actor) throw new Error("Actor not available");
+    setIsPublishing(true);
+    setError(null);
+    try {
+      const mappingsObj = getMappingsObject(graph.id);
+      const existingMappings = Object.entries(mappingsObj);
+      console.log("🔵 [PUBLISH] commit() called");
+      console.log("🔵 [PUBLISH] graph.nodes count:", graph.nodes.length);
+      console.log("🔵 [PUBLISH] graph.edges count:", graph.edges.length);
+      console.log(
+        "🔵 [PUBLISH] full edges:",
+        JSON.stringify(graph.edges, null, 2)
+      );
+      console.log("🔵 [PUBLISH] isUpdate:", isUpdate);
+      console.log("🔵 [PUBLISH] existingMappings:", existingMappings);
+      const input = sourceGraphToInput(graph);
+      console.log("🔵 [PUBLISH] input.nodes count:", input.nodes.length);
+      console.log("🔵 [PUBLISH] input.edges count:", input.edges.length);
+      console.log(
+        "🔵 [PUBLISH] full input.edges:",
+        JSON.stringify(input.edges, null, 2)
+      );
+      const rawResult = await actor.commitPublishSourceGraph(
+        input,
+        existingMappings
+      );
+      let result;
+      if (rawResult.__kind__ === "success") {
+        result = {
+          type: "success",
+          nodeMappings: rawResult.success.nodeMappings,
+          message: rawResult.success.message,
+          publishedSourceGraphId: rawResult.success.publishedSourceGraphId
+        };
+        const newMappings = rawResult.success.nodeMappings.map(([localName, backendId]) => {
+          var _a3;
+          return {
+            localName,
+            backendId,
+            nodeType: ((_a3 = graph.nodes.find((n2) => (n2.id ?? n2.name) === localName)) == null ? void 0 : _a3.nodeType) ?? "unknown",
+            publishedAt: Date.now()
+          };
+        });
+        if (!isUpdate) {
+          saveMappings(graph.id, newMappings);
+        } else {
+          const existing = getMappings(graph.id);
+          const merged = [
+            ...existing.filter(
+              (e2) => !newMappings.find((n2) => n2.localName === e2.localName)
+            ),
+            ...newMappings
+          ];
+          saveMappings(graph.id, merged);
+        }
+        queryClient2.invalidateQueries({ queryKey: ["graphData"] });
+        queryClient2.invalidateQueries({ queryKey: ["allGraphData"] });
+        queryClient2.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
+        if (!isUpdate && rawResult.success.publishedSourceGraphId) {
+          const graphId = rawResult.success.publishedSourceGraphId;
+          const graphName = graph.name;
+          const actorRef = actor;
+          setTimeout(async () => {
+            try {
+              const dataUrl = await generateTruchetArtwork(graphName, "full");
+              if (dataUrl && actorRef) {
+                await actorRef.updateSourceGraphArtwork(
+                  graphId,
+                  dataUrl
+                );
+              }
+            } catch (artErr) {
+              console.warn(
+                "[ARTWORK] Failed to generate/save artwork:",
+                artErr
+              );
+            }
+          }, 0);
+        }
+      } else {
+        result = {
+          type: "error",
+          message: rawResult.error.message,
+          failedAt: rawResult.error.failedAt ?? null
+        };
+        setError(rawResult.error.message);
+      }
+      setLastResult(result);
+      return result;
+    } catch (e2) {
+      const msg = e2 instanceof Error ? e2.message : String(e2);
+      setError(msg);
+      throw e2;
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+  function reset() {
+    setError(null);
+    setLastResult(null);
+  }
+  return { commit, isPublishing, error, lastResult, reset };
+}
+const usePublishGraph$1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  sourceGraphToInput,
+  usePublishGraph
+}, Symbol.toStringTag, { value: "Module" }));
+function parentIdFromPath$2(id2) {
+  const lastAt = id2.lastIndexOf("@");
+  return lastAt > 0 ? id2.slice(0, lastAt) : null;
+}
+function getSourceGraphs() {
+  try {
+    const raw2 = localStorage.getItem("source_graphs");
+    return raw2 ? JSON.parse(raw2) : [];
+  } catch {
+    return [];
+  }
+}
+function getActiveGraph() {
+  const graphs = getSourceGraphs();
+  const activeId = localStorage.getItem("active_source_graph_id");
+  if (activeId) return graphs.find((g2) => g2.id === activeId);
+  return graphs[0];
+}
+function useDebugTools() {
+  reactExports.useEffect(() => {
+    window.__debug = {
+      dumpSourceGraph: (graphId) => {
+        const graphs = getSourceGraphs();
+        const graph = graphs.find((g2) => g2.id === graphId);
+        if (!graph) {
+          console.warn(`[debug] No graph found with id: ${graphId}`);
+          return;
+        }
+        console.log(`[debug] dumpSourceGraph: ${graph.name} (${graph.id})`);
+        const rows = graph.nodes.map((n2) => ({
+          id: n2.id ?? "(none)",
+          name: n2.name,
+          nodeType: n2.nodeType,
+          parentName: n2.parentName ?? "(root)"
+        }));
+        console.table(rows);
+        console.log(`[debug] Edges (${graph.edges.length}):`);
+        for (const e2 of graph.edges) {
+          console.log(`  ${e2.source} → ${e2.target}`);
+        }
+      },
+      comparePublish: (graphId) => {
+        const graphs = getSourceGraphs();
+        const graph = graphs.find((g2) => g2.id === graphId);
+        if (!graph) {
+          console.warn(`[debug] No graph found with id: ${graphId}`);
+          return;
+        }
+        const input = sourceGraphToInput(graph);
+        console.log(`[debug] comparePublish: ${graph.name} (${graph.id})`);
+        console.log(input);
+        return input;
+      },
+      traceAncestorChain: (nodeId) => {
+        const graph = getActiveGraph();
+        if (!graph) {
+          console.warn("[debug] No active graph found");
+          return;
+        }
+        const nodeMap = /* @__PURE__ */ new Map();
+        for (const n2 of graph.nodes) {
+          const key2 = n2.id ?? n2.name;
+          if (key2) nodeMap.set(key2, n2);
+        }
+        console.log(`[debug] traceAncestorChain from: ${nodeId}`);
+        let currentId = nodeId;
+        let depth = 0;
+        while (currentId) {
+          const node2 = nodeMap.get(currentId);
+          if (!node2) {
+            console.log(
+              `  [depth ${depth}] id="${currentId}" — NOT FOUND in nodeMap`
+            );
+            break;
+          }
+          console.log(
+            `  [depth ${depth}] id="${node2.id ?? "(none)"}" name="${node2.name}" nodeType="${node2.nodeType}"`
+          );
+          if (node2.attributes && Object.keys(node2.attributes).length > 0) {
+            console.log("    attributes:", node2.attributes);
+          }
+          if (node2.sources && node2.sources.length > 0) {
+            console.log("    sources:", node2.sources);
+          }
+          currentId = parentIdFromPath$2(currentId);
+          depth++;
+        }
+        if (depth === 0) console.log("  (no ancestors found)");
+      }
+    };
+    return () => {
+      window.__debug = void 0;
+    };
+  }, []);
+}
 function DeleteConfirmDialog({
   isOpen,
   nodeName,
@@ -104512,7 +104963,12 @@ function editorToSourceGraph(nodes, rootId) {
       }
       continue;
     }
-    const fullPath = buildFullPath(node2.id, nodes);
+    let fullPath = buildFullPath(node2.id, nodes);
+    let nodeName = node2.name;
+    if (node2.nodeType === "interpEntity") {
+      fullPath = fullPath.replace(/\.md$/, "");
+      nodeName = nodeName.replace(/\.md$/, "");
+    }
     nodeFullPaths.set(node2.id, fullPath);
     if (node2.nodeType === "curation") curationNames.set(node2.name, fullPath);
     if (node2.nodeType === "swarm") swarmNames.set(node2.name, fullPath);
@@ -104534,7 +104990,7 @@ function editorToSourceGraph(nodes, rootId) {
     ) : void 0;
     const sourceNode = {
       id: fullPath,
-      name: node2.name,
+      name: nodeName,
       nodeType: node2.nodeType,
       content: content2 || void 0,
       attributes: attributes && Object.keys(attributes).length > 0 ? attributes : void 0,
@@ -104600,7 +105056,7 @@ function toEditorNodeType(nodeType) {
 function pathSegments(id2) {
   return id2.split("@");
 }
-function parentIdFromPath$2(id2) {
+function parentIdFromPath$1(id2) {
   const parts = pathSegments(id2);
   if (parts.length <= 1) return null;
   return parts.slice(0, -1).join("@");
@@ -104611,7 +105067,7 @@ function sourceGraphToEditor(graph) {
   for (const node2 of graph.nodes) {
     const id2 = node2.id ?? node2.name;
     if (!childrenMap.has(id2)) childrenMap.set(id2, []);
-    const pid = parentIdFromPath$2(id2);
+    const pid = parentIdFromPath$1(id2);
     if (pid !== null) {
       const existing = childrenMap.get(pid) ?? [];
       if (!existing.includes(id2)) {
@@ -104622,7 +105078,7 @@ function sourceGraphToEditor(graph) {
   const editorNodes = [];
   for (const node2 of graph.nodes) {
     const id2 = node2.id ?? node2.name;
-    const parentId = parentIdFromPath$2(id2);
+    const parentId = parentIdFromPath$1(id2);
     let content2;
     let frontmatter = {};
     if (node2.nodeType === "interpEntity") {
@@ -106777,7 +107233,7 @@ function McpSetupPage() {
     }
   );
 }
-function parentIdFromPath$1(id2) {
+function parentIdFromPath(id2) {
   const lastAt = id2.lastIndexOf("@");
   return lastAt > 0 ? id2.slice(0, lastAt) : null;
 }
@@ -106790,7 +107246,7 @@ const NODE_TYPE_LABELS = {
 };
 function buildInheritedAttributes(node2, nodeMap) {
   const chain2 = [];
-  let currentId = node2.id ? parentIdFromPath$1(node2.id) : null;
+  let currentId = node2.id ? parentIdFromPath(node2.id) : null;
   const visited = /* @__PURE__ */ new Set();
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId);
@@ -106799,7 +107255,7 @@ function buildInheritedAttributes(node2, nodeMap) {
     if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
       chain2.push(ancestor.attributes);
     }
-    currentId = parentIdFromPath$1(currentId);
+    currentId = parentIdFromPath(currentId);
   }
   const merged = {};
   for (let i2 = chain2.length - 1; i2 >= 0; i2--) {
@@ -106814,7 +107270,7 @@ function buildInheritedAttributes(node2, nodeMap) {
 }
 function buildInheritedSources(node2, nodeMap) {
   const chain2 = [];
-  let currentId = node2.id ? parentIdFromPath$1(node2.id) : null;
+  let currentId = node2.id ? parentIdFromPath(node2.id) : null;
   const visited = /* @__PURE__ */ new Set();
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId);
@@ -106823,7 +107279,7 @@ function buildInheritedSources(node2, nodeMap) {
     if (ancestor.sources && ancestor.sources.length > 0) {
       chain2.push(ancestor.sources);
     }
-    currentId = parentIdFromPath$1(currentId);
+    currentId = parentIdFromPath(currentId);
   }
   chain2.reverse();
   return chain2.flat();
@@ -107467,350 +107923,6 @@ function PublishConfirmDialog({
       ] })
     }
   );
-}
-function fnv1a(str) {
-  let hash = 2166136261;
-  for (let i2 = 0; i2 < str.length; i2++) {
-    hash ^= str.charCodeAt(i2);
-    hash = Math.imul(hash, 16777619) >>> 0;
-  }
-  return hash >>> 0;
-}
-function makePrng(seed) {
-  let s2 = seed >>> 0;
-  return () => {
-    s2 |= 0;
-    s2 = s2 + 1831565813 | 0;
-    let t2 = Math.imul(s2 ^ s2 >>> 15, 1 | s2);
-    t2 = t2 + Math.imul(t2 ^ t2 >>> 7, 61 | t2) ^ t2;
-    return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
-  };
-}
-const PALETTE = [
-  "#000000",
-  // black
-  "#4B5563",
-  // gray-600
-  "#6B7280",
-  // gray-500
-  "#9CA3AF",
-  // gray-400
-  "#D1D5DB",
-  // gray-300
-  "#E5E7EB",
-  // gray-200
-  "#FFFFFF"
-  // white
-];
-function drawTile(ctx, tileType, cellSize, fg) {
-  const half = cellSize / 2;
-  const lw = Math.max(1.5, cellSize * 0.08);
-  ctx.strokeStyle = fg;
-  ctx.lineWidth = lw;
-  ctx.lineCap = "round";
-  switch (tileType) {
-    case 0: {
-      ctx.beginPath();
-      ctx.arc(0, 0, half, 0, Math.PI / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cellSize, cellSize, half, Math.PI, 3 * Math.PI / 2);
-      ctx.stroke();
-      break;
-    }
-    case 1: {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(cellSize, cellSize);
-      ctx.stroke();
-      break;
-    }
-    case 2: {
-      ctx.beginPath();
-      ctx.moveTo(half, 0);
-      ctx.lineTo(half, cellSize);
-      ctx.moveTo(0, half);
-      ctx.lineTo(cellSize, half);
-      ctx.stroke();
-      break;
-    }
-    case 3: {
-      const r2 = cellSize * 0.15;
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.25, cellSize * 0.25, r2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.75, cellSize * 0.75, r2, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
-  }
-}
-async function generateTruchetArtwork(curationName, size2) {
-  const canvasSize = 400;
-  const gridCount = 20;
-  const cellSize = canvasSize / gridCount;
-  const seed = fnv1a(curationName);
-  const rand2 = makePrng(seed);
-  let canvas;
-  try {
-    canvas = document.createElement("canvas");
-  } catch {
-    return "";
-  }
-  canvas.width = canvasSize;
-  canvas.height = canvasSize;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  ctx.fillStyle = "#0a0a0a";
-  ctx.fillRect(0, 0, canvasSize, canvasSize);
-  for (let row = 0; row < gridCount; row++) {
-    for (let col = 0; col < gridCount; col++) {
-      const x3 = col * cellSize;
-      const y2 = row * cellSize;
-      const tileType = Math.floor(rand2() * 4);
-      const rotation = Math.floor(rand2() * 4) * 90;
-      const fgIdx = Math.floor(rand2() * PALETTE.length);
-      let bgIdx = Math.floor(rand2() * (PALETTE.length - 1));
-      if (bgIdx >= fgIdx) bgIdx++;
-      const fg = PALETTE[fgIdx];
-      const bg = PALETTE[bgIdx];
-      ctx.fillStyle = bg;
-      ctx.fillRect(x3, y2, cellSize, cellSize);
-      ctx.save();
-      ctx.translate(x3 + cellSize / 2, y2 + cellSize / 2);
-      ctx.rotate(rotation * Math.PI / 180);
-      ctx.translate(-cellSize / 2, -cellSize / 2);
-      drawTile(ctx, tileType, cellSize, fg);
-      ctx.restore();
-    }
-  }
-  return canvas.toDataURL("image/jpeg", 0.7);
-}
-const MAPPINGS_KEY_PREFIX = "caffeine_published_mappings_";
-function usePublishMappings() {
-  function getMappings(graphId) {
-    const raw2 = localStorage.getItem(MAPPINGS_KEY_PREFIX + graphId);
-    if (!raw2) return [];
-    try {
-      return JSON.parse(raw2);
-    } catch {
-      return [];
-    }
-  }
-  function saveMappings(graphId, mappings) {
-    localStorage.setItem(
-      MAPPINGS_KEY_PREFIX + graphId,
-      JSON.stringify(mappings)
-    );
-  }
-  function clearMappings(graphId) {
-    localStorage.removeItem(MAPPINGS_KEY_PREFIX + graphId);
-  }
-  function isPublished(graphId) {
-    return localStorage.getItem(MAPPINGS_KEY_PREFIX + graphId) !== null;
-  }
-  function getMappingsObject(graphId) {
-    const mappings = getMappings(graphId);
-    return mappings.reduce(
-      (acc, m2) => {
-        acc[m2.localName] = m2.backendId;
-        return acc;
-      },
-      {}
-    );
-  }
-  return {
-    getMappings,
-    saveMappings,
-    clearMappings,
-    isPublished,
-    getMappingsObject
-  };
-}
-function parentIdFromPath(id2) {
-  const lastAt = id2.lastIndexOf("@");
-  return lastAt > 0 ? id2.slice(0, lastAt) : null;
-}
-function sourceGraphToInput(graph) {
-  const nodeMap = /* @__PURE__ */ new Map();
-  for (const n2 of graph.nodes) {
-    const key2 = n2.id ?? n2.name;
-    if (key2) nodeMap.set(key2, n2);
-  }
-  const nodes = graph.nodes.map((node2) => {
-    const ancestorChain = [];
-    const ancestorSourceChain = [];
-    let currentId = node2.id ? parentIdFromPath(node2.id) : null;
-    const visited = /* @__PURE__ */ new Set();
-    while (currentId && !visited.has(currentId)) {
-      visited.add(currentId);
-      const ancestor = nodeMap.get(currentId);
-      if (!ancestor) break;
-      if (ancestor.attributes && Object.keys(ancestor.attributes).length > 0) {
-        ancestorChain.push(ancestor.attributes);
-      }
-      if (ancestor.sources && ancestor.sources.length > 0) {
-        ancestorSourceChain.push(ancestor.sources);
-      }
-      currentId = parentIdFromPath(currentId);
-    }
-    const merged = {};
-    for (let i2 = ancestorChain.length - 1; i2 >= 0; i2--) {
-      Object.assign(merged, ancestorChain[i2]);
-    }
-    Object.assign(merged, node2.attributes ?? {});
-    const rawMergedSources = [];
-    for (let i2 = ancestorSourceChain.length - 1; i2 >= 0; i2--) {
-      rawMergedSources.push(...ancestorSourceChain[i2]);
-    }
-    if (node2.sources && node2.sources.length > 0) {
-      rawMergedSources.push(...node2.sources);
-    }
-    const seen2 = /* @__PURE__ */ new Set();
-    const mergedSources = [];
-    for (const s2 of rawMergedSources) {
-      const key2 = `${s2.name}|${s2.url}`;
-      if (!seen2.has(key2)) {
-        seen2.add(key2);
-        mergedSources.push(s2);
-      }
-    }
-    return {
-      id: node2.id ?? void 0,
-      name: node2.name,
-      nodeType: node2.nodeType,
-      tags: [],
-      content: node2.content ?? void 0,
-      parentName: node2.parentName ?? void 0,
-      attributes: Object.entries(merged).map(
-        ([key2, value]) => [key2, Array.isArray(value) ? value.map(String) : [String(value)]]
-      ),
-      sources: mergedSources
-    };
-  });
-  const edges = graph.edges.map((edge) => ({
-    sourceName: edge.source,
-    targetName: edge.target,
-    edgeLabel: edge.label ?? "",
-    bidirectional: edge.bidirectional ?? false
-  }));
-  return { nodes, edges };
-}
-function usePublishGraph() {
-  const { actor: _rawActor } = useActor(createActor);
-  const actor = _rawActor;
-  const queryClient2 = useQueryClient();
-  const [isPublishing, setIsPublishing] = reactExports.useState(false);
-  const [error, setError] = reactExports.useState(null);
-  const [lastResult, setLastResult] = reactExports.useState(
-    null
-  );
-  const { getMappingsObject, saveMappings, getMappings } = usePublishMappings();
-  async function commit(graph, isUpdate) {
-    if (!actor) throw new Error("Actor not available");
-    setIsPublishing(true);
-    setError(null);
-    try {
-      const mappingsObj = getMappingsObject(graph.id);
-      const existingMappings = Object.entries(mappingsObj);
-      console.log("🔵 [PUBLISH] commit() called");
-      console.log("🔵 [PUBLISH] graph.nodes count:", graph.nodes.length);
-      console.log("🔵 [PUBLISH] graph.edges count:", graph.edges.length);
-      console.log(
-        "🔵 [PUBLISH] full edges:",
-        JSON.stringify(graph.edges, null, 2)
-      );
-      console.log("🔵 [PUBLISH] isUpdate:", isUpdate);
-      console.log("🔵 [PUBLISH] existingMappings:", existingMappings);
-      const input = sourceGraphToInput(graph);
-      console.log("🔵 [PUBLISH] input.nodes count:", input.nodes.length);
-      console.log("🔵 [PUBLISH] input.edges count:", input.edges.length);
-      console.log(
-        "🔵 [PUBLISH] full input.edges:",
-        JSON.stringify(input.edges, null, 2)
-      );
-      const rawResult = await actor.commitPublishSourceGraph(
-        input,
-        existingMappings
-      );
-      let result;
-      if (rawResult.__kind__ === "success") {
-        result = {
-          type: "success",
-          nodeMappings: rawResult.success.nodeMappings,
-          message: rawResult.success.message,
-          publishedSourceGraphId: rawResult.success.publishedSourceGraphId
-        };
-        const newMappings = rawResult.success.nodeMappings.map(([localName, backendId]) => {
-          var _a3;
-          return {
-            localName,
-            backendId,
-            nodeType: ((_a3 = graph.nodes.find((n2) => (n2.id ?? n2.name) === localName)) == null ? void 0 : _a3.nodeType) ?? "unknown",
-            publishedAt: Date.now()
-          };
-        });
-        if (!isUpdate) {
-          saveMappings(graph.id, newMappings);
-        } else {
-          const existing = getMappings(graph.id);
-          const merged = [
-            ...existing.filter(
-              (e2) => !newMappings.find((n2) => n2.localName === e2.localName)
-            ),
-            ...newMappings
-          ];
-          saveMappings(graph.id, merged);
-        }
-        queryClient2.invalidateQueries({ queryKey: ["graphData"] });
-        queryClient2.invalidateQueries({ queryKey: ["allGraphData"] });
-        queryClient2.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
-        if (!isUpdate && rawResult.success.publishedSourceGraphId) {
-          const graphId = rawResult.success.publishedSourceGraphId;
-          const graphName = graph.name;
-          const actorRef = actor;
-          setTimeout(async () => {
-            try {
-              const dataUrl = await generateTruchetArtwork(graphName, "full");
-              if (dataUrl && actorRef) {
-                await actorRef.updateSourceGraphArtwork(
-                  graphId,
-                  dataUrl
-                );
-              }
-            } catch (artErr) {
-              console.warn(
-                "[ARTWORK] Failed to generate/save artwork:",
-                artErr
-              );
-            }
-          }, 0);
-        }
-      } else {
-        result = {
-          type: "error",
-          message: rawResult.error.message,
-          failedAt: rawResult.error.failedAt ?? null
-        };
-        setError(rawResult.error.message);
-      }
-      setLastResult(result);
-      return result;
-    } catch (e2) {
-      const msg = e2 instanceof Error ? e2.message : String(e2);
-      setError(msg);
-      throw e2;
-    } finally {
-      setIsPublishing(false);
-    }
-  }
-  function reset() {
-    setError(null);
-    setLastResult(null);
-  }
-  return { commit, isPublishing, error, lastResult, reset };
 }
 function mapNodeOperation(raw2) {
   let action;
@@ -110435,6 +110547,7 @@ ${formatDebugHelpText()}${formatTelegramConfigHelp()}`
     }
   };
   const handleDebug = async (action, fields) => {
+    var _a3, _b3, _c2, _d2, _e3, _f2;
     if (!isAdmin) {
       addMessage("error", formatDebugError("Access denied. Admin only."));
       return;
@@ -110648,6 +110761,205 @@ ${formatDebugHelpText()}${formatTelegramConfigHelp()}`
         case "reset": {
           setDebugResetPending(true);
           addMessage("normal", "⚠️ Type 'yes' to confirm reset:");
+          break;
+        }
+        case "publishedgraphs": {
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            for (const meta of metas) {
+              addMessage("success", `Graph: ${meta.name} | id: ${meta.id}`);
+              addMessage(
+                "normal",
+                `  Published: ${new Date(Number(meta.publishedAt) / 1e6).toISOString()}`
+              );
+              addMessage(
+                "normal",
+                `  Nodes: ${Number(meta.nodeCount)} | Edges: ${Number(meta.edgeCount)} | Hierarchy: ${Number(meta.hierarchyEdgeCount ?? 0n)}`
+              );
+              if (meta.extensionLog && meta.extensionLog.length > 0) {
+                addMessage(
+                  "normal",
+                  `  Extensions (${meta.extensionLog.length}):`
+                );
+                for (const ext of meta.extensionLog) {
+                  addMessage(
+                    "normal",
+                    `    +${Number(ext.addedNodes)} nodes, +${Number(ext.addedEdges)} edges, +${Number(ext.addedAttributes)} attrs, +${Number(ext.addedSources ?? 0n)} sources at ${new Date(Number(ext.extendedAt) / 1e6).toISOString()}`
+                  );
+                }
+              }
+            }
+          } catch (e2) {
+            addMessage("error", formatDebugError(String(e2)));
+          }
+          break;
+        }
+        case "checknode": {
+          const nodeName = fields == null ? void 0 : fields.name;
+          if (!nodeName) {
+            addMessage(
+              "error",
+              formatDebugError("Usage: /debug checknode name=<nodename>")
+            );
+            break;
+          }
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            const sorted = [...metas].sort(
+              (a2, b2) => Number(b2.publishedAt) - Number(a2.publishedAt)
+            );
+            const mostRecent = sorted[0];
+            const graphResult = await actor.getPublishedSourceGraph(
+              mostRecent.id
+            );
+            if (!graphResult || !graphResult[0]) {
+              addMessage(
+                "error",
+                formatDebugError(`Could not load graph: ${mostRecent.id}`)
+              );
+              break;
+            }
+            const graphData2 = graphResult[0];
+            const found = (_a3 = graphData2.interpretationTokens) == null ? void 0 : _a3.find(
+              (it2) => it2.title === nodeName
+            );
+            if (!found) {
+              addMessage(
+                "success",
+                `interpToken "${nodeName}" not found in graph "${mostRecent.name}"`
+              );
+              break;
+            }
+            addMessage("success", `Found interpToken: "${found.title}"`);
+            addMessage("normal", `  id: ${found.id}`);
+            addMessage(
+              "normal",
+              `  parentLawTokenId: ${found.parentLawTokenId ?? "(none)"}`
+            );
+            const parentLawTokenId = found.parentLawTokenId;
+            const parentLaw = parentLawTokenId ? (_b3 = graphData2.lawTokens) == null ? void 0 : _b3.find(
+              (lt) => lt.id === parentLawTokenId
+            ) : void 0;
+            if (parentLaw) {
+              addMessage(
+                "normal",
+                `  parentLawToken: "${parentLaw.title ?? parentLaw.tokenLabel ?? parentLaw.id}" (found)`
+              );
+              const parentLocationId = parentLaw.parentLocationId;
+              const parentLoc = parentLocationId ? (_c2 = graphData2.locations) == null ? void 0 : _c2.find(
+                (loc) => loc.id === parentLocationId
+              ) : void 0;
+              if (parentLoc) {
+                addMessage(
+                  "normal",
+                  `  location: "${parentLoc.name ?? parentLoc.title ?? parentLoc.id}"`
+                );
+                const parentSwarmId = parentLoc.parentSwarmId;
+                const parentSwarm = parentSwarmId ? (_d2 = graphData2.swarms) == null ? void 0 : _d2.find(
+                  (s2) => s2.id === parentSwarmId
+                ) : void 0;
+                if (parentSwarm) {
+                  addMessage("normal", `  swarm: "${parentSwarm.name}"`);
+                  const parentCurationId = parentSwarm.parentCurationId;
+                  const parentCuration = parentCurationId ? (_e3 = graphData2.curations) == null ? void 0 : _e3.find(
+                    (c2) => c2.id === parentCurationId
+                  ) : void 0;
+                  if (parentCuration)
+                    addMessage(
+                      "normal",
+                      `  curation: "${parentCuration.name}"`
+                    );
+                }
+              }
+            } else if (parentLawTokenId) {
+              addMessage(
+                "normal",
+                `  parentLawToken id ${parentLawTokenId}: NOT FOUND in graph`
+              );
+            }
+          } catch (e2) {
+            addMessage("error", formatDebugError(String(e2)));
+          }
+          break;
+        }
+        case "curationtags": {
+          try {
+            const metas = await actor.getAllPublishedSourceGraphs();
+            if (!metas || metas.length === 0) {
+              addMessage("success", "No published graphs found.");
+              break;
+            }
+            for (const meta of metas) {
+              const graphResult = await actor.getPublishedSourceGraph(meta.id);
+              if (!graphResult || !graphResult[0]) continue;
+              const gd = graphResult[0];
+              const rootCuration = (_f2 = gd.curations) == null ? void 0 : _f2[0];
+              addMessage(
+                "normal",
+                `Graph "${meta.id}": curation = "${(rootCuration == null ? void 0 : rootCuration.name) ?? "(unknown)"}"`
+              );
+            }
+          } catch (e2) {
+            addMessage("error", formatDebugError(String(e2)));
+          }
+          break;
+        }
+        case "inputpreview": {
+          try {
+            const raw2 = localStorage.getItem("source_graphs");
+            const graphs = raw2 ? JSON.parse(raw2) : [];
+            const activeId = localStorage.getItem("active_source_graph_id");
+            const activeGraph = activeId ? graphs.find((g2) => g2.id === activeId) : graphs[0];
+            if (!activeGraph) {
+              addMessage(
+                "success",
+                "No active source graph found in localStorage."
+              );
+              break;
+            }
+            const { sourceGraphToInput: sourceGraphToInput2 } = await __vitePreload(async () => {
+              const { sourceGraphToInput: sourceGraphToInput3 } = await Promise.resolve().then(() => usePublishGraph$1);
+              return { sourceGraphToInput: sourceGraphToInput3 };
+            }, true ? void 0 : void 0);
+            const input2 = sourceGraphToInput2(activeGraph);
+            addMessage(
+              "success",
+              `Input preview for graph: ${activeGraph.name}`
+            );
+            addMessage("normal", `Nodes (${input2.nodes.length}):`);
+            for (const n2 of input2.nodes) {
+              addMessage(
+                "normal",
+                `  [${n2.nodeType}] ${n2.name} | id: ${n2.id} | parent: ${n2.parentName ?? "(root)"}`
+              );
+              if (n2.attributes && n2.attributes.length > 0) {
+                addMessage(
+                  "normal",
+                  `    attributes: ${n2.attributes.map((a2) => `${a2[0]}:${JSON.stringify(a2[1])}`).join(", ")}`
+                );
+              }
+              if (n2.sources && n2.sources.length > 0) {
+                addMessage(
+                  "normal",
+                  `    sources: ${n2.sources.map((s2) => s2.name).join(", ")}`
+                );
+              }
+            }
+            addMessage("normal", `Edges (${input2.edges.length}):`);
+            for (const e2 of input2.edges) {
+              addMessage("normal", `  ${e2.sourceName} → ${e2.targetName}`);
+            }
+          } catch (e2) {
+            addMessage("error", formatDebugError(String(e2)));
+          }
           break;
         }
         default: {
@@ -111222,6 +111534,7 @@ function AppShell() {
   const [commandPaletteOpen, setCommandPaletteOpen] = reactExports.useState(false);
   const isAuthenticated = !!identity2;
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } = useSettings();
+  useDebugTools();
   reactExports.useEffect(() => {
     const savedPairing = getSavedFontPairing();
     const savedSize = getSavedFontSize();
