@@ -55,19 +55,37 @@ function buildFullPath(nodeId: string, nodes: Map<string, EditorNode>): string {
 }
 
 // ---------------------------------------------------------------------------
-// Edge-reference helpers (mirror sourceGraphParser.ts patterns)
+// Edge-reference helpers
 // ---------------------------------------------------------------------------
 
-function extractLawEntityReferences(content: string): string[] {
+/**
+ * Extract all {name} references from content.
+ */
+function extractReferences(content: string): string[] {
   const matches = content.match(/\{([^}]+)\}/g);
   if (!matches) return [];
   return matches.map((m) => m.slice(1, -1).trim());
 }
 
-function extractInterpEntityReferences(content: string): string[] {
-  const matches = content.match(/\{\{([^}]+)\}\}/g);
-  if (!matches) return [];
-  return matches.map((m) => m.slice(2, -2).trim()).filter((s) => s.length > 0);
+/**
+ * Resolve a reference name against all node type maps, in priority order:
+ * interpEntity → lawEntity → location → swarm → curation.
+ */
+function resolveNodeRef(
+  name: string,
+  interp: Map<string, string>,
+  law: Map<string, string>,
+  location: Map<string, string>,
+  swarm: Map<string, string>,
+  curation: Map<string, string>,
+): string | undefined {
+  return (
+    interp.get(name) ??
+    law.get(name) ??
+    location.get(name) ??
+    swarm.get(name) ??
+    curation.get(name)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +112,9 @@ export function editorToSourceGraph(
   const sourceNodes: SourceNode[] = [];
 
   // Lookup maps populated during the node loop
+  const curationNames = new Map<string, string>(); // name -> fullPath
+  const swarmNames = new Map<string, string>(); // name -> fullPath
+  const locationNames = new Map<string, string>(); // name -> fullPath
   const lawEntityNames = new Map<string, string>(); // name -> fullPath
   const interpFilenames = new Map<string, string>(); // name -> fullPath
   const nodeFullPaths = new Map<string, string>(); // nodeId -> fullPath
@@ -102,12 +123,12 @@ export function editorToSourceGraph(
     const fullPath = buildFullPath(node.id, nodes);
     nodeFullPaths.set(node.id, fullPath);
 
-    if (node.nodeType === "lawEntity") {
-      lawEntityNames.set(node.name, fullPath);
-    }
-    if (node.nodeType === "interpEntity") {
+    if (node.nodeType === "curation") curationNames.set(node.name, fullPath);
+    if (node.nodeType === "swarm") swarmNames.set(node.name, fullPath);
+    if (node.nodeType === "location") locationNames.set(node.name, fullPath);
+    if (node.nodeType === "lawEntity") lawEntityNames.set(node.name, fullPath);
+    if (node.nodeType === "interpEntity")
       interpFilenames.set(node.name, fullPath);
-    }
 
     // Re-serialise interpEntity content (prepend frontmatter block)
     let content: string | undefined;
@@ -169,31 +190,29 @@ export function editorToSourceGraph(
     }
   }
 
-  // Cross-reference edges: interpEntity -> lawEntity via {EntityName}
+  // Cross-reference edges: interpEntity -> any node via {name}
   for (const node of allNodes) {
     if (node.nodeType === "interpEntity" && node.content) {
       const nodePath = nodeFullPaths.get(node.id);
       if (!nodePath) continue;
-      const refs = extractLawEntityReferences(node.content);
+      const refs = extractReferences(node.content);
       for (const ref of refs) {
-        const refPath = lawEntityNames.get(ref);
+        const refPath = resolveNodeRef(
+          ref,
+          interpFilenames,
+          lawEntityNames,
+          locationNames,
+          swarmNames,
+          curationNames,
+        );
         if (refPath && refPath !== nodePath) {
-          edges.push({ source: nodePath, target: refPath });
-        }
-      }
-    }
-  }
-
-  // Interp-entity links: interpEntity -> interpEntity via {{filename}}
-  for (const node of allNodes) {
-    if (node.nodeType === "interpEntity" && node.content) {
-      const nodePath = nodeFullPaths.get(node.id);
-      if (!nodePath) continue;
-      const refs = extractInterpEntityReferences(node.content);
-      for (const ref of refs) {
-        const refPath = interpFilenames.get(ref);
-        if (refPath && refPath !== nodePath) {
-          edges.push({ source: nodePath, target: refPath });
+          // Avoid duplicates
+          const alreadyExists = edges.some(
+            (e) => e.source === nodePath && e.target === refPath,
+          );
+          if (!alreadyExists) {
+            edges.push({ source: nodePath, target: refPath });
+          }
         }
       }
     }

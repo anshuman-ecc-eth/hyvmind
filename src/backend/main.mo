@@ -23,7 +23,6 @@ import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
 
-import Migration "migration";
 
 
 
@@ -32,7 +31,8 @@ import Migration "migration";
 
 
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;

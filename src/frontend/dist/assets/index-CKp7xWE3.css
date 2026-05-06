@@ -3443,6 +3443,9 @@ body{
 .min-w-\[1rem\]{
   min-width: 1rem;
 }
+.min-w-\[200px\]{
+  min-width: 200px;
+}
 .min-w-\[8rem\]{
   min-width: 8rem;
 }
@@ -4493,6 +4496,9 @@ body{
 .text-sidebar-foreground{
   color: var(--sidebar-foreground);
 }
+.text-transparent{
+  color: transparent;
+}
 .text-white{
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
@@ -4544,6 +4550,9 @@ body{
 }
 .underline-offset-4{
   text-underline-offset: 4px;
+}
+.caret-foreground{
+  caret-color: var(--foreground);
 }
 .opacity-0{
   opacity: 0;
@@ -5270,6 +5279,33 @@ mark {
 .wikilink.not-found {
   color: oklch(0.55 0.12 25);
   text-decoration-color: oklch(0.55 0.12 25);
+}
+/* Reference highlight in editor backdrop */
+.ref-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+/* Pending {@ reference while typing */
+.ref-pending {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+  opacity: 0.7;
+}
+/* Reference link in preview mode */
+.ref-link {
+  color: var(--accent-foreground);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2px;
+  padding: 0 2px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.ref-link:hover {
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 /* Theme-independent Voronoi diagram styles */
 .voronoi-diagram-container {

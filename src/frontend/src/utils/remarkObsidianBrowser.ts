@@ -17,7 +17,7 @@ function escapeHtml(str: string): string {
 function processInlineText(value: string): any[] {
   const nodes: any[] = [];
   const pattern =
-    /(\[\[([^\]]+)\]\])|(==([^=]+)==)|(#([a-zA-Z0-9_/-]+)(?=\s|$|[^a-zA-Z0-9_/-]))/g;
+    /(\[\[([^\]]+)\]\])|(==([^=]+)==)|(#([a-zA-Z0-9_/-]+)(?=\s|$|[^a-zA-Z0-9_/-]))|(\{([^}]+)\})/g;
   let last = 0;
   let match: RegExpExecArray | null;
 
@@ -49,6 +49,13 @@ function processInlineText(value: string): any[] {
       nodes.push({
         type: "html",
         value: `<a class="tag" href="#tag-${encodeURIComponent(tag)}">#${escapeHtml(tag)}</a>`,
+      });
+    } else if (match[7]) {
+      // {name} cross-reference
+      const name = match[8];
+      nodes.push({
+        type: "html",
+        value: `<a class="ref-link" href="#${encodeURIComponent(name)}">${escapeHtml(name)}</a>`,
       });
     }
 

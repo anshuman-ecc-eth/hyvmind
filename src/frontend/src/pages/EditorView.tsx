@@ -6,7 +6,7 @@ import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { parseFrontmatter, stripFrontmatter } from "../utils/sourceGraphParser";
 
@@ -430,6 +430,10 @@ export default function EditorView() {
     ? (session.nodes.get(session.activeFileId) ?? null)
     : null;
 
+  const allNodes = useMemo(() => {
+    return [...(session?.nodes.values() ?? [])];
+  }, [session?.nodes]);
+
   const viewMode = session?.viewMode ?? "edit";
   const isEmpty = !session || session.rootIds.length === 0;
 
@@ -548,6 +552,7 @@ export default function EditorView() {
                       content={activeNode.content ?? ""}
                       onChange={handleContentChange}
                       isSaving={isSaving}
+                      nodes={allNodes}
                     />
                   ) : (
                     <div

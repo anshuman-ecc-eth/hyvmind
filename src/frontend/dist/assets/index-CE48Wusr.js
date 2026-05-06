@@ -82477,17 +82477,254 @@ function generateCallout(type) {
 function generateTaskItem(checked) {
   return checked ? "- [x] " : "- [ ] ";
 }
+const dotColorClass = {
+  curation: "text-blue-400",
+  swarm: "text-orange-400",
+  location: "text-emerald-600",
+  lawEntity: "text-amber-600",
+  interpEntity: "text-purple-400"
+};
+function ReferenceDropdown({
+  open,
+  searchText,
+  nodes,
+  anchorRect,
+  highlightedIndex,
+  onSelect,
+  onHighlightChange
+}) {
+  if (!open || !anchorRect) return null;
+  const filtered = nodes.filter(
+    (n2) => n2.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+  if (filtered.length === 0) return null;
+  return reactDomExports.createPortal(
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        style: {
+          position: "fixed",
+          top: anchorRect.bottom,
+          left: anchorRect.left,
+          zIndex: 50
+        },
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-popover text-popover-foreground border rounded shadow-md z-50 min-w-[200px] max-w-[400px] max-h-[300px] overflow-y-auto", children: filtered.map((node2, index2) => {
+          const isHighlighted = index2 === highlightedIndex;
+          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              tabIndex: -1,
+              className: [
+                "px-3 py-1.5 flex items-center gap-2 cursor-pointer text-sm",
+                isHighlighted ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+              ].join(" "),
+              onMouseEnter: () => onHighlightChange(index2),
+              onClick: () => onSelect(node2.name),
+              onKeyDown: (e2) => {
+                if (e2.key === "Enter") onSelect(node2.name);
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: dotColorClass[node2.nodeType], children: "●" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: [
+                      "font-medium truncate",
+                      isHighlighted ? "text-accent-foreground" : "text-foreground"
+                    ].join(" "),
+                    children: node2.name
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "span",
+                  {
+                    className: [
+                      "text-[10px] ml-auto truncate pl-2",
+                      isHighlighted ? "text-accent-foreground/70" : "text-muted-foreground"
+                    ].join(" "),
+                    children: [
+                      "· ",
+                      node2.parentPath
+                    ]
+                  }
+                )
+              ]
+            },
+            node2.id
+          );
+        }) })
+      }
+    ),
+    document.body
+  );
+}
+function escapeHtml$1(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+const ReferenceHighlighter = reactExports.forwardRef(function ReferenceHighlighter2({ content: content2, cursorPos }, ref) {
+  const processed = reactExports.useMemo(() => {
+    const escaped = escapeHtml$1(content2);
+    const textBefore = content2.slice(0, cursorPos);
+    const hasPending = /\{@([^}]*)$/.test(textBefore);
+    let result = escaped;
+    if (hasPending) {
+      result = result.replace(
+        /\{@([^}]*)/g,
+        '<span class="ref-pending">{@$1</span>'
+      );
+    }
+    result = result.replace(
+      /\{([^}@][^}]*)\}/g,
+      '<span class="ref-accent">{$1}</span>'
+    );
+    return result;
+  }, [content2, cursorPos]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "pre",
+    {
+      ref,
+      className: "absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-all font-mono text-sm leading-relaxed px-4 py-4 pr-20 bg-transparent",
+      dangerouslySetInnerHTML: { __html: processed }
+    }
+  );
+});
+function calculateCursorRect(ta, cursorPos) {
+  const text2 = ta.value.slice(0, cursorPos);
+  const mirror = document.createElement("div");
+  const style2 = getComputedStyle(ta);
+  mirror.style.cssText = `
+    position: fixed; top: 0; left: 0; visibility: hidden; overflow: hidden;
+    white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+    font-family: ${style2.fontFamily};
+    font-size: ${style2.fontSize};
+    line-height: ${style2.lineHeight};
+    padding: ${style2.padding};
+    letter-spacing: ${style2.letterSpacing};
+    width: ${ta.clientWidth}px;
+  `;
+  const span = document.createElement("span");
+  span.textContent = text2;
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+  const rect = span.getBoundingClientRect();
+  document.body.removeChild(mirror);
+  return new DOMRect(rect.left, rect.bottom, 0, 0);
+}
 function MarkdownEditor({
   content: content2,
   onChange: onChange15,
-  isSaving
+  isSaving,
+  nodes = []
 }) {
+  var _a3;
   const textareaRef = reactExports.useRef(null);
+  const highlightPreRef = reactExports.useRef(null);
+  const [dropdownOpen, setDropdownOpen] = reactExports.useState(false);
+  const [dropdownSearchText, setDropdownSearchText] = reactExports.useState("");
+  const [dropdownAnchorRect, setDropdownAnchorRect] = reactExports.useState(
+    null
+  );
+  const [highlightedIndex, setHighlightedIndex] = reactExports.useState(0);
+  const dropdownNodes = reactExports.useMemo(() => {
+    const nodeMap = new Map(nodes.map((n2) => [n2.id, n2]));
+    return nodes.map((node2) => {
+      const path2 = [];
+      let current = node2;
+      while (current == null ? void 0 : current.parentId) {
+        const parent = nodeMap.get(current.parentId);
+        if (parent) path2.unshift(parent.name);
+        current = parent;
+      }
+      return {
+        id: node2.id,
+        name: node2.name,
+        nodeType: node2.nodeType,
+        parentPath: path2.length > 0 ? path2.join(" @ ") : "(root)"
+      };
+    });
+  }, [nodes]);
   reactExports.useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
   }, []);
+  const insertReference = reactExports.useCallback(
+    (nodeName) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const cursorPos = ta.selectionStart;
+      const textBefore = content2.slice(0, cursorPos);
+      const atIndex = textBefore.lastIndexOf("{@");
+      if (atIndex < 0) return;
+      const newContent = `${content2.slice(0, atIndex)}{${nodeName}}${content2.slice(cursorPos)}`;
+      onChange15(newContent);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newPos = atIndex + nodeName.length + 2;
+          textareaRef.current.setSelectionRange(newPos, newPos);
+          textareaRef.current.focus();
+        }
+      }, 0);
+      setDropdownOpen(false);
+    },
+    [content2, onChange15]
+  );
+  const handleChange = (e2) => {
+    const newContent = e2.target.value;
+    const ta = textareaRef.current;
+    if (ta) {
+      const cursorPos = ta.selectionStart;
+      const textBefore = newContent.slice(0, cursorPos);
+      const atIndex = textBefore.lastIndexOf("{@");
+      if (atIndex >= 0) {
+        const afterAt = textBefore.slice(atIndex + 2);
+        if (!afterAt.includes("}")) {
+          setDropdownSearchText(afterAt);
+          setDropdownAnchorRect(calculateCursorRect(ta, cursorPos));
+          setHighlightedIndex(0);
+          setDropdownOpen(true);
+        } else {
+          setDropdownOpen(false);
+        }
+      } else {
+        setDropdownOpen(false);
+      }
+    }
+    onChange15(newContent);
+  };
+  const handleKeyDown = (e2) => {
+    if (!dropdownOpen) return;
+    const filtered = dropdownNodes.filter(
+      (n2) => n2.name.toLowerCase().includes(dropdownSearchText.toLowerCase())
+    );
+    if (filtered.length === 0) return;
+    switch (e2.key) {
+      case "ArrowDown":
+        e2.preventDefault();
+        setHighlightedIndex((i2) => (i2 + 1) % filtered.length);
+        break;
+      case "ArrowUp":
+        e2.preventDefault();
+        setHighlightedIndex((i2) => (i2 - 1 + filtered.length) % filtered.length);
+        break;
+      case "Enter":
+        e2.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
+          insertReference(filtered[highlightedIndex].name);
+        }
+        break;
+      case "Escape":
+        e2.preventDefault();
+        setDropdownOpen(false);
+        break;
+    }
+  };
+  const handleScroll2 = (e2) => {
+    if (highlightPreRef.current) {
+      highlightPreRef.current.scrollTop = e2.currentTarget.scrollTop;
+      highlightPreRef.current.scrollLeft = e2.currentTarget.scrollLeft;
+    }
+  };
   const handleInsert = reactExports.useCallback(
     (transform2) => {
       const ta = textareaRef.current;
@@ -82529,26 +82766,40 @@ function MarkdownEditor({
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs(ContextMenu, { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "textarea",
-            {
-              ref: textareaRef,
-              "aria-label": "Markdown editor",
-              spellCheck: false,
-              "data-ocid": "markdown_editor.textarea",
-              value: content2,
-              onChange: (e2) => onChange15(e2.target.value),
-              onContextMenu: (e2) => e2.stopPropagation(),
-              className: [
-                "flex-1 w-full h-full resize-none bg-background text-foreground",
-                "font-mono text-sm leading-relaxed",
-                "px-4 py-4 pr-20",
-                "border-none outline-none focus:outline-none",
-                "placeholder:text-muted-foreground"
-              ].join(" "),
-              placeholder: "Start writing markdown\\u2026"
-            }
-          ) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ContextMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative flex-1 min-h-0 bg-background", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              ReferenceHighlighter,
+              {
+                ref: highlightPreRef,
+                content: content2,
+                cursorPos: ((_a3 = textareaRef.current) == null ? void 0 : _a3.selectionStart) ?? 0
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "textarea",
+              {
+                ref: textareaRef,
+                "aria-label": "Markdown editor",
+                spellCheck: false,
+                "data-ocid": "markdown_editor.textarea",
+                value: content2,
+                onChange: handleChange,
+                onKeyDown: handleKeyDown,
+                onScroll: handleScroll2,
+                onBlur: () => setTimeout(() => setDropdownOpen(false), 200),
+                onContextMenu: (e2) => e2.stopPropagation(),
+                className: [
+                  "relative bg-transparent text-transparent caret-foreground",
+                  "flex-1 w-full h-full resize-none",
+                  "font-mono text-sm leading-relaxed",
+                  "px-4 py-4 pr-20",
+                  "border-none outline-none focus:outline-none",
+                  "placeholder:text-muted-foreground"
+                ].join(" "),
+                placeholder: "Start writing markdown\\u2026"
+              }
+            )
+          ] }) }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs(ContextMenuContent, { className: "w-52 font-mono text-xs", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               ContextMenuItem,
@@ -82720,7 +82971,20 @@ function MarkdownEditor({
               }
             )
           ] })
-        ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          ReferenceDropdown,
+          {
+            open: dropdownOpen,
+            searchText: dropdownSearchText,
+            nodes: dropdownNodes,
+            anchorRect: dropdownAnchorRect,
+            highlightedIndex,
+            onSelect: insertReference,
+            onHighlightChange: setHighlightedIndex,
+            onClose: () => setDropdownOpen(false)
+          }
+        )
       ]
     }
   );
@@ -82730,7 +82994,7 @@ function escapeHtml(str) {
 }
 function processInlineText(value) {
   const nodes = [];
-  const pattern = /(\[\[([^\]]+)\]\])|(==([^=]+)==)|(#([a-zA-Z0-9_/-]+)(?=\s|$|[^a-zA-Z0-9_/-]))/g;
+  const pattern = /(\[\[([^\]]+)\]\])|(==([^=]+)==)|(#([a-zA-Z0-9_/-]+)(?=\s|$|[^a-zA-Z0-9_/-]))|(\{([^}]+)\})/g;
   let last = 0;
   let match;
   match = pattern.exec(value);
@@ -82757,6 +83021,12 @@ function processInlineText(value) {
       nodes.push({
         type: "html",
         value: `<a class="tag" href="#tag-${encodeURIComponent(tag)}">#${escapeHtml(tag)}</a>`
+      });
+    } else if (match[7]) {
+      const name = match[8];
+      nodes.push({
+        type: "html",
+        value: `<a class="ref-link" href="#${encodeURIComponent(name)}">${escapeHtml(name)}</a>`
       });
     }
     last = match.index + match[0].length;
@@ -95563,15 +95833,13 @@ function buildFullPath(nodeId, nodes) {
   }
   return segments.join("@");
 }
-function extractLawEntityReferences$1(content2) {
+function extractReferences$1(content2) {
   const matches = content2.match(/\{([^}]+)\}/g);
   if (!matches) return [];
   return matches.map((m2) => m2.slice(1, -1).trim());
 }
-function extractInterpEntityReferences$1(content2) {
-  const matches = content2.match(/\{\{([^}]+)\}\}/g);
-  if (!matches) return [];
-  return matches.map((m2) => m2.slice(2, -2).trim()).filter((s2) => s2.length > 0);
+function resolveNodeRef(name, interp, law, location2, swarm, curation) {
+  return interp.get(name) ?? law.get(name) ?? location2.get(name) ?? swarm.get(name) ?? curation.get(name);
 }
 function editorToSourceGraph(nodes, rootId) {
   var _a3;
@@ -95581,18 +95849,21 @@ function editorToSourceGraph(nodes, rootId) {
   }
   const allNodes = collectDescendants(rootId, nodes);
   const sourceNodes = [];
+  const curationNames = /* @__PURE__ */ new Map();
+  const swarmNames = /* @__PURE__ */ new Map();
+  const locationNames = /* @__PURE__ */ new Map();
   const lawEntityNames = /* @__PURE__ */ new Map();
   const interpFilenames = /* @__PURE__ */ new Map();
   const nodeFullPaths = /* @__PURE__ */ new Map();
   for (const node2 of allNodes) {
     const fullPath = buildFullPath(node2.id, nodes);
     nodeFullPaths.set(node2.id, fullPath);
-    if (node2.nodeType === "lawEntity") {
-      lawEntityNames.set(node2.name, fullPath);
-    }
-    if (node2.nodeType === "interpEntity") {
+    if (node2.nodeType === "curation") curationNames.set(node2.name, fullPath);
+    if (node2.nodeType === "swarm") swarmNames.set(node2.name, fullPath);
+    if (node2.nodeType === "location") locationNames.set(node2.name, fullPath);
+    if (node2.nodeType === "lawEntity") lawEntityNames.set(node2.name, fullPath);
+    if (node2.nodeType === "interpEntity")
       interpFilenames.set(node2.name, fullPath);
-    }
     let content2;
     if (node2.nodeType === "interpEntity") {
       const fmBlock = serialiseFrontmatter(node2.frontmatter);
@@ -95630,24 +95901,23 @@ function editorToSourceGraph(nodes, rootId) {
     if (node2.nodeType === "interpEntity" && node2.content) {
       const nodePath = nodeFullPaths.get(node2.id);
       if (!nodePath) continue;
-      const refs = extractLawEntityReferences$1(node2.content);
+      const refs = extractReferences$1(node2.content);
       for (const ref of refs) {
-        const refPath = lawEntityNames.get(ref);
+        const refPath = resolveNodeRef(
+          ref,
+          interpFilenames,
+          lawEntityNames,
+          locationNames,
+          swarmNames,
+          curationNames
+        );
         if (refPath && refPath !== nodePath) {
-          edges.push({ source: nodePath, target: refPath });
-        }
-      }
-    }
-  }
-  for (const node2 of allNodes) {
-    if (node2.nodeType === "interpEntity" && node2.content) {
-      const nodePath = nodeFullPaths.get(node2.id);
-      if (!nodePath) continue;
-      const refs = extractInterpEntityReferences$1(node2.content);
-      for (const ref of refs) {
-        const refPath = interpFilenames.get(ref);
-        if (refPath && refPath !== nodePath) {
-          edges.push({ source: nodePath, target: refPath });
+          const alreadyExists = edges.some(
+            (e2) => e2.source === nodePath && e2.target === refPath
+          );
+          if (!alreadyExists) {
+            edges.push({ source: nodePath, target: refPath });
+          }
         }
       }
     }
@@ -104032,15 +104302,10 @@ function extractAllAttributes(fm) {
   }
   return Object.keys(attrs).length > 0 ? attrs : void 0;
 }
-function extractLawEntityReferences(content2) {
+function extractReferences(content2) {
   const matches = content2.match(/\{([^}]+)\}/g);
   if (!matches) return [];
   return matches.map((m2) => m2.slice(1, -1).trim());
-}
-function extractInterpEntityReferences(content2) {
-  const matches = content2.match(/\{\{([^}]+)\}\}/g);
-  if (!matches) return [];
-  return matches.map((m2) => m2.slice(2, -2).trim()).filter((s2) => s2.length > 0);
 }
 async function getDirectAttributes(zip, folderPath) {
   const base = folderPath.replace(/\/+$/, "");
@@ -104136,7 +104401,10 @@ async function parseSourceGraphZip(file2) {
       }
       const swarmWideLawEntityNames = /* @__PURE__ */ new Map();
       const allInterpFilenames = /* @__PURE__ */ new Map();
+      const swarmWideLocationNames = /* @__PURE__ */ new Map();
       for (const locName of locationFolders) {
+        const fullLocPath = `${curationName}@${swarmName}@${locName}`;
+        swarmWideLocationNames.set(locName, fullLocPath);
         const locPrefix = `${swarmPath}/${locName}/`;
         for (const p2 of allPaths) {
           if (!p2.startsWith(locPrefix)) continue;
@@ -104153,6 +104421,8 @@ async function parseSourceGraphZip(file2) {
           }
         }
       }
+      const swarmPath_ = `${curationName}@${swarmName}`;
+      const resolveRef = (name) => allInterpFilenames.get(name) ?? swarmWideLawEntityNames.get(name) ?? swarmWideLocationNames.get(name) ?? (name === swarmName ? swarmPath_ : void 0);
       console.log(
         "🟡 [PARSER] swarmWideLawEntityNames Map:",
         JSON.stringify([...swarmWideLawEntityNames.entries()])
@@ -104240,8 +104510,8 @@ async function parseSourceGraphZip(file2) {
               attributes: mergedAttrs && Object.keys(mergedAttrs).length > 0 ? mergedAttrs : void 0
             };
             nodes.push(interpNode);
-            const references = extractLawEntityReferences(body2);
-            const uniqueRefs = [...new Set(references)];
+            const refs = extractReferences(body2);
+            const uniqueRefs = [...new Set(refs)];
             const hasSelfReference = uniqueRefs.some(
               (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name
             );
@@ -104250,49 +104520,24 @@ async function parseSourceGraphZip(file2) {
               target: fullInterpPath,
               bidirectional: hasSelfReference
             });
-            console.log("🟡 [PARSER] Processing lawEntity refs:", uniqueRefs);
+            console.log("🟡 [PARSER] Processing refs:", uniqueRefs);
             for (const ref of uniqueRefs) {
-              const refFullPath = swarmWideLawEntityNames.get(ref);
-              console.log(
-                `🟡 [PARSER]   ref="${ref}" -> fullPath=${refFullPath ?? "UNDEFINED"}`
-              );
-              if (!refFullPath) {
-                console.warn(
-                  `🟡 [PARSER] WARNING: Could not resolve lawEntity ref "${ref}" to full path, skipping edge`
-                );
-                continue;
-              }
               if (ref === entry.name) continue;
-              const alreadyExists = edges.some(
-                (e2) => e2.source === fullInterpPath && e2.target === refFullPath
-              );
-              if (!alreadyExists) {
-                edges.push({ source: fullInterpPath, target: refFullPath });
-              }
-            }
-            const interpRefs = extractInterpEntityReferences(body2);
-            const uniqueInterpRefs = [...new Set(interpRefs)];
-            console.log(
-              "🟡 [PARSER] Processing interp refs:",
-              uniqueInterpRefs
-            );
-            for (const ref of uniqueInterpRefs) {
-              if (ref === filename) continue;
-              const refFullPath = allInterpFilenames.get(ref);
+              const refPath = resolveRef(ref);
               console.log(
-                `🟡 [PARSER]   ref="{{${ref}}}" -> fullPath=${refFullPath ?? "UNDEFINED"}`
+                `🟡 [PARSER]   ref="${ref}" -> fullPath=${refPath ?? "UNDEFINED"}`
               );
-              if (!refFullPath) {
+              if (!refPath) {
                 console.warn(
-                  `🟡 [PARSER] WARNING: Could not resolve interp ref "${ref}" to full path, skipping edge`
+                  `🟡 [PARSER] WARNING: Could not resolve ref "${ref}", skipping edge`
                 );
                 continue;
               }
               const alreadyExists = edges.some(
-                (e2) => e2.source === fullInterpPath && e2.target === refFullPath
+                (e2) => e2.source === fullInterpPath && e2.target === refPath
               );
               if (!alreadyExists) {
-                edges.push({ source: fullInterpPath, target: refFullPath });
+                edges.push({ source: fullInterpPath, target: refPath });
               }
             }
           }
@@ -105426,6 +105671,9 @@ function EditorView() {
     [session, updateFile]
   );
   const activeNode = (session == null ? void 0 : session.activeFileId) ? session.nodes.get(session.activeFileId) ?? null : null;
+  const allNodes = reactExports.useMemo(() => {
+    return [...(session == null ? void 0 : session.nodes.values()) ?? []];
+  }, [session == null ? void 0 : session.nodes]);
   const viewMode = (session == null ? void 0 : session.viewMode) ?? "edit";
   const isEmpty2 = !session || session.rootIds.length === 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -105534,7 +105782,8 @@ function EditorView() {
                 {
                   content: activeNode.content ?? "",
                   onChange: handleContentChange,
-                  isSaving
+                  isSaving,
+                  nodes: allNodes
                 }
               ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
                 "div",

@@ -340,6 +340,36 @@ mark {
   text-decoration-color: oklch(0.55 0.12 25);
 }
 
+/* Reference highlight in editor backdrop */
+.ref-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Pending {@ reference while typing */
+.ref-pending {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+  opacity: 0.7;
+}
+
+/* Reference link in preview mode */
+.ref-link {
+  color: var(--accent-foreground);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2px;
+  padding: 0 2px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.ref-link:hover {
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
 /* Theme-independent Voronoi diagram styles */
 .voronoi-diagram-container {
   background: #ffffff !important;
