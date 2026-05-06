@@ -67,6 +67,7 @@ export interface NodeOperation {
   parentName: string | null;
   action: "create" | "update";
   attributeChanges?: AttributeChange[];
+  sourceChanges?: SourceRef[];
   attributes: [string, string[]][];
 }
 

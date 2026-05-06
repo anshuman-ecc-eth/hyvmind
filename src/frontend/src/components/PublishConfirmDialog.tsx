@@ -4,6 +4,7 @@ import type {
   EdgeOperation,
   NodeOperation,
   PublishPreviewResult,
+  SourceRef,
 } from "../types/sourceGraph";
 
 interface Props {
@@ -132,6 +133,17 @@ function NodeUpdateRow({ op }: { op: NodeOperation }) {
       </div>
       {op.attributeChanges && op.attributeChanges.length > 0 && (
         <AttributeChangesView changes={op.attributeChanges} />
+      )}
+      {op.sourceChanges && op.sourceChanges.length > 0 && (
+        <div className="mt-1 pl-2 border-l border-dashed border-cyan-600/40 text-[10px]">
+          <span className="text-cyan-600">sources changed:</span>
+          {op.sourceChanges.map((s: SourceRef) => (
+            <div key={s.name} className="text-muted-foreground">
+              + {s.name}
+              {s.url ? ` (${s.url})` : ""}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

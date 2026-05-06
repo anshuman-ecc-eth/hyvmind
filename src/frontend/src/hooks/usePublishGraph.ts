@@ -61,12 +61,23 @@ export function sourceGraphToInput(graph: SourceGraph) {
     Object.assign(merged, node.attributes ?? {});
 
     // Merge sources: farthest ancestor first, then closer ancestors, then own
-    const mergedSources: import("../types/sourceGraph").SourceRef[] = [];
+    const rawMergedSources: import("../types/sourceGraph").SourceRef[] = [];
     for (let i = ancestorSourceChain.length - 1; i >= 0; i--) {
-      mergedSources.push(...ancestorSourceChain[i]);
+      rawMergedSources.push(...ancestorSourceChain[i]);
     }
     if (node.sources && node.sources.length > 0) {
-      mergedSources.push(...node.sources);
+      rawMergedSources.push(...node.sources);
+    }
+
+    // Deduplicate sources by name|url key
+    const seen = new Set<string>();
+    const mergedSources: import("../types/sourceGraph").SourceRef[] = [];
+    for (const s of rawMergedSources) {
+      const key = `${s.name}|${s.url}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mergedSources.push(s);
+      }
     }
 
     return {

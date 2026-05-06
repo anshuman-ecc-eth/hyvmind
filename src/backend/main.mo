@@ -27,6 +27,8 @@ import Migration "migration";
 
 
 
+
+
 (with migration = Migration.run)
 actor {
   // Type Aliases
@@ -249,6 +251,7 @@ actor {
     addedNodes : Nat;
     addedEdges : Nat;
     addedAttributes : Nat;
+    addedSources : ?Nat;
   };
 
   type PublishedSourceGraphMeta = {
@@ -260,6 +263,7 @@ actor {
     nodeCount : Nat;
     edgeCount : Nat;
     attributeCount : Nat;
+    sourcesCount : ?Nat;
     extensionLog : [ExtensionEntry];
     artworkDataUrl : ?Text;
   };
@@ -318,6 +322,7 @@ actor {
     parentName : ?Text;
     action : { #create; #update : [AttributeChange] };
     attributes : [(Text, [Text])];
+    sourceChanges : [SourceRef];
   };
 
   type EdgeOperation = {
@@ -1721,6 +1726,67 @@ actor {
     result.toArray();
   };
 
+  // ─── Helper: mergeSources ────────────────────────────────────────────────
+  func mergeSources(existing : [SourceRef], newSrcs : [SourceRef]) : [SourceRef] {
+    let keyMap = Map.empty<Text, Bool>();
+    let result = List.empty<SourceRef>();
+    for (src in existing.values()) {
+      let key = src.name # "|" # src.url;
+      keyMap.add(key, true);
+      result.add(src);
+    };
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          keyMap.add(key, true);
+          result.add(src);
+        };
+        case (?_) {};
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: countNewSources ───────────────────────────────────────────────
+  func countNewSources(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : Nat {
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    var count = 0;
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          keyMap.add(key, true);
+          count += 1;
+        };
+        case (?_) {};
+      };
+    };
+    count
+  };
+
+  // ─── Helper: computeNewSources ──────────────────────────────────────────────
+  func computeNewSources(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : [SourceRef] {
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    let result = List.empty<SourceRef>();
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          result.add(src);
+        };
+        case (?_) {};
+      };
+    };
+    result.toArray();
+  };
+
   // ─── Helper: mergeEdgeLabels ──────────────────────────────────────────────────
   func mergeEdgeLabels(existing : [WeightedValue], newLabels : [Text]) : [WeightedValue] {
     let labelMap = Map.empty<Text, Nat>();
@@ -1924,18 +1990,18 @@ actor {
     false
   };
 
-  // ─── Helper: count sources ─────────────────────────────────────────────────────
-  func countSources(srcs : [SourceRef]) : Nat { srcs.size() };
-
-  // ─── Helper: detect changes between two SourceRef arrays ──────────────────────
+  // ─── Helper: detect changes between two SourceRef arrays (set-based) ──────────
   func hasSourceChanges(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : Bool {
     if (existingSrcs.size() != newSrcs.size()) { return true };
-    var i = 0;
-    while (i < newSrcs.size()) {
-      if (newSrcs[i].name != existingSrcs[i].name or newSrcs[i].url != existingSrcs[i].url) {
-        return true;
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    for (src in newSrcs.values()) {
+      switch (keyMap.get(src.name # "|" # src.url)) {
+        case (null) { return true };
+        case (?_) {};
       };
-      i += 1;
     };
     false
   };
@@ -2118,13 +2184,13 @@ actor {
               let belongs = belongsToPublishedGraph(existingId, pid);
               Debug.print("Preview: Node " # node.name # " (curation) belongsToPublishedGraph = " # belongs.toText());
               if (belongs) {
+                let existingSrcs = switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
                 let hasChanges = hasActualChanges(
                   switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } },
                   node.attributes
-                ) or hasSourceChanges(
-                  switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } },
-                  node.sources
-                );
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
                   nodeOps.add({
@@ -2134,6 +2200,7 @@ actor {
                     parentName = null;
                     action = #update(changes);
                     attributes = node.attributes;
+                    sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
                 };
@@ -2147,6 +2214,7 @@ actor {
                   parentName = null;
                   action = #create;
                   attributes = node.attributes;
+                  sourceChanges = [];
                 });
                 nodesToCreate += 1;
               };
@@ -2160,6 +2228,7 @@ actor {
                 parentName = null;
                 action = #create;
                 attributes = node.attributes;
+                sourceChanges = [];
               });
               nodesToCreate += 1;
             };
@@ -2184,6 +2253,7 @@ actor {
             parentName = null;
             action = #create;
             attributes = node.attributes;
+            sourceChanges = [];
           });
           nodesToCreate += 1;
         };
@@ -2235,13 +2305,13 @@ actor {
               let belongs = belongsToPublishedGraph(existingId, pid);
               Debug.print("Preview: Node " # node.name # " (swarm) belongsToPublishedGraph = " # belongs.toText());
               if (belongs) {
+                let existingSrcs = switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
                 let hasChanges = hasActualChanges(
                   switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } },
                   node.attributes
-                ) or hasSourceChanges(
-                  switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } },
-                  node.sources
-                );
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
                   nodeOps.add({
@@ -2251,6 +2321,7 @@ actor {
                     parentName = node.parentName;
                     action = #update(changes);
                     attributes = node.attributes;
+                    sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
                 };
@@ -2262,6 +2333,7 @@ actor {
                   parentName = node.parentName;
                   action = #create;
                   attributes = node.attributes;
+                  sourceChanges = [];
                 });
                 nodesToCreate += 1;
               };
@@ -2274,6 +2346,7 @@ actor {
                 parentName = node.parentName;
                 action = #create;
                 attributes = node.attributes;
+                sourceChanges = [];
               });
               nodesToCreate += 1;
             };
@@ -2299,6 +2372,7 @@ actor {
             parentName = node.parentName;
             action = #create;
             attributes = node.attributes;
+            sourceChanges = [];
           });
           nodesToCreate += 1;
         };
@@ -2350,13 +2424,13 @@ actor {
               let belongs = belongsToPublishedGraph(existingId, pid);
               Debug.print("Preview: Node " # node.name # " (location) belongsToPublishedGraph = " # belongs.toText());
               if (belongs) {
+                let existingSrcs = switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
                 let hasChanges = hasActualChanges(
                   switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } },
                   node.attributes
-                ) or hasSourceChanges(
-                  switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } },
-                  node.sources
-                );
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
                   nodeOps.add({
@@ -2366,6 +2440,7 @@ actor {
                     parentName = node.parentName;
                     action = #update(changes);
                     attributes = node.attributes;
+                    sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
                 };
@@ -2377,6 +2452,7 @@ actor {
                   parentName = node.parentName;
                   action = #create;
                   attributes = node.attributes;
+                  sourceChanges = [];
                 });
                 nodesToCreate += 1;
               };
@@ -2389,6 +2465,7 @@ actor {
                 parentName = node.parentName;
                 action = #create;
                 attributes = node.attributes;
+                sourceChanges = [];
               });
               nodesToCreate += 1;
             };
@@ -2414,6 +2491,7 @@ actor {
             parentName = node.parentName;
             action = #create;
             attributes = node.attributes;
+            sourceChanges = [];
           });
           nodesToCreate += 1;
         };
@@ -2465,13 +2543,13 @@ actor {
               let belongs = belongsToPublishedGraph(existingId, pid);
               Debug.print("Preview: Node " # node.name # " (lawEntity) belongsToPublishedGraph = " # belongs.toText());
               if (belongs) {
+                let existingSrcs = switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
                 let hasChanges = hasActualChanges(
                   switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } },
                   node.attributes
-                ) or hasSourceChanges(
-                  switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } },
-                  node.sources
-                );
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
                   nodeOps.add({
@@ -2481,6 +2559,7 @@ actor {
                     parentName = node.parentName;
                     action = #update(changes);
                     attributes = node.attributes;
+                    sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
                 };
@@ -2492,6 +2571,7 @@ actor {
                   parentName = node.parentName;
                   action = #create;
                   attributes = node.attributes;
+                  sourceChanges = [];
                 });
                 nodesToCreate += 1;
               };
@@ -2504,6 +2584,7 @@ actor {
                 parentName = node.parentName;
                 action = #create;
                 attributes = node.attributes;
+                sourceChanges = [];
               });
               nodesToCreate += 1;
             };
@@ -2529,6 +2610,7 @@ actor {
             parentName = node.parentName;
             action = #create;
             attributes = node.attributes;
+            sourceChanges = [];
           });
           nodesToCreate += 1;
         };
@@ -2580,13 +2662,13 @@ actor {
               let belongs = belongsToPublishedGraph(existingId, pid);
               Debug.print("Preview: Node " # node.name # " (interpEntity) belongsToPublishedGraph = " # belongs.toText());
               if (belongs) {
+                let existingSrcs = switch (foundIt) { case (?it) { it.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
                 let hasChanges = hasActualChanges(
                   switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } },
                   node.attributes
-                ) or hasSourceChanges(
-                  switch (foundIt) { case (?it) { it.sources }; case (null) { [] } },
-                  node.sources
-                );
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
                 Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
                 if (hasChanges) {
                   nodeOps.add({
@@ -2596,6 +2678,7 @@ actor {
                     parentName = node.parentName;
                     action = #update(changes);
                     attributes = node.attributes;
+                    sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
                 };
@@ -2607,6 +2690,7 @@ actor {
                   parentName = node.parentName;
                   action = #create;
                   attributes = node.attributes;
+                  sourceChanges = [];
                 });
                 nodesToCreate += 1;
               };
@@ -2619,6 +2703,7 @@ actor {
                 parentName = node.parentName;
                 action = #create;
                 attributes = node.attributes;
+                sourceChanges = [];
               });
               nodesToCreate += 1;
             };
@@ -2644,6 +2729,7 @@ actor {
             parentName = node.parentName;
             action = #create;
             attributes = node.attributes;
+            sourceChanges = [];
           });
           nodesToCreate += 1;
         };
@@ -2848,6 +2934,7 @@ actor {
     var edgesToCreate : Nat = 0;
     var edgesToUpdate : Nat = 0;
     var attributesAdded : Nat = 0;
+    var sourcesAdded : Nat = 0;
 
     // Helper: count new attribute entries relative to existing weighted attributes
     // New key → all its values counted; existing key → only new distinct values counted
@@ -2911,8 +2998,9 @@ actor {
             case (?c) { mergeWeightedAttributes(c.customAttributes, node.attributes) };
             case (null) { attributesToWeighted(node.attributes) };
           };
+          let curationExistingSources = switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } };
           let updatedCuration = switch (foundCuration) {
-            case (?c) { { c with customAttributes = mergedAttrs; sources = c.sources.concat(node.sources) } };
+            case (?c) { { c with customAttributes = mergedAttrs; sources = mergeSources(c.sources, node.sources) } };
             case (null) {
               return #error({ message = "Curation disappeared during staging"; failedAt = ?{ nodeType = "curation"; name = node.name } });
             };
@@ -2935,17 +3023,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(curationExistingAttrs, node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += countNewSources(curationExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
-              attributesAdded += countSources(node.sources);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -3029,7 +3117,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedSwarm = switch (foundSwarm) {
-            case (?s) { { s with customAttributes = mergedAttrs; sources = s.sources.concat(node.sources) } };
+            case (?s) { { s with customAttributes = mergedAttrs; sources = mergeSources(s.sources, node.sources) } };
             case (null) {
               return #error({ message = "Swarm disappeared during staging"; failedAt = ?{ nodeType = "swarm"; name = node.name } });
             };
@@ -3055,17 +3143,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(swarmExistingAttrs, node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += countNewSources(swarmExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
-              attributesAdded += countSources(node.sources);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -3144,7 +3232,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedLocation = switch (foundLocation) {
-            case (?l) { { l with customAttributes = mergedAttrs; sources = l.sources.concat(node.sources) } };
+            case (?l) { { l with customAttributes = mergedAttrs; sources = mergeSources(l.sources, node.sources) } };
             case (null) {
               return #error({ message = "Location disappeared during staging"; failedAt = ?{ nodeType = "location"; name = node.name } });
             };
@@ -3170,17 +3258,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(locExistingAttrs, node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += countNewSources(locExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
-              attributesAdded += countSources(node.sources);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -3256,7 +3344,7 @@ actor {
             case (null) { attributesToWeighted(node.attributes) };
           };
           let updatedLt = switch (foundLawToken) {
-            case (?lt) { { lt with customAttributes = mergedAttrs; sources = lt.sources.concat(node.sources) } };
+            case (?lt) { { lt with customAttributes = mergedAttrs; sources = mergeSources(lt.sources, node.sources) } };
             case (null) {
               return #error({ message = "LawToken disappeared during staging"; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
             };
@@ -3282,17 +3370,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(ltExistingAttrs, node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += countNewSources(ltExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
-              attributesAdded += countSources(node.sources);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -3373,7 +3461,7 @@ actor {
             case (null) { [{ content = newContent; contributor = caller; timestamp = Time.now() }] };
           };
           let updatedIt = switch (foundIt) {
-            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions; sources = it.sources.concat(node.sources) } };
+            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions; sources = mergeSources(it.sources, node.sources) } };
             case (null) {
               return #error({ message = "InterpToken disappeared during staging"; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
             };
@@ -3399,17 +3487,17 @@ actor {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
                 attributesAdded += countNewAttributes(itExistingAttrs, node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += countNewSources(itExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
-                attributesAdded += countSources(node.sources);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
-              attributesAdded += countSources(node.sources);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -3567,12 +3655,14 @@ actor {
               addedNodes = nodesToCreate;
               addedEdges = edgesToCreate;
               addedAttributes = attributesAdded;
+              addedSources = ?sourcesAdded;
             };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
               nodeCount = existingMeta.nodeCount + nodesToCreate;
               edgeCount = existingMeta.edgeCount + edgesToCreate;
               attributeCount = existingMeta.attributeCount + attributesAdded;
+              sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
             };
             publishedSourceGraphs.add(pid, updatedMeta);
@@ -3597,6 +3687,7 @@ actor {
           nodeCount = nodesToCreate;
           edgeCount = edgesToCreate;
           attributeCount = attributesAdded;
+          sourcesCount = ?sourcesAdded;
           extensionLog = [];
           artworkDataUrl = null;
         };
@@ -4209,6 +4300,7 @@ actor {
       ("nodeCount", jsonNat(m.nodeCount)),
       ("edgeCount", jsonNat(m.edgeCount)),
       ("attributeCount", jsonNat(m.attributeCount)),
+      ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
       ("extensionCount", jsonNat(m.extensionLog.size())),
     ]);
   };

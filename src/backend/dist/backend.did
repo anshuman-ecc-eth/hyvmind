@@ -84,6 +84,7 @@ type PublishedSourceGraphMeta =
    name: text;
    nodeCount: nat;
    publishedAt: Time;
+   sourcesCount: opt nat;
  };
 type PublishSourceGraphInput = 
  record {
@@ -136,6 +137,7 @@ type NodeOperation =
    localName: text;
    nodeType: text;
    parentName: opt text;
+   sourceChanges: vec SourceRef;
  };
 type NodeId = text;
 type MintSettings = record {numCopies: nat;};
@@ -250,6 +252,7 @@ type ExtensionEntry =
    addedAttributes: nat;
    addedEdges: nat;
    addedNodes: nat;
+   addedSources: opt nat;
    extendedAt: Time;
  };
 type EdgeOperation = 

@@ -88,7 +88,8 @@ function ExtensionHistory({ log }: { log: ExtensionEntry[] }) {
                 <span className="text-foreground/70">{date}</span>
                 {" — "}+{Number(entry.addedNodes)} nodes, +
                 {Number(entry.addedEdges)} edges, +
-                {Number(entry.addedAttributes)} attrs
+                {Number(entry.addedAttributes)} attrs, +
+                {Number(entry.addedSources ?? 0n)} sources
               </li>
             );
           })}
@@ -144,6 +145,9 @@ function GraphCard({ graph, onView }: GraphCardProps) {
         </span>
         <span data-ocid="public_graph.attr_count">
           {Number(graph.attributeCount)} attrs
+        </span>
+        <span data-ocid="public_graph.source_count">
+          {Number(graph.sourcesCount ?? 0n)} sources
         </span>
       </div>
 

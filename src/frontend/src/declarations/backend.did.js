@@ -62,6 +62,7 @@ export const Tag = IDL.Text;
 export const Time = IDL.Int;
 export const ExtensionEntry = IDL.Record({
   'addedNodes' : IDL.Nat,
+  'addedSources' : IDL.Opt(IDL.Nat),
   'addedAttributes' : IDL.Nat,
   'extendedAt' : Time,
   'addedEdges' : IDL.Nat,
@@ -75,6 +76,7 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'attributeCount' : IDL.Nat,
   'creatorName' : IDL.Text,
   'edgeCount' : IDL.Nat,
+  'sourcesCount' : IDL.Opt(IDL.Nat),
   'artworkDataUrl' : IDL.Opt(IDL.Text),
   'nodeCount' : IDL.Nat,
 });
@@ -256,6 +258,7 @@ export const NodeOperation = IDL.Record({
     'create' : IDL.Null,
     'update' : IDL.Vec(AttributeChange),
   }),
+  'sourceChanges' : IDL.Vec(SourceRef),
   'attributes' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(IDL.Text))),
   'backendId' : IDL.Opt(NodeId),
   'parentName' : IDL.Opt(IDL.Text),
@@ -500,6 +503,7 @@ export const idlFactory = ({ IDL }) => {
   const Time = IDL.Int;
   const ExtensionEntry = IDL.Record({
     'addedNodes' : IDL.Nat,
+    'addedSources' : IDL.Opt(IDL.Nat),
     'addedAttributes' : IDL.Nat,
     'extendedAt' : Time,
     'addedEdges' : IDL.Nat,
@@ -513,6 +517,7 @@ export const idlFactory = ({ IDL }) => {
     'attributeCount' : IDL.Nat,
     'creatorName' : IDL.Text,
     'edgeCount' : IDL.Nat,
+    'sourcesCount' : IDL.Opt(IDL.Nat),
     'artworkDataUrl' : IDL.Opt(IDL.Text),
     'nodeCount' : IDL.Nat,
   });
@@ -691,6 +696,7 @@ export const idlFactory = ({ IDL }) => {
       'create' : IDL.Null,
       'update' : IDL.Vec(AttributeChange),
     }),
+    'sourceChanges' : IDL.Vec(SourceRef),
     'attributes' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(IDL.Text))),
     'backendId' : IDL.Opt(NodeId),
     'parentName' : IDL.Opt(IDL.Text),

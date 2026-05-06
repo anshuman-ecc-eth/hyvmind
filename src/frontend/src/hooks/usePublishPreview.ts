@@ -13,6 +13,7 @@ import type {
   NodeOperation,
   PublishPreviewResult,
   SourceGraph,
+  SourceRef,
 } from "../types/sourceGraph";
 import { sourceGraphToInput } from "./usePublishGraph";
 import { usePublishMappings } from "./usePublishMappings";
@@ -47,6 +48,7 @@ function mapNodeOperation(raw: BackendNodeOperation): NodeOperation {
     parentName: raw.parentName ?? null,
     action,
     attributeChanges,
+    sourceChanges: (raw.sourceChanges as unknown as SourceRef[]) ?? [],
     attributes: raw.attributes,
   };
 }

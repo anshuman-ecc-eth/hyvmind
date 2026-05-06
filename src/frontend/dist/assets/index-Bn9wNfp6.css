@@ -3937,6 +3937,9 @@ body{
 .border-border{
   border-color: var(--border);
 }
+.border-cyan-600\/40{
+  border-color: rgb(8 145 178 / 0.4);
+}
 .border-destructive{
   border-color: var(--destructive);
 }
@@ -4430,6 +4433,10 @@ body{
 }
 .text-cyan-400\/70{
   color: rgb(34 211 238 / 0.7);
+}
+.text-cyan-600{
+  --tw-text-opacity: 1;
+  color: rgb(8 145 178 / var(--tw-text-opacity, 1));
 }
 .text-destructive{
   color: var(--destructive);

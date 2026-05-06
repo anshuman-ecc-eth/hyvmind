@@ -58,6 +58,7 @@ export interface PublishedSourceGraphMeta {
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    sourcesCount?: bigint;
     artworkDataUrl?: string;
     nodeCount: bigint;
 }
@@ -70,6 +71,7 @@ export interface NodeOperation {
         __kind__: "update";
         update: Array<AttributeChange>;
     };
+    sourceChanges: Array<SourceRef>;
     attributes: Array<[string, Array<string>]>;
     backendId?: NodeId;
     parentName?: string;
@@ -131,6 +133,7 @@ export type PublishCommitResult = {
 };
 export interface ExtensionEntry {
     addedNodes: bigint;
+    addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
     addedEdges: bigint;

@@ -69,6 +69,7 @@ export interface EdgeOperation {
 }
 export interface ExtensionEntry {
   'addedNodes' : bigint,
+  'addedSources' : [] | [bigint],
   'addedAttributes' : bigint,
   'extendedAt' : Time,
   'addedEdges' : bigint,
@@ -160,6 +161,7 @@ export interface NodeOperation {
   'localName' : string,
   'action' : { 'create' : null } |
     { 'update' : Array<AttributeChange> },
+  'sourceChanges' : Array<SourceRef>,
   'attributes' : Array<[string, Array<string>]>,
   'backendId' : [] | [NodeId],
   'parentName' : [] | [string],
@@ -201,6 +203,7 @@ export interface PublishedSourceGraphMeta {
   'attributeCount' : bigint,
   'creatorName' : string,
   'edgeCount' : bigint,
+  'sourcesCount' : [] | [bigint],
   'artworkDataUrl' : [] | [string],
   'nodeCount' : bigint,
 }

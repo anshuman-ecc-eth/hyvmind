@@ -25,8 +25,6 @@ type CollectibleEdition__303213557 =
   };
 type ContentVersion__182794311 =
   {content : Text; contributor : Principal; timestamp : Time__900049286};
-type ContentVersion__446548233 =
-  {content : Text; contributor : Principal; timestamp : Time__900049286};
 type Curation__572080379 =
   {
     creator : Principal;
@@ -44,7 +42,15 @@ type ExtensionEntry__104646688 =
     addedAttributes : Nat;
     addedEdges : Nat;
     addedNodes : Nat;
+    addedSources : ?Nat;
     extendedAt : Time__900049286
+  };
+type ExtensionEntry_v0__756451335 =
+  {
+    addedAttributes : Nat;
+    addedEdges : Nat;
+    addedNodes : Nat;
+    extendedAt : Time__976142243
   };
 type ForkedSwarm__273475596 =
   {
@@ -108,57 +114,8 @@ type MintSettings__157171564 = {numCopies : Nat};
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type NodeId__811092033 = Text;
-type NodeId__968231965 = Text;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-type OldCuration__1066320036 =
-  {
-    creator : Principal;
-    customAttributes : [WeightedAttribute__743330656];
-    id : NodeId__968231965;
-    name : Text;
-    timestamps : Timestamps__378717705
-  };
-type OldInterpretationToken__601791729 =
-  {
-    contentVersions : [ContentVersion__446548233];
-    creator : Principal;
-    customAttributes : [WeightedAttribute__743330656];
-    id : NodeId__968231965;
-    parentLawTokenId : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    title : Text
-  };
-type OldLawToken__93648794 =
-  {
-    creator : Principal;
-    customAttributes : [WeightedAttribute__743330656];
-    id : NodeId__968231965;
-    parentLocationId : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    tokenLabel : Text
-  };
-type OldLocation__97846908 =
-  {
-    creator : Principal;
-    customAttributes : [WeightedAttribute__743330656];
-    id : NodeId__968231965;
-    parentSwarmId : NodeId__968231965;
-    timestamps : Timestamps__378717705;
-    title : Text
-  };
-type OldSwarm__289266322 =
-  {
-    creator : Principal;
-    customAttributes : [WeightedAttribute__743330656];
-    forkPrincipal : ?Principal;
-    forkSource : ?NodeId__968231965;
-    id : NodeId__968231965;
-    name : Text;
-    parentCurationId : NodeId__968231965;
-    tags : [Tag__238789133];
-    timestamps : Timestamps__378717705
-  };
 type PublishedSourceGraphMeta__808509219 =
   {
     artworkDataUrl : ?Text;
@@ -170,7 +127,21 @@ type PublishedSourceGraphMeta__808509219 =
     id : Text;
     name : Text;
     nodeCount : Nat;
-    publishedAt : Time__900049286
+    publishedAt : Time__900049286;
+    sourcesCount : ?Nat
+  };
+type PublishedSourceGraphMeta_v0__249658681 =
+  {
+    artworkDataUrl : ?Text;
+    attributeCount : Nat;
+    creator : Principal;
+    creatorName : Text;
+    edgeCount : Nat;
+    extensionLog : [ExtensionEntry_v0__756451335];
+    id : Text;
+    name : Text;
+    nodeCount : Nat;
+    publishedAt : Time__976142243
   };
 type SourceGraphEdge__199036688 =
   {
@@ -211,7 +182,6 @@ type Swarm__147277083 =
     tags : [Tag__973970575];
     timestamps : Timestamps__70525832
   };
-type Tag__238789133 = Text;
 type Tag__973970575 = Text;
 type TelegramConfig__326514849 =
   {
@@ -222,7 +192,7 @@ type TelegramConfig__326514849 =
   };
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
-type Timestamps__378717705 = {createdAt : Time__900049286};
+type Time__976142243 = Int;
 type Timestamps__70525832 = {createdAt : Time__900049286};
 type UserProfile__491224006 = {name : Text; socialUrl : ?Text};
 type UserRole__1054455867 = {#admin; #guest; #user};
@@ -230,10 +200,7 @@ type UserVoteTracking__294729650 = {votedNodes : Map__605269027<Text, Bool>};
 type VoteData__617051593 = {downvotes : Nat; upvotes : Nat};
 type WeightedAttribute__233211122 =
   {key : Text; weightedValues : [WeightedValue__469957321]};
-type WeightedAttribute__743330656 =
-  {key : Text; weightedValues : [WeightedValue__477198005]};
 type WeightedValue__469957321 = {value : Text; weight : Nat};
-type WeightedValue__477198005 = {value : Text; weight : Nat};
 actor ({
   stable accessControlState :
     {
@@ -283,8 +250,11 @@ actor ({
       var root : Node__46230540<NodeId__811092033, Nat>;
       var size : Nat__490723111
     };
-  in var curationMap :
-    Map__605269027<NodeId__968231965, OldCuration__1066320036>;
+  stable var curationMap :
+    {
+      var root : Node__46230540<NodeId__811092033, Curation__572080379>;
+      var size : Nat__490723111
+    };
   stable var curationToPublishedGraphId :
     {
       var root : Node__46230540<NodeId__811092033, Text>;
@@ -302,12 +272,22 @@ actor ({
       var root : Node__46230540<NodeId__811092033, ForkedSwarm__273475596>;
       var size : Nat__490723111
     };
-  in var interpretationTokenMap :
-    Map__605269027<NodeId__968231965, OldInterpretationToken__601791729>;
-  in var lawTokenMap :
-    Map__605269027<NodeId__968231965, OldLawToken__93648794>;
-  in var locationMap :
-    Map__605269027<NodeId__968231965, OldLocation__97846908>;
+  stable var interpretationTokenMap :
+    {
+      var root :
+        Node__46230540<NodeId__811092033, InterpretationToken__77411706>;
+      var size : Nat__490723111
+    };
+  stable var lawTokenMap :
+    {
+      var root : Node__46230540<NodeId__811092033, LawToken__181636461>;
+      var size : Nat__490723111
+    };
+  stable var locationMap :
+    {
+      var root : Node__46230540<NodeId__811092033, Location__31265466>;
+      var size : Nat__490723111
+    };
   stable var membershipRequests :
     {
       var root :
@@ -322,11 +302,8 @@ actor ({
     };
   stable var principalByApiKey :
     {var root : Node__46230540<Text, Principal>; var size : Nat__490723111};
-  stable var publishedSourceGraphs :
-    {
-      var root : Node__46230540<Text, PublishedSourceGraphMeta__808509219>;
-      var size : Nat__490723111
-    };
+  in var publishedSourceGraphs :
+    Map__605269027<Text, PublishedSourceGraphMeta_v0__249658681>;
   stable var sourceEdges :
     {
       var root :
@@ -334,7 +311,11 @@ actor ({
                         List__415060402<SourceGraphEdge__199036688>>;
       var size : Nat__490723111
     };
-  in var swarmMap : Map__605269027<NodeId__968231965, OldSwarm__289266322>;
+  stable var swarmMap :
+    {
+      var root : Node__46230540<NodeId__811092033, Swarm__147277083>;
+      var size : Nat__490723111
+    };
   stable var swarmMembers :
     {
       var root : Node__46230540<NodeId__811092033, List__415060402<Principal>>;
