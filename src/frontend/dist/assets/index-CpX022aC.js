@@ -28427,6 +28427,8 @@ const PublishPreviewResult = Record({
     "hierarchyEdgesToCreate": Nat,
     "edgesToCreate": Nat,
     "edgesToUpdate": Nat,
+    "attributesAdded": Nat,
+    "sourcesAdded": Nat,
     "nodesToCreate": Nat,
     "nodesToUpdate": Nat
   }),
@@ -28865,6 +28867,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
       "hierarchyEdgesToCreate": IDL2.Nat,
       "edgesToCreate": IDL2.Nat,
       "edgesToUpdate": IDL2.Nat,
+      "attributesAdded": IDL2.Nat,
+      "sourcesAdded": IDL2.Nat,
       "nodesToCreate": IDL2.Nat,
       "nodesToUpdate": IDL2.Nat
     }),
@@ -107769,6 +107773,16 @@ function PublishConfirmDialog({
   isPublished,
   isLoading
 }) {
+  const [showCostBreakdown, setShowCostBreakdown] = reactExports.useState(false);
+  const perTypeCreateCounts = reactExports.useMemo(() => {
+    const counts = {};
+    for (const op of previewResult.nodeOperations) {
+      if (op.action === "create") {
+        counts[op.nodeType] = (counts[op.nodeType] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [previewResult.nodeOperations]);
   if (!isOpen) return null;
   const { summary, nodeOperations, edgeOperations } = previewResult;
   const noChanges = summary.nodesToCreate === 0 && summary.nodesToUpdate === 0 && summary.edgesToCreate === 0 && summary.edgesToUpdate === 0;
@@ -107819,45 +107833,126 @@ function PublishConfirmDialog({
               children: "⚠ this curation name already exists. your changes will be added to the shared curation."
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "div",
             {
               className: "px-3 py-2 border border-dashed border-border text-xs text-muted-foreground space-y-0.5",
               "data-ocid": "publish_dialog.summary",
-              children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4 flex-wrap", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.nodesToCreate }),
-                  " ",
-                  "new nodes"
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4 flex-wrap", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.nodesToCreate }),
+                    " ",
+                    "new nodes"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.nodesToUpdate }),
+                    " ",
+                    "updated nodes"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.edgesToCreate }),
+                    " ",
+                    "cross-ref new"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.hierarchyEdgesToCreate }),
+                    " ",
+                    "hierarchy new"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.edgesToUpdate }),
+                    " ",
+                    "updated edges"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                    "publish cost:",
+                    " ",
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: (previewResult.buzzCost / 10).toFixed(1) }),
+                    " ",
+                    "buzz",
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "button",
+                      {
+                        type: "button",
+                        className: "text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0",
+                        onClick: () => setShowCostBreakdown((v2) => !v2),
+                        children: showCostBreakdown ? "[hide]" : "[see breakdown]"
+                      }
+                    )
+                  ] })
                 ] }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.nodesToUpdate }),
-                  " ",
-                  "updated nodes"
-                ] }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.edgesToCreate }),
-                  " ",
-                  "cross-ref new"
-                ] }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.hierarchyEdgesToCreate }),
-                  " ",
-                  "hierarchy new"
-                ] }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.edgesToUpdate }),
-                  " ",
-                  "updated edges"
-                ] }),
-                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                  "publish cost:",
-                  " ",
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: (previewResult.buzzCost / 10).toFixed(1) }),
-                  " ",
-                  "buzz"
+                showCostBreakdown && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs font-mono text-muted-foreground space-y-0.5 mt-1 pl-2", children: [
+                  (perTypeCreateCounts.curation ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "curation: ",
+                    perTypeCreateCounts.curation,
+                    " × 1.0 =",
+                    " ",
+                    ((perTypeCreateCounts.curation ?? 0) * 10 / 10).toFixed(
+                      1
+                    )
+                  ] }),
+                  (perTypeCreateCounts.swarm ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "swarm: ",
+                    perTypeCreateCounts.swarm,
+                    " × 2.0 =",
+                    " ",
+                    ((perTypeCreateCounts.swarm ?? 0) * 20 / 10).toFixed(1)
+                  ] }),
+                  (perTypeCreateCounts.location ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "location: ",
+                    perTypeCreateCounts.location,
+                    " × 3.0 =",
+                    " ",
+                    ((perTypeCreateCounts.location ?? 0) * 30 / 10).toFixed(
+                      1
+                    )
+                  ] }),
+                  (perTypeCreateCounts.lawEntity ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "law entity: ",
+                    perTypeCreateCounts.lawEntity,
+                    " × 4.0 =",
+                    " ",
+                    ((perTypeCreateCounts.lawEntity ?? 0) * 40 / 10).toFixed(
+                      1
+                    )
+                  ] }),
+                  (perTypeCreateCounts.interpEntity ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "interp entity: ",
+                    perTypeCreateCounts.interpEntity,
+                    " × 5.0 =",
+                    " ",
+                    ((perTypeCreateCounts.interpEntity ?? 0) * 50 / 10).toFixed(1)
+                  ] }),
+                  (summary.edgesToCreate ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "cross-refs: ",
+                    summary.edgesToCreate,
+                    " × 0.1 =",
+                    " ",
+                    (summary.edgesToCreate / 10).toFixed(1)
+                  ] }),
+                  (summary.attributesToCreate ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "attributes: ",
+                    summary.attributesToCreate,
+                    " × 0.1 =",
+                    " ",
+                    (summary.attributesToCreate / 10).toFixed(1)
+                  ] }),
+                  (summary.sourcesToCreate ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                    "sources: ",
+                    summary.sourcesToCreate,
+                    " × 0.1 =",
+                    " ",
+                    (summary.sourcesToCreate / 10).toFixed(1)
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-dashed border-muted-foreground/40 my-0.5" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-foreground", children: [
+                    "total: ",
+                    (previewResult.buzzCost / 10).toFixed(1),
+                    " buzz"
+                  ] })
                 ] })
-              ] })
+              ]
             }
           ),
           noChanges && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -108005,7 +108100,13 @@ function mapPreviewResult(raw2) {
       nodesToUpdate: Number(raw2.summary.nodesToUpdate),
       edgesToCreate: Number(raw2.summary.edgesToCreate),
       edgesToUpdate: Number(raw2.summary.edgesToUpdate),
-      hierarchyEdgesToCreate: Number(raw2.summary.hierarchyEdgesToCreate)
+      hierarchyEdgesToCreate: Number(raw2.summary.hierarchyEdgesToCreate),
+      attributesToCreate: Number(
+        raw2.summary.attributesAdded ?? 0n
+      ),
+      sourcesToCreate: Number(
+        raw2.summary.sourcesAdded ?? 0n
+      )
     },
     buzzCost: Number(raw2.buzzCost ?? 0n)
   };

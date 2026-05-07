@@ -179,6 +179,8 @@ export interface PublishPreviewResult {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
+        attributesAdded: bigint;
+        sourcesAdded: bigint;
         nodesToCreate: bigint;
         nodesToUpdate: bigint;
     };
@@ -1780,6 +1782,8 @@ function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uin
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
+        attributesAdded: bigint;
+        sourcesAdded: bigint;
         nodesToCreate: bigint;
         nodesToUpdate: bigint;
     };
@@ -1791,6 +1795,8 @@ function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uin
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
+        attributesAdded: bigint;
+        sourcesAdded: bigint;
         nodesToCreate: bigint;
         nodesToUpdate: bigint;
     };

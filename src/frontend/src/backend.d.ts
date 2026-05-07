@@ -97,6 +97,8 @@ export interface PublishPreviewResult {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
         edgesToUpdate: bigint;
+        attributesAdded: bigint;
+        sourcesAdded: bigint;
         nodesToCreate: bigint;
         nodesToUpdate: bigint;
     };

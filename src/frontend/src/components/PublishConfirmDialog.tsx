@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
   AttributeChange,
   EdgeOperation,
@@ -196,6 +196,18 @@ export default function PublishConfirmDialog({
   isPublished,
   isLoading,
 }: Props) {
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
+
+  const perTypeCreateCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const op of previewResult.nodeOperations) {
+      if (op.action === "create") {
+        counts[op.nodeType] = (counts[op.nodeType] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [previewResult.nodeOperations]);
+
   if (!isOpen) return null;
 
   const { summary, nodeOperations, edgeOperations } = previewResult;
@@ -293,8 +305,80 @@ export default function PublishConfirmDialog({
                   {(previewResult.buzzCost / 10).toFixed(1)}
                 </span>{" "}
                 buzz
+                <button
+                  type="button"
+                  className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0"
+                  onClick={() => setShowCostBreakdown((v) => !v)}
+                >
+                  {showCostBreakdown ? "[hide]" : "[see breakdown]"}
+                </button>
               </span>
             </div>
+            {showCostBreakdown && (
+              <div className="text-xs font-mono text-muted-foreground space-y-0.5 mt-1 pl-2">
+                {(perTypeCreateCounts.curation ?? 0) > 0 && (
+                  <div>
+                    curation: {perTypeCreateCounts.curation} × 1.0 ={" "}
+                    {(((perTypeCreateCounts.curation ?? 0) * 10) / 10).toFixed(
+                      1,
+                    )}
+                  </div>
+                )}
+                {(perTypeCreateCounts.swarm ?? 0) > 0 && (
+                  <div>
+                    swarm: {perTypeCreateCounts.swarm} × 2.0 ={" "}
+                    {(((perTypeCreateCounts.swarm ?? 0) * 20) / 10).toFixed(1)}
+                  </div>
+                )}
+                {(perTypeCreateCounts.location ?? 0) > 0 && (
+                  <div>
+                    location: {perTypeCreateCounts.location} × 3.0 ={" "}
+                    {(((perTypeCreateCounts.location ?? 0) * 30) / 10).toFixed(
+                      1,
+                    )}
+                  </div>
+                )}
+                {(perTypeCreateCounts.lawEntity ?? 0) > 0 && (
+                  <div>
+                    law entity: {perTypeCreateCounts.lawEntity} × 4.0 ={" "}
+                    {(((perTypeCreateCounts.lawEntity ?? 0) * 40) / 10).toFixed(
+                      1,
+                    )}
+                  </div>
+                )}
+                {(perTypeCreateCounts.interpEntity ?? 0) > 0 && (
+                  <div>
+                    interp entity: {perTypeCreateCounts.interpEntity} × 5.0 ={" "}
+                    {(
+                      ((perTypeCreateCounts.interpEntity ?? 0) * 50) /
+                      10
+                    ).toFixed(1)}
+                  </div>
+                )}
+                {(summary.edgesToCreate ?? 0) > 0 && (
+                  <div>
+                    cross-refs: {summary.edgesToCreate} × 0.1 ={" "}
+                    {(summary.edgesToCreate / 10).toFixed(1)}
+                  </div>
+                )}
+                {(summary.attributesToCreate ?? 0) > 0 && (
+                  <div>
+                    attributes: {summary.attributesToCreate} × 0.1 ={" "}
+                    {(summary.attributesToCreate / 10).toFixed(1)}
+                  </div>
+                )}
+                {(summary.sourcesToCreate ?? 0) > 0 && (
+                  <div>
+                    sources: {summary.sourcesToCreate} × 0.1 ={" "}
+                    {(summary.sourcesToCreate / 10).toFixed(1)}
+                  </div>
+                )}
+                <div className="border-t border-dashed border-muted-foreground/40 my-0.5" />
+                <div className="text-foreground">
+                  total: {(previewResult.buzzCost / 10).toFixed(1)} buzz
+                </div>
+              </div>
+            )}
           </div>
 
           {noChanges && (

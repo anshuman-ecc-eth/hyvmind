@@ -91,6 +91,8 @@ export interface PublishPreviewResult {
     edgesToCreate: number;
     edgesToUpdate: number;
     hierarchyEdgesToCreate: number;
+    attributesToCreate: number;
+    sourcesToCreate: number;
   };
   buzzCost: number;
 }

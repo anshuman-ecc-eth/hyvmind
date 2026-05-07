@@ -22,7 +22,6 @@ import Runtime "mo:core/Runtime";
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
-import Migration "migration";
 
 
 
@@ -34,7 +33,8 @@ import Migration "migration";
 
 
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -352,6 +352,8 @@ actor {
       edgesToCreate : Nat;
       edgesToUpdate : Nat;
       hierarchyEdgesToCreate : Nat;
+      attributesAdded : Nat;
+      sourcesAdded : Nat;
     };
     buzzCost : Int;
   };
@@ -2546,6 +2548,8 @@ actor {
                     sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
                 };
               } else {
                 nodeOps.add({
@@ -2558,6 +2562,9 @@ actor {
                   sourceChanges = [];
                 });
                 nodesToCreate += 1;
+                locationsToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
@@ -2571,6 +2578,9 @@ actor {
                 sourceChanges = [];
               });
               nodesToCreate += 1;
+              locationsToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -2597,6 +2607,9 @@ actor {
             sourceChanges = [];
           });
           nodesToCreate += 1;
+          locationsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -2665,6 +2678,8 @@ actor {
                     sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
                 };
               } else {
                 nodeOps.add({
@@ -2677,6 +2692,9 @@ actor {
                   sourceChanges = [];
                 });
                 nodesToCreate += 1;
+                lawEntitiesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
@@ -2690,6 +2708,9 @@ actor {
                 sourceChanges = [];
               });
               nodesToCreate += 1;
+              lawEntitiesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -2716,6 +2737,9 @@ actor {
             sourceChanges = [];
           });
           nodesToCreate += 1;
+          lawEntitiesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -2784,6 +2808,8 @@ actor {
                     sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
                 };
               } else {
                 nodeOps.add({
@@ -2796,6 +2822,9 @@ actor {
                   sourceChanges = [];
                 });
                 nodesToCreate += 1;
+                interpEntitiesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
@@ -2809,6 +2838,9 @@ actor {
                 sourceChanges = [];
               });
               nodesToCreate += 1;
+              interpEntitiesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -2835,6 +2867,9 @@ actor {
             sourceChanges = [];
           });
           nodesToCreate += 1;
+          interpEntitiesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -2971,6 +3006,8 @@ actor {
         edgesToCreate;
         edgesToUpdate;
         hierarchyEdgesToCreate;
+        attributesAdded;
+        sourcesAdded;
       };
       buzzCost;
     };

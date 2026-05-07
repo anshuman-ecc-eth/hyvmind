@@ -90,6 +90,14 @@ function mapPreviewResult(
       edgesToCreate: Number(raw.summary.edgesToCreate),
       edgesToUpdate: Number(raw.summary.edgesToUpdate),
       hierarchyEdgesToCreate: Number(raw.summary.hierarchyEdgesToCreate),
+      attributesToCreate: Number(
+        (raw.summary as unknown as { attributesAdded?: bigint })
+          .attributesAdded ?? 0n,
+      ),
+      sourcesToCreate: Number(
+        (raw.summary as unknown as { sourcesAdded?: bigint }).sourcesAdded ??
+          0n,
+      ),
     },
     buzzCost: Number((raw as unknown as { buzzCost?: bigint }).buzzCost ?? 0n),
   };

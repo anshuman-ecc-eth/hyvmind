@@ -99,11 +99,13 @@ type PublishPreviewResult =
    nodeOperations: vec NodeOperation;
    summary:
     record {
+      attributesAdded: nat;
       edgesToCreate: nat;
       edgesToUpdate: nat;
       hierarchyEdgesToCreate: nat;
       nodesToCreate: nat;
       nodesToUpdate: nat;
+      sourcesAdded: nat;
     };
  };
 type PublishCommitResult = 
