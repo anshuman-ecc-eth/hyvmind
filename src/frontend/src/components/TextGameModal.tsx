@@ -93,7 +93,7 @@ type Phase =
   | { type: "idle" }
   | { type: "settings" }
   | { type: "leaderboard" }
-  | { type: "nameEntry"; score: number }
+  | { type: "generating" }
   | { type: "intro"; step: number }
   | { type: "game1" }
   | { type: "postGame1"; step: number }
@@ -360,118 +360,6 @@ function LeaderboardScreen({
       >
         {"> Back"}
       </button>
-    </div>
-  );
-}
-
-// ── Name Entry Screen ──────────────────────────────────────────────────────────
-
-interface NameEntryScreenProps {
-  score: number;
-  onSubmit: (name: string) => void;
-}
-
-function NameEntryScreen({ score, onSubmit }: NameEntryScreenProps) {
-  const [name, setName] = useState("");
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && name.length > 0) {
-        onSubmit(name.toUpperCase());
-      } else if (e.key === "Backspace") {
-        setName((prev) => prev.slice(0, -1));
-      } else if (
-        e.key.length === 1 &&
-        /^[a-zA-Z0-9]$/.test(e.key) &&
-        name.length < 10
-      ) {
-        setName((prev) => (prev + e.key).toUpperCase());
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [name, onSubmit]);
-
-  const paddedName = name.padEnd(10, "_");
-
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
-      <div
-        className="text-foreground"
-        style={{
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.8rem",
-          letterSpacing: "0.1em",
-        }}
-      >
-        NEW HIGH SCORE!
-      </div>
-      <div
-        className="text-foreground"
-        style={{
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "1.2rem",
-        }}
-      >
-        {score}
-      </div>
-      <div className="flex flex-col items-center gap-3">
-        <input
-          type="text"
-          maxLength={10}
-          className="opacity-0 absolute"
-          value={name}
-          onChange={(e) => {
-            const val = e.target.value.toUpperCase().slice(0, 10);
-            setName(val);
-          }}
-        />
-        <div
-          className="text-muted-foreground"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55rem",
-            letterSpacing: "0.15em",
-          }}
-        >
-          ENTER NAME:
-        </div>
-        <div
-          className="text-foreground"
-          data-ocid="text_game.name_entry.input"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.65rem",
-            letterSpacing: "0.1em",
-          }}
-        >
-          {`> ${paddedName}`}
-        </div>
-        <button
-          type="button"
-          className="text-foreground text-xs mt-2 hover:text-muted-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            letterSpacing: "0.1em",
-          }}
-          disabled={name.length === 0}
-          onClick={() => {
-            if (name.length > 0) onSubmit(name);
-          }}
-        >
-          Submit
-        </button>
-      </div>
-      <div
-        className="text-muted-foreground"
-        style={{
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.45rem",
-          letterSpacing: "0.15em",
-        }}
-      >
-        PRESS ENTER OR TAP SUBMIT TO SAVE
-      </div>
     </div>
   );
 }
@@ -989,7 +877,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   });
 
   // Leaderboard (persisted)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
+  const [leaderboard, _setLeaderboard] = useState<LeaderboardEntry[]>(() => {
     const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
     return saved ? (JSON.parse(saved) as LeaderboardEntry[]) : [];
   });
@@ -1008,8 +896,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     return audio;
   });
 
-  // Pending score awaiting name entry
-  const [pendingScore, setPendingScore] = useState<number | null>(null);
+  // Score awaiting auto-generation of buzz secret
+  const [generatingScore, setGeneratingScore] = useState<number | null>(null);
 
   // ── Persist settings & leaderboard ────────────────────────────────────────
 
@@ -1072,8 +960,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   }, []);
 
   const handleChessComplete = useCallback((score: number) => {
-    setPendingScore(score);
-    setPhase({ type: "nameEntry", score });
+    setGeneratingScore(score);
+    setPhase({ type: "generating" });
   }, []);
 
   const handleStartWordle = useCallback(() => {
@@ -1081,41 +969,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   }, []);
 
   const handleWordleComplete = useCallback((score: number) => {
-    setPendingScore(score);
-    setPhase({ type: "nameEntry", score });
+    setGeneratingScore(score);
+    setPhase({ type: "generating" });
   }, []);
 
   const handleCloseSubScreen = useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
-
-  const handleNameSubmit = useCallback(
-    async (name: string) => {
-      if (pendingScore !== null) {
-        const newEntry: LeaderboardEntry = {
-          name,
-          score: pendingScore,
-          date: new Date().toISOString(),
-        };
-        setLeaderboard((prev) =>
-          [...prev, newEntry].sort((a, b) => b.score - a.score).slice(0, 10),
-        );
-        // Generate a Buzz secret for the score
-        try {
-          const secret = await generateBuzzSecret.mutateAsync(
-            BigInt(Math.round(pendingScore)),
-          );
-          setSecretCode(secret);
-          setShowScoreConfirmation(true);
-        } catch (err) {
-          console.error("Failed to generate buzz secret:", err);
-        }
-        setPendingScore(null);
-      }
-      setPhase({ type: "idle" });
-    },
-    [pendingScore, generateBuzzSecret],
-  );
 
   // ── Phase: idle → intro (or game1 if skipMessages) ────────────────────────
 
@@ -1155,16 +1015,40 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         const score3 = (e.data.score as number) || 0;
         setGameScores((prev) => {
           const totalScore = prev.game1 + prev.game2 + score3;
-          const newScores = { ...prev, game3: score3 };
-          setPendingScore(totalScore);
-          setPhase({ type: "nameEntry", score: totalScore });
-          return newScores;
+          setGeneratingScore(totalScore);
+          setPhase({ type: "generating" });
+          return { ...prev, game3: score3 };
         });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [settings]);
+
+  // ── Auto-generate buzz secret when generatingScore is set ─────────────────
+
+  useEffect(() => {
+    if (generatingScore === null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const secret = await generateBuzzSecret.mutateAsync(
+          BigInt(Math.round(generatingScore)),
+        );
+        if (!cancelled) {
+          setSecretCode(secret);
+          setShowScoreConfirmation(true);
+          setPhase({ type: "idle" });
+        }
+      } catch (err) {
+        if (!cancelled) console.error("Failed to generate buzz secret:", err);
+      }
+      if (!cancelled) setGeneratingScore(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [generatingScore, generateBuzzSecret]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -1398,9 +1282,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           />
         );
 
-      case "nameEntry":
+      case "generating":
         return (
-          <NameEntryScreen score={phase.score} onSubmit={handleNameSubmit} />
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none">
+            <div
+              className="text-foreground"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65rem",
+                letterSpacing: "0.1em",
+              }}
+            >
+              Generating secret...
+            </div>
+          </div>
         );
 
       case "intro":

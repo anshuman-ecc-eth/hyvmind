@@ -184,6 +184,7 @@ type WeightedAttribute__233211122 =
 type WeightedValue__469957321 = {value : Text; weight : Nat};
 actor {
   stable BUZZ_DECIMALS : Int;
+  stable HEX_CHARS : [Text];
   stable accessControlState :
     {
       var adminAssigned : Bool;

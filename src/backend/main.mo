@@ -12,6 +12,8 @@ import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Set "mo:core/Set";
 import Blob "mo:core/Blob";
+import Random "mo:core/Random";
+import Nat8 "mo:core/Nat8";
 
 
 import AccessControl "mo:caffeineai-authorization/access-control";
@@ -42,6 +44,7 @@ actor {
   type Tag = Text;
   type BuzzScore = Int;
   let BUZZ_DECIMALS : Int = 10;
+  let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 
   type BuzzSecretRecord = {
     points : Int;
@@ -1633,8 +1636,22 @@ actor {
     buzzScores.add(user, currentBalance + delta);
   };
 
+  func blobToHex(b : Blob, start : Nat, len : Nat) : Text {
+    let bytes = b.toArray();
+    var result = "";
+    var i = start;
+    let end = if (start + len > bytes.size()) bytes.size() else start + len;
+    while (i < end) {
+      let byte = bytes[i];
+      result #= HEX_CHARS[(byte >> 4).toNat()] # HEX_CHARS[(byte & 0x0f).toNat()];
+      i += 1;
+    };
+    result
+  };
+
   public shared (msg) func generateBuzzSecret(score : Int) : async Text {
-    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText();
+    let hex = blobToHex(await Random.blob(), 0, 8);
+    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText() # "-" # hex;
     let now = Time.now();
     let expiryTime = now + 86_400_000_000_000;
     let record : BuzzSecretRecord = {
@@ -1654,10 +1671,17 @@ actor {
     let codesBuffer = List.empty<Text>();
     let now = Time.now();
     let expiryTime = now + validDays * 86_400_000_000_000;
+    let randomBlob = await Random.blob();
+    let baseBytes = randomBlob.toArray();
     let points = 100 * BUZZ_DECIMALS;
     var i = 0;
     while (i < count) {
-      let secretId = "invite-" # now.toText() # "-" # i.toText();
+      let offset = (i * 4) % 28;
+      let b0 = baseBytes[offset] ^ Nat8.fromNat(i % 256);
+      let b1 = baseBytes[offset + 1] ^ Nat8.fromNat((i / 256) % 256);
+      let hex = HEX_CHARS[(b0 >> 4).toNat()] # HEX_CHARS[(b0 & 0x0f).toNat()]
+             # HEX_CHARS[(b1 >> 4).toNat()] # HEX_CHARS[(b1 & 0x0f).toNat()];
+      let secretId = "invite-" # msg.caller.toText() # "-" # now.toText() # "-" # i.toText() # "-" # hex;
       let rec : BuzzSecretRecord = {
         points;
         createdAt = now;

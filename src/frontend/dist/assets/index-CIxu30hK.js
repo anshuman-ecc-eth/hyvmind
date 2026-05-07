@@ -56382,7 +56382,7 @@ function CreateBuzzModal({ isOpen, onClose }) {
               id: "buzz-secret-input",
               value: secret,
               onChange: (e2) => setSecret(e2.target.value),
-              placeholder: "buzz-xxxxxx-xxxxxxxxxx",
+              placeholder: "buzz-xxxxxx-xxxxxxxxxx-xxxxxxxx",
               className: "font-mono text-sm",
               disabled: redeemBuzzSecret.isPending,
               "data-ocid": "create_buzz.input",
@@ -80564,116 +80564,6 @@ function LeaderboardScreen({
     )
   ] });
 }
-function NameEntryScreen({ score, onSubmit }) {
-  const [name, setName] = reactExports.useState("");
-  reactExports.useEffect(() => {
-    const handler = (e2) => {
-      if (e2.key === "Enter" && name.length > 0) {
-        onSubmit(name.toUpperCase());
-      } else if (e2.key === "Backspace") {
-        setName((prev) => prev.slice(0, -1));
-      } else if (e2.key.length === 1 && /^[a-zA-Z0-9]$/.test(e2.key) && name.length < 10) {
-        setName((prev) => (prev + e2.key).toUpperCase());
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [name, onSubmit]);
-  const paddedName = name.padEnd(10, "_");
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-8 select-none", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-foreground",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.8rem",
-          letterSpacing: "0.1em"
-        },
-        children: "NEW HIGH SCORE!"
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-foreground",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "1.2rem"
-        },
-        children: score
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "input",
-        {
-          type: "text",
-          maxLength: 10,
-          className: "opacity-0 absolute",
-          value: name,
-          onChange: (e2) => {
-            const val = e2.target.value.toUpperCase().slice(0, 10);
-            setName(val);
-          }
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "text-muted-foreground",
-          style: {
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55rem",
-            letterSpacing: "0.15em"
-          },
-          children: "ENTER NAME:"
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "text-foreground",
-          "data-ocid": "text_game.name_entry.input",
-          style: {
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.65rem",
-            letterSpacing: "0.1em"
-          },
-          children: `> ${paddedName}`
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          className: "text-foreground text-xs mt-2 hover:text-muted-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-          style: {
-            fontFamily: '"Press Start 2P", monospace',
-            letterSpacing: "0.1em"
-          },
-          disabled: name.length === 0,
-          onClick: () => {
-            if (name.length > 0) onSubmit(name);
-          },
-          children: "Submit"
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-muted-foreground",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.45rem",
-          letterSpacing: "0.15em"
-        },
-        children: "PRESS ENTER OR TAP SUBMIT TO SAVE"
-      }
-    )
-  ] });
-}
 function StartScreen({
   onStart,
   onChess,
@@ -81094,7 +80984,7 @@ function TextGameModal({ onComplete }) {
     const saved = localStorage.getItem("hyvmind_textgame_settings");
     return saved ? JSON.parse(saved) : { skipMessages: false, music: "off" };
   });
-  const [leaderboard, setLeaderboard] = reactExports.useState(() => {
+  const [leaderboard, _setLeaderboard] = reactExports.useState(() => {
     const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
     return saved ? JSON.parse(saved) : [];
   });
@@ -81108,7 +80998,7 @@ function TextGameModal({ onComplete }) {
     audio.loop = true;
     return audio;
   });
-  const [pendingScore, setPendingScore] = reactExports.useState(null);
+  const [generatingScore, setGeneratingScore] = reactExports.useState(null);
   reactExports.useEffect(() => {
     localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
   }, [settings]);
@@ -81153,45 +81043,19 @@ function TextGameModal({ onComplete }) {
     setPhase({ type: "chess" });
   }, []);
   const handleChessComplete = reactExports.useCallback((score) => {
-    setPendingScore(score);
-    setPhase({ type: "nameEntry", score });
+    setGeneratingScore(score);
+    setPhase({ type: "generating" });
   }, []);
   const handleStartWordle = reactExports.useCallback(() => {
     setPhase({ type: "wordle" });
   }, []);
   const handleWordleComplete = reactExports.useCallback((score) => {
-    setPendingScore(score);
-    setPhase({ type: "nameEntry", score });
+    setGeneratingScore(score);
+    setPhase({ type: "generating" });
   }, []);
   const handleCloseSubScreen = reactExports.useCallback(() => {
     setPhase({ type: "idle" });
   }, []);
-  const handleNameSubmit = reactExports.useCallback(
-    async (name) => {
-      if (pendingScore !== null) {
-        const newEntry = {
-          name,
-          score: pendingScore,
-          date: (/* @__PURE__ */ new Date()).toISOString()
-        };
-        setLeaderboard(
-          (prev) => [...prev, newEntry].sort((a2, b2) => b2.score - a2.score).slice(0, 10)
-        );
-        try {
-          const secret = await generateBuzzSecret.mutateAsync(
-            BigInt(Math.round(pendingScore))
-          );
-          setSecretCode(secret);
-          setShowScoreConfirmation(true);
-        } catch (err) {
-          console.error("Failed to generate buzz secret:", err);
-        }
-        setPendingScore(null);
-      }
-      setPhase({ type: "idle" });
-    },
-    [pendingScore, generateBuzzSecret]
-  );
   const handleStart = reactExports.useCallback(() => {
     if (settings.skipMessages) {
       setPhase({ type: "game1" });
@@ -81226,16 +81090,37 @@ function TextGameModal({ onComplete }) {
         const score3 = e2.data.score || 0;
         setGameScores((prev) => {
           const totalScore = prev.game1 + prev.game2 + score3;
-          const newScores = { ...prev, game3: score3 };
-          setPendingScore(totalScore);
-          setPhase({ type: "nameEntry", score: totalScore });
-          return newScores;
+          setGeneratingScore(totalScore);
+          setPhase({ type: "generating" });
+          return { ...prev, game3: score3 };
         });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [settings]);
+  reactExports.useEffect(() => {
+    if (generatingScore === null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const secret = await generateBuzzSecret.mutateAsync(
+          BigInt(Math.round(generatingScore))
+        );
+        if (!cancelled) {
+          setSecretCode(secret);
+          setShowScoreConfirmation(true);
+          setPhase({ type: "idle" });
+        }
+      } catch (err) {
+        if (!cancelled) console.error("Failed to generate buzz secret:", err);
+      }
+      if (!cancelled) setGeneratingScore(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [generatingScore, generateBuzzSecret]);
   const handleAdvance = reactExports.useCallback(() => {
     if (!scrambleComplete) return;
     switch (phase.type) {
@@ -81450,8 +81335,19 @@ function TextGameModal({ onComplete }) {
             heading: "Leaderboard"
           }
         );
-      case "nameEntry":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx(NameEntryScreen, { score: phase.score, onSubmit: handleNameSubmit });
+      case "generating":
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 flex flex-col items-center justify-center gap-4 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "text-foreground",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.65rem",
+              letterSpacing: "0.1em"
+            },
+            children: "Generating secret..."
+          }
+        ) });
       case "intro":
       case "postGame1":
       case "choice1":

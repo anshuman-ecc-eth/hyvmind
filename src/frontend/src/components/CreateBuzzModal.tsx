@@ -94,7 +94,7 @@ export function CreateBuzzModal({ isOpen, onClose }: CreateBuzzModalProps) {
                   id="buzz-secret-input"
                   value={secret}
                   onChange={(e) => setSecret(e.target.value)}
-                  placeholder="buzz-xxxxxx-xxxxxxxxxx"
+                  placeholder="buzz-xxxxxx-xxxxxxxxxx-xxxxxxxx"
                   className="font-mono text-sm"
                   disabled={redeemBuzzSecret.isPending}
                   data-ocid="create_buzz.input"
