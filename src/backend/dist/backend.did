@@ -120,6 +120,7 @@ type PublishCommitResult =
     };
    success:
     record {
+      buzzCost: int;
       message: text;
       nodeMappings: vec record {
                           text;

@@ -28201,6 +28201,7 @@ const PublishCommitResult = Variant({
   }),
   "success": Record({
     "publishedSourceGraphId": Opt(Text),
+    "buzzCost": Int,
     "message": Text,
     "nodeMappings": Vec(Tuple(Text, NodeId))
   })
@@ -28647,6 +28648,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     }),
     "success": IDL2.Record({
       "publishedSourceGraphId": IDL2.Opt(IDL2.Text),
+      "buzzCost": IDL2.Int,
       "message": IDL2.Text,
       "nodeMappings": IDL2.Vec(IDL2.Tuple(IDL2.Text, NodeId2))
     })
@@ -29988,6 +29990,7 @@ function from_candid_record_n10(_uploadFile, _downloadFile, value) {
 function from_candid_record_n12(_uploadFile, _downloadFile, value) {
   return {
     publishedSourceGraphId: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.publishedSourceGraphId)),
+    buzzCost: value.buzzCost,
     message: value.message,
     nodeMappings: value.nodeMappings
   };
@@ -81983,7 +81986,8 @@ function usePublishGraph() {
           type: "success",
           nodeMappings: rawResult.success.nodeMappings,
           message: rawResult.success.message,
-          publishedSourceGraphId: rawResult.success.publishedSourceGraphId
+          publishedSourceGraphId: rawResult.success.publishedSourceGraphId,
+          buzzCost: Number(rawResult.success.buzzCost)
         };
         const newMappings = rawResult.success.nodeMappings.map(([localName, backendId]) => {
           var _a3;
@@ -82009,6 +82013,7 @@ function usePublishGraph() {
         queryClient2.invalidateQueries({ queryKey: ["graphData"] });
         queryClient2.invalidateQueries({ queryKey: ["allGraphData"] });
         queryClient2.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
+        queryClient2.invalidateQueries({ queryKey: ["myBuzzBalance"] });
         if (!isUpdate && rawResult.success.publishedSourceGraphId) {
           const graphId = rawResult.success.publishedSourceGraphId;
           const graphName = graph.name;
@@ -107793,6 +107798,18 @@ function PublishConfirmDialog({
   const nodesToUpdate = nodeOperations.filter((op) => op.action === "update");
   const edgesToCreate = edgeOperations.filter((op) => op.action === "create");
   const edgesToUpdate = edgeOperations.filter((op) => op.action === "update");
+  const nodesWithNewAttributes = nodeOperations.filter(
+    (op) => {
+      var _a3;
+      return op.action === "create" ? op.attributes.length > 0 : (((_a3 = op.attributeChanges) == null ? void 0 : _a3.length) ?? 0) > 0;
+    }
+  );
+  const nodesWithNewSources = nodeOperations.filter(
+    (op) => {
+      var _a3;
+      return (((_a3 = op.sourceChanges) == null ? void 0 : _a3.length) ?? 0) > 0;
+    }
+  );
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",
     {
@@ -108005,6 +108022,73 @@ function PublishConfirmDialog({
                     op
                   },
                   `${op.sourceName}-${op.targetName}`
+                ))
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              CollapsibleSection,
+              {
+                title: "attributes to add",
+                count: nodesWithNewAttributes.length,
+                children: nodesWithNewAttributes.map((op) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "div",
+                  {
+                    className: "py-1.5 border-b border-dashed border-border/40 last:border-0",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs font-mono text-foreground", children: [
+                        op.localName,
+                        " ",
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType })
+                      ] }),
+                      op.action === "create" ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: op.attributes.map(([k2, vals]) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                        "div",
+                        {
+                          className: "text-[10px] text-muted-foreground",
+                          children: [
+                            "+ ",
+                            k2,
+                            ": ",
+                            vals.join(", ")
+                          ]
+                        },
+                        k2
+                      )) }) : /* @__PURE__ */ jsxRuntimeExports.jsx(AttributeChangesView, { changes: op.attributeChanges ?? [] })
+                    ]
+                  },
+                  op.localName
+                ))
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              CollapsibleSection,
+              {
+                title: "sources to add",
+                count: nodesWithNewSources.length,
+                children: nodesWithNewSources.map((op) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "div",
+                  {
+                    className: "py-1.5 border-b border-dashed border-border/40 last:border-0",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs font-mono text-foreground", children: [
+                        op.localName,
+                        " ",
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType })
+                      ] }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: (op.sourceChanges ?? []).map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                        "div",
+                        {
+                          className: "text-[10px] text-muted-foreground",
+                          children: [
+                            "+ ",
+                            s2.name,
+                            s2.url ? ` (${s2.url})` : ""
+                          ]
+                        },
+                        s2.name
+                      )) })
+                    ]
+                  },
+                  op.localName
                 ))
               }
             )
@@ -108329,6 +108413,9 @@ function SourcesView() {
         setIsDialogOpen(false);
         setCommitSuccessId(previewGraph.id);
         setPreviewGraph(null);
+        ue$1.success(
+          `Graph ${isUpdate ? "updated" : "published"} successfully. ${(result.buzzCost / 10).toFixed(1)} Buzz deducted.`
+        );
       } else {
         setCommitError(result.message);
       }

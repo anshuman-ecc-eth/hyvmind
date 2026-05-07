@@ -226,6 +226,15 @@ export default function PublishConfirmDialog({
   const edgesToCreate = edgeOperations.filter((op) => op.action === "create");
   const edgesToUpdate = edgeOperations.filter((op) => op.action === "update");
 
+  const nodesWithNewAttributes = nodeOperations.filter((op) =>
+    op.action === "create"
+      ? op.attributes.length > 0
+      : (op.attributeChanges?.length ?? 0) > 0,
+  );
+  const nodesWithNewSources = nodeOperations.filter(
+    (op) => (op.sourceChanges?.length ?? 0) > 0,
+  );
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -431,6 +440,63 @@ export default function PublishConfirmDialog({
                   key={`${op.sourceName}-${op.targetName}`}
                   op={op}
                 />
+              ))}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="attributes to add"
+              count={nodesWithNewAttributes.length}
+            >
+              {nodesWithNewAttributes.map((op) => (
+                <div
+                  key={op.localName}
+                  className="py-1.5 border-b border-dashed border-border/40 last:border-0"
+                >
+                  <div className="text-xs font-mono text-foreground">
+                    {op.localName} <NodeTypeBadge type={op.nodeType} />
+                  </div>
+                  {op.action === "create" ? (
+                    <div className="mt-0.5 pl-2 space-y-0.5">
+                      {op.attributes.map(([k, vals]) => (
+                        <div
+                          key={k}
+                          className="text-[10px] text-muted-foreground"
+                        >
+                          + {k}: {vals.join(", ")}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <AttributeChangesView changes={op.attributeChanges ?? []} />
+                  )}
+                </div>
+              ))}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="sources to add"
+              count={nodesWithNewSources.length}
+            >
+              {nodesWithNewSources.map((op) => (
+                <div
+                  key={op.localName}
+                  className="py-1.5 border-b border-dashed border-border/40 last:border-0"
+                >
+                  <div className="text-xs font-mono text-foreground">
+                    {op.localName} <NodeTypeBadge type={op.nodeType} />
+                  </div>
+                  <div className="mt-0.5 pl-2 space-y-0.5">
+                    {(op.sourceChanges ?? []).map((s) => (
+                      <div
+                        key={s.name}
+                        className="text-[10px] text-muted-foreground"
+                      >
+                        + {s.name}
+                        {s.url ? ` (${s.url})` : ""}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </CollapsibleSection>
           </div>

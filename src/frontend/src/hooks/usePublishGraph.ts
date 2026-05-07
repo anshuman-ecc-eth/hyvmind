@@ -18,6 +18,7 @@ export type PublishCommitResult =
       nodeMappings: [string, string][];
       message: string;
       publishedSourceGraphId?: string;
+      buzzCost: number;
     }
   | {
       type: "error";
@@ -152,10 +153,26 @@ export function usePublishGraph() {
         "🔵 [PUBLISH] full input.edges:",
         JSON.stringify(input.edges, null, 2),
       );
-      const rawResult = await actor.commitPublishSourceGraph(
+      const rawResult = (await actor.commitPublishSourceGraph(
         input,
         existingMappings,
-      );
+      )) as
+        | {
+            __kind__: "success";
+            success: {
+              publishedSourceGraphId?: string;
+              message: string;
+              nodeMappings: [string, string][];
+              buzzCost: bigint;
+            };
+          }
+        | {
+            __kind__: "error";
+            error: {
+              message: string;
+              failedAt?: { name: string; nodeType: string };
+            };
+          };
 
       let result: PublishCommitResult;
 
@@ -165,6 +182,7 @@ export function usePublishGraph() {
           nodeMappings: rawResult.success.nodeMappings,
           message: rawResult.success.message,
           publishedSourceGraphId: rawResult.success.publishedSourceGraphId,
+          buzzCost: Number(rawResult.success.buzzCost),
         };
 
         const newMappings: PublishedNodeInfo[] =
@@ -193,6 +211,7 @@ export function usePublishGraph() {
         queryClient.invalidateQueries({ queryKey: ["graphData"] });
         queryClient.invalidateQueries({ queryKey: ["allGraphData"] });
         queryClient.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
+        queryClient.invalidateQueries({ queryKey: ["myBuzzBalance"] });
 
         // After a brand-new publish, generate truchet artwork in the background
         if (!isUpdate && rawResult.success.publishedSourceGraphId) {

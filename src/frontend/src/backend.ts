@@ -214,6 +214,7 @@ export type PublishCommitResult = {
     __kind__: "success";
     success: {
         publishedSourceGraphId?: string;
+        buzzCost: bigint;
         message: string;
         nodeMappings: Array<[string, NodeId]>;
     };
@@ -1495,15 +1496,18 @@ function from_candid_record_n10(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     publishedSourceGraphId: [] | [string];
+    buzzCost: bigint;
     message: string;
     nodeMappings: Array<[string, _NodeId]>;
 }): {
     publishedSourceGraphId?: string;
+    buzzCost: bigint;
     message: string;
     nodeMappings: Array<[string, NodeId]>;
 } {
     return {
         publishedSourceGraphId: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.publishedSourceGraphId)),
+        buzzCost: value.buzzCost,
         message: value.message,
         nodeMappings: value.nodeMappings
     };
@@ -2100,6 +2104,7 @@ function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } | {
     success: {
         publishedSourceGraphId: [] | [string];
+        buzzCost: bigint;
         message: string;
         nodeMappings: Array<[string, _NodeId]>;
     };
@@ -2116,6 +2121,7 @@ function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uin
     __kind__: "success";
     success: {
         publishedSourceGraphId?: string;
+        buzzCost: bigint;
         message: string;
         nodeMappings: Array<[string, NodeId]>;
     };

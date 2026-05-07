@@ -46,6 +46,7 @@ export const PublishCommitResult = IDL.Variant({
   }),
   'success' : IDL.Record({
     'publishedSourceGraphId' : IDL.Opt(IDL.Text),
+    'buzzCost' : IDL.Int,
     'message' : IDL.Text,
     'nodeMappings' : IDL.Vec(IDL.Tuple(IDL.Text, NodeId)),
   }),
@@ -496,6 +497,7 @@ export const idlFactory = ({ IDL }) => {
     }),
     'success' : IDL.Record({
       'publishedSourceGraphId' : IDL.Opt(IDL.Text),
+      'buzzCost' : IDL.Int,
       'message' : IDL.Text,
       'nodeMappings' : IDL.Vec(IDL.Tuple(IDL.Text, NodeId)),
     }),

@@ -177,6 +177,7 @@ export type PublishCommitResult = {
   {
     'success' : {
       'publishedSourceGraphId' : [] | [string],
+      'buzzCost' : bigint,
       'message' : string,
       'nodeMappings' : Array<[string, NodeId]>,
     }

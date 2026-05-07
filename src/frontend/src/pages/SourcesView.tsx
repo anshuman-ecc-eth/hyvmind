@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import FilterPanel from "../components/FilterPanel";
 import NodeDetailsModal from "../components/NodeDetailsModal";
 import PublishConfirmDialog from "../components/PublishConfirmDialog";
@@ -242,6 +243,10 @@ export default function SourcesView() {
         setIsDialogOpen(false);
         setCommitSuccessId(previewGraph.id);
         setPreviewGraph(null);
+        toast.success(
+          `Graph ${isUpdate ? "updated" : "published"} successfully. ` +
+            `${(result.buzzCost / 10).toFixed(1)} Buzz deducted.`,
+        );
       } else {
         setCommitError(result.message);
       }

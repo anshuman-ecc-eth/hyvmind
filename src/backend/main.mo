@@ -363,6 +363,7 @@ actor {
       nodeMappings : [(Text, NodeId)];
       message : Text;
       publishedSourceGraphId : ?Text;
+      buzzCost : Int;
     };
     #error : {
       message : Text;
@@ -2298,8 +2299,8 @@ actor {
                   backendId = null;
                   parentName = null;
                   action = #create;
-                  attributes = node.attributes;
-                  sourceChanges = [];
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
                 curationsToCreate += 1;
@@ -2315,8 +2316,8 @@ actor {
                 backendId = ?existingId;
                 parentName = null;
                 action = #create;
-                attributes = node.attributes;
-                sourceChanges = [];
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
               });
               nodesToCreate += 1;
               curationsToCreate += 1;
@@ -2343,8 +2344,8 @@ actor {
             backendId = null;
             parentName = null;
             action = #create;
-            attributes = node.attributes;
-            sourceChanges = [];
+             attributes = node.attributes;
+             sourceChanges = node.sources;
           });
           nodesToCreate += 1;
           curationsToCreate += 1;
@@ -2428,8 +2429,8 @@ actor {
                   backendId = null;
                   parentName = node.parentName;
                   action = #create;
-                  attributes = node.attributes;
-                  sourceChanges = [];
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
                 swarmsToCreate += 1;
@@ -2444,8 +2445,8 @@ actor {
                 backendId = ?existingId;
                 parentName = node.parentName;
                 action = #create;
-                attributes = node.attributes;
-                sourceChanges = [];
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
               });
               nodesToCreate += 1;
               swarmsToCreate += 1;
@@ -2473,8 +2474,8 @@ actor {
             backendId = null;
             parentName = node.parentName;
             action = #create;
-            attributes = node.attributes;
-            sourceChanges = [];
+             attributes = node.attributes;
+             sourceChanges = node.sources;
           });
           nodesToCreate += 1;
           swarmsToCreate += 1;
@@ -2558,8 +2559,8 @@ actor {
                   backendId = null;
                   parentName = node.parentName;
                   action = #create;
-                  attributes = node.attributes;
-                  sourceChanges = [];
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
                 locationsToCreate += 1;
@@ -2574,8 +2575,8 @@ actor {
                 backendId = ?existingId;
                 parentName = node.parentName;
                 action = #create;
-                attributes = node.attributes;
-                sourceChanges = [];
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
               });
               nodesToCreate += 1;
               locationsToCreate += 1;
@@ -2603,8 +2604,8 @@ actor {
             backendId = null;
             parentName = node.parentName;
             action = #create;
-            attributes = node.attributes;
-            sourceChanges = [];
+             attributes = node.attributes;
+             sourceChanges = node.sources;
           });
           nodesToCreate += 1;
           locationsToCreate += 1;
@@ -2688,8 +2689,8 @@ actor {
                   backendId = null;
                   parentName = node.parentName;
                   action = #create;
-                  attributes = node.attributes;
-                  sourceChanges = [];
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
                 lawEntitiesToCreate += 1;
@@ -2704,8 +2705,8 @@ actor {
                 backendId = ?existingId;
                 parentName = node.parentName;
                 action = #create;
-                attributes = node.attributes;
-                sourceChanges = [];
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
               });
               nodesToCreate += 1;
               lawEntitiesToCreate += 1;
@@ -2733,8 +2734,8 @@ actor {
             backendId = null;
             parentName = node.parentName;
             action = #create;
-            attributes = node.attributes;
-            sourceChanges = [];
+             attributes = node.attributes;
+             sourceChanges = node.sources;
           });
           nodesToCreate += 1;
           lawEntitiesToCreate += 1;
@@ -2818,8 +2819,8 @@ actor {
                   backendId = null;
                   parentName = node.parentName;
                   action = #create;
-                  attributes = node.attributes;
-                  sourceChanges = [];
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
                 interpEntitiesToCreate += 1;
@@ -2834,8 +2835,8 @@ actor {
                 backendId = ?existingId;
                 parentName = node.parentName;
                 action = #create;
-                attributes = node.attributes;
-                sourceChanges = [];
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
               });
               nodesToCreate += 1;
               interpEntitiesToCreate += 1;
@@ -2863,8 +2864,8 @@ actor {
             backendId = null;
             parentName = node.parentName;
             action = #create;
-            attributes = node.attributes;
-            sourceChanges = [];
+             attributes = node.attributes;
+             sourceChanges = node.sources;
           });
           nodesToCreate += 1;
           interpEntitiesToCreate += 1;
@@ -3938,6 +3939,7 @@ actor {
       nodeMappings = nodeMappings.toArray();
       message = "Published successfully";
       publishedSourceGraphId = ?thePublishedId;
+      buzzCost = publishCost;
     });
   };
 

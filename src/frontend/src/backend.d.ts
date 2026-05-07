@@ -132,6 +132,7 @@ export type PublishCommitResult = {
     __kind__: "success";
     success: {
         publishedSourceGraphId?: string;
+        buzzCost: bigint;
         message: string;
         nodeMappings: Array<[string, NodeId]>;
     };
