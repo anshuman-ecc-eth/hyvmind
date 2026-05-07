@@ -92,6 +92,7 @@ export interface PublishPreviewResult {
     edgesToUpdate: number;
     hierarchyEdgesToCreate: number;
   };
+  buzzCost: number;
 }
 
 export interface ContentVersionInfo {

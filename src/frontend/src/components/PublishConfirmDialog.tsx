@@ -287,6 +287,13 @@ export default function PublishConfirmDialog({
                 <span className="text-amber-600">{summary.edgesToUpdate}</span>{" "}
                 updated edges
               </span>
+              <span>
+                publish cost:{" "}
+                <span className="text-amber-600">
+                  {(previewResult.buzzCost / 10).toFixed(1)}
+                </span>{" "}
+                buzz
+              </span>
             </div>
           </div>
 

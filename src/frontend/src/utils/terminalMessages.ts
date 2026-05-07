@@ -30,6 +30,11 @@ export function formatHelpText(): string {
     /archive name="Article 1"
     /archive name=lawtoken123
 
+/buzz <count>,<days>  (admin only)
+  Generate invite codes worth 100 Buzz each
+  Example:
+    /buzz 5,7
+
 Notes:
   - Use quotes for names with spaces: name="My Node"
   - To create nodes, publish a source graph from the Sources tab

@@ -182,6 +182,7 @@ export type PublishCommitResult = {
     }
   };
 export interface PublishPreviewResult {
+  'buzzCost' : bigint,
   'summary' : {
     'hierarchyEdgesToCreate' : bigint,
     'edgesToCreate' : bigint,
@@ -287,6 +288,7 @@ export interface _SERVICE {
   >,
   'generateApiKey' : ActorMethod<[], string>,
   'generateBuzzSecret' : ActorMethod<[bigint], string>,
+  'generateInviteCodes' : ActorMethod<[bigint, bigint], Array<string>>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],
     Array<PublishedSourceGraphMeta>
@@ -304,7 +306,6 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
-  'getMyTextGameBuzz' : ActorMethod<[], bigint>,
   'getPublishedPaths' : ActorMethod<
     [],
     Array<

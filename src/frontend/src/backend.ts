@@ -174,6 +174,7 @@ export interface SourceGraphEdgeInput {
     edgeLabel: string;
 }
 export interface PublishPreviewResult {
+    buzzCost: bigint;
     summary: {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
@@ -413,6 +414,7 @@ export interface backendInterface {
     }>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
+    generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -429,7 +431,6 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
-    getMyTextGameBuzz(): Promise<bigint>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -694,6 +695,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async generateInviteCodes(arg0: bigint, arg1: bigint): Promise<Array<string>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateInviteCodes(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateInviteCodes(arg0, arg1);
+            return result;
+        }
+    }
     async getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>> {
         if (this.processError) {
             try {
@@ -837,20 +852,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getMyBuzzBalance();
-            return result;
-        }
-    }
-    async getMyTextGameBuzz(): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getMyTextGameBuzz();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getMyTextGameBuzz();
             return result;
         }
     }
@@ -1774,6 +1775,7 @@ function from_candid_record_n56(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }
 function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    buzzCost: bigint;
     summary: {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
@@ -1784,6 +1786,7 @@ function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uin
     edgeOperations: Array<_EdgeOperation>;
     nodeOperations: Array<_NodeOperation>;
 }): {
+    buzzCost: bigint;
     summary: {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
@@ -1795,6 +1798,7 @@ function from_candid_record_n65(_uploadFile: (file: ExternalBlob) => Promise<Uin
     nodeOperations: Array<NodeOperation>;
 } {
     return {
+        buzzCost: value.buzzCost,
         summary: value.summary,
         edgeOperations: from_candid_vec_n66(_uploadFile, _downloadFile, value.edgeOperations),
         nodeOperations: from_candid_vec_n70(_uploadFile, _downloadFile, value.nodeOperations)

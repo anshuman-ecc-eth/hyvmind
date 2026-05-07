@@ -92,6 +92,7 @@ export interface SourceGraphEdgeInput {
     edgeLabel: string;
 }
 export interface PublishPreviewResult {
+    buzzCost: bigint;
     summary: {
         hierarchyEdgesToCreate: bigint;
         edgesToCreate: bigint;
@@ -330,6 +331,7 @@ export interface backendInterface {
     }>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
+    generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -346,7 +348,6 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
-    getMyTextGameBuzz(): Promise<bigint>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;

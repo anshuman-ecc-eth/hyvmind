@@ -267,6 +267,7 @@ export const NodeOperation = IDL.Record({
   'nodeType' : IDL.Text,
 });
 export const PublishPreviewResult = IDL.Record({
+  'buzzCost' : IDL.Int,
   'summary' : IDL.Record({
     'hierarchyEdgesToCreate' : IDL.Nat,
     'edgesToCreate' : IDL.Nat,
@@ -327,6 +328,7 @@ export const idlService = IDL.Service({
     ),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
+  'generateInviteCodes' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Vec(IDL.Text)], []),
   'getAllPublishedSourceGraphs' : IDL.Func(
       [],
       [IDL.Vec(PublishedSourceGraphMeta)],
@@ -349,7 +351,6 @@ export const idlService = IDL.Service({
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
-  'getMyTextGameBuzz' : IDL.Func([], [IDL.Int], ['query']),
   'getPublishedPaths' : IDL.Func(
       [],
       [
@@ -708,6 +709,7 @@ export const idlFactory = ({ IDL }) => {
     'nodeType' : IDL.Text,
   });
   const PublishPreviewResult = IDL.Record({
+    'buzzCost' : IDL.Int,
     'summary' : IDL.Record({
       'hierarchyEdgesToCreate' : IDL.Nat,
       'edgesToCreate' : IDL.Nat,
@@ -768,6 +770,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
+    'generateInviteCodes' : IDL.Func(
+        [IDL.Nat, IDL.Nat],
+        [IDL.Vec(IDL.Text)],
+        [],
+      ),
     'getAllPublishedSourceGraphs' : IDL.Func(
         [],
         [IDL.Vec(PublishedSourceGraphMeta)],
@@ -790,7 +797,6 @@ export const idlFactory = ({ IDL }) => {
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
-    'getMyTextGameBuzz' : IDL.Func([], [IDL.Int], ['query']),
     'getPublishedPaths' : IDL.Func(
         [],
         [

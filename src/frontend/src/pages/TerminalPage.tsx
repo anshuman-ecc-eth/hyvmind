@@ -619,7 +619,7 @@ export default function TerminalPage() {
         case "mybuzz": {
           const buzz = await actor.getMyBuzzBalance();
           const display =
-            typeof buzz === "bigint" ? Number(buzz) / 10_000_000 : buzz;
+            typeof buzz === "bigint" ? (Number(buzz) / 10).toFixed(1) : buzz;
           addMessage("success", `💰 BUZZ balance: ${display}`);
           break;
         }
@@ -1381,6 +1381,54 @@ export default function TerminalPage() {
         "error",
         "Unknown /config sub-command. Type /help for available config commands.",
       );
+      return;
+    }
+
+    if (command === "buzz") {
+      setInput("");
+      if (!isAdmin) {
+        addMessage("error", "Not authorized. This command requires admin.");
+        return;
+      }
+      if (!actor) {
+        addMessage(
+          "error",
+          "Backend not connected. Please wait and try again.",
+        );
+        return;
+      }
+      const buzzArg = (argument || "").trim();
+      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)$/);
+      if (!buzzMatch) {
+        addMessage("error", "Usage: /buzz <count>,<days>\nExample: /buzz 5,7");
+        return;
+      }
+      const buzzCount = Number.parseInt(buzzMatch[1], 10);
+      const buzzDays = Number.parseInt(buzzMatch[2], 10);
+      if (buzzCount <= 0 || buzzDays <= 0) {
+        addMessage("error", "Count and days must be positive integers.");
+        return;
+      }
+      try {
+        type BuzzAdminActor = {
+          generateInviteCodes: (
+            count: bigint,
+            validDays: bigint,
+          ) => Promise<string[]>;
+        };
+        const codes = await (
+          actor as unknown as BuzzAdminActor
+        ).generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays));
+        addMessage(
+          "success",
+          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):\n${codes.map((c) => `  ${c}`).join("\n")}`,
+        );
+      } catch (e) {
+        addMessage(
+          "error",
+          `Failed to generate invite codes: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
       return;
     }
 

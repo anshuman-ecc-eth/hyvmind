@@ -91,6 +91,7 @@ function mapPreviewResult(
       edgesToUpdate: Number(raw.summary.edgesToUpdate),
       hierarchyEdgesToCreate: Number(raw.summary.hierarchyEdgesToCreate),
     },
+    buzzCost: Number((raw as unknown as { buzzCost?: bigint }).buzzCost ?? 0n),
   };
 }
 

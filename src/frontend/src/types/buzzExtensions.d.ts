@@ -3,5 +3,6 @@
 export interface BuzzBackendExtensions {
   generateBuzzSecret(score: bigint): Promise<string>;
   redeemBuzzSecret(secret: string): Promise<{ ok: string } | { err: string }>;
-  getMyTextGameBuzz(): Promise<bigint>;
+  getMyBuzzBalance(): Promise<bigint>;
+  generateInviteCodes(count: bigint, validDays: bigint): Promise<string[]>;
 }

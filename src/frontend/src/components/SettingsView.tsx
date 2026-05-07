@@ -18,7 +18,7 @@ import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
 import {
   useGetCallerUserProfile,
-  useGetMyTextGameBuzz,
+  useGetMyBuzzBalance,
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useSettings";
@@ -48,7 +48,7 @@ export function SettingsView() {
   const { fontPairing, setFontPairing, fontSize, setFontSize } = useSettings();
 
   const [createBuzzOpen, setCreateBuzzOpen] = useState(false);
-  const { data: textGameBuzz } = useGetMyTextGameBuzz();
+  const { data: buzzBalance } = useGetMyBuzzBalance();
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
@@ -450,7 +450,9 @@ export function SettingsView() {
                   className="text-sm font-medium"
                   data-ocid="settings.wallet.buzz_balance"
                 >
-                  {textGameBuzz !== undefined ? textGameBuzz.toString() : "0"}{" "}
+                  {buzzBalance !== undefined
+                    ? (Number(buzzBalance) / 10).toFixed(1)
+                    : "0.0"}{" "}
                   <span className="text-muted-foreground">Buzz</span>
                 </p>
                 <p

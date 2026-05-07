@@ -458,22 +458,8 @@ export function useRedeemBuzzSecret() {
       return (actor as unknown as BuzzActor).redeemBuzzSecret(secret);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["myTextGameBuzz"] });
+      void queryClient.invalidateQueries({ queryKey: ["myBuzzBalance"] });
     },
-  });
-}
-
-export function useGetMyTextGameBuzz() {
-  const { actor, isFetching } = useBackendActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<bigint>({
-    queryKey: ["myTextGameBuzz"],
-    queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return (actor as unknown as BuzzActor).getMyTextGameBuzz();
-    },
-    enabled: !!actor && !isFetching && !!identity,
   });
 }
 

@@ -94,6 +94,7 @@ type PublishSourceGraphInput =
  };
 type PublishPreviewResult = 
  record {
+   buzzCost: int;
    edgeOperations: vec EdgeOperation;
    nodeOperations: vec NodeOperation;
    summary:
@@ -361,6 +362,7 @@ service : {
     });
   generateApiKey: () -> (text);
   generateBuzzSecret: (score: int) -> (text);
+  generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
@@ -375,7 +377,6 @@ service : {
   getMintSettings: () -> (MintSettings) query;
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
-  getMyTextGameBuzz: () -> (int) query;
   getPublishedPaths: () ->
    (vec record {
           curation: text;

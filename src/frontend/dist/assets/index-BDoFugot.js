@@ -28422,6 +28422,7 @@ const NodeOperation = Record({
   "nodeType": Text
 });
 const PublishPreviewResult = Record({
+  "buzzCost": Int,
   "summary": Record({
     "hierarchyEdgesToCreate": Nat,
     "edgesToCreate": Nat,
@@ -28481,6 +28482,7 @@ Service({
   ),
   "generateApiKey": Func([], [Text], []),
   "generateBuzzSecret": Func([Int], [Text], []),
+  "generateInviteCodes": Func([Nat, Nat], [Vec(Text)], []),
   "getAllPublishedSourceGraphs": Func(
     [],
     [Vec(PublishedSourceGraphMeta)],
@@ -28503,7 +28505,6 @@ Service({
   "getMintSettings": Func([], [MintSettings], ["query"]),
   "getMyApiKey": Func([], [Opt(Text)], ["query"]),
   "getMyBuzzBalance": Func([], [BuzzScore], ["query"]),
-  "getMyTextGameBuzz": Func([], [Int], ["query"]),
   "getPublishedPaths": Func(
     [],
     [
@@ -28859,6 +28860,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "nodeType": IDL2.Text
   });
   const PublishPreviewResult2 = IDL2.Record({
+    "buzzCost": IDL2.Int,
     "summary": IDL2.Record({
       "hierarchyEdgesToCreate": IDL2.Nat,
       "edgesToCreate": IDL2.Nat,
@@ -28918,6 +28920,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
     ),
     "generateApiKey": IDL2.Func([], [IDL2.Text], []),
     "generateBuzzSecret": IDL2.Func([IDL2.Int], [IDL2.Text], []),
+    "generateInviteCodes": IDL2.Func(
+      [IDL2.Nat, IDL2.Nat],
+      [IDL2.Vec(IDL2.Text)],
+      []
+    ),
     "getAllPublishedSourceGraphs": IDL2.Func(
       [],
       [IDL2.Vec(PublishedSourceGraphMeta2)],
@@ -28940,7 +28947,6 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "getMintSettings": IDL2.Func([], [MintSettings2], ["query"]),
     "getMyApiKey": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
     "getMyBuzzBalance": IDL2.Func([], [BuzzScore2], ["query"]),
-    "getMyTextGameBuzz": IDL2.Func([], [IDL2.Int], ["query"]),
     "getPublishedPaths": IDL2.Func(
       [],
       [
@@ -29243,6 +29249,20 @@ class Backend {
       return result;
     }
   }
+  async generateInviteCodes(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.generateInviteCodes(arg0, arg1);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.generateInviteCodes(arg0, arg1);
+      return result;
+    }
+  }
   async getAllPublishedSourceGraphs() {
     if (this.processError) {
       try {
@@ -29380,20 +29400,6 @@ class Backend {
       }
     } else {
       const result = await this.actor.getMyBuzzBalance();
-      return result;
-    }
-  }
-  async getMyTextGameBuzz() {
-    if (this.processError) {
-      try {
-        const result = await this.actor.getMyTextGameBuzz();
-        return result;
-      } catch (e2) {
-        this.processError(e2);
-        throw new Error("unreachable");
-      }
-    } else {
-      const result = await this.actor.getMyTextGameBuzz();
       return result;
     }
   }
@@ -30094,6 +30100,7 @@ function from_candid_record_n56(_uploadFile, _downloadFile, value) {
 }
 function from_candid_record_n65(_uploadFile, _downloadFile, value) {
   return {
+    buzzCost: value.buzzCost,
     summary: value.summary,
     edgeOperations: from_candid_vec_n66(_uploadFile, _downloadFile, value.edgeOperations),
     nodeOperations: from_candid_vec_n70(_uploadFile, _downloadFile, value.nodeOperations)
@@ -35905,6 +35912,17 @@ function useIsCallerAdmin() {
     enabled: !!actor && !isFetching
   });
 }
+function useGetMyBuzzBalance() {
+  const { actor, isFetching } = useBackendActor$1();
+  return useQuery({
+    queryKey: ["myBuzzBalance"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return actor.getMyBuzzBalance();
+    },
+    enabled: !!actor && !isFetching
+  });
+}
 function useGenerateBuzzSecret() {
   const { actor } = useBackendActor$1();
   return useMutation({
@@ -35923,20 +35941,8 @@ function useRedeemBuzzSecret() {
       return actor.redeemBuzzSecret(secret);
     },
     onSuccess: () => {
-      void queryClient2.invalidateQueries({ queryKey: ["myTextGameBuzz"] });
+      void queryClient2.invalidateQueries({ queryKey: ["myBuzzBalance"] });
     }
-  });
-}
-function useGetMyTextGameBuzz() {
-  const { actor, isFetching } = useBackendActor$1();
-  const { identity: identity2 } = useInternetIdentity();
-  return useQuery({
-    queryKey: ["myTextGameBuzz"],
-    queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return actor.getMyTextGameBuzz();
-    },
-    enabled: !!actor && !isFetching && !!identity2
   });
 }
 function useResetAllData() {
@@ -36065,6 +36071,11 @@ function formatHelpText() {
   Example:
     /archive name="Article 1"
     /archive name=lawtoken123
+
+/buzz <count>,<days>  (admin only)
+  Generate invite codes worth 100 Buzz each
+  Example:
+    /buzz 5,7
 
 Notes:
   - Use quotes for names with spaces: name="My Node"
@@ -37069,7 +37080,7 @@ function parseCommand(input) {
   }
   const command = commandMatch[1];
   const rest = trimmed.slice(commandMatch[0].length);
-  if (command === "find" || command === "debug") {
+  if (command === "find" || command === "debug" || command === "buzz") {
     return {
       success: true,
       command,
@@ -56423,7 +56434,7 @@ function SettingsView() {
   const actor = rawActor.actor;
   const { fontPairing, setFontPairing, fontSize, setFontSize } = useSettings();
   const [createBuzzOpen, setCreateBuzzOpen] = reactExports.useState(false);
-  const { data: textGameBuzz } = useGetMyTextGameBuzz();
+  const { data: buzzBalance } = useGetMyBuzzBalance();
   const [profileName, setProfileName] = reactExports.useState("");
   const [socialUrl, setSocialUrl] = reactExports.useState("");
   const [apiKey, setApiKey] = reactExports.useState(null);
@@ -56760,7 +56771,7 @@ function SettingsView() {
               className: "text-sm font-medium",
               "data-ocid": "settings.wallet.buzz_balance",
               children: [
-                textGameBuzz !== void 0 ? textGameBuzz.toString() : "0",
+                buzzBalance !== void 0 ? (Number(buzzBalance) / 10).toFixed(1) : "0.0",
                 " ",
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", children: "Buzz" })
               ]
@@ -107838,6 +107849,13 @@ function PublishConfirmDialog({
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.edgesToUpdate }),
                   " ",
                   "updated edges"
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+                  "publish cost:",
+                  " ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: (previewResult.buzzCost / 10).toFixed(1) }),
+                  " ",
+                  "buzz"
                 ] })
               ] })
             }
@@ -107988,7 +108006,8 @@ function mapPreviewResult(raw2) {
       edgesToCreate: Number(raw2.summary.edgesToCreate),
       edgesToUpdate: Number(raw2.summary.edgesToUpdate),
       hierarchyEdgesToCreate: Number(raw2.summary.hierarchyEdgesToCreate)
-    }
+    },
+    buzzCost: Number(raw2.buzzCost ?? 0n)
   };
 }
 function usePublishPreview() {
@@ -110628,7 +110647,7 @@ ${formatDebugHelpText()}${formatTelegramConfigHelp()}`
         }
         case "mybuzz": {
           const buzz = await actor.getMyBuzzBalance();
-          const display = typeof buzz === "bigint" ? Number(buzz) / 1e7 : buzz;
+          const display = typeof buzz === "bigint" ? (Number(buzz) / 10).toFixed(1) : buzz;
           addMessage("success", `💰 BUZZ balance: ${display}`);
           break;
         }
@@ -111310,6 +111329,46 @@ ${formatDebugHelpText()}${formatTelegramConfigHelp()}`
         "error",
         "Unknown /config sub-command. Type /help for available config commands."
       );
+      return;
+    }
+    if (command === "buzz") {
+      setInput("");
+      if (!isAdmin) {
+        addMessage("error", "Not authorized. This command requires admin.");
+        return;
+      }
+      if (!actor) {
+        addMessage(
+          "error",
+          "Backend not connected. Please wait and try again."
+        );
+        return;
+      }
+      const buzzArg = (argument || "").trim();
+      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)$/);
+      if (!buzzMatch) {
+        addMessage("error", "Usage: /buzz <count>,<days>\nExample: /buzz 5,7");
+        return;
+      }
+      const buzzCount = Number.parseInt(buzzMatch[1], 10);
+      const buzzDays = Number.parseInt(buzzMatch[2], 10);
+      if (buzzCount <= 0 || buzzDays <= 0) {
+        addMessage("error", "Count and days must be positive integers.");
+        return;
+      }
+      try {
+        const codes = await actor.generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays));
+        addMessage(
+          "success",
+          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):
+${codes.map((c2) => `  ${c2}`).join("\n")}`
+        );
+      } catch (e22) {
+        addMessage(
+          "error",
+          `Failed to generate invite codes: ${e22 instanceof Error ? e22.message : String(e22)}`
+        );
+      }
       return;
     }
     if (command === "debug") {

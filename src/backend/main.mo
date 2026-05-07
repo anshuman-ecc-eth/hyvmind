@@ -22,6 +22,7 @@ import Runtime "mo:core/Runtime";
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
+import Migration "migration";
 
 
 
@@ -33,12 +34,14 @@ import Debug "mo:core/Debug";
 
 
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
   type Directionality = { #none; #unidirectional; #bidirectional };
   type Tag = Text;
   type BuzzScore = Int;
+  let BUZZ_DECIMALS : Int = 10;
 
   type BuzzSecretRecord = {
     points : Int;
@@ -350,6 +353,7 @@ actor {
       edgesToUpdate : Nat;
       hierarchyEdgesToCreate : Nat;
     };
+    buzzCost : Int;
   };
 
   type PublishCommitResult = {
@@ -416,7 +420,6 @@ actor {
   var swarmUpdates = Map.empty<Principal, List.List<SwarmUpdate>>();
   var voteDataMap = Map.empty<Text, VoteData>();
   var buzzScores = Map.empty<Principal, BuzzScore>();
-  var textGameBuzz = Map.empty<Principal, Int>();
   var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
   let accessControlState = AccessControl.initState();
   let approvalState = UserApproval.initState(accessControlState);
@@ -433,6 +436,7 @@ actor {
 
   // Published source graph metadata
   var publishedSourceGraphs = Map.empty<Text, PublishedSourceGraphMeta>();
+  var publishedGraphBuzzMetrics = Map.empty<Text, { cumulativeBuzzSpent : Int; extensionCount : Nat }>();
 
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
@@ -566,8 +570,8 @@ actor {
   // COLLECTIBLES FUNCTIONALITY
   func calculatePrice(tokenType : { #lawToken; #interpretationToken }, numCopies : Nat) : Int {
     let basePrice = switch (tokenType) {
-      case (#lawToken) { 30_000_000 };
-      case (#interpretationToken) { 50_000_000 };
+      case (#lawToken) { 300_000_000 };
+      case (#interpretationToken) { 500_000_000 };
     };
     if (numCopies == 0) { return basePrice };
     basePrice / numCopies;
@@ -1619,11 +1623,11 @@ actor {
   };
 
   func updateBuzzScore(user : Principal, delta : Int) {
-    let currentBalance = switch (textGameBuzz.get(user)) {
+    let currentBalance = switch (buzzScores.get(user)) {
       case (null) { 0 };
       case (?balance) { balance };
     };
-    textGameBuzz.add(user, currentBalance + delta);
+    buzzScores.add(user, currentBalance + delta);
   };
 
   public shared (msg) func generateBuzzSecret(score : Int) : async Text {
@@ -1631,13 +1635,37 @@ actor {
     let now = Time.now();
     let expiryTime = now + 86_400_000_000_000;
     let record : BuzzSecretRecord = {
-      points = score;
+      points = score * BUZZ_DECIMALS;
       createdAt = now;
       expiresAt = expiryTime;
       isUsed = false;
     };
     buzzSecrets.add(secretId, record);
     secretId;
+  };
+
+  public shared (msg) func generateInviteCodes(count : Nat, validDays : Nat) : async [Text] {
+    if (not AccessControl.isAdmin(accessControlState, msg.caller)) {
+      Runtime.trap("Unauthorized: Only admins can generate invite codes");
+    };
+    let codesBuffer = List.empty<Text>();
+    let now = Time.now();
+    let expiryTime = now + validDays * 86_400_000_000_000;
+    let points = 100 * BUZZ_DECIMALS;
+    var i = 0;
+    while (i < count) {
+      let secretId = "invite-" # now.toText() # "-" # i.toText();
+      let rec : BuzzSecretRecord = {
+        points;
+        createdAt = now;
+        expiresAt = expiryTime;
+        isUsed = false;
+      };
+      buzzSecrets.add(secretId, rec);
+      codesBuffer.add(secretId);
+      i += 1;
+    };
+    codesBuffer.toArray();
   };
 
   public shared (msg) func redeemBuzzSecret(secret : Text) : async { #ok : Text; #err : Text } {
@@ -1655,17 +1683,12 @@ actor {
         };
         updateBuzzScore(msg.caller, record.points);
         buzzSecrets.add(secret, { record with isUsed = true });
-        #ok("Added " # record.points.toText() # " Buzz to your wallet");
+        #ok("Added " # (record.points / 10).toText() # " Buzz to your wallet");
       };
     };
   };
 
-  public query (msg) func getMyTextGameBuzz() : async Int {
-    switch (textGameBuzz.get(msg.caller)) {
-      case (null) { 0 };
-      case (?balance) { balance };
-    };
-  };
+
 
   func generateId(nodeType : Text, name : Text, creator : Principal) : NodeId {
     nodeType # "-" # name # "-" # creator.toText() # "-" # Time.now().toText()
@@ -2125,6 +2148,34 @@ actor {
     };
   };
 
+
+  // ── Top-level attribute/source counting helpers (shared by previewLogic and commitPublish) ──
+  func countNewAttributes(existingAttrs : [WeightedAttribute], inputAttrs : [(Text, [Text])]) : Nat {
+    var count = 0;
+    for ((key, values) in inputAttrs.values()) {
+      let found = existingAttrs.find(func(wa : WeightedAttribute) : Bool { wa.key == key });
+      switch (found) {
+        case (null) { count += values.size() };
+        case (?wa) {
+          for (v in values.values()) {
+            let exists = wa.weightedValues.find(func(wv : WeightedValue) : Bool { wv.value == v });
+            switch (exists) {
+              case (null) { count += 1 };
+              case (?_) {};
+            };
+          };
+        };
+      };
+    };
+    count
+  };
+
+  func countRawAttributes(attrs : [(Text, [Text])]) : Nat {
+    var count = 0;
+    for ((_, values) in attrs.values()) { count += values.size() };
+    count
+  };
+
   func previewLogic(
     caller : Principal,
     input : PublishSourceGraphInput,
@@ -2138,6 +2189,12 @@ actor {
     var edgesToUpdate : Nat = 0;
     var hierarchyEdgesToCreate : Nat = 0;
     var curationsToCreate : Nat = 0;
+    var swarmsToCreate : Nat = 0;
+    var locationsToCreate : Nat = 0;
+    var lawEntitiesToCreate : Nat = 0;
+    var interpEntitiesToCreate : Nat = 0;
+    var attributesAdded : Nat = 0;
+    var sourcesAdded : Nat = 0;
 
     // ── Extension detection ──────────────────────────────────────────────────
     let (isExtension, publishedGraphId) = detectExtension(
@@ -2227,6 +2284,8 @@ actor {
                     sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
                 };
                 // If no changes: skip entirely (no op, no count)
               } else {
@@ -2242,6 +2301,8 @@ actor {
                 });
                 nodesToCreate += 1;
                 curationsToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
@@ -2257,6 +2318,8 @@ actor {
               });
               nodesToCreate += 1;
               curationsToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -2283,6 +2346,8 @@ actor {
           });
           nodesToCreate += 1;
           curationsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -2351,6 +2416,8 @@ actor {
                     sourceChanges = srcChanges;
                   });
                   nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
                 };
               } else {
                 nodeOps.add({
@@ -2363,6 +2430,9 @@ actor {
                   sourceChanges = [];
                 });
                 nodesToCreate += 1;
+                swarmsToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
               };
             };
             case (null) {
@@ -2376,6 +2446,9 @@ actor {
                 sourceChanges = [];
               });
               nodesToCreate += 1;
+              swarmsToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
             };
           };
         };
@@ -2402,6 +2475,9 @@ actor {
             sourceChanges = [];
           });
           nodesToCreate += 1;
+          swarmsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -2876,6 +2952,16 @@ actor {
     // ── Final debug log ──────────────────────────────────────────────────────
     Debug.print("Preview: Final counts - nodesToCreate: " # nodesToCreate.toText() # ", nodesToUpdate: " # nodesToUpdate.toText() # ", edgesToCreate: " # edgesToCreate.toText() # ", edgesToUpdate: " # edgesToUpdate.toText());
 
+    // ── Compute Buzz cost ────────────────────────────────────────────────────
+    let buzzCost : Int = curationsToCreate * 10
+      + swarmsToCreate * 20
+      + locationsToCreate * 30
+      + lawEntitiesToCreate * 40
+      + interpEntitiesToCreate * 50
+      + attributesAdded * 1
+      + edgesToCreate * 1
+      + sourcesAdded * 1;
+
     {
       nodeOperations = nodeOps.toArray();
       edgeOperations = edgeOps.toArray();
@@ -2886,6 +2972,7 @@ actor {
         edgesToUpdate;
         hierarchyEdgesToCreate;
       };
+      buzzCost;
     };
   };
 
@@ -2968,35 +3055,11 @@ actor {
     var sourcesAdded : Nat = 0;
     var hierarchyEdgesCreated : Nat = 0;
     var curationsToCreate : Nat = 0;
+    var swarmsToCreate : Nat = 0;
+    var locationsToCreate : Nat = 0;
+    var lawEntitiesToCreate : Nat = 0;
+    var interpEntitiesToCreate : Nat = 0;
 
-    // Helper: count new attribute entries relative to existing weighted attributes
-    // New key → all its values counted; existing key → only new distinct values counted
-    func countNewAttributes(existingAttrs : [WeightedAttribute], inputAttrs : [(Text, [Text])]) : Nat {
-      var count = 0;
-      for ((key, values) in inputAttrs.values()) {
-        let found = existingAttrs.find(func(wa : WeightedAttribute) : Bool { wa.key == key });
-        switch (found) {
-          case (null) { count += values.size() };
-          case (?wa) {
-            for (v in values.values()) {
-              let exists = wa.weightedValues.find(func(wv : WeightedValue) : Bool { wv.value == v });
-              switch (exists) {
-                case (null) { count += 1 };
-                case (?_) {};
-              };
-            };
-          };
-        };
-      };
-      count
-    };
-
-    // Helper: count total (key, value) pairs in a raw attribute list
-    func countRawAttributes(attrs : [(Text, [Text])]) : Nat {
-      var count = 0;
-      for ((_, values) in attrs.values()) { count += values.size() };
-      count
-    };
 
     // Build node input lookup
     let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
@@ -3221,7 +3284,9 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
+          swarmsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3333,7 +3398,9 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
+          locationsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3445,7 +3512,9 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
+          lawEntitiesToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3563,7 +3632,9 @@ actor {
           let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
+          interpEntitiesToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3675,6 +3746,28 @@ actor {
     // ── Compute hierarchy edges ───────────────────────────────────────────
     hierarchyEdgesCreated := nodesToCreate - curationsToCreate;
 
+    // ── Compute and check Buzz cost ───────────────────────────────────────
+    let publishCost : Int = curationsToCreate * 10
+      + swarmsToCreate * 20
+      + locationsToCreate * 30
+      + lawEntitiesToCreate * 40
+      + interpEntitiesToCreate * 50
+      + attributesAdded * 1
+      + edgesToCreate * 1
+      + sourcesAdded * 1;
+    let callerBuzzBalance = switch (buzzScores.get(caller)) {
+      case (null) { 0 };
+      case (?b) { b };
+    };
+    if (callerBuzzBalance < publishCost) {
+      let deficit = publishCost - callerBuzzBalance;
+      return #error({
+        message = "Insufficient Buzz: need " # (publishCost / 10).toText() # "." # (Int.abs(publishCost % 10)).toText() # " Buzz, have " # (callerBuzzBalance / 10).toText() # "." # (Int.abs(callerBuzzBalance % 10)).toText() # " Buzz (need " # (deficit / 10).toText() # "." # (Int.abs(deficit % 10)).toText() # " more)";
+        failedAt = null;
+      });
+    };
+    updateBuzzScore(caller, -publishCost);
+
     // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
 
     // Find root curation name (first curation in input)
@@ -3706,6 +3799,14 @@ actor {
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
             };
             publishedSourceGraphs.add(pid, updatedMeta);
+            let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
+              case (?m) { m };
+              case (null) { { cumulativeBuzzSpent = 0; extensionCount = 0 } };
+            };
+            publishedGraphBuzzMetrics.add(pid, {
+              cumulativeBuzzSpent = existingMetrics.cumulativeBuzzSpent + publishCost;
+              extensionCount = existingMetrics.extensionCount + 1;
+            });
           };
           case (null) {};
         };
@@ -3733,6 +3834,7 @@ actor {
           artworkDataUrl = null;
         };
         publishedSourceGraphs.add(newPid, newMeta);
+        publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
         newPid
       };
     };
