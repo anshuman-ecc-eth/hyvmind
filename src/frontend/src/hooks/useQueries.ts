@@ -441,9 +441,18 @@ export function useGenerateBuzzSecret() {
   const { actor } = useBackendActor();
 
   return useMutation({
-    mutationFn: async (score: bigint) => {
+    mutationFn: async ({
+      score,
+      clientHex,
+    }: {
+      score: bigint;
+      clientHex: string;
+    }) => {
       if (!actor) throw new Error("Actor not available");
-      return (actor as unknown as BuzzActor).generateBuzzSecret(score);
+      return (actor as unknown as BuzzActor).generateBuzzSecret(
+        score,
+        clientHex,
+      );
     },
   });
 }

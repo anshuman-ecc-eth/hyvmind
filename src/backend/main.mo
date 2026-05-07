@@ -1649,9 +1649,8 @@ actor {
     result
   };
 
-  public shared (msg) func generateBuzzSecret(score : Int) : async Text {
-    let hex = blobToHex(await Random.blob(), 0, 8);
-    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText() # "-" # hex;
+  public shared (msg) func generateBuzzSecret(score : Int, clientHex : Text) : async Text {
+    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText() # "-" # clientHex;
     let now = Time.now();
     let expiryTime = now + 86_400_000_000_000;
     let record : BuzzSecretRecord = {

@@ -416,7 +416,7 @@ export interface backendInterface {
         err: string;
     }>;
     generateApiKey(): Promise<string>;
-    generateBuzzSecret(score: bigint): Promise<string>;
+    generateBuzzSecret(score: bigint, clientHex: string): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
@@ -684,17 +684,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async generateBuzzSecret(arg0: bigint): Promise<string> {
+    async generateBuzzSecret(arg0: bigint, arg1: string): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.generateBuzzSecret(arg0);
+                const result = await this.actor.generateBuzzSecret(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.generateBuzzSecret(arg0);
+            const result = await this.actor.generateBuzzSecret(arg0, arg1);
             return result;
         }
     }

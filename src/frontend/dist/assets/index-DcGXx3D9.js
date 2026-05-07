@@ -28484,7 +28484,7 @@ Service({
     []
   ),
   "generateApiKey": Func([], [Text], []),
-  "generateBuzzSecret": Func([Int], [Text], []),
+  "generateBuzzSecret": Func([Int, Text], [Text], []),
   "generateInviteCodes": Func([Nat, Nat], [Vec(Text)], []),
   "getAllPublishedSourceGraphs": Func(
     [],
@@ -28925,7 +28925,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       []
     ),
     "generateApiKey": IDL2.Func([], [IDL2.Text], []),
-    "generateBuzzSecret": IDL2.Func([IDL2.Int], [IDL2.Text], []),
+    "generateBuzzSecret": IDL2.Func([IDL2.Int, IDL2.Text], [IDL2.Text], []),
     "generateInviteCodes": IDL2.Func(
       [IDL2.Nat, IDL2.Nat],
       [IDL2.Vec(IDL2.Text)],
@@ -29241,17 +29241,17 @@ class Backend {
       return result;
     }
   }
-  async generateBuzzSecret(arg0) {
+  async generateBuzzSecret(arg0, arg1) {
     if (this.processError) {
       try {
-        const result = await this.actor.generateBuzzSecret(arg0);
+        const result = await this.actor.generateBuzzSecret(arg0, arg1);
         return result;
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.generateBuzzSecret(arg0);
+      const result = await this.actor.generateBuzzSecret(arg0, arg1);
       return result;
     }
   }
@@ -35933,9 +35933,15 @@ function useGetMyBuzzBalance() {
 function useGenerateBuzzSecret() {
   const { actor } = useBackendActor$1();
   return useMutation({
-    mutationFn: async (score) => {
+    mutationFn: async ({
+      score,
+      clientHex
+    }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.generateBuzzSecret(score);
+      return actor.generateBuzzSecret(
+        score,
+        clientHex
+      );
     }
   });
 }
@@ -81103,19 +81109,25 @@ function TextGameModal({ onComplete }) {
     if (generatingScore === null) return;
     let cancelled = false;
     (async () => {
+      const bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      const clientHex = Array.from(bytes).map((b2) => b2.toString(16).padStart(2, "0")).join("");
       try {
-        const secret = await generateBuzzSecret.mutateAsync(
-          BigInt(Math.round(generatingScore))
-        );
+        const secret = await generateBuzzSecret.mutateAsync({
+          score: BigInt(Math.round(generatingScore)),
+          clientHex
+        });
         if (!cancelled) {
           setSecretCode(secret);
           setShowScoreConfirmation(true);
-          setPhase({ type: "idle" });
         }
       } catch (err) {
         if (!cancelled) console.error("Failed to generate buzz secret:", err);
       }
-      if (!cancelled) setGeneratingScore(null);
+      if (!cancelled) {
+        setGeneratingScore(null);
+        setPhase({ type: "idle" });
+      }
     })();
     return () => {
       cancelled = true;

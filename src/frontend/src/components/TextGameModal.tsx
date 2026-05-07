@@ -1031,19 +1031,28 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     if (generatingScore === null) return;
     let cancelled = false;
     (async () => {
+      // Generate random hex suffix on the client (microseconds, no consensus)
+      const bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      const clientHex = Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
       try {
-        const secret = await generateBuzzSecret.mutateAsync(
-          BigInt(Math.round(generatingScore)),
-        );
+        const secret = await generateBuzzSecret.mutateAsync({
+          score: BigInt(Math.round(generatingScore)),
+          clientHex,
+        });
         if (!cancelled) {
           setSecretCode(secret);
           setShowScoreConfirmation(true);
-          setPhase({ type: "idle" });
         }
       } catch (err) {
         if (!cancelled) console.error("Failed to generate buzz secret:", err);
       }
-      if (!cancelled) setGeneratingScore(null);
+      if (!cancelled) {
+        setGeneratingScore(null);
+        setPhase({ type: "idle" });
+      }
     })();
     return () => {
       cancelled = true;
