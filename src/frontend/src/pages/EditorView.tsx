@@ -25,15 +25,30 @@ type ContextOption =
   | "new-location"
   | "new-law-entity"
   | "new-file"
+  | "add-attributes"
+  | "add-sources"
   | "rename"
   | "delete"
   | "convert-to-source-graph";
 
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
-  curation: ["new-swarm", "rename", "delete", "convert-to-source-graph"],
-  swarm: ["new-location", "rename", "delete"],
-  location: ["new-law-entity", "rename", "delete"],
-  lawEntity: ["new-file", "rename", "delete"],
+  curation: [
+    "new-swarm",
+    "add-attributes",
+    "add-sources",
+    "rename",
+    "delete",
+    "convert-to-source-graph",
+  ],
+  swarm: ["new-location", "add-attributes", "add-sources", "rename", "delete"],
+  location: [
+    "new-law-entity",
+    "add-attributes",
+    "add-sources",
+    "rename",
+    "delete",
+  ],
+  lawEntity: ["new-file", "add-attributes", "add-sources", "rename", "delete"],
   interpEntity: ["rename", "delete"],
 };
 
@@ -42,6 +57,8 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   "new-location": "New Location",
   "new-law-entity": "New Law Entity",
   "new-file": "New File",
+  "add-attributes": "Add Attributes",
+  "add-sources": "Add Sources",
   rename: "Rename",
   delete: "Delete",
   "convert-to-source-graph": "Convert",
@@ -282,9 +299,40 @@ export default function EditorView() {
           })();
           break;
         }
+        case "add-attributes": {
+          const parent = session?.nodes.get(nodeId);
+          if (parent) {
+            const alreadyExists = parent.children.some(
+              (cid) => session?.nodes.get(cid)?.name === "_attributes.md",
+            );
+            if (!alreadyExists) {
+              createNode(nodeId, "_attributes.md", "file", {
+                nodeType: "interpEntity",
+              });
+            }
+          }
+          setContextMenu(null);
+          break;
+        }
+        case "add-sources": {
+          const parent = session?.nodes.get(nodeId);
+          if (parent) {
+            const alreadyExists = parent.children.some(
+              (cid) => session?.nodes.get(cid)?.name === "_sources.md",
+            );
+            if (!alreadyExists) {
+              createNode(nodeId, "_sources.md", "file", {
+                nodeType: "interpEntity",
+                content: "- ",
+              });
+            }
+          }
+          setContextMenu(null);
+          break;
+        }
       }
     },
-    [contextMenu, session, convertToSourceGraph],
+    [contextMenu, session, convertToSourceGraph, createNode],
   );
 
   const handleFileChange = useCallback(

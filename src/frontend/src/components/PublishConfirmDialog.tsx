@@ -104,15 +104,6 @@ function NodeCreateRow({ op }: { op: NodeOperation }) {
           </span>
         )}
       </div>
-      {op.attributes.length > 0 && (
-        <div className="mt-0.5 pl-2 space-y-0.5">
-          {op.attributes.map(([k, vals]) => (
-            <div key={k} className="text-[10px] text-muted-foreground">
-              {k}: {vals.join(", ")}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -131,20 +122,6 @@ function NodeUpdateRow({ op }: { op: NodeOperation }) {
           </span>
         )}
       </div>
-      {op.attributeChanges && op.attributeChanges.length > 0 && (
-        <AttributeChangesView changes={op.attributeChanges} />
-      )}
-      {op.sourceChanges && op.sourceChanges.length > 0 && (
-        <div className="mt-1 pl-2 border-l border-dashed border-cyan-600/40 text-[10px]">
-          <span className="text-cyan-600">sources changed:</span>
-          {op.sourceChanges.map((s: SourceRef) => (
-            <div key={s.name} className="text-muted-foreground">
-              + {s.name}
-              {s.url ? ` (${s.url})` : ""}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

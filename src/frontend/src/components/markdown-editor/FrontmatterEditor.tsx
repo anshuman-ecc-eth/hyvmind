@@ -1,4 +1,5 @@
 import { Plus, X } from "lucide-react";
+import { useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +37,26 @@ export function FrontmatterEditor({
 }: FrontmatterEditorProps) {
   const entries = Object.entries(frontmatter);
 
+  // Stable row IDs — grow-only array so keys never change when a field name is edited
+  const stableKeys = useRef<string[]>([]);
+  if (stableKeys.current.length < entries.length) {
+    const extra = Array.from(
+      { length: entries.length - stableKeys.current.length },
+      (_, i) =>
+        `fmrow-${stableKeys.current.length + i}-${Math.random().toString(36).slice(2)}`,
+    );
+    stableKeys.current = [...stableKeys.current, ...extra];
+  }
+
+  // 2D ref array: refs.current[idx][0] = key input, refs.current[idx][1] = value input
+  const refs = useRef<(HTMLInputElement | null)[][]>([]);
+  refs.current = refs.current.slice(0, entries.length);
+  for (let i = 0; i < entries.length; i++) {
+    if (!refs.current[i]) refs.current[i] = [null, null];
+    if (refs.current[i].length < 2)
+      refs.current[i] = [refs.current[i][0] ?? null, null];
+  }
+
   const handleKeyChange = (oldKey: string, newKey: string) => {
     const updated: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(frontmatter)) {
@@ -63,6 +84,44 @@ export function FrontmatterEditor({
       candidate = `key${i}`;
     }
     onChange({ ...frontmatter, [candidate]: "" });
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    idx: number,
+    col: number,
+    key: string,
+  ) => {
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        if (idx > 0) refs.current[idx - 1]?.[col]?.focus();
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        if (idx < entries.length - 1) refs.current[idx + 1]?.[col]?.focus();
+        break;
+      case "ArrowRight":
+        if (col === 0) {
+          e.preventDefault();
+          refs.current[idx]?.[1]?.focus();
+        }
+        break;
+      case "ArrowLeft":
+        if (col === 1) {
+          e.preventDefault();
+          refs.current[idx]?.[0]?.focus();
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        if (col === 0) {
+          e.currentTarget.value = key;
+        } else {
+          e.currentTarget.blur();
+        }
+        break;
+    }
   };
 
   return (
@@ -96,7 +155,7 @@ export function FrontmatterEditor({
         <div className="divide-y divide-border">
           {entries.map(([key, value], idx) => (
             <div
-              key={key}
+              key={stableKeys.current[idx]}
               className="flex items-center gap-1 px-2 py-1"
               data-ocid={`frontmatter_editor.row.${idx + 1}`}
             >
@@ -107,7 +166,12 @@ export function FrontmatterEditor({
                 value={key}
                 data-ocid={`frontmatter_editor.key_input.${idx + 1}`}
                 className="w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
+                ref={(el) => {
+                  if (!refs.current[idx]) refs.current[idx] = [null, null];
+                  refs.current[idx][0] = el;
+                }}
                 onChange={(e) => handleKeyChange(key, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, idx, 0, key)}
               />
               <span className="text-xs text-muted-foreground flex-shrink-0">
                 :
@@ -119,7 +183,12 @@ export function FrontmatterEditor({
                 value={formatValue(value)}
                 data-ocid={`frontmatter_editor.value_input.${idx + 1}`}
                 className="flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
+                ref={(el) => {
+                  if (!refs.current[idx]) refs.current[idx] = [null, null];
+                  refs.current[idx][1] = el;
+                }}
                 onChange={(e) => handleValueChange(key, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, idx, 1, key)}
               />
               {/* Remove button */}
               <button

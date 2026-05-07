@@ -3940,9 +3940,6 @@ body{
 .border-border{
   border-color: var(--border);
 }
-.border-cyan-600\/40{
-  border-color: rgb(8 145 178 / 0.4);
-}
 .border-destructive{
   border-color: var(--destructive);
 }
@@ -4437,10 +4434,6 @@ body{
 .text-cyan-400\/70{
   color: rgb(34 211 238 / 0.7);
 }
-.text-cyan-600{
-  --tw-text-opacity: 1;
-  color: rgb(8 145 178 / var(--tw-text-opacity, 1));
-}
 .text-destructive{
   color: var(--destructive);
 }
@@ -4634,6 +4627,10 @@ body{
 }
 .ring-offset-background{
   --tw-ring-offset-color: var(--background);
+}
+.blur{
+  --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 .grayscale{
   --tw-grayscale: grayscale(100%);

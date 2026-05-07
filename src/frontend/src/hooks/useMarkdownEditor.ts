@@ -233,12 +233,17 @@ export function useMarkdownEditor() {
   // ---------------------------------------------------------------------------
 
   const createNode = useCallback(
-    (parentId: string, name: string, type: "folder" | "file") => {
+    (
+      parentId: string,
+      name: string,
+      type: "folder" | "file",
+      extra?: { nodeType?: EditorNode["nodeType"]; content?: string },
+    ) => {
       setSession((prev) => {
         const parent = prev.nodes.get(parentId);
         if (!parent) return prev;
 
-        const nt = childNodeType(parent.nodeType, type);
+        const nt = extra?.nodeType ?? childNodeType(parent.nodeType, type);
         if (!nt) {
           console.warn(
             `[useMarkdownEditor] Invalid hierarchy: cannot add ${type} under ${parent.nodeType}`,
@@ -260,7 +265,7 @@ export function useMarkdownEditor() {
           children: [],
           createdAt: now,
           updatedAt: now,
-          ...(type === "file" ? { content: "" } : {}),
+          ...(type === "file" ? { content: extra?.content ?? "" } : {}),
         };
 
         const action: EditorAction = { type: "create", node, parentId };

@@ -82385,6 +82385,21 @@ function FrontmatterEditor({
   onChange: onChange15
 }) {
   const entries = Object.entries(frontmatter);
+  const stableKeys = reactExports.useRef([]);
+  if (stableKeys.current.length < entries.length) {
+    const extra = Array.from(
+      { length: entries.length - stableKeys.current.length },
+      (_2, i2) => `fmrow-${stableKeys.current.length + i2}-${Math.random().toString(36).slice(2)}`
+    );
+    stableKeys.current = [...stableKeys.current, ...extra];
+  }
+  const refs = reactExports.useRef([]);
+  refs.current = refs.current.slice(0, entries.length);
+  for (let i2 = 0; i2 < entries.length; i2++) {
+    if (!refs.current[i2]) refs.current[i2] = [null, null];
+    if (refs.current[i2].length < 2)
+      refs.current[i2] = [refs.current[i2][0] ?? null, null];
+  }
   const handleKeyChange = (oldKey, newKey) => {
     const updated = {};
     for (const [k2, v2] of Object.entries(frontmatter)) {
@@ -82408,6 +82423,39 @@ function FrontmatterEditor({
       candidate = `key${i2}`;
     }
     onChange15({ ...frontmatter, [candidate]: "" });
+  };
+  const handleKeyDown = (e2, idx, col, key2) => {
+    var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2;
+    switch (e2.key) {
+      case "ArrowUp":
+        e2.preventDefault();
+        if (idx > 0) (_b3 = (_a3 = refs.current[idx - 1]) == null ? void 0 : _a3[col]) == null ? void 0 : _b3.focus();
+        break;
+      case "ArrowDown":
+        e2.preventDefault();
+        if (idx < entries.length - 1) (_d2 = (_c2 = refs.current[idx + 1]) == null ? void 0 : _c2[col]) == null ? void 0 : _d2.focus();
+        break;
+      case "ArrowRight":
+        if (col === 0) {
+          e2.preventDefault();
+          (_f2 = (_e3 = refs.current[idx]) == null ? void 0 : _e3[1]) == null ? void 0 : _f2.focus();
+        }
+        break;
+      case "ArrowLeft":
+        if (col === 1) {
+          e2.preventDefault();
+          (_h2 = (_g2 = refs.current[idx]) == null ? void 0 : _g2[0]) == null ? void 0 : _h2.focus();
+        }
+        break;
+      case "Escape":
+        e2.preventDefault();
+        if (col === 0) {
+          e2.currentTarget.value = key2;
+        } else {
+          e2.currentTarget.blur();
+        }
+        break;
+    }
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
@@ -82446,7 +82494,12 @@ function FrontmatterEditor({
                   value: key2,
                   "data-ocid": `frontmatter_editor.key_input.${idx + 1}`,
                   className: "w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm",
-                  onChange: (e2) => handleKeyChange(key2, e2.target.value)
+                  ref: (el) => {
+                    if (!refs.current[idx]) refs.current[idx] = [null, null];
+                    refs.current[idx][0] = el;
+                  },
+                  onChange: (e2) => handleKeyChange(key2, e2.target.value),
+                  onKeyDown: (e2) => handleKeyDown(e2, idx, 0, key2)
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground flex-shrink-0", children: ":" }),
@@ -82458,7 +82511,12 @@ function FrontmatterEditor({
                   value: formatValue(value),
                   "data-ocid": `frontmatter_editor.value_input.${idx + 1}`,
                   className: "flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm",
-                  onChange: (e2) => handleValueChange(key2, e2.target.value)
+                  ref: (el) => {
+                    if (!refs.current[idx]) refs.current[idx] = [null, null];
+                    refs.current[idx][1] = el;
+                  },
+                  onChange: (e2) => handleValueChange(key2, e2.target.value),
+                  onKeyDown: (e2) => handleKeyDown(e2, idx, 1, key2)
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -82474,7 +82532,7 @@ function FrontmatterEditor({
               )
             ]
           },
-          key2
+          stableKeys.current[idx]
         )) })
       ]
     }
@@ -105375,11 +105433,11 @@ function useMarkdownEditor() {
     });
   }, []);
   const createNode2 = reactExports.useCallback(
-    (parentId, name, type) => {
+    (parentId, name, type, extra) => {
       setSession((prev) => {
         const parent = prev.nodes.get(parentId);
         if (!parent) return prev;
-        const nt2 = childNodeType(parent.nodeType, type);
+        const nt2 = (extra == null ? void 0 : extra.nodeType) ?? childNodeType(parent.nodeType, type);
         if (!nt2) {
           console.warn(
             `[useMarkdownEditor] Invalid hierarchy: cannot add ${type} under ${parent.nodeType}`
@@ -105400,7 +105458,7 @@ function useMarkdownEditor() {
           children: [],
           createdAt: now2,
           updatedAt: now2,
-          ...type === "file" ? { content: "" } : {}
+          ...type === "file" ? { content: (extra == null ? void 0 : extra.content) ?? "" } : {}
         };
         const action = { type: "create", node: node2, parentId };
         const nodes = new Map(prev.nodes);
@@ -105837,10 +105895,23 @@ function applyInverseAction(action, nodes) {
   return next;
 }
 const CONTEXT_OPTIONS = {
-  curation: ["new-swarm", "rename", "delete", "convert-to-source-graph"],
-  swarm: ["new-location", "rename", "delete"],
-  location: ["new-law-entity", "rename", "delete"],
-  lawEntity: ["new-file", "rename", "delete"],
+  curation: [
+    "new-swarm",
+    "add-attributes",
+    "add-sources",
+    "rename",
+    "delete",
+    "convert-to-source-graph"
+  ],
+  swarm: ["new-location", "add-attributes", "add-sources", "rename", "delete"],
+  location: [
+    "new-law-entity",
+    "add-attributes",
+    "add-sources",
+    "rename",
+    "delete"
+  ],
+  lawEntity: ["new-file", "add-attributes", "add-sources", "rename", "delete"],
   interpEntity: ["rename", "delete"]
 };
 const OPTION_LABELS = {
@@ -105848,6 +105919,8 @@ const OPTION_LABELS = {
   "new-location": "New Location",
   "new-law-entity": "New Law Entity",
   "new-file": "New File",
+  "add-attributes": "Add Attributes",
+  "add-sources": "Add Sources",
   rename: "Rename",
   delete: "Delete",
   "convert-to-source-graph": "Convert"
@@ -106048,9 +106121,46 @@ function EditorView() {
           })();
           break;
         }
+        case "add-attributes": {
+          const parent = session == null ? void 0 : session.nodes.get(nodeId);
+          if (parent) {
+            const alreadyExists = parent.children.some(
+              (cid) => {
+                var _a4;
+                return ((_a4 = session == null ? void 0 : session.nodes.get(cid)) == null ? void 0 : _a4.name) === "_attributes.md";
+              }
+            );
+            if (!alreadyExists) {
+              createNode2(nodeId, "_attributes.md", "file", {
+                nodeType: "interpEntity"
+              });
+            }
+          }
+          setContextMenu(null);
+          break;
+        }
+        case "add-sources": {
+          const parent = session == null ? void 0 : session.nodes.get(nodeId);
+          if (parent) {
+            const alreadyExists = parent.children.some(
+              (cid) => {
+                var _a4;
+                return ((_a4 = session == null ? void 0 : session.nodes.get(cid)) == null ? void 0 : _a4.name) === "_sources.md";
+              }
+            );
+            if (!alreadyExists) {
+              createNode2(nodeId, "_sources.md", "file", {
+                nodeType: "interpEntity",
+                content: "- "
+              });
+            }
+          }
+          setContextMenu(null);
+          break;
+        }
       }
     },
-    [contextMenu, session, convertToSourceGraph]
+    [contextMenu, session, convertToSourceGraph, createNode2]
   );
   const handleFileChange = reactExports.useCallback(
     async (e2) => {
@@ -107705,42 +107815,24 @@ function CollapsibleSection({
   ] });
 }
 function NodeCreateRow({ op }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
-      op.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground", children: [
-        "← ",
-        op.parentName
-      ] })
-    ] }),
-    op.attributes.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: op.attributes.map(([k2, vals]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-[10px] text-muted-foreground", children: [
-      k2,
-      ": ",
-      vals.join(", ")
-    ] }, k2)) })
-  ] });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
+    op.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground", children: [
+      "← ",
+      op.parentName
+    ] })
+  ] }) });
 }
 function NodeUpdateRow({ op }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
-      op.backendId && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground font-mono", children: [
-        op.backendId.slice(0, 12),
-        "…"
-      ] })
-    ] }),
-    op.attributeChanges && op.attributeChanges.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(AttributeChangesView, { changes: op.attributeChanges }),
-    op.sourceChanges && op.sourceChanges.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-1 pl-2 border-l border-dashed border-cyan-600/40 text-[10px]", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-cyan-600", children: "sources changed:" }),
-      op.sourceChanges.map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-muted-foreground", children: [
-        "+ ",
-        s2.name,
-        s2.url ? ` (${s2.url})` : ""
-      ] }, s2.name))
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
+    op.backendId && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground font-mono", children: [
+      op.backendId.slice(0, 12),
+      "…"
     ] })
-  ] });
+  ] }) });
 }
 function EdgeCreateRow({ op }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: [

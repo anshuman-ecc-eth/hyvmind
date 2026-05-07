@@ -2303,7 +2303,6 @@ actor {
                    sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
-                curationsToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
@@ -2320,7 +2319,6 @@ actor {
                  sourceChanges = node.sources;
               });
               nodesToCreate += 1;
-              curationsToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -2433,7 +2431,6 @@ actor {
                    sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
-                swarmsToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
@@ -2449,7 +2446,6 @@ actor {
                  sourceChanges = node.sources;
               });
               nodesToCreate += 1;
-              swarmsToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -2563,7 +2559,6 @@ actor {
                    sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
-                locationsToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
@@ -2579,7 +2574,6 @@ actor {
                  sourceChanges = node.sources;
               });
               nodesToCreate += 1;
-              locationsToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -2693,7 +2687,6 @@ actor {
                    sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
-                lawEntitiesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
@@ -2709,7 +2702,6 @@ actor {
                  sourceChanges = node.sources;
               });
               nodesToCreate += 1;
-              lawEntitiesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -2823,7 +2815,6 @@ actor {
                    sourceChanges = node.sources;
                 });
                 nodesToCreate += 1;
-                interpEntitiesToCreate += 1;
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
@@ -2839,7 +2830,6 @@ actor {
                  sourceChanges = node.sources;
               });
               nodesToCreate += 1;
-              interpEntitiesToCreate += 1;
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -3198,6 +3188,7 @@ actor {
           nodesToCreate += 1;
           curationsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
         };
       };
     };
