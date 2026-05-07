@@ -290,7 +290,7 @@ export interface _SERVICE {
       { 'err' : string }
   >,
   'generateApiKey' : ActorMethod<[], string>,
-  'generateBuzzSecret' : ActorMethod<[bigint, string], string>,
+  'generateBuzzSecret' : ActorMethod<[bigint], string>,
   'generateInviteCodes' : ActorMethod<[bigint, bigint], Array<string>>,
   'getAllPublishedSourceGraphs' : ActorMethod<
     [],

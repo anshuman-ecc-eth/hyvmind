@@ -364,7 +364,7 @@ service : {
           };
     });
   generateApiKey: () -> (text);
-  generateBuzzSecret: (score: int, clientHex: text) -> (text);
+  generateBuzzSecret: (score: int) -> (text);
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;

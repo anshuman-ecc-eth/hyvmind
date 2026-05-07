@@ -330,7 +330,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
-  'generateBuzzSecret' : IDL.Func([IDL.Int, IDL.Text], [IDL.Text], []),
+  'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
   'generateInviteCodes' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Vec(IDL.Text)], []),
   'getAllPublishedSourceGraphs' : IDL.Func(
       [],
@@ -775,7 +775,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
-    'generateBuzzSecret' : IDL.Func([IDL.Int, IDL.Text], [IDL.Text], []),
+    'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
     'generateInviteCodes' : IDL.Func(
         [IDL.Nat, IDL.Nat],
         [IDL.Vec(IDL.Text)],

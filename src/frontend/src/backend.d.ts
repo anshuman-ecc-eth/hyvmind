@@ -333,7 +333,7 @@ export interface backendInterface {
         err: string;
     }>;
     generateApiKey(): Promise<string>;
-    generateBuzzSecret(score: bigint, clientHex: string): Promise<string>;
+    generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;

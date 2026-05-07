@@ -17,14 +17,32 @@ import type {
   Swarm,
   backendInterface,
 } from "../backend";
-import { createActor } from "../backend";
+import { createActor as createBaseActor } from "../backend";
+import type { CreateActorOptions, ExternalBlob } from "../backend";
+
+function createActorWithDefaults(
+  canisterId: string,
+  _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>,
+  _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>,
+  options: CreateActorOptions = {},
+) {
+  return createBaseActor(canisterId, _uploadFile, _downloadFile, {
+    ...options,
+    agentOptions: {
+      ...options.agentOptions,
+      retryTimes: 1,
+    },
+  });
+}
 
 // Typed wrapper to get a properly-typed backend actor
 function useBackendActor(): {
   actor: backendInterface | null;
   isFetching: boolean;
 } {
-  const result = useActor(createActor as Parameters<typeof useActor>[0]);
+  const result = useActor(
+    createActorWithDefaults as unknown as Parameters<typeof useActor>[0],
+  );
   return {
     actor: result.actor as backendInterface | null,
     isFetching: result.isFetching,
@@ -441,18 +459,9 @@ export function useGenerateBuzzSecret() {
   const { actor } = useBackendActor();
 
   return useMutation({
-    mutationFn: async ({
-      score,
-      clientHex,
-    }: {
-      score: bigint;
-      clientHex: string;
-    }) => {
+    mutationFn: async (score: bigint) => {
       if (!actor) throw new Error("Actor not available");
-      return (actor as unknown as BuzzActor).generateBuzzSecret(
-        score,
-        clientHex,
-      );
+      return (actor as unknown as BuzzActor).generateBuzzSecret(score);
     },
   });
 }

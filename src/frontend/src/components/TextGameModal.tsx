@@ -862,7 +862,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [secretCode, setSecretCode] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showScoreConfirmation, setShowScoreConfirmation] = useState(false);
-  const generateBuzzSecret = useGenerateBuzzSecret();
+  const { mutateAsync: generateBuzzSecret } = useGenerateBuzzSecret();
 
   // Phase state
   const [phase, setPhase] = useState<Phase>({ type: "idle" });
@@ -1031,17 +1031,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     if (generatingScore === null) return;
     let cancelled = false;
     (async () => {
-      // Generate random hex suffix on the client (microseconds, no consensus)
-      const bytes = new Uint8Array(8);
-      crypto.getRandomValues(bytes);
-      const clientHex = Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
       try {
-        const secret = await generateBuzzSecret.mutateAsync({
-          score: BigInt(Math.round(generatingScore)),
-          clientHex,
-        });
+        const secret = await generateBuzzSecret(
+          BigInt(Math.round(generatingScore)),
+        );
         if (!cancelled) {
           setSecretCode(secret);
           setShowScoreConfirmation(true);
