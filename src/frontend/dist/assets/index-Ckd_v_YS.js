@@ -82321,6 +82321,7 @@ function FrontmatterEditor({
     );
     stableKeys.current = [...stableKeys.current, ...extra];
   }
+  const [navMode, setNavMode] = reactExports.useState(false);
   const refs = reactExports.useRef([]);
   refs.current = refs.current.slice(0, entries.length);
   for (let i2 = 0; i2 < entries.length; i2++) {
@@ -82352,36 +82353,47 @@ function FrontmatterEditor({
     }
     onChange15({ ...frontmatter, [candidate]: "" });
   };
-  const handleKeyDown = (e2, idx, col, key2) => {
+  const handleKeyDown = (e2, idx, col, _key) => {
     var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2;
     switch (e2.key) {
       case "ArrowUp":
-        e2.preventDefault();
-        if (idx > 0) (_b3 = (_a3 = refs.current[idx - 1]) == null ? void 0 : _a3[col]) == null ? void 0 : _b3.focus();
+        if (navMode) {
+          e2.preventDefault();
+          if (idx > 0) (_b3 = (_a3 = refs.current[idx - 1]) == null ? void 0 : _a3[col]) == null ? void 0 : _b3.focus();
+        }
         break;
       case "ArrowDown":
-        e2.preventDefault();
-        if (idx < entries.length - 1) (_d2 = (_c2 = refs.current[idx + 1]) == null ? void 0 : _c2[col]) == null ? void 0 : _d2.focus();
+        if (navMode) {
+          e2.preventDefault();
+          if (idx < entries.length - 1) (_d2 = (_c2 = refs.current[idx + 1]) == null ? void 0 : _c2[col]) == null ? void 0 : _d2.focus();
+        }
         break;
       case "ArrowRight":
-        if (col === 0) {
+        if (navMode && col === 0) {
           e2.preventDefault();
           (_f2 = (_e3 = refs.current[idx]) == null ? void 0 : _e3[1]) == null ? void 0 : _f2.focus();
         }
         break;
       case "ArrowLeft":
-        if (col === 1) {
+        if (navMode && col === 1) {
           e2.preventDefault();
           (_h2 = (_g2 = refs.current[idx]) == null ? void 0 : _g2[0]) == null ? void 0 : _h2.focus();
         }
         break;
       case "Escape":
         e2.preventDefault();
-        if (col === 0) {
-          e2.currentTarget.value = key2;
-        } else {
-          e2.currentTarget.blur();
-        }
+        setNavMode(true);
+        break;
+      case "Enter":
+        e2.preventDefault();
+        setNavMode(false);
+        requestAnimationFrame(() => {
+          var _a4;
+          const input = (_a4 = refs.current[idx]) == null ? void 0 : _a4[col];
+          if (input && document.activeElement === input) {
+            input.setSelectionRange(input.value.length, input.value.length);
+          }
+        });
         break;
     }
   };
@@ -82421,13 +82433,13 @@ function FrontmatterEditor({
                   "aria-label": "Frontmatter key",
                   value: key2,
                   "data-ocid": `frontmatter_editor.key_input.${idx + 1}`,
-                  className: "w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm",
+                  className: `w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none rounded-sm ${navMode ? "focus:ring-2 focus:ring-ring" : "focus:ring-1 focus:ring-ring"}`,
                   ref: (el) => {
                     if (!refs.current[idx]) refs.current[idx] = [null, null];
                     refs.current[idx][0] = el;
                   },
                   onChange: (e2) => handleKeyChange(key2, e2.target.value),
-                  onKeyDown: (e2) => handleKeyDown(e2, idx, 0, key2)
+                  onKeyDown: (e2) => handleKeyDown(e2, idx, 0)
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground flex-shrink-0", children: ":" }),
@@ -82438,13 +82450,13 @@ function FrontmatterEditor({
                   "aria-label": "Frontmatter value",
                   value: formatValue(value),
                   "data-ocid": `frontmatter_editor.value_input.${idx + 1}`,
-                  className: "flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm",
+                  className: `flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none rounded-sm ${navMode ? "focus:ring-2 focus:ring-ring" : "focus:ring-1 focus:ring-ring"}`,
                   ref: (el) => {
                     if (!refs.current[idx]) refs.current[idx] = [null, null];
                     refs.current[idx][1] = el;
                   },
                   onChange: (e2) => handleValueChange(key2, e2.target.value),
-                  onKeyDown: (e2) => handleKeyDown(e2, idx, 1, key2)
+                  onKeyDown: (e2) => handleKeyDown(e2, idx, 1)
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -83115,13 +83127,13 @@ function MarkdownEditor({
       if (atIndex < 0) return;
       const newContent = `${content2.slice(0, atIndex)}{${nodeName}}${content2.slice(cursorPos)}`;
       onChange15(newContent);
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (textareaRef.current) {
           const newPos = atIndex + nodeName.length + 2;
           textareaRef.current.setSelectionRange(newPos, newPos);
           textareaRef.current.focus();
         }
-      }, 0);
+      });
       setDropdownOpen(false);
     },
     [content2, onChange15]
@@ -83190,13 +83202,13 @@ function MarkdownEditor({
       const end = ta.selectionEnd;
       const result = transform2(content2, start2, end);
       onChange15(result.newContent);
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (!textareaRef.current) return;
         const newStart = result.newStart ?? result.newCursor ?? start2;
         const newEnd = result.newEnd ?? result.newCursor ?? newStart;
         textareaRef.current.setSelectionRange(newStart, newEnd);
         textareaRef.current.focus();
-      }, 0);
+      });
     },
     [content2, onChange15]
   );
@@ -107752,16 +107764,6 @@ function NodeCreateRow({ op }) {
     ] })
   ] }) });
 }
-function NodeUpdateRow({ op }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
-    op.backendId && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground font-mono", children: [
-      op.backendId.slice(0, 12),
-      "…"
-    ] })
-  ] }) });
-}
 function EdgeCreateRow({ op }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs font-mono text-foreground", children: [
@@ -107815,7 +107817,6 @@ function PublishConfirmDialog({
     (op) => op.action === "update" && op.nodeType === "curation"
   );
   const nodesToCreate = nodeOperations.filter((op) => op.action === "create");
-  const nodesToUpdate = nodeOperations.filter((op) => op.action === "update");
   const edgesToCreate = edgeOperations.filter((op) => op.action === "create");
   const edgesToUpdate = edgeOperations.filter((op) => op.action === "update");
   const nodesWithNewAttributes = nodeOperations.filter(
@@ -107881,11 +107882,6 @@ function PublishConfirmDialog({
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.nodesToCreate }),
                     " ",
                     "new nodes"
-                  ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.nodesToUpdate }),
-                    " ",
-                    "updated nodes"
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.edgesToCreate }),
@@ -108007,14 +108003,6 @@ function PublishConfirmDialog({
                 title: "nodes to create",
                 count: nodesToCreate.length,
                 children: nodesToCreate.map((op) => /* @__PURE__ */ jsxRuntimeExports.jsx(NodeCreateRow, { op }, op.localName))
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              CollapsibleSection,
-              {
-                title: "nodes to update",
-                count: nodesToUpdate.length,
-                children: nodesToUpdate.map((op) => /* @__PURE__ */ jsxRuntimeExports.jsx(NodeUpdateRow, { op }, op.localName))
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(

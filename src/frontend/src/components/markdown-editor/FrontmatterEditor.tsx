@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,6 +48,8 @@ export function FrontmatterEditor({
     stableKeys.current = [...stableKeys.current, ...extra];
   }
 
+  const [navMode, setNavMode] = useState(false);
+
   // 2D ref array: refs.current[idx][0] = key input, refs.current[idx][1] = value input
   const refs = useRef<(HTMLInputElement | null)[][]>([]);
   refs.current = refs.current.slice(0, entries.length);
@@ -90,36 +92,46 @@ export function FrontmatterEditor({
     e: React.KeyboardEvent<HTMLInputElement>,
     idx: number,
     col: number,
-    key: string,
+    _key: string,
   ) => {
     switch (e.key) {
       case "ArrowUp":
-        e.preventDefault();
-        if (idx > 0) refs.current[idx - 1]?.[col]?.focus();
+        if (navMode) {
+          e.preventDefault();
+          if (idx > 0) refs.current[idx - 1]?.[col]?.focus();
+        }
         break;
       case "ArrowDown":
-        e.preventDefault();
-        if (idx < entries.length - 1) refs.current[idx + 1]?.[col]?.focus();
+        if (navMode) {
+          e.preventDefault();
+          if (idx < entries.length - 1) refs.current[idx + 1]?.[col]?.focus();
+        }
         break;
       case "ArrowRight":
-        if (col === 0) {
+        if (navMode && col === 0) {
           e.preventDefault();
           refs.current[idx]?.[1]?.focus();
         }
         break;
       case "ArrowLeft":
-        if (col === 1) {
+        if (navMode && col === 1) {
           e.preventDefault();
           refs.current[idx]?.[0]?.focus();
         }
         break;
       case "Escape":
         e.preventDefault();
-        if (col === 0) {
-          e.currentTarget.value = key;
-        } else {
-          e.currentTarget.blur();
-        }
+        setNavMode(true);
+        break;
+      case "Enter":
+        e.preventDefault();
+        setNavMode(false);
+        requestAnimationFrame(() => {
+          const input = refs.current[idx]?.[col];
+          if (input && document.activeElement === input) {
+            input.setSelectionRange(input.value.length, input.value.length);
+          }
+        });
         break;
     }
   };
@@ -165,7 +177,7 @@ export function FrontmatterEditor({
                 aria-label="Frontmatter key"
                 value={key}
                 data-ocid={`frontmatter_editor.key_input.${idx + 1}`}
-                className="w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
+                className={`w-28 px-1.5 py-0.5 text-xs font-mono bg-muted border border-border text-foreground focus:outline-none rounded-sm ${navMode ? "focus:ring-2 focus:ring-ring" : "focus:ring-1 focus:ring-ring"}`}
                 ref={(el) => {
                   if (!refs.current[idx]) refs.current[idx] = [null, null];
                   refs.current[idx][0] = el;
@@ -182,7 +194,7 @@ export function FrontmatterEditor({
                 aria-label="Frontmatter value"
                 value={formatValue(value)}
                 data-ocid={`frontmatter_editor.value_input.${idx + 1}`}
-                className="flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm"
+                className={`flex-1 min-w-0 px-1.5 py-0.5 text-xs font-mono bg-background border border-border text-foreground focus:outline-none rounded-sm ${navMode ? "focus:ring-2 focus:ring-ring" : "focus:ring-1 focus:ring-ring"}`}
                 ref={(el) => {
                   if (!refs.current[idx]) refs.current[idx] = [null, null];
                   refs.current[idx][1] = el;

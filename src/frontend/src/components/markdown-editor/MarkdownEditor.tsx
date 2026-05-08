@@ -126,13 +126,13 @@ export function MarkdownEditor({
       if (atIndex < 0) return;
       const newContent = `${content.slice(0, atIndex)}{${nodeName}}${content.slice(cursorPos)}`;
       onChange(newContent);
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (textareaRef.current) {
           const newPos = atIndex + nodeName.length + 2;
           textareaRef.current.setSelectionRange(newPos, newPos);
           textareaRef.current.focus();
         }
-      }, 0);
+      });
       setDropdownOpen(false);
     },
     [content, onChange],
@@ -221,13 +221,13 @@ export function MarkdownEditor({
       const result = transform(content, start, end);
       onChange(result.newContent);
       // Restore selection after re-render
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         if (!textareaRef.current) return;
         const newStart = result.newStart ?? result.newCursor ?? start;
         const newEnd = result.newEnd ?? result.newCursor ?? newStart;
         textareaRef.current.setSelectionRange(newStart, newEnd);
         textareaRef.current.focus();
-      }, 0);
+      });
     },
     [content, onChange],
   );

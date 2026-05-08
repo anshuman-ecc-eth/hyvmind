@@ -108,24 +108,6 @@ function NodeCreateRow({ op }: { op: NodeOperation }) {
   );
 }
 
-function NodeUpdateRow({ op }: { op: NodeOperation }) {
-  return (
-    <div className="py-1.5 border-b border-dashed border-border/40 last:border-0">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-foreground font-mono">
-          {op.localName}
-        </span>
-        <NodeTypeBadge type={op.nodeType} />
-        {op.backendId && (
-          <span className="text-[10px] text-muted-foreground font-mono">
-            {op.backendId.slice(0, 12)}…
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function EdgeCreateRow({ op }: { op: EdgeOperation }) {
   return (
     <div className="py-1.5 border-b border-dashed border-border/40 last:border-0">
@@ -199,7 +181,6 @@ export default function PublishConfirmDialog({
   );
 
   const nodesToCreate = nodeOperations.filter((op) => op.action === "create");
-  const nodesToUpdate = nodeOperations.filter((op) => op.action === "update");
   const edgesToCreate = edgeOperations.filter((op) => op.action === "create");
   const edgesToUpdate = edgeOperations.filter((op) => op.action === "update");
 
@@ -264,10 +245,6 @@ export default function PublishConfirmDialog({
                   {summary.nodesToCreate}
                 </span>{" "}
                 new nodes
-              </span>
-              <span>
-                <span className="text-amber-600">{summary.nodesToUpdate}</span>{" "}
-                updated nodes
               </span>
               <span>
                 <span className="text-emerald-600">
@@ -384,15 +361,6 @@ export default function PublishConfirmDialog({
             >
               {nodesToCreate.map((op) => (
                 <NodeCreateRow key={op.localName} op={op} />
-              ))}
-            </CollapsibleSection>
-
-            <CollapsibleSection
-              title="nodes to update"
-              count={nodesToUpdate.length}
-            >
-              {nodesToUpdate.map((op) => (
-                <NodeUpdateRow key={op.localName} op={op} />
               ))}
             </CollapsibleSection>
 

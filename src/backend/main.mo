@@ -2936,16 +2936,8 @@ actor {
                   let bothBelong = srcBelongs and tgtBelongs;
                   Debug.print("Preview: Edge " # edge.sourceName # " -> " # edge.targetName # " belongsToPublishedGraph = " # bothBelong.toText());
                   if (srcBelongs and tgtBelongs) {
-                    edgeOps.add({
-                      sourceName = edge.sourceName;
-                      targetName = edge.targetName;
-                      sourceId = ?sourceId;
-                      targetId = ?targetId;
-                      action = #update({ newLabels = [edge.edgeLabel] });
-                      labels = [edge.edgeLabel];
-                      bidirectional = edge.bidirectional;
-                    });
-                    edgesToUpdate += 1;
+                    // Edge already exists in the published graph with same source+target
+                    // and edges have no meaningful labels — nothing to update, skip
                   } else {
                     edgeOps.add({
                       sourceName = edge.sourceName;
