@@ -1,44 +1,80 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
+import Time "mo:core/Time";
 
 module {
-  // ─── Old types (from .old/src/backend/dist/backend.most) ─────────────────
-  type OldNodeContribution = { buzzCost : Int; paidBy : Principal };
-
-  type OldActor = {
-    var publishedNodeContributions :
-      Map.Map<Text, Map.Map<Text, OldNodeContribution>>;
+  // ── Old types (from the previously deployed stable interface) ────────────────
+  type OldExtensionEntry = {
+    extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
   };
 
-  // ─── New types ────────────────────────────────────────────────────────────
-  type NewNodeContribution = { payers : List.List<(Principal, Int)> };
+  type OldPublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [OldExtensionEntry];
+    artworkDataUrl : ?Text;
+    // NOTE: terrainParams is absent from the old type
+  };
+
+  // ── New types (matching the new PublishedSourceGraphMeta in main.mo) ─────────
+  type NewExtensionEntry = {
+    extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
+  };
+
+  type NewPublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [NewExtensionEntry];
+    artworkDataUrl : ?Text;
+    terrainParams : ?Text;
+  };
+
+  // ── State shapes ─────────────────────────────────────────────────────────────
+  type OldActor = {
+    var publishedSourceGraphs : Map.Map<Text, OldPublishedSourceGraphMeta>;
+  };
 
   type NewActor = {
-    var publishedNodeContributions :
-      Map.Map<Text, Map.Map<Text, NewNodeContribution>>;
-    var trustTransactions :
-      Map.Map<Principal, List.List<{ saver : Principal; savedAt : Int; saveNumber : Nat; totalBuzzCost : Int; earned : Int }>>;
+    var publishedSourceGraphs : Map.Map<Text, NewPublishedSourceGraphMeta>;
   };
 
+  // ── Migration function ───────────────────────────────────────────────────────
   public func run(old : OldActor) : NewActor {
-    // Convert each inner NodeContribution from single-payer to multi-payer.
-    // In practice publishedNodeContributions has no production data (feature
-    // was added in recent commits), so this map is always empty at upgrade.
-    let newContribs = old.publishedNodeContributions.map<Text, Map.Map<Text, OldNodeContribution>, Map.Map<Text, NewNodeContribution>>(
-      func(_, innerMap) {
-        innerMap.map<Text, OldNodeContribution, NewNodeContribution>(
-          func(_, oldContrib) {
-            let payers = List.singleton(
-              (oldContrib.paidBy, oldContrib.buzzCost)
-            );
-            { payers }
-          }
-        )
+    let newGraphs = old.publishedSourceGraphs.map<Text, OldPublishedSourceGraphMeta, NewPublishedSourceGraphMeta>(
+      func(_id, meta) {
+        { meta with terrainParams = null }
       }
     );
-    {
-      var publishedNodeContributions = newContribs;
-      var trustTransactions = Map.empty<Principal, List.List<{ saver : Principal; savedAt : Int; saveNumber : Nat; totalBuzzCost : Int; earned : Int }>>();
-    }
+    { var publishedSourceGraphs = newGraphs }
   };
 };

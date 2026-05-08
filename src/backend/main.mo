@@ -25,19 +25,22 @@ import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import Migration "migration";
-
-
-
-
-
-
-
-
-
-
-
-
 
 (with migration = Migration.run)
 actor {
@@ -299,6 +302,7 @@ actor {
     sourcesCount : ?Nat;
     extensionLog : [ExtensionEntry];
     artworkDataUrl : ?Text;
+    terrainParams : ?Text;
   };
 
   // Source graph edge with weighted labels
@@ -4109,6 +4113,7 @@ actor {
           sourcesCount = ?sourcesAdded;
           extensionLog = [];
           artworkDataUrl = null;
+          terrainParams = null;
         };
         publishedSourceGraphs.add(newPid, newMeta);
         publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
@@ -4309,6 +4314,19 @@ actor {
       case (?meta) {
         if (meta.creator != caller) { return false };
         let updated : PublishedSourceGraphMeta = { meta with artworkDataUrl = ?dataUrl };
+        publishedSourceGraphs.add(id, updated);
+        true;
+      };
+    };
+  };
+
+  // ─── updateSourceGraphTerrainParams: Store terrain params for a published graph ─
+  public shared ({ caller }) func updateSourceGraphTerrainParams(id : Text, paramsJson : Text) : async Bool {
+    switch (publishedSourceGraphs.get(id)) {
+      case (null) { false };
+      case (?meta) {
+        if (meta.creator != caller) { return false };
+        let updated : PublishedSourceGraphMeta = { meta with terrainParams = ?paramsJson };
         publishedSourceGraphs.add(id, updated);
         true;
       };

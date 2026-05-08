@@ -116,7 +116,32 @@ type NodeContribution__721536626 =
 type NodeId__811092033 = Text;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-type OldNodeContribution__631011422 = {buzzCost : Int; paidBy : Principal};
+type OldExtensionEntry__187459621 =
+  {
+    addedAttributes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedNodes : Nat;
+    addedSources : ?Nat;
+    extendedAt : Time__900049286;
+    extendedBy : Principal;
+    extendedByName : Text
+  };
+type OldPublishedSourceGraphMeta__687042500 =
+  {
+    artworkDataUrl : ?Text;
+    attributeCount : Nat;
+    creator : Principal;
+    creatorName : Text;
+    edgeCount : Nat;
+    extensionLog : [OldExtensionEntry__187459621];
+    hierarchyEdgeCount : Nat;
+    id : Text;
+    name : Text;
+    nodeCount : Nat;
+    publishedAt : Time__900049286;
+    sourcesCount : ?Nat
+  };
 type PublishedSourceGraphMeta__808509219 =
   {
     artworkDataUrl : ?Text;
@@ -130,7 +155,8 @@ type PublishedSourceGraphMeta__808509219 =
     name : Text;
     nodeCount : Nat;
     publishedAt : Time__900049286;
-    sourcesCount : ?Nat
+    sourcesCount : ?Nat;
+    terrainParams : ?Text
   };
 type SourceGraphEdge__199036688 =
   {
@@ -320,13 +346,16 @@ actor ({
                         {cumulativeBuzzSpent : Int; extensionCount : Nat}>;
       var size : Nat__490723111
     };
-  in var publishedNodeContributions :
-    Map__605269027<Text, Map__605269027<Text, OldNodeContribution__631011422>>;
-  stable var publishedSourceGraphs :
+  stable var publishedNodeContributions :
     {
-      var root : Node__46230540<Text, PublishedSourceGraphMeta__808509219>;
+      var root :
+        Node__46230540<Text,
+                        Map__605269027<NodeId__811092033,
+                                        NodeContribution__721536626>>;
       var size : Nat__490723111
     };
+  in var publishedSourceGraphs :
+    Map__605269027<Text, OldPublishedSourceGraphMeta__687042500>;
   stable var sourceEdges :
     {
       var root :
@@ -359,6 +388,12 @@ actor ({
   stable var trustScores :
     {
       var root : Node__46230540<Principal, TrustScore__724277234>;
+      var size : Nat__490723111
+    };
+  stable var trustTransactions :
+    {
+      var root :
+        Node__46230540<Principal, List__415060402<TrustTransaction__1112320>>;
       var size : Nat__490723111
     };
   stable var userProfiles :

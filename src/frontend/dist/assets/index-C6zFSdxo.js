@@ -28238,7 +28238,8 @@ const PublishedSourceGraphMeta = Record({
   "sourcesCount": Opt(Nat),
   "artworkDataUrl": Opt(Text),
   "hierarchyEdgeCount": Nat,
-  "nodeCount": Nat
+  "nodeCount": Nat,
+  "terrainParams": Opt(Text)
 });
 const UserProfile = Record({
   "name": Text,
@@ -28629,6 +28630,11 @@ Service({
     ["query"]
   ),
   "updateSourceGraphArtwork": Func([Text, Text], [Bool], []),
+  "updateSourceGraphTerrainParams": Func(
+    [Text, Text],
+    [Bool],
+    []
+  ),
   "upvoteNode": Func([NodeId], [], [])
 });
 const idlFactory = ({ IDL: IDL2 }) => {
@@ -28704,7 +28710,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "sourcesCount": IDL2.Opt(IDL2.Nat),
     "artworkDataUrl": IDL2.Opt(IDL2.Text),
     "hierarchyEdgeCount": IDL2.Nat,
-    "nodeCount": IDL2.Nat
+    "nodeCount": IDL2.Nat,
+    "terrainParams": IDL2.Opt(IDL2.Text)
   });
   const UserProfile2 = IDL2.Record({
     "name": IDL2.Text,
@@ -29096,6 +29103,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "updateSourceGraphArtwork": IDL2.Func([IDL2.Text, IDL2.Text], [IDL2.Bool], []),
+    "updateSourceGraphTerrainParams": IDL2.Func(
+      [IDL2.Text, IDL2.Text],
+      [IDL2.Bool],
+      []
+    ),
     "upvoteNode": IDL2.Func([NodeId2], [], [])
   });
 };
@@ -29985,6 +29997,20 @@ class Backend {
       return result;
     }
   }
+  async updateSourceGraphTerrainParams(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.updateSourceGraphTerrainParams(arg0, arg1);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.updateSourceGraphTerrainParams(arg0, arg1);
+      return result;
+    }
+  }
   async upvoteNode(arg0) {
     if (this.processError) {
       try {
@@ -30108,7 +30134,8 @@ function from_candid_record_n17(_uploadFile, _downloadFile, value) {
     sourcesCount: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.sourcesCount)),
     artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
     hierarchyEdgeCount: value.hierarchyEdgeCount,
-    nodeCount: value.nodeCount
+    nodeCount: value.nodeCount,
+    terrainParams: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.terrainParams))
   };
 }
 function from_candid_record_n20(_uploadFile, _downloadFile, value) {
@@ -33697,7 +33724,7 @@ const getDefaultConfig = () => {
   const opacity = fromTheme("opacity");
   const padding = fromTheme("padding");
   const saturate2 = fromTheme("saturate");
-  const scale = fromTheme("scale");
+  const scale2 = fromTheme("scale");
   const sepia = fromTheme("sepia");
   const skew = fromTheme("skew");
   const space2 = fromTheme("space");
@@ -35352,21 +35379,21 @@ const getDefaultConfig = () => {
        * @see https://tailwindcss.com/docs/scale
        */
       scale: [{
-        scale: [scale]
+        scale: [scale2]
       }],
       /**
        * Scale X
        * @see https://tailwindcss.com/docs/scale
        */
       "scale-x": [{
-        "scale-x": [scale]
+        "scale-x": [scale2]
       }],
       /**
        * Scale Y
        * @see https://tailwindcss.com/docs/scale
        */
       "scale-y": [{
-        "scale-y": [scale]
+        "scale-y": [scale2]
       }],
       /**
        * Rotate
@@ -39052,21 +39079,21 @@ function getBoundingClientRect(element2, includeScale, isFixedStrategy, offsetPa
   }
   const clientRect = element2.getBoundingClientRect();
   const domElement = unwrapElement(element2);
-  let scale = createCoords(1);
+  let scale2 = createCoords(1);
   if (includeScale) {
     if (offsetParent) {
       if (isElement(offsetParent)) {
-        scale = getScale(offsetParent);
+        scale2 = getScale(offsetParent);
       }
     } else {
-      scale = getScale(element2);
+      scale2 = getScale(element2);
     }
   }
   const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
-  let x3 = (clientRect.left + visualOffsets.x) / scale.x;
-  let y2 = (clientRect.top + visualOffsets.y) / scale.y;
-  let width = clientRect.width / scale.x;
-  let height = clientRect.height / scale.y;
+  let x3 = (clientRect.left + visualOffsets.x) / scale2.x;
+  let y2 = (clientRect.top + visualOffsets.y) / scale2.y;
+  let width = clientRect.width / scale2.x;
+  let height = clientRect.height / scale2.y;
   if (domElement) {
     const win = getWindow(domElement);
     const offsetWin = offsetParent && isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
@@ -39128,7 +39155,7 @@ function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
     scrollLeft: 0,
     scrollTop: 0
   };
-  let scale = createCoords(1);
+  let scale2 = createCoords(1);
   const offsets = createCoords(0);
   const isOffsetParentAnElement = isHTMLElement(offsetParent);
   if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
@@ -39137,17 +39164,17 @@ function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
     }
     if (isOffsetParentAnElement) {
       const offsetRect = getBoundingClientRect(offsetParent);
-      scale = getScale(offsetParent);
+      scale2 = getScale(offsetParent);
       offsets.x = offsetRect.x + offsetParent.clientLeft;
       offsets.y = offsetRect.y + offsetParent.clientTop;
     }
   }
   const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
   return {
-    width: rect.width * scale.x,
-    height: rect.height * scale.y,
-    x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
-    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
+    width: rect.width * scale2.x,
+    height: rect.height * scale2.y,
+    x: rect.x * scale2.x - scroll.scrollLeft * scale2.x + offsets.x + htmlOffset.x,
+    y: rect.y * scale2.y - scroll.scrollTop * scale2.y + offsets.y + htmlOffset.y
   };
 }
 function getClientRects(element2) {
@@ -39213,11 +39240,11 @@ function getInnerBoundingClientRect(element2, strategy) {
   const clientRect = getBoundingClientRect(element2, true, strategy === "fixed");
   const top = clientRect.top + element2.clientTop;
   const left = clientRect.left + element2.clientLeft;
-  const scale = isHTMLElement(element2) ? getScale(element2) : createCoords(1);
-  const width = element2.clientWidth * scale.x;
-  const height = element2.clientHeight * scale.y;
-  const x3 = left * scale.x;
-  const y2 = top * scale.y;
+  const scale2 = isHTMLElement(element2) ? getScale(element2) : createCoords(1);
+  const width = element2.clientWidth * scale2.x;
+  const height = element2.clientHeight * scale2.y;
+  const x3 = left * scale2.x;
+  const y2 = top * scale2.y;
   return {
     width,
     height,
@@ -41752,8 +41779,10 @@ function Header({ onNavigateToSettings }) {
 function ArtworkModal({
   artworkUrl,
   graphName,
+  terrainParams,
   onClose
 }) {
+  const [showParams, setShowParams] = reactExports.useState(false);
   reactExports.useEffect(() => {
     const handler = (e2) => {
       if (e2.key === "Escape") onClose();
@@ -41795,13 +41824,29 @@ function ArtworkModal({
             "img",
             {
               src: artworkUrl,
-              alt: `Truchet tile artwork for ${graphName}`,
+              alt: `Terrain artwork for ${graphName}`,
               width: 400,
               height: 400,
               className: "block",
               style: { imageRendering: "pixelated" }
             }
-          )
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setShowParams((p2) => !p2),
+              className: "border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors",
+              "data-ocid": "artwork_modal.parameters_toggle",
+              children: showParams ? "Hide Parameters" : "⚙ Parameters"
+            }
+          ),
+          showParams && terrainParams && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 w-full font-mono text-xs text-muted-foreground", children: /* @__PURE__ */ jsxRuntimeExports.jsx("dl", { className: "grid grid-cols-2 gap-x-4 gap-y-1", children: Object.entries(
+            JSON.parse(terrainParams)
+          ).map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs(React$2.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "capitalize", children: key2.replace(/([A-Z])/g, " $1").trim() }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { children: key2 === "light" ? "Max" : key2 === "lightPosition" ? `${String(value)}°` : String(value) })
+          ] }, key2)) }) })
         ] })
       ]
     }
@@ -55771,7 +55816,7 @@ function interpolateTransform(parse2, pxComma, pxParen, degParen) {
       s2.push(pop2(s2) + "skewX(" + b2 + degParen);
     }
   }
-  function scale(xa, ya, xb, yb, s2, q2) {
+  function scale2(xa, ya, xb, yb, s2, q2) {
     if (xa !== xb || ya !== yb) {
       var i2 = s2.push(pop2(s2) + "scale(", null, ",", null, ")");
       q2.push({ i: i2 - 4, x: interpolateNumber(xa, xb) }, { i: i2 - 2, x: interpolateNumber(ya, yb) });
@@ -55785,7 +55830,7 @@ function interpolateTransform(parse2, pxComma, pxParen, degParen) {
     translate(a2.translateX, a2.translateY, b2.translateX, b2.translateY, s2, q2);
     rotate(a2.rotate, b2.rotate, s2, q2);
     skewX(a2.skewX, b2.skewX, s2, q2);
-    scale(a2.scaleX, a2.scaleY, b2.scaleX, b2.scaleY, s2, q2);
+    scale2(a2.scaleX, a2.scaleY, b2.scaleX, b2.scaleY, s2, q2);
     a2 = b2 = null;
     return function(t2) {
       var i2 = -1, n2 = q2.length, o2;
@@ -56695,7 +56740,7 @@ function zoom() {
   zoom3.scaleTo = function(selection2, k2, p2, event) {
     zoom3.transform(selection2, function() {
       var e2 = extent.apply(this, arguments), t0 = this.__zoom, p0 = p2 == null ? centroid(e2) : typeof p2 === "function" ? p2.apply(this, arguments) : p2, p1 = t0.invert(p0), k1 = typeof k2 === "function" ? k2.apply(this, arguments) : k2;
-      return constrain(translate(scale(t0, k1), p0, p1), e2, translateExtent);
+      return constrain(translate(scale2(t0, k1), p0, p1), e2, translateExtent);
     }, p2, event);
   };
   zoom3.translateBy = function(selection2, x3, y2, event) {
@@ -56715,7 +56760,7 @@ function zoom() {
       ), e2, translateExtent);
     }, p2, event);
   };
-  function scale(transform2, k2) {
+  function scale2(transform2, k2) {
     k2 = Math.max(scaleExtent[0], Math.min(scaleExtent[1], k2));
     return k2 === transform2.k ? transform2 : new Transform(k2, transform2.x, transform2.y);
   }
@@ -56812,7 +56857,7 @@ function zoom() {
     }
     noevent(event);
     g2.wheel = setTimeout(wheelidled, wheelDelay);
-    g2.zoom("mouse", constrain(translate(scale(t2, k2), g2.mouse[0], g2.mouse[1]), g2.extent, translateExtent));
+    g2.zoom("mouse", constrain(translate(scale2(t2, k2), g2.mouse[0], g2.mouse[1]), g2.extent, translateExtent));
     function wheelidled() {
       g2.wheel = null;
       g2.end();
@@ -56843,7 +56888,7 @@ function zoom() {
   }
   function dblclicked(event, ...args) {
     if (!filter2.apply(this, arguments)) return;
-    var t0 = this.__zoom, p0 = pointer(event.changedTouches ? event.changedTouches[0] : event, this), p1 = t0.invert(p0), k1 = t0.k * (event.shiftKey ? 0.5 : 2), t1 = constrain(translate(scale(t0, k1), p0, p1), extent.apply(this, args), translateExtent);
+    var t0 = this.__zoom, p0 = pointer(event.changedTouches ? event.changedTouches[0] : event, this), p1 = t0.invert(p0), k1 = t0.k * (event.shiftKey ? 0.5 : 2), t1 = constrain(translate(scale2(t0, k1), p0, p1), extent.apply(this, args), translateExtent);
     noevent(event);
     if (duration > 0) select(this).transition().duration(duration).call(schedule2, t1, p0, event);
     else select(this).call(zoom3.transform, t1, p0, event);
@@ -56879,7 +56924,7 @@ function zoom() {
     t2 = g2.that.__zoom;
     if (g2.touch1) {
       var p0 = g2.touch0[0], l0 = g2.touch0[1], p1 = g2.touch1[0], l1 = g2.touch1[1], dp = (dp = p1[0] - p0[0]) * dp + (dp = p1[1] - p0[1]) * dp, dl = (dl = l1[0] - l0[0]) * dl + (dl = l1[1] - l0[1]) * dl;
-      t2 = scale(t2, Math.sqrt(dp / dl));
+      t2 = scale2(t2, Math.sqrt(dp / dl));
       p2 = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
       l2 = [(l0[0] + l1[0]) / 2, (l0[1] + l1[1]) / 2];
     } else if (g2.touch0) p2 = g2.touch0[0], l2 = g2.touch0[1];
@@ -62501,7 +62546,7 @@ function initRange(domain2, range) {
 const implicit = Symbol("implicit");
 function ordinal() {
   var index2 = new InternMap(), domain2 = [], range = [], unknown2 = implicit;
-  function scale(d2) {
+  function scale2(d2) {
     let i2 = index2.get(d2);
     if (i2 === void 0) {
       if (unknown2 !== implicit) return unknown2;
@@ -62509,26 +62554,26 @@ function ordinal() {
     }
     return range[i2 % range.length];
   }
-  scale.domain = function(_2) {
+  scale2.domain = function(_2) {
     if (!arguments.length) return domain2.slice();
     domain2 = [], index2 = new InternMap();
     for (const value of _2) {
       if (index2.has(value)) continue;
       index2.set(value, domain2.push(value) - 1);
     }
-    return scale;
+    return scale2;
   };
-  scale.range = function(_2) {
-    return arguments.length ? (range = Array.from(_2), scale) : range.slice();
+  scale2.range = function(_2) {
+    return arguments.length ? (range = Array.from(_2), scale2) : range.slice();
   };
-  scale.unknown = function(_2) {
-    return arguments.length ? (unknown2 = _2, scale) : unknown2;
+  scale2.unknown = function(_2) {
+    return arguments.length ? (unknown2 = _2, scale2) : unknown2;
   };
-  scale.copy = function() {
+  scale2.copy = function() {
     return ordinal(domain2, range).unknown(unknown2);
   };
-  initRange.apply(scale, arguments);
-  return scale;
+  initRange.apply(scale2, arguments);
+  return scale2;
 }
 function colors(specifier) {
   var n2 = specifier.length / 6 | 0, colors2 = new Array(n2), i2 = 0;
@@ -64358,8 +64403,8 @@ function GraphCardWithSave({ meta, onView, onSave }) {
               disabled: !artworkUrl,
               className: "border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
               "data-ocid": "public_graph.artwork_thumbnail",
-              "aria-label": artworkUrl ? `View tileset for ${meta.name}` : "Tileset generating",
-              children: artworkUrl ? "Tileset" : "Making.."
+              "aria-label": artworkUrl ? `View terrain for ${meta.name}` : "Terrain generating",
+              children: artworkUrl ? "Terrain" : "Generating."
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -64388,6 +64433,7 @@ function GraphCardWithSave({ meta, onView, onSave }) {
           {
             artworkUrl,
             graphName: meta.name,
+            terrainParams: meta.terrainParams ?? void 0,
             onClose: () => setShowArtworkModal(false)
           }
         )
@@ -73752,7 +73798,7 @@ var jquery = { exports: {} };
       isAttached(elem) && jQuery.css(elem, "display") === "none";
     };
     function adjustCSS(elem, prop, valueParts, tween) {
-      var adjusted, scale, maxIterations = 20, currentValue = tween ? function() {
+      var adjusted, scale2, maxIterations = 20, currentValue = tween ? function() {
         return tween.cur();
       } : function() {
         return jQuery.css(elem, prop, "");
@@ -73763,10 +73809,10 @@ var jquery = { exports: {} };
         initialInUnit = +initial || 1;
         while (maxIterations--) {
           jQuery.style(elem, prop, initialInUnit + unit);
-          if ((1 - scale) * (1 - (scale = currentValue() / initial || 0.5)) <= 0) {
+          if ((1 - scale2) * (1 - (scale2 = currentValue() / initial || 0.5)) <= 0) {
             maxIterations = 0;
           }
-          initialInUnit = initialInUnit / scale;
+          initialInUnit = initialInUnit / scale2;
         }
         initialInUnit = initialInUnit * 2;
         jQuery.style(elem, prop, initialInUnit + unit);
@@ -92464,117 +92510,474 @@ function fnv1a(str) {
   }
   return hash >>> 0;
 }
-function makePrng(seed) {
-  let s2 = seed >>> 0;
-  return () => {
-    s2 |= 0;
-    s2 = s2 + 1831565813 | 0;
-    let t2 = Math.imul(s2 ^ s2 >>> 15, 1 | s2);
-    t2 = t2 + Math.imul(t2 ^ t2 >>> 7, 61 | t2) ^ t2;
-    return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
-  };
-}
-const PALETTE = [
-  "#000000",
-  // black
-  "#4B5563",
-  // gray-600
-  "#6B7280",
-  // gray-500
-  "#9CA3AF",
-  // gray-400
-  "#D1D5DB",
-  // gray-300
-  "#E5E7EB",
-  // gray-200
-  "#FFFFFF"
-  // white
-];
-function drawTile(ctx, tileType, cellSize, fg) {
-  const half = cellSize / 2;
-  const lw = Math.max(1.5, cellSize * 0.08);
-  ctx.strokeStyle = fg;
-  ctx.lineWidth = lw;
-  ctx.lineCap = "round";
-  switch (tileType) {
-    case 0: {
-      ctx.beginPath();
-      ctx.arc(0, 0, half, 0, Math.PI / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cellSize, cellSize, half, Math.PI, 3 * Math.PI / 2);
-      ctx.stroke();
-      break;
-    }
-    case 1: {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(cellSize, cellSize);
-      ctx.stroke();
-      break;
-    }
-    case 2: {
-      ctx.beginPath();
-      ctx.moveTo(half, 0);
-      ctx.lineTo(half, cellSize);
-      ctx.moveTo(0, half);
-      ctx.lineTo(cellSize, half);
-      ctx.stroke();
-      break;
-    }
-    case 3: {
-      const r2 = cellSize * 0.15;
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.25, cellSize * 0.25, r2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cellSize * 0.75, cellSize * 0.75, r2, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
+class SeedablePRNG {
+  constructor(seed) {
+    __publicField(this, "seed");
+    this.seed = seed;
+  }
+  next() {
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
   }
 }
-async function generateTruchetArtwork(curationName, size2) {
-  const canvasSize = 400;
-  const gridCount = 20;
-  const cellSize = canvasSize / gridCount;
+function easeInOutQuad(t2) {
+  return t2 < 0.5 ? 2 * t2 * t2 : -1 + (4 - 2 * t2) * t2;
+}
+function perlinNoise(width, height, persistence, octaves, wavelength, prng) {
+  const gradX = [];
+  const gradY = [];
+  for (let o2 = 0; o2 < octaves; o2++) {
+    const gw = width + 1;
+    const gh = height + 1;
+    const gxLayer = [];
+    const gyLayer = [];
+    for (let gy = 0; gy < gh; gy++) {
+      const gxRow = [];
+      const gyRow = [];
+      for (let gx = 0; gx < gw; gx++) {
+        const angle = prng.next() * Math.PI * 2;
+        gxRow.push(Math.cos(angle));
+        gyRow.push(Math.sin(angle));
+      }
+      gxLayer.push(gxRow);
+      gyLayer.push(gyRow);
+    }
+    gradX.push(gxLayer);
+    gradY.push(gyLayer);
+  }
+  const result = [];
+  for (let y2 = 0; y2 < height; y2++) {
+    const row = [];
+    for (let x3 = 0; x3 < width; x3++) {
+      let noise = 0;
+      let amplitude = 1;
+      let freq = 1 / wavelength;
+      let maxAmp = 0;
+      for (let o2 = 0; o2 < octaves; o2++) {
+        const px = x3 * freq;
+        const py = y2 * freq;
+        const ix = Math.floor(px);
+        const iy = Math.floor(py);
+        const fx = px - ix;
+        const fy = py - iy;
+        const gx0 = gradX[o2];
+        const gy0 = gradY[o2];
+        const wx = easeInOutQuad(fx);
+        const wy = easeInOutQuad(fy);
+        const gw = width + 1;
+        const gh = height + 1;
+        const ix0 = (ix % gw + gw) % gw;
+        const ix1 = ((ix + 1) % gw + gw) % gw;
+        const iy0 = (iy % gh + gh) % gh;
+        const iy1 = ((iy + 1) % gh + gh) % gh;
+        const d00 = gx0[iy0][ix0] * fx + gy0[iy0][ix0] * fy;
+        const d10 = gx0[iy0][ix1] * (fx - 1) + gy0[iy0][ix1] * fy;
+        const d01 = gx0[iy1][ix0] * fx + gy0[iy1][ix0] * (fy - 1);
+        const d11 = gx0[iy1][ix1] * (fx - 1) + gy0[iy1][ix1] * (fy - 1);
+        const lerpX0 = d00 + wx * (d10 - d00);
+        const lerpX1 = d01 + wx * (d11 - d01);
+        noise += (lerpX0 + wy * (lerpX1 - lerpX0)) * amplitude;
+        maxAmp += amplitude;
+        amplitude *= persistence;
+        freq *= 2;
+      }
+      row.push(noise / maxAmp);
+    }
+    result.push(row);
+  }
+  return result;
+}
+function calculateSlopeDirection(y0, y1, y2, y3) {
+  const avgSlopeX = (y1 - y0 + (y3 - y2)) / 2;
+  const avgSlopeZ = (y2 - y0 + (y3 - y1)) / 2;
+  const slopeDirection = Math.atan2(avgSlopeZ, avgSlopeX) * 180 / Math.PI;
+  return [slopeDirection, avgSlopeX, avgSlopeZ];
+}
+function addShading(colors2, slopeDirection, _slopeX, _slopeZ, lightPosition, lightHeight, light) {
+  const rawDiff = ((lightPosition - slopeDirection) % 360 + 360) % 360;
+  const angleDiff = rawDiff > 180 ? rawDiff - 360 : rawDiff;
+  const darkening = Math.abs(angleDiff) / 180 * lightHeight;
+  colors2[0] = Math.max(0, Math.min(255, colors2[0] - darkening + light));
+  colors2[1] = Math.max(0, Math.min(255, colors2[1] - darkening + light));
+  colors2[2] = Math.max(0, Math.min(255, colors2[2] - darkening + light));
+}
+function terrainColorLookup(elevation, slopeDirection, slopeX, slopeZ, waterLevel, beachSize, lightPosition, lightHeight, light) {
+  const sandThreshold = waterLevel + beachSize;
+  const remaining = 255 - sandThreshold;
+  const band = remaining / 8;
+  let r2;
+  let g2;
+  let b2;
+  if (elevation <= sandThreshold) {
+    r2 = 218;
+    g2 = 195;
+    b2 = 139;
+  } else if (elevation <= sandThreshold + band) {
+    r2 = 86;
+    g2 = 158;
+    b2 = 75;
+  } else if (elevation <= sandThreshold + band * 2) {
+    r2 = 76;
+    g2 = 140;
+    b2 = 66;
+  } else if (elevation <= sandThreshold + band * 3) {
+    r2 = 66;
+    g2 = 122;
+    b2 = 57;
+  } else if (elevation <= sandThreshold + band * 4) {
+    r2 = 56;
+    g2 = 104;
+    b2 = 48;
+  } else if (elevation <= sandThreshold + band * 5) {
+    r2 = 46;
+    g2 = 86;
+    b2 = 39;
+  } else if (elevation <= sandThreshold + band * 6) {
+    r2 = 110;
+    g2 = 84;
+    b2 = 60;
+  } else if (elevation <= sandThreshold + band * 7) {
+    r2 = 128;
+    g2 = 120;
+    b2 = 110;
+  } else {
+    r2 = 240;
+    g2 = 240;
+    b2 = 245;
+  }
+  const colors2 = [r2, g2, b2];
+  addShading(
+    colors2,
+    slopeDirection,
+    slopeX,
+    slopeZ,
+    lightPosition,
+    lightHeight,
+    light
+  );
+  return [colors2[0], colors2[1], colors2[2], 255];
+}
+function waterColorLookup(depth, waterLevel, lightHeight) {
+  const clampedDepth = Math.max(0, depth);
+  const t2 = Math.min(1, clampedDepth / waterLevel);
+  const r2 = Math.round(248 + t2 * (64 - 248));
+  const g2 = Math.round(218 + t2 * (164 - 218));
+  const b2 = Math.round(148 + t2 * (223 - 148));
+  const alpha = Math.round(180 + t2 * 75 + lightHeight * 0.1);
+  return [r2, g2, b2, Math.min(255, alpha)];
+}
+const cos30 = Math.cos(Math.PI / 6);
+const sin30 = Math.sin(Math.PI / 6);
+const isoHeight = 20;
+const isoWidth = 1;
+const isoLength = 1;
+const scale = 5;
+function coordToPixel(coordX, coordY, coordHeight) {
+  return [
+    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 345),
+    Math.floor(
+      scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 345
+    )
+  ];
+}
+function drawTile(ctx, h0, h1, h2, h3, isWater, x3, y2, terrainAverageHeight, terrainHighestHeight, slopeValues, waterLevel, beachSize, lightPosition, lightHeight, light) {
+  const [px0, py0] = coordToPixel(x3, y2, h0);
+  const [px1, py1] = coordToPixel(x3 + 1, y2, h1);
+  const [px2, py2] = coordToPixel(x3, y2 + 1, h2);
+  const [px3, py3] = coordToPixel(x3 + 1, y2 + 1, h3);
+  let color2;
+  if (isWater) {
+    const depth = waterLevel - terrainAverageHeight;
+    color2 = waterColorLookup(depth, waterLevel, lightHeight);
+  } else {
+    color2 = terrainColorLookup(
+      terrainHighestHeight,
+      slopeValues[0],
+      slopeValues[1],
+      slopeValues[2],
+      waterLevel,
+      beachSize,
+      lightPosition,
+      lightHeight,
+      light
+    );
+  }
+  const [r2, g2, b2, a2] = color2;
+  ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+  ctx.beginPath();
+  ctx.moveTo(px0, py0);
+  ctx.lineTo(px1, py1);
+  ctx.lineTo(px3, py3);
+  ctx.lineTo(px2, py2);
+  ctx.closePath();
+  ctx.fill();
+  if (!isWater) {
+    ctx.strokeStyle = `rgba(${Math.max(0, r2 - 20)},${Math.max(0, g2 - 20)},${Math.max(0, b2 - 20)},0.4)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+function drawBorder(ctx, h0, h1, _h2, _h3, isWater, x1, y1, x22, y2, isLeftBorder, waterLevel, lightHeight, light) {
+  const [px0, py0] = coordToPixel(x1, y1, h0);
+  const [px1, py1] = coordToPixel(x22, y2, h1);
+  const [px0b, py0b] = coordToPixel(x1, y1, 0);
+  const [px1b, py1b] = coordToPixel(x22, y2, 0);
+  if (isWater) {
+    const depthAdj = isLeftBorder ? 25 : 15;
+    const [r2, g2, b2, a2] = waterColorLookup(depthAdj, waterLevel, lightHeight);
+    ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+    ctx.beginPath();
+    ctx.moveTo(px0, py0);
+    ctx.lineTo(px1, py1);
+    ctx.lineTo(px1b, py1b);
+    ctx.lineTo(px0b, py0b);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r2},${g2},${b2},0.5)`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    return;
+  }
+  const maxH = Math.max(h0, h1);
+  if (maxH <= 0) return;
+  const gradient = ctx.createLinearGradient(px0b, py0b, px0, py0);
+  const lightHeightChange = lightHeight * 0.5;
+  const bottomR = Math.min(255, 150 + light);
+  const bottomG = Math.min(255, 110 + light);
+  const bottomB = Math.min(255, 0 + light);
+  const topR = Math.min(255, 255 + light - lightHeightChange);
+  const topG = Math.min(255, 215 + light - lightHeightChange);
+  const topB = Math.min(255, 105 + light - lightHeightChange);
+  gradient.addColorStop(0, `rgb(${bottomR},${bottomG},${bottomB})`);
+  gradient.addColorStop(1, `rgb(${topR},${topG},${topB})`);
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(px0, py0);
+  ctx.lineTo(px1, py1);
+  ctx.lineTo(px1b, py1b);
+  ctx.lineTo(px0b, py0b);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(80,60,0,0.4)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+async function generateTerrainArtwork(curationName, size2) {
+  var _a3;
+  const canvasSize = 690;
+  const gridWidth = 100;
+  const gridHeight = 100;
   const seed = fnv1a(curationName);
-  const rand2 = makePrng(seed);
+  const prng = new SeedablePRNG(seed);
+  const persistence = 0.3 + prng.next() * 0.4;
+  const octaves = 3 + Math.floor(prng.next() * 4);
+  const wavelength = 12 + prng.next() * 12;
+  const amplitude = 1;
+  const exponent = 1 + prng.next() * 0.5;
+  const peaks = prng.next() * 0.15;
+  const waterLevel = Math.round(80 + prng.next() * 60);
+  const beachSize = Math.round(5 + prng.next() * 15);
+  const lightPosition = Math.floor(prng.next() * 360);
+  const lightHeight = 42;
+  const light = 0;
+  const params = {
+    seed,
+    persistence,
+    octaves,
+    wavelength,
+    amplitude,
+    exponent,
+    peaks,
+    waterLevel,
+    beachSize,
+    lightPosition,
+    lightHeight,
+    light
+  };
   let canvas;
   try {
     canvas = document.createElement("canvas");
   } catch {
-    return "";
+    return { dataUrl: "", params };
   }
   canvas.width = canvasSize;
   canvas.height = canvasSize;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  ctx.fillStyle = "#0a0a0a";
+  if (!ctx) return { dataUrl: "", params };
+  ctx.fillStyle = "rgb(40,80,140)";
   ctx.fillRect(0, 0, canvasSize, canvasSize);
-  for (let row = 0; row < gridCount; row++) {
-    for (let col = 0; col < gridCount; col++) {
-      const x3 = col * cellSize;
-      const y2 = row * cellSize;
-      const tileType = Math.floor(rand2() * 4);
-      const rotation = Math.floor(rand2() * 4) * 90;
-      const fgIdx = Math.floor(rand2() * PALETTE.length);
-      let bgIdx = Math.floor(rand2() * (PALETTE.length - 1));
-      if (bgIdx >= fgIdx) bgIdx++;
-      const fg = PALETTE[fgIdx];
-      const bg = PALETTE[bgIdx];
-      ctx.fillStyle = bg;
-      ctx.fillRect(x3, y2, cellSize, cellSize);
-      ctx.save();
-      ctx.translate(x3 + cellSize / 2, y2 + cellSize / 2);
-      ctx.rotate(rotation * Math.PI / 180);
-      ctx.translate(-cellSize / 2, -cellSize / 2);
-      drawTile(ctx, tileType, cellSize, fg);
-      ctx.restore();
+  ctx.translate(382, 250);
+  const noisePrng = new SeedablePRNG(seed ^ 3735928559);
+  const rawMap = perlinNoise(
+    gridWidth + 1,
+    gridHeight + 1,
+    persistence,
+    octaves,
+    wavelength,
+    noisePrng
+  );
+  const elevationMap = [];
+  for (let y2 = 0; y2 <= gridHeight; y2++) {
+    const row = [];
+    for (let x3 = 0; x3 <= gridWidth; x3++) {
+      const raw2 = ((_a3 = rawMap[y2]) == null ? void 0 : _a3[x3]) ?? 0;
+      const normalized = (raw2 + 1) / 2 + peaks;
+      const elevated = Math.max(0, normalized) ** exponent * 255;
+      row.push(Math.max(0, Math.min(255, elevated)));
+    }
+    elevationMap.push(row);
+  }
+  const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
+  for (let y2 = 0; y2 < gridHeight; y2++) {
+    for (let x3 = 0; x3 < gridWidth; x3++) {
+      const mapvalue0 = elevationMap[y2][x3];
+      const mapvalue1 = elevationMap[y2][x3 + 1];
+      const mapvalue2 = elevationMap[y2 + 1][x3];
+      const mapvalue3 = elevationMap[y2 + 1][x3 + 1];
+      const toPerlin = (v2) => v2 / 255 * 2 - 1;
+      const p0 = toPerlin(mapvalue0);
+      const p1 = toPerlin(mapvalue1);
+      const p2 = toPerlin(mapvalue2);
+      const p3 = toPerlin(mapvalue3);
+      const terrainAverageHeight = (mapvalue0 + mapvalue1 + mapvalue2 + mapvalue3) / 4;
+      const terrainHighestHeight = Math.max(
+        mapvalue0,
+        mapvalue1,
+        mapvalue2,
+        mapvalue3
+      );
+      const terrainLowestHeight = Math.min(
+        mapvalue0,
+        mapvalue1,
+        mapvalue2,
+        mapvalue3
+      );
+      const slopeValues = calculateSlopeDirection(
+        mapvalue0,
+        mapvalue1,
+        mapvalue2,
+        mapvalue3
+      );
+      if (terrainHighestHeight < waterLevel) {
+        drawTile(
+          ctx,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          true,
+          x3,
+          y2,
+          terrainAverageHeight,
+          terrainHighestHeight,
+          slopeValues,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light
+        );
+      } else if (terrainLowestHeight >= waterLevel) {
+        drawTile(
+          ctx,
+          p0,
+          p1,
+          p2,
+          p3,
+          false,
+          x3,
+          y2,
+          terrainAverageHeight,
+          terrainHighestHeight,
+          slopeValues,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light
+        );
+      } else {
+        drawTile(
+          ctx,
+          p0,
+          p1,
+          p2,
+          p3,
+          false,
+          x3,
+          y2,
+          terrainAverageHeight,
+          terrainHighestHeight,
+          slopeValues,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light
+        );
+        drawTile(
+          ctx,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          perlinWaterLevel,
+          true,
+          x3,
+          y2,
+          terrainAverageHeight,
+          terrainHighestHeight,
+          slopeValues,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light
+        );
+      }
+      if (y2 === gridHeight - 2) {
+        if (mapvalue2 > 0 || mapvalue3 > 0) {
+          drawBorder(
+            ctx,
+            mapvalue2 / 255,
+            mapvalue3 / 255,
+            0,
+            0,
+            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+            x3,
+            y2 + 1,
+            x3 + 1,
+            y2 + 1,
+            true,
+            waterLevel,
+            lightHeight,
+            light
+          );
+        }
+      }
+      if (x3 === gridWidth - 2) {
+        if (mapvalue1 > 0 || mapvalue3 > 0) {
+          drawBorder(
+            ctx,
+            mapvalue1 / 255,
+            mapvalue3 / 255,
+            0,
+            0,
+            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+            x3 + 1,
+            y2,
+            x3 + 1,
+            y2 + 1,
+            false,
+            waterLevel,
+            lightHeight,
+            light
+          );
+        }
+      }
     }
   }
-  return canvas.toDataURL("image/jpeg", 0.7);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+  return { dataUrl, params };
 }
 const MAPPINGS_KEY_PREFIX = "caffeine_published_mappings_";
 function usePublishMappings() {
@@ -92763,16 +93166,30 @@ function usePublishGraph() {
           const actorRef = actor;
           setTimeout(async () => {
             try {
-              const dataUrl = await generateTruchetArtwork(graphName, "full");
+              const { dataUrl, params } = await generateTerrainArtwork(
+                graphName,
+                "full"
+              );
               if (dataUrl && actorRef) {
                 await actorRef.updateSourceGraphArtwork(
                   graphId,
                   dataUrl
                 );
+                try {
+                  await actorRef.updateSourceGraphTerrainParams(
+                    graphId,
+                    JSON.stringify(params)
+                  );
+                } catch (paramsErr) {
+                  console.warn(
+                    "[ARTWORK] Failed to save terrain params:",
+                    paramsErr
+                  );
+                }
               }
             } catch (artErr) {
               console.warn(
-                "[ARTWORK] Failed to generate/save artwork:",
+                "[ARTWORK] Failed to generate/save terrain artwork:",
                 artErr
               );
             }

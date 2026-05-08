@@ -144,6 +144,7 @@ export interface PublishedSourceGraphMeta {
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
+    terrainParams?: string;
 }
 export interface NodeOperation {
     localName: string;
@@ -522,6 +523,7 @@ export interface backendInterface {
         response: IcHttpRequestResult;
     }): Promise<IcHttpRequestResult>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
+    updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }
 import type { ApprovalStatus as _ApprovalStatus, AttributeChange as _AttributeChange, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CollectibleEdition as _CollectibleEdition, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, MintCollectibleRequest as _MintCollectibleRequest, MintCollectibleResult as _MintCollectibleResult, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
@@ -1450,6 +1452,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateSourceGraphTerrainParams(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateSourceGraphTerrainParams(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateSourceGraphTerrainParams(arg0, arg1);
+            return result;
+        }
+    }
     async upvoteNode(arg0: NodeId): Promise<void> {
         if (this.processError) {
             try {
@@ -1607,6 +1623,7 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
     artworkDataUrl: [] | [string];
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
+    terrainParams: [] | [string];
 }): {
     id: string;
     creator: Principal;
@@ -1620,6 +1637,7 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
+    terrainParams?: string;
 } {
     return {
         id: value.id,
@@ -1633,7 +1651,8 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
         sourcesCount: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.sourcesCount)),
         artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
         hierarchyEdgeCount: value.hierarchyEdgeCount,
-        nodeCount: value.nodeCount
+        nodeCount: value.nodeCount,
+        terrainParams: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.terrainParams))
     };
 }
 function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {

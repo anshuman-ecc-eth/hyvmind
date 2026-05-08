@@ -95,6 +95,7 @@ type PublishedSourceGraphMeta =
    nodeCount: nat;
    publishedAt: Time;
    sourcesCount: opt nat;
+   terrainParams: opt text;
  };
 type PublishSourceGraphInput = 
  record {
@@ -466,5 +467,6 @@ service : {
                 response: IcHttpRequestResult;
               }) -> (IcHttpRequestResult) query;
   updateSourceGraphArtwork: (id: text, dataUrl: text) -> (bool);
+  updateSourceGraphTerrainParams: (id: text, paramsJson: text) -> (bool);
   upvoteNode: (nodeId: NodeId) -> ();
 }

@@ -131,10 +131,10 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
           className="border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           data-ocid="public_graph.artwork_thumbnail"
           aria-label={
-            artworkUrl ? `View tileset for ${meta.name}` : "Tileset generating"
+            artworkUrl ? `View terrain for ${meta.name}` : "Terrain generating"
           }
         >
-          {artworkUrl ? "Tileset" : "Making.."}
+          {artworkUrl ? "Terrain" : "Generating."}
         </button>
         <button
           type="button"
@@ -160,6 +160,7 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
         <ArtworkModal
           artworkUrl={artworkUrl}
           graphName={meta.name}
+          terrainParams={meta.terrainParams ?? undefined}
           onClose={() => setShowArtworkModal(false)}
         />
       )}

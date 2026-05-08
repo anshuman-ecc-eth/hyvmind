@@ -84,6 +84,7 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'artworkDataUrl' : IDL.Opt(IDL.Text),
   'hierarchyEdgeCount' : IDL.Nat,
   'nodeCount' : IDL.Nat,
+  'terrainParams' : IDL.Opt(IDL.Text),
 });
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
@@ -475,6 +476,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'updateSourceGraphTerrainParams' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
   'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
@@ -554,6 +560,7 @@ export const idlFactory = ({ IDL }) => {
     'artworkDataUrl' : IDL.Opt(IDL.Text),
     'hierarchyEdgeCount' : IDL.Nat,
     'nodeCount' : IDL.Nat,
+    'terrainParams' : IDL.Opt(IDL.Text),
   });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
@@ -946,6 +953,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'updateSourceGraphTerrainParams' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
     'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };

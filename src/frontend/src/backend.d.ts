@@ -62,6 +62,7 @@ export interface PublishedSourceGraphMeta {
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
+    terrainParams?: string;
 }
 export interface NodeOperation {
     localName: string;
@@ -439,5 +440,6 @@ export interface backendInterface {
         response: IcHttpRequestResult;
     }): Promise<IcHttpRequestResult>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
+    updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
     upvoteNode(nodeId: NodeId): Promise<void>;
 }

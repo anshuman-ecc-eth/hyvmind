@@ -9,7 +9,7 @@ import type {
   SourceGraph,
   SourceNode,
 } from "../types/sourceGraph";
-import { generateTruchetArtwork } from "../utils/truchetGenerator";
+import { generateTerrainArtwork } from "../utils/perlinTerrainGenerator";
 import { usePublishMappings } from "./usePublishMappings";
 
 export type PublishCommitResult =
@@ -213,23 +213,39 @@ export function usePublishGraph() {
         queryClient.invalidateQueries({ queryKey: ["publishedSourceGraphs"] });
         queryClient.invalidateQueries({ queryKey: ["myBuzzBalance"] });
 
-        // After a brand-new publish, generate truchet artwork in the background
+        // After a brand-new publish, generate terrain artwork in the background
         if (!isUpdate && rawResult.success.publishedSourceGraphId) {
           const graphId = rawResult.success.publishedSourceGraphId;
           const graphName = graph.name;
           const actorRef = actor;
           setTimeout(async () => {
             try {
-              const dataUrl = await generateTruchetArtwork(graphName, "full");
+              const { dataUrl, params } = await generateTerrainArtwork(
+                graphName,
+                "full",
+              );
               if (dataUrl && actorRef) {
                 await (actorRef as backendInterface).updateSourceGraphArtwork(
                   graphId,
                   dataUrl,
                 );
+                try {
+                  await (
+                    actorRef as backendInterface
+                  ).updateSourceGraphTerrainParams(
+                    graphId,
+                    JSON.stringify(params),
+                  );
+                } catch (paramsErr) {
+                  console.warn(
+                    "[ARTWORK] Failed to save terrain params:",
+                    paramsErr,
+                  );
+                }
               }
             } catch (artErr) {
               console.warn(
-                "[ARTWORK] Failed to generate/save artwork:",
+                "[ARTWORK] Failed to generate/save terrain artwork:",
                 artErr,
               );
             }

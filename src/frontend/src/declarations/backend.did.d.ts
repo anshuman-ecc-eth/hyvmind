@@ -215,6 +215,7 @@ export interface PublishedSourceGraphMeta {
   'artworkDataUrl' : [] | [string],
   'hierarchyEdgeCount' : bigint,
   'nodeCount' : bigint,
+  'terrainParams' : [] | [string],
 }
 export interface SourceGraphEdgeInput {
   'sourceName' : string,
@@ -403,6 +404,7 @@ export interface _SERVICE {
     IcHttpRequestResult
   >,
   'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,
+  'updateSourceGraphTerrainParams' : ActorMethod<[string, string], boolean>,
   'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
