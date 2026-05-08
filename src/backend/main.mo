@@ -269,6 +269,30 @@ actor {
     edges : [GraphEdge];
   };
 
+  type OldExtensionEntry = {
+    extendedAt : Time.Time;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
+  };
+
+  type OldPublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [OldExtensionEntry];
+    artworkDataUrl : ?Text;
+  };
+
   type ExtensionEntry = {
     extendedAt : Time.Time;
     extendedBy : Principal;
@@ -3192,7 +3216,7 @@ actor {
     var locationsToCreate : Nat = 0;
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
-      var tempContribs = Map.empty<NodeId, NodeContribution>();
+      let tempContribs = Map.empty<NodeId, NodeContribution>();
       func recordContrib(nodeId : NodeId, buzzCost : Int) {
     tempContribs.add(nodeId, { paidBy = caller; buzzCost });
       };
