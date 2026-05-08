@@ -280,11 +280,11 @@ function coordToPixel(
   coordHeight: number,
 ): [number, number] {
   return [
-    Math.floor(scale * (((coordX - coordY) * cos30) / isoWidth) + 432.5),
+    Math.floor(scale * (((coordX - coordY) * cos30) / isoWidth) + 50),
     Math.floor(
       scale *
         (((coordX + coordY) * sin30) / isoLength - coordHeight * isoHeight) +
-        345,
+        50,
     ),
   ];
 }
@@ -486,7 +486,7 @@ export async function generateTerrainArtwork(
   }
 
   // Translate origin as specified
-  ctx.translate(382, 250);
+  ctx.translate(382, 50);
 
   // Generate noise map — use a fresh PRNG seeded from params for reproducibility
   const noisePrng = new SeedablePRNG(seed ^ 0xdeadbeef);

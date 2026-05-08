@@ -92674,9 +92674,9 @@ const isoLength = 1;
 const scale = 5;
 function coordToPixel(coordX, coordY, coordHeight) {
   return [
-    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 432.5),
+    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 50),
     Math.floor(
-      scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 345
+      scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 50
     )
   ];
 }
@@ -92807,7 +92807,7 @@ async function generateTerrainArtwork(curationName, size2) {
   if (!ctx) return { dataUrl: "", params };
   ctx.fillStyle = "rgb(40,80,140)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  ctx.translate(382, 250);
+  ctx.translate(382, 50);
   const noisePrng = new SeedablePRNG(seed ^ 3735928559);
   const rawMap = perlinNoise(
     gridWidth + 1,
