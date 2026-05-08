@@ -53532,6 +53532,56 @@ function graphDataToEditorNodes(graphData, selectedNodeIds, _graphName) {
       parent.children.push(id2);
     }
   }
+  const folderIds = Array.from(nodes.keys());
+  for (const folderId of folderIds) {
+    const folder = nodes.get(folderId);
+    if (!folder || folder.type !== "folder") continue;
+    const hasAttrs = Object.keys(folder.inheritedAttributes).length > 0;
+    const hasSources = folder.inheritedSources.length > 0;
+    if (!hasAttrs && !hasSources) continue;
+    if (hasAttrs) {
+      const attrId = `${folderId}@_attributes.md`;
+      const attrNode = {
+        id: attrId,
+        name: "_attributes.md",
+        type: "file",
+        parentId: folderId,
+        nodeType: "interpEntity",
+        content: "",
+        frontmatter: { ...folder.inheritedAttributes },
+        inheritedAttributes: {},
+        inheritedSources: [],
+        children: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      nodes.set(attrId, attrNode);
+      if (!folder.children.includes(attrId)) folder.children.push(attrId);
+      folder.inheritedAttributes = {};
+    }
+    if (hasSources) {
+      const srcId = `${folderId}@_sources.md`;
+      const srcContent = folder.inheritedSources.map((s2) => `- [${s2.name}](${s2.url})
+`).join("");
+      const srcNode = {
+        id: srcId,
+        name: "_sources.md",
+        type: "file",
+        parentId: folderId,
+        nodeType: "interpEntity",
+        content: srcContent,
+        frontmatter: {},
+        inheritedAttributes: {},
+        inheritedSources: [],
+        children: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      nodes.set(srcId, srcNode);
+      if (!folder.children.includes(srcId)) folder.children.push(srcId);
+      folder.inheritedSources = [];
+    }
+  }
   const rootIds = [];
   for (const c2 of graphData.curations) {
     if (selectedNodeIds.has(c2.id) && nodes.has(c2.name)) {
@@ -53678,10 +53728,6 @@ function TreeNodeCheckbox({
             "span",
             {
               className: `truncate min-w-0 flex-1 text-xs font-mono ${colorClass}`,
-              style: {
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem"
-              },
               children: node2.name
             }
           )
@@ -53783,32 +53829,13 @@ function SaveGraphDialog({
   const selectedCount = checkedIds.size;
   const totalCount = allIds.length;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open: isOpen, onOpenChange: handleOpenChange, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "sm:max-w-lg", "data-ocid": "save_graph.dialog", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(DialogHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-      DialogTitle,
-      {
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.7rem"
-        },
-        children: "Save Graph to Notes"
-      }
-    ) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "p",
-      {
-        className: "text-xs text-muted-foreground",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.55rem"
-        },
-        children: [
-          "Select nodes from ",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: graphName }),
-          " ",
-          "to import into your Notes workspace."
-        ]
-      }
-    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(DialogHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogTitle, { children: "Save Graph to Notes" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
+      "Select nodes from ",
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: graphName }),
+      " ",
+      "to import into your Notes workspace."
+    ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
@@ -53818,10 +53845,6 @@ function SaveGraphDialog({
           "div",
           {
             className: "py-8 text-center text-xs text-muted-foreground",
-            style: {
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6rem"
-            },
             "data-ocid": "save_graph.empty_state",
             children: "No nodes found"
           }

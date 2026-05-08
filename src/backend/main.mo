@@ -25,7 +25,6 @@ import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
-import Migration "migration";
 
 
 
@@ -39,7 +38,8 @@ import Migration "migration";
 
 
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -269,34 +269,10 @@ actor {
     edges : [GraphEdge];
   };
 
-  type OldExtensionEntry = {
-    extendedAt : Time.Time;
-    addedNodes : Nat;
-    addedEdges : Nat;
-    addedHierarchyEdges : Nat;
-    addedAttributes : Nat;
-    addedSources : ?Nat;
-  };
-
-  type OldPublishedSourceGraphMeta = {
-    id : Text;
-    name : Text;
-    creator : Principal;
-    creatorName : Text;
-    publishedAt : Time.Time;
-    nodeCount : Nat;
-    edgeCount : Nat;
-    hierarchyEdgeCount : Nat;
-    attributeCount : Nat;
-    sourcesCount : ?Nat;
-    extensionLog : [OldExtensionEntry];
-    artworkDataUrl : ?Text;
-  };
-
   type ExtensionEntry = {
     extendedAt : Time.Time;
-    extendedBy : ?Principal;
-    extendedByName : ?Text;
+    extendedBy : Principal;
+    extendedByName : Text;
     addedNodes : Nat;
     addedEdges : Nat;
     addedHierarchyEdges : Nat;
@@ -721,13 +697,13 @@ actor {
   };
 
   public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async { #ok : Text; #err : Text } {
+    Debug.print("[savePublishedGraph] publishedGraphId = " # publishedGraphId);
+    Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     switch (publishedSourceGraphs.get(publishedGraphId)) {
       case (null) { return #err("Graph not found") };
       case (?_) {};
     };
     if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
-    Debug.print("[savePublishedGraph] publishedGraphId = " # publishedGraphId);
-    Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     let savers = switch (graphSavers.get(publishedGraphId)) {
       case (null) { List.empty<Principal>() };
       case (?list) { list };
@@ -745,10 +721,9 @@ actor {
         Map.empty<NodeId, NodeContribution>()
       };
       case (?m) {
-        Debug.print("[savePublishedGraph] Found contribMap, counting entries...");
-        var entryCount = 0;
-        for ((_, _) in m.entries()) { entryCount += 1; };
-        Debug.print("[savePublishedGraph] contribMap has " # debug_show (entryCount) # " entries");
+        var count = 0;
+        for ((_, _) in m.entries()) { count += 1; };
+        Debug.print("[savePublishedGraph] contribMap entries = " # debug_show (count));
         m
       };
     };
@@ -759,11 +734,11 @@ actor {
         case (null) {};
         case (?contrib) {
           matchedCount += 1;
-          if (not Principal.equal(contrib.paidBy, msg.caller)) {
+          if (Principal.equal(contrib.paidBy, msg.caller)) {
+            skippedSelfCount += 1;
+          } else {
             let existing = switch (bucket.get(contrib.paidBy)) { case (null) { 0 }; case (?v) { v }; };
             bucket.add(contrib.paidBy, existing + contrib.buzzCost);
-          } else {
-            skippedSelfCount += 1;
           };
         };
       };
@@ -774,7 +749,7 @@ actor {
     Debug.print("[savePublishedGraph] bucket entries = " # debug_show (bucketEntryCount));
     for ((creator, totalBuzzCost) in bucket.entries()) {
       let earned : Int = (Float.sqrt(saveNumber.toFloat()) * (totalBuzzCost * TRUST_DECIMALS).toFloat()).toInt();
-      Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ", sqrt=" # debug_show (Float.sqrt(saveNumber.toFloat())) # ")");
+      Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ")");
       updateTrustScore(creator, earned);
     };
     #ok("Graph saved")
@@ -3975,8 +3950,8 @@ actor {
             };
             let newEntry : ExtensionEntry = {
               extendedAt = Time.now();
-              extendedBy = ?caller;
-              extendedByName = ?extendedByName;
+              extendedBy = caller;
+              extendedByName;
               addedNodes = nodesToCreate;
               addedEdges = edgesToCreate;
               addedHierarchyEdges = hierarchyEdgesCreated;

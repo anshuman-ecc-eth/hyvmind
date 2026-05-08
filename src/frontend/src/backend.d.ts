@@ -139,11 +139,11 @@ export type PublishCommitResult = {
 };
 export interface ExtensionEntry {
     addedNodes: bigint;
-    extendedByName?: string;
+    extendedByName: string;
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
-    extendedBy?: Principal;
+    extendedBy: Principal;
     addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }

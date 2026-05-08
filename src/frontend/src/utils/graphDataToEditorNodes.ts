@@ -284,70 +284,62 @@ export function graphDataToEditorNodes(
   }
 
   // ------------------------------------------------------------------
-  // Step 6: Create _attributes.md and _sources.md file nodes for
-  // folder nodes with inherited metadata. The folder's children array
-  // is updated and the inherited fields are cleared to avoid
-  // duplication during editorToSourceGraph conversion.
+  // Step 6: Create _attributes.md and _sources.md file nodes for folders
+  // with non-empty inherited metadata. Clears the folder's inherited
+  // fields afterwards to prevent duplication in editorToSourceGraph.
   // ------------------------------------------------------------------
-  for (const [, node] of nodes) {
-    if (node.type !== "folder") continue;
+  const folderIds = Array.from(nodes.keys());
+  for (const folderId of folderIds) {
+    const folder = nodes.get(folderId);
+    if (!folder || folder.type !== "folder") continue;
 
-    const attrs = node.inheritedAttributes;
-    const srcs = node.inheritedSources;
-    const hasAttrs = attrs && Object.keys(attrs).length > 0;
-    const hasSrcs = srcs && srcs.length > 0;
+    const hasAttrs = Object.keys(folder.inheritedAttributes).length > 0;
+    const hasSources = folder.inheritedSources.length > 0;
+    if (!hasAttrs && !hasSources) continue;
 
-    if (!hasAttrs && !hasSrcs) continue;
-
-    // _attributes.md
     if (hasAttrs) {
-      const attrsId = `${node.id}@_attributes.md`;
-      const attrsNode: EditorNode = {
-        id: attrsId,
+      const attrId = `${folderId}@_attributes.md`;
+      const attrNode: EditorNode = {
+        id: attrId,
         name: "_attributes.md",
         type: "file",
-        parentId: node.id,
+        parentId: folderId,
         nodeType: "interpEntity",
         content: "",
-        frontmatter: { ...attrs },
+        frontmatter: { ...folder.inheritedAttributes },
         inheritedAttributes: {},
         inheritedSources: [],
         children: [],
-        createdAt: now,
-        updatedAt: now,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
-      nodes.set(attrsId, attrsNode);
-      if (!node.children.includes(attrsId)) {
-        node.children.push(attrsId);
-      }
-      node.inheritedAttributes = {};
+      nodes.set(attrId, attrNode);
+      if (!folder.children.includes(attrId)) folder.children.push(attrId);
+      folder.inheritedAttributes = {};
     }
 
-    // _sources.md
-    if (hasSrcs) {
-      const srcsId = `${node.id}@_sources.md`;
-      const srcLines = srcs
-        .map((s) => `- [${s.name}](${s.url})`)
-        .join("\n");
-      const srcsNode: EditorNode = {
-        id: srcsId,
+    if (hasSources) {
+      const srcId = `${folderId}@_sources.md`;
+      const srcContent = folder.inheritedSources
+        .map((s) => `- [${s.name}](${s.url})\n`)
+        .join("");
+      const srcNode: EditorNode = {
+        id: srcId,
         name: "_sources.md",
         type: "file",
-        parentId: node.id,
+        parentId: folderId,
         nodeType: "interpEntity",
-        content: srcLines,
+        content: srcContent,
         frontmatter: {},
         inheritedAttributes: {},
         inheritedSources: [],
         children: [],
-        createdAt: now,
-        updatedAt: now,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
-      nodes.set(srcsId, srcsNode);
-      if (!node.children.includes(srcsId)) {
-        node.children.push(srcsId);
-      }
-      node.inheritedSources = [];
+      nodes.set(srcId, srcNode);
+      if (!folder.children.includes(srcId)) folder.children.push(srcId);
+      folder.inheritedSources = [];
     }
   }
 
