@@ -271,8 +271,6 @@ actor {
 
   type OldExtensionEntry = {
     extendedAt : Time.Time;
-    extendedBy : Principal;
-    extendedByName : Text;
     addedNodes : Nat;
     addedEdges : Nat;
     addedHierarchyEdges : Nat;
@@ -297,8 +295,8 @@ actor {
 
   type ExtensionEntry = {
     extendedAt : Time.Time;
-    extendedBy : Principal;
-    extendedByName : Text;
+    extendedBy : ?Principal;
+    extendedByName : ?Text;
     addedNodes : Nat;
     addedEdges : Nat;
     addedHierarchyEdges : Nat;
@@ -3977,8 +3975,8 @@ actor {
             };
             let newEntry : ExtensionEntry = {
               extendedAt = Time.now();
-              extendedBy = caller;
-              extendedByName;
+              extendedBy = ?caller;
+              extendedByName = ?extendedByName;
               addedNodes = nodesToCreate;
               addedEdges = edgesToCreate;
               addedHierarchyEdges = hierarchyEdgesCreated;
