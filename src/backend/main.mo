@@ -271,6 +271,8 @@ actor {
 
   type OldExtensionEntry = {
     extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
     addedNodes : Nat;
     addedEdges : Nat;
     addedHierarchyEdges : Nat;
