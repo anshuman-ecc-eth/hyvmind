@@ -122,7 +122,9 @@ type OldExtensionEntry__187459621 =
     addedHierarchyEdges : Nat;
     addedNodes : Nat;
     addedSources : ?Nat;
-    extendedAt : Time__900049286
+    extendedAt : Time__900049286;
+    extendedBy : Principal;
+    extendedByName : Text
   };
 type OldPublishedSourceGraphMeta__687042500 =
   {
