@@ -165,15 +165,33 @@ function calculateSlopeDirection(
 function addShading(
   colors: number[],
   slopeDirection: number,
-  _slopeX: number,
-  _slopeZ: number,
+  slopeX: number,
+  slopeZ: number,
   lightPosition: number,
   lightHeight: number,
   light: number,
 ): void {
-  const rawDiff = (((lightPosition - slopeDirection) % 360) + 360) % 360;
-  const angleDiff = rawDiff > 180 ? rawDiff - 360 : rawDiff;
-  const darkening = (Math.abs(angleDiff) / 180) * lightHeight;
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = (3 * (lightHeight + 90)) / 180 + 1;
+  const light2 = 5 - light1;
+  colors[0] = Math.max(
+    0,
+    colors[0] - lightHeightChange / light1 + Math.min(0, lightHeight),
+  );
+  colors[1] = Math.max(
+    0,
+    colors[1] - lightHeightChange / 2 + Math.min(0, lightHeight),
+  );
+  colors[2] = Math.max(
+    0,
+    colors[2] - lightHeightChange / light2 + Math.min(0, lightHeight),
+  );
+  let diff = Math.abs(lightPosition - slopeDirection);
+  diff = diff > 180 ? 360 - diff : diff;
+  if (slopeX === 0 && slopeZ === 0) {
+    diff = -(lightHeight - 90);
+  }
+  const darkening = diff * Math.abs((lightHeight - 90) / 90);
   colors[0] = Math.max(0, Math.min(255, colors[0] - darkening + light));
   colors[1] = Math.max(0, Math.min(255, colors[1] - darkening + light));
   colors[2] = Math.max(0, Math.min(255, colors[2] - darkening + light));
@@ -239,20 +257,28 @@ function terrainColorLookup(
 
 function waterColorLookup(
   depth: number,
-  waterLevel: number,
+  _waterLevel: number,
   lightHeight: number,
 ): [number, number, number, number] {
-  const clampedDepth = Math.max(0, depth);
-  const t = Math.min(1, clampedDepth / waterLevel);
-
-  // Shallow: (248, 218, 148), Deep: (64, 164, 223)
-  const r = Math.round(248 + t * (64 - 248));
-  const g = Math.round(218 + t * (164 - 218));
-  const b = Math.round(148 + t * (223 - 148));
-
-  // Shallow water is slightly transparent, deep is opaque
-  const alpha = Math.round(180 + t * 75 + lightHeight * 0.1);
-  return [r, g, b, Math.min(255, alpha)];
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = (3 * (lightHeight + 90)) / 180 + 1;
+  const light2 = 5 - light1;
+  const baseR = 0;
+  const baseG = 180 - depth / 2;
+  const baseB = 255 - depth / 4;
+  const r = Math.max(
+    0,
+    baseR - lightHeightChange / light1 + Math.min(0, lightHeight),
+  );
+  const g = Math.max(
+    0,
+    baseG - lightHeightChange / 2 + Math.min(0, lightHeight),
+  );
+  const b = Math.max(
+    0,
+    baseB - lightHeightChange / light2 + Math.min(0, lightHeight),
+  );
+  return [Math.round(r), Math.round(g), Math.round(b), 178];
 }
 
 // ---------------------------------------------------------------------------
@@ -389,7 +415,7 @@ function drawBorder(
 
   // Gradient: bottom (golden) -> top (brighter golden)
   const gradient = ctx.createLinearGradient(px0b, py0b, px0, py0);
-  const lightHeightChange = lightHeight * 0.5;
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
   const bottomR = Math.min(255, 150 + light);
   const bottomG = Math.min(255, 110 + light);
   const bottomB = Math.min(255, 0 + light);
@@ -426,20 +452,20 @@ export async function generateTerrainArtwork(
   const gridHeight = 100;
 
   const seed = fnv1a(curationName);
-  const prng = new SeedablePRNG(seed);
+  const _prng = new SeedablePRNG(seed);
 
-  // Derive all params from PRNG
-  const persistence = 0.3 + prng.next() * 0.4; // 0.3 - 0.7
-  const octaves = 3 + Math.floor(prng.next() * 4); // 3 - 6
-  const wavelength = 12 + prng.next() * 12; // 12 - 24
-  const amplitude = 1.0; // fixed
-  const exponent = 1.0 + prng.next() * 0.5; // 1.0 - 1.5
-  const peaks = prng.next() * 0.15; // 0.0 - 0.15
-  const waterLevel = Math.round(80 + prng.next() * 60); // 80 - 140
-  const beachSize = Math.round(5 + prng.next() * 15); // 5 - 20
-  const lightPosition = Math.floor(prng.next() * 360); // 0 - 359
-  const lightHeight = 42; // fixed
-  const light = 0; // fixed
+  // Fixed reference defaults
+  const persistence = 0.5;
+  const octaves = 5;
+  const wavelength = 133;
+  const amplitude = 1.0;
+  const exponent = 3.3;
+  const peaks = 0.25;
+  const waterLevel = 132;
+  const beachSize = 12;
+  const lightPosition = 180;
+  const lightHeight = 60;
+  const light = 0;
 
   const params: TerrainParams = {
     seed,

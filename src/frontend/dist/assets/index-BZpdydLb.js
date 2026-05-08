@@ -92596,10 +92596,28 @@ function calculateSlopeDirection(y0, y1, y2, y3) {
   const slopeDirection = Math.atan2(avgSlopeZ, avgSlopeX) * 180 / Math.PI;
   return [slopeDirection, avgSlopeX, avgSlopeZ];
 }
-function addShading(colors2, slopeDirection, _slopeX, _slopeZ, lightPosition, lightHeight, light) {
-  const rawDiff = ((lightPosition - slopeDirection) % 360 + 360) % 360;
-  const angleDiff = rawDiff > 180 ? rawDiff - 360 : rawDiff;
-  const darkening = Math.abs(angleDiff) / 180 * lightHeight;
+function addShading(colors2, slopeDirection, slopeX, slopeZ, lightPosition, lightHeight, light) {
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = 3 * (lightHeight + 90) / 180 + 1;
+  const light2 = 5 - light1;
+  colors2[0] = Math.max(
+    0,
+    colors2[0] - lightHeightChange / light1 + Math.min(0, lightHeight)
+  );
+  colors2[1] = Math.max(
+    0,
+    colors2[1] - lightHeightChange / 2 + Math.min(0, lightHeight)
+  );
+  colors2[2] = Math.max(
+    0,
+    colors2[2] - lightHeightChange / light2 + Math.min(0, lightHeight)
+  );
+  let diff = Math.abs(lightPosition - slopeDirection);
+  diff = diff > 180 ? 360 - diff : diff;
+  if (slopeX === 0 && slopeZ === 0) {
+    diff = 30;
+  }
+  const darkening = diff * Math.abs((lightHeight - 90) / 90);
   colors2[0] = Math.max(0, Math.min(255, colors2[0] - darkening + light));
   colors2[1] = Math.max(0, Math.min(255, colors2[1] - darkening + light));
   colors2[2] = Math.max(0, Math.min(255, colors2[2] - darkening + light));
@@ -92649,14 +92667,26 @@ function terrainColorLookup(elevation, slopeDirection, slopeX, slopeZ, waterLeve
   );
   return [colors2[0], colors2[1], colors2[2], 255];
 }
-function waterColorLookup(depth, waterLevel, lightHeight) {
-  const clampedDepth = Math.max(0, depth);
-  const t2 = Math.min(1, clampedDepth / waterLevel);
-  const r2 = Math.round(248 + t2 * (64 - 248));
-  const g2 = Math.round(218 + t2 * (164 - 218));
-  const b2 = Math.round(148 + t2 * (223 - 148));
-  const alpha = Math.round(180 + t2 * 75 + lightHeight * 0.1);
-  return [r2, g2, b2, Math.min(255, alpha)];
+function waterColorLookup(depth, _waterLevel, lightHeight) {
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = 3 * (lightHeight + 90) / 180 + 1;
+  const light2 = 5 - light1;
+  const baseR = 0;
+  const baseG = 180 - depth / 2;
+  const baseB = 255 - depth / 4;
+  const r2 = Math.max(
+    0,
+    baseR - lightHeightChange / light1 + Math.min(0, lightHeight)
+  );
+  const g2 = Math.max(
+    0,
+    baseG - lightHeightChange / 2 + Math.min(0, lightHeight)
+  );
+  const b2 = Math.max(
+    0,
+    baseB - lightHeightChange / light2 + Math.min(0, lightHeight)
+  );
+  return [Math.round(r2), Math.round(g2), Math.round(b2), 178];
 }
 const cos30 = Math.cos(Math.PI / 6);
 const sin30 = Math.sin(Math.PI / 6);
@@ -92733,7 +92763,7 @@ function drawBorder(ctx, h0, h1, _h2, _h3, isWater, x1, y1, x22, y2, isLeftBorde
   const maxH = Math.max(h0, h1);
   if (maxH <= 0) return;
   const gradient = ctx.createLinearGradient(px0b, py0b, px0, py0);
-  const lightHeightChange = lightHeight * 0.5;
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
   const bottomR = Math.min(255, 150 + light);
   const bottomG = Math.min(255, 110 + light);
   const bottomB = Math.min(255, 0 + light);
@@ -92761,17 +92791,16 @@ async function generateTerrainArtwork(curationName, size2) {
   const gridWidth = 100;
   const gridHeight = 100;
   const seed = fnv1a(curationName);
-  const prng = new SeedablePRNG(seed);
-  const persistence = 0.3 + prng.next() * 0.4;
-  const octaves = 3 + Math.floor(prng.next() * 4);
-  const wavelength = 12 + prng.next() * 12;
+  const persistence = 0.5;
+  const octaves = 5;
+  const wavelength = 133;
   const amplitude = 1;
-  const exponent = 1 + prng.next() * 0.5;
-  const peaks = prng.next() * 0.15;
-  const waterLevel = Math.round(80 + prng.next() * 60);
-  const beachSize = Math.round(5 + prng.next() * 15);
-  const lightPosition = Math.floor(prng.next() * 360);
-  const lightHeight = 42;
+  const exponent = 3.3;
+  const peaks = 0.25;
+  const waterLevel = 132;
+  const beachSize = 12;
+  const lightPosition = 180;
+  const lightHeight = 60;
   const light = 0;
   const params = {
     seed,
