@@ -92674,7 +92674,7 @@ const isoLength = 1;
 const scale = 5;
 function coordToPixel(coordX, coordY, coordHeight) {
   return [
-    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 345),
+    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 432.5),
     Math.floor(
       scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 345
     )
@@ -92764,7 +92764,8 @@ function drawBorder(ctx, h0, h1, _h2, _h3, isWater, x1, y1, x22, y2, isLeftBorde
 }
 async function generateTerrainArtwork(curationName, size2) {
   var _a3;
-  const canvasSize = 690;
+  const canvasWidth = 865;
+  const canvasHeight = 690;
   const gridWidth = 100;
   const gridHeight = 100;
   const seed = fnv1a(curationName);
@@ -92800,12 +92801,12 @@ async function generateTerrainArtwork(curationName, size2) {
   } catch {
     return { dataUrl: "", params };
   }
-  canvas.width = canvasSize;
-  canvas.height = canvasSize;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) return { dataUrl: "", params };
   ctx.fillStyle = "rgb(40,80,140)";
-  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   ctx.translate(382, 250);
   const noisePrng = new SeedablePRNG(seed ^ 3735928559);
   const rawMap = perlinNoise(

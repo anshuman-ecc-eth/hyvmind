@@ -40,9 +40,9 @@ import Float "mo:core/Float";
 
 
 
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // Type Aliases
   type NodeId = Text;

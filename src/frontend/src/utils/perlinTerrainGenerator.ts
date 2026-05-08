@@ -280,7 +280,7 @@ function coordToPixel(
   coordHeight: number,
 ): [number, number] {
   return [
-    Math.floor(scale * (((coordX - coordY) * cos30) / isoWidth) + 345),
+    Math.floor(scale * (((coordX - coordY) * cos30) / isoWidth) + 432.5),
     Math.floor(
       scale *
         (((coordX + coordY) * sin30) / isoLength - coordHeight * isoHeight) +
@@ -428,7 +428,8 @@ export async function generateTerrainArtwork(
   curationName: string,
   size: "thumbnail" | "full",
 ): Promise<{ dataUrl: string; params: TerrainParams }> {
-  const canvasSize = size === "full" ? 690 : 345;
+  const canvasWidth = size === "full" ? 865 : 433;
+  const canvasHeight = size === "full" ? 690 : 345;
   const gridWidth = 100;
   const gridHeight = 100;
 
@@ -469,15 +470,15 @@ export async function generateTerrainArtwork(
   } catch {
     return { dataUrl: "", params };
   }
-  canvas.width = canvasSize;
-  canvas.height = canvasSize;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return { dataUrl: "", params };
 
   // Background fill
   ctx.fillStyle = "rgb(40,80,140)";
-  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Scale canvas for thumbnail
   if (size === "thumbnail") {
