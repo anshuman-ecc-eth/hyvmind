@@ -24,7 +24,7 @@ function formatWeightedValue(wv: WeightedValue): string {
  * Converts backend WeightedAttribute[] to a flat Record<string, string>.
  * Multiple values for the same key are joined with ", ".
  */
-function convertWeightedAttributes(
+export function convertWeightedAttributes(
   attrs: WeightedAttribute[],
 ): Record<string, string> {
   const result: Record<string, string> = {};
@@ -38,7 +38,7 @@ function convertWeightedAttributes(
  * Converts backend SourceRef[] to frontend SourceRef[]. Simple passthrough
  * mapping — kept as a typed conversion so future backend changes are isolated.
  */
-function convertSources(
+export function convertSources(
   sources: SourceRef[] | undefined,
 ): import("../types/sourceGraph").SourceRef[] | undefined {
   if (!sources || sources.length === 0) return undefined;

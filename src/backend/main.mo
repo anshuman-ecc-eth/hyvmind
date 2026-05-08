@@ -24,6 +24,8 @@ import Runtime "mo:core/Runtime";
 import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
+import Float "mo:core/Float";
+import Migration "migration";
 
 
 
@@ -37,6 +39,7 @@ import Debug "mo:core/Debug";
 
 
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -44,6 +47,17 @@ actor {
   type Tag = Text;
   type BuzzScore = Int;
   let BUZZ_DECIMALS : Int = 10;
+  type TrustScore = Int;
+  let TRUST_DECIMALS : Int = 10_000_000;
+  type BuzzTransaction = {
+    amount : Int;
+    timestamp : Int;
+    publishedGraphId : Text;
+  };
+  type NodeContribution = {
+    paidBy : Principal;
+    buzzCost : Int;
+  };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 
   type BuzzSecretRecord = {
@@ -257,6 +271,8 @@ actor {
 
   type ExtensionEntry = {
     extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
     addedNodes : Nat;
     addedEdges : Nat;
     addedHierarchyEdges : Nat;
@@ -443,6 +459,10 @@ actor {
   // Published source graph metadata
   var publishedSourceGraphs = Map.empty<Text, PublishedSourceGraphMeta>();
   var publishedGraphBuzzMetrics = Map.empty<Text, { cumulativeBuzzSpent : Int; extensionCount : Nat }>();
+  var trustScores = Map.empty<Principal, TrustScore>();
+  var buzzTransactions = Map.empty<Principal, List.List<BuzzTransaction>>();
+  var graphSavers = Map.empty<Text, List.List<Principal>>();
+  var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
 
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
@@ -674,6 +694,53 @@ actor {
         if (interpretationTokenMap.containsKey(tokenId)) { ?tokenType } else { null };
       };
     };
+  };
+
+  public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async { #ok : Text; #err : Text } {
+    switch (publishedSourceGraphs.get(publishedGraphId)) {
+      case (null) { return #err("Graph not found") };
+      case (?_) {};
+    };
+    if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
+    let savers = switch (graphSavers.get(publishedGraphId)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+    let alreadySaved = savers.any(func(p : Principal) : Bool { Principal.equal(p, msg.caller) });
+    if (alreadySaved) { return #err("Already saved") };
+    savers.add(msg.caller);
+    graphSavers.add(publishedGraphId, savers);
+    let saveNumber = savers.size();
+    var bucket = Map.empty<Principal, Int>();
+    let contribMap = switch (publishedNodeContributions.get(publishedGraphId)) {
+      case (null) { Map.empty<NodeId, NodeContribution>() };
+      case (?m) { m };
+    };
+    for (nodeId in selectedNodeIds.vals()) {
+      switch (contribMap.get(nodeId)) {
+        case (null) {};
+        case (?contrib) {
+          if (not Principal.equal(contrib.paidBy, msg.caller)) {
+            let existing = switch (bucket.get(contrib.paidBy)) { case (null) { 0 }; case (?v) { v }; };
+            bucket.add(contrib.paidBy, existing + contrib.buzzCost);
+          };
+        };
+      };
+    };
+    for ((creator, totalBuzzCost) in bucket.entries()) {
+      let earned : Int = (Float.sqrt(saveNumber.toFloat()) * (totalBuzzCost * TRUST_DECIMALS).toFloat()).toInt();
+      updateTrustScore(creator, earned);
+    };
+    #ok("Graph saved")
+  };
+
+  func updateTrustScore(user : Principal, delta : Int) {
+    let balance = switch (trustScores.get(user)) { case (null) { 0 }; case (?b) { b }; };
+    trustScores.add(user, balance + delta);
+  };
+
+  public shared (msg) func getMyTrustBalance() : async TrustScore {
+    switch (trustScores.get(msg.caller)) { case (null) { 0 }; case (?b) { b }; };
   };
 
   public query ({ caller }) func getMyBuzzBalance() : async BuzzScore {
@@ -3102,7 +3169,11 @@ actor {
     var swarmsToCreate : Nat = 0;
     var locationsToCreate : Nat = 0;
     var lawEntitiesToCreate : Nat = 0;
-    var interpEntitiesToCreate : Nat = 0;
+      var interpEntitiesToCreate : Nat = 0;
+      var tempContribs = Map.empty<NodeId, NodeContribution>();
+      func recordContrib(nodeId : NodeId, buzzCost : Int) {
+    tempContribs.add(nodeId, { paidBy = caller; buzzCost });
+      };
 
 
     // Build node input lookup
@@ -3204,7 +3275,8 @@ actor {
           nodesToCreate += 1;
           curationsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
-          sourcesAdded += node.sources.size();
+
+          recordContrib(newId, 10);          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3331,7 +3403,8 @@ actor {
           nodesToCreate += 1;
           swarmsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
-          sourcesAdded += node.sources.size();
+
+          recordContrib(newId, 20);          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3445,7 +3518,8 @@ actor {
           nodesToCreate += 1;
           locationsToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
-          sourcesAdded += node.sources.size();
+
+          recordContrib(newId, 30);          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3559,7 +3633,8 @@ actor {
           nodesToCreate += 1;
           lawEntitiesToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
-          sourcesAdded += node.sources.size();
+
+          recordContrib(newId, 40);          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3679,7 +3754,8 @@ actor {
           nodesToCreate += 1;
           interpEntitiesToCreate += 1;
           attributesAdded += countRawAttributes(node.attributes);
-          sourcesAdded += node.sources.size();
+
+          recordContrib(newId, 50);          sourcesAdded += node.sources.size();
         };
       };
     };
@@ -3814,6 +3890,17 @@ actor {
     updateBuzzScore(caller, -publishCost);
 
     // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
+    let buzzTx : BuzzTransaction = {
+      amount = publishCost;
+      timestamp = Time.now();
+      publishedGraphId = "";
+    };
+    let existingTxs = switch (buzzTransactions.get(caller)) {
+      case (null) { List.empty<BuzzTransaction>() };
+      case (?list) { list };
+    };
+    existingTxs.add(buzzTx);
+    buzzTransactions.add(caller, existingTxs);
 
     // Find root curation name (first curation in input)
     let rootCurationName = switch (input.nodes.find(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" })) {
@@ -3826,8 +3913,14 @@ actor {
         // Extension: update existing metadata using accurate delta counts from tracking vars
         switch (publishedSourceGraphs.get(pid)) {
           case (?existingMeta) {
+            let extendedByName = switch (userProfiles.get(caller)) {
+              case (?profile) { profile.name };
+              case (null) { caller.toText() };
+            };
             let newEntry : ExtensionEntry = {
               extendedAt = Time.now();
+              extendedBy = caller;
+              extendedByName;
               addedNodes = nodesToCreate;
               addedEdges = edgesToCreate;
               addedHierarchyEdges = hierarchyEdgesCreated;
@@ -3937,7 +4030,18 @@ actor {
       sourceEdges.add(id, edgeList);
     };
 
-    // Auto-upvote new nodes (all new swarms in staging not in original map)
+
+    // Commit node contributions
+    if (tempContribs.size() > 0) {
+      let existingMap = switch (publishedNodeContributions.get(thePublishedId)) {
+        case (null) { Map.empty<NodeId, NodeContribution>() };
+        case (?m) { m };
+      };
+      for ((nodeId, contrib) in tempContribs.entries()) {
+        existingMap.add(nodeId, contrib);
+      };
+      publishedNodeContributions.add(thePublishedId, existingMap);
+    };    // Auto-upvote new nodes (all new swarms in staging not in original map)
     for ((id, swarm) in stagingSwarms.entries()) {
       autoUpvoteNode(id, caller);
     };
@@ -5076,5 +5180,9 @@ actor {
     principalByApiKey := Map.empty<Text, Principal>();
     apiRateLimitCounts := Map.empty<Text, Nat>();
     apiRateLimitWindowStarts := Map.empty<Text, Int>();
+    trustScores := Map.empty<Principal, TrustScore>();
+    buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
+    graphSavers := Map.empty<Text, List.List<Principal>>();
+    publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
   };
 };

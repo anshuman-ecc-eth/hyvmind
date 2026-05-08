@@ -69,9 +69,11 @@ export interface EdgeOperation {
 }
 export interface ExtensionEntry {
   'addedNodes' : bigint,
+  'extendedByName' : string,
   'addedSources' : [] | [bigint],
   'addedAttributes' : bigint,
   'extendedAt' : Time,
+  'extendedBy' : Principal,
   'addedHierarchyEdges' : bigint,
   'addedEdges' : bigint,
 }
@@ -247,6 +249,7 @@ export interface Swarm {
 export type Tag = string;
 export type Time = bigint;
 export interface Timestamps { 'createdAt' : Time }
+export type TrustScore = bigint;
 export interface UserApprovalInfo {
   'status' : ApprovalStatus,
   'principal' : Principal,
@@ -309,6 +312,7 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
+  'getMyTrustBalance' : ActorMethod<[], TrustScore>,
   'getPublishedPaths' : ActorMethod<
     [],
     Array<
@@ -367,6 +371,11 @@ export interface _SERVICE {
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'savePublishedGraph' : ActorMethod<
+    [string, Array<NodeId>],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
   'sendMessage' : ActorMethod<
     [string, string],
     { 'ok' : null } |

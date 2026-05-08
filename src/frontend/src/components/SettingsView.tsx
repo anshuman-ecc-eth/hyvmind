@@ -19,6 +19,7 @@ import type { backendInterface } from "../backend.d";
 import {
   useGetCallerUserProfile,
   useGetMyBuzzBalance,
+  useGetMyTrustBalance,
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useSettings";
@@ -49,6 +50,7 @@ export function SettingsView() {
 
   const [createBuzzOpen, setCreateBuzzOpen] = useState(false);
   const { data: buzzBalance } = useGetMyBuzzBalance();
+  const { data: trustBalance } = useGetMyTrustBalance();
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
@@ -441,7 +443,7 @@ export function SettingsView() {
         <section className="space-y-4" data-ocid="settings.wallet.section">
           <h2 className="text-lg font-medium">Wallet</h2>
           <p className="text-sm text-muted-foreground">
-            Manage your Buzz balance.
+            Manage your Buzz and Trust balances.
           </p>
           <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -459,7 +461,10 @@ export function SettingsView() {
                   className="text-sm text-muted-foreground"
                   data-ocid="settings.wallet.trust_balance"
                 >
-                  0 <span>Trust</span>
+                  {trustBalance !== undefined
+                    ? (Number(trustBalance) / 10_000_000).toFixed(7)
+                    : "0.0000000"}{" "}
+                  <span>Trust</span>
                 </p>
               </div>
               <Button

@@ -6,11 +6,9 @@ import GraphFuzzyFinder, {
   type SearchableItem,
 } from "../components/GraphFuzzyFinder";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
+import SaveGraphDialog from "../components/SaveGraphDialog";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
-import type {
-  PublishedSourceGraphMeta as BasePublishedSourceGraphMeta,
-  ExtensionEntry,
-} from "../hooks/usePublicGraphs";
+import type { PublishedSourceGraphMeta as BasePublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
 import {
   usePublishedGraphData,
   usePublishedGraphMetas,
@@ -61,113 +59,107 @@ function Spinner() {
   );
 }
 
-function ExtensionHistory({ log }: { log: ExtensionEntry[] }) {
-  const [open, setOpen] = useState(false);
-  if (log.length === 0) return null;
+interface GraphCardWithSaveProps {
+  curationName: string;
+  meta: PublishedSourceGraphMeta;
+  onView: (id: string) => void;
+  onSave?: (graphId: string) => void;
+}
+
+function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
+  const ms = Number(meta.publishedAt) / 1_000_000;
+  const date = new Date(ms).toLocaleDateString();
+  const [showArtworkModal, setShowArtworkModal] = useState(false);
+  const artworkUrl = meta.artworkDataUrl;
+  const crossRefEdges =
+    Number(meta.edgeCount) - Number(meta.hierarchyEdgeCount ?? 0n);
+  const hierarchyEdges = Number(meta.hierarchyEdgeCount ?? 0n);
 
   return (
-    <div className="mt-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono flex items-center gap-1"
-        data-ocid="extension_history.toggle"
-      >
-        <span className="text-[10px]">{open ? "▾" : "▸"}</span>
-        Extension History ({log.length})
-      </button>
+    <div
+      className="border border-border bg-card p-4 rounded-sm mb-2"
+      data-ocid="public_graph.card"
+    >
+      {/* Core line */}
+      <div className="font-mono text-xs text-muted-foreground mb-1">
+        Core &mdash; {meta.creatorName} &mdash; {date}
+      </div>
 
-      {open && (
-        <ul className="mt-1 space-y-1 pl-3 border-l border-border">
-          {log.map((entry, i) => {
-            const ms = Number(entry.extendedAt) / 1_000_000;
-            const date = new Date(ms).toLocaleDateString();
+      {/* Stats */}
+      <div className="flex flex-wrap gap-3 font-mono text-xs text-muted-foreground mb-2">
+        <span data-ocid="public_graph.node_count">
+          {Number(meta.nodeCount)} nodes
+        </span>
+        <span data-ocid="public_graph.edge_count">
+          {crossRefEdges} cross-ref, {hierarchyEdges} hierarchy
+        </span>
+        <span data-ocid="public_graph.attr_count">
+          {Number(meta.attributeCount)} attrs
+        </span>
+        <span data-ocid="public_graph.source_count">
+          {Number(meta.sourcesCount ?? 0n)} sources
+        </span>
+      </div>
+
+      {/* Extensions */}
+      {meta.extensionLog.length > 0 && (
+        <ul className="mb-2 space-y-0.5 pl-2 border-l border-border">
+          {meta.extensionLog.map((entry, i) => {
+            const extMs = Number(entry.extendedAt) / 1_000_000;
+            const extDate = new Date(extMs).toLocaleDateString();
+            const byName = entry.extendedByName || "Unknown";
             return (
-              // biome-ignore lint/suspicious/noArrayIndexKey: extension log entries are positional
-              <li key={i} className="text-xs text-muted-foreground font-mono">
-                <span className="text-foreground/70">{date}</span>
-                {" — "}+{Number(entry.addedNodes)} nodes, +
-                {Number(entry.addedEdges)} cross-ref, +
-                {Number(entry.addedHierarchyEdges ?? 0n)} hierarchy, +
-                {Number(entry.addedAttributes)} attrs, +
-                {Number(entry.addedSources ?? 0n)} sources
+              <li
+                key={String(entry.extendedAt)}
+                className="font-mono text-[10px] text-muted-foreground"
+              >
+                Ext #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
+                {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}
+                edges, +{Number(entry.addedAttributes)} attrs
               </li>
             );
           })}
         </ul>
       )}
-    </div>
-  );
-}
 
-interface GraphCardProps {
-  graph: PublishedSourceGraphMeta;
-  onView: (id: string) => void;
-}
-
-function GraphCard({ graph, onView }: GraphCardProps) {
-  const ms = Number(graph.publishedAt) / 1_000_000;
-  const date = new Date(ms).toLocaleDateString();
-  const [showArtworkModal, setShowArtworkModal] = useState(false);
-
-  const artworkUrl = graph.artworkDataUrl;
-
-  return (
-    <div
-      className="border border-border bg-card p-4 flex flex-col gap-2"
-      data-ocid="public_graph.card"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-xs text-muted-foreground shrink-0">
-          {date}
-        </span>
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          type="button"
+          onClick={() => setShowArtworkModal(true)}
+          disabled={!artworkUrl}
+          className="border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          data-ocid="public_graph.artwork_thumbnail"
+          aria-label={
+            artworkUrl ? `View tileset for ${meta.name}` : "Tileset generating"
+          }
+        >
+          {artworkUrl ? "Tileset" : "Making.."}
+        </button>
+        <button
+          type="button"
+          onClick={() => onView(meta.id)}
+          className="border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors"
+          data-ocid="public_graph.view_button"
+        >
+          View Graph
+        </button>
+        {onSave && (
+          <button
+            type="button"
+            onClick={() => onSave(meta.id)}
+            className="border border-primary bg-primary/10 px-3 py-1 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+            data-ocid="public_graph.save_button"
+          >
+            Save
+          </button>
+        )}
       </div>
-
-      {/* View Tileset button */}
-      <button
-        type="button"
-        onClick={() => setShowArtworkModal(true)}
-        disabled={!artworkUrl}
-        className="self-start border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        data-ocid="public_graph.artwork_thumbnail"
-        aria-label={
-          artworkUrl ? `View tileset for ${graph.name}` : "Tileset generating"
-        }
-      >
-        {artworkUrl ? "View Tileset" : "Making Tileset.."}
-      </button>
-
-      <div className="flex gap-4 font-mono text-xs text-muted-foreground">
-        <span data-ocid="public_graph.node_count">
-          {Number(graph.nodeCount)} nodes
-        </span>
-        <span data-ocid="public_graph.edge_count">
-          {Number(graph.edgeCount) - Number(graph.hierarchyEdgeCount ?? 0n)}{" "}
-          cross-ref, {Number(graph.hierarchyEdgeCount ?? 0n)} hierarchy
-        </span>
-        <span data-ocid="public_graph.attr_count">
-          {Number(graph.attributeCount)} attrs
-        </span>
-        <span data-ocid="public_graph.source_count">
-          {Number(graph.sourcesCount ?? 0n)} sources
-        </span>
-      </div>
-
-      <ExtensionHistory log={graph.extensionLog} />
-
-      <button
-        type="button"
-        onClick={() => onView(graph.id)}
-        className="mt-1 self-start border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors"
-        data-ocid="public_graph.view_button"
-      >
-        View Graph
-      </button>
 
       {showArtworkModal && artworkUrl && (
         <ArtworkModal
           artworkUrl={artworkUrl}
-          graphName={graph.name}
+          graphName={meta.name}
           onClose={() => setShowArtworkModal(false)}
         />
       )}
@@ -175,56 +167,33 @@ function GraphCard({ graph, onView }: GraphCardProps) {
   );
 }
 
-interface CreatorAccordionProps {
+interface GraphCardGroupProps {
   curationName: string;
   graphs: PublishedSourceGraphMeta[];
-  expanded: boolean;
-  onToggle: () => void;
   onView: (id: string) => void;
-  containerRef?: (el: HTMLDivElement | null) => void;
+  onSave?: (graphId: string) => void;
 }
 
-function CreatorAccordion({
+function GraphCardGroup({
   curationName,
   graphs,
-  expanded,
-  onToggle,
   onView,
-  containerRef,
-}: CreatorAccordionProps) {
+  onSave,
+}: GraphCardGroupProps) {
   return (
-    <div
-      ref={containerRef}
-      className="border border-border"
-      data-ocid="creator_accordion.section"
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 font-mono text-sm text-foreground hover:bg-secondary/50 transition-colors"
-        data-ocid="creator_accordion.toggle"
-      >
-        <span className="text-xs font-normal">{curationName}</span>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>
-            {graphs.length} graph{graphs.length !== 1 ? "s" : ""}
-          </span>
-          <span className="text-[10px]">{expanded ? "▾" : "▸"}</span>
-        </span>
-      </button>
-
-      {expanded && (
-        <div className="border-t border-border divide-y divide-border">
-          {graphs.map((g) => (
-            <div key={g.id} className="px-4 py-3">
-              <div className="mb-1 font-mono text-xs text-muted-foreground">
-                {g.creatorName}
-              </div>
-              <GraphCard graph={g} onView={onView} />
-            </div>
-          ))}
-        </div>
-      )}
+    <div data-ocid="graph_card_group.section">
+      <h3 className="text-sm font-bold text-foreground mb-2 mt-4 font-mono">
+        {curationName}
+      </h3>
+      {graphs.map((g) => (
+        <GraphCardWithSave
+          key={g.id}
+          curationName={curationName}
+          meta={g}
+          onView={onView}
+          onSave={onSave}
+        />
+      ))}
     </div>
   );
 }
@@ -396,36 +365,17 @@ export default function PublicGraphView({
 }: { isLanding?: boolean }) {
   const { data: graphs = [], isLoading, error } = usePublishedGraphMetas();
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
-  const [expandedCreators, setExpandedCreators] = useState<Set<string>>(
-    new Set(),
-  );
+  const [savingGraphId, setSavingGraphId] = useState<string | null>(null);
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
-  const curationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-
-  const toggleCreator = (name: string) => {
-    setExpandedCreators((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  };
 
   const handleFuzzySelect = (item: SearchableItem) => {
-    setExpandedCreators((prev) => {
-      const next = new Set(prev);
-      next.add(item.curationName);
-      return next;
-    });
-    requestAnimationFrame(() => {
-      const element = curationRefs.current.get(item.curationName);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    });
+    setSelectedGraphId(item.graphId);
   };
+
+  const savingGraphData = usePublishedGraphData(savingGraphId);
+  const savingMeta = graphs.find((g) => g.id === savingGraphId);
 
   // ------------------------------------------------------------------
   // Loading / error states
@@ -514,6 +464,17 @@ export default function PublicGraphView({
         </div>
       </div>
 
+      {/* Save dialog */}
+      {savingGraphId && savingGraphData.data && savingMeta && (
+        <SaveGraphDialog
+          isOpen={true}
+          onClose={() => setSavingGraphId(null)}
+          graphName={savingMeta.name}
+          graphData={savingGraphData.data}
+          graphId={savingGraphId}
+        />
+      )}
+
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-auto px-4 py-4">
         {graphs.length === 0 ? (
@@ -529,21 +490,16 @@ export default function PublicGraphView({
             </span>
           </div>
         ) : (
-          <div className="space-y-2" data-ocid="public_graphs.list">
+          <div className="space-y-1" data-ocid="public_graphs.list">
             {sortedCreators.map((curationName) => {
-              const creatorGraphs = byCreator.get(curationName) ?? [];
+              const gs = byCreator.get(curationName) ?? [];
               return (
-                <CreatorAccordion
+                <GraphCardGroup
                   key={curationName}
                   curationName={curationName}
-                  graphs={creatorGraphs}
-                  expanded={expandedCreators.has(curationName)}
-                  onToggle={() => toggleCreator(curationName)}
+                  graphs={gs}
                   onView={(id) => setSelectedGraphId(id)}
-                  containerRef={(el) => {
-                    if (el) curationRefs.current.set(curationName, el);
-                    else curationRefs.current.delete(curationName);
-                  }}
+                  onSave={isLanding ? undefined : (id) => setSavingGraphId(id)}
                 />
               );
             })}

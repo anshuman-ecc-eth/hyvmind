@@ -237,6 +237,19 @@ export default function EditorView() {
     };
   }, []);
 
+  // Import nodes from hyvmind:import-nodes custom event (dispatched by SaveGraphDialog)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        nodes: Map<string, EditorNode>;
+        rootIds: string[];
+      }>;
+      importRawNodes(customEvent.detail.nodes, customEvent.detail.rootIds);
+    };
+    window.addEventListener("hyvmind:import-nodes", handler);
+    return () => window.removeEventListener("hyvmind:import-nodes", handler);
+  }, [importRawNodes]);
+
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------

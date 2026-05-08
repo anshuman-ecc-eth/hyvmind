@@ -139,9 +139,11 @@ export type PublishCommitResult = {
 };
 export interface ExtensionEntry {
     addedNodes: bigint;
+    extendedByName: string;
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    extendedBy: Principal;
     addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }
@@ -199,12 +201,13 @@ export interface SourceGraphNodeInput {
     parentName?: string;
     nodeType: string;
 }
-export interface Timestamps {
-    createdAt: Time;
-}
 export interface VoteData {
     upvotes: bigint;
     downvotes: bigint;
+}
+export type TrustScore = bigint;
+export interface Timestamps {
+    createdAt: Time;
 }
 export type NodeId = string;
 export interface MintSettings {
@@ -351,6 +354,7 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyTrustBalance(): Promise<TrustScore>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -397,6 +401,13 @@ export interface backendInterface {
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;

@@ -452,6 +452,7 @@ export function useGetMyBuzzBalance() {
 }
 
 import type { BuzzBackendExtensions } from "../types/buzzExtensions.d";
+import type { TrustBackendExtensions } from "../types/trustExtensions.d";
 
 type BuzzActor = backendInterface & BuzzBackendExtensions;
 
@@ -477,6 +478,44 @@ export function useRedeemBuzzSecret() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["myBuzzBalance"] });
+    },
+  });
+}
+
+export function useGetMyTrustBalance() {
+  const { actor, isFetching } = useBackendActor();
+
+  return useQuery<bigint>({
+    queryKey: ["myTrustBalance"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return (actor as unknown as TrustBackendExtensions).getMyTrustBalance();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useSavePublishedGraph() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      publishedGraphId,
+      selectedNodes,
+    }: {
+      publishedGraphId: string;
+      selectedNodes: string[];
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return (actor as unknown as TrustBackendExtensions).savePublishedGraph(
+        publishedGraphId,
+        selectedNodes,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myTrustBalance"] });
     },
   });
 }

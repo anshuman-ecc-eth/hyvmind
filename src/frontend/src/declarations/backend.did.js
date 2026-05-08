@@ -63,9 +63,11 @@ export const Tag = IDL.Text;
 export const Time = IDL.Int;
 export const ExtensionEntry = IDL.Record({
   'addedNodes' : IDL.Nat,
+  'extendedByName' : IDL.Text,
   'addedSources' : IDL.Opt(IDL.Nat),
   'addedAttributes' : IDL.Nat,
   'extendedAt' : Time,
+  'extendedBy' : IDL.Principal,
   'addedHierarchyEdges' : IDL.Nat,
   'addedEdges' : IDL.Nat,
 });
@@ -112,6 +114,7 @@ export const ChatMessage = IDL.Record({
 });
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const BuzzScore = IDL.Int;
+export const TrustScore = IDL.Int;
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
 export const Curation = IDL.Record({
   'id' : NodeId,
@@ -354,6 +357,7 @@ export const idlService = IDL.Service({
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+  'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
   'getPublishedPaths' : IDL.Func(
       [],
       [
@@ -429,6 +433,11 @@ export const idlService = IDL.Service({
   'resetAllData' : IDL.Func([], [], []),
   'revokeApiKey' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'savePublishedGraph' : IDL.Func(
+      [IDL.Text, IDL.Vec(NodeId)],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
   'sendMessage' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
@@ -511,9 +520,11 @@ export const idlFactory = ({ IDL }) => {
   const Time = IDL.Int;
   const ExtensionEntry = IDL.Record({
     'addedNodes' : IDL.Nat,
+    'extendedByName' : IDL.Text,
     'addedSources' : IDL.Opt(IDL.Nat),
     'addedAttributes' : IDL.Nat,
     'extendedAt' : Time,
+    'extendedBy' : IDL.Principal,
     'addedHierarchyEdges' : IDL.Nat,
     'addedEdges' : IDL.Nat,
   });
@@ -560,6 +571,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const BuzzScore = IDL.Int;
+  const TrustScore = IDL.Int;
   const Timestamps = IDL.Record({ 'createdAt' : Time });
   const Curation = IDL.Record({
     'id' : NodeId,
@@ -803,6 +815,7 @@ export const idlFactory = ({ IDL }) => {
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+    'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
     'getPublishedPaths' : IDL.Func(
         [],
         [
@@ -878,6 +891,11 @@ export const idlFactory = ({ IDL }) => {
     'resetAllData' : IDL.Func([], [], []),
     'revokeApiKey' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'savePublishedGraph' : IDL.Func(
+        [IDL.Text, IDL.Vec(NodeId)],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
     'sendMessage' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],

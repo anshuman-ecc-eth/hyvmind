@@ -221,9 +221,11 @@ export type PublishCommitResult = {
 };
 export interface ExtensionEntry {
     addedNodes: bigint;
+    extendedByName: string;
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    extendedBy: Principal;
     addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }
@@ -281,12 +283,13 @@ export interface SourceGraphNodeInput {
     parentName?: string;
     nodeType: string;
 }
-export interface Timestamps {
-    createdAt: Time;
-}
 export interface VoteData {
     upvotes: bigint;
     downvotes: bigint;
+}
+export type TrustScore = bigint;
+export interface Timestamps {
+    createdAt: Time;
 }
 export type NodeId = string;
 export interface MintSettings {
@@ -434,6 +437,7 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyTrustBalance(): Promise<TrustScore>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -480,6 +484,13 @@ export interface backendInterface {
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -855,6 +866,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getMyBuzzBalance();
+            return result;
+        }
+    }
+    async getMyTrustBalance(): Promise<TrustScore> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyTrustBalance();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyTrustBalance();
             return result;
         }
     }
@@ -1255,6 +1280,26 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async savePublishedGraph(arg0: string, arg1: Array<NodeId>): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.savePublishedGraph(arg0, arg1);
+                return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.savePublishedGraph(arg0, arg1);
+            return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async sendMessage(arg0: string, arg1: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -1556,24 +1601,30 @@ function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     addedNodes: bigint;
+    extendedByName: string;
     addedSources: [] | [bigint];
     addedAttributes: bigint;
     extendedAt: _Time;
+    extendedBy: Principal;
     addedHierarchyEdges: bigint;
     addedEdges: bigint;
 }): {
     addedNodes: bigint;
+    extendedByName: string;
     addedSources?: bigint;
     addedAttributes: bigint;
     extendedAt: Time;
+    extendedBy: Principal;
     addedHierarchyEdges: bigint;
     addedEdges: bigint;
 } {
     return {
         addedNodes: value.addedNodes,
+        extendedByName: value.extendedByName,
         addedSources: record_opt_to_undefined(from_candid_opt_n21(_uploadFile, _downloadFile, value.addedSources)),
         addedAttributes: value.addedAttributes,
         extendedAt: value.extendedAt,
+        extendedBy: value.extendedBy,
         addedHierarchyEdges: value.addedHierarchyEdges,
         addedEdges: value.addedEdges
     };

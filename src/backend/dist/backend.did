@@ -29,6 +29,7 @@ type UserApprovalInfo =
    "principal": principal;
    status: ApprovalStatus;
  };
+type TrustScore = int;
 type Timestamps = record {createdAt: Time;};
 type Time = int;
 type Tag = text;
@@ -261,6 +262,8 @@ type ExtensionEntry =
    addedNodes: nat;
    addedSources: opt nat;
    extendedAt: Time;
+   extendedBy: principal;
+   extendedByName: text;
  };
 type EdgeOperation = 
  record {
@@ -380,6 +383,7 @@ service : {
   getMintSettings: () -> (MintSettings) query;
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
+  getMyTrustBalance: () -> (TrustScore);
   getPublishedPaths: () ->
    (vec record {
           curation: text;
@@ -430,6 +434,11 @@ service : {
   resetAllData: () -> ();
   revokeApiKey: () -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
+  savePublishedGraph: (publishedGraphId: text, selectedNodeIds:
+   vec NodeId) -> (variant {
+                     err: text;
+                     ok: text;
+                   });
   sendMessage: (channelId: text, "text": text) -> (variant {
                                                      err: text;
                                                      ok;
