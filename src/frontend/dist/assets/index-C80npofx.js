@@ -92520,6 +92520,9 @@ class SeedablePRNG {
     return this.seed / 233280;
   }
 }
+function toPerlin(elevation) {
+  return elevation / 255 * 2 - 1;
+}
 function easeInOutQuad(t2) {
   return t2 < 0.5 ? 2 * t2 * t2 : -1 + (4 - 2 * t2) * t2;
 }
@@ -92602,48 +92605,37 @@ function addShading(colors2, slopeDirection, _slopeX, _slopeZ, lightPosition, li
   colors2[2] = Math.max(0, Math.min(255, colors2[2] - darkening + light));
 }
 function terrainColorLookup(elevation, slopeDirection, slopeX, slopeZ, waterLevel, beachSize, lightPosition, lightHeight, light) {
-  const sandThreshold = waterLevel + beachSize;
-  const remaining = 255 - sandThreshold;
-  const band = remaining / 8;
   let r2;
   let g2;
   let b2;
-  if (elevation <= sandThreshold) {
-    r2 = 218;
-    g2 = 195;
-    b2 = 139;
-  } else if (elevation <= sandThreshold + band) {
-    r2 = 86;
-    g2 = 158;
-    b2 = 75;
-  } else if (elevation <= sandThreshold + band * 2) {
-    r2 = 76;
-    g2 = 140;
-    b2 = 66;
-  } else if (elevation <= sandThreshold + band * 3) {
-    r2 = 66;
-    g2 = 122;
-    b2 = 57;
-  } else if (elevation <= sandThreshold + band * 4) {
-    r2 = 56;
-    g2 = 104;
-    b2 = 48;
-  } else if (elevation <= sandThreshold + band * 5) {
-    r2 = 46;
-    g2 = 86;
-    b2 = 39;
-  } else if (elevation <= sandThreshold + band * 6) {
-    r2 = 110;
-    g2 = 84;
-    b2 = 60;
-  } else if (elevation <= sandThreshold + band * 7) {
-    r2 = 128;
-    g2 = 120;
-    b2 = 110;
+  if (elevation < waterLevel + beachSize) {
+    r2 = elevation / 3 + 150 * 1.3;
+    g2 = elevation / 3 + 110 * 1.3;
+    b2 = elevation / 3 * 1.3;
+  } else if (elevation < 100) {
+    r2 = elevation;
+    g2 = elevation + 88;
+    b2 = elevation;
+  } else if (elevation < 130) {
+    r2 = elevation;
+    g2 = elevation + 58;
+    b2 = elevation;
+  } else if (elevation < 160) {
+    r2 = elevation;
+    g2 = Math.min(elevation + 29, 255);
+    b2 = elevation;
+  } else if (elevation < 190) {
+    r2 = elevation - 10;
+    g2 = elevation - 10;
+    b2 = elevation;
+  } else if (elevation < 220) {
+    r2 = elevation - 40;
+    g2 = elevation - 40;
+    b2 = elevation - 30;
   } else {
-    r2 = 240;
-    g2 = 240;
-    b2 = 245;
+    r2 = Math.min(255, elevation + 10);
+    g2 = Math.min(255, elevation + 10);
+    b2 = Math.min(255, elevation + 20);
   }
   const colors2 = [r2, g2, b2];
   addShading(
@@ -92805,7 +92797,7 @@ async function generateTerrainArtwork(curationName, size2) {
   canvas.height = canvasHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) return { dataUrl: "", params };
-  ctx.fillStyle = "rgb(40,80,140)";
+  ctx.fillStyle = "rgba(0,0,0,0)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   ctx.translate(382, 50);
   const noisePrng = new SeedablePRNG(seed ^ 3735928559);
@@ -92835,7 +92827,6 @@ async function generateTerrainArtwork(curationName, size2) {
       const mapvalue1 = elevationMap[y2][x3 + 1];
       const mapvalue2 = elevationMap[y2 + 1][x3];
       const mapvalue3 = elevationMap[y2 + 1][x3 + 1];
-      const toPerlin = (v2) => v2 / 255 * 2 - 1;
       const p0 = toPerlin(mapvalue0);
       const p1 = toPerlin(mapvalue1);
       const p2 = toPerlin(mapvalue2);
@@ -92898,49 +92889,148 @@ async function generateTerrainArtwork(curationName, size2) {
           light
         );
       } else {
-        drawTile(
-          ctx,
-          p0,
-          p1,
-          p2,
-          p3,
-          false,
-          x3,
-          y2,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light
-        );
-        drawTile(
-          ctx,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          true,
-          x3,
-          y2,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light
-        );
+        let drawPolygon = function(verts, isWater, avgHeight) {
+          if (verts.length < 3) return;
+          const pixels = verts.map(([cx2, cy, ch]) => coordToPixel(cx2, cy, ch));
+          let color2;
+          if (isWater) {
+            color2 = waterColorLookup(
+              waterLevel - avgHeight,
+              waterLevel,
+              lightHeight
+            );
+          } else {
+            color2 = terrainColorLookup(
+              terrainAverageHeight,
+              slopeValues[0],
+              slopeValues[1],
+              slopeValues[2],
+              waterLevel,
+              beachSize,
+              lightPosition,
+              lightHeight,
+              light
+            );
+          }
+          ctx.fillStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},${color2[3] / 255})`;
+          ctx.beginPath();
+          ctx.moveTo(pixels[0][0], pixels[0][1]);
+          for (let i2 = 1; i2 < pixels.length; i2++) {
+            ctx.lineTo(pixels[i2][0], pixels[i2][1]);
+          }
+          ctx.closePath();
+          ctx.fill();
+          if (!isWater) {
+            ctx.strokeStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},0.5)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        };
+        const slope1 = mapvalue1 - mapvalue0;
+        const slope2 = mapvalue2 - mapvalue0;
+        const slope3 = mapvalue3 - mapvalue1;
+        const slope4 = mapvalue3 - mapvalue2;
+        const b1 = mapvalue0 - slope1 * x3;
+        const b2 = mapvalue0 - slope2 * y2;
+        const b3 = mapvalue1 - slope3 * y2;
+        const b4 = mapvalue2 - slope4 * x3;
+        const x1 = slope1 !== 0 ? (waterLevel - b1) / slope1 : Number.NEGATIVE_INFINITY;
+        const y1 = slope2 !== 0 ? (waterLevel - b2) / slope2 : Number.NEGATIVE_INFINITY;
+        const y22 = slope3 !== 0 ? (waterLevel - b3) / slope3 : Number.NEGATIVE_INFINITY;
+        const x22 = slope4 !== 0 ? (waterLevel - b4) / slope4 : Number.NEGATIVE_INFINITY;
+        const vertexList = [];
+        const tileList = [];
+        const tileList2 = [];
+        if (mapvalue0 >= waterLevel) {
+          tileList2.push([x3, y2, toPerlin(mapvalue0)]);
+        } else {
+          tileList.push([x3, y2, toPerlin(mapvalue0)]);
+          vertexList.push([x3, y2, perlinWaterLevel]);
+        }
+        if (mapvalue0 >= waterLevel !== mapvalue1 >= waterLevel) {
+          vertexList.push([x1, y2, perlinWaterLevel]);
+          tileList.push([x1, y2, perlinWaterLevel]);
+          tileList2.push([x1, y2, perlinWaterLevel]);
+        }
+        if (mapvalue1 >= waterLevel) {
+          tileList2.push([x3 + 1, y2, toPerlin(mapvalue1)]);
+        } else {
+          tileList.push([x3 + 1, y2, toPerlin(mapvalue1)]);
+          vertexList.push([x3 + 1, y2, perlinWaterLevel]);
+        }
+        if (mapvalue1 >= waterLevel !== mapvalue3 >= waterLevel) {
+          vertexList.push([x3 + 1, y22, perlinWaterLevel]);
+          tileList.push([x3 + 1, y22, perlinWaterLevel]);
+          tileList2.push([x3 + 1, y22, perlinWaterLevel]);
+        }
+        if (mapvalue3 >= waterLevel) {
+          tileList2.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
+        } else {
+          tileList.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
+          vertexList.push([x3 + 1, y2 + 1, perlinWaterLevel]);
+        }
+        if (mapvalue3 >= waterLevel !== mapvalue2 >= waterLevel) {
+          vertexList.push([x22, y2 + 1, perlinWaterLevel]);
+          tileList.push([x22, y2 + 1, perlinWaterLevel]);
+          tileList2.push([x22, y2 + 1, perlinWaterLevel]);
+        }
+        if (mapvalue2 >= waterLevel) {
+          tileList2.push([x3, y2 + 1, toPerlin(mapvalue2)]);
+        } else {
+          tileList.push([x3, y2 + 1, toPerlin(mapvalue2)]);
+          vertexList.push([x3, y2 + 1, perlinWaterLevel]);
+        }
+        if (mapvalue2 >= waterLevel !== mapvalue0 >= waterLevel) {
+          vertexList.push([x3, y1, perlinWaterLevel]);
+          tileList.push([x3, y1, perlinWaterLevel]);
+          tileList2.push([x3, y1, perlinWaterLevel]);
+        }
+        drawPolygon(tileList2, false, terrainAverageHeight);
+        drawPolygon(tileList, false, terrainAverageHeight);
+        drawPolygon(vertexList, true, terrainAverageHeight);
+        if (y2 === gridHeight - 2 && (mapvalue2 < waterLevel || mapvalue3 < waterLevel)) {
+          drawBorder(
+            ctx,
+            toPerlin(mapvalue2),
+            toPerlin(mapvalue3),
+            0,
+            0,
+            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+            x3,
+            y2 + 1,
+            x3 + 1,
+            y2 + 1,
+            true,
+            waterLevel,
+            lightHeight,
+            light
+          );
+        }
+        if (x3 === gridWidth - 2 && (mapvalue1 < waterLevel || mapvalue3 < waterLevel)) {
+          drawBorder(
+            ctx,
+            toPerlin(mapvalue1),
+            toPerlin(mapvalue3),
+            0,
+            0,
+            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+            x3 + 1,
+            y2,
+            x3 + 1,
+            y2 + 1,
+            false,
+            waterLevel,
+            lightHeight,
+            light
+          );
+        }
       }
       if (y2 === gridHeight - 2) {
         if (mapvalue2 > 0 || mapvalue3 > 0) {
           drawBorder(
             ctx,
-            mapvalue2 / 255,
-            mapvalue3 / 255,
+            toPerlin(mapvalue2),
+            toPerlin(mapvalue3),
             0,
             0,
             mapvalue2 < waterLevel && mapvalue3 < waterLevel,
@@ -92959,8 +93049,8 @@ async function generateTerrainArtwork(curationName, size2) {
         if (mapvalue1 > 0 || mapvalue3 > 0) {
           drawBorder(
             ctx,
-            mapvalue1 / 255,
-            mapvalue3 / 255,
+            toPerlin(mapvalue1),
+            toPerlin(mapvalue3),
             0,
             0,
             mapvalue1 < waterLevel && mapvalue3 < waterLevel,
@@ -92977,7 +93067,7 @@ async function generateTerrainArtwork(curationName, size2) {
       }
     }
   }
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+  const dataUrl = canvas.toDataURL("image/png");
   return { dataUrl, params };
 }
 const MAPPINGS_KEY_PREFIX = "caffeine_published_mappings_";
