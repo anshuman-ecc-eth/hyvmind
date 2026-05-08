@@ -1297,6 +1297,21 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             >
               Generating secret...
             </div>
+            <div className="flex gap-[2px]">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                  key={i}
+                  className="text-foreground"
+                  style={{
+                    fontSize: "0.55rem",
+                    animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                  }}
+                >
+                  █
+                </span>
+              ))}
+            </div>
           </div>
         );
 
@@ -1489,7 +1504,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <button
             type="button"
             data-ocid="text_game.close_button"
-            className="font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
+            className="text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.5rem",
+              letterSpacing: "0.3em",
+            }}
             onClick={() => {
               if (overrideAudio) {
                 overrideAudio.pause();
@@ -1499,7 +1519,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             }}
             aria-label="Close text game"
           >
-            ×
+            X
           </button>
         </div>
 

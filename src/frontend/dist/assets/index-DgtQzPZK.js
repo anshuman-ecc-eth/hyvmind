@@ -81349,18 +81349,32 @@ function TextGameModal({ onComplete }) {
           }
         );
       case "generating":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 flex flex-col items-center justify-center gap-4 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "div",
-          {
-            className: "text-foreground",
-            style: {
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.65rem",
-              letterSpacing: "0.1em"
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-4 select-none", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65rem",
+                letterSpacing: "0.1em"
+              },
+              children: "Generating secret..."
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "span",
+            {
+              className: "text-foreground",
+              style: {
+                fontSize: "0.55rem",
+                animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+              },
+              children: "█"
             },
-            children: "Generating secret..."
-          }
-        ) });
+            i2
+          )) })
+        ] });
       case "intro":
       case "postGame1":
       case "choice1":
@@ -81541,7 +81555,12 @@ function TextGameModal({ onComplete }) {
               {
                 type: "button",
                 "data-ocid": "text_game.close_button",
-                className: "font-mono text-xs text-muted-foreground hover:text-foreground px-2 py-1 transition-colors",
+                className: "text-muted-foreground hover:text-foreground px-2 py-1 transition-colors",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.5rem",
+                  letterSpacing: "0.3em"
+                },
                 onClick: () => {
                   if (overrideAudio) {
                     overrideAudio.pause();
@@ -81550,7 +81569,7 @@ function TextGameModal({ onComplete }) {
                   onComplete();
                 },
                 "aria-label": "Close text game",
-                children: "×"
+                children: "X"
               }
             )
           ] }),
