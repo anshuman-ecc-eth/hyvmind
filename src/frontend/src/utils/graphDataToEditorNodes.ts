@@ -284,7 +284,75 @@ export function graphDataToEditorNodes(
   }
 
   // ------------------------------------------------------------------
-  // Step 6: rootIds = @-paths of all kept curations
+  // Step 6: Create _attributes.md and _sources.md file nodes for
+  // folder nodes with inherited metadata. The folder's children array
+  // is updated and the inherited fields are cleared to avoid
+  // duplication during editorToSourceGraph conversion.
+  // ------------------------------------------------------------------
+  for (const [, node] of nodes) {
+    if (node.type !== "folder") continue;
+
+    const attrs = node.inheritedAttributes;
+    const srcs = node.inheritedSources;
+    const hasAttrs = attrs && Object.keys(attrs).length > 0;
+    const hasSrcs = srcs && srcs.length > 0;
+
+    if (!hasAttrs && !hasSrcs) continue;
+
+    // _attributes.md
+    if (hasAttrs) {
+      const attrsId = `${node.id}@_attributes.md`;
+      const attrsNode: EditorNode = {
+        id: attrsId,
+        name: "_attributes.md",
+        type: "file",
+        parentId: node.id,
+        nodeType: "interpEntity",
+        content: "",
+        frontmatter: { ...attrs },
+        inheritedAttributes: {},
+        inheritedSources: [],
+        children: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      nodes.set(attrsId, attrsNode);
+      if (!node.children.includes(attrsId)) {
+        node.children.push(attrsId);
+      }
+      node.inheritedAttributes = {};
+    }
+
+    // _sources.md
+    if (hasSrcs) {
+      const srcsId = `${node.id}@_sources.md`;
+      const srcLines = srcs
+        .map((s) => `- [${s.name}](${s.url})`)
+        .join("\n");
+      const srcsNode: EditorNode = {
+        id: srcsId,
+        name: "_sources.md",
+        type: "file",
+        parentId: node.id,
+        nodeType: "interpEntity",
+        content: srcLines,
+        frontmatter: {},
+        inheritedAttributes: {},
+        inheritedSources: [],
+        children: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      nodes.set(srcsId, srcsNode);
+      if (!node.children.includes(srcsId)) {
+        node.children.push(srcsId);
+      }
+      node.inheritedSources = [];
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Step 7: rootIds = @-paths of all kept curations
   // ------------------------------------------------------------------
   const rootIds: string[] = [];
   for (const c of graphData.curations) {

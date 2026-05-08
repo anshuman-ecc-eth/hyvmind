@@ -702,6 +702,8 @@ actor {
       case (?_) {};
     };
     if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
+    Debug.print("[savePublishedGraph] publishedGraphId = " # publishedGraphId);
+    Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     let savers = switch (graphSavers.get(publishedGraphId)) {
       case (null) { List.empty<Principal>() };
       case (?list) { list };
@@ -711,24 +713,44 @@ actor {
     savers.add(msg.caller);
     graphSavers.add(publishedGraphId, savers);
     let saveNumber = savers.size();
+    Debug.print("[savePublishedGraph] saveNumber = " # debug_show (saveNumber));
     var bucket = Map.empty<Principal, Int>();
     let contribMap = switch (publishedNodeContributions.get(publishedGraphId)) {
-      case (null) { Map.empty<NodeId, NodeContribution>() };
-      case (?m) { m };
+      case (null) {
+        Debug.print("[savePublishedGraph] NO contributions found for this graph");
+        Map.empty<NodeId, NodeContribution>()
+      };
+      case (?m) {
+        Debug.print("[savePublishedGraph] Found contribMap, counting entries...");
+        var entryCount = 0;
+        for ((_, _) in m.entries()) { entryCount += 1; };
+        Debug.print("[savePublishedGraph] contribMap has " # debug_show (entryCount) # " entries");
+        m
+      };
     };
+    var matchedCount = 0;
+    var skippedSelfCount = 0;
     for (nodeId in selectedNodeIds.vals()) {
       switch (contribMap.get(nodeId)) {
         case (null) {};
         case (?contrib) {
+          matchedCount += 1;
           if (not Principal.equal(contrib.paidBy, msg.caller)) {
             let existing = switch (bucket.get(contrib.paidBy)) { case (null) { 0 }; case (?v) { v }; };
             bucket.add(contrib.paidBy, existing + contrib.buzzCost);
+          } else {
+            skippedSelfCount += 1;
           };
         };
       };
     };
+    Debug.print("[savePublishedGraph] matchedCount = " # debug_show (matchedCount) # ", skippedSelfCount = " # debug_show (skippedSelfCount));
+    var bucketEntryCount = 0;
+    for ((_, _) in bucket.entries()) { bucketEntryCount += 1; };
+    Debug.print("[savePublishedGraph] bucket entries = " # debug_show (bucketEntryCount));
     for ((creator, totalBuzzCost) in bucket.entries()) {
       let earned : Int = (Float.sqrt(saveNumber.toFloat()) * (totalBuzzCost * TRUST_DECIMALS).toFloat()).toInt();
+      Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ", sqrt=" # debug_show (Float.sqrt(saveNumber.toFloat())) # ")");
       updateTrustScore(creator, earned);
     };
     #ok("Graph saved")
@@ -3237,12 +3259,14 @@ actor {
                 sourcesAdded += countNewSources(curationExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
+                recordContrib(existingId, 10);
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
+              recordContrib(existingId, 10);
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -3360,12 +3384,14 @@ actor {
                 sourcesAdded += countNewSources(swarmExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
+                recordContrib(existingId, 20);
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
+              recordContrib(existingId, 20);
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -3479,12 +3505,14 @@ actor {
                 sourcesAdded += countNewSources(locExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
+                recordContrib(existingId, 30);
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
+              recordContrib(existingId, 30);
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -3594,12 +3622,14 @@ actor {
                 sourcesAdded += countNewSources(ltExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
+                recordContrib(existingId, 40);
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
+              recordContrib(existingId, 40);
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };
@@ -3714,12 +3744,14 @@ actor {
                 sourcesAdded += countNewSources(itExistingSources, node.sources);
               } else {
                 nodesToCreate += 1;
+                recordContrib(existingId, 50);
                 attributesAdded += countRawAttributes(node.attributes);
                 sourcesAdded += node.sources.size();
               };
             };
             case (null) {
               nodesToCreate += 1;
+              recordContrib(existingId, 50);
               attributesAdded += countRawAttributes(node.attributes);
               sourcesAdded += node.sources.size();
             };

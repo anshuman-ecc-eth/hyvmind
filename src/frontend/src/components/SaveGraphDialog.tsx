@@ -234,15 +234,11 @@ function TreeNodeCheckbox({
         />
 
         {/* Label */}
-        <span
-          className={`truncate min-w-0 flex-1 text-xs font-mono ${colorClass}`}
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.6rem",
-          }}
-        >
-          {node.name}
-        </span>
+          <span
+            className={`truncate min-w-0 flex-1 text-xs font-mono ${colorClass}`}
+          >
+            {node.name}
+          </span>
       </div>
 
       {/* Children */}
@@ -364,23 +360,12 @@ export default function SaveGraphDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg" data-ocid="save_graph.dialog">
         <DialogHeader>
-          <DialogTitle
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.7rem",
-            }}
-          >
+          <DialogTitle>
             Save Graph to Notes
           </DialogTitle>
         </DialogHeader>
 
-        <p
-          className="text-xs text-muted-foreground"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55rem",
-          }}
-        >
+        <p className="text-xs text-muted-foreground">
           Select nodes from <span className="text-foreground">{graphName}</span>{" "}
           to import into your Notes workspace.
         </p>
@@ -391,14 +376,10 @@ export default function SaveGraphDialog({
           data-ocid="save_graph.list"
         >
           {rootIds.length === 0 ? (
-            <div
-              className="py-8 text-center text-xs text-muted-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
-              }}
-              data-ocid="save_graph.empty_state"
-            >
+              <div
+                className="py-8 text-center text-xs text-muted-foreground"
+                data-ocid="save_graph.empty_state"
+              >
               No nodes found
             </div>
           ) : (
