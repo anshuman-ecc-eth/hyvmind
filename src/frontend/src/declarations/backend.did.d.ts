@@ -250,6 +250,13 @@ export type Tag = string;
 export type Time = bigint;
 export interface Timestamps { 'createdAt' : Time }
 export type TrustScore = bigint;
+export interface TrustTransaction {
+  'totalBuzzCost' : bigint,
+  'saver' : Principal,
+  'earned' : bigint,
+  'savedAt' : bigint,
+  'saveNumber' : bigint,
+}
 export interface UserApprovalInfo {
   'status' : ApprovalStatus,
   'principal' : Principal,
@@ -313,6 +320,7 @@ export interface _SERVICE {
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getMyTrustBalance' : ActorMethod<[], TrustScore>,
+  'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransaction>>,
   'getPublishedPaths' : ActorMethod<
     [],
     Array<
@@ -344,6 +352,7 @@ export interface _SERVICE {
   'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'hasTelegramConfig' : ActorMethod<[], boolean>,
   'hasUserFork' : ActorMethod<[NodeId], boolean>,
+  'hasUserSavedGraph' : ActorMethod<[string], boolean>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'icChallengeNonce' : ActorMethod<[], string>,
   'initializeAccessControl' : ActorMethod<[], undefined>,

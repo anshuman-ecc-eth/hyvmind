@@ -3279,6 +3279,9 @@ body{
 .max-h-\[300px\]{
   max-height: 300px;
 }
+.max-h-\[60vh\]{
+  max-height: 60vh;
+}
 .max-h-\[70vh\]{
   max-height: 70vh;
 }
@@ -6409,6 +6412,9 @@ html[class*="-dark"] .voronoi-tooltip-type {
   }
   .sm\:flex{
     display: flex;
+  }
+  .sm\:max-w-2xl{
+    max-width: 42rem;
   }
   .sm\:max-w-lg{
     max-width: 32rem;

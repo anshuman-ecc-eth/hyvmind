@@ -452,7 +452,10 @@ export function useGetMyBuzzBalance() {
 }
 
 import type { BuzzBackendExtensions } from "../types/buzzExtensions.d";
-import type { TrustBackendExtensions } from "../types/trustExtensions.d";
+import type {
+  TrustBackendExtensions,
+  TrustTransaction,
+} from "../types/trustExtensions.d";
 
 type BuzzActor = backendInterface & BuzzBackendExtensions;
 
@@ -509,14 +512,55 @@ export function useSavePublishedGraph() {
       selectedNodes: string[];
     }) => {
       if (!actor) throw new Error("Actor not available");
-      return (actor as unknown as TrustBackendExtensions).savePublishedGraph(
-        publishedGraphId,
-        selectedNodes,
-      );
+      const result = await (
+        actor as unknown as TrustBackendExtensions
+      ).savePublishedGraph(publishedGraphId, selectedNodes);
+      if ("err" in result) throw new Error(result.err);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myTrustBalance"] });
+      queryClient.invalidateQueries({ queryKey: ["hasUserSavedGraph"] });
     },
+  });
+}
+
+export function useHasUserSavedGraph(publishedGraphId: string | null) {
+  const { actor } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<boolean>({
+    queryKey: [
+      "hasUserSavedGraph",
+      publishedGraphId,
+      identity?.getPrincipal().toText() ?? "anonymous",
+    ],
+    queryFn: async () => {
+      if (!actor || !publishedGraphId) return false;
+      return (actor as unknown as TrustBackendExtensions).hasUserSavedGraph(
+        publishedGraphId,
+      );
+    },
+    enabled: !!actor && !!publishedGraphId && !!identity,
+  });
+}
+
+export function useGetMyTrustTransactions() {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<TrustTransaction[]>({
+    queryKey: [
+      "myTrustTransactions",
+      identity?.getPrincipal().toText() ?? "anonymous",
+    ],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (
+        actor as unknown as TrustBackendExtensions
+      ).getMyTrustTransactions();
+    },
+    enabled: !!actor && !isFetching && !!identity,
   });
 }
 

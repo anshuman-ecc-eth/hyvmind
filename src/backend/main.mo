@@ -25,6 +25,7 @@ import AnnotationHttpTypes "types/annotation-http";
 import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "migration";
 
 
 
@@ -38,8 +39,7 @@ import Float "mo:core/Float";
 
 
 
-
-
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -55,8 +55,14 @@ actor {
     publishedGraphId : Text;
   };
   type NodeContribution = {
-    paidBy : Principal;
-    buzzCost : Int;
+    payers : List.List<(Principal, Int)>;
+  };
+  type TrustTransaction = {
+    saver : Principal;
+    savedAt : Int;
+    saveNumber : Nat;
+    totalBuzzCost : Int;
+    earned : Int;
   };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 
@@ -463,6 +469,7 @@ actor {
   var buzzTransactions = Map.empty<Principal, List.List<BuzzTransaction>>();
   var graphSavers = Map.empty<Text, List.List<Principal>>();
   var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
+  var trustTransactions = Map.empty<Principal, List.List<TrustTransaction>>();
 
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
@@ -734,11 +741,13 @@ actor {
         case (null) {};
         case (?contrib) {
           matchedCount += 1;
-          if (Principal.equal(contrib.paidBy, msg.caller)) {
-            skippedSelfCount += 1;
-          } else {
-            let existing = switch (bucket.get(contrib.paidBy)) { case (null) { 0 }; case (?v) { v }; };
-            bucket.add(contrib.paidBy, existing + contrib.buzzCost);
+          for ((paidBy, buzzCost) in contrib.payers.values()) {
+            if (Principal.equal(paidBy, msg.caller)) {
+              skippedSelfCount += 1;
+            } else {
+              let existing = switch (bucket.get(paidBy)) { case (null) { 0 }; case (?v) { v }; };
+              bucket.add(paidBy, existing + buzzCost);
+            };
           };
         };
       };
@@ -748,11 +757,38 @@ actor {
     for ((_, _) in bucket.entries()) { bucketEntryCount += 1; };
     Debug.print("[savePublishedGraph] bucket entries = " # debug_show (bucketEntryCount));
     for ((creator, totalBuzzCost) in bucket.entries()) {
-      let earned : Int = (Float.sqrt(saveNumber.toFloat()) * (totalBuzzCost * TRUST_DECIMALS).toFloat()).toInt();
+      let earned : Int = (Float.sqrt(saveNumber.toFloat()) * ((totalBuzzCost * TRUST_DECIMALS) / BUZZ_DECIMALS).toFloat()).toInt();
       Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ")");
       updateTrustScore(creator, earned);
+      let trustTx : TrustTransaction = {
+        saver = msg.caller;
+        savedAt = Time.now();
+        saveNumber;
+        totalBuzzCost;
+        earned;
+      };
+      let existingTrustTxs = switch (trustTransactions.get(creator)) {
+        case (null) { List.empty<TrustTransaction>() };
+        case (?list) { list };
+      };
+      existingTrustTxs.add(trustTx);
+      trustTransactions.add(creator, existingTrustTxs);
     };
     #ok("Graph saved")
+  };
+
+  public query ({ caller }) func hasUserSavedGraph(publishedGraphId : Text) : async Bool {
+    switch (graphSavers.get(publishedGraphId)) {
+      case (null) { false };
+      case (?list) { list.contains(caller) };
+    };
+  };
+
+  public query ({ caller }) func getMyTrustTransactions() : async [TrustTransaction] {
+    switch (trustTransactions.get(caller)) {
+      case (null) { [] };
+      case (?list) { list.toArray() };
+    };
   };
 
   func updateTrustScore(user : Principal, delta : Int) {
@@ -3193,7 +3229,7 @@ actor {
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
       func recordContrib(nodeId : NodeId, buzzCost : Int) {
-    tempContribs.add(nodeId, { paidBy = caller; buzzCost });
+    tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
       };
 
 
@@ -3254,20 +3290,28 @@ actor {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
-                attributesAdded += countNewAttributes(curationExistingAttrs, node.attributes);
-                sourcesAdded += countNewSources(curationExistingSources, node.sources);
+                let newCurationAttrs = countNewAttributes(curationExistingAttrs, node.attributes);
+                let newCurationSrcs = countNewSources(curationExistingSources, node.sources);
+                let curationExtCost = newCurationAttrs * 1 + newCurationSrcs * 1;
+                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost) };
+                attributesAdded += newCurationAttrs;
+                sourcesAdded += newCurationSrcs;
               } else {
                 nodesToCreate += 1;
-                recordContrib(existingId, 10);
-                attributesAdded += countRawAttributes(node.attributes);
-                sourcesAdded += node.sources.size();
+                let curationAttrCount = countRawAttributes(node.attributes);
+                let curationSrcCount = node.sources.size();
+                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1);
+                attributesAdded += curationAttrCount;
+                sourcesAdded += curationSrcCount;
               };
             };
             case (null) {
               nodesToCreate += 1;
-              recordContrib(existingId, 10);
-              attributesAdded += countRawAttributes(node.attributes);
-              sourcesAdded += node.sources.size();
+              let curationAttrCount2 = countRawAttributes(node.attributes);
+              let curationSrcCount2 = node.sources.size();
+              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1);
+              attributesAdded += curationAttrCount2;
+              sourcesAdded += curationSrcCount2;
             };
           };
         };
@@ -3297,9 +3341,11 @@ actor {
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
           curationsToCreate += 1;
-          attributesAdded += countRawAttributes(node.attributes);
-
-          recordContrib(newId, 10);          sourcesAdded += node.sources.size();
+          let newCurationAttrCount = countRawAttributes(node.attributes);
+          let newCurationSrcCount = node.sources.size();
+          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1);
+          attributesAdded += newCurationAttrCount;
+          sourcesAdded += newCurationSrcCount;
         };
       };
     };
@@ -3379,20 +3425,28 @@ actor {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
-                attributesAdded += countNewAttributes(swarmExistingAttrs, node.attributes);
-                sourcesAdded += countNewSources(swarmExistingSources, node.sources);
+                let newSwarmAttrs = countNewAttributes(swarmExistingAttrs, node.attributes);
+                let newSwarmSrcs = countNewSources(swarmExistingSources, node.sources);
+                let swarmExtCost = newSwarmAttrs * 1 + newSwarmSrcs * 1;
+                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost) };
+                attributesAdded += newSwarmAttrs;
+                sourcesAdded += newSwarmSrcs;
               } else {
                 nodesToCreate += 1;
-                recordContrib(existingId, 20);
-                attributesAdded += countRawAttributes(node.attributes);
-                sourcesAdded += node.sources.size();
+                let swarmAttrCount = countRawAttributes(node.attributes);
+                let swarmSrcCount = node.sources.size();
+                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1);
+                attributesAdded += swarmAttrCount;
+                sourcesAdded += swarmSrcCount;
               };
             };
             case (null) {
               nodesToCreate += 1;
-              recordContrib(existingId, 20);
-              attributesAdded += countRawAttributes(node.attributes);
-              sourcesAdded += node.sources.size();
+              let swarmAttrCount2 = countRawAttributes(node.attributes);
+              let swarmSrcCount2 = node.sources.size();
+              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1);
+              attributesAdded += swarmAttrCount2;
+              sourcesAdded += swarmSrcCount2;
             };
           };
         };
@@ -3427,9 +3481,11 @@ actor {
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
           swarmsToCreate += 1;
-          attributesAdded += countRawAttributes(node.attributes);
-
-          recordContrib(newId, 20);          sourcesAdded += node.sources.size();
+          let newSwarmAttrCount = countRawAttributes(node.attributes);
+          let newSwarmSrcCount = node.sources.size();
+          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1);
+          attributesAdded += newSwarmAttrCount;
+          sourcesAdded += newSwarmSrcCount;
         };
       };
     };
@@ -3500,20 +3556,28 @@ actor {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
-                attributesAdded += countNewAttributes(locExistingAttrs, node.attributes);
-                sourcesAdded += countNewSources(locExistingSources, node.sources);
+                let newLocAttrs = countNewAttributes(locExistingAttrs, node.attributes);
+                let newLocSrcs = countNewSources(locExistingSources, node.sources);
+                let locExtCost = newLocAttrs * 1 + newLocSrcs * 1;
+                if (locExtCost > 0) { recordContrib(existingId, locExtCost) };
+                attributesAdded += newLocAttrs;
+                sourcesAdded += newLocSrcs;
               } else {
                 nodesToCreate += 1;
-                recordContrib(existingId, 30);
-                attributesAdded += countRawAttributes(node.attributes);
-                sourcesAdded += node.sources.size();
+                let locAttrCount = countRawAttributes(node.attributes);
+                let locSrcCount = node.sources.size();
+                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1);
+                attributesAdded += locAttrCount;
+                sourcesAdded += locSrcCount;
               };
             };
             case (null) {
               nodesToCreate += 1;
-              recordContrib(existingId, 30);
-              attributesAdded += countRawAttributes(node.attributes);
-              sourcesAdded += node.sources.size();
+              let locAttrCount2 = countRawAttributes(node.attributes);
+              let locSrcCount2 = node.sources.size();
+              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1);
+              attributesAdded += locAttrCount2;
+              sourcesAdded += locSrcCount2;
             };
           };
         };
@@ -3544,9 +3608,11 @@ actor {
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
           locationsToCreate += 1;
-          attributesAdded += countRawAttributes(node.attributes);
-
-          recordContrib(newId, 30);          sourcesAdded += node.sources.size();
+          let newLocAttrCount = countRawAttributes(node.attributes);
+          let newLocSrcCount = node.sources.size();
+          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1);
+          attributesAdded += newLocAttrCount;
+          sourcesAdded += newLocSrcCount;
         };
       };
     };
@@ -3617,20 +3683,28 @@ actor {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
-                attributesAdded += countNewAttributes(ltExistingAttrs, node.attributes);
-                sourcesAdded += countNewSources(ltExistingSources, node.sources);
+                let newLtAttrs = countNewAttributes(ltExistingAttrs, node.attributes);
+                let newLtSrcs = countNewSources(ltExistingSources, node.sources);
+                let ltExtCost = newLtAttrs * 1 + newLtSrcs * 1;
+                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost) };
+                attributesAdded += newLtAttrs;
+                sourcesAdded += newLtSrcs;
               } else {
                 nodesToCreate += 1;
-                recordContrib(existingId, 40);
-                attributesAdded += countRawAttributes(node.attributes);
-                sourcesAdded += node.sources.size();
+                let ltAttrCount = countRawAttributes(node.attributes);
+                let ltSrcCount = node.sources.size();
+                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1);
+                attributesAdded += ltAttrCount;
+                sourcesAdded += ltSrcCount;
               };
             };
             case (null) {
               nodesToCreate += 1;
-              recordContrib(existingId, 40);
-              attributesAdded += countRawAttributes(node.attributes);
-              sourcesAdded += node.sources.size();
+              let ltAttrCount2 = countRawAttributes(node.attributes);
+              let ltSrcCount2 = node.sources.size();
+              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1);
+              attributesAdded += ltAttrCount2;
+              sourcesAdded += ltSrcCount2;
             };
           };
         };
@@ -3661,9 +3735,11 @@ actor {
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
           lawEntitiesToCreate += 1;
-          attributesAdded += countRawAttributes(node.attributes);
-
-          recordContrib(newId, 40);          sourcesAdded += node.sources.size();
+          let newLtAttrCount = countRawAttributes(node.attributes);
+          let newLtSrcCount = node.sources.size();
+          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1);
+          attributesAdded += newLtAttrCount;
+          sourcesAdded += newLtSrcCount;
         };
       };
     };
@@ -3739,20 +3815,28 @@ actor {
             case (?pid) {
               if (belongsToPublishedGraph(existingId, pid)) {
                 nodesToUpdate += 1;
-                attributesAdded += countNewAttributes(itExistingAttrs, node.attributes);
-                sourcesAdded += countNewSources(itExistingSources, node.sources);
+                let newItAttrs = countNewAttributes(itExistingAttrs, node.attributes);
+                let newItSrcs = countNewSources(itExistingSources, node.sources);
+                let itExtCost = newItAttrs * 1 + newItSrcs * 1;
+                if (itExtCost > 0) { recordContrib(existingId, itExtCost) };
+                attributesAdded += newItAttrs;
+                sourcesAdded += newItSrcs;
               } else {
                 nodesToCreate += 1;
-                recordContrib(existingId, 50);
-                attributesAdded += countRawAttributes(node.attributes);
-                sourcesAdded += node.sources.size();
+                let itAttrCount = countRawAttributes(node.attributes);
+                let itSrcCount = node.sources.size();
+                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1);
+                attributesAdded += itAttrCount;
+                sourcesAdded += itSrcCount;
               };
             };
             case (null) {
               nodesToCreate += 1;
-              recordContrib(existingId, 50);
-              attributesAdded += countRawAttributes(node.attributes);
-              sourcesAdded += node.sources.size();
+              let itAttrCount2 = countRawAttributes(node.attributes);
+              let itSrcCount2 = node.sources.size();
+              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1);
+              attributesAdded += itAttrCount2;
+              sourcesAdded += itSrcCount2;
             };
           };
         };
@@ -3784,14 +3868,17 @@ actor {
           nodeMappings.add((mappingKey, newId));
           nodesToCreate += 1;
           interpEntitiesToCreate += 1;
-          attributesAdded += countRawAttributes(node.attributes);
-
-          recordContrib(newId, 50);          sourcesAdded += node.sources.size();
+          let newItAttrCount = countRawAttributes(node.attributes);
+          let newItSrcCount = node.sources.size();
+          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1);
+          attributesAdded += newItAttrCount;
+          sourcesAdded += newItSrcCount;
         };
       };
     };
 
     // Process source graph edges with scope-aware target resolution
+    let tempEdgeCosts = Map.empty<NodeId, Int>();
     for (edge in input.edges.values()) {
       let sourceId = switch (nameToId.get(edge.sourceName)) {
         case (null) { "" };
@@ -3860,9 +3947,15 @@ actor {
                     edgesToUpdate += 1;
                   } else {
                     edgesToCreate += 1;
+                    let existingEdgeCost0 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+                    tempEdgeCosts.add(sourceId, existingEdgeCost0 + 1);
                   };
                 };
-                case (null) { edgesToCreate += 1 };
+                case (null) {
+                  edgesToCreate += 1;
+                  let existingEdgeCost1 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+                  tempEdgeCosts.add(sourceId, existingEdgeCost1 + 1);
+                };
               };
             };
             case (null) {
@@ -3885,8 +3978,23 @@ actor {
               edgeList.add(newEdge);
               stagingEdges.add(sourceId, edgeList);
               edgesToCreate += 1;
+              let existingEdgeCost2 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+              tempEdgeCosts.add(sourceId, existingEdgeCost2 + 1);
             };
           };
+        };
+      };
+    };
+
+    // Merge edge costs into tempContribs
+    for ((edgeNodeId, edgeCost) in tempEdgeCosts.entries()) {
+      switch (tempContribs.get(edgeNodeId)) {
+        case (null) {
+          tempContribs.add(edgeNodeId, { payers = List.singleton<(Principal, Int)>((caller, edgeCost)) });
+        };
+        case (?existing) {
+          existing.payers.add((caller, edgeCost));
+          tempContribs.add(edgeNodeId, { payers = existing.payers });
         };
       };
     };
@@ -4069,7 +4177,17 @@ actor {
         case (?m) { m };
       };
       for ((nodeId, contrib) in tempContribs.entries()) {
-        existingMap.add(nodeId, contrib);
+        switch (existingMap.get(nodeId)) {
+          case (null) {
+            existingMap.add(nodeId, contrib);
+          };
+          case (?existing) {
+            for ((payer, cost) in contrib.payers.values()) {
+              existing.payers.add((payer, cost));
+            };
+            existingMap.add(nodeId, { payers = existing.payers });
+          };
+        };
       };
       publishedNodeContributions.add(thePublishedId, existingMap);
     };    // Auto-upvote new nodes (all new swarms in staging not in original map)
@@ -5215,5 +5333,6 @@ actor {
     buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
     graphSavers := Map.empty<Text, List.List<Principal>>();
     publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
+    trustTransactions := Map.empty<Principal, List.List<TrustTransaction>>();
   };
 };

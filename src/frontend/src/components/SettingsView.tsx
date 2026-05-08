@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -9,8 +16,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { Check, Copy, ExternalLink, Loader2, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  FileText,
+  Loader2,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +43,7 @@ import {
   useGetCallerUserProfile,
   useGetMyBuzzBalance,
   useGetMyTrustBalance,
+  useGetMyTrustTransactions,
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useSettings";
@@ -32,6 +56,7 @@ import {
   getBaseTheme,
   getVariant,
 } from "../lib/themes";
+import type { TrustTransaction } from "../types/trustExtensions";
 import { CreateBuzzModal } from "./CreateBuzzModal";
 
 function maskApiKey(key: string): string {
@@ -50,7 +75,9 @@ export function SettingsView() {
 
   const [createBuzzOpen, setCreateBuzzOpen] = useState(false);
   const { data: buzzBalance } = useGetMyBuzzBalance();
-  const { data: trustBalance } = useGetMyTrustBalance();
+  const { data: trustBalance, refetch: refetchTrust } = useGetMyTrustBalance();
+  const { data: trustTransactions } = useGetMyTrustTransactions();
+  const [txLogOpen, setTxLogOpen] = useState(false);
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
@@ -465,6 +492,24 @@ export function SettingsView() {
                     ? (Number(trustBalance) / 10_000_000).toFixed(7)
                     : "0.0000000"}{" "}
                   <span>Trust</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 ml-1 align-middle"
+                    onClick={() => refetchTrust()}
+                    data-ocid="settings.wallet.refresh_trust"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 ml-1 align-middle"
+                    onClick={() => setTxLogOpen(true)}
+                    data-ocid="settings.wallet.trust_tx_log"
+                  >
+                    <FileText className="h-3 w-3" />
+                  </Button>
                 </p>
               </div>
               <Button
@@ -483,6 +528,61 @@ export function SettingsView() {
           isOpen={createBuzzOpen}
           onClose={() => setCreateBuzzOpen(false)}
         />
+
+        <Dialog open={txLogOpen} onOpenChange={setTxLogOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Trust Transactions</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              {trustTransactions && trustTransactions.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Saver</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Multiplier</TableHead>
+                      <TableHead>Buzz Base</TableHead>
+                      <TableHead>Trust Earned</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trustTransactions.map((tx: TrustTransaction) => (
+                      <TableRow
+                        key={`${String(tx.saver)}-${String(tx.savedAt)}`}
+                      >
+                        <TableCell className="font-mono text-xs">
+                          {typeof (tx.saver as { toText?: () => string })
+                            .toText === "function"
+                            ? `${(tx.saver as { toText: () => string }).toText().slice(0, 10)}...`
+                            : `${String(tx.saver).slice(0, 10)}...`}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(
+                            Number(tx.savedAt) / 1_000_000,
+                          ).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {`\u221a${tx.saveNumber.toString()}`}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {(Number(tx.totalBuzzCost) / 10).toFixed(1)}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {(Number(tx.earned) / 10_000_000).toFixed(7)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-sm text-muted-foreground p-4 text-center">
+                  No trust transactions yet.
+                </p>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

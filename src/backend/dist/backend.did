@@ -29,6 +29,14 @@ type UserApprovalInfo =
    "principal": principal;
    status: ApprovalStatus;
  };
+type TrustTransaction = 
+ record {
+   earned: int;
+   saveNumber: nat;
+   savedAt: int;
+   saver: principal;
+   totalBuzzCost: int;
+ };
 type TrustScore = int;
 type Timestamps = record {createdAt: Time;};
 type Time = int;
@@ -384,6 +392,7 @@ service : {
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
   getMyTrustBalance: () -> (TrustScore);
+  getMyTrustTransactions: () -> (vec TrustTransaction) query;
   getPublishedPaths: () ->
    (vec record {
           curation: text;
@@ -409,6 +418,7 @@ service : {
   getVoteData: (nodeId: NodeId) -> (VoteData) query;
   hasTelegramConfig: () -> (bool) query;
   hasUserFork: (swarmId: NodeId) -> (bool) query;
+  hasUserSavedGraph: (publishedGraphId: text) -> (bool) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   icChallengeNonce: () -> (text) query;
   initializeAccessControl: () -> ();

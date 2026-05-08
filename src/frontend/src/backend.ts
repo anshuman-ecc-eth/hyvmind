@@ -314,6 +314,13 @@ export interface UserApprovalInfo {
     status: ApprovalStatus;
     principal: Principal;
 }
+export interface TrustTransaction {
+    totalBuzzCost: bigint;
+    saver: Principal;
+    earned: bigint;
+    savedAt: bigint;
+    saveNumber: bigint;
+}
 export interface GraphData {
     curations: Array<Curation>;
     rootNodes: Array<GraphNode>;
@@ -438,6 +445,7 @@ export interface backendInterface {
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getMyTrustBalance(): Promise<TrustScore>;
+    getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -461,6 +469,7 @@ export interface backendInterface {
     getVoteData(nodeId: NodeId): Promise<VoteData>;
     hasTelegramConfig(): Promise<boolean>;
     hasUserFork(swarmId: NodeId): Promise<boolean>;
+    hasUserSavedGraph(publishedGraphId: string): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
     icChallengeNonce(): Promise<string>;
     initializeAccessControl(): Promise<void>;
@@ -883,6 +892,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getMyTrustTransactions(): Promise<Array<TrustTransaction>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyTrustTransactions();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyTrustTransactions();
+            return result;
+        }
+    }
     async getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -1033,6 +1056,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.hasUserFork(arg0);
+            return result;
+        }
+    }
+    async hasUserSavedGraph(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasUserSavedGraph(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasUserSavedGraph(arg0);
             return result;
         }
     }

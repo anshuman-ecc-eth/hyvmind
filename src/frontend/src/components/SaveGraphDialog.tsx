@@ -1,3 +1,13 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -11,7 +21,10 @@ import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { GraphData } from "../backend.d";
-import { useSavePublishedGraph } from "../hooks/useQueries";
+import {
+  useHasUserSavedGraph,
+  useSavePublishedGraph,
+} from "../hooks/useQueries";
 import { graphDataToEditorNodes } from "../utils/graphDataToEditorNodes";
 
 // ---------------------------------------------------------------------------
@@ -289,6 +302,8 @@ export default function SaveGraphDialog({
     () => new Set(allIds),
   );
   const [saving, setSaving] = useState(false);
+  const { data: alreadySaved } = useHasUserSavedGraph(graphId);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleToggleCheck = (id: string) => {
     setCheckedIds((prev) => {
@@ -322,7 +337,12 @@ export default function SaveGraphDialog({
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirm(false);
     setSaving(true);
     try {
       await savePublishedGraph.mutateAsync({
@@ -354,7 +374,7 @@ export default function SaveGraphDialog({
   };
 
   const selectedCount = checkedIds.size;
-  const totalCount = allIds.length;
+  const _totalCount = allIds.length;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -370,7 +390,7 @@ export default function SaveGraphDialog({
 
         {/* Scrollable tree */}
         <div
-          className="max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50"
+          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved ? "opacity-50 pointer-events-none" : ""}`}
           data-ocid="save_graph.list"
         >
           {rootIds.length === 0 ? (
@@ -396,6 +416,15 @@ export default function SaveGraphDialog({
           )}
         </div>
 
+        {alreadySaved && (
+          <p
+            className="text-xs text-muted-foreground"
+            data-ocid="save_graph.already_saved"
+          >
+            You have already saved this graph.
+          </p>
+        )}
+
         <DialogFooter className="gap-2">
           <Button
             type="button"
@@ -409,20 +438,42 @@ export default function SaveGraphDialog({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={saving || selectedCount === 0}
+            disabled={alreadySaved || saving || selectedCount === 0}
             data-ocid="save_graph.submit_button"
           >
-            {saving ? (
+            {alreadySaved ? (
+              "Already Saved"
+            ) : saving ? (
               <>
                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Saving...
               </>
             ) : (
-              `Save (${selectedCount}/${totalCount})`
+              `Save Selected (${selectedCount})`
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save this graph?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can only save this graph once. The selected nodes will be
+              imported into your Notes. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirm(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSave}>
+              Save to Notes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

@@ -115,6 +115,13 @@ export const ChatMessage = IDL.Record({
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const BuzzScore = IDL.Int;
 export const TrustScore = IDL.Int;
+export const TrustTransaction = IDL.Record({
+  'totalBuzzCost' : IDL.Int,
+  'saver' : IDL.Principal,
+  'earned' : IDL.Int,
+  'savedAt' : IDL.Int,
+  'saveNumber' : IDL.Nat,
+});
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
 export const Curation = IDL.Record({
   'id' : NodeId,
@@ -358,6 +365,11 @@ export const idlService = IDL.Service({
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
   'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
+  'getMyTrustTransactions' : IDL.Func(
+      [],
+      [IDL.Vec(TrustTransaction)],
+      ['query'],
+    ),
   'getPublishedPaths' : IDL.Func(
       [],
       [
@@ -404,6 +416,7 @@ export const idlService = IDL.Service({
   'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
   'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
   'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+  'hasUserSavedGraph' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
   'initializeAccessControl' : IDL.Func([], [], []),
@@ -572,6 +585,13 @@ export const idlFactory = ({ IDL }) => {
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const BuzzScore = IDL.Int;
   const TrustScore = IDL.Int;
+  const TrustTransaction = IDL.Record({
+    'totalBuzzCost' : IDL.Int,
+    'saver' : IDL.Principal,
+    'earned' : IDL.Int,
+    'savedAt' : IDL.Int,
+    'saveNumber' : IDL.Nat,
+  });
   const Timestamps = IDL.Record({ 'createdAt' : Time });
   const Curation = IDL.Record({
     'id' : NodeId,
@@ -816,6 +836,11 @@ export const idlFactory = ({ IDL }) => {
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
     'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
+    'getMyTrustTransactions' : IDL.Func(
+        [],
+        [IDL.Vec(TrustTransaction)],
+        ['query'],
+      ),
     'getPublishedPaths' : IDL.Func(
         [],
         [
@@ -862,6 +887,7 @@ export const idlFactory = ({ IDL }) => {
     'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
     'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
     'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+    'hasUserSavedGraph' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
     'initializeAccessControl' : IDL.Func([], [], []),
