@@ -519,14 +519,19 @@ export default function SourcesView() {
 
       {/* Delete confirmation dialog */}
       {confirmDeleteId && (
-        <dialog
-          open
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm m-0 w-full h-full max-w-none max-h-none border-0 p-0"
-          aria-label="Confirm deletion"
-          data-ocid="sources.confirm_delete_dialog"
-          onClose={handleDeleteCancel}
-        >
-          <div className="border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono">
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+            aria-hidden="true"
+            onClick={handleDeleteCancel}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") handleDeleteCancel();
+            }}
+          />
+          <div
+            className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono"
+            data-ocid="sources.confirm_delete_dialog"
+          >
             <p className="text-sm text-foreground mb-2">delete graph?</p>
             <p className="text-xs text-muted-foreground mb-6">
               {graphs.find((g) => g.id === confirmDeleteId)?.name ?? ""}
@@ -552,7 +557,7 @@ export default function SourcesView() {
               </button>
             </div>
           </div>
-        </dialog>
+        </>
       )}
 
       {/* Publish confirm dialog */}

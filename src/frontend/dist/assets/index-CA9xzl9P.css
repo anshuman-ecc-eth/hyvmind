@@ -3291,9 +3291,6 @@ body{
 .max-h-\[90vh\]{
   max-height: 90vh;
 }
-.max-h-none{
-  max-height: none;
-}
 .min-h-0{
   min-height: 0px;
 }
@@ -3934,23 +3931,11 @@ body{
 .border-amber-500\/30{
   border-color: rgb(245 158 11 / 0.3);
 }
-.border-amber-600\/30{
-  border-color: rgb(217 119 6 / 0.3);
-}
-.border-amber-600\/40{
-  border-color: rgb(217 119 6 / 0.4);
-}
-.border-blue-400\/40{
-  border-color: rgb(96 165 250 / 0.4);
-}
 .border-border{
   border-color: var(--border);
 }
 .border-destructive{
   border-color: var(--destructive);
-}
-.border-emerald-600\/30{
-  border-color: rgb(5 150 105 / 0.3);
 }
 .border-foreground{
   border-color: var(--foreground);
@@ -3967,14 +3952,8 @@ body{
 .border-muted{
   border-color: var(--muted);
 }
-.border-orange-400\/40{
-  border-color: rgb(251 146 60 / 0.4);
-}
 .border-primary{
   border-color: var(--primary);
-}
-.border-purple-400\/40{
-  border-color: rgb(192 132 252 / 0.4);
 }
 .border-sidebar-border{
   border-color: var(--sidebar-border);

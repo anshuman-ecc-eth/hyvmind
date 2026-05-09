@@ -86,6 +86,12 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'nodeCount' : IDL.Nat,
   'terrainParams' : IDL.Opt(IDL.Text),
 });
+export const BuzzScore = IDL.Int;
+export const BuzzLeaderboardEntry = IDL.Record({
+  'principal' : IDL.Principal,
+  'score' : BuzzScore,
+  'profileName' : IDL.Opt(IDL.Text),
+});
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'socialUrl' : IDL.Opt(IDL.Text),
@@ -114,7 +120,6 @@ export const ChatMessage = IDL.Record({
   'senderName' : IDL.Text,
 });
 export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
-export const BuzzScore = IDL.Int;
 export const TrustScore = IDL.Int;
 export const TrustTransaction = IDL.Record({
   'totalBuzzCost' : IDL.Int,
@@ -349,6 +354,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+  'getBuzzLeaderboard' : IDL.Func(
+      [IDL.Nat],
+      [IDL.Vec(BuzzLeaderboardEntry)],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
@@ -562,6 +572,12 @@ export const idlFactory = ({ IDL }) => {
     'nodeCount' : IDL.Nat,
     'terrainParams' : IDL.Opt(IDL.Text),
   });
+  const BuzzScore = IDL.Int;
+  const BuzzLeaderboardEntry = IDL.Record({
+    'principal' : IDL.Principal,
+    'score' : BuzzScore,
+    'profileName' : IDL.Opt(IDL.Text),
+  });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
     'socialUrl' : IDL.Opt(IDL.Text),
@@ -590,7 +606,6 @@ export const idlFactory = ({ IDL }) => {
     'senderName' : IDL.Text,
   });
   const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
-  const BuzzScore = IDL.Int;
   const TrustScore = IDL.Int;
   const TrustTransaction = IDL.Record({
     'totalBuzzCost' : IDL.Int,
@@ -826,6 +841,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+    'getBuzzLeaderboard' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(BuzzLeaderboardEntry)],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),

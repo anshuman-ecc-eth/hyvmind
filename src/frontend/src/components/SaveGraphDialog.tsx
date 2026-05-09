@@ -43,33 +43,14 @@ interface SaveGraphDialogProps {
 // Internal tree types
 // ---------------------------------------------------------------------------
 
-type NodeType =
-  | "curation"
-  | "swarm"
-  | "location"
-  | "lawEntity"
-  | "interpEntity";
-
 interface TreeNodeData {
   id: string;
   name: string;
-  nodeType: NodeType;
+  nodeType: string;
   depth: number;
   parentId: string | null;
   childrenIds: string[];
 }
-
-// ---------------------------------------------------------------------------
-// Colors matching FileTree.tsx
-// ---------------------------------------------------------------------------
-
-const nodeTypeColors: Record<NodeType, string> = {
-  curation: "text-blue-400",
-  swarm: "text-orange-400",
-  location: "text-green-400",
-  lawEntity: "text-red-400",
-  interpEntity: "text-purple-400",
-};
 
 // ---------------------------------------------------------------------------
 // Build flat tree from GraphData
@@ -197,8 +178,6 @@ function TreeNodeCheckbox({
   const isExpanded = expandedIds.has(id);
   const isChecked = checkedIds.has(id);
   const hasChildren = node.childrenIds.length > 0;
-  const colorClass = nodeTypeColors[node.nodeType];
-
   return (
     <div>
       <div
@@ -247,9 +226,7 @@ function TreeNodeCheckbox({
         />
 
         {/* Label */}
-        <span
-          className={`truncate min-w-0 flex-1 text-xs font-mono ${colorClass}`}
-        >
+        <span className="truncate min-w-0 flex-1 text-xs font-mono text-foreground">
           {node.name}
         </span>
       </div>

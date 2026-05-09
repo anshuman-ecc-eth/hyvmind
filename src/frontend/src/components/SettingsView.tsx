@@ -75,8 +75,13 @@ export function SettingsView() {
 
   const [createBuzzOpen, setCreateBuzzOpen] = useState(false);
   const { data: buzzBalance } = useGetMyBuzzBalance();
-  const { data: trustBalance, refetch: refetchTrust } = useGetMyTrustBalance();
-  const { data: trustTransactions } = useGetMyTrustTransactions();
+  const {
+    data: trustBalance,
+    refetch: refetchTrust,
+    isRefetching: isTrustRefetching,
+  } = useGetMyTrustBalance();
+  const { data: trustTransactions, refetch: refetchTransactions } =
+    useGetMyTrustTransactions();
   const [txLogOpen, setTxLogOpen] = useState(false);
 
   const [profileName, setProfileName] = useState("");
@@ -496,10 +501,15 @@ export function SettingsView() {
                     variant="ghost"
                     size="icon"
                     className="h-4 w-4 ml-1 align-middle"
-                    onClick={() => refetchTrust()}
+                    onClick={() => {
+                      refetchTrust();
+                      refetchTransactions();
+                    }}
                     data-ocid="settings.wallet.refresh_trust"
                   >
-                    <RotateCcw className="h-3 w-3" />
+                    <RotateCcw
+                      className={`h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`}
+                    />
                   </Button>
                   <Button
                     variant="ghost"

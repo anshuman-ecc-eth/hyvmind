@@ -1,6 +1,10 @@
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useGenerateBuzzSecret } from "../hooks/useQueries";
+import type { BuzzLeaderboardEntry } from "../backend.d";
+import {
+  useGenerateBuzzSecret,
+  useGetBuzzLeaderboard,
+} from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
@@ -81,12 +85,6 @@ type MusicMode = "on" | "off";
 interface GameSettings {
   skipMessages: boolean;
   music: MusicMode;
-}
-
-interface LeaderboardEntry {
-  name: string;
-  score: number;
-  date: string;
 }
 
 type Phase =
@@ -281,7 +279,7 @@ function SettingsScreen({
 // ── Leaderboard Screen ─────────────────────────────────────────────────────────
 
 interface LeaderboardScreenProps {
-  leaderboard: LeaderboardEntry[];
+  leaderboard: BuzzLeaderboardEntry[];
   onBack: () => void;
   heading?: string;
 }
@@ -325,7 +323,7 @@ function LeaderboardScreen({
         ) : (
           leaderboard.map((entry, idx) => (
             <div
-              key={entry.date}
+              key={entry.principal.toString()}
               data-ocid={`text_game.leaderboard.item.${idx + 1}`}
               className="text-foreground"
               style={{
@@ -337,8 +335,10 @@ function LeaderboardScreen({
               }}
             >
               <span className="text-muted-foreground">{idx + 1}.</span>
-              <span style={{ minWidth: "80px" }}>{entry.name}</span>
-              <span>{entry.score}</span>
+              <span style={{ minWidth: "80px" }}>
+                {entry.profileName ?? "Anonymous"}
+              </span>
+              <span>{(Number(entry.score) / 10_000_000).toFixed(7)}</span>
             </div>
           ))
         )}
@@ -373,7 +373,6 @@ interface StartScreenProps {
   onSettings: () => void;
   onHiScores: () => void;
   onExit: () => void;
-  leaderboard: LeaderboardEntry[];
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -877,10 +876,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   });
 
   // Leaderboard (persisted)
-  const [leaderboard, _setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
-    return saved ? (JSON.parse(saved) as LeaderboardEntry[]) : [];
-  });
+  const { data: leaderboardEntries } = useGetBuzzLeaderboard();
 
   // Game scores for this session
   const [_gameScores, setGameScores] = useState({
@@ -904,13 +900,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   useEffect(() => {
     localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
   }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "hyvmind_textgame_leaderboard",
-      JSON.stringify(leaderboard),
-    );
-  }, [leaderboard]);
 
   // ── Audio: play/pause based on sound setting ──────────────────────────────
 
@@ -1258,7 +1247,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onSettings={handleOpenSettings}
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
-            leaderboard={leaderboard}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}
@@ -1278,7 +1266,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "leaderboard":
         return (
           <LeaderboardScreen
-            leaderboard={leaderboard}
+            leaderboard={leaderboardEntries ?? []}
             onBack={handleCloseSubScreen}
             heading="Leaderboard"
           />

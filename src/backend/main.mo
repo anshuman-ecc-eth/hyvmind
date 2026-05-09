@@ -804,6 +804,25 @@ actor {
     switch (trustScores.get(msg.caller)) { case (null) { 0 }; case (?b) { b }; };
   };
 
+  public query func getBuzzLeaderboard(topN : Nat) : async [BuzzLeaderboardEntry] {
+    let entries = trustScores.entries().toArray();
+    let sorted = entries.sort(func (a : (Principal, TrustScore), b : (Principal, TrustScore)) : Order.Order {
+        if (a.1 > b.1) { #less } else if (a.1 < b.1) { #greater } else { #equal };
+    });
+    let len = if (sorted.size() < topN) { sorted.size() } else { topN };
+    Array.tabulate<BuzzLeaderboardEntry>(
+        len,
+        func (i : Nat) : BuzzLeaderboardEntry {
+            let (principal, score) = sorted[i];
+            let profileName = switch (userProfiles.get(principal)) {
+                case (null) { null };
+                case (?profile) { ?profile.name };
+            };
+            { principal = principal; profileName = profileName; score = score };
+        }
+    );
+  };
+
   public query ({ caller }) func getMyBuzzBalance() : async BuzzScore {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can view their BUZZ balance");

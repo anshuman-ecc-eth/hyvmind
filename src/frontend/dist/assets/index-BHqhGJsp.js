@@ -28241,6 +28241,12 @@ const PublishedSourceGraphMeta = Record({
   "nodeCount": Nat,
   "terrainParams": Opt(Text)
 });
+const BuzzScore = Int;
+const BuzzLeaderboardEntry = Record({
+  "principal": Principal2,
+  "score": BuzzScore,
+  "profileName": Opt(Text)
+});
 const UserProfile = Record({
   "name": Text,
   "socialUrl": Opt(Text)
@@ -28269,7 +28275,6 @@ const ChatMessage = Record({
   "senderName": Text
 });
 const MintSettings = Record({ "numCopies": Nat });
-const BuzzScore = Int;
 const TrustScore = Int;
 const TrustTransaction = Record({
   "totalBuzzCost": Int,
@@ -28503,6 +28508,11 @@ Service({
     ["query"]
   ),
   "getArchivedNodeIds": Func([], [Vec(NodeId)], ["query"]),
+  "getBuzzLeaderboard": Func(
+    [Nat],
+    [Vec(BuzzLeaderboardEntry)],
+    ["query"]
+  ),
   "getCallerUserProfile": Func([], [Opt(UserProfile)], ["query"]),
   "getCallerUserRole": Func([], [UserRole], ["query"]),
   "getChannels": Func([], [Vec(ChatChannelSummary)], ["query"]),
@@ -28713,6 +28723,12 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "nodeCount": IDL2.Nat,
     "terrainParams": IDL2.Opt(IDL2.Text)
   });
+  const BuzzScore2 = IDL2.Int;
+  const BuzzLeaderboardEntry2 = IDL2.Record({
+    "principal": IDL2.Principal,
+    "score": BuzzScore2,
+    "profileName": IDL2.Opt(IDL2.Text)
+  });
   const UserProfile2 = IDL2.Record({
     "name": IDL2.Text,
     "socialUrl": IDL2.Opt(IDL2.Text)
@@ -28741,7 +28757,6 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "senderName": IDL2.Text
   });
   const MintSettings2 = IDL2.Record({ "numCopies": IDL2.Nat });
-  const BuzzScore2 = IDL2.Int;
   const TrustScore2 = IDL2.Int;
   const TrustTransaction2 = IDL2.Record({
     "totalBuzzCost": IDL2.Int,
@@ -28976,6 +28991,11 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "getArchivedNodeIds": IDL2.Func([], [IDL2.Vec(NodeId2)], ["query"]),
+    "getBuzzLeaderboard": IDL2.Func(
+      [IDL2.Nat],
+      [IDL2.Vec(BuzzLeaderboardEntry2)],
+      ["query"]
+    ),
     "getCallerUserProfile": IDL2.Func([], [IDL2.Opt(UserProfile2)], ["query"]),
     "getCallerUserRole": IDL2.Func([], [UserRole2], ["query"]),
     "getChannels": IDL2.Func([], [IDL2.Vec(ChatChannelSummary2)], ["query"]),
@@ -29353,74 +29373,88 @@ class Backend {
       return result;
     }
   }
+  async getBuzzLeaderboard(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getBuzzLeaderboard(arg0);
+        return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getBuzzLeaderboard(arg0);
+      return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
+    }
+  }
   async getCallerUserProfile() {
     if (this.processError) {
       try {
         const result = await this.actor.getCallerUserProfile();
-        return from_candid_opt_n22(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n25(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getCallerUserProfile();
-      return from_candid_opt_n22(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n25(this._uploadFile, this._downloadFile, result);
     }
   }
   async getCallerUserRole() {
     if (this.processError) {
       try {
         const result = await this.actor.getCallerUserRole();
-        return from_candid_UserRole_n25(this._uploadFile, this._downloadFile, result);
+        return from_candid_UserRole_n28(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getCallerUserRole();
-      return from_candid_UserRole_n25(this._uploadFile, this._downloadFile, result);
+      return from_candid_UserRole_n28(this._uploadFile, this._downloadFile, result);
     }
   }
   async getChannels() {
     if (this.processError) {
       try {
         const result = await this.actor.getChannels();
-        return from_candid_vec_n27(this._uploadFile, this._downloadFile, result);
-      } catch (e2) {
-        this.processError(e2);
-        throw new Error("unreachable");
-      }
-    } else {
-      const result = await this.actor.getChannels();
-      return from_candid_vec_n27(this._uploadFile, this._downloadFile, result);
-    }
-  }
-  async getCollectibleEditions(arg0) {
-    if (this.processError) {
-      try {
-        const result = await this.actor.getCollectibleEditions(arg0);
         return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.getCollectibleEditions(arg0);
+      const result = await this.actor.getChannels();
       return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getCollectibleEditions(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getCollectibleEditions(arg0);
+        return from_candid_vec_n33(this._uploadFile, this._downloadFile, result);
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getCollectibleEditions(arg0);
+      return from_candid_vec_n33(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMessages(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getMessages(arg0);
-        return from_candid_variant_n34(this._uploadFile, this._downloadFile, result);
+        return from_candid_variant_n37(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMessages(arg0);
-      return from_candid_variant_n34(this._uploadFile, this._downloadFile, result);
+      return from_candid_variant_n37(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMintSettings() {
@@ -29511,28 +29545,28 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getPublishedSourceGraph(arg0);
-        return from_candid_opt_n35(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n38(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getPublishedSourceGraph(arg0);
-      return from_candid_opt_n35(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n38(this._uploadFile, this._downloadFile, result);
     }
   }
   async getSwarmForks(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getSwarmForks(arg0);
-        return from_candid_vec_n47(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n50(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getSwarmForks(arg0);
-      return from_candid_vec_n47(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n50(this._uploadFile, this._downloadFile, result);
     }
   }
   async getSwarmMembers(arg0) {
@@ -29553,42 +29587,42 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getTelegramConfig();
-        return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getTelegramConfig();
-      return from_candid_opt_n51(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n54(this._uploadFile, this._downloadFile, result);
     }
   }
   async getTelegramConfigStatus() {
     if (this.processError) {
       try {
         const result = await this.actor.getTelegramConfigStatus();
-        return from_candid_record_n52(this._uploadFile, this._downloadFile, result);
+        return from_candid_record_n55(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getTelegramConfigStatus();
-      return from_candid_record_n52(this._uploadFile, this._downloadFile, result);
+      return from_candid_record_n55(this._uploadFile, this._downloadFile, result);
     }
   }
   async getUserProfile(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getUserProfile(arg0);
-        return from_candid_opt_n22(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n25(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getUserProfile(arg0);
-      return from_candid_opt_n22(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n25(this._uploadFile, this._downloadFile, result);
     }
   }
   async getVoteData(arg0) {
@@ -29763,42 +29797,42 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.listApprovals();
-        return from_candid_vec_n54(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n57(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.listApprovals();
-      return from_candid_vec_n54(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n57(this._uploadFile, this._downloadFile, result);
     }
   }
   async mintCollectible(arg0) {
     if (this.processError) {
       try {
-        const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n59(this._uploadFile, this._downloadFile, arg0));
-        return from_candid_MintCollectibleResult_n62(this._uploadFile, this._downloadFile, result);
+        const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n62(this._uploadFile, this._downloadFile, arg0));
+        return from_candid_MintCollectibleResult_n65(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n59(this._uploadFile, this._downloadFile, arg0));
-      return from_candid_MintCollectibleResult_n62(this._uploadFile, this._downloadFile, result);
+      const result = await this.actor.mintCollectible(to_candid_MintCollectibleRequest_n62(this._uploadFile, this._downloadFile, arg0));
+      return from_candid_MintCollectibleResult_n65(this._uploadFile, this._downloadFile, result);
     }
   }
   async previewPublishSourceGraph(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.previewPublishSourceGraph(to_candid_PublishSourceGraphInput_n3(this._uploadFile, this._downloadFile, arg0), arg1);
-        return from_candid_PublishPreviewResult_n64(this._uploadFile, this._downloadFile, result);
+        return from_candid_PublishPreviewResult_n67(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.previewPublishSourceGraph(to_candid_PublishSourceGraphInput_n3(this._uploadFile, this._downloadFile, arg0), arg1);
-      return from_candid_PublishPreviewResult_n64(this._uploadFile, this._downloadFile, result);
+      return from_candid_PublishPreviewResult_n67(this._uploadFile, this._downloadFile, result);
     }
   }
   async pullFromSwarm(arg0) {
@@ -29819,14 +29853,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.redeemBuzzSecret(arg0);
-        return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
+        return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.redeemBuzzSecret(arg0);
-      return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
+      return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
     }
   }
   async requestApproval() {
@@ -29874,14 +29908,14 @@ class Backend {
   async saveCallerUserProfile(arg0) {
     if (this.processError) {
       try {
-        const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n75(this._uploadFile, this._downloadFile, arg0));
+        const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n78(this._uploadFile, this._downloadFile, arg0));
         return result;
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n75(this._uploadFile, this._downloadFile, arg0));
+      const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n78(this._uploadFile, this._downloadFile, arg0));
       return result;
     }
   }
@@ -29889,41 +29923,41 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.savePublishedGraph(arg0, arg1);
-        return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
-      } catch (e2) {
-        this.processError(e2);
-        throw new Error("unreachable");
-      }
-    } else {
-      const result = await this.actor.savePublishedGraph(arg0, arg1);
-      return from_candid_variant_n74(this._uploadFile, this._downloadFile, result);
-    }
-  }
-  async sendMessage(arg0, arg1) {
-    if (this.processError) {
-      try {
-        const result = await this.actor.sendMessage(arg0, arg1);
         return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.sendMessage(arg0, arg1);
+      const result = await this.actor.savePublishedGraph(arg0, arg1);
       return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async sendMessage(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.sendMessage(arg0, arg1);
+        return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.sendMessage(arg0, arg1);
+      return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
     }
   }
   async setApproval(arg0, arg1) {
     if (this.processError) {
       try {
-        const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n78(this._uploadFile, this._downloadFile, arg1));
+        const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n81(this._uploadFile, this._downloadFile, arg1));
         return result;
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n78(this._uploadFile, this._downloadFile, arg1));
+      const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n81(this._uploadFile, this._downloadFile, arg1));
       return result;
     }
   }
@@ -29945,14 +29979,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.setTelegramConfig(arg0, arg1);
-        return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
+        return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
       } catch (e2) {
         this.processError(e2);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.setTelegramConfig(arg0, arg1);
-      return from_candid_variant_n77(this._uploadFile, this._downloadFile, result);
+      return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
     }
   }
   async track_api_request(arg0) {
@@ -30026,59 +30060,62 @@ class Backend {
     }
   }
 }
-function from_candid_ApprovalStatus_n57(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n58(_uploadFile, _downloadFile, value);
+function from_candid_ApprovalStatus_n60(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n61(_uploadFile, _downloadFile, value);
 }
-function from_candid_ChatChannelSummary_n28(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n29(_uploadFile, _downloadFile, value);
+function from_candid_BuzzLeaderboardEntry_n23(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n24(_uploadFile, _downloadFile, value);
 }
-function from_candid_CollectibleEdition_n31(_uploadFile, _downloadFile, value) {
+function from_candid_ChatChannelSummary_n31(_uploadFile, _downloadFile, value) {
   return from_candid_record_n32(_uploadFile, _downloadFile, value);
 }
-function from_candid_Directionality_n45(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n46(_uploadFile, _downloadFile, value);
+function from_candid_CollectibleEdition_n34(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n35(_uploadFile, _downloadFile, value);
 }
-function from_candid_EdgeOperation_n67(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n68(_uploadFile, _downloadFile, value);
+function from_candid_Directionality_n48(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n49(_uploadFile, _downloadFile, value);
+}
+function from_candid_EdgeOperation_n70(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n71(_uploadFile, _downloadFile, value);
 }
 function from_candid_ExtensionEntry_n19(_uploadFile, _downloadFile, value) {
   return from_candid_record_n20(_uploadFile, _downloadFile, value);
 }
-function from_candid_GraphData_n36(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n37(_uploadFile, _downloadFile, value);
-}
-function from_candid_GraphEdge_n43(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n44(_uploadFile, _downloadFile, value);
-}
-function from_candid_GraphNode_n39(_uploadFile, _downloadFile, value) {
+function from_candid_GraphData_n39(_uploadFile, _downloadFile, value) {
   return from_candid_record_n40(_uploadFile, _downloadFile, value);
 }
-function from_candid_MintCollectibleResult_n62(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n63(_uploadFile, _downloadFile, value);
+function from_candid_GraphEdge_n46(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n47(_uploadFile, _downloadFile, value);
 }
-function from_candid_NodeOperation_n71(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n72(_uploadFile, _downloadFile, value);
+function from_candid_GraphNode_n42(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n43(_uploadFile, _downloadFile, value);
+}
+function from_candid_MintCollectibleResult_n65(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n66(_uploadFile, _downloadFile, value);
+}
+function from_candid_NodeOperation_n74(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n75(_uploadFile, _downloadFile, value);
 }
 function from_candid_PublishCommitResult_n8(_uploadFile, _downloadFile, value) {
   return from_candid_variant_n9(_uploadFile, _downloadFile, value);
 }
-function from_candid_PublishPreviewResult_n64(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n65(_uploadFile, _downloadFile, value);
+function from_candid_PublishPreviewResult_n67(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n68(_uploadFile, _downloadFile, value);
 }
 function from_candid_PublishedSourceGraphMeta_n16(_uploadFile, _downloadFile, value) {
   return from_candid_record_n17(_uploadFile, _downloadFile, value);
 }
-function from_candid_Swarm_n48(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n49(_uploadFile, _downloadFile, value);
+function from_candid_Swarm_n51(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n52(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserApprovalInfo_n55(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n56(_uploadFile, _downloadFile, value);
+function from_candid_UserApprovalInfo_n58(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n59(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserProfile_n23(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n24(_uploadFile, _downloadFile, value);
+function from_candid_UserProfile_n26(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n27(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n25(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n26(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n28(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n29(_uploadFile, _downloadFile, value);
 }
 function from_candid_opt_n11(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
@@ -30089,22 +30126,22 @@ function from_candid_opt_n13(_uploadFile, _downloadFile, value) {
 function from_candid_opt_n21(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n22(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_UserProfile_n23(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n25(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_UserProfile_n26(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n35(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_GraphData_n36(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n38(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_GraphData_n39(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n41(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n50(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n51(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n44(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n53(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n54(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n56(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n10(_uploadFile, _downloadFile, value) {
@@ -30152,11 +30189,18 @@ function from_candid_record_n20(_uploadFile, _downloadFile, value) {
 }
 function from_candid_record_n24(_uploadFile, _downloadFile, value) {
   return {
+    principal: value.principal,
+    score: value.score,
+    profileName: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.profileName))
+  };
+}
+function from_candid_record_n27(_uploadFile, _downloadFile, value) {
+  return {
     name: value.name,
     socialUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.socialUrl))
   };
 }
-function from_candid_record_n29(_uploadFile, _downloadFile, value) {
+function from_candid_record_n32(_uploadFile, _downloadFile, value) {
   return {
     id: value.id,
     name: value.name,
@@ -30165,101 +30209,101 @@ function from_candid_record_n29(_uploadFile, _downloadFile, value) {
     parentCuration: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.parentCuration))
   };
 }
-function from_candid_record_n32(_uploadFile, _downloadFile, value) {
+function from_candid_record_n35(_uploadFile, _downloadFile, value) {
   return {
     tokenId: value.tokenId,
     editionNumber: value.editionNumber,
     owner: value.owner,
     mintedAt: value.mintedAt,
-    tokenType: from_candid_variant_n33(_uploadFile, _downloadFile, value.tokenType)
-  };
-}
-function from_candid_record_n37(_uploadFile, _downloadFile, value) {
-  return {
-    curations: value.curations,
-    rootNodes: from_candid_vec_n38(_uploadFile, _downloadFile, value.rootNodes),
-    edges: from_candid_vec_n42(_uploadFile, _downloadFile, value.edges),
-    locations: value.locations,
-    sources: value.sources,
-    swarms: from_candid_vec_n47(_uploadFile, _downloadFile, value.swarms),
-    lawTokens: value.lawTokens,
-    interpretationTokens: value.interpretationTokens
+    tokenType: from_candid_variant_n36(_uploadFile, _downloadFile, value.tokenType)
   };
 }
 function from_candid_record_n40(_uploadFile, _downloadFile, value) {
   return {
+    curations: value.curations,
+    rootNodes: from_candid_vec_n41(_uploadFile, _downloadFile, value.rootNodes),
+    edges: from_candid_vec_n45(_uploadFile, _downloadFile, value.edges),
+    locations: value.locations,
+    sources: value.sources,
+    swarms: from_candid_vec_n50(_uploadFile, _downloadFile, value.swarms),
+    lawTokens: value.lawTokens,
+    interpretationTokens: value.interpretationTokens
+  };
+}
+function from_candid_record_n43(_uploadFile, _downloadFile, value) {
+  return {
     id: value.id,
     customAttributes: value.customAttributes,
-    children: from_candid_vec_n38(_uploadFile, _downloadFile, value.children),
+    children: from_candid_vec_n41(_uploadFile, _downloadFile, value.children),
     jurisdiction: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.jurisdiction)),
     sources: value.sources,
-    parentId: record_opt_to_undefined(from_candid_opt_n41(_uploadFile, _downloadFile, value.parentId)),
+    parentId: record_opt_to_undefined(from_candid_opt_n44(_uploadFile, _downloadFile, value.parentId)),
     tokenLabel: value.tokenLabel,
     nodeType: value.nodeType
   };
 }
-function from_candid_record_n44(_uploadFile, _downloadFile, value) {
+function from_candid_record_n47(_uploadFile, _downloadFile, value) {
   return {
     source: value.source,
-    directionality: from_candid_Directionality_n45(_uploadFile, _downloadFile, value.directionality),
+    directionality: from_candid_Directionality_n48(_uploadFile, _downloadFile, value.directionality),
     target: value.target,
     edgeLabel: value.edgeLabel
   };
 }
-function from_candid_record_n49(_uploadFile, _downloadFile, value) {
+function from_candid_record_n52(_uploadFile, _downloadFile, value) {
   return {
     id: value.id,
     creator: value.creator,
     customAttributes: value.customAttributes,
     name: value.name,
     tags: value.tags,
-    forkSource: record_opt_to_undefined(from_candid_opt_n41(_uploadFile, _downloadFile, value.forkSource)),
+    forkSource: record_opt_to_undefined(from_candid_opt_n44(_uploadFile, _downloadFile, value.forkSource)),
     timestamps: value.timestamps,
     parentCurationId: value.parentCurationId,
     sources: value.sources,
-    forkPrincipal: record_opt_to_undefined(from_candid_opt_n50(_uploadFile, _downloadFile, value.forkPrincipal))
+    forkPrincipal: record_opt_to_undefined(from_candid_opt_n53(_uploadFile, _downloadFile, value.forkPrincipal))
   };
 }
-function from_candid_record_n52(_uploadFile, _downloadFile, value) {
+function from_candid_record_n55(_uploadFile, _downloadFile, value) {
   return {
-    updatedAt: record_opt_to_undefined(from_candid_opt_n53(_uploadFile, _downloadFile, value.updatedAt)),
+    updatedAt: record_opt_to_undefined(from_candid_opt_n56(_uploadFile, _downloadFile, value.updatedAt)),
     updatedBy: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.updatedBy)),
     hasToken: value.hasToken,
     hasChatId: value.hasChatId
   };
 }
-function from_candid_record_n56(_uploadFile, _downloadFile, value) {
+function from_candid_record_n59(_uploadFile, _downloadFile, value) {
   return {
-    status: from_candid_ApprovalStatus_n57(_uploadFile, _downloadFile, value.status),
+    status: from_candid_ApprovalStatus_n60(_uploadFile, _downloadFile, value.status),
     principal: value.principal
-  };
-}
-function from_candid_record_n65(_uploadFile, _downloadFile, value) {
-  return {
-    buzzCost: value.buzzCost,
-    summary: value.summary,
-    edgeOperations: from_candid_vec_n66(_uploadFile, _downloadFile, value.edgeOperations),
-    nodeOperations: from_candid_vec_n70(_uploadFile, _downloadFile, value.nodeOperations)
   };
 }
 function from_candid_record_n68(_uploadFile, _downloadFile, value) {
   return {
-    action: from_candid_variant_n69(_uploadFile, _downloadFile, value.action),
+    buzzCost: value.buzzCost,
+    summary: value.summary,
+    edgeOperations: from_candid_vec_n69(_uploadFile, _downloadFile, value.edgeOperations),
+    nodeOperations: from_candid_vec_n73(_uploadFile, _downloadFile, value.nodeOperations)
+  };
+}
+function from_candid_record_n71(_uploadFile, _downloadFile, value) {
+  return {
+    action: from_candid_variant_n72(_uploadFile, _downloadFile, value.action),
     labels: value.labels,
-    sourceId: record_opt_to_undefined(from_candid_opt_n41(_uploadFile, _downloadFile, value.sourceId)),
+    sourceId: record_opt_to_undefined(from_candid_opt_n44(_uploadFile, _downloadFile, value.sourceId)),
     sourceName: value.sourceName,
     bidirectional: value.bidirectional,
     targetName: value.targetName,
-    targetId: record_opt_to_undefined(from_candid_opt_n41(_uploadFile, _downloadFile, value.targetId))
+    targetId: record_opt_to_undefined(from_candid_opt_n44(_uploadFile, _downloadFile, value.targetId))
   };
 }
-function from_candid_record_n72(_uploadFile, _downloadFile, value) {
+function from_candid_record_n75(_uploadFile, _downloadFile, value) {
   return {
     localName: value.localName,
-    action: from_candid_variant_n73(_uploadFile, _downloadFile, value.action),
+    action: from_candid_variant_n76(_uploadFile, _downloadFile, value.action),
     sourceChanges: value.sourceChanges,
     attributes: value.attributes,
-    backendId: record_opt_to_undefined(from_candid_opt_n41(_uploadFile, _downloadFile, value.backendId)),
+    backendId: record_opt_to_undefined(from_candid_opt_n44(_uploadFile, _downloadFile, value.backendId)),
     parentName: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.parentName)),
     nodeType: value.nodeType
   };
@@ -30273,13 +30317,13 @@ function from_candid_variant_n14(_uploadFile, _downloadFile, value) {
     err: value.err
   } : value;
 }
-function from_candid_variant_n26(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n29(_uploadFile, _downloadFile, value) {
   return "admin" in value ? "admin" : "user" in value ? "user" : "guest" in value ? "guest" : value;
 }
-function from_candid_variant_n33(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n36(_uploadFile, _downloadFile, value) {
   return "lawToken" in value ? "lawToken" : "interpretationToken" in value ? "interpretationToken" : value;
 }
-function from_candid_variant_n34(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n37(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -30288,13 +30332,13 @@ function from_candid_variant_n34(_uploadFile, _downloadFile, value) {
     err: value.err
   } : value;
 }
-function from_candid_variant_n46(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n49(_uploadFile, _downloadFile, value) {
   return "none" in value ? "none" : "bidirectional" in value ? "bidirectional" : "unidirectional" in value ? "unidirectional" : value;
 }
-function from_candid_variant_n58(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n61(_uploadFile, _downloadFile, value) {
   return "pending" in value ? "pending" : "approved" in value ? "approved" : "rejected" in value ? "rejected" : value;
 }
-function from_candid_variant_n63(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n66(_uploadFile, _downloadFile, value) {
   return "editionLimitReached" in value ? {
     __kind__: "editionLimitReached",
     editionLimitReached: value.editionLimitReached
@@ -30306,13 +30350,13 @@ function from_candid_variant_n63(_uploadFile, _downloadFile, value) {
     insufficientFunds: value.insufficientFunds
   } : "success" in value ? {
     __kind__: "success",
-    success: from_candid_CollectibleEdition_n31(_uploadFile, _downloadFile, value.success)
+    success: from_candid_CollectibleEdition_n34(_uploadFile, _downloadFile, value.success)
   } : "tokenNotFound" in value ? {
     __kind__: "tokenNotFound",
     tokenNotFound: value.tokenNotFound
   } : value;
 }
-function from_candid_variant_n69(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n72(_uploadFile, _downloadFile, value) {
   return "create" in value ? {
     __kind__: "create",
     create: value.create
@@ -30321,7 +30365,7 @@ function from_candid_variant_n69(_uploadFile, _downloadFile, value) {
     update: value.update
   } : value;
 }
-function from_candid_variant_n73(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n76(_uploadFile, _downloadFile, value) {
   return "create" in value ? {
     __kind__: "create",
     create: value.create
@@ -30330,7 +30374,7 @@ function from_candid_variant_n73(_uploadFile, _downloadFile, value) {
     update: value.update
   } : value;
 }
-function from_candid_variant_n74(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n77(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -30339,7 +30383,7 @@ function from_candid_variant_n74(_uploadFile, _downloadFile, value) {
     err: value.err
   } : value;
 }
-function from_candid_variant_n77(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n80(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -30363,35 +30407,38 @@ function from_candid_vec_n15(_uploadFile, _downloadFile, value) {
 function from_candid_vec_n18(_uploadFile, _downloadFile, value) {
   return value.map((x3) => from_candid_ExtensionEntry_n19(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n27(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_ChatChannelSummary_n28(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n22(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_BuzzLeaderboardEntry_n23(_uploadFile, _downloadFile, x3));
 }
 function from_candid_vec_n30(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_CollectibleEdition_n31(_uploadFile, _downloadFile, x3));
+  return value.map((x3) => from_candid_ChatChannelSummary_n31(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n38(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_GraphNode_n39(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n33(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_CollectibleEdition_n34(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n42(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_GraphEdge_n43(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n41(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_GraphNode_n42(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n47(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_Swarm_n48(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n45(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_GraphEdge_n46(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n54(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_UserApprovalInfo_n55(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n50(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_Swarm_n51(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n66(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_EdgeOperation_n67(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n57(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_UserApprovalInfo_n58(_uploadFile, _downloadFile, x3));
 }
-function from_candid_vec_n70(_uploadFile, _downloadFile, value) {
-  return value.map((x3) => from_candid_NodeOperation_n71(_uploadFile, _downloadFile, x3));
+function from_candid_vec_n69(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_EdgeOperation_n70(_uploadFile, _downloadFile, x3));
 }
-function to_candid_ApprovalStatus_n78(_uploadFile, _downloadFile, value) {
-  return to_candid_variant_n79(_uploadFile, _downloadFile, value);
+function from_candid_vec_n73(_uploadFile, _downloadFile, value) {
+  return value.map((x3) => from_candid_NodeOperation_n74(_uploadFile, _downloadFile, x3));
 }
-function to_candid_MintCollectibleRequest_n59(_uploadFile, _downloadFile, value) {
-  return to_candid_record_n60(_uploadFile, _downloadFile, value);
+function to_candid_ApprovalStatus_n81(_uploadFile, _downloadFile, value) {
+  return to_candid_variant_n82(_uploadFile, _downloadFile, value);
+}
+function to_candid_MintCollectibleRequest_n62(_uploadFile, _downloadFile, value) {
+  return to_candid_record_n63(_uploadFile, _downloadFile, value);
 }
 function to_candid_PublishSourceGraphInput_n3(_uploadFile, _downloadFile, value) {
   return to_candid_record_n4(_uploadFile, _downloadFile, value);
@@ -30399,8 +30446,8 @@ function to_candid_PublishSourceGraphInput_n3(_uploadFile, _downloadFile, value)
 function to_candid_SourceGraphNodeInput_n6(_uploadFile, _downloadFile, value) {
   return to_candid_record_n7(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n75(_uploadFile, _downloadFile, value) {
-  return to_candid_record_n76(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n78(_uploadFile, _downloadFile, value) {
+  return to_candid_record_n79(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile, _downloadFile, value) {
   return to_candid_variant_n2(_uploadFile, _downloadFile, value);
@@ -30411,10 +30458,10 @@ function to_candid_record_n4(_uploadFile, _downloadFile, value) {
     nodes: to_candid_vec_n5(_uploadFile, _downloadFile, value.nodes)
   };
 }
-function to_candid_record_n60(_uploadFile, _downloadFile, value) {
+function to_candid_record_n63(_uploadFile, _downloadFile, value) {
   return {
     tokenId: value.tokenId,
-    tokenType: to_candid_variant_n61(_uploadFile, _downloadFile, value.tokenType)
+    tokenType: to_candid_variant_n64(_uploadFile, _downloadFile, value.tokenType)
   };
 }
 function to_candid_record_n7(_uploadFile, _downloadFile, value) {
@@ -30430,7 +30477,7 @@ function to_candid_record_n7(_uploadFile, _downloadFile, value) {
     nodeType: value.nodeType
   };
 }
-function to_candid_record_n76(_uploadFile, _downloadFile, value) {
+function to_candid_record_n79(_uploadFile, _downloadFile, value) {
   return {
     name: value.name,
     socialUrl: value.socialUrl ? candid_some(value.socialUrl) : candid_none()
@@ -30445,14 +30492,14 @@ function to_candid_variant_n2(_uploadFile, _downloadFile, value) {
     guest: null
   } : value;
 }
-function to_candid_variant_n61(_uploadFile, _downloadFile, value) {
+function to_candid_variant_n64(_uploadFile, _downloadFile, value) {
   return value == "lawToken" ? {
     lawToken: null
   } : value == "interpretationToken" ? {
     interpretationToken: null
   } : value;
 }
-function to_candid_variant_n79(_uploadFile, _downloadFile, value) {
+function to_candid_variant_n82(_uploadFile, _downloadFile, value) {
   return value == "pending" ? {
     pending: null
   } : value == "approved" ? {
@@ -36103,6 +36150,17 @@ function useIsCallerAdmin() {
     queryFn: async () => {
       if (!actor) throw new Error("Actor not available");
       return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching
+  });
+}
+function useGetBuzzLeaderboard() {
+  const { actor, isFetching } = useBackendActor$1();
+  return useQuery({
+    queryKey: ["buzzLeaderboard"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getBuzzLeaderboard(BigInt(10));
     },
     enabled: !!actor && !isFetching
   });
@@ -54001,13 +54059,6 @@ function graphDataToEditorNodes(graphData, selectedNodeIds, _graphName) {
   }
   return { nodes, rootIds };
 }
-const nodeTypeColors$1 = {
-  curation: "text-blue-400",
-  swarm: "text-orange-400",
-  location: "text-green-400",
-  lawEntity: "text-red-400",
-  interpEntity: "text-purple-400"
-};
 function buildTree(data) {
   var _a3, _b3, _c2, _d2;
   const nodes = /* @__PURE__ */ new Map();
@@ -54093,7 +54144,6 @@ function TreeNodeCheckbox({
   const isExpanded = expandedIds.has(id2);
   const isChecked = checkedIds.has(id2);
   const hasChildren = node2.childrenIds.length > 0;
-  const colorClass = nodeTypeColors$1[node2.nodeType];
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
@@ -54135,13 +54185,7 @@ function TreeNodeCheckbox({
               "data-ocid": `save_graph.checkbox.${id2}`
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "span",
-            {
-              className: `truncate min-w-0 flex-1 text-xs font-mono ${colorClass}`,
-              children: node2.name
-            }
-          )
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1 text-xs font-mono text-foreground", children: node2.name })
         ]
       }
     ),
@@ -67242,8 +67286,12 @@ function SettingsView() {
   const { fontPairing, setFontPairing, fontSize, setFontSize } = useSettings();
   const [createBuzzOpen, setCreateBuzzOpen] = reactExports.useState(false);
   const { data: buzzBalance } = useGetMyBuzzBalance();
-  const { data: trustBalance, refetch: refetchTrust } = useGetMyTrustBalance();
-  const { data: trustTransactions } = useGetMyTrustTransactions();
+  const {
+    data: trustBalance,
+    refetch: refetchTrust,
+    isRefetching: isTrustRefetching
+  } = useGetMyTrustBalance();
+  const { data: trustTransactions, refetch: refetchTransactions } = useGetMyTrustTransactions();
   const [txLogOpen, setTxLogOpen] = reactExports.useState(false);
   const [profileName, setProfileName] = reactExports.useState("");
   const [socialUrl, setSocialUrl] = reactExports.useState("");
@@ -67602,9 +67650,17 @@ function SettingsView() {
                     variant: "ghost",
                     size: "icon",
                     className: "h-4 w-4 ml-1 align-middle",
-                    onClick: () => refetchTrust(),
+                    onClick: () => {
+                      refetchTrust();
+                      refetchTransactions();
+                    },
                     "data-ocid": "settings.wallet.refresh_trust",
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(RotateCcw, { className: "h-3 w-3" })
+                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      RotateCcw,
+                      {
+                        className: `h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`
+                      }
+                    )
                   }
                 ),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -91388,11 +91444,11 @@ function LeaderboardScreen({
                 idx + 1,
                 "."
               ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { minWidth: "80px" }, children: entry.name }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: entry.score })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { minWidth: "80px" }, children: entry.profileName ?? "Anonymous" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: (Number(entry.score) / 1e7).toFixed(7) })
             ]
           },
-          entry.date
+          entry.principal.toString()
         ))
       }
     ),
@@ -91837,10 +91893,7 @@ function TextGameModal({ onComplete }) {
     const saved = localStorage.getItem("hyvmind_textgame_settings");
     return saved ? JSON.parse(saved) : { skipMessages: false, music: "off" };
   });
-  const [leaderboard, _setLeaderboard] = reactExports.useState(() => {
-    const saved = localStorage.getItem("hyvmind_textgame_leaderboard");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { data: leaderboardEntries } = useGetBuzzLeaderboard();
   const [_gameScores, setGameScores] = reactExports.useState({
     game1: 0,
     game2: 0,
@@ -91855,12 +91908,6 @@ function TextGameModal({ onComplete }) {
   reactExports.useEffect(() => {
     localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
   }, [settings]);
-  reactExports.useEffect(() => {
-    localStorage.setItem(
-      "hyvmind_textgame_leaderboard",
-      JSON.stringify(leaderboard)
-    );
-  }, [leaderboard]);
   reactExports.useEffect(() => {
     if (!overrideAudio) return;
     if (settings.music === "on") {
@@ -92165,7 +92212,6 @@ function TextGameModal({ onComplete }) {
             onSettings: handleOpenSettings,
             onHiScores: handleOpenLeaderboard,
             onExit: handleExit,
-            leaderboard,
             showScoreConfirmation,
             setShowScoreConfirmation,
             setSecretCode
@@ -92185,7 +92231,7 @@ function TextGameModal({ onComplete }) {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           LeaderboardScreen,
           {
-            leaderboard,
+            leaderboard: leaderboardEntries ?? [],
             onBack: handleCloseSubScreen,
             heading: "Leaderboard"
           }
@@ -93552,9 +93598,19 @@ function TreeNode({
   onToggleExpand,
   onSelectFile,
   onContextMenu,
-  depth
+  onRenameNode,
+  depth,
+  renameTarget,
+  onRenameEnd
 }) {
   const node2 = nodes.get(nodeId);
+  const inputRef = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    if ((renameTarget == null ? void 0 : renameTarget.id) === nodeId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [renameTarget == null ? void 0 : renameTarget.id, nodeId]);
   if (!node2) return null;
   const isFolder = node2.type === "folder";
   const isExpanded = expandedIds.has(nodeId);
@@ -93594,7 +93650,31 @@ function TreeNode({
         children: [
           isFolder ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3 h-3 flex-shrink-0 text-muted-foreground", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 12 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { size: 12 }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3 h-3 flex-shrink-0" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `flex-shrink-0 ${colorClass}`, children: isFolder ? isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(FolderOpen, { size: 13 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Folder, { size: 13 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(File, { size: 13 }) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", children: node2.name })
+          (renameTarget == null ? void 0 : renameTarget.id) === nodeId ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              ref: inputRef,
+              type: "text",
+              defaultValue: node2.name,
+              className: "min-w-0 flex-1 bg-background border border-border text-foreground text-xs px-1 py-0 focus:outline-none focus:ring-1 focus:ring-ring",
+              onKeyDown: (e2) => {
+                e2.stopPropagation();
+                if (e2.key === "Enter" && e2.currentTarget.value.trim()) {
+                  onRenameNode(nodeId, e2.currentTarget.value.trim());
+                  onRenameEnd();
+                } else if (e2.key === "Escape") {
+                  onRenameEnd();
+                }
+              },
+              onBlur: (e2) => {
+                if (e2.currentTarget.value.trim()) {
+                  onRenameNode(nodeId, e2.currentTarget.value.trim());
+                }
+                onRenameEnd();
+              },
+              onClick: (e2) => e2.stopPropagation()
+            }
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", children: node2.name })
         ]
       }
     ),
@@ -93608,7 +93688,10 @@ function TreeNode({
         onToggleExpand,
         onSelectFile,
         onContextMenu,
-        depth: depth + 1
+        onRenameNode,
+        depth: depth + 1,
+        renameTarget,
+        onRenameEnd
       },
       childId
     )) })
@@ -93620,9 +93703,11 @@ function FileTree({
   activeFileId,
   onSelectFile,
   onCreateNode: _onCreateNode,
-  onRenameNode: _onRenameNode,
+  onRenameNode,
   onDeleteNode: _onDeleteNode,
-  onContextMenu
+  onContextMenu,
+  renameTarget,
+  onRenameEnd
 }) {
   const [expandedIds, setExpandedIds] = reactExports.useState(() => {
     return new Set(rootIds);
@@ -93665,7 +93750,10 @@ function FileTree({
           onToggleExpand: handleToggleExpand,
           onSelectFile,
           onContextMenu,
-          depth: 0
+          onRenameNode,
+          depth: 0,
+          renameTarget,
+          onRenameEnd
         },
         rootId
       ))
@@ -108713,7 +108801,6 @@ function EditorView() {
   const [deleteTarget, setDeleteTarget] = reactExports.useState(null);
   const [showCreateCuration, setShowCreateCuration] = reactExports.useState(false);
   const [renameTarget, setRenameTarget] = reactExports.useState(null);
-  const [createChild, setCreateChild] = reactExports.useState(null);
   const fileInputRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     const handler = (e2) => {
@@ -108765,28 +108852,32 @@ function EditorView() {
       setContextMenu(null);
       switch (option2) {
         case "new-swarm":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Swarm"
+          createNode2(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled"
           });
           break;
         case "new-location":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Location"
+          createNode2(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled"
           });
           break;
         case "new-law-entity":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Law Entity"
+          createNode2(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled"
           });
           break;
         case "new-file":
-          setCreateChild({ parentId: nodeId, type: "file", label: "New File" });
+          createNode2(nodeId, "Untitled", "file");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled"
+          });
           break;
         case "rename": {
           const node2 = session == null ? void 0 : session.nodes.get(nodeId);
@@ -109116,7 +109207,9 @@ function EditorView() {
                     onCreateNode: createNode2,
                     onRenameNode: renameNode,
                     onDeleteNode: (id2) => setDeleteTarget(id2),
-                    onContextMenu: handleContextMenu
+                    onContextMenu: handleContextMenu,
+                    renameTarget,
+                    onRenameEnd: () => setRenameTarget(null)
                   }
                 ) })
               ]
@@ -109166,33 +109259,6 @@ function EditorView() {
               setShowCreateCuration(false);
             },
             ocidPrefix: "editor.create_curation_dialog"
-          }
-        ),
-        renameTarget && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          InlineDialog,
-          {
-            label: "Rename",
-            value: renameTarget.currentName,
-            onClose: () => setRenameTarget(null),
-            onSubmit: (name) => {
-              renameNode(renameTarget.id, name);
-              setRenameTarget(null);
-            },
-            ocidPrefix: "editor.rename_dialog"
-          }
-        ),
-        createChild && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          InlineDialog,
-          {
-            label: createChild.label,
-            value: "",
-            placeholder: "Name",
-            onClose: () => setCreateChild(null),
-            onSubmit: (name) => {
-              createNode2(createChild.parentId, name, createChild.type);
-              setCreateChild(null);
-            },
-            ocidPrefix: "editor.create_child_dialog"
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -110446,14 +110512,7 @@ function NodeDetailsModal({
   );
 }
 function NodeTypeBadge({ type }) {
-  const colors2 = {
-    curation: "text-blue-400 border-blue-400/40",
-    swarm: "text-orange-400 border-orange-400/40",
-    location: "text-emerald-600 border-emerald-600/30",
-    lawEntity: "text-amber-600 border-amber-600/30",
-    interpEntity: "text-purple-400 border-purple-400/40"
-  };
-  const cls = colors2[type] ?? "text-muted-foreground border-border";
+  const cls = "text-muted-foreground border-border";
   return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-[10px] border px-1 py-0.5 ${cls}`, children: type });
 }
 function AttributeChangesView({ changes }) {
@@ -110465,7 +110524,7 @@ function AttributeChangesView({ changes }) {
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", children: c2.oldValues.map((v2) => `${v2.value}(×${v2.weight})`).join(", ") }),
     " → ",
-    c2.newWeightedValues && c2.newWeightedValues.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: c2.newWeightedValues.map((v2) => `${v2.value}(×${v2.weight})`).join(", ") }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: c2.newValues.join(", ") })
+    c2.newWeightedValues && c2.newWeightedValues.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: c2.newWeightedValues.map((v2) => `${v2.value}(×${v2.weight})`).join(", ") }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: c2.newValues.join(", ") })
   ] }, c2.key)) });
 }
 function CollapsibleSection({
@@ -110531,7 +110590,7 @@ function EdgeUpdateRow({ op }) {
       " ",
       op.targetName
     ] }),
-    op.newLabels && op.newLabels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-[10px] text-emerald-600 mt-0.5", children: [
+    op.newLabels && op.newLabels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-[10px] text-foreground mt-0.5", children: [
       "+ ",
       op.newLabels.join(", ")
     ] })
@@ -110612,7 +110671,7 @@ function PublishConfirmDialog({
           hasCurationConflict && /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
-              className: "px-3 py-2 border border-dashed border-amber-600/40 text-amber-600 text-xs",
+              className: "px-3 py-2 border border-dashed border-destructive/40 text-destructive text-xs",
               "data-ocid": "publish_dialog.curation_conflict_warning",
               children: "⚠ this curation name already exists. your changes will be added to the shared curation."
             }
@@ -110625,29 +110684,29 @@ function PublishConfirmDialog({
               children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4 flex-wrap", children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.nodesToCreate }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: summary.nodesToCreate }),
                     " ",
                     "new nodes"
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.edgesToCreate }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: summary.edgesToCreate }),
                     " ",
                     "cross-ref new"
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: summary.hierarchyEdgesToCreate }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: summary.hierarchyEdgesToCreate }),
                     " ",
                     "hierarchy new"
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: summary.edgesToUpdate }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: summary.edgesToUpdate }),
                     " ",
                     "updated edges"
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
                     "publish cost:",
                     " ",
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-amber-600", children: (previewResult.buzzCost / 10).toFixed(1) }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: (previewResult.buzzCost / 10).toFixed(1) }),
                     " ",
                     "buzz",
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -111420,46 +111479,56 @@ function SourcesView() {
         graph.id
       );
     }) }),
-    confirmDeleteId && /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "dialog",
-      {
-        open: true,
-        className: "fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm m-0 w-full h-full max-w-none max-h-none border-0 p-0",
-        "aria-label": "Confirm deletion",
-        "data-ocid": "sources.confirm_delete_dialog",
-        onClose: handleDeleteCancel,
-        children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground mb-2", children: "delete graph?" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mb-6", children: [
-            ((_a3 = graphs.find((g2) => g2.id === confirmDeleteId)) == null ? void 0 : _a3.name) ?? "",
-            /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
-            "this action cannot be undone."
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                onClick: handleDeleteConfirm,
-                className: "flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
-                "data-ocid": "sources.confirm_delete_yes",
-                children: "delete"
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                onClick: handleDeleteCancel,
-                className: "flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
-                "data-ocid": "sources.confirm_delete_cancel",
-                children: "cancel"
-              }
-            )
-          ] })
-        ] })
-      }
-    ),
+    confirmDeleteId && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm",
+          "aria-hidden": "true",
+          onClick: handleDeleteCancel,
+          onKeyDown: (e2) => {
+            if (e2.key === "Escape") handleDeleteCancel();
+          }
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono",
+          "data-ocid": "sources.confirm_delete_dialog",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground mb-2", children: "delete graph?" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mb-6", children: [
+              ((_a3 = graphs.find((g2) => g2.id === confirmDeleteId)) == null ? void 0 : _a3.name) ?? "",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+              "this action cannot be undone."
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: handleDeleteConfirm,
+                  className: "flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
+                  "data-ocid": "sources.confirm_delete_yes",
+                  children: "delete"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: handleDeleteCancel,
+                  className: "flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
+                  "data-ocid": "sources.confirm_delete_cancel",
+                  children: "cancel"
+                }
+              )
+            ] })
+          ]
+        }
+      )
+    ] }),
     previewResult && /* @__PURE__ */ jsxRuntimeExports.jsx(
       PublishConfirmDialog,
       {

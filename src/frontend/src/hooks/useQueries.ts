@@ -1,6 +1,7 @@
 import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  BuzzLeaderboardEntry,
   BuzzScore,
   ChatChannelSummary,
   ChatMessage,
@@ -428,11 +429,11 @@ export function useDownvoteNode() {
 export function useGetBuzzLeaderboard() {
   const { actor, isFetching } = useBackendActor();
 
-  return useQuery<any[]>({
+  return useQuery<BuzzLeaderboardEntry[]>({
     queryKey: ["buzzLeaderboard"],
     queryFn: async () => {
       if (!actor) return [];
-      return [];
+      return actor.getBuzzLeaderboard(BigInt(10));
     },
     enabled: !!actor && !isFetching,
   });

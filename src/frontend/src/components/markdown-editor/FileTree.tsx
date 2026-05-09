@@ -6,7 +6,7 @@ import {
   Folder,
   FolderOpen,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,6 +25,8 @@ interface FileTreeProps {
   onRenameNode: (id: string, newName: string) => void;
   onDeleteNode: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, nodeId: string) => void;
+  renameTarget: { id: string; currentName: string } | null;
+  onRenameEnd: () => void;
 }
 
 interface TreeNodeProps {
@@ -35,7 +37,10 @@ interface TreeNodeProps {
   onToggleExpand: (id: string) => void;
   onSelectFile: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, nodeId: string) => void;
+  onRenameNode: (id: string, newName: string) => void;
   depth: number;
+  renameTarget: { id: string; currentName: string } | null;
+  onRenameEnd: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,9 +67,21 @@ function TreeNode({
   onToggleExpand,
   onSelectFile,
   onContextMenu,
+  onRenameNode,
   depth,
+  renameTarget,
+  onRenameEnd,
 }: TreeNodeProps) {
   const node = nodes.get(nodeId);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renameTarget?.id === nodeId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [renameTarget?.id, nodeId]);
+
   if (!node) return null;
 
   const isFolder = node.type === "folder";
@@ -133,7 +150,32 @@ function TreeNode({
         </span>
 
         {/* Label */}
-        <span className="truncate min-w-0 flex-1">{node.name}</span>
+        {renameTarget?.id === nodeId ? (
+          <input
+            ref={inputRef}
+            type="text"
+            defaultValue={node.name}
+            className="min-w-0 flex-1 bg-background border border-border text-foreground text-xs px-1 py-0 focus:outline-none focus:ring-1 focus:ring-ring"
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                onRenameNode(nodeId, e.currentTarget.value.trim());
+                onRenameEnd();
+              } else if (e.key === "Escape") {
+                onRenameEnd();
+              }
+            }}
+            onBlur={(e) => {
+              if (e.currentTarget.value.trim()) {
+                onRenameNode(nodeId, e.currentTarget.value.trim());
+              }
+              onRenameEnd();
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="truncate min-w-0 flex-1">{node.name}</span>
+        )}
       </div>
 
       {/* Children — only rendered when folder is expanded */}
@@ -149,7 +191,10 @@ function TreeNode({
               onToggleExpand={onToggleExpand}
               onSelectFile={onSelectFile}
               onContextMenu={onContextMenu}
+              onRenameNode={onRenameNode}
               depth={depth + 1}
+              renameTarget={renameTarget}
+              onRenameEnd={onRenameEnd}
             />
           ))}
         </div>
@@ -168,9 +213,11 @@ export function FileTree({
   activeFileId,
   onSelectFile,
   onCreateNode: _onCreateNode,
-  onRenameNode: _onRenameNode,
+  onRenameNode,
   onDeleteNode: _onDeleteNode,
   onContextMenu,
+  renameTarget,
+  onRenameEnd,
 }: FileTreeProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     // Auto-expand root-level curation folders
@@ -217,7 +264,10 @@ export function FileTree({
           onToggleExpand={handleToggleExpand}
           onSelectFile={onSelectFile}
           onContextMenu={onContextMenu}
+          onRenameNode={onRenameNode}
           depth={0}
+          renameTarget={renameTarget}
+          onRenameEnd={onRenameEnd}
         />
       ))}
     </div>

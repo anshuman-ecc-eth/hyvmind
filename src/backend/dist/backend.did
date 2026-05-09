@@ -335,6 +335,12 @@ type ChatChannelSummary =
    unreadCount: nat;
  };
 type BuzzScore = int;
+type BuzzLeaderboardEntry = 
+ record {
+   "principal": principal;
+   profileName: opt text;
+   score: BuzzScore;
+ };
 type AttributeChange = 
  record {
    key: text;
@@ -380,6 +386,7 @@ service : {
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
+  getBuzzLeaderboard: (topN: nat) -> (vec BuzzLeaderboardEntry) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
   getChannels: () -> (vec ChatChannelSummary) query;

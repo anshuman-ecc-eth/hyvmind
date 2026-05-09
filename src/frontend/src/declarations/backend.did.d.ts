@@ -19,6 +19,11 @@ export interface AttributeChange {
   'oldValues' : Array<WeightedValue>,
   'newWeightedValues' : Array<WeightedValue>,
 }
+export interface BuzzLeaderboardEntry {
+  'principal' : Principal,
+  'score' : BuzzScore,
+  'profileName' : [] | [string],
+}
 export type BuzzScore = bigint;
 export interface ChatChannelSummary {
   'id' : string,
@@ -308,6 +313,7 @@ export interface _SERVICE {
     Array<PublishedSourceGraphMeta>
   >,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
+  'getBuzzLeaderboard' : ActorMethod<[bigint], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getChannels' : ActorMethod<[], Array<ChatChannelSummary>>,

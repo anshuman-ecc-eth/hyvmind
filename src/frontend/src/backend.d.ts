@@ -79,6 +79,11 @@ export interface NodeOperation {
     parentName?: string;
     nodeType: string;
 }
+export interface BuzzLeaderboardEntry {
+    principal: Principal;
+    score: BuzzScore;
+    profileName?: string;
+}
 export interface AttributeChange {
     key: string;
     newValues: Array<string>;
@@ -348,6 +353,7 @@ export interface backendInterface {
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
+    getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChannels(): Promise<Array<ChatChannelSummary>>;

@@ -190,13 +190,6 @@ export default function EditorView() {
     currentName: string;
   } | null>(null);
 
-  // Dialog: create child
-  const [createChild, setCreateChild] = useState<{
-    parentId: string;
-    type: "folder" | "file";
-    label: string;
-  } | null>(null);
-
   // File input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -270,28 +263,32 @@ export default function EditorView() {
 
       switch (option) {
         case "new-swarm":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Swarm",
+          createNode(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled",
           });
           break;
         case "new-location":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Location",
+          createNode(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled",
           });
           break;
         case "new-law-entity":
-          setCreateChild({
-            parentId: nodeId,
-            type: "folder",
-            label: "New Law Entity",
+          createNode(nodeId, "Untitled", "folder");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled",
           });
           break;
         case "new-file":
-          setCreateChild({ parentId: nodeId, type: "file", label: "New File" });
+          createNode(nodeId, "Untitled", "file");
+          setRenameTarget({
+            id: `${nodeId}@Untitled`,
+            currentName: "Untitled",
+          });
           break;
         case "rename": {
           const node = session?.nodes.get(nodeId);
@@ -660,6 +657,8 @@ export default function EditorView() {
                 onRenameNode={renameNode}
                 onDeleteNode={(id) => setDeleteTarget(id)}
                 onContextMenu={handleContextMenu}
+                renameTarget={renameTarget}
+                onRenameEnd={() => setRenameTarget(null)}
               />
             </div>
           </div>
@@ -714,35 +713,6 @@ export default function EditorView() {
             setShowCreateCuration(false);
           }}
           ocidPrefix="editor.create_curation_dialog"
-        />
-      )}
-
-      {/* Rename dialog */}
-      {renameTarget && (
-        <InlineDialog
-          label="Rename"
-          value={renameTarget.currentName}
-          onClose={() => setRenameTarget(null)}
-          onSubmit={(name) => {
-            renameNode(renameTarget.id, name);
-            setRenameTarget(null);
-          }}
-          ocidPrefix="editor.rename_dialog"
-        />
-      )}
-
-      {/* Create child node dialog */}
-      {createChild && (
-        <InlineDialog
-          label={createChild.label}
-          value=""
-          placeholder="Name"
-          onClose={() => setCreateChild(null)}
-          onSubmit={(name) => {
-            createNode(createChild.parentId, name, createChild.type);
-            setCreateChild(null);
-          }}
-          ocidPrefix="editor.create_child_dialog"
         />
       )}
 
