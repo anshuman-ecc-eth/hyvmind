@@ -160,7 +160,6 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
         <ArtworkModal
           artworkUrl={artworkUrl}
           graphName={meta.name}
-          terrainParams={meta.terrainParams ?? undefined}
           onClose={() => setShowArtworkModal(false)}
         />
       )}

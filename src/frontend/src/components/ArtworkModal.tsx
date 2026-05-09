@@ -1,21 +1,17 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 interface ArtworkModalProps {
   artworkUrl: string;
   graphName: string;
-  terrainParams?: string;
   onClose: () => void;
 }
 
 export default function ArtworkModal({
   artworkUrl,
   graphName,
-  terrainParams,
   onClose,
 }: ArtworkModalProps): ReactNode {
-  const [showParams, setShowParams] = useState(false);
   // Close on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -67,40 +63,6 @@ export default function ArtworkModal({
           className="block"
           style={{ imageRendering: "pixelated" }}
         />
-
-        {/* Parameters toggle */}
-        <button
-          type="button"
-          onClick={() => setShowParams((p) => !p)}
-          className="border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors"
-          data-ocid="artwork_modal.parameters_toggle"
-        >
-          {showParams ? "Hide Parameters" : "⚙ Parameters"}
-        </button>
-
-        {/* Parameters panel */}
-        {showParams && terrainParams && (
-          <div className="mt-1 w-full font-mono text-xs text-muted-foreground">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-              {Object.entries(
-                JSON.parse(terrainParams) as Record<string, unknown>,
-              ).map(([key, value]) => (
-                <React.Fragment key={key}>
-                  <dt className="capitalize">
-                    {key.replace(/([A-Z])/g, " $1").trim()}
-                  </dt>
-                  <dd>
-                    {key === "light"
-                      ? "Max"
-                      : key === "lightPosition"
-                        ? `${String(value)}°`
-                        : String(value)}
-                  </dd>
-                </React.Fragment>
-              ))}
-            </dl>
-          </div>
-        )}
       </div>
     </div>
   );

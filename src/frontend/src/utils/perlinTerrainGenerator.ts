@@ -461,38 +461,56 @@ export async function generateTerrainArtwork(
   const amplitude = 1.0;
   const exponent = 3.3;
   const peaks = 0.25;
-  const waterLevel = 132;
   const beachSize = 12;
   const lightPosition = 180;
   const lightHeight = 60;
   const light = 0;
 
-  const params: TerrainParams = {
-    seed,
-    persistence,
-    octaves,
-    wavelength,
-    amplitude,
-    exponent,
-    peaks,
-    waterLevel,
-    beachSize,
-    lightPosition,
-    lightHeight,
-    light,
-  };
-
   let canvas: HTMLCanvasElement;
   try {
     canvas = document.createElement("canvas");
   } catch {
-    return { dataUrl: "", params };
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light,
+      },
+    };
   }
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return { dataUrl: "", params };
+  if (!ctx) {
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light,
+      },
+    };
+  }
 
   // Background fill (transparent)
   ctx.fillStyle = "rgba(0,0,0,0)";
@@ -529,6 +547,32 @@ export async function generateTerrainArtwork(
     }
     elevationMap.push(row);
   }
+
+  // Calculate waterLevel from elevation distribution to guarantee >=20% land
+  const allElevations: number[] = [];
+  for (let y = 0; y <= gridHeight; y++) {
+    for (let x = 0; x <= gridWidth; x++) {
+      allElevations.push(elevationMap[y][x]);
+    }
+  }
+  allElevations.sort((a, b) => a - b);
+  const percentileIndex = Math.floor(allElevations.length * 0.2);
+  const waterLevel = allElevations[percentileIndex];
+
+  const params: TerrainParams = {
+    seed,
+    persistence,
+    octaves,
+    wavelength,
+    amplitude,
+    exponent,
+    peaks,
+    waterLevel,
+    beachSize,
+    lightPosition,
+    lightHeight,
+    light,
+  };
 
   const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
 

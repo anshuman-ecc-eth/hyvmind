@@ -41779,10 +41779,8 @@ function Header({ onNavigateToSettings }) {
 function ArtworkModal({
   artworkUrl,
   graphName,
-  terrainParams,
   onClose
 }) {
-  const [showParams, setShowParams] = reactExports.useState(false);
   reactExports.useEffect(() => {
     const handler = (e2) => {
       if (e2.key === "Escape") onClose();
@@ -41830,23 +41828,7 @@ function ArtworkModal({
               className: "block",
               style: { imageRendering: "pixelated" }
             }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              onClick: () => setShowParams((p2) => !p2),
-              className: "border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors",
-              "data-ocid": "artwork_modal.parameters_toggle",
-              children: showParams ? "Hide Parameters" : "⚙ Parameters"
-            }
-          ),
-          showParams && terrainParams && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 w-full font-mono text-xs text-muted-foreground", children: /* @__PURE__ */ jsxRuntimeExports.jsx("dl", { className: "grid grid-cols-2 gap-x-4 gap-y-1", children: Object.entries(
-            JSON.parse(terrainParams)
-          ).map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs(React$2.Fragment, { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "capitalize", children: key2.replace(/([A-Z])/g, " $1").trim() }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { children: key2 === "light" ? "Max" : key2 === "lightPosition" ? `${String(value)}°` : String(value) })
-          ] }, key2)) }) })
+          )
         ] })
       ]
     }
@@ -64433,7 +64415,6 @@ function GraphCardWithSave({ meta, onView, onSave }) {
           {
             artworkUrl,
             graphName: meta.name,
-            terrainParams: meta.terrainParams ?? void 0,
             onClose: () => setShowArtworkModal(false)
           }
         )
@@ -92797,35 +92778,54 @@ async function generateTerrainArtwork(curationName, size2) {
   const amplitude = 1;
   const exponent = 3.3;
   const peaks = 0.25;
-  const waterLevel = 132;
   const beachSize = 12;
   const lightPosition = 180;
   const lightHeight = 60;
   const light = 0;
-  const params = {
-    seed,
-    persistence,
-    octaves,
-    wavelength,
-    amplitude,
-    exponent,
-    peaks,
-    waterLevel,
-    beachSize,
-    lightPosition,
-    lightHeight,
-    light
-  };
   let canvas;
   try {
     canvas = document.createElement("canvas");
   } catch {
-    return { dataUrl: "", params };
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light
+      }
+    };
   }
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return { dataUrl: "", params };
+  if (!ctx) {
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light
+      }
+    };
+  }
   ctx.fillStyle = "rgba(0,0,0,0)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   ctx.translate(382, 50);
@@ -92849,6 +92849,29 @@ async function generateTerrainArtwork(curationName, size2) {
     }
     elevationMap.push(row);
   }
+  const allElevations = [];
+  for (let y2 = 0; y2 <= gridHeight; y2++) {
+    for (let x3 = 0; x3 <= gridWidth; x3++) {
+      allElevations.push(elevationMap[y2][x3]);
+    }
+  }
+  allElevations.sort((a2, b2) => a2 - b2);
+  const percentileIndex = Math.floor(allElevations.length * 0.2);
+  const waterLevel = allElevations[percentileIndex];
+  const params = {
+    seed,
+    persistence,
+    octaves,
+    wavelength,
+    amplitude,
+    exponent,
+    peaks,
+    waterLevel,
+    beachSize,
+    lightPosition,
+    lightHeight,
+    light
+  };
   const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
   for (let y2 = 0; y2 < gridHeight; y2++) {
     for (let x3 = 0; x3 < gridWidth; x3++) {
