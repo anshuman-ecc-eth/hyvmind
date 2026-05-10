@@ -29,6 +29,7 @@ import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
 import EditorView from "./pages/EditorView";
 import HyvmindSkillsPage from "./pages/HyvmindSkillsPage";
 import McpSetupPage from "./pages/McpSetupPage";
+import ObsidianTokenPage from "./pages/ObsidianTokenPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import SwarmsView from "./pages/SwarmsView";
@@ -68,6 +69,21 @@ function HyvmindSkillsRoute() {
       storageKey="hyvmind-theme"
     >
       <HyvmindSkillsPage />
+    </ThemeProvider>
+  );
+}
+
+// Obsidian Token page — public, no auth
+function ObsidianTokenRoute() {
+  return (
+    <ThemeProvider
+      attribute="class"
+      themes={ALL_THEMES}
+      defaultTheme={DEFAULT_THEME}
+      enableSystem={false}
+      storageKey="hyvmind-theme"
+    >
+      <ObsidianTokenPage />
     </ThemeProvider>
   );
 }
@@ -352,6 +368,11 @@ export default function App() {
   // /docs/api redirects to /mcp
   if (window.location.pathname === "/docs/api") {
     return <ApiDocsRoute />;
+  }
+
+  // /obsidian-token is a public standalone page — render it directly without auth or layout
+  if (window.location.pathname === "/obsidian-token") {
+    return <ObsidianTokenRoute />;
   }
 
   return (
