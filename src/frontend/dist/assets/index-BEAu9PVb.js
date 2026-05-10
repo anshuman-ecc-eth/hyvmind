@@ -41772,62 +41772,84 @@ function Header({ onNavigateToSettings }) {
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(Menu$1, { className: "h-4 w-4" })
           }
         ) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
           DropdownMenuContent,
           {
             align: "end",
             className: "bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none",
             "data-ocid": "header.dropdown_menu",
-            children: !isAuthenticated ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 DropdownMenuItem,
                 {
-                  onClick: handleLogin,
-                  disabled: loginStatus === "logging-in",
+                  onClick: () => {
+                    if (typeof Supademo !== "undefined") {
+                      Supademo.open("cmoxxf92q04az4qulear09806");
+                    } else {
+                      const script = document.createElement("script");
+                      script.src = "https://script.supademo.com/supademo.js";
+                      script.onload = () => Supademo.open(
+                        "cmoxxf92q04az4qulear09806"
+                      );
+                      script.onerror = () => console.warn("Failed to load tutorial");
+                      document.head.appendChild(script);
+                    }
+                  },
                   className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  "data-ocid": "header.login.button",
-                  children: loginStatus === "logging-in" ? "logging in..." : "login"
+                  children: "tutorial"
                 }
               ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                DropdownMenuItem,
-                {
-                  onClick: () => window.open("https://telegram.me/hyvmind_tg", "_blank"),
-                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "telegram"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                DropdownMenuItem,
-                {
-                  onClick: () => window.open(
-                    "https://nodes.desci.com/dpid/969",
-                    "_blank"
-                  ),
-                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "whitepaper"
-                }
-              )
-            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                DropdownMenuItem,
-                {
-                  onClick: onNavigateToSettings,
-                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  "data-ocid": "header.settings.nav",
-                  children: "settings"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                DropdownMenuItem,
-                {
-                  onClick: handleLogout,
-                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  "data-ocid": "header.logout.button",
-                  children: "logout"
-                }
-              )
-            ] })
+              !isAuthenticated ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  DropdownMenuItem,
+                  {
+                    onClick: handleLogin,
+                    disabled: loginStatus === "logging-in",
+                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                    "data-ocid": "header.login.button",
+                    children: loginStatus === "logging-in" ? "logging in..." : "login"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  DropdownMenuItem,
+                  {
+                    onClick: () => window.open("https://telegram.me/hyvmind_tg", "_blank"),
+                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                    children: "telegram"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  DropdownMenuItem,
+                  {
+                    onClick: () => window.open(
+                      "https://nodes.desci.com/dpid/969",
+                      "_blank"
+                    ),
+                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                    children: "whitepaper"
+                  }
+                )
+              ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  DropdownMenuItem,
+                  {
+                    onClick: onNavigateToSettings,
+                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                    "data-ocid": "header.settings.nav",
+                    children: "settings"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  DropdownMenuItem,
+                  {
+                    onClick: handleLogout,
+                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                    "data-ocid": "header.logout.button",
+                    children: "logout"
+                  }
+                )
+              ] })
+            ]
           }
         )
       ] })

@@ -11,6 +11,7 @@ import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { clearTreeCache } from "../hooks/useQueries";
 import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
+declare const Supademo: { open: (id: string) => void };
 
 interface HeaderProps {
   onNavigateToSettings: () => void;
@@ -101,6 +102,26 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                 className="bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none"
                 data-ocid="header.dropdown_menu"
               >
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (typeof Supademo !== "undefined") {
+                      Supademo.open("cmoxxf92q04az4qulear09806");
+                    } else {
+                      const script = document.createElement("script");
+                      script.src = "https://script.supademo.com/supademo.js";
+                      script.onload = () =>
+                        (Supademo as { open: (id: string) => void }).open(
+                          "cmoxxf92q04az4qulear09806",
+                        );
+                      script.onerror = () =>
+                        console.warn("Failed to load tutorial");
+                      document.head.appendChild(script);
+                    }
+                  }}
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  tutorial
+                </DropdownMenuItem>
                 {!isAuthenticated ? (
                   <>
                     <DropdownMenuItem
