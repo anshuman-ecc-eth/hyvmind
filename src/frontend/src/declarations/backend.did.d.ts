@@ -279,6 +279,7 @@ export interface WeightedAttribute {
 export interface WeightedValue { 'weight' : bigint, 'value' : string }
 export interface _SERVICE {
   '_initializeAccessControl' : ActorMethod<[], undefined>,
+  'approvePluginBinding' : ActorMethod<[Principal], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'commitPublishSourceGraph' : ActorMethod<
@@ -326,8 +327,12 @@ export interface _SERVICE {
   'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
+  'getMyPrincipal' : ActorMethod<[], Principal>,
   'getMyTrustBalance' : ActorMethod<[], TrustScore>,
   'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransaction>>,
+  'getNotesData' : ActorMethod<[], [] | [string]>,
+  'getPendingPluginBindings' : ActorMethod<[], Array<Principal>>,
+  'getPluginBindingStatus' : ActorMethod<[], boolean>,
   'getPublishedPaths' : ActorMethod<
     [],
     Array<
@@ -384,6 +389,7 @@ export interface _SERVICE {
       { 'err' : string }
   >,
   'requestApproval' : ActorMethod<[], undefined>,
+  'requestPluginBinding' : ActorMethod<[Principal, Principal], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
@@ -404,6 +410,7 @@ export interface _SERVICE {
     { 'ok' : null } |
       { 'err' : string }
   >,
+  'storeNotesData' : ActorMethod<[string], undefined>,
   'track_api_request' : ActorMethod<[string], undefined>,
   'transform' : ActorMethod<
     [{ 'context' : Uint8Array, 'response' : IcHttpRequestResult }],

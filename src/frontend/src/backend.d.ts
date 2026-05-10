@@ -329,6 +329,7 @@ export enum Variant_lawToken_interpretationToken {
     interpretationToken = "interpretationToken"
 }
 export interface backendInterface {
+    approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
@@ -368,8 +369,12 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyPrincipal(): Promise<Principal>;
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
+    getNotesData(): Promise<string | null>;
+    getPendingPluginBindings(): Promise<Array<Principal>>;
+    getPluginBindingStatus(): Promise<boolean>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -414,6 +419,7 @@ export interface backendInterface {
         err: string;
     }>;
     requestApproval(): Promise<void>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -440,6 +446,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    storeNotesData(json: string): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
     transform(arg0: {
         context: Uint8Array;

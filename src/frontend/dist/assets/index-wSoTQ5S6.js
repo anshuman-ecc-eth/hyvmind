@@ -1284,6 +1284,14 @@ let Principal$1 = class Principal {
     return cmp == "gt" || cmp == "eq";
   }
 };
+const index$a = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  JSON_KEY_PRINCIPAL,
+  Principal: Principal$1,
+  base32Decode,
+  base32Encode,
+  getCrc32
+}, Symbol.toStringTag, { value: "Module" }));
 var ErrorKindEnum;
 (function(ErrorKindEnum2) {
   ErrorKindEnum2["Trust"] = "Trust";
@@ -28460,6 +28468,7 @@ const IcHttpRequestResult = Record({
 });
 Service({
   "_initializeAccessControl": Func([], [], []),
+  "approvePluginBinding": Func([Principal2], [], []),
   "archiveNode": Func([NodeId], [], []),
   "assignCallerUserRole": Func([Principal2, UserRole], [], []),
   "commitPublishSourceGraph": Func(
@@ -28529,12 +28538,20 @@ Service({
   "getMintSettings": Func([], [MintSettings], ["query"]),
   "getMyApiKey": Func([], [Opt(Text)], ["query"]),
   "getMyBuzzBalance": Func([], [BuzzScore], ["query"]),
+  "getMyPrincipal": Func([], [Principal2], ["query"]),
   "getMyTrustBalance": Func([], [TrustScore], []),
   "getMyTrustTransactions": Func(
     [],
     [Vec(TrustTransaction)],
     ["query"]
   ),
+  "getNotesData": Func([], [Opt(Text)], ["query"]),
+  "getPendingPluginBindings": Func(
+    [],
+    [Vec(Principal2)],
+    ["query"]
+  ),
+  "getPluginBindingStatus": Func([], [Bool], ["query"]),
   "getPublishedPaths": Func(
     [],
     [
@@ -28608,6 +28625,7 @@ Service({
     []
   ),
   "requestApproval": Func([], [], []),
+  "requestPluginBinding": Func([Principal2, Principal2], [], []),
   "resetAllData": Func([], [], []),
   "revokeApiKey": Func([], [], []),
   "saveCallerUserProfile": Func([UserProfile], [], []),
@@ -28628,6 +28646,7 @@ Service({
     [Variant({ "ok": Null, "err": Text })],
     []
   ),
+  "storeNotesData": Func([Text], [], []),
   "track_api_request": Func([Text], [], []),
   "transform": Func(
     [
@@ -28939,6 +28958,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
   });
   return IDL2.Service({
     "_initializeAccessControl": IDL2.Func([], [], []),
+    "approvePluginBinding": IDL2.Func([IDL2.Principal], [], []),
     "archiveNode": IDL2.Func([NodeId2], [], []),
     "assignCallerUserRole": IDL2.Func([IDL2.Principal, UserRole2], [], []),
     "commitPublishSourceGraph": IDL2.Func(
@@ -29012,12 +29032,20 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "getMintSettings": IDL2.Func([], [MintSettings2], ["query"]),
     "getMyApiKey": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
     "getMyBuzzBalance": IDL2.Func([], [BuzzScore2], ["query"]),
+    "getMyPrincipal": IDL2.Func([], [IDL2.Principal], ["query"]),
     "getMyTrustBalance": IDL2.Func([], [TrustScore2], []),
     "getMyTrustTransactions": IDL2.Func(
       [],
       [IDL2.Vec(TrustTransaction2)],
       ["query"]
     ),
+    "getNotesData": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
+    "getPendingPluginBindings": IDL2.Func(
+      [],
+      [IDL2.Vec(IDL2.Principal)],
+      ["query"]
+    ),
+    "getPluginBindingStatus": IDL2.Func([], [IDL2.Bool], ["query"]),
     "getPublishedPaths": IDL2.Func(
       [],
       [
@@ -29091,6 +29119,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       []
     ),
     "requestApproval": IDL2.Func([], [], []),
+    "requestPluginBinding": IDL2.Func([IDL2.Principal, IDL2.Principal], [], []),
     "resetAllData": IDL2.Func([], [], []),
     "revokeApiKey": IDL2.Func([], [], []),
     "saveCallerUserProfile": IDL2.Func([UserProfile2], [], []),
@@ -29111,6 +29140,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       [IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text })],
       []
     ),
+    "storeNotesData": IDL2.Func([IDL2.Text], [], []),
     "track_api_request": IDL2.Func([IDL2.Text], [], []),
     "transform": IDL2.Func(
       [
@@ -29160,6 +29190,20 @@ class Backend {
       }
     } else {
       const result = await this.actor._initializeAccessControl();
+      return result;
+    }
+  }
+  async approvePluginBinding(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.approvePluginBinding(arg0);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.approvePluginBinding(arg0);
       return result;
     }
   }
@@ -29499,6 +29543,20 @@ class Backend {
       return result;
     }
   }
+  async getMyPrincipal() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getMyPrincipal();
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getMyPrincipal();
+      return result;
+    }
+  }
   async getMyTrustBalance() {
     if (this.processError) {
       try {
@@ -29524,6 +29582,48 @@ class Backend {
       }
     } else {
       const result = await this.actor.getMyTrustTransactions();
+      return result;
+    }
+  }
+  async getNotesData() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getNotesData();
+        return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getNotesData();
+      return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getPendingPluginBindings() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getPendingPluginBindings();
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getPendingPluginBindings();
+      return result;
+    }
+  }
+  async getPluginBindingStatus() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getPluginBindingStatus();
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getPluginBindingStatus();
       return result;
     }
   }
@@ -29877,6 +29977,20 @@ class Backend {
       return result;
     }
   }
+  async requestPluginBinding(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.requestPluginBinding(arg0, arg1);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.requestPluginBinding(arg0, arg1);
+      return result;
+    }
+  }
   async resetAllData() {
     if (this.processError) {
       try {
@@ -29987,6 +30101,20 @@ class Backend {
     } else {
       const result = await this.actor.setTelegramConfig(arg0, arg1);
       return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async storeNotesData(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.storeNotesData(arg0);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.storeNotesData(arg0);
+      return result;
     }
   }
   async track_api_request(arg0) {
@@ -67317,12 +67445,42 @@ function SettingsView() {
   const [txLogOpen, setTxLogOpen] = reactExports.useState(false);
   const [profileName, setProfileName] = reactExports.useState("");
   const [socialUrl, setSocialUrl] = reactExports.useState("");
+  const [myPrincipal, setMyPrincipal] = reactExports.useState(null);
+  const [pendingBindings, setPendingBindings] = reactExports.useState([]);
+  const [pluginBound, setPluginBound] = reactExports.useState(false);
+  const [principalCopied, setPrincipalCopied] = reactExports.useState(false);
   const [apiKey, setApiKey] = reactExports.useState(null);
   const [apiKeyLoading, setApiKeyLoading] = reactExports.useState(false);
   const [copied, setCopied] = reactExports.useState(false);
   const [revokeConfirm, setRevokeConfirm] = reactExports.useState(false);
   const [revokeLoading, setRevokeLoading] = reactExports.useState(false);
   const [generateLoading, setGenerateLoading] = reactExports.useState(false);
+  reactExports.useEffect(() => {
+    if (!actor) return;
+    (async () => {
+      try {
+        const principal = await actor.getMyPrincipal();
+        setMyPrincipal(
+          typeof principal.toText === "function" ? principal.toText() : String(principal)
+        );
+      } catch {
+      }
+      try {
+        const pending = await actor.getPendingPluginBindings();
+        setPendingBindings(
+          pending.map(
+            (p2) => typeof p2.toText === "function" ? p2.toText() : String(p2)
+          )
+        );
+      } catch {
+      }
+      try {
+        const bound = await actor.getPluginBindingStatus();
+        setPluginBound(Boolean(bound));
+      } catch {
+      }
+    })();
+  }, [actor]);
   reactExports.useEffect(() => {
     if (!actor) return;
     setApiKeyLoading(true);
@@ -67334,6 +67492,22 @@ function SettingsView() {
       setSocialUrl(userProfile.socialUrl || "");
     }
   }, [userProfile]);
+  const handleCopyPrincipal = () => {
+    if (!myPrincipal) return;
+    navigator.clipboard.writeText(myPrincipal);
+    setPrincipalCopied(true);
+    setTimeout(() => setPrincipalCopied(false), 2e3);
+  };
+  const handleApproveBinding = async (key2) => {
+    if (!actor) return;
+    const { Principal: Principal3 } = await __vitePreload(async () => {
+      const { Principal: Principal4 } = await Promise.resolve().then(() => index$a);
+      return { Principal: Principal4 };
+    }, true ? void 0 : void 0);
+    await actor.approvePluginBinding(Principal3.fromText(key2));
+    setPendingBindings((prev) => prev.filter((k2) => k2 !== key2));
+    ue$1.success("Plugin binding approved");
+  };
   const handleCopy = async () => {
     if (!apiKey) return;
     await navigator.clipboard.writeText(apiKey);
@@ -67509,6 +67683,95 @@ function SettingsView() {
         ] })
       ] })
     ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "section",
+      {
+        className: "space-y-5",
+        "data-ocid": "settings.plugin_binding.section",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Plugin Binding" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Link the Obsidian plugin to your account so it can import folder data into your notes." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Your Principal ID" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "font-mono text-xs bg-muted px-2 py-1 rounded break-all", children: myPrincipal ?? "Loading..." }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: handleCopyPrincipal,
+                  className: "shrink-0 text-xs text-muted-foreground hover:text-foreground",
+                  "data-ocid": "settings.plugin_binding.copy_principal_button",
+                  children: principalCopied ? "✓ Copied" : "Copy"
+                }
+              )
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Pending Plugin Requests" }),
+            pendingBindings.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "p",
+              {
+                className: "text-sm text-muted-foreground",
+                "data-ocid": "settings.plugin_binding.empty_state",
+                children: "No pending binding requests."
+              }
+            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                className: "space-y-2",
+                "data-ocid": "settings.plugin_binding.pending_list",
+                children: pendingBindings.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "div",
+                  {
+                    className: "flex items-center gap-2",
+                    "data-ocid": `settings.plugin_binding.pending.item.${idx + 1}`,
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs", children: [
+                        key2.slice(0, 8),
+                        "..."
+                      ] }),
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => handleApproveBinding(key2),
+                          className: "text-xs border border-border px-2 py-1 rounded hover:bg-muted",
+                          "data-ocid": `settings.plugin_binding.approve_button.${idx + 1}`,
+                          children: "Approve"
+                        }
+                      )
+                    ]
+                  },
+                  key2
+                ))
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Binding Status" }),
+            pluginBound ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "p",
+              {
+                className: "text-sm text-green-600 dark:text-green-400",
+                "data-ocid": "settings.plugin_binding.status_bound",
+                children: "✓ Plugin bound"
+              }
+            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "p",
+              {
+                className: "text-sm text-muted-foreground",
+                "data-ocid": "settings.plugin_binding.status_unbound",
+                children: "No plugin bound"
+              }
+            )
+          ] })
+        ]
+      }
+    ),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-4", "data-ocid": "settings.api_key.section", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
@@ -108798,6 +109061,42 @@ function InlineDialog({
     )
   ] });
 }
+function convertObsidianData(data) {
+  const nodes = /* @__PURE__ */ new Map();
+  const rootIds = [];
+  function processFolder(folder, parentId, pathPrefix) {
+    const id2 = parentId ? `${pathPrefix}@${folder.name}` : folder.name;
+    const nodeType = folder.content != null ? "interpEntity" : "curation";
+    const children2 = [];
+    if (folder.folders) {
+      for (const child of folder.folders) {
+        const childId = `${id2}@${child.name}`;
+        children2.push(childId);
+        processFolder(child, id2, id2);
+      }
+    }
+    const node2 = {
+      id: id2,
+      name: folder.name,
+      type: nodeType === "interpEntity" ? "file" : "folder",
+      nodeType,
+      content: folder.content ?? "",
+      parentId,
+      children: children2,
+      frontmatter: {},
+      inheritedAttributes: {},
+      inheritedSources: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    nodes.set(id2, node2);
+    if (parentId === null) rootIds.push(id2);
+  }
+  for (const folder of data.folders) {
+    processFolder(folder, null, folder.name);
+  }
+  return { nodes, rootIds };
+}
 function EditorView() {
   var _a3;
   const {
@@ -108816,6 +109115,8 @@ function EditorView() {
     canUndo,
     canRedo
   } = useMarkdownEditor();
+  const rawActor = useActor(createActor);
+  const backendActor = rawActor.actor;
   const [isSaving, setIsSaving] = reactExports.useState(false);
   const savingTimerRef = reactExports.useRef(null);
   const [contextMenu, setContextMenu] = reactExports.useState(null);
@@ -108852,6 +109153,25 @@ function EditorView() {
       if (savingTimerRef.current) clearTimeout(savingTimerRef.current);
     };
   }, []);
+  reactExports.useEffect(() => {
+    if (!backendActor) return;
+    void (async () => {
+      try {
+        const actorWithPluginMethods = backendActor;
+        const result = await actorWithPluginMethods.getNotesData();
+        if (!result || result.length === 0 || !result[0]) return;
+        const json = result[0];
+        if (!json) return;
+        const data = JSON.parse(json);
+        if (!data.folders || data.folders.length === 0) return;
+        const { nodes: nodeMap, rootIds } = convertObsidianData(data);
+        importRawNodes(nodeMap, rootIds);
+        await actorWithPluginMethods.storeNotesData("");
+      } catch (err) {
+        console.warn("Obsidian import failed:", err);
+      }
+    })();
+  }, [backendActor, importRawNodes]);
   reactExports.useEffect(() => {
     const handler = (e2) => {
       const customEvent = e2;

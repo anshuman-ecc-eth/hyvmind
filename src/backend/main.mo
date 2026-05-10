@@ -514,6 +514,17 @@ actor {
   // Per-key rate limiting counters
   var apiRateLimitCounts = Map.empty<Text, Nat>();
   var apiRateLimitWindowStarts = Map.empty<Text, Int>();
+  // ── Plugin Binding State ─────────────────────────────────────────────────────
+
+  // Pending plugin bindings: userPrincipal → [pluginPubKey] awaiting approval
+  var pendingPluginBindings = Map.empty<Principal, List.List<Principal>>();
+
+  // Active plugin bindings: pluginPubKey → userPrincipal (bound)
+  var pluginBindings = Map.empty<Principal, Principal>();
+
+  // Notes import data: userPrincipal → json blob from Obsidian plugin
+  var notesImports = Map.empty<Principal, Text>();
+
 
   type SwarmType = {
     #regular;
@@ -843,6 +854,78 @@ actor {
         existingAdmins := existingAdmins.concat([caller]);
       };
     };
+  };
+
+  // ── Plugin Binding Helpers & Methods ────────────────────────────────────────
+
+  func getEffectiveUser(caller : Principal) : Principal {
+    switch (pluginBindings.get(caller)) {
+      case (?user) { user };
+      case (null) { caller };
+    };
+  };
+
+  public query ({ caller }) func getMyPrincipal() : async Principal {
+    caller;
+  };
+
+  public shared ({ caller }) func requestPluginBinding(pluginPubKey : Principal, forPrincipal : Principal) : async () {
+    let existing = switch (pendingPluginBindings.get(forPrincipal)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    existing.add(pluginPubKey);
+    pendingPluginBindings.add(forPrincipal, existing);
+  };
+
+  public query ({ caller }) func getPendingPluginBindings() : async [Principal] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can view pending bindings");
+    };
+    switch (pendingPluginBindings.get(caller)) {
+      case (?list) { list.toArray() };
+      case (null) { [] };
+    };
+  };
+
+  public shared ({ caller }) func approvePluginBinding(pluginPubKey : Principal) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can approve bindings");
+    };
+    let pending = switch (pendingPluginBindings.get(caller)) {
+      case (?list) { list };
+      case (null) { Runtime.trap("No pending bindings found") };
+    };
+    let found = pending.find(func(p : Principal) : Bool { p == pluginPubKey });
+    switch (found) {
+      case (null) { Runtime.trap("Plugin key not found in pending bindings") };
+      case (?_) {};
+    };
+    // Remove pluginPubKey from the pending list
+    let filtered = List.empty<Principal>();
+    for (p in pending.values()) {
+      if (p != pluginPubKey) { filtered.add(p) };
+    };
+    pendingPluginBindings.add(caller, filtered);
+    // Add to active bindings
+    pluginBindings.add(pluginPubKey, caller);
+  };
+
+  public shared ({ caller }) func storeNotesData(json : Text) : async () {
+    let effectiveUser = getEffectiveUser(caller);
+    notesImports.add(effectiveUser, json);
+  };
+
+  public query ({ caller }) func getNotesData() : async ?Text {
+    notesImports.get(caller);
+  };
+
+  public query ({ caller }) func getPluginBindingStatus() : async Bool {
+    var found = false;
+    for ((_, user) in pluginBindings.entries()) {
+      if (user == caller) { found := true };
+    };
+    found;
   };
 
   // APPROVAL SYSTEM
@@ -5366,6 +5449,9 @@ actor {
     principalByApiKey := Map.empty<Text, Principal>();
     apiRateLimitCounts := Map.empty<Text, Nat>();
     apiRateLimitWindowStarts := Map.empty<Text, Int>();
+    pendingPluginBindings := Map.empty<Principal, List.List<Principal>>();
+    pluginBindings := Map.empty<Principal, Principal>();
+    notesImports := Map.empty<Principal, Text>();
     trustScores := Map.empty<Principal, TrustScore>();
     buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
     graphSavers := Map.empty<Text, List.List<Principal>>();

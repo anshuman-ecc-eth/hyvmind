@@ -356,6 +356,7 @@ type ApprovalStatus =
  };
 service : {
   _initializeAccessControl: () -> ();
+  approvePluginBinding: (pluginPubKey: principal) -> ();
   archiveNode: (nodeId: NodeId) -> ();
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
   commitPublishSourceGraph: (input: PublishSourceGraphInput,
@@ -399,8 +400,12 @@ service : {
   getMintSettings: () -> (MintSettings) query;
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
+  getMyPrincipal: () -> (principal) query;
   getMyTrustBalance: () -> (TrustScore);
   getMyTrustTransactions: () -> (vec TrustTransaction) query;
+  getNotesData: () -> (opt text) query;
+  getPendingPluginBindings: () -> (vec principal) query;
+  getPluginBindingStatus: () -> (bool) query;
   getPublishedPaths: () ->
    (vec record {
           curation: text;
@@ -449,6 +454,8 @@ service : {
                                          ok: text;
                                        });
   requestApproval: () -> ();
+  requestPluginBinding: (pluginPubKey: principal, forPrincipal: principal) ->
+   ();
   resetAllData: () -> ();
   revokeApiKey: () -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
@@ -468,6 +475,7 @@ service : {
       err: text;
       ok;
     });
+  storeNotesData: (json: text) -> ();
   track_api_request: (apiKey: text) -> ();
   transform: (record {
                 context: blob;

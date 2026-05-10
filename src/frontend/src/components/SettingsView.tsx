@@ -87,6 +87,12 @@ export function SettingsView() {
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
 
+  // Plugin Binding state
+  const [myPrincipal, setMyPrincipal] = useState<string | null>(null);
+  const [pendingBindings, setPendingBindings] = useState<string[]>([]);
+  const [pluginBound, setPluginBound] = useState<boolean>(false);
+  const [principalCopied, setPrincipalCopied] = useState<boolean>(false);
+
   // API Key state
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [apiKeyLoading, setApiKeyLoading] = useState(false);
@@ -94,6 +100,41 @@ export function SettingsView() {
   const [revokeConfirm, setRevokeConfirm] = useState(false);
   const [revokeLoading, setRevokeLoading] = useState(false);
   const [generateLoading, setGenerateLoading] = useState(false);
+
+  // Load plugin binding data on mount
+  useEffect(() => {
+    if (!actor) return;
+    (async () => {
+      try {
+        const principal = await actor.getMyPrincipal();
+        setMyPrincipal(
+          typeof (principal as { toText?: () => string }).toText === "function"
+            ? (principal as { toText: () => string }).toText()
+            : String(principal),
+        );
+      } catch {
+        // ignore
+      }
+      try {
+        const pending = await actor.getPendingPluginBindings();
+        setPendingBindings(
+          (pending as unknown[]).map((p) =>
+            typeof (p as { toText?: () => string }).toText === "function"
+              ? (p as { toText: () => string }).toText()
+              : String(p),
+          ),
+        );
+      } catch {
+        // ignore
+      }
+      try {
+        const bound = await actor.getPluginBindingStatus();
+        setPluginBound(Boolean(bound));
+      } catch {
+        // ignore
+      }
+    })();
+  }, [actor]);
 
   // Load API key on mount
   useEffect(() => {
@@ -113,6 +154,21 @@ export function SettingsView() {
       setSocialUrl(userProfile.socialUrl || "");
     }
   }, [userProfile]);
+
+  const handleCopyPrincipal = () => {
+    if (!myPrincipal) return;
+    navigator.clipboard.writeText(myPrincipal);
+    setPrincipalCopied(true);
+    setTimeout(() => setPrincipalCopied(false), 2000);
+  };
+
+  const handleApproveBinding = async (key: string) => {
+    if (!actor) return;
+    const { Principal } = await import("@dfinity/principal");
+    await actor.approvePluginBinding(Principal.fromText(key));
+    setPendingBindings((prev) => prev.filter((k) => k !== key));
+    toast.success("Plugin binding approved");
+  };
 
   const handleCopy = async () => {
     if (!apiKey) return;
@@ -329,6 +385,98 @@ export function SettingsView() {
                 )}
               </Button>
             </div>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Plugin Binding Section */}
+        <section
+          className="space-y-5"
+          data-ocid="settings.plugin_binding.section"
+        >
+          <div>
+            <h2 className="text-lg font-medium">Plugin Binding</h2>
+            <p className="text-sm text-muted-foreground">
+              Link the Obsidian plugin to your account so it can import folder
+              data into your notes.
+            </p>
+          </div>
+
+          {/* Principal ID subsection */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Your Principal ID</p>
+            <div className="flex items-center gap-2">
+              <code className="font-mono text-xs bg-muted px-2 py-1 rounded break-all">
+                {myPrincipal ?? "Loading..."}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopyPrincipal}
+                className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                data-ocid="settings.plugin_binding.copy_principal_button"
+              >
+                {principalCopied ? "✓ Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+
+          {/* Pending bindings subsection */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Pending Plugin Requests</p>
+            {pendingBindings.length === 0 ? (
+              <p
+                className="text-sm text-muted-foreground"
+                data-ocid="settings.plugin_binding.empty_state"
+              >
+                No pending binding requests.
+              </p>
+            ) : (
+              <div
+                className="space-y-2"
+                data-ocid="settings.plugin_binding.pending_list"
+              >
+                {pendingBindings.map((key, idx) => (
+                  <div
+                    key={key}
+                    className="flex items-center gap-2"
+                    data-ocid={`settings.plugin_binding.pending.item.${idx + 1}`}
+                  >
+                    <code className="font-mono text-xs">
+                      {key.slice(0, 8)}...
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => handleApproveBinding(key)}
+                      className="text-xs border border-border px-2 py-1 rounded hover:bg-muted"
+                      data-ocid={`settings.plugin_binding.approve_button.${idx + 1}`}
+                    >
+                      Approve
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Binding status subsection */}
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Binding Status</p>
+            {pluginBound ? (
+              <p
+                className="text-sm text-green-600 dark:text-green-400"
+                data-ocid="settings.plugin_binding.status_bound"
+              >
+                ✓ Plugin bound
+              </p>
+            ) : (
+              <p
+                className="text-sm text-muted-foreground"
+                data-ocid="settings.plugin_binding.status_unbound"
+              >
+                No plugin bound
+              </p>
+            )}
           </div>
         </section>
 

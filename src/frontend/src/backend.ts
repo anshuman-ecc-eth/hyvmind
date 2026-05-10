@@ -412,6 +412,7 @@ export enum Variant_lawToken_interpretationToken {
 }
 export interface backendInterface {
     _initializeAccessControl(): Promise<void>;
+    approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
@@ -451,8 +452,12 @@ export interface backendInterface {
     getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyPrincipal(): Promise<Principal>;
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
+    getNotesData(): Promise<string | null>;
+    getPendingPluginBindings(): Promise<Array<Principal>>;
+    getPluginBindingStatus(): Promise<boolean>;
     getPublishedPaths(): Promise<Array<{
         graphId: string;
         swarm: string;
@@ -497,6 +502,7 @@ export interface backendInterface {
         err: string;
     }>;
     requestApproval(): Promise<void>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -523,6 +529,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    storeNotesData(json: string): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
     transform(arg0: {
         context: Uint8Array;
@@ -546,6 +553,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor._initializeAccessControl();
+            return result;
+        }
+    }
+    async approvePluginBinding(arg0: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.approvePluginBinding(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.approvePluginBinding(arg0);
             return result;
         }
     }
@@ -900,6 +921,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getMyPrincipal(): Promise<Principal> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyPrincipal();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyPrincipal();
+            return result;
+        }
+    }
     async getMyTrustBalance(): Promise<TrustScore> {
         if (this.processError) {
             try {
@@ -925,6 +960,48 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getMyTrustTransactions();
+            return result;
+        }
+    }
+    async getNotesData(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getNotesData();
+                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getNotesData();
+            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPendingPluginBindings(): Promise<Array<Principal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingPluginBindings();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingPluginBindings();
+            return result;
+        }
+    }
+    async getPluginBindingStatus(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPluginBindingStatus();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPluginBindingStatus();
             return result;
         }
     }
@@ -1297,6 +1374,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async requestPluginBinding(arg0: Principal, arg1: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.requestPluginBinding(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.requestPluginBinding(arg0, arg1);
+            return result;
+        }
+    }
     async resetAllData(): Promise<void> {
         if (this.processError) {
             try {
@@ -1425,6 +1516,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.setTelegramConfig(arg0, arg1);
             return from_candid_variant_n80(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async storeNotesData(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.storeNotesData(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.storeNotesData(arg0);
+            return result;
         }
     }
     async track_api_request(arg0: string): Promise<void> {

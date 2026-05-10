@@ -311,6 +311,18 @@ actor {
       var root : Node__46230540<Principal, MintSettings__157171564>;
       var size : Nat__490723111
     };
+  stable var notesImports :
+    {var root : Node__46230540<Principal, Text>; var size : Nat__490723111};
+  stable var pendingPluginBindings :
+    {
+      var root : Node__46230540<Principal, List__415060402<Principal>>;
+      var size : Nat__490723111
+    };
+  stable var pluginBindings :
+    {
+      var root : Node__46230540<Principal, Principal>;
+      var size : Nat__490723111
+    };
   stable var principalByApiKey :
     {var root : Node__46230540<Text, Principal>; var size : Nat__490723111};
   stable var publishedGraphBuzzMetrics :

@@ -306,6 +306,7 @@ export const IcHttpRequestResult = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
+  'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
   'archiveNode' : IDL.Func([NodeId], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'commitPublishSourceGraph' : IDL.Func(
@@ -375,12 +376,20 @@ export const idlService = IDL.Service({
   'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+  'getMyPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
   'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
   'getMyTrustTransactions' : IDL.Func(
       [],
       [IDL.Vec(TrustTransaction)],
       ['query'],
     ),
+  'getNotesData' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
+  'getPendingPluginBindings' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Principal)],
+      ['query'],
+    ),
+  'getPluginBindingStatus' : IDL.Func([], [IDL.Bool], ['query']),
   'getPublishedPaths' : IDL.Func(
       [],
       [
@@ -454,6 +463,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'requestApproval' : IDL.Func([], [], []),
+  'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'revokeApiKey' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -474,6 +484,7 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
       [],
     ),
+  'storeNotesData' : IDL.Func([IDL.Text], [], []),
   'track_api_request' : IDL.Func([IDL.Text], [], []),
   'transform' : IDL.Func(
       [
@@ -789,6 +800,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
+    'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
     'archiveNode' : IDL.Func([NodeId], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'commitPublishSourceGraph' : IDL.Func(
@@ -862,12 +874,20 @@ export const idlFactory = ({ IDL }) => {
     'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
+    'getMyPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
     'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
     'getMyTrustTransactions' : IDL.Func(
         [],
         [IDL.Vec(TrustTransaction)],
         ['query'],
       ),
+    'getNotesData' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
+    'getPendingPluginBindings' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Principal)],
+        ['query'],
+      ),
+    'getPluginBindingStatus' : IDL.Func([], [IDL.Bool], ['query']),
     'getPublishedPaths' : IDL.Func(
         [],
         [
@@ -941,6 +961,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'requestApproval' : IDL.Func([], [], []),
+    'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'revokeApiKey' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -961,6 +982,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
         [],
       ),
+    'storeNotesData' : IDL.Func([IDL.Text], [], []),
     'track_api_request' : IDL.Func([IDL.Text], [], []),
     'transform' : IDL.Func(
         [

@@ -6,8 +6,11 @@ import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
+import { useActor } from "@caffeineai/core-infrastructure";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { createActor } from "../backend";
+import type { backendInterface } from "../backend";
 import { parseFrontmatter, stripFrontmatter } from "../utils/sourceGraphParser";
 
 // ---------------------------------------------------------------------------
@@ -149,6 +152,63 @@ function InlineDialog({
 }
 
 // ---------------------------------------------------------------------------
+// Obsidian import conversion
+// ---------------------------------------------------------------------------
+
+interface ObsidianFolder {
+  name: string;
+  content?: string;
+  folders?: ObsidianFolder[];
+}
+
+function convertObsidianData(data: { folders: ObsidianFolder[] }): {
+  nodes: Map<string, EditorNode>;
+  rootIds: string[];
+} {
+  const nodes = new Map<string, EditorNode>();
+  const rootIds: string[] = [];
+
+  function processFolder(
+    folder: ObsidianFolder,
+    parentId: string | null,
+    pathPrefix: string,
+  ): void {
+    const id = parentId ? `${pathPrefix}@${folder.name}` : folder.name;
+    const nodeType: EditorNode["nodeType"] =
+      folder.content != null ? "interpEntity" : "curation";
+    const children: string[] = [];
+    if (folder.folders) {
+      for (const child of folder.folders) {
+        const childId = `${id}@${child.name}`;
+        children.push(childId);
+        processFolder(child, id, id);
+      }
+    }
+    const node: EditorNode = {
+      id,
+      name: folder.name,
+      type: nodeType === "interpEntity" ? "file" : "folder",
+      nodeType,
+      content: folder.content ?? "",
+      parentId,
+      children,
+      frontmatter: {},
+      inheritedAttributes: {},
+      inheritedSources: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    nodes.set(id, node);
+    if (parentId === null) rootIds.push(id);
+  }
+
+  for (const folder of data.folders) {
+    processFolder(folder, null, folder.name);
+  }
+  return { nodes, rootIds };
+}
+
+// ---------------------------------------------------------------------------
 // EditorView
 // ---------------------------------------------------------------------------
 
@@ -169,6 +229,9 @@ export default function EditorView() {
     canUndo,
     canRedo,
   } = useMarkdownEditor();
+
+  const rawActor = useActor(createActor as Parameters<typeof useActor>[0]);
+  const backendActor = rawActor.actor as backendInterface | null;
 
   // Saving indicator
   const [isSaving, setIsSaving] = useState(false);
@@ -229,6 +292,30 @@ export default function EditorView() {
       if (savingTimerRef.current) clearTimeout(savingTimerRef.current);
     };
   }, []);
+
+  // Auto-import Obsidian folder data from backend on mount
+  useEffect(() => {
+    if (!backendActor) return;
+    void (async () => {
+      try {
+        const actorWithPluginMethods = backendActor as backendInterface & {
+          getNotesData: () => Promise<[string] | []>;
+          storeNotesData: (json: string) => Promise<void>;
+        };
+        const result = await actorWithPluginMethods.getNotesData();
+        if (!result || result.length === 0 || !result[0]) return;
+        const json = result[0];
+        if (!json) return;
+        const data = JSON.parse(json) as { folders: ObsidianFolder[] };
+        if (!data.folders || data.folders.length === 0) return;
+        const { nodes: nodeMap, rootIds } = convertObsidianData(data);
+        importRawNodes(nodeMap, rootIds);
+        await actorWithPluginMethods.storeNotesData("");
+      } catch (err) {
+        console.warn("Obsidian import failed:", err);
+      }
+    })();
+  }, [backendActor, importRawNodes]);
 
   // Import nodes from hyvmind:import-nodes custom event (dispatched by SaveGraphDialog)
   useEffect(() => {
