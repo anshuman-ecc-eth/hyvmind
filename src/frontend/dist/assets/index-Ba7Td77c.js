@@ -109321,7 +109321,7 @@ function CopyButton({ text: text2 }) {
     }
   );
 }
-function CodeBlock$1({
+function CodeBlock$2({
   code: code2,
   language = "bash",
   label
@@ -109506,7 +109506,7 @@ function HyvmindSkillsPage() {
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.frontmatter.section", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(SectionHeader, { children: "Skill Manifest" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: FRONTMATTER, language: "yaml" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$2, { code: FRONTMATTER, language: "yaml" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.about.section", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(SectionHeader, { children: "What This Is" }),
@@ -109552,7 +109552,7 @@ function HyvmindSkillsPage() {
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.base_url.section", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(SectionHeader, { children: "API Base URL" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: BASE_URL, language: "url" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$2, { code: BASE_URL, language: "url" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-white/40 mt-3", children: "Hosted on the Internet Computer (ICP). Requests are served directly from a canister — no intermediary servers." })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.how_it_works.section", children: [
@@ -109662,9 +109662,9 @@ function HyvmindSkillsPage() {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.examples.section", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(SectionHeader, { children: "Implementation Examples" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-6", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: CURL_EXAMPLE, language: "bash", label: "cURL" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$2, { code: CURL_EXAMPLE, language: "bash", label: "cURL" }),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
-                CodeBlock$1,
+                CodeBlock$2,
                 {
                   code: JS_EXAMPLE,
                   language: "javascript",
@@ -109672,7 +109672,7 @@ function HyvmindSkillsPage() {
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
-                CodeBlock$1,
+                CodeBlock$2,
                 {
                   code: PYTHON_EXAMPLE,
                   language: "python",
@@ -109680,7 +109680,7 @@ function HyvmindSkillsPage() {
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
-                CodeBlock$1,
+                CodeBlock$2,
                 {
                   code: NODEJS_EXAMPLE,
                   language: "javascript",
@@ -109688,7 +109688,7 @@ function HyvmindSkillsPage() {
                 }
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
-                CodeBlock$1,
+                CodeBlock$2,
                 {
                   code: LANGCHAIN_EXAMPLE,
                   language: "python",
@@ -109703,7 +109703,7 @@ function HyvmindSkillsPage() {
               "Response from ",
               /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "text-white/60", children: "GET /api/graphs" })
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: SAMPLE_RESPONSE, language: "json" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$2, { code: SAMPLE_RESPONSE, language: "json" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { "data-ocid": "skills.browser_support.section", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(SectionHeader, { children: "Browser Support" }),
@@ -109722,7 +109722,7 @@ function HyvmindSkillsPage() {
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "You can call the API directly from any browser origin with no proxy needed:" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
-                    CodeBlock$1,
+                    CodeBlock$2,
                     {
                       code: `fetch("${BASE_URL}/api/graphs")
   .then(r => r.json())
@@ -109784,7 +109784,7 @@ function HyvmindSkillsPage() {
                     ] }),
                     q2.label
                   ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: q2.code, language: "bash" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$2, { code: q2.code, language: "bash" }),
                   q2.note && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-white/30 mt-1 pl-1", children: [
                     "↳ ",
                     q2.note
@@ -109886,7 +109886,7 @@ async function loadConfig() {
   }
   return { backend_canister_id: PLACEHOLDER };
 }
-function CodeBlock({
+function CodeBlock$1({
   code: code2,
   language = "bash"
 }) {
@@ -110039,7 +110039,7 @@ function McpSetupPage() {
                 "."
               ] }) }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs(Step, { number: 2, title: "Add Hyvmind as an MCP server", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock, { code: ironclawAddCmd, language: "bash" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: ironclawAddCmd, language: "bash" }),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
                   "Replace",
                   " ",
@@ -110048,7 +110048,7 @@ function McpSetupPage() {
                   "with the key from your profile settings."
                 ] })
               ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(Step, { number: 3, title: "Test the connection", children: /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock, { code: ironclawTestCmd, language: "bash" }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(Step, { number: 3, title: "Test the connection", children: /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: ironclawTestCmd, language: "bash" }) }),
               /* @__PURE__ */ jsxRuntimeExports.jsx(Step, { number: 4, title: "Try a prompt", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded border border-border bg-muted/10 px-4 py-3 font-mono text-sm text-foreground italic", children: '"What knowledge graphs are available in Hyvmind?"' }) })
             ] })
           ] }),
@@ -110080,7 +110080,7 @@ function McpSetupPage() {
                       /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "font-mono bg-muted/40 px-1 py-0.5 rounded text-foreground text-xs", children: "~/Library/Application Support/Claude/claude_desktop_config.json" }),
                       ":"
                     ] }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock, { code: claudeConfig, language: "json" })
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock$1, { code: claudeConfig, language: "json" })
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground", children: [
                     "Replace",
@@ -110131,6 +110131,205 @@ function McpSetupPage() {
                 ]
               }
             ) })
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+function CodeBlock({ code: code2 }) {
+  const [copied, setCopied] = reactExports.useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code2);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2e3);
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      className: "relative rounded border border-border overflow-hidden",
+      "data-ocid": "obsidian_token.code_block",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-xs text-muted-foreground", children: "json" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: handleCopy,
+              className: "flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors",
+              "data-ocid": "obsidian_token.copy_button",
+              children: copied ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-3 w-3" }),
+                " copied"
+              ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "h-3 w-3" }),
+                " copy"
+              ] })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "px-4 py-3 overflow-x-auto text-sm font-mono text-foreground leading-relaxed whitespace-pre-wrap break-all bg-muted/10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("code", { children: code2 }) })
+      ]
+    }
+  );
+}
+function readAuthStorage() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("auth-client-db");
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction("ic-keyval", "readonly");
+      const store = tx.objectStore("ic-keyval");
+      const idReq = store.get("identity");
+      const delReq = store.get("delegation");
+      let identity2;
+      let delegation;
+      idReq.onsuccess = () => {
+        identity2 = idReq.result;
+        check();
+      };
+      delReq.onsuccess = () => {
+        delegation = delReq.result;
+        check();
+      };
+      idReq.onerror = () => reject(idReq.error);
+      delReq.onerror = () => reject(delReq.error);
+      function check() {
+        if (identity2 !== void 0 && delegation !== void 0) {
+          resolve({ identity: identity2, delegation });
+        }
+      }
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+function ObsidianTokenPage() {
+  const [state, setState] = reactExports.useState("loading");
+  const [tokenJson, setTokenJson] = reactExports.useState("");
+  const [errorMessage, setErrorMessage] = reactExports.useState("");
+  reactExports.useEffect(() => {
+    fetch("/env.json").then(() => setState("ready")).catch(() => setState("ready"));
+  }, []);
+  const handleSignIn = async () => {
+    setState("signing_in");
+    try {
+      const config = await (await fetch("/env.json")).json();
+      const authClient = await AuthClient.create({ keyType: "Ed25519" });
+      await new Promise((resolve, reject) => {
+        authClient.login({
+          identityProvider: "https://identity.internetcomputer.org/",
+          derivationOrigin: config.ii_derivation_origin,
+          maxTimeToLive: BigInt(30) * BigInt(24) * BigInt(36e11),
+          onSuccess: async () => {
+            try {
+              const { identity: identity2, delegation } = await readAuthStorage();
+              const combined = JSON.stringify(
+                { identity: identity2, delegation },
+                null,
+                2
+              );
+              setTokenJson(combined);
+              setState("success");
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          },
+          onError: (err) => {
+            reject(new Error(err ?? "Authentication failed"));
+          }
+        });
+      });
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+      setState("error");
+    }
+  };
+  if (state === "loading") {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "flex h-screen items-center justify-center bg-background font-mono text-xs text-muted-foreground",
+        "data-ocid": "obsidian_token.loading_state",
+        children: "loading..."
+      }
+    );
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      className: "min-h-screen overflow-y-auto bg-background",
+      "data-ocid": "obsidian_token.page",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-b border-border bg-card px-6 py-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl mx-auto flex items-center justify-between", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-sm font-semibold text-foreground", children: "hyvmind" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "a",
+            {
+              href: "/",
+              className: "font-mono text-xs text-muted-foreground hover:text-foreground transition-colors",
+              "data-ocid": "obsidian_token.home_link",
+              children: "← back to app"
+            }
+          )
+        ] }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl mx-auto px-6 py-12 space-y-10", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-2xl font-semibold text-foreground", children: "Obsidian Token" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground leading-relaxed", children: "Sign in with Internet Identity to generate your Obsidian plugin authentication token." })
+          ] }),
+          state === "ready" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-5", "data-ocid": "obsidian_token.ready_section", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground leading-relaxed", children: "Click the button below to authenticate with Internet Identity. Your Ed25519 signing key and delegation chain will be exported as a JSON token that the Obsidian plugin uses to call the Hyvmind canister on your behalf." }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: handleSignIn,
+                className: "inline-flex items-center gap-2 rounded border border-border bg-primary/10 px-4 py-2 font-mono text-sm text-foreground hover:bg-primary/20 transition-colors",
+                "data-ocid": "obsidian_token.sign_in_button",
+                children: "Sign in with Internet Identity"
+              }
+            )
+          ] }),
+          state === "signing_in" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "flex items-center gap-2 font-mono text-xs text-muted-foreground",
+              "data-ocid": "obsidian_token.signing_in_state",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "animate-spin inline-block h-3 w-3 border border-border border-t-foreground rounded-full" }),
+                "signing in…"
+              ]
+            }
+          ),
+          state === "success" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-5", "data-ocid": "obsidian_token.success_state", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold text-foreground uppercase tracking-wide font-mono border-b border-dashed border-border pb-2", children: "Your Authentication Token" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CodeBlock, { code: tokenJson }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground leading-relaxed", children: "Copy this token and paste it into the Obsidian plugin settings. Keep it secret — it grants full signing authority on your behalf." }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: () => setState("ready"),
+                className: "font-mono text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2",
+                "data-ocid": "obsidian_token.regenerate_button",
+                children: "sign in again to regenerate"
+              }
+            )
+          ] }),
+          state === "error" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", "data-ocid": "obsidian_token.error_state", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-mono text-destructive", children: errorMessage || "An unexpected error occurred." }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: () => setState("ready"),
+                className: "inline-flex items-center gap-2 rounded border border-border bg-muted/20 px-4 py-2 font-mono text-xs text-foreground hover:bg-muted/40 transition-colors",
+                "data-ocid": "obsidian_token.retry_button",
+                children: "Try again"
+              }
+            )
           ] })
         ] })
       ]
@@ -113861,6 +114060,19 @@ function HyvmindSkillsRoute() {
     }
   );
 }
+function ObsidianTokenRoute() {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    J$2,
+    {
+      attribute: "class",
+      themes: ALL_THEMES,
+      defaultTheme: DEFAULT_THEME,
+      enableSystem: false,
+      storageKey: "hyvmind-theme",
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(ObsidianTokenPage, {})
+    }
+  );
+}
 function AppShell() {
   const { identity: identity2, isInitializing } = useInternetIdentity();
   const [gameComplete, setGameComplete] = reactExports.useState(false);
@@ -114115,6 +114327,9 @@ function App() {
   }
   if (window.location.pathname === "/docs/api") {
     return /* @__PURE__ */ jsxRuntimeExports.jsx(ApiDocsRoute, {});
+  }
+  if (window.location.pathname === "/obsidian-token") {
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(ObsidianTokenRoute, {});
   }
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     J$2,
