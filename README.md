@@ -1,4 +1,4 @@
-# Caffeine
+# Hyvmind
 
 A knowledge management application built on the Internet Computer.
 

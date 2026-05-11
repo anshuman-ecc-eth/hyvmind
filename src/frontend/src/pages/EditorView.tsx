@@ -175,7 +175,7 @@ function convertObsidianData(data: { folders: ObsidianFolder[] }): {
     folder: ObsidianFolder,
     parentId: string | null,
     pathPrefix: string,
-    depth: number = 0,
+    depth = 0,
   ): void {
     const id = parentId ? `${pathPrefix}@${folder.name}` : folder.name;
     let nodeType: EditorNode["nodeType"];
@@ -437,7 +437,9 @@ export default function EditorView() {
               let cur: typeof n | undefined = n;
               while (cur) {
                 parts.unshift(cur.name);
-                cur = cur.parentId ? session.nodes.get(cur.parentId) : undefined;
+                cur = cur.parentId
+                  ? session.nodes.get(cur.parentId)
+                  : undefined;
               }
               const path = parts.join("/");
               if (n.type === "folder") {
@@ -445,13 +447,16 @@ export default function EditorView() {
               } else {
                 const fm = n.frontmatter;
                 const fmEntries = Object.entries(fm);
-                const fmBlock = fmEntries.length > 0
-                  ? `---\n${fmEntries.map(([k, v]) =>
-                    typeof v === "string"
-                      ? `${k}: ${v}`
-                      : `${k}: ${JSON.stringify(v)}`
-                  ).join("\n")}\n---\n`
-                  : "";
+                const fmBlock =
+                  fmEntries.length > 0
+                    ? `---\n${fmEntries
+                        .map(([k, v]) =>
+                          typeof v === "string"
+                            ? `${k}: ${v}`
+                            : `${k}: ${JSON.stringify(v)}`,
+                        )
+                        .join("\n")}\n---\n`
+                    : "";
                 const fullContent = `${fmBlock}${n.content ?? ""}`;
                 zip.file(path, fullContent);
               }

@@ -86,6 +86,10 @@ export function SourceGraphDiagram({
   >(new Map());
   const currentGraphIdRef = useRef<string>("");
 
+  // Hover highlight state
+  const hoveredNodeIdRef = useRef<string | null>(null);
+  const neighborIdsRef = useRef<Set<string>>(new Set());
+
   const isDark = getVariant(resolvedTheme || "minimalist-dark") === "dark";
 
   // Stable refs — carry updates without recreating the graph instance
@@ -202,17 +206,57 @@ export function SourceGraphDiagram({
     // Set background immediately so the canvas isn't transparent
     fg.backgroundColor(isDarkRef.current ? BG_DARK : BG_LIGHT);
 
-    fg.nodeId("id")
+    fg.autoPauseRedraw(false)
+      .nodeId("id")
       .nodeLabel("name")
       .linkLabel("label")
       .linkDirectionalArrowLength(6)
       .linkDirectionalArrowRelPos(1)
-      .linkColor(() => "#888888")
-      .linkDirectionalArrowColor(() => "#888888")
+      .linkColor((link) => {
+        const neighborIds = neighborIdsRef.current;
+        if (neighborIds.size === 0) return "#888888";
+        const sourceId = String(
+          typeof link.source === "object" ? link.source.id : link.source,
+        );
+        const targetId = String(
+          typeof link.target === "object" ? link.target.id : link.target,
+        );
+        if (
+          sourceId &&
+          targetId &&
+          neighborIds.has(sourceId) &&
+          neighborIds.has(targetId)
+        ) {
+          return "#888888";
+        }
+        return "rgba(136,136,136,0.08)";
+      })
+      .linkDirectionalArrowColor((link) => {
+        const neighborIds = neighborIdsRef.current;
+        if (neighborIds.size === 0) return "#888888";
+        const sourceId = String(
+          typeof link.source === "object" ? link.source.id : link.source,
+        );
+        const targetId = String(
+          typeof link.target === "object" ? link.target.id : link.target,
+        );
+        if (
+          sourceId &&
+          targetId &&
+          neighborIds.has(sourceId) &&
+          neighborIds.has(targetId)
+        ) {
+          return "#888888";
+        }
+        return "rgba(136,136,136,0.08)";
+      })
       .nodeColor((node) => NODE_COLORS[node.nodeType] ?? "#888888")
       .nodeCanvasObject((node, ctx, globalScale) => {
         const label = node.name ?? "";
         const r = 6;
+        const neighborIds = neighborIdsRef.current;
+        const isDimmed = neighborIds.size > 0 && !neighborIds.has(node.id);
+        ctx.globalAlpha = isDimmed ? 0.15 : 1.0;
         ctx.beginPath();
         ctx.arc(node.x ?? 0, node.y ?? 0, r, 0, 2 * Math.PI);
         ctx.fillStyle = NODE_COLORS[node.nodeType] ?? "#888888";
@@ -227,8 +271,26 @@ export function SourceGraphDiagram({
             : "rgba(0,0,0,0.8)";
           ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + r + 2);
         }
+        ctx.globalAlpha = 1.0;
       })
       .nodeCanvasObjectMode(() => "replace")
+      .onNodeHover((node) => {
+        if (node) {
+          const neighborIds = new Set<string>();
+          neighborIds.add(node.id);
+          for (const link of graphDataRef.current.links) {
+            const src = link.source;
+            const tgt = link.target;
+            if (src === node.id) neighborIds.add(tgt as string);
+            if (tgt === node.id) neighborIds.add(src as string);
+          }
+          neighborIdsRef.current = neighborIds;
+          hoveredNodeIdRef.current = node.id;
+        } else {
+          neighborIdsRef.current = new Set();
+          hoveredNodeIdRef.current = null;
+        }
+      })
       .onNodeClick((node) => {
         if (onNodeClickRef.current) {
           const sourceNode: SourceNode = {
@@ -298,7 +360,7 @@ export function SourceGraphDiagram({
   }, [graphData]);
 
   // ------------------------------------------------------------------
-  // Apply node visibility filter when searchText or visibleNodeTypes change
+  // Apply visibility filter when searchText or visibleNodeTypes change
   // ------------------------------------------------------------------
   useEffect(() => {
     if (!fgRef.current) return;
@@ -309,13 +371,25 @@ export function SourceGraphDiagram({
     const noSearch = search.length === 0;
 
     if (allTypesVisible && noSearch) {
-      // All nodes visible — remove filter
       fgRef.current.nodeVisibility(true);
+      fgRef.current.linkVisibility(true);
     } else {
-      fgRef.current.nodeVisibility((node: FGNode) => {
+      const isNodeVisible = (node: FGNode) => {
         const typeOk = allTypesVisible || (types?.has(node.nodeType) ?? true);
         const searchOk = noSearch || node.name.toLowerCase().includes(search);
         return typeOk && searchOk;
+      };
+      fgRef.current.nodeVisibility(isNodeVisible);
+      fgRef.current.linkVisibility((link) => {
+        const src = link.source;
+        const tgt = link.target;
+        if (typeof src === "object" && typeof tgt === "object") {
+          return (
+            isNodeVisible(src as unknown as FGNode) &&
+            isNodeVisible(tgt as unknown as FGNode)
+          );
+        }
+        return true;
       });
     }
   }, [searchText, visibleNodeTypes]);

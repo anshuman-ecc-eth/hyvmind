@@ -40,14 +40,8 @@ const defaultFilterState = (): FilterState => ({
 // ---------------------------------------------------------------------------
 
 export default function SourcesView() {
-  const {
-    graphs,
-    activeGraphId,
-    saveGraph,
-    deleteGraph,
-    setActiveGraph,
-    updateNode,
-  } = useSourceGraphs();
+  const { graphs, activeGraphId, saveGraph, deleteGraph, setActiveGraph } =
+    useSourceGraphs();
 
   const { commit, isPublishing } = usePublishGraph();
   const {
@@ -214,13 +208,6 @@ export default function SourcesView() {
     setSelectedNode(node);
   };
 
-  const handleNodeSave = (nodeName: string, updates: Partial<SourceNode>) => {
-    if (activeGraphId && selectedNode) {
-      updateNode(activeGraphId, nodeName, updates, selectedNode.id);
-    }
-    setSelectedNode(null);
-  };
-
   const handlePublish = async (graph: SourceGraph) => {
     setPreviewGraph(graph);
     setCommitError(null);
@@ -350,7 +337,6 @@ export default function SourcesView() {
           <NodeDetailsModal
             node={selectedNode}
             graph={activeGraph}
-            onSave={handleNodeSave}
             onClose={() => setSelectedNode(null)}
           />
         )}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import type { SourceRef } from "../types/sourceGraph";
 
@@ -9,20 +9,7 @@ import type { SourceRef } from "../types/sourceGraph";
 interface NodeDetailsModalProps {
   node: SourceNode;
   graph: SourceGraph;
-  onSave: (nodeName: string, updates: Partial<SourceNode>) => void;
   onClose: () => void;
-}
-
-interface AttributeRow {
-  key: string;
-  value: string;
-  isNew: boolean;
-}
-
-interface SourceRow {
-  name: string;
-  url: string;
-  isNew: boolean;
 }
 
 function parentIdFromPath(id: string): string | null {
@@ -50,7 +37,6 @@ function buildInheritedAttributes(
   node: SourceNode,
   nodeMap: Map<string, SourceNode>,
 ): Record<string, string> {
-  // Walk ancestor chain via @-path derivation (avoids name collision bugs)
   const chain: Record<string, unknown>[] = [];
   let currentId = node.id ? parentIdFromPath(node.id) : null;
   const visited = new Set<string>();
@@ -65,12 +51,10 @@ function buildInheritedAttributes(
     currentId = parentIdFromPath(currentId);
   }
 
-  // Merge: later entries (closer ancestors) override earlier (further ancestors)
   const merged: Record<string, unknown> = {};
   for (let i = chain.length - 1; i >= 0; i--) {
     Object.assign(merged, chain[i]);
   }
-  // Stringify any non-string values for display
   return Object.fromEntries(
     Object.entries(merged).map(([k, v]) => [
       k,
@@ -78,11 +62,11 @@ function buildInheritedAttributes(
     ]),
   );
 }
+
 function buildInheritedSources(
   node: SourceNode,
   nodeMap: Map<string, SourceNode>,
 ): SourceRef[] {
-  // Walk ancestor chain via @-path derivation; collect sources farthest-first
   const chain: SourceRef[][] = [];
   let currentId = node.id ? parentIdFromPath(node.id) : null;
   const visited = new Set<string>();
@@ -97,7 +81,6 @@ function buildInheritedSources(
     currentId = parentIdFromPath(currentId);
   }
 
-  // chain[0] = closest ancestor; reverse so farthest is first in result
   chain.reverse();
   return chain.flat();
 }
@@ -109,37 +92,16 @@ function buildInheritedSources(
 export default function NodeDetailsModal({
   node,
   graph,
-  onSave,
   onClose,
 }: NodeDetailsModalProps) {
-  const [editedName, setEditedName] = useState(node.name);
-
-  // Existing attributes (key read-only, value editable)
-  const [existingRows, setExistingRows] = useState<AttributeRow[]>(() =>
-    Object.entries(node.attributes ?? {}).map(([key, value]) => ({
-      key,
-      value: typeof value === "string" ? value : JSON.stringify(value),
-      isNew: false,
-    })),
-  );
-
-  // New rows added in this session (both key + value editable)
-  const [newRows, setNewRows] = useState<AttributeRow[]>([]);
-
   const nodeMap = useRef(new Map(graph.nodes.map((n) => [n.id ?? n.name, n])));
-
   const inheritedAttributes = buildInheritedAttributes(node, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
-
-  const [sourceRows, setSourceRows] = useState<SourceRow[]>(() =>
-    (node.sources ?? []).map((s) => ({
-      name: s.name,
-      url: s.url,
-      isNew: false,
-    })),
-  );
-
   const inheritedSources = buildInheritedSources(node, nodeMap.current);
+
+  const ownAttrs = Object.entries(node.attributes ?? {}).filter(
+    ([, v]) => v !== "",
+  );
 
   // Trap focus inside modal
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -147,7 +109,7 @@ export default function NodeDetailsModal({
     const el = overlayRef.current;
     if (!el) return;
     const focusable = el.querySelectorAll<HTMLElement>(
-      'button, input, [tabindex="0"]',
+      'button, [tabindex="0"]',
     );
     focusable[0]?.focus();
 
@@ -157,77 +119,6 @@ export default function NodeDetailsModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-
-  // -------------------------------------------------------------------------
-  // Handlers
-  // -------------------------------------------------------------------------
-
-  const handleExistingValueChange = (index: number, value: string) => {
-    setExistingRows((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, value } : r)),
-    );
-  };
-
-  const handleExistingRemove = (index: number) => {
-    setExistingRows((rows) => rows.filter((_, i) => i !== index));
-  };
-
-  const handleNewKeyChange = (index: number, key: string) => {
-    setNewRows((rows) => rows.map((r, i) => (i === index ? { ...r, key } : r)));
-  };
-
-  const handleNewValueChange = (index: number, value: string) => {
-    setNewRows((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, value } : r)),
-    );
-  };
-
-  const handleNewRemove = (index: number) => {
-    setNewRows((rows) => rows.filter((_, i) => i !== index));
-  };
-
-  const handleAddAttribute = () => {
-    setNewRows((rows) => [...rows, { key: "", value: "", isNew: true }]);
-  };
-
-  const handleSourceNameChange = (index: number, value: string) => {
-    setSourceRows((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, name: value } : r)),
-    );
-  };
-
-  const handleSourceUrlChange = (index: number, value: string) => {
-    setSourceRows((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, url: value } : r)),
-    );
-  };
-
-  const handleAddSource = () => {
-    setSourceRows((rows) => [...rows, { name: "", url: "", isNew: true }]);
-  };
-
-  const handleRemoveSource = (index: number) => {
-    setSourceRows((rows) => rows.filter((_, i) => i !== index));
-  };
-
-  const handleSave = () => {
-    const merged: Record<string, string> = {};
-    for (const row of existingRows) {
-      if (row.key.trim()) merged[row.key.trim()] = row.value;
-    }
-    for (const row of newRows) {
-      if (row.key.trim()) merged[row.key.trim()] = row.value;
-    }
-    const sources: SourceRef[] = sourceRows
-      .filter((r) => r.name.trim() !== "")
-      .map((r) => ({ name: r.name.trim(), url: r.url.trim() }));
-    onSave(node.name, { name: editedName, attributes: merged, sources });
-    onClose();
-  };
-
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
 
   return (
     <div
@@ -276,113 +167,70 @@ export default function NodeDetailsModal({
         {/* ── Scrollable body ── */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
           {/* Name */}
-          <div className="space-y-1">
-            <label
-              htmlFor="node-name-input"
-              className="block text-xs text-muted-foreground"
-            >
+          <div>
+            <span className="block text-xs text-muted-foreground mb-0.5">
               name
-            </label>
-            <input
-              id="node-name-input"
-              type="text"
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              className="
-                w-full bg-background text-foreground border border-dashed border-border
-                px-2 py-1 text-sm font-mono
-                focus:outline-none focus:border-foreground
-              "
-              data-ocid="node-name-input"
-            />
+            </span>
+            <p className="text-sm text-foreground break-words">{node.name}</p>
           </div>
+
+          {/* ID */}
+          {node.id && (
+            <div>
+              <span className="block text-xs text-muted-foreground mb-0.5">
+                id
+              </span>
+              <p className="text-xs text-foreground/70 break-all">{node.id}</p>
+            </div>
+          )}
+
+          {/* Parent */}
+          {node.parentName && (
+            <div>
+              <span className="block text-xs text-muted-foreground mb-0.5">
+                parent
+              </span>
+              <p className="text-xs text-foreground break-words">
+                {node.parentName}
+              </p>
+            </div>
+          )}
+
+          {/* Content */}
+          {node.content && (
+            <div>
+              <span className="block text-xs text-muted-foreground mb-0.5">
+                content
+              </span>
+              <p className="text-xs text-foreground/80 break-words whitespace-pre-wrap">
+                {node.content}
+              </p>
+            </div>
+          )}
 
           {/* Own Attributes */}
           <div className="space-y-2">
             <div className="text-xs text-muted-foreground border-b border-dashed border-border pb-1">
               own attributes
             </div>
-
-            {existingRows.length === 0 && newRows.length === 0 && (
+            {ownAttrs.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">(none)</p>
+            ) : (
+              <div className="border border-dashed border-border divide-y divide-dashed divide-border">
+                {ownAttrs.map(([key, value]) => (
+                  <div key={key} className="flex gap-2 px-2 py-1 text-xs">
+                    <span className="text-muted-foreground shrink-0 min-w-0 break-words">
+                      {key}
+                    </span>
+                    <span className="text-foreground/80 ml-auto text-right break-words">
+                      {typeof value === "string"
+                        ? value
+                        : JSON.stringify(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
-
-            {existingRows.map((row, i) => (
-              <div key={row.key} className="flex items-center gap-2">
-                <span
-                  className="text-xs text-muted-foreground w-28 shrink-0 truncate"
-                  title={row.key}
-                >
-                  {row.key}
-                </span>
-                <input
-                  type="text"
-                  value={row.value}
-                  onChange={(e) => handleExistingValueChange(i, e.target.value)}
-                  className="
-                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border
-                    px-2 py-0.5 text-xs font-mono
-                    focus:outline-none focus:border-foreground
-                  "
-                  data-ocid={`attr-value-${row.key}`}
-                />
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                  onClick={() => handleExistingRemove(i)}
-                  data-ocid={`attr-remove-${row.key}`}
-                >
-                  [–]
-                </button>
-              </div>
-            ))}
-
-            {newRows.map((row, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: new rows have no stable key
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="key"
-                  value={row.key}
-                  onChange={(e) => handleNewKeyChange(i, e.target.value)}
-                  className="
-                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border
-                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
-                    focus:outline-none focus:border-foreground
-                  "
-                  data-ocid="new-attr-key-input"
-                />
-                <input
-                  type="text"
-                  placeholder="value"
-                  value={row.value}
-                  onChange={(e) => handleNewValueChange(i, e.target.value)}
-                  className="
-                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border
-                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
-                    focus:outline-none focus:border-foreground
-                  "
-                  data-ocid="new-attr-value-input"
-                />
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                  onClick={() => handleNewRemove(i)}
-                  data-ocid="new-attr-remove"
-                >
-                  [–]
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors"
-              onClick={handleAddAttribute}
-              data-ocid="add-attribute-btn"
-            >
-              [+ add attribute]
-            </button>
           </div>
 
           {/* Inherited Attributes */}
@@ -391,19 +239,21 @@ export default function NodeDetailsModal({
               inherited attributes
             </div>
             {hasInherited ? (
-              Object.entries(inheritedAttributes).map(([key, value]) => (
-                <div key={key} className="flex items-start gap-2 text-xs">
-                  <span
-                    className="text-muted-foreground w-28 shrink-0 truncate"
-                    title={key}
-                  >
-                    {key}
-                  </span>
-                  <span className="text-foreground break-words min-w-0">
-                    {value}
-                  </span>
-                </div>
-              ))
+              <div className="border border-dashed border-border divide-y divide-dashed divide-border">
+                {Object.entries(inheritedAttributes).map(([key, value]) => (
+                  <div key={key} className="flex gap-2 px-2 py-1 text-xs">
+                    <span
+                      className="text-muted-foreground w-28 shrink-0 truncate"
+                      title={key}
+                    >
+                      {key}
+                    </span>
+                    <span className="text-foreground break-words min-w-0">
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground italic">(none)</p>
             )}
@@ -414,57 +264,29 @@ export default function NodeDetailsModal({
             <div className="text-xs text-muted-foreground border-b border-dashed border-border pb-1">
               own sources
             </div>
-
-            {sourceRows.length === 0 && (
+            {!node.sources || node.sources.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">(none)</p>
-            )}
-
-            {sourceRows.map((row, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: source rows have no stable key
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="name"
-                  value={row.name}
-                  onChange={(e) => handleSourceNameChange(i, e.target.value)}
-                  className="
-                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border
-                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
-                    focus:outline-none focus:border-foreground
-                  "
-                  data-ocid={`source-name-${i}`}
-                />
-                <input
-                  type="text"
-                  placeholder="url"
-                  value={row.url}
-                  onChange={(e) => handleSourceUrlChange(i, e.target.value)}
-                  className="
-                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border
-                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground
-                    focus:outline-none focus:border-foreground
-                  "
-                  data-ocid={`source-url-${i}`}
-                />
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                  onClick={() => handleRemoveSource(i)}
-                  data-ocid={`source-remove-${i}`}
-                >
-                  [–]
-                </button>
+            ) : (
+              <div className="space-y-1">
+                {node.sources.map((s, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: flat list, no stable key
+                  <div key={i} className="text-xs break-words">
+                    {s.url ? (
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-foreground/80 underline hover:text-foreground transition-colors"
+                      >
+                        {s.name}
+                      </a>
+                    ) : (
+                      <span className="text-foreground/80">{s.name}</span>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors"
-              onClick={handleAddSource}
-              data-ocid="add-source-btn"
-            >
-              [+ add source]
-            </button>
+            )}
           </div>
 
           {/* Inherited Sources */}
@@ -473,48 +295,42 @@ export default function NodeDetailsModal({
               inherited sources
             </div>
             {inheritedSources.length > 0 ? (
-              inheritedSources.map((s) => (
-                <div
-                  key={`${s.name}-${s.url}`}
-                  className="text-xs text-foreground break-words min-w-0"
-                >
-                  {s.url ? (
-                    <a
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-primary transition-colors"
-                    >
-                      {s.name}
-                    </a>
-                  ) : (
-                    <span>{s.name}</span>
-                  )}
-                </div>
-              ))
+              <div className="space-y-1">
+                {inheritedSources.map((s) => (
+                  <div
+                    key={`${s.name}-${s.url}`}
+                    className="text-xs text-foreground break-words min-w-0"
+                  >
+                    {s.url ? (
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-primary transition-colors"
+                      >
+                        {s.name}
+                      </a>
+                    ) : (
+                      <span>{s.name}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground italic">(none)</p>
             )}
           </div>
         </div>
 
-        {/* ── Footer actions ── */}
-        <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-dashed border-border shrink-0">
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-end px-4 py-3 border-t border-dashed border-border shrink-0">
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-3 py-1 transition-colors"
             onClick={onClose}
-            data-ocid="node-details-cancel"
+            data-ocid="node-details-close-button"
           >
-            [cancel]
-          </button>
-          <button
-            type="button"
-            className="text-xs text-foreground bg-foreground/10 hover:bg-foreground/20 border border-dashed border-foreground px-3 py-1 transition-colors"
-            onClick={handleSave}
-            data-ocid="node-details-save"
-          >
-            [save]
+            [close]
           </button>
         </div>
       </div>
