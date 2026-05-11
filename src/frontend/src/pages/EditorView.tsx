@@ -32,11 +32,13 @@ type ContextOption =
   | "add-sources"
   | "rename"
   | "delete"
-  | "convert-to-source-graph";
+  | "convert-to-source-graph"
+  | "download";
 
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
   curation: [
     "new-swarm",
+    "download",
     "add-attributes",
     "add-sources",
     "rename",
@@ -65,6 +67,7 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   rename: "Rename",
   delete: "Delete",
   "convert-to-source-graph": "Convert",
+  download: "Download ZIP",
 };
 
 // ---------------------------------------------------------------------------
@@ -172,16 +175,37 @@ function convertObsidianData(data: { folders: ObsidianFolder[] }): {
     folder: ObsidianFolder,
     parentId: string | null,
     pathPrefix: string,
+    depth: number = 0,
   ): void {
     const id = parentId ? `${pathPrefix}@${folder.name}` : folder.name;
-    const nodeType: EditorNode["nodeType"] =
-      folder.content != null ? "interpEntity" : "curation";
+    let nodeType: EditorNode["nodeType"];
+    if (folder.content != null) {
+      nodeType = "interpEntity";
+    } else {
+      switch (depth) {
+        case 0:
+          nodeType = "curation";
+          break;
+        case 1:
+          nodeType = "swarm";
+          break;
+        case 2:
+          nodeType = "location";
+          break;
+        case 3:
+          nodeType = "lawEntity";
+          break;
+        default:
+          nodeType = "lawEntity";
+          break;
+      }
+    }
     const children: string[] = [];
     if (folder.folders) {
       for (const child of folder.folders) {
         const childId = `${id}@${child.name}`;
         children.push(childId);
-        processFolder(child, id, id);
+        processFolder(child, id, id, depth + 1);
       }
     }
     const node: EditorNode = {
@@ -189,10 +213,10 @@ function convertObsidianData(data: { folders: ObsidianFolder[] }): {
       name: folder.name,
       type: nodeType === "interpEntity" ? "file" : "folder",
       nodeType,
-      content: folder.content ?? "",
+      content: folder.content ? stripFrontmatter(folder.content) : "",
       parentId,
       children,
-      frontmatter: {},
+      frontmatter: folder.content ? parseFrontmatter(folder.content) : {},
       inheritedAttributes: {},
       inheritedSources: [],
       createdAt: Date.now(),
@@ -203,7 +227,7 @@ function convertObsidianData(data: { folders: ObsidianFolder[] }): {
   }
 
   for (const folder of data.folders) {
-    processFolder(folder, null, folder.name);
+    processFolder(folder, null, folder.name, 0);
   }
   return { nodes, rootIds };
 }
@@ -390,6 +414,54 @@ export default function EditorView() {
           })();
           break;
         }
+        case "download": {
+          void (async () => {
+            if (!session) return;
+            const curationNode = session.nodes.get(nodeId);
+            if (!curationNode || curationNode.nodeType !== "curation") return;
+            const { default: JSZip } = await import("jszip");
+            const zip = new JSZip();
+            // DFS to collect all descendants
+            const allNodes: import("@/types/markdownEditor").EditorNode[] = [];
+            const stack = [nodeId];
+            while (stack.length > 0) {
+              const id = stack.pop()!;
+              const n = session.nodes.get(id);
+              if (!n) continue;
+              allNodes.push(n);
+              for (const cid of n.children) stack.push(cid);
+            }
+            // Populate ZIP
+            for (const n of allNodes) {
+              const path = n.id.split("@").join("/");
+              if (n.type === "folder") {
+                zip.folder(path);
+              } else {
+                const fm = n.frontmatter;
+                const fmEntries = Object.entries(fm);
+                const fmBlock = fmEntries.length > 0
+                  ? `---\n${fmEntries.map(([k, v]) =>
+                    typeof v === "string"
+                      ? `${k}: ${v}`
+                      : `${k}: ${JSON.stringify(v)}`
+                  ).join("\n")}\n---\n`
+                  : "";
+                const fullContent = `${fmBlock}${n.content ?? ""}`;
+                zip.file(`${path}.md`, fullContent);
+              }
+            }
+            const blob = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${curationNode.name}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          })();
+          break;
+        }
         case "add-attributes": {
           const parent = session?.nodes.get(nodeId);
           if (parent) {
@@ -487,7 +559,7 @@ export default function EditorView() {
                 nodeType = "lawEntity";
                 break;
               default:
-                nodeType = "swarm"; // fallback
+                nodeType = "lawEntity"; // fallback
             }
           } else {
             nodeType = "interpEntity";
