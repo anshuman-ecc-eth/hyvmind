@@ -431,9 +431,15 @@ export default function EditorView() {
               allNodes.push(n);
               for (const cid of n.children) stack.push(cid);
             }
-            // Populate ZIP
+            // Populate ZIP — build paths from parent chain, not from IDs
             for (const n of allNodes) {
-              const path = n.id.split("@").join("/");
+              const parts: string[] = [];
+              let cur: typeof n | undefined = n;
+              while (cur) {
+                parts.unshift(cur.name);
+                cur = cur.parentId ? session.nodes.get(cur.parentId) : undefined;
+              }
+              const path = parts.join("/");
               if (n.type === "folder") {
                 zip.folder(path);
               } else {
@@ -447,7 +453,7 @@ export default function EditorView() {
                   ).join("\n")}\n---\n`
                   : "";
                 const fullContent = `${fmBlock}${n.content ?? ""}`;
-                zip.file(`${path}.md`, fullContent);
+                zip.file(path, fullContent);
               }
             }
             const blob = await zip.generateAsync({ type: "blob" });
