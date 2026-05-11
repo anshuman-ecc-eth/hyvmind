@@ -90,8 +90,14 @@ export function SettingsView() {
   // Plugin Binding state
   const [myPrincipal, setMyPrincipal] = useState<string | null>(null);
   const [pendingBindings, setPendingBindings] = useState<string[]>([]);
+  const [boundPluginKeys, setBoundPluginKeys] = useState<string[]>([]);
   const [pluginBound, setPluginBound] = useState<boolean>(false);
   const [principalCopied, setPrincipalCopied] = useState<boolean>(false);
+  const [pluginSectionLoading, setPluginSectionLoading] =
+    useState<boolean>(false);
+  const [approvingKey, setApprovingKey] = useState<string | null>(null);
+  const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null);
+  const [revokingKey, setRevokingKey] = useState<string | null>(null);
 
   // API Key state
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -104,34 +110,33 @@ export function SettingsView() {
   // Load plugin binding data on mount
   useEffect(() => {
     if (!actor) return;
+    setPluginSectionLoading(true);
     (async () => {
       try {
-        const principal = await actor.getMyPrincipal();
-        setMyPrincipal(
-          typeof (principal as { toText?: () => string }).toText === "function"
-            ? (principal as { toText: () => string }).toText()
-            : String(principal),
+        const toStr = (p: unknown) =>
+          typeof (p as { toText?: () => string }).toText === "function"
+            ? (p as { toText: () => string }).toText()
+            : String(p);
+        const [principal, pending, bound, boundKeys] = await Promise.allSettled(
+          [
+            actor.getMyPrincipal(),
+            actor.getPendingPluginBindings(),
+            actor.getPluginBindingStatus(),
+            actor.getBoundPluginKeys(),
+          ],
         );
-      } catch {
-        // ignore
-      }
-      try {
-        const pending = await actor.getPendingPluginBindings();
-        setPendingBindings(
-          (pending as unknown[]).map((p) =>
-            typeof (p as { toText?: () => string }).toText === "function"
-              ? (p as { toText: () => string }).toText()
-              : String(p),
-          ),
-        );
-      } catch {
-        // ignore
-      }
-      try {
-        const bound = await actor.getPluginBindingStatus();
-        setPluginBound(Boolean(bound));
-      } catch {
-        // ignore
+        if (principal.status === "fulfilled")
+          setMyPrincipal(toStr(principal.value));
+        if (pending.status === "fulfilled")
+          setPendingBindings((pending.value as unknown[]).map(toStr));
+        if (bound.status === "fulfilled") setPluginBound(Boolean(bound.value));
+        if (boundKeys.status === "fulfilled")
+          setBoundPluginKeys((boundKeys.value as unknown[]).map(toStr));
+      } catch (e) {
+        toast.error("Failed to load plugin binding data");
+        console.error(e);
+      } finally {
+        setPluginSectionLoading(false);
       }
     })();
   }, [actor]);
@@ -164,10 +169,52 @@ export function SettingsView() {
 
   const handleApproveBinding = async (key: string) => {
     if (!actor) return;
-    const { Principal } = await import("@dfinity/principal");
-    await actor.approvePluginBinding(Principal.fromText(key));
-    setPendingBindings((prev) => prev.filter((k) => k !== key));
-    toast.success("Plugin binding approved");
+    setApprovingKey(key);
+    try {
+      const { Principal } = await import("@dfinity/principal");
+      await actor.approvePluginBinding(Principal.fromText(key));
+      setPendingBindings((prev) => prev.filter((k) => k !== key));
+      // Refresh bound keys and status after approval
+      const [boundKeys, status] = await Promise.allSettled([
+        actor.getBoundPluginKeys(),
+        actor.getPluginBindingStatus(),
+      ]);
+      const toStr = (p: unknown) =>
+        typeof (p as { toText?: () => string }).toText === "function"
+          ? (p as { toText: () => string }).toText()
+          : String(p);
+      if (boundKeys.status === "fulfilled")
+        setBoundPluginKeys((boundKeys.value as unknown[]).map(toStr));
+      if (status.status === "fulfilled") setPluginBound(Boolean(status.value));
+      toast.success("Plugin binding approved");
+    } catch {
+      toast.error("Failed to approve plugin binding");
+    } finally {
+      setApprovingKey(null);
+    }
+  };
+
+  const handleRevokeBinding = async (key: string) => {
+    if (!actor) return;
+    setRevokingKey(key);
+    try {
+      const { Principal } = await import("@dfinity/principal");
+      await actor.revokePluginBinding(Principal.fromText(key));
+      setBoundPluginKeys((prev) => prev.filter((k) => k !== key));
+      setConfirmRevokeKey(null);
+      // Refresh status after revoke
+      try {
+        const newStatus = await actor.getPluginBindingStatus();
+        setPluginBound(Boolean(newStatus));
+      } catch {
+        // ignore
+      }
+      toast.success("Plugin binding revoked");
+    } catch {
+      toast.error("Failed to revoke plugin binding");
+    } finally {
+      setRevokingKey(null);
+    }
   };
 
   const handleCopy = async () => {
@@ -398,85 +445,205 @@ export function SettingsView() {
           <div>
             <h2 className="text-lg font-medium">Plugin Binding</h2>
             <p className="text-sm text-muted-foreground">
-              Link the Obsidian plugin to your account so it can import folder
-              data into your notes.
+              Link this Obsidian plugin to your Hyvmind account so uploaded
+              notes appear here.
             </p>
           </div>
 
-          {/* Principal ID subsection */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Your Principal ID</p>
-            <div className="flex items-center gap-2">
-              <code className="font-mono text-xs bg-muted px-2 py-1 rounded break-all">
-                {myPrincipal ?? "Loading..."}
-              </code>
-              <button
-                type="button"
-                onClick={handleCopyPrincipal}
-                className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
-                data-ocid="settings.plugin_binding.copy_principal_button"
-              >
-                {principalCopied ? "✓ Copied" : "Copy"}
-              </button>
-            </div>
-          </div>
-
-          {/* Pending bindings subsection */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Pending Plugin Requests</p>
-            {pendingBindings.length === 0 ? (
-              <p
-                className="text-sm text-muted-foreground"
-                data-ocid="settings.plugin_binding.empty_state"
-              >
-                No pending binding requests.
+          <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">
+            {/* Principal ID subsection */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Your Principal ID</p>
+              <p className="text-xs text-muted-foreground">
+                Copy this into the Obsidian plugin so it can request binding.
               </p>
-            ) : (
-              <div
-                className="space-y-2"
-                data-ocid="settings.plugin_binding.pending_list"
-              >
-                {pendingBindings.map((key, idx) => (
-                  <div
-                    key={key}
-                    className="flex items-center gap-2"
-                    data-ocid={`settings.plugin_binding.pending.item.${idx + 1}`}
+              {pluginSectionLoading && !myPrincipal ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <code
+                    className="font-mono text-xs bg-muted px-2 py-1 rounded break-all"
+                    data-ocid="settings.plugin_binding.principal_display"
                   >
-                    <code className="font-mono text-xs">
-                      {key.slice(0, 8)}...
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => handleApproveBinding(key)}
-                      className="text-xs border border-border px-2 py-1 rounded hover:bg-muted"
-                      data-ocid={`settings.plugin_binding.approve_button.${idx + 1}`}
-                    >
-                      Approve
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    {myPrincipal ?? "—"}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPrincipal}
+                    disabled={!myPrincipal}
+                    className="shrink-0"
+                    data-ocid="settings.plugin_binding.copy_principal_button"
+                  >
+                    {principalCopied ? (
+                      <Check className="h-4 w-4 text-foreground" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
 
-          {/* Binding status subsection */}
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Binding Status</p>
-            {pluginBound ? (
-              <p
-                className="text-sm text-green-600 dark:text-green-400"
-                data-ocid="settings.plugin_binding.status_bound"
-              >
-                ✓ Plugin bound
-              </p>
-            ) : (
-              <p
-                className="text-sm text-muted-foreground"
-                data-ocid="settings.plugin_binding.status_unbound"
-              >
-                No plugin bound
-              </p>
-            )}
+            {/* Binding status indicator */}
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Binding Status</p>
+              {pluginSectionLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : pluginBound ? (
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "oklch(0.55 0.15 145)" }}
+                  data-ocid="settings.plugin_binding.status_bound"
+                >
+                  ✓ Plugin bound
+                </p>
+              ) : (
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-ocid="settings.plugin_binding.status_unbound"
+                >
+                  No plugin bound
+                </p>
+              )}
+            </div>
+
+            {/* Pending bindings subsection */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Pending Plugin Requests</p>
+              {pluginSectionLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : pendingBindings.length === 0 ? (
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-ocid="settings.plugin_binding.pending.empty_state"
+                >
+                  (no pending requests)
+                </p>
+              ) : (
+                <div
+                  className="space-y-2"
+                  data-ocid="settings.plugin_binding.pending_list"
+                >
+                  {pendingBindings.map((key, idx) => (
+                    <div
+                      key={key}
+                      className="flex items-center gap-2"
+                      data-ocid={`settings.plugin_binding.pending.item.${idx + 1}`}
+                    >
+                      <code className="font-mono text-xs flex-1 truncate">
+                        {key.slice(0, 20)}...
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={approvingKey === key}
+                        onClick={() => handleApproveBinding(key)}
+                        data-ocid={`settings.plugin_binding.approve_button.${idx + 1}`}
+                      >
+                        {approvingKey === key ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          "Approve"
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Bound plugin keys subsection */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Bound Plugin Keys</p>
+              {pluginSectionLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : boundPluginKeys.length === 0 ? (
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-ocid="settings.plugin_binding.bound.empty_state"
+                >
+                  (no bound plugins)
+                </p>
+              ) : (
+                <div
+                  className="space-y-3"
+                  data-ocid="settings.plugin_binding.bound_list"
+                >
+                  {boundPluginKeys.map((key, idx) => (
+                    <div
+                      key={key}
+                      className="space-y-2"
+                      data-ocid={`settings.plugin_binding.bound.item.${idx + 1}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <code className="font-mono text-xs flex-1 truncate">
+                          {key.slice(0, 20)}...
+                        </code>
+                        {confirmRevokeKey !== key ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs text-destructive hover:text-destructive shrink-0"
+                            onClick={() => setConfirmRevokeKey(key)}
+                            data-ocid={`settings.plugin_binding.revoke_button.${idx + 1}`}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            Revoke
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setConfirmRevokeKey(null)}
+                              disabled={revokingKey === key}
+                              data-ocid={`settings.plugin_binding.cancel_revoke_button.${idx + 1}`}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={revokingKey === key}
+                              onClick={() => handleRevokeBinding(key)}
+                              data-ocid={`settings.plugin_binding.confirm_revoke_button.${idx + 1}`}
+                            >
+                              {revokingKey === key ? (
+                                <>
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                  Revoking...
+                                </>
+                              ) : (
+                                "Confirm Revoke"
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {confirmRevokeKey === key && (
+                        <p className="text-xs text-muted-foreground">
+                          This will disconnect the plugin. It will need to
+                          re-bind to send notes again.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

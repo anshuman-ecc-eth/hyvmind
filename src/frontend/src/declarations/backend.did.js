@@ -355,6 +355,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+  'getBoundPluginKeys' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getBuzzLeaderboard' : IDL.Func(
       [IDL.Nat],
       [IDL.Vec(BuzzLeaderboardEntry)],
@@ -466,6 +467,7 @@ export const idlService = IDL.Service({
   'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'revokeApiKey' : IDL.Func([], [], []),
+  'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'savePublishedGraph' : IDL.Func(
       [IDL.Text, IDL.Vec(NodeId)],
@@ -853,6 +855,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+    'getBoundPluginKeys' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getBuzzLeaderboard' : IDL.Func(
         [IDL.Nat],
         [IDL.Vec(BuzzLeaderboardEntry)],
@@ -964,6 +967,7 @@ export const idlFactory = ({ IDL }) => {
     'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'revokeApiKey' : IDL.Func([], [], []),
+    'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'savePublishedGraph' : IDL.Func(
         [IDL.Text, IDL.Vec(NodeId)],

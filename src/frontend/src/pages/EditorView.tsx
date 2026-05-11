@@ -298,19 +298,13 @@ export default function EditorView() {
     if (!backendActor) return;
     void (async () => {
       try {
-        const actorWithPluginMethods = backendActor as backendInterface & {
-          getNotesData: () => Promise<[string] | []>;
-          storeNotesData: (json: string) => Promise<void>;
-        };
-        const result = await actorWithPluginMethods.getNotesData();
-        if (!result || result.length === 0 || !result[0]) return;
-        const json = result[0];
-        if (!json) return;
-        const data = JSON.parse(json) as { folders: ObsidianFolder[] };
+        const result = await backendActor.getNotesData();
+        if (!result) return;
+        const data = JSON.parse(result) as { folders: ObsidianFolder[] };
         if (!data.folders || data.folders.length === 0) return;
         const { nodes: nodeMap, rootIds } = convertObsidianData(data);
         importRawNodes(nodeMap, rootIds);
-        await actorWithPluginMethods.storeNotesData("");
+        await backendActor.storeNotesData("");
       } catch (err) {
         console.warn("Obsidian import failed:", err);
       }

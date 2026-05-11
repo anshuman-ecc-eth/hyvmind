@@ -354,6 +354,7 @@ export interface backendInterface {
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
+    getBoundPluginKeys(): Promise<Array<Principal>>;
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -422,6 +423,7 @@ export interface backendInterface {
     requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
+    revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
         __kind__: "ok";

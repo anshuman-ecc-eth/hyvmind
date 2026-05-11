@@ -28517,6 +28517,7 @@ Service({
     ["query"]
   ),
   "getArchivedNodeIds": Func([], [Vec(NodeId)], ["query"]),
+  "getBoundPluginKeys": Func([], [Vec(Principal2)], ["query"]),
   "getBuzzLeaderboard": Func(
     [Nat],
     [Vec(BuzzLeaderboardEntry)],
@@ -28628,6 +28629,7 @@ Service({
   "requestPluginBinding": Func([Principal2, Principal2], [], []),
   "resetAllData": Func([], [], []),
   "revokeApiKey": Func([], [], []),
+  "revokePluginBinding": Func([Principal2], [], []),
   "saveCallerUserProfile": Func([UserProfile], [], []),
   "savePublishedGraph": Func(
     [Text, Vec(NodeId)],
@@ -29011,6 +29013,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "getArchivedNodeIds": IDL2.Func([], [IDL2.Vec(NodeId2)], ["query"]),
+    "getBoundPluginKeys": IDL2.Func([], [IDL2.Vec(IDL2.Principal)], ["query"]),
     "getBuzzLeaderboard": IDL2.Func(
       [IDL2.Nat],
       [IDL2.Vec(BuzzLeaderboardEntry2)],
@@ -29122,6 +29125,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "requestPluginBinding": IDL2.Func([IDL2.Principal, IDL2.Principal], [], []),
     "resetAllData": IDL2.Func([], [], []),
     "revokeApiKey": IDL2.Func([], [], []),
+    "revokePluginBinding": IDL2.Func([IDL2.Principal], [], []),
     "saveCallerUserProfile": IDL2.Func([UserProfile2], [], []),
     "savePublishedGraph": IDL2.Func(
       [IDL2.Text, IDL2.Vec(NodeId2)],
@@ -29414,6 +29418,20 @@ class Backend {
       }
     } else {
       const result = await this.actor.getArchivedNodeIds();
+      return result;
+    }
+  }
+  async getBoundPluginKeys() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getBoundPluginKeys();
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getBoundPluginKeys();
       return result;
     }
   }
@@ -30016,6 +30034,20 @@ class Backend {
       }
     } else {
       const result = await this.actor.revokeApiKey();
+      return result;
+    }
+  }
+  async revokePluginBinding(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.revokePluginBinding(arg0);
+        return result;
+      } catch (e2) {
+        this.processError(e2);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.revokePluginBinding(arg0);
       return result;
     }
   }
@@ -67447,8 +67479,13 @@ function SettingsView() {
   const [socialUrl, setSocialUrl] = reactExports.useState("");
   const [myPrincipal, setMyPrincipal] = reactExports.useState(null);
   const [pendingBindings, setPendingBindings] = reactExports.useState([]);
+  const [boundPluginKeys, setBoundPluginKeys] = reactExports.useState([]);
   const [pluginBound, setPluginBound] = reactExports.useState(false);
   const [principalCopied, setPrincipalCopied] = reactExports.useState(false);
+  const [pluginSectionLoading, setPluginSectionLoading] = reactExports.useState(false);
+  const [approvingKey, setApprovingKey] = reactExports.useState(null);
+  const [confirmRevokeKey, setConfirmRevokeKey] = reactExports.useState(null);
+  const [revokingKey, setRevokingKey] = reactExports.useState(null);
   const [apiKey, setApiKey] = reactExports.useState(null);
   const [apiKeyLoading, setApiKeyLoading] = reactExports.useState(false);
   const [copied, setCopied] = reactExports.useState(false);
@@ -67457,27 +67494,30 @@ function SettingsView() {
   const [generateLoading, setGenerateLoading] = reactExports.useState(false);
   reactExports.useEffect(() => {
     if (!actor) return;
+    setPluginSectionLoading(true);
     (async () => {
       try {
-        const principal = await actor.getMyPrincipal();
-        setMyPrincipal(
-          typeof principal.toText === "function" ? principal.toText() : String(principal)
+        const toStr2 = (p2) => typeof p2.toText === "function" ? p2.toText() : String(p2);
+        const [principal, pending, bound, boundKeys] = await Promise.allSettled(
+          [
+            actor.getMyPrincipal(),
+            actor.getPendingPluginBindings(),
+            actor.getPluginBindingStatus(),
+            actor.getBoundPluginKeys()
+          ]
         );
-      } catch {
-      }
-      try {
-        const pending = await actor.getPendingPluginBindings();
-        setPendingBindings(
-          pending.map(
-            (p2) => typeof p2.toText === "function" ? p2.toText() : String(p2)
-          )
-        );
-      } catch {
-      }
-      try {
-        const bound = await actor.getPluginBindingStatus();
-        setPluginBound(Boolean(bound));
-      } catch {
+        if (principal.status === "fulfilled")
+          setMyPrincipal(toStr2(principal.value));
+        if (pending.status === "fulfilled")
+          setPendingBindings(pending.value.map(toStr2));
+        if (bound.status === "fulfilled") setPluginBound(Boolean(bound.value));
+        if (boundKeys.status === "fulfilled")
+          setBoundPluginKeys(boundKeys.value.map(toStr2));
+      } catch (e2) {
+        ue$1.error("Failed to load plugin binding data");
+        console.error(e2);
+      } finally {
+        setPluginSectionLoading(false);
       }
     })();
   }, [actor]);
@@ -67500,13 +67540,51 @@ function SettingsView() {
   };
   const handleApproveBinding = async (key2) => {
     if (!actor) return;
-    const { Principal: Principal3 } = await __vitePreload(async () => {
-      const { Principal: Principal4 } = await Promise.resolve().then(() => index$a);
-      return { Principal: Principal4 };
-    }, true ? void 0 : void 0);
-    await actor.approvePluginBinding(Principal3.fromText(key2));
-    setPendingBindings((prev) => prev.filter((k2) => k2 !== key2));
-    ue$1.success("Plugin binding approved");
+    setApprovingKey(key2);
+    try {
+      const { Principal: Principal3 } = await __vitePreload(async () => {
+        const { Principal: Principal4 } = await Promise.resolve().then(() => index$a);
+        return { Principal: Principal4 };
+      }, true ? void 0 : void 0);
+      await actor.approvePluginBinding(Principal3.fromText(key2));
+      setPendingBindings((prev) => prev.filter((k2) => k2 !== key2));
+      const [boundKeys, status] = await Promise.allSettled([
+        actor.getBoundPluginKeys(),
+        actor.getPluginBindingStatus()
+      ]);
+      const toStr2 = (p2) => typeof p2.toText === "function" ? p2.toText() : String(p2);
+      if (boundKeys.status === "fulfilled")
+        setBoundPluginKeys(boundKeys.value.map(toStr2));
+      if (status.status === "fulfilled") setPluginBound(Boolean(status.value));
+      ue$1.success("Plugin binding approved");
+    } catch {
+      ue$1.error("Failed to approve plugin binding");
+    } finally {
+      setApprovingKey(null);
+    }
+  };
+  const handleRevokeBinding = async (key2) => {
+    if (!actor) return;
+    setRevokingKey(key2);
+    try {
+      const { Principal: Principal3 } = await __vitePreload(async () => {
+        const { Principal: Principal4 } = await Promise.resolve().then(() => index$a);
+        return { Principal: Principal4 };
+      }, true ? void 0 : void 0);
+      await actor.revokePluginBinding(Principal3.fromText(key2));
+      setBoundPluginKeys((prev) => prev.filter((k2) => k2 !== key2));
+      setConfirmRevokeKey(null);
+      try {
+        const newStatus = await actor.getPluginBindingStatus();
+        setPluginBound(Boolean(newStatus));
+      } catch {
+      }
+      ue$1.success("Plugin binding revoked");
+    } catch {
+      ue$1.error("Failed to revoke plugin binding");
+    } finally {
+      setRevokingKey(null);
+    }
   };
   const handleCopy = async () => {
     if (!apiKey) return;
@@ -67692,82 +67770,182 @@ function SettingsView() {
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Plugin Binding" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Link the Obsidian plugin to your account so it can import folder data into your notes." })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Link this Obsidian plugin to your Hyvmind account so uploaded notes appear here." })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Your Principal ID" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "font-mono text-xs bg-muted px-2 py-1 rounded break-all", children: myPrincipal ?? "Loading..." }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-5", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Your Principal ID" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "Copy this into the Obsidian plugin so it can request binding." }),
+              pluginSectionLoading && !myPrincipal ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                "Loading..."
+              ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "code",
+                  {
+                    className: "font-mono text-xs bg-muted px-2 py-1 rounded break-all",
+                    "data-ocid": "settings.plugin_binding.principal_display",
+                    children: myPrincipal ?? "—"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "outline",
+                    size: "sm",
+                    onClick: handleCopyPrincipal,
+                    disabled: !myPrincipal,
+                    className: "shrink-0",
+                    "data-ocid": "settings.plugin_binding.copy_principal_button",
+                    children: principalCopied ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-4 w-4 text-foreground" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "h-4 w-4" })
+                  }
+                )
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Binding Status" }),
+              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin text-muted-foreground" }) : pluginBound ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
                 {
-                  type: "button",
-                  onClick: handleCopyPrincipal,
-                  className: "shrink-0 text-xs text-muted-foreground hover:text-foreground",
-                  "data-ocid": "settings.plugin_binding.copy_principal_button",
-                  children: principalCopied ? "✓ Copied" : "Copy"
+                  className: "text-sm font-medium",
+                  style: { color: "oklch(0.55 0.15 145)" },
+                  "data-ocid": "settings.plugin_binding.status_bound",
+                  children: "✓ Plugin bound"
+                }
+              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
+                {
+                  className: "text-sm text-muted-foreground",
+                  "data-ocid": "settings.plugin_binding.status_unbound",
+                  children: "No plugin bound"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Pending Plugin Requests" }),
+              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                "Loading..."
+              ] }) : pendingBindings.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
+                {
+                  className: "text-sm text-muted-foreground",
+                  "data-ocid": "settings.plugin_binding.pending.empty_state",
+                  children: "(no pending requests)"
+                }
+              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "div",
+                {
+                  className: "space-y-2",
+                  "data-ocid": "settings.plugin_binding.pending_list",
+                  children: pendingBindings.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "div",
+                    {
+                      className: "flex items-center gap-2",
+                      "data-ocid": `settings.plugin_binding.pending.item.${idx + 1}`,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
+                          key2.slice(0, 20),
+                          "..."
+                        ] }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          Button,
+                          {
+                            size: "sm",
+                            variant: "outline",
+                            disabled: approvingKey === key2,
+                            onClick: () => handleApproveBinding(key2),
+                            "data-ocid": `settings.plugin_binding.approve_button.${idx + 1}`,
+                            children: approvingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                              /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
+                              "Approving..."
+                            ] }) : "Approve"
+                          }
+                        )
+                      ]
+                    },
+                    key2
+                  ))
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Bound Plugin Keys" }),
+              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                "Loading..."
+              ] }) : boundPluginKeys.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
+                {
+                  className: "text-sm text-muted-foreground",
+                  "data-ocid": "settings.plugin_binding.bound.empty_state",
+                  children: "(no bound plugins)"
+                }
+              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "div",
+                {
+                  className: "space-y-3",
+                  "data-ocid": "settings.plugin_binding.bound_list",
+                  children: boundPluginKeys.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "div",
+                    {
+                      className: "space-y-2",
+                      "data-ocid": `settings.plugin_binding.bound.item.${idx + 1}`,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                          /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
+                            key2.slice(0, 20),
+                            "..."
+                          ] }),
+                          confirmRevokeKey !== key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                            Button,
+                            {
+                              size: "sm",
+                              variant: "outline",
+                              className: "text-xs text-destructive hover:text-destructive shrink-0",
+                              onClick: () => setConfirmRevokeKey(key2),
+                              "data-ocid": `settings.plugin_binding.revoke_button.${idx + 1}`,
+                              children: [
+                                /* @__PURE__ */ jsxRuntimeExports.jsx(Trash2, { className: "mr-1 h-3 w-3" }),
+                                "Revoke"
+                              ]
+                            }
+                          ) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 shrink-0", children: [
+                            /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              Button,
+                              {
+                                size: "sm",
+                                variant: "outline",
+                                onClick: () => setConfirmRevokeKey(null),
+                                disabled: revokingKey === key2,
+                                "data-ocid": `settings.plugin_binding.cancel_revoke_button.${idx + 1}`,
+                                children: "Cancel"
+                              }
+                            ),
+                            /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              Button,
+                              {
+                                size: "sm",
+                                variant: "destructive",
+                                disabled: revokingKey === key2,
+                                onClick: () => handleRevokeBinding(key2),
+                                "data-ocid": `settings.plugin_binding.confirm_revoke_button.${idx + 1}`,
+                                children: revokingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                                  /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
+                                  "Revoking..."
+                                ] }) : "Confirm Revoke"
+                              }
+                            )
+                          ] })
+                        ] }),
+                        confirmRevokeKey === key2 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "This will disconnect the plugin. It will need to re-bind to send notes again." })
+                      ]
+                    },
+                    key2
+                  ))
                 }
               )
             ] })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Pending Plugin Requests" }),
-            pendingBindings.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "p",
-              {
-                className: "text-sm text-muted-foreground",
-                "data-ocid": "settings.plugin_binding.empty_state",
-                children: "No pending binding requests."
-              }
-            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "div",
-              {
-                className: "space-y-2",
-                "data-ocid": "settings.plugin_binding.pending_list",
-                children: pendingBindings.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                  "div",
-                  {
-                    className: "flex items-center gap-2",
-                    "data-ocid": `settings.plugin_binding.pending.item.${idx + 1}`,
-                    children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs", children: [
-                        key2.slice(0, 8),
-                        "..."
-                      ] }),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "button",
-                        {
-                          type: "button",
-                          onClick: () => handleApproveBinding(key2),
-                          className: "text-xs border border-border px-2 py-1 rounded hover:bg-muted",
-                          "data-ocid": `settings.plugin_binding.approve_button.${idx + 1}`,
-                          children: "Approve"
-                        }
-                      )
-                    ]
-                  },
-                  key2
-                ))
-              }
-            )
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Binding Status" }),
-            pluginBound ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "p",
-              {
-                className: "text-sm text-green-600 dark:text-green-400",
-                "data-ocid": "settings.plugin_binding.status_bound",
-                children: "✓ Plugin bound"
-              }
-            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "p",
-              {
-                className: "text-sm text-muted-foreground",
-                "data-ocid": "settings.plugin_binding.status_unbound",
-                children: "No plugin bound"
-              }
-            )
           ] })
         ]
       }
@@ -109157,16 +109335,13 @@ function EditorView() {
     if (!backendActor) return;
     void (async () => {
       try {
-        const actorWithPluginMethods = backendActor;
-        const result = await actorWithPluginMethods.getNotesData();
-        if (!result || result.length === 0 || !result[0]) return;
-        const json = result[0];
-        if (!json) return;
-        const data = JSON.parse(json);
+        const result = await backendActor.getNotesData();
+        if (!result) return;
+        const data = JSON.parse(result);
         if (!data.folders || data.folders.length === 0) return;
         const { nodes: nodeMap, rootIds } = convertObsidianData(data);
         importRawNodes(nodeMap, rootIds);
-        await actorWithPluginMethods.storeNotesData("");
+        await backendActor.storeNotesData("");
       } catch (err) {
         console.warn("Obsidian import failed:", err);
       }

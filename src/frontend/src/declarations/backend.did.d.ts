@@ -314,6 +314,7 @@ export interface _SERVICE {
     Array<PublishedSourceGraphMeta>
   >,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
+  'getBoundPluginKeys' : ActorMethod<[], Array<Principal>>,
   'getBuzzLeaderboard' : ActorMethod<[bigint], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -392,6 +393,7 @@ export interface _SERVICE {
   'requestPluginBinding' : ActorMethod<[Principal, Principal], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,
+  'revokePluginBinding' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'savePublishedGraph' : ActorMethod<
     [string, Array<NodeId>],

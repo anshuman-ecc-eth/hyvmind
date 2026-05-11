@@ -387,6 +387,7 @@ service : {
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
+  getBoundPluginKeys: () -> (vec principal) query;
   getBuzzLeaderboard: (topN: nat) -> (vec BuzzLeaderboardEntry) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
@@ -458,6 +459,7 @@ service : {
    ();
   resetAllData: () -> ();
   revokeApiKey: () -> ();
+  revokePluginBinding: (pluginKey: principal) -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
   savePublishedGraph: (publishedGraphId: text, selectedNodeIds:
    vec NodeId) -> (variant {

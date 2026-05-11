@@ -928,6 +928,30 @@ actor {
     found;
   };
 
+  public query ({ caller }) func getBoundPluginKeys() : async [Principal] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can view bound keys");
+    };
+    let keys = List.empty<Principal>();
+    for ((pluginKey, user) in pluginBindings.entries()) {
+      if (user == caller) { keys.add(pluginKey) };
+    };
+    keys.toArray();
+  };
+
+  public shared ({ caller }) func revokePluginBinding(pluginKey : Principal) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can revoke bindings");
+    };
+    switch (pluginBindings.get(pluginKey)) {
+      case (?user) {
+        if (user != caller) { Runtime.trap("Cannot revoke a binding that belongs to another user") };
+        pluginBindings.remove(pluginKey);
+      };
+      case (null) { Runtime.trap("Plugin key not found in active bindings") };
+    };
+  };
+
   // APPROVAL SYSTEM
   public query ({ caller }) func isCallerApproved() : async Bool {
     AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
