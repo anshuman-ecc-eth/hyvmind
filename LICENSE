@@ -1,9 +1,6 @@
 GNU GENERAL PUBLIC LICENSE
 Version 3, 29 June 2007
 
-Copyright (C) 2026 Anshuman Singh
-SPDX-License-Identifier: GPL-3.0-or-later
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -638,3 +635,6 @@ Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
                      END OF TERMS AND CONDITIONS
+
+Copyright (C) 2026 Anshuman Singh
+SPDX-License-Identifier: GPL-3.0-or-later
