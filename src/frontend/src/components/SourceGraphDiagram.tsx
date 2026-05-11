@@ -279,10 +279,14 @@ export function SourceGraphDiagram({
           const neighborIds = new Set<string>();
           neighborIds.add(node.id);
           for (const link of graphDataRef.current.links) {
-            const src = link.source;
-            const tgt = link.target;
-            if (src === node.id) neighborIds.add(tgt as string);
-            if (tgt === node.id) neighborIds.add(src as string);
+            const srcId = String(
+              typeof link.source === "object" ? link.source.id : link.source,
+            );
+            const tgtId = String(
+              typeof link.target === "object" ? link.target.id : link.target,
+            );
+            if (srcId === node.id) neighborIds.add(tgtId);
+            if (tgtId === node.id) neighborIds.add(srcId);
           }
           neighborIdsRef.current = neighborIds;
           hoveredNodeIdRef.current = node.id;
