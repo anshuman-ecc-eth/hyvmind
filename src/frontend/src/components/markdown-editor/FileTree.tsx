@@ -174,7 +174,7 @@ function TreeNode({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="truncate min-w-0 flex-1">{node.name}</span>
+          <span className="truncate min-w-0 flex-1" title={node.name}>{node.name}</span>
         )}
       </div>
 

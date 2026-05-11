@@ -52,7 +52,7 @@ export default function ReferenceDropdown({
         zIndex: 50,
       }}
     >
-      <div className="bg-popover text-popover-foreground border rounded shadow-md z-50 min-w-[200px] max-w-[400px] max-h-[300px] overflow-y-auto">
+      <div className="bg-popover text-popover-foreground border rounded shadow-md z-50 min-w-[200px] max-w-[600px] max-h-[300px] overflow-y-auto">
         {filtered.map((node, index) => {
           const isHighlighted = index === highlightedIndex;
           return (
@@ -74,7 +74,7 @@ export default function ReferenceDropdown({
               <span className={dotColorClass[node.nodeType]}>●</span>
               <span
                 className={[
-                  "font-medium truncate",
+                  "font-medium",
                   isHighlighted ? "text-accent-foreground" : "text-foreground",
                 ].join(" ")}
               >
