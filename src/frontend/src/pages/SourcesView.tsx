@@ -281,18 +281,20 @@ export default function SourcesView() {
     return (
       <div className="flex flex-col h-full font-mono">
         {/* Graph header */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-background shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
           <button
             type="button"
             onClick={handleBackToList}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             data-ocid="sources.back_to_list"
           >
-            ← back to list
+            ← back
           </button>
           <span className="text-xs text-border">|</span>
-          <span className="text-xs text-foreground">{activeGraph.name}</span>
-          <span className="text-xs text-muted-foreground ml-auto">
+          <span className="text-sm font-semibold text-foreground mr-auto">
+            {activeGraph.name}
+          </span>
+          <span className="text-xs text-muted-foreground">
             {activeGraph.nodes.length} nodes
           </span>
         </div>
@@ -348,194 +350,194 @@ export default function SourcesView() {
   // List view
   // ---------------------------------------------------------------------------
   return (
-    <div className="h-full overflow-auto p-6 font-mono">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".zip"
-        className="hidden"
-        onChange={handleFileChange}
-        data-ocid="sources.file_input"
-        aria-label="Import ZIP file"
-      />
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground mb-1">
-            Graphs
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleImportClick}
-            disabled={importing}
-            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            data-ocid="sources.import_button"
-          >
-            {importing ? "parsing..." : "import graph"}
-          </button>
-        </div>
+    <div className="flex flex-col h-full font-mono">
+      {/* Display bar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
+        <span className="text-sm font-semibold text-foreground mr-auto">
+          Graphs
+        </span>
+        <button
+          type="button"
+          onClick={handleImportClick}
+          disabled={importing}
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-ocid="sources.import_button"
+        >
+          {importing ? "parsing..." : "import graph"}
+        </button>
       </div>
 
-      {/* Import error banner */}
-      {error && (
-        <div
-          className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
-          data-ocid="sources.error_message"
-          role="alert"
-        >
-          [ERROR] {error}
-        </div>
-      )}
-
-      {/* Preview/commit error banner */}
-      {(commitError || previewError) && (
-        <div
-          className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
-          data-ocid="sources.publish_error_state"
-          role="alert"
-        >
-          [PUBLISH ERROR] {commitError ?? previewError}
-        </div>
-      )}
-
-
-      {/* Graph list */}
-      {graphs.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {graphs.map((graph) => {
-            const published = isPublished(graph.id);
-            const publishedDate = published ? getPublishedDate(graph.id) : null;
-            return (
-              <div
-                key={graph.id}
-                className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
-                data-ocid={`sources.graph_row.${graph.id}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-foreground truncate">
-                    {graph.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatDate(graph.createdAt)} · {graph.nodes.length} nodes ·{" "}
-                    {(() => {
-                      const hierarchyCount = graph.nodes.length - 1;
-                      const crossRefCount = graph.edges.length - hierarchyCount;
-                      return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
-                    })()}
-                  </p>
-                  {published && publishedDate && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      published {publishedDate}
-                    </p>
-                  )}
-                  {commitSuccessId === graph.id && (
-                    <p
-                      className="text-xs text-green-500 mt-0.5"
-                      data-ocid={`sources.publish_success_state.${graph.id}`}
-                    >
-                      ✓ {published ? "updated" : "published"} to backend
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleView(graph)}
-                    className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
-                    data-ocid={`sources.view_button.${graph.id}`}
-                  >
-                    view
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePublish(graph)}
-                    disabled={isPublishing || isPreviewLoading}
-                    className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    data-ocid={`sources.publish_button.${graph.id}`}
-                  >
-                    {isPreviewLoading && previewGraph?.id === graph.id
-                      ? "previewing..."
-                      : published
-                        ? "update"
-                        : "publish"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteRequest(graph.id)}
-                    className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                    data-ocid={`sources.delete_button.${graph.id}`}
-                  >
-                    delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Delete confirmation dialog */}
-      {confirmDeleteId && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
-            aria-hidden="true"
-            onClick={handleDeleteCancel}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") handleDeleteCancel();
-            }}
-          />
-          <div
-            className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono"
-            data-ocid="sources.confirm_delete_dialog"
-          >
-            <p className="text-sm text-foreground mb-2">delete graph?</p>
-            <p className="text-xs text-muted-foreground mb-6">
-              {graphs.find((g) => g.id === confirmDeleteId)?.name ?? ""}
-              <br />
-              this action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                data-ocid="sources.confirm_delete_yes"
-              >
-                delete
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteCancel}
-                className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
-                data-ocid="sources.confirm_delete_cancel"
-              >
-                cancel
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Publish confirm dialog */}
-      {previewResult && (
-        <PublishConfirmDialog
-          isOpen={isDialogOpen}
-          onClose={() => {
-            setIsDialogOpen(false);
-            setPreviewGraph(null);
-          }}
-          onConfirm={handleConfirm}
-          previewResult={previewResult}
-          graphName={previewGraph?.name ?? ""}
-          isPublished={previewGraph ? isPublished(previewGraph.id) : false}
-          isLoading={isPublishing || isPreviewLoading}
+      <div className="flex-1 overflow-auto p-6">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".zip"
+          className="hidden"
+          onChange={handleFileChange}
+          data-ocid="sources.file_input"
+          aria-label="Import ZIP file"
         />
-      )}
+
+        {/* Import error banner */}
+        {error && (
+          <div
+            className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+            data-ocid="sources.error_message"
+            role="alert"
+          >
+            [ERROR] {error}
+          </div>
+        )}
+
+        {/* Preview/commit error banner */}
+        {(commitError || previewError) && (
+          <div
+            className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+            data-ocid="sources.publish_error_state"
+            role="alert"
+          >
+            [PUBLISH ERROR] {commitError ?? previewError}
+          </div>
+        )}
+
+        {/* Graph list */}
+        {graphs.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {graphs.map((graph) => {
+              const published = isPublished(graph.id);
+              const publishedDate = published
+                ? getPublishedDate(graph.id)
+                : null;
+              return (
+                <div
+                  key={graph.id}
+                  className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
+                  data-ocid={`sources.graph_row.${graph.id}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-foreground truncate">
+                      {graph.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatDate(graph.createdAt)} · {graph.nodes.length} nodes
+                      · {(() => {
+                        const hierarchyCount = graph.nodes.length - 1;
+                        const crossRefCount =
+                          graph.edges.length - hierarchyCount;
+                        return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+                      })()}
+                    </p>
+                    {published && publishedDate && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        published {publishedDate}
+                      </p>
+                    )}
+                    {commitSuccessId === graph.id && (
+                      <p
+                        className="text-xs text-green-500 mt-0.5"
+                        data-ocid={`sources.publish_success_state.${graph.id}`}
+                      >
+                        ✓ {published ? "updated" : "published"} to backend
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleView(graph)}
+                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                      data-ocid={`sources.view_button.${graph.id}`}
+                    >
+                      view
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePublish(graph)}
+                      disabled={isPublishing || isPreviewLoading}
+                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-ocid={`sources.publish_button.${graph.id}`}
+                    >
+                      {isPreviewLoading && previewGraph?.id === graph.id
+                        ? "previewing..."
+                        : published
+                          ? "update"
+                          : "publish"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRequest(graph.id)}
+                      className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      data-ocid={`sources.delete_button.${graph.id}`}
+                    >
+                      delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Delete confirmation dialog */}
+        {confirmDeleteId && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+              aria-hidden="true"
+              onClick={handleDeleteCancel}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") handleDeleteCancel();
+              }}
+            />
+            <div
+              className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono"
+              data-ocid="sources.confirm_delete_dialog"
+            >
+              <p className="text-sm text-foreground mb-2">delete graph?</p>
+              <p className="text-xs text-muted-foreground mb-6">
+                {graphs.find((g) => g.id === confirmDeleteId)?.name ?? ""}
+                <br />
+                this action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  data-ocid="sources.confirm_delete_yes"
+                >
+                  delete
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteCancel}
+                  className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                  data-ocid="sources.confirm_delete_cancel"
+                >
+                  cancel
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Publish confirm dialog */}
+        {previewResult && (
+          <PublishConfirmDialog
+            isOpen={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false);
+              setPreviewGraph(null);
+            }}
+            onConfirm={handleConfirm}
+            previewResult={previewResult}
+            graphName={previewGraph?.name ?? ""}
+            isPublished={previewGraph ? isPublished(previewGraph.id) : false}
+            isLoading={isPublishing || isPreviewLoading}
+          />
+        )}
+      </div>
     </div>
   );
 }

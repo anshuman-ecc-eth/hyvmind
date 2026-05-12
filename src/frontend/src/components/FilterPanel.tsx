@@ -214,7 +214,7 @@ export default function FilterPanel({
             <button
               type="button"
               onClick={onFitToVisible}
-              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
+              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
               data-ocid="filter_panel.fit_to_visible"
               aria-label="Zoom to fit visible nodes"
             >
@@ -224,7 +224,7 @@ export default function FilterPanel({
               type="button"
               onClick={onReset}
               disabled={!isFiltered}
-              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed"
               data-ocid="filter_panel.reset_button"
               aria-label="Reset all filters"
             >

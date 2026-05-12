@@ -150,7 +150,7 @@ export function FrontmatterEditor({
           type="button"
           aria-label="Add frontmatter field"
           data-ocid="frontmatter_editor.add_button"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 hover:bg-accent rounded-sm"
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-accent-foreground transition-colors px-1.5 py-0.5 hover:bg-accent rounded-sm"
           onClick={handleAdd}
         >
           <Plus size={11} />
@@ -207,7 +207,7 @@ export function FrontmatterEditor({
                 type="button"
                 aria-label={`Remove ${key}`}
                 data-ocid={`frontmatter_editor.remove_button.${idx + 1}`}
-                className="flex-shrink-0 p-0.5 text-muted-foreground hover:text-destructive transition-colors rounded-sm hover:bg-accent"
+                className="flex-shrink-0 p-0.5 text-muted-foreground hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10"
                 onClick={() => handleRemove(key)}
               >
                 <X size={11} />

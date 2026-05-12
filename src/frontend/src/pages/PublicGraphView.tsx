@@ -444,21 +444,17 @@ export default function PublicGraphView({
   }
 
   const containerClass = isLanding
-    ? "flex flex-col h-full min-h-0 overflow-auto"
-    : "flex flex-col flex-1 min-h-0 overflow-auto";
+    ? "flex flex-col h-full min-h-0"
+    : "flex flex-col flex-1 min-h-0";
 
   return (
     <div className={containerClass} data-ocid="public_graphs.page">
       {/* Header bar */}
-      <div className="px-4 py-3 border-b border-border bg-card shrink-0">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="font-mono text-sm text-foreground font-semibold">
-              Public Graphs
-            </h2>
-          </div>
-          <GraphFuzzyFinder onSelect={handleFuzzySelect} />
-        </div>
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
+        <span className="text-sm font-semibold text-foreground mr-auto">
+          Public Graphs
+        </span>
+        <GraphFuzzyFinder onSelect={handleFuzzySelect} />
       </div>
 
       {/* Save dialog */}

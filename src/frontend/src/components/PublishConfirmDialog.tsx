@@ -66,7 +66,7 @@ function CollapsibleSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-2 text-xs text-foreground hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-xs text-foreground hover:text-accent-foreground hover:bg-accent transition-colors"
         data-ocid={`publish_dialog.section_toggle.${title.toLowerCase().replace(/\s+/g, "_")}`}
       >
         <span>
@@ -441,7 +441,7 @@ export default function PublishConfirmDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
             data-ocid="publish_dialog.cancel_button"
           >
             cancel
@@ -450,7 +450,7 @@ export default function PublishConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isLoading || noChanges}
-            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-ocid="publish_dialog.confirm_button"
           >
             {isLoading ? "working..." : isPublished ? "update" : "publish"}

@@ -131,7 +131,7 @@ function InlineDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-xs px-3 py-1.5 border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="text-xs px-3 py-1.5 border border-dashed border-border text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-colors"
             data-ocid={`${ocidPrefix}.cancel_button`}
           >
             Cancel
@@ -142,7 +142,7 @@ function InlineDialog({
             onClick={() => {
               if (name.trim()) onSubmit(name.trim());
             }}
-            className="text-xs px-3 py-1.5 border border-dashed border-border text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-xs px-3 py-1.5 border border-dashed border-border text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-ocid={`${ocidPrefix}.submit_button`}
           >
             Confirm
@@ -732,7 +732,7 @@ export default function EditorView() {
         <button
           type="button"
           onClick={() => setShowCreateCuration(true)}
-          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
           data-ocid="editor.create_button"
         >
           + create
@@ -742,7 +742,7 @@ export default function EditorView() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors"
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
           data-ocid="editor.import_button"
         >
           import zip
@@ -753,7 +753,9 @@ export default function EditorView() {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Center content area */}
         <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-          {isEmpty ? <div /> : (
+          {isEmpty ? (
+            <div />
+          ) : (
             <>
               {viewMode === "edit" && (
                 <div className="flex flex-col flex-1 min-h-0 overflow-hidden">

@@ -65,12 +65,6 @@ interface PendingExecution {
   originalInput: string;
 }
 
-const DEFAULT_MESSAGE: TerminalMessage = {
-  type: "success",
-  text: "Terminal ready. Type /help for list of commands.",
-  timestamp: Date.now(),
-};
-
 function renderLineTokens(tokens: LineToken[]): React.ReactNode {
   return tokens.map((token, i) => {
     if (token.type === "blank") {
@@ -103,7 +97,7 @@ function renderLineTokens(tokens: LineToken[]): React.ReactNode {
 export default function TerminalPage() {
   const [messages, setMessages] = useState<TerminalMessage[]>(() => {
     const loaded = loadTerminalSession();
-    return loaded && loaded.length > 0 ? loaded : [DEFAULT_MESSAGE];
+    return loaded && loaded.length > 0 ? loaded : [];
   });
   const [input, setInput] = useState("");
   const [pendingExecution, setPendingExecution] =
@@ -1600,6 +1594,13 @@ export default function TerminalPage() {
 
   return (
     <div className="flex flex-col h-full bg-background font-mono text-sm">
+      {/* Display bar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
+        <span className="text-sm font-semibold text-foreground mr-auto">
+          Terminal
+        </span>
+      </div>
+
       {/* Terminal output */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
         <div className="p-4 space-y-0.5">
@@ -1645,7 +1646,6 @@ export default function TerminalPage() {
       {/* Input area */}
       <div className="border-t border-border p-3 shrink-0">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <span className="text-accent font-medium shrink-0">$</span>
           <Input
             ref={inputRef}
             value={input}
