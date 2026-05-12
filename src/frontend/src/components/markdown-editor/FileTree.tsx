@@ -140,9 +140,9 @@ function TreeNode({
         <span className={`flex-shrink-0 ${colorClass}`}>
           {isFolder ? (
             isExpanded ? (
-              <FolderOpen size={13} />
+              <FolderOpen size={13} fill="currentColor" />
             ) : (
-              <Folder size={13} />
+              <Folder size={13} fill="currentColor" />
             )
           ) : (
             <File size={13} />

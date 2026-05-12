@@ -32,6 +32,8 @@ export const TWEAKCN_THEME_NAMES: string[] = [
   "starry-night",
   "soft-pop",
   "sage-garden",
+  "catppuccin",
+  "tokyo-night",
 ];
 
 /** All 25 base theme names: minimalist first, then tweakcn themes */
@@ -64,6 +66,8 @@ export const THEME_DISPLAY_NAMES: Record<string, string> = {
   "starry-night": "Starry Night",
   "soft-pop": "Soft Pop",
   "sage-garden": "Sage Garden",
+  catppuccin: "Catppuccin",
+  "tokyo-night": "Tokyo Night",
 };
 
 /** All 50 compound theme names: each base theme × 2 variants */
