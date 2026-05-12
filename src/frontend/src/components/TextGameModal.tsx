@@ -224,7 +224,7 @@ function SettingsScreen({
     <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
       <div
         className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1em" }}
       >
         {heading ?? "Settings"}
       </div>
@@ -239,7 +239,7 @@ function SettingsScreen({
               className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
+                fontSize: "0.6em",
                 letterSpacing: "0.15em",
                 background: "none",
                 border: "none",
@@ -301,7 +301,7 @@ function LeaderboardScreen({
     <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
       <div
         className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" }}
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1em" }}
       >
         {heading ?? "Leaderboard"}
       </div>
@@ -314,7 +314,7 @@ function LeaderboardScreen({
             className="text-muted-foreground"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.55rem",
+              fontSize: "0.55em",
               letterSpacing: "0.1em",
             }}
           >
@@ -328,7 +328,7 @@ function LeaderboardScreen({
               className="text-foreground"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
+                fontSize: "0.6em",
                 letterSpacing: "0.1em",
                 display: "flex",
                 gap: "1rem",
@@ -349,7 +349,7 @@ function LeaderboardScreen({
         className="text-foreground transition-colors hover:text-muted-foreground"
         style={{
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.6rem",
+          fontSize: "0.6em",
           letterSpacing: "0.15em",
           background: "none",
           border: "none",
@@ -464,7 +464,7 @@ function StartScreen({
                     <span
                       key={letter}
                       style={{
-                        fontSize: "2.5rem",
+                        fontSize: "2.5em",
                         verticalAlign: "middle",
                         lineHeight: 1,
                       }}
@@ -475,7 +475,7 @@ function StartScreen({
                     <span
                       key={letter}
                       style={{
-                        fontSize: "2rem",
+                        fontSize: "2em",
                         verticalAlign: "middle",
                         lineHeight: 1,
                       }}
@@ -490,7 +490,7 @@ function StartScreen({
               className="text-muted-foreground text-center mt-3"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.5rem",
+                fontSize: "0.5em",
                 letterSpacing: "0.05em",
               }}
             >
@@ -502,7 +502,7 @@ function StartScreen({
             className="text-foreground tracking-widest"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "1rem",
+              fontSize: "1em",
               letterSpacing: "0.15em",
             }}
           >
@@ -523,7 +523,7 @@ function StartScreen({
                     className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65rem",
+                      fontSize: "0.65em",
                       letterSpacing: "0.2em",
                       background: "none",
                       border: "none",
@@ -555,7 +555,7 @@ function StartScreen({
                     className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65rem",
+                      fontSize: "0.65em",
                       letterSpacing: "0.2em",
                       background: "none",
                       border: "none",
@@ -579,7 +579,7 @@ function StartScreen({
             className="text-foreground text-center mt-4"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5rem",
+              fontSize: "0.5em",
               letterSpacing: "0.1em",
             }}
           >
@@ -647,7 +647,7 @@ function ChoiceMenu({
               className={`text-left transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
+                fontSize: "0.6em",
                 letterSpacing: "0.05em",
                 lineHeight: "2",
                 background: "none",
@@ -815,7 +815,7 @@ function ScrambleDisplay({
         className="text-foreground text-center leading-relaxed"
         style={{
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.7rem",
+          fontSize: "0.7em",
           letterSpacing: "0.05em",
           lineHeight: "2",
           maxWidth: "80%",
@@ -1279,7 +1279,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               className="text-foreground"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.65rem",
+                fontSize: "0.65em",
                 letterSpacing: "0.1em",
               }}
             >
@@ -1292,7 +1292,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   key={i}
                   className="text-foreground"
                   style={{
-                    fontSize: "0.55rem",
+                    fontSize: "0.55em",
                     animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
                   }}
                 >
@@ -1482,7 +1482,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <span
             className="text-foreground/50"
             style={{
-              fontSize: "0.5rem",
+              fontSize: "0.5em",
               letterSpacing: "0.3em",
               fontFamily: '"Press Start 2P", monospace',
             }}
@@ -1495,7 +1495,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             className="text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5rem",
+              fontSize: "0.5em",
               letterSpacing: "0.3em",
             }}
             onClick={() => {
@@ -1563,7 +1563,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               className="text-muted-foreground"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.35rem",
+                fontSize: "0.35em",
                 letterSpacing: "0.1em",
               }}
             >
