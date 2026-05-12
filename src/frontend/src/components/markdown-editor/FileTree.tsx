@@ -106,7 +106,7 @@ function TreeNode({
         aria-expanded={isFolder ? isExpanded : undefined}
         data-ocid={`file_tree.item.${nodeId}`}
         className={[
-          "flex items-center gap-1 px-2 py-1 cursor-pointer select-none text-xs",
+          "flex items-center gap-1 px-2 py-1 cursor-pointer select-none text-sm",
           "hover:bg-accent hover:text-accent-foreground transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           isActive
@@ -253,7 +253,7 @@ export function FileTree({
     <div
       role="tree"
       aria-label="File tree"
-      className="w-full overflow-y-auto text-sm"
+      className="w-full overflow-y-auto"
       data-ocid="file_tree.panel"
     >
       {rootIds.map((rootId) => (

@@ -111,7 +111,7 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
             return (
               <li
                 key={String(entry.extendedAt)}
-                className="font-mono text-[10px] text-muted-foreground"
+                className="font-mono text-xs text-muted-foreground"
               >
                 Ext #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
                 {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}

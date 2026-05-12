@@ -82,7 +82,7 @@ export default function ReferenceDropdown({
               </span>
               <span
                 className={[
-                  "text-[10px] ml-auto truncate pl-2",
+                  "text-xs ml-auto truncate pl-2",
                   isHighlighted
                     ? "text-accent-foreground/70"
                     : "text-muted-foreground",

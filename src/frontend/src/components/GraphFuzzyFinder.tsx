@@ -38,7 +38,7 @@ interface GraphFuzzyFinderProps {
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/30">
+    <div className="px-3 py-1 font-mono text-xs uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/30">
       {label}
     </div>
   );
@@ -378,7 +378,7 @@ function ResultRow({
       <span className="font-mono text-xs font-medium text-foreground truncate">
         {item.label}
       </span>
-      <span className="font-mono text-[10px] text-muted-foreground truncate">
+      <span className="font-mono text-xs text-muted-foreground truncate">
         {item.description}
         {" · "}
         <span className="opacity-60">{item.curationName}</span>

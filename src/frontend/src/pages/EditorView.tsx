@@ -803,7 +803,7 @@ export default function EditorView() {
             data-ocid="editor.sidebar"
           >
             <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                 files
               </span>
             </div>

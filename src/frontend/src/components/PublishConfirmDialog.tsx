@@ -19,9 +19,7 @@ interface Props {
 
 function NodeTypeBadge({ type }: { type: string }) {
   const cls = "text-muted-foreground border-border";
-  return (
-    <span className={`text-[10px] border px-1 py-0.5 ${cls}`}>{type}</span>
-  );
+  return <span className={`text-xs border px-1 py-0.5 ${cls}`}>{type}</span>;
 }
 
 function AttributeChangesView({ changes }: { changes: AttributeChange[] }) {
@@ -29,7 +27,7 @@ function AttributeChangesView({ changes }: { changes: AttributeChange[] }) {
   return (
     <div className="mt-1 pl-2 border-l border-dashed border-border space-y-1">
       {changes.map((c) => (
-        <div key={c.key} className="text-[10px]">
+        <div key={c.key} className="text-xs">
           <span className="text-muted-foreground">{c.key}: </span>
           <span className="text-muted-foreground">
             {c.oldValues.map((v) => `${v.value}(×${v.weight})`).join(", ")}
@@ -92,7 +90,7 @@ function NodeCreateRow({ op }: { op: NodeOperation }) {
         </span>
         <NodeTypeBadge type={op.nodeType} />
         {op.parentName && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             ← {op.parentName}
           </span>
         )}
@@ -112,7 +110,7 @@ function EdgeCreateRow({ op }: { op: EdgeOperation }) {
         {op.targetName}
       </div>
       {op.labels.length > 0 && (
-        <div className="text-[10px] text-muted-foreground mt-0.5">
+        <div className="text-xs text-muted-foreground mt-0.5">
           {op.labels.join(", ")}
         </div>
       )}
@@ -131,7 +129,7 @@ function EdgeUpdateRow({ op }: { op: EdgeOperation }) {
         {op.targetName}
       </div>
       {op.newLabels && op.newLabels.length > 0 && (
-        <div className="text-[10px] text-foreground mt-0.5">
+        <div className="text-xs text-foreground mt-0.5">
           + {op.newLabels.join(", ")}
         </div>
       )}
@@ -259,7 +257,7 @@ export default function PublishConfirmDialog({
                 buzz
                 <button
                   type="button"
-                  className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0"
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0"
                   onClick={() => setShowCostBreakdown((v) => !v)}
                 >
                   {showCostBreakdown ? "[hide]" : "[see breakdown]"}
@@ -392,10 +390,7 @@ export default function PublishConfirmDialog({
                   {op.action === "create" ? (
                     <div className="mt-0.5 pl-2 space-y-0.5">
                       {op.attributes.map(([k, vals]) => (
-                        <div
-                          key={k}
-                          className="text-[10px] text-muted-foreground"
-                        >
+                        <div key={k} className="text-xs text-muted-foreground">
                           + {k}: {vals.join(", ")}
                         </div>
                       ))}
@@ -423,7 +418,7 @@ export default function PublishConfirmDialog({
                     {(op.sourceChanges ?? []).map((s) => (
                       <div
                         key={s.name}
-                        className="text-[10px] text-muted-foreground"
+                        className="text-xs text-muted-foreground"
                       >
                         + {s.name}
                         {s.url ? ` (${s.url})` : ""}

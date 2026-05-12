@@ -69,7 +69,7 @@ function NodeTypeCheckbox({
       </div>
       <label
         htmlFor={inputId}
-        className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors cursor-pointer"
+        className="text-xs text-muted-foreground group-hover:text-foreground transition-colors cursor-pointer"
       >
         {label}
       </label>
@@ -134,7 +134,7 @@ export default function FilterPanel({
         }
         data-ocid="filter_panel.toggle"
       >
-        <span className="text-[9px] tracking-widest uppercase select-none">
+        <span className="text-xs tracking-widest uppercase select-none">
           {isCollapsed ? "▶ filter" : "◀ filter"}
         </span>
         {isFiltered && (
@@ -156,7 +156,7 @@ export default function FilterPanel({
         >
           {/* Search */}
           <div className="px-3 pt-3 pb-2 border-b border-dashed border-border shrink-0">
-            <span className="block text-[9px] uppercase tracking-widest text-muted-foreground mb-1.5">
+            <span className="block text-xs uppercase tracking-widest text-muted-foreground mb-1.5">
               search
             </span>
             <input
@@ -174,7 +174,7 @@ export default function FilterPanel({
 
           {/* Node type checkboxes */}
           <div className="px-3 pt-2 pb-2 border-b border-dashed border-border shrink-0">
-            <span className="block text-[9px] uppercase tracking-widest text-muted-foreground mb-2">
+            <span className="block text-xs uppercase tracking-widest text-muted-foreground mb-2">
               node types
             </span>
             <div className="flex flex-col gap-1.5">
@@ -194,7 +194,7 @@ export default function FilterPanel({
           {/* Node count */}
           <div className="px-3 py-2 border-b border-dashed border-border shrink-0">
             <span
-              className="text-[10px] text-muted-foreground"
+              className="text-xs text-muted-foreground"
               data-ocid="filter_panel.node_count"
             >
               showing{" "}
@@ -214,7 +214,7 @@ export default function FilterPanel({
             <button
               type="button"
               onClick={onFitToVisible}
-              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
+              className="w-full text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
               data-ocid="filter_panel.fit_to_visible"
               aria-label="Zoom to fit visible nodes"
             >
@@ -224,7 +224,7 @@ export default function FilterPanel({
               type="button"
               onClick={onReset}
               disabled={!isFiltered}
-              className="w-full text-[10px] border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full text-xs border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed"
               data-ocid="filter_panel.reset_button"
               aria-label="Reset all filters"
             >

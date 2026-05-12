@@ -70,7 +70,7 @@ export default function PublicNodeDetailsPanel({
         <div className="p-4 space-y-3 text-xs max-h-[70vh] overflow-y-auto">
           {/* Name */}
           <div>
-            <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+            <span className="text-muted-foreground tracking-widest uppercase text-xs">
               NAME
             </span>
             <p className="mt-0.5 text-foreground break-words">{node.name}</p>
@@ -78,7 +78,7 @@ export default function PublicNodeDetailsPanel({
 
           {/* Type */}
           <div>
-            <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+            <span className="text-muted-foreground tracking-widest uppercase text-xs">
               TYPE
             </span>
             <p className="mt-0.5 text-foreground">{typeLabel}</p>
@@ -87,7 +87,7 @@ export default function PublicNodeDetailsPanel({
           {/* ID */}
           {node.id && (
             <div>
-              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+              <span className="text-muted-foreground tracking-widest uppercase text-xs">
                 ID
               </span>
               <p className="mt-0.5 text-foreground/70 break-all">{node.id}</p>
@@ -97,7 +97,7 @@ export default function PublicNodeDetailsPanel({
           {/* Parent */}
           {node.parentName && (
             <div>
-              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+              <span className="text-muted-foreground tracking-widest uppercase text-xs">
                 PARENT
               </span>
               <p className="mt-0.5 text-foreground break-words">
@@ -109,14 +109,14 @@ export default function PublicNodeDetailsPanel({
           {/* Tags */}
           {tagList && (
             <div>
-              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+              <span className="text-muted-foreground tracking-widest uppercase text-xs">
                 TAGS
               </span>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {tagList.map((tag) => (
                   <span
                     key={tag}
-                    className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                    className="border border-border px-1.5 py-0.5 text-xs text-muted-foreground"
                   >
                     {tag}
                   </span>
@@ -128,7 +128,7 @@ export default function PublicNodeDetailsPanel({
           {/* Optional text fields */}
           {presentOptional.map(({ label, value }) => (
             <div key={label}>
-              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+              <span className="text-muted-foreground tracking-widest uppercase text-xs">
                 {label}
               </span>
               <p className="mt-0.5 text-foreground/80 break-words whitespace-pre-wrap">
@@ -139,7 +139,7 @@ export default function PublicNodeDetailsPanel({
 
           {/* Attributes */}
           <div>
-            <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+            <span className="text-muted-foreground tracking-widest uppercase text-xs">
               ATTRIBUTES
             </span>
             {attrs.length === 0 ? (
@@ -167,7 +167,7 @@ export default function PublicNodeDetailsPanel({
           {/* Sources */}
           {node.sources !== undefined && (
             <div>
-              <span className="text-muted-foreground tracking-widest uppercase text-[10px]">
+              <span className="text-muted-foreground tracking-widest uppercase text-xs">
                 SOURCES
               </span>
               {node.sources.length === 0 ? (

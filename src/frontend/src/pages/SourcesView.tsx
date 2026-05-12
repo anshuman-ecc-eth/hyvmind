@@ -416,7 +416,7 @@ export default function SourcesView() {
                   data-ocid={`sources.graph_row.${graph.id}`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-foreground truncate">
+                    <p className="text-sm text-foreground truncate">
                       {graph.name}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -429,7 +429,7 @@ export default function SourcesView() {
                       })()}
                     </p>
                     {published && publishedDate && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         published {publishedDate}
                       </p>
                     )}

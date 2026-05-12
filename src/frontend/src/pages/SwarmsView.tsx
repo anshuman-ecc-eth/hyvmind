@@ -26,7 +26,7 @@ function UnreadBadge({ count }: { count: bigint }) {
   if (count === BigInt(0)) return null;
   const display = count > BigInt(99) ? "99+" : count.toString();
   return (
-    <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-yellow-400 px-1 text-[10px] font-bold text-yellow-900 leading-none">
+    <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-yellow-400 px-1 text-xs font-bold text-yellow-900 leading-none">
       {display}
     </span>
   );
@@ -367,14 +367,14 @@ export default function SwarmsView() {
                   data-ocid={`swarms.message.item.${i + 1}`}
                 >
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="text-xs font-semibold text-foreground">
+                    <span className="text-sm font-semibold text-foreground">
                       {msg.senderName}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    <span className="text-xs text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                       {formatTime(msg.timestamp)}
                     </span>
                   </div>
-                  <p className="text-xs text-foreground/80 leading-relaxed break-words">
+                  <p className="text-sm text-foreground/80 leading-relaxed break-words">
                     {msg.text}
                   </p>
                 </div>
@@ -412,7 +412,7 @@ export default function SwarmsView() {
               </div>
               {!isTelegramChannel && sendMutation.isError && (
                 <p
-                  className="mt-1 text-[10px] text-destructive"
+                  className="mt-1 text-xs text-destructive"
                   data-ocid="swarms.message.error_state"
                 >
                   failed to send — try again
@@ -431,7 +431,7 @@ export default function SwarmsView() {
               onValueChange={setSelectedCuration}
             >
               <SelectTrigger
-                className="h-7 w-full rounded-none border-dashed border-border bg-transparent font-mono text-[11px] text-muted-foreground focus:ring-0 focus:ring-offset-0 px-2"
+                className="h-7 w-full rounded-none border-dashed border-border bg-transparent font-mono text-xs text-muted-foreground focus:ring-0 focus:ring-offset-0 px-2"
                 data-ocid="swarms.curation.select"
               >
                 <SelectValue placeholder="all curations" />
