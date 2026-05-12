@@ -7,6 +7,7 @@ import {
 } from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
 import PixelTransition from "./TextAnimations/PixelTransition";
+import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -76,9 +77,6 @@ const CONTENT = {
   outro: ["game not over"],
 };
 
-const SCRAMBLE_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type MusicMode = "on" | "off";
@@ -120,10 +118,6 @@ type Phase =
   | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-function randomChar(): string {
-  return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-}
 
 function getCurrentMessage(phase: Phase): string {
   switch (phase.type) {
@@ -482,7 +476,7 @@ function StartScreen({
                     <span>D</span>
                   </div>
                 }
-                  secondContent={
+                secondContent={
                   <div
                     className="text-muted-foreground"
                     style={{
@@ -493,8 +487,12 @@ function StartScreen({
                       lineHeight: 1.6,
                     }}
                   >
-                    <div style={{ whiteSpace: "nowrap" }}>a digital sanctuary</div>
-                    <div style={{ whiteSpace: "nowrap" }}>for legal researchers</div>
+                    <div style={{ whiteSpace: "nowrap" }}>
+                      a digital sanctuary
+                    </div>
+                    <div style={{ whiteSpace: "nowrap" }}>
+                      for legal researchers
+                    </div>
                   </div>
                 }
                 pixelColor="var(--foreground)"
@@ -675,139 +673,29 @@ function ChoiceMenu({
   );
 }
 
-// ── ScrambleDisplay ────────────────────────────────────────────────────────────
+// ── TypewriterDisplay ───────────────────────────────────────────────────────────
 
-interface ScrambleDisplayProps {
+interface TypewriterDisplayProps {
   target: string;
-  /** ms per scramble tick per character position */
-  tickMs?: number;
-  /** total ms to reveal all characters */
-  revealDurationMs?: number;
   onComplete: () => void;
   scrambleDone: boolean;
   onAdvance?: () => void;
 }
 
-function ScrambleDisplay({
+function TypewriterDisplay({
   target,
-  tickMs = 50,
-  revealDurationMs = 1000,
   onComplete,
   scrambleDone,
   onAdvance,
-}: ScrambleDisplayProps) {
-  const [display, setDisplay] = useState<string[]>(() =>
-    Array.from({ length: target.length }, () => randomChar()),
-  );
-  const lockedRef = useRef<boolean[]>(new Array(target.length).fill(false));
-  const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
-
-  // Blinking cursor state — only active after scramble is done
-  const [cursorVisible, setCursorVisible] = useState(false);
-  const cursorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Start/stop cursor based on scrambleDone
-  useEffect(() => {
-    if (scrambleDone) {
-      setCursorVisible(true);
-      cursorIntervalRef.current = setInterval(() => {
-        setCursorVisible((v) => !v);
-      }, 500);
-    } else {
-      setCursorVisible(false);
-      if (cursorIntervalRef.current) {
-        clearInterval(cursorIntervalRef.current);
-        cursorIntervalRef.current = null;
-      }
-    }
-    return () => {
-      if (cursorIntervalRef.current) {
-        clearInterval(cursorIntervalRef.current);
-        cursorIntervalRef.current = null;
-      }
-    };
-  }, [scrambleDone]);
-
-  // On each new target: reset locked state and display
-  useEffect(() => {
-    lockedRef.current = new Array(target.length).fill(false);
-    setDisplay(Array.from({ length: target.length }, () => randomChar()));
-  }, [target]);
-
-  // RAF loop: randomly cycle unlocked characters
-  useEffect(() => {
-    let lastTick = performance.now();
-    let raf: number;
-
-    function loop(now: number) {
-      const delta = now - lastTick;
-      if (delta >= tickMs) {
-        lastTick = now;
-        setDisplay((prev) => {
-          const next = [...prev];
-          for (let i = 0; i < target.length; i++) {
-            if (!lockedRef.current[i]) next[i] = randomChar();
-          }
-          return next;
-        });
-      }
-      raf = requestAnimationFrame(loop);
-    }
-
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [target, tickMs]);
-
-  // Progressive lock-in per character
-  useEffect(() => {
-    if (target.length === 0) {
-      onCompleteRef.current();
-      return;
-    }
-    const msPerChar = revealDurationMs / target.length;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    for (let i = 0; i < target.length; i++) {
-      timers.push(
-        setTimeout(() => {
-          lockedRef.current[i] = true;
-          setDisplay((prev) => {
-            const next = [...prev];
-            next[i] = target[i];
-            return next;
-          });
-          if (i === target.length - 1) {
-            onCompleteRef.current();
-          }
-        }, i * msPerChar),
-      );
-    }
-
-    return () => {
-      for (const t of timers) clearTimeout(t);
-    };
-  }, [target, revealDurationMs]);
-
-  const handleAdvance = useCallback(() => {
-    if (!scrambleDone) return;
-    // Stop cursor immediately on advance
-    if (cursorIntervalRef.current) {
-      clearInterval(cursorIntervalRef.current);
-      cursorIntervalRef.current = null;
-    }
-    setCursorVisible(false);
-    onAdvance?.();
-  }, [scrambleDone, onAdvance]);
-
+}: TypewriterDisplayProps) {
   return (
     <div
       className="flex-1 flex flex-col items-center justify-center gap-6 px-8 select-none cursor-pointer"
-      onClick={scrambleDone ? handleAdvance : undefined}
+      onClick={scrambleDone ? onAdvance : undefined}
       onKeyDown={
         scrambleDone
           ? (e) => {
-              if (e.key !== "Tab") handleAdvance();
+              if (e.key !== "Tab") onAdvance?.();
             }
           : undefined
       }
@@ -828,19 +716,16 @@ function ScrambleDisplay({
           fontWeight: "400",
         }}
       >
-        {display.join("")}
-        {scrambleDone && (
-          <span
-            aria-hidden="true"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              opacity: cursorVisible ? 1 : 0,
-              marginLeft: "2px",
-            }}
-          >
-            █
-          </span>
-        )}
+        <TextType
+          text={target}
+          typingSpeed={25}
+          showCursor
+          hideCursorWhileTyping
+          cursorCharacter="█"
+          cursorBlinkDuration={0.4}
+          loop={false}
+          onSentenceComplete={onComplete}
+        />
       </p>
     </div>
   );
@@ -890,6 +775,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     game2: 0,
     game3: 0,
   });
+
+  // Whether each iframe game has finished loading
+  const [gameLoaded, setGameLoaded] = useState<Record<string, boolean>>({});
+
+  // Reset loaded state when entering a new game
+  useEffect(() => {
+    if (
+      phase.type === "game1" ||
+      phase.type === "game2" ||
+      phase.type === "game3"
+    ) {
+      setGameLoaded({ [phase.type]: false });
+    }
+  }, [phase.type]);
 
   // Override audio (island-puzzle-mystery.ogg)
   const [overrideAudio] = useState<HTMLAudioElement | null>(() => {
@@ -1323,11 +1222,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "choice1cSubPath":
       case "choice2c": {
         return (
-          <ScrambleDisplay
+          <TypewriterDisplay
             key={`${phase.type}-${"step" in phase ? phase.step : 0}`}
             target={getCurrentMessage(phase)}
-            revealDurationMs={1000}
-            tickMs={50}
             onComplete={() => setScrambleComplete(true)}
             scrambleDone={scrambleComplete}
             onAdvance={handleAdvance}
@@ -1338,11 +1235,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "outro": {
         // "game not over" — auto-closes when scramble finishes
         return (
-          <ScrambleDisplay
+          <TypewriterDisplay
             key="outro-0"
             target={CONTENT.outro[0]}
-            revealDurationMs={1000}
-            tickMs={50}
             onComplete={() => onCompleteRef.current()}
             scrambleDone={scrambleComplete}
             onAdvance={undefined}
@@ -1404,12 +1299,34 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             <div
               className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
             >
+              {!gameLoaded.game1 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                  <div className="flex gap-[2px]">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <span
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                        key={i}
+                        className="text-foreground"
+                        style={{
+                          fontSize: "0.55em",
+                          animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                        }}
+                      >
+                        █
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <iframe
                 src={`/assets/rebirth.html${bgmParam}`}
                 allow="autoplay"
                 className="w-full h-full border-0"
                 title="Rebirth"
                 data-ocid="text_game.game1_iframe"
+                onLoad={() =>
+                  setGameLoaded((prev) => ({ ...prev, game1: true }))
+                }
               />
             </div>
           </div>
@@ -1421,12 +1338,34 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             <div
               className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
             >
+              {!gameLoaded.game2 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                  <div className="flex gap-[2px]">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <span
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                        key={i}
+                        className="text-foreground"
+                        style={{
+                          fontSize: "0.55em",
+                          animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                        }}
+                      >
+                        █
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <iframe
                 src={`/assets/squarebar.html${bgmParam}`}
                 allow="autoplay"
                 className="w-full h-full border-0"
                 title="Square Bar"
                 data-ocid="text_game.game2_iframe"
+                onLoad={() =>
+                  setGameLoaded((prev) => ({ ...prev, game2: true }))
+                }
               />
             </div>
           </div>
@@ -1438,12 +1377,34 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             <div
               className={`flex-1 flex items-center justify-center bg-background ${isLight ? "p-2" : "p-0"}`}
             >
+              {!gameLoaded.game3 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                  <div className="flex gap-[2px]">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <span
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                        key={i}
+                        className="text-foreground"
+                        style={{
+                          fontSize: "0.55em",
+                          animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                        }}
+                      >
+                        █
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <iframe
                 src={`/assets/slalom.html${bgmParam}`}
                 allow="autoplay"
                 className="w-full h-full border-0"
                 title="Slalom"
                 data-ocid="text_game.game3_iframe"
+                onLoad={() =>
+                  setGameLoaded((prev) => ({ ...prev, game3: true }))
+                }
               />
             </div>
           </div>
