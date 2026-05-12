@@ -473,7 +473,11 @@ function StartScreen({
                 >
                   Y
                 </span>
-                <ShuffleText text="VMIND" />
+                <ShuffleText text="V" />
+                <ShuffleText text="M" />
+                <ShuffleText text="I" />
+                <ShuffleText text="N" />
+                <ShuffleText text="D" />
               </div>
             </div>
             <div
