@@ -17,7 +17,7 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
   const getPerch = () => {
     if (!yRef.current) return null;
     const yr = yRef.current.getBoundingClientRect();
-    return { x: yr.left + yr.width / 2, y: yr.top - 6 };
+    return { x: yr.left + yr.width * 0.25, y: yr.top - 6 };
   };
 
   const getCorner = () => {
