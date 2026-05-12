@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useActor } from "@caffeineai/core-infrastructure";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type { GraphData, backendInterface } from "../backend";
@@ -95,8 +95,15 @@ function renderLineTokens(tokens: LineToken[]): React.ReactNode {
 }
 
 export default function TerminalPage() {
+  const { identity } = useInternetIdentity();
+  const principal = identity?.getPrincipal().toString();
+  const principalRef = useRef(principal);
+  useEffect(() => {
+    principalRef.current = principal;
+  }, [principal]);
+
   const [messages, setMessages] = useState<TerminalMessage[]>(() => {
-    const loaded = loadTerminalSession();
+    const loaded = loadTerminalSession(principalRef.current);
     return loaded && loaded.length > 0 ? loaded : [];
   });
   const [input, setInput] = useState("");
@@ -118,7 +125,7 @@ export default function TerminalPage() {
 
   // Persist messages whenever they change
   useEffect(() => {
-    saveTerminalSession(messages);
+    saveTerminalSession(messages, principalRef.current);
   }, [messages]);
 
   // Auto-scroll to bottom when messages change

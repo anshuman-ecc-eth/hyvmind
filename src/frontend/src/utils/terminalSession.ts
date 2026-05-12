@@ -1,7 +1,12 @@
 import type { TerminalMessage } from "../pages/TerminalPage";
 
-const TERMINAL_SESSION_KEY = "hyvmind_terminal_session";
 const SESSION_VERSION = 5; // Incremented to invalidate old sessions with removed welcome message
+
+function getKey(principal?: string): string {
+  const base = "hyvmind_terminal_session";
+  if (!principal) return base; // fallback for anonymous
+  return `${base}_${principal}`;
+}
 
 interface StoredSession {
   version: number;
@@ -17,7 +22,10 @@ interface StoredSession {
   }>;
 }
 
-export function saveTerminalSession(messages: TerminalMessage[]): void {
+export function saveTerminalSession(
+  messages: TerminalMessage[],
+  principal?: string,
+): void {
   try {
     const session: StoredSession = {
       version: SESSION_VERSION,
@@ -28,23 +36,24 @@ export function saveTerminalSession(messages: TerminalMessage[]): void {
         ontologyData: msg.ontologyData,
       })),
     };
-    localStorage.setItem(TERMINAL_SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(getKey(principal), JSON.stringify(session));
   } catch (error) {
     console.error("Failed to save terminal session:", error);
   }
 }
 
-export function loadTerminalSession(): TerminalMessage[] | null {
+export function loadTerminalSession(
+  principal?: string,
+): TerminalMessage[] | null {
   try {
-    const stored = localStorage.getItem(TERMINAL_SESSION_KEY);
+    const stored = localStorage.getItem(getKey(principal));
     if (!stored) return null;
 
     const session: StoredSession = JSON.parse(stored);
 
     // Check version compatibility
     if (session.version !== SESSION_VERSION) {
-      // Clear old session if version mismatch
-      clearTerminalSession();
+      clearTerminalSession(principal);
       return null;
     }
 
@@ -60,9 +69,9 @@ export function loadTerminalSession(): TerminalMessage[] | null {
   }
 }
 
-export function clearTerminalSession(): void {
+export function clearTerminalSession(principal?: string): void {
   try {
-    localStorage.removeItem(TERMINAL_SESSION_KEY);
+    localStorage.removeItem(getKey(principal));
   } catch (error) {
     console.error("Failed to clear terminal session:", error);
   }

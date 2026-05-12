@@ -231,16 +231,65 @@ export function SettingsView() {
         <span className="text-sm font-semibold text-foreground mr-auto">
           Settings
         </span>
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById("settings-profile")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+          data-ocid="settings.nav.profile"
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById("settings-appearance")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+          data-ocid="settings.nav.appearance"
+        >
+          Appearance
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById("settings-obsidian")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+          data-ocid="settings.nav.obsidian"
+        >
+          Obsidian
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById("settings-wallet")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+          data-ocid="settings.nav.wallet"
+        >
+          Wallet
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-10 space-y-10">
           {/* Appearance Section */}
           <section
+            id="settings-appearance"
             className="space-y-5"
             data-ocid="settings.appearance.section"
           >
-            <h2 className="text-lg font-medium">Appearance</h2>
+            <h2 className="text-sm font-semibold">Appearance</h2>
             <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">
               {/* Theme */}
               <div>
@@ -324,8 +373,12 @@ export function SettingsView() {
           <Separator />
 
           {/* Profile Section */}
-          <section className="space-y-5" data-ocid="settings.profile.section">
-            <h2 className="text-lg font-medium">Profile Information</h2>
+          <section
+            id="settings-profile"
+            className="space-y-5"
+            data-ocid="settings.profile.section"
+          >
+            <h2 className="text-sm font-semibold">Profile</h2>
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="settings-profileName">Profile Name</Label>
@@ -384,11 +437,12 @@ export function SettingsView() {
 
           {/* Plugin Binding Section */}
           <section
+            id="settings-obsidian"
             className="space-y-5"
             data-ocid="settings.plugin_binding.section"
           >
             <div>
-              <h2 className="text-lg font-medium">Plugin Binding</h2>
+              <h2 className="text-sm font-semibold">Obsidian</h2>
               <p className="text-sm text-muted-foreground">
                 Link this Obsidian plugin to your Hyvmind account so uploaded
                 notes appear here.
@@ -593,8 +647,12 @@ export function SettingsView() {
           </section>
 
           {/* Wallet Section */}
-          <section className="space-y-4" data-ocid="settings.wallet.section">
-            <h2 className="text-lg font-medium">Wallet</h2>
+          <section
+            id="settings-wallet"
+            className="space-y-4"
+            data-ocid="settings.wallet.section"
+          >
+            <h2 className="text-sm font-semibold">Wallet</h2>
             <p className="text-sm text-muted-foreground">
               Manage your Buzz and Trust balances.
             </p>
