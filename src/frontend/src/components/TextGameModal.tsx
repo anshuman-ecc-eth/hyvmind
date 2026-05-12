@@ -451,18 +451,30 @@ function StartScreen({
         {subMenu === "main" ? (
           <>
             <div className="flex flex-col items-center gap-3">
-              <ShuffleText
-                text="HYVMIND"
+              <div
                 className="text-foreground tracking-widest"
                 style={{
                   fontFamily: '"Press Start 2P", monospace',
                   fontSize: "2em",
                   lineHeight: 1,
                   letterSpacing: "0.05em",
+                  display: "flex",
+                  alignItems: "center",
                 }}
-                as="div"
                 aria-label="HYVMIND"
-              />
+              >
+                <ShuffleText text="H" />
+                <span
+                  style={{
+                    fontSize: "1.25em",
+                    verticalAlign: "middle",
+                    lineHeight: 1,
+                  }}
+                >
+                  Y
+                </span>
+                <ShuffleText text="VMIND" />
+              </div>
             </div>
             <ShuffleText
               text="a digital sanctuary for legal researchers"
