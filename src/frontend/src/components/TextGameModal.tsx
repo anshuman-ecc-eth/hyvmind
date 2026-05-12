@@ -443,9 +443,7 @@ function StartScreen({
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
-      {subMenu === "main" && (
-        <FlyingBee modalRef={modalRef} yRef={yRef} visible />
-      )}
+      {subMenu === "main" && <FlyingBee modalRef={modalRef} yRef={yRef} />}
       {/* Content box — flat, no card */}
       <div className="flex flex-col items-center" data-zone="content">
         {/* Title / Puzzles heading */}
