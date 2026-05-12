@@ -16,7 +16,7 @@ function resolveCSSColor(varName: string): string {
 
 export default function HexagonBackground({
   size = 14,
-  glowRadius = 120,
+  glowRadius = 150,
 }: HexagonBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -30,7 +30,6 @@ export default function HexagonBackground({
     let mouseX = -9999;
     let mouseY = -9999;
 
-    const baseColor = resolveCSSColor("var(--foreground)");
     const accentColor = resolveCSSColor("var(--primary)");
 
     const resize = () => {
@@ -44,15 +43,17 @@ export default function HexagonBackground({
 
     const handlePointer = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+        mouseX = x;
+        mouseY = y;
+      } else {
+        mouseX = -9999;
+        mouseY = -9999;
+      }
     };
-    const handleLeave = () => {
-      mouseX = -9999;
-      mouseY = -9999;
-    };
-    canvas.addEventListener("pointermove", handlePointer);
-    canvas.addEventListener("pointerleave", handleLeave);
+    window.addEventListener("pointermove", handlePointer);
 
     const hexWidth = Math.sqrt(3) * size;
     const hSpacing = hexWidth;
@@ -69,11 +70,11 @@ export default function HexagonBackground({
       }
       ctx.closePath();
 
-      ctx.fillStyle = `color-mix(in srgb, ${baseColor} ${Math.round(2 + glow * 10)}%, transparent)`;
+      ctx.fillStyle = `color-mix(in srgb, ${accentColor} ${Math.round(3 + glow * 20)}%, transparent)`;
       ctx.fill();
 
-      ctx.strokeStyle = `color-mix(in srgb, ${accentColor} ${Math.round(5 + glow * 45)}%, transparent)`;
-      ctx.lineWidth = 0.5 + glow * 1.5;
+      ctx.strokeStyle = `color-mix(in srgb, ${accentColor} ${Math.round(8 + glow * 60)}%, transparent)`;
+      ctx.lineWidth = 0.5 + glow * 2;
       ctx.stroke();
     }
 
@@ -117,8 +118,7 @@ export default function HexagonBackground({
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", resize);
-      canvas.removeEventListener("pointermove", handlePointer);
-      canvas.removeEventListener("pointerleave", handleLeave);
+      window.removeEventListener("pointermove", handlePointer);
     };
   }, [size, glowRadius]);
 
