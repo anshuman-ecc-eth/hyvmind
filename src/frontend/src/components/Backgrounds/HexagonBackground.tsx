@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 interface HexagonBackgroundProps {
   size?: number;
-  glowRadius?: number;
+  hoverRadius?: number;
 }
 
 function resolveCSSColor(varName: string): string {
@@ -16,7 +16,7 @@ function resolveCSSColor(varName: string): string {
 
 export default function HexagonBackground({
   size = 14,
-  glowRadius = 150,
+  hoverRadius = 150,
 }: HexagonBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -42,6 +42,13 @@ export default function HexagonBackground({
     window.addEventListener("resize", resize);
 
     const handlePointer = (e: PointerEvent) => {
+      const container = canvas.parentElement;
+      if (!container) return;
+      if (e.target !== container) {
+        mouseX = -9999;
+        mouseY = -9999;
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -59,7 +66,7 @@ export default function HexagonBackground({
     const hSpacing = hexWidth;
     const vSpacing = size * 1.5;
 
-    function drawHexagon(cx: number, cy: number, sz: number, glow: number) {
+    function drawHexagon(cx: number, cy: number, sz: number, hovered: boolean) {
       ctx.beginPath();
       for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i - Math.PI / 6;
@@ -70,15 +77,21 @@ export default function HexagonBackground({
       }
       ctx.closePath();
 
-      ctx.fillStyle = `color-mix(in srgb, ${accentColor} ${Math.round(3 + glow * 20)}%, transparent)`;
+      if (hovered) {
+        ctx.fillStyle = `color-mix(in srgb, ${accentColor} 20%, transparent)`;
+        ctx.strokeStyle = `color-mix(in srgb, ${accentColor} 70%, transparent)`;
+        ctx.lineWidth = 2;
+      } else {
+        ctx.fillStyle = `color-mix(in srgb, ${accentColor} 3%, transparent)`;
+        ctx.strokeStyle = `color-mix(in srgb, ${accentColor} 8%, transparent)`;
+        ctx.lineWidth = 0.5;
+      }
       ctx.fill();
-
-      ctx.strokeStyle = `color-mix(in srgb, ${accentColor} ${Math.round(8 + glow * 60)}%, transparent)`;
-      ctx.lineWidth = 0.5 + glow * 2;
       ctx.stroke();
     }
 
     const cnv = canvas;
+    const hoverDist = hoverRadius * hoverRadius;
 
     function render() {
       const w = cnv.clientWidth;
@@ -93,21 +106,43 @@ export default function HexagonBackground({
       const cols = Math.ceil(w / hSpacing) + 2;
       const rows = Math.ceil(h / vSpacing) + 2;
 
+      let hoverRow = -1;
+      let hoverCol = -1;
+      let minDist2 = hoverDist;
+
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
           const offsetX = row % 2 === 0 ? 0 : hSpacing / 2;
           const cx = col * hSpacing + offsetX;
           const cy = row * vSpacing + size;
-
           const dx = mouseX - cx;
           const dy = mouseY - cy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          const rawGlow = Math.max(0, 1 - dist / glowRadius);
-          const glow = rawGlow * rawGlow;
-
-          drawHexagon(cx, cy, size, glow);
+          const dist2 = dx * dx + dy * dy;
+          if (dist2 < minDist2) {
+            minDist2 = dist2;
+            hoverRow = row;
+            hoverCol = col;
+          }
         }
+      }
+
+      const hasHover = hoverRow >= 0;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          if (hasHover && row === hoverRow && col === hoverCol) continue;
+          const offsetX = row % 2 === 0 ? 0 : hSpacing / 2;
+          const cx = col * hSpacing + offsetX;
+          const cy = row * vSpacing + size;
+          drawHexagon(cx, cy, size, false);
+        }
+      }
+
+      if (hasHover) {
+        const offsetX = hoverRow % 2 === 0 ? 0 : hSpacing / 2;
+        const cx = hoverCol * hSpacing + offsetX;
+        const cy = hoverRow * vSpacing + size;
+        drawHexagon(cx, cy, size * 1.15, true);
       }
 
       animationId = requestAnimationFrame(render);
@@ -120,13 +155,13 @@ export default function HexagonBackground({
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", handlePointer);
     };
-  }, [size, glowRadius]);
+  }, [size, hoverRadius]);
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 pointer-events-none"
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "100%", zIndex: -1 }}
     />
   );
 }
