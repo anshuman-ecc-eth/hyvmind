@@ -16,43 +16,42 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
   const mouseViewport = useRef({ x: 0, y: 0 });
   const beeViewport = useRef({ x: 0, y: 0 });
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedRef = useRef(false);
 
-  const toParent = (vx: number, vy: number) => {
-    const p = wrapperRef.current?.parentElement;
-    if (!p) return { x: vx, y: vy };
-    const pr = p.getBoundingClientRect();
-    return { x: vx - pr.left, y: vy - pr.top };
-  };
-
-  const getPerchPos = () => {
+  const getPerchViewport = () => {
     if (!yRef.current) return null;
     const r = yRef.current.getBoundingClientRect();
-    return toParent(r.left + r.width / 2, r.top + r.height * 0.3);
+    return { x: r.left + r.width / 2, y: r.top + r.height * 0.3 };
   };
 
-  const getCornerPos = () => {
+  const getCornerViewport = () => {
     if (!modalRef.current) return { x: 0, y: 0 };
     const mr = modalRef.current.getBoundingClientRect();
-    const corners = [
-      toParent(mr.left - 40, mr.top - 40),
-      toParent(mr.right + 40, mr.top - 40),
-      toParent(mr.left - 40, mr.bottom + 40),
-      toParent(mr.right + 40, mr.bottom + 40),
+    const corners: Array<{ x: number; y: number }> = [
+      { x: mr.left - 40, y: mr.top - 40 },
+      { x: mr.right + 40, y: mr.top - 40 },
+      { x: mr.left - 40, y: mr.bottom + 40 },
+      { x: mr.right + 40, y: mr.bottom + 40 },
     ];
     return corners[Math.floor(Math.random() * 4)];
   };
 
-  const getEscapePos = () => {
-    const p = wrapperRef.current?.parentElement;
-    if (!p) return { x: 0, y: 0 };
-    const pr = p.getBoundingClientRect();
-    const sides = [
-      { x: -60, y: Math.random() * pr.height },
-      { x: pr.width + 60, y: Math.random() * pr.height },
-      { x: Math.random() * pr.width, y: -60 },
-      { x: Math.random() * pr.width, y: pr.height + 60 },
+  const getEscapeViewport = () => {
+    if (!modalRef.current) return { x: 0, y: 0 };
+    const mr = modalRef.current.getBoundingClientRect();
+    const sides: Array<{ x: number; y: number }> = [
+      { x: mr.left - 60, y: mr.top + Math.random() * mr.height },
+      { x: mr.right + 60, y: mr.top + Math.random() * mr.height },
+      { x: mr.left + Math.random() * mr.width, y: mr.top - 60 },
+      { x: mr.left + Math.random() * mr.width, y: mr.bottom + 60 },
     ];
     return sides[Math.floor(Math.random() * 4)];
+  };
+
+  const vpToBee = (vx: number, vy: number) => {
+    if (!wrapperRef.current?.parentElement) return { x: vx, y: vy };
+    const pr = wrapperRef.current.parentElement.getBoundingClientRect();
+    return { x: vx - pr.left, y: vy - pr.top };
   };
 
   const buildZigzag = (
@@ -90,17 +89,18 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
     if (beeRef.current) gsap.killTweensOf(beeRef.current);
   };
 
-  const animatePath = (
-    tx: number,
-    ty: number,
+  const animatePathVp = (
+    tvx: number,
+    tvy: number,
     zigs: number,
     onDone?: () => void,
   ) => {
     if (!beeRef.current) return;
     killBee();
-    const cx = gsap.getProperty(beeRef.current, "x") as number;
-    const cy = gsap.getProperty(beeRef.current, "y") as number;
-    const frames = buildZigzag(cx, cy, tx, ty, zigs);
+    const curX = gsap.getProperty(beeRef.current, "x") as number;
+    const curY = gsap.getProperty(beeRef.current, "y") as number;
+    const target = vpToBee(tvx, tvy);
+    const frames = buildZigzag(curX, curY, target.x, target.y, zigs);
     const tl = gsap.timeline({ onComplete: onDone });
     for (const f of frames) {
       tl.to(beeRef.current!, {
@@ -130,8 +130,8 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
 
   const flee = () => {
     statusRef.current = "fleeing";
-    const ep = getEscapePos();
-    animatePath(ep.x, ep.y, 4, () => {
+    const ep = getEscapeViewport();
+    animatePathVp(ep.x, ep.y, 4, () => {
       if (returnTimer.current) clearTimeout(returnTimer.current);
       returnTimer.current = setTimeout(() => {
         if (statusRef.current === "fleeing") returnToPerch();
@@ -140,21 +140,29 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
   };
 
   const returnToPerch = () => {
-    const pp = getPerchPos();
+    const pp = getPerchViewport();
     if (!pp) return;
     statusRef.current = "returning";
-    animatePath(pp.x, pp.y, 5, () => {
+    animatePathVp(pp.x, pp.y, 5, () => {
       startPerch();
     });
   };
 
   const enter = () => {
-    const pp = getPerchPos();
-    if (!pp || !beeRef.current) return;
+    if (!beeRef.current || !loadedRef.current) return;
+    if (statusRef.current !== "idle") return;
+    const pp = getPerchViewport();
+    if (!pp) return;
     statusRef.current = "entering";
-    const cp = getCornerPos();
-    gsap.set(beeRef.current, { x: cp.x, y: cp.y, rotation: 0, opacity: 1 });
-    animatePath(pp.x, pp.y, 6, () => {
+    const cp = getCornerViewport();
+    const beePos = vpToBee(cp.x, cp.y);
+    gsap.set(beeRef.current, {
+      x: beePos.x,
+      y: beePos.y,
+      rotation: 0,
+      opacity: 1,
+    });
+    animatePathVp(pp.x, pp.y, 6, () => {
       startPerch();
     });
   };
@@ -184,7 +192,7 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
 
   useEffect(() => {
     if (visible && statusRef.current === "idle") {
-      const t = setTimeout(() => enterRef.current(), 500);
+      const t = setTimeout(() => enterRef.current(), 100);
       return () => clearTimeout(t);
     }
     if (!visible && statusRef.current !== "idle") {
@@ -230,12 +238,16 @@ export default function FlyingBee({ modalRef, yRef, visible }: FlyingBeeProps) {
         ref={beeRef}
         src="/assets/generated/pixel-bee.svg"
         alt=""
+        onLoad={() => {
+          loadedRef.current = true;
+          if (statusRef.current === "idle") enterRef.current();
+        }}
         style={{
           position: "absolute",
           left: 0,
           top: 0,
           width: "28px",
-          height: "auto",
+          height: "19px",
           imageRendering: "pixelated",
           opacity: 0,
         }}
