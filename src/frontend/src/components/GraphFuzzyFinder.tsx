@@ -245,7 +245,7 @@ export default function GraphFuzzyFinder({
             if (query.length > 0 && results.length > 0) setIsOpen(true);
           }}
           placeholder="Search nodes, edges, attributes..."
-          className="flex-1 bg-transparent py-1.5 px-1 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
+          className="flex-1 bg-transparent py-1 px-1 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
           data-ocid="fuzzy_finder.search_input"
           aria-label="Search knowledge graph nodes, edges, and attributes"
           aria-autocomplete="list"

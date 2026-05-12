@@ -679,7 +679,7 @@ export default function EditorView() {
       />
 
       {/* Header bar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
+      <div className="flex items-center gap-2 px-4 py-2 min-h-11 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground mr-auto">
           Notes
         </span>
