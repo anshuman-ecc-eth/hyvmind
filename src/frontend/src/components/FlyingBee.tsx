@@ -84,14 +84,6 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
   const startPerch = () => {
     if (!beeRef.current) return;
     statusRef.current = "perched";
-    gsap.to(beeRef.current, {
-      rotation: 5,
-      y: "+=2",
-      duration: 1,
-      yoyo: true,
-      repeat: -1,
-      ease: "sine.inOut",
-    });
   };
 
   const doFlee = () => {
