@@ -18,9 +18,9 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
     if (!yRef.current) return null;
     const yr = yRef.current.getBoundingClientRect();
     const titleEl = yRef.current.parentElement;
-    if (!titleEl) return { x: yr.left + yr.width * 0.25, y: yr.top - 6 };
+    if (!titleEl) return { x: yr.left - 6, y: yr.top - 18 };
     const tr = titleEl.getBoundingClientRect();
-    return { x: yr.left + yr.width * 0.25, y: tr.top - 8 };
+    return { x: yr.left - 6, y: tr.top - 18 };
   };
 
   const getCorner = () => {
