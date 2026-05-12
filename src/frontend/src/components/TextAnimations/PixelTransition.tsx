@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 interface PixelTransitionProps {
   firstContent: ReactNode;
   secondContent: ReactNode;
-  gridSize?: number;
+  pixelSize?: number;
   pixelColor?: string;
   animationStepDuration?: number;
 }
@@ -12,10 +12,11 @@ interface PixelTransitionProps {
 export default function PixelTransition({
   firstContent,
   secondContent,
-  gridSize = 7,
+  pixelSize = 6,
   pixelColor = "var(--foreground)",
   animationStepDuration = 0.3,
 }: PixelTransitionProps) {
+  const containerRef = useRef<HTMLButtonElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
   const delayedCallRef = useRef<gsap.core.Tween | null>(null);
@@ -27,22 +28,29 @@ export default function PixelTransition({
 
   useEffect(() => {
     const pixelGridEl = pixelGridRef.current;
-    if (!pixelGridEl) return;
+    const containerEl = containerRef.current;
+    if (!pixelGridEl || !containerEl) return;
     pixelGridEl.innerHTML = "";
 
-    for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
+    const w = containerEl.offsetWidth;
+    const h = containerEl.offsetHeight;
+    if (w === 0 || h === 0) return;
+
+    const cols = Math.ceil(w / pixelSize);
+    const rows = Math.ceil(h / pixelSize);
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
         const pixel = document.createElement("div");
         pixel.style.cssText = `display:none;position:absolute;background-color:${pixelColor};`;
-        const size = 100 / gridSize;
-        pixel.style.width = `${size}%`;
-        pixel.style.height = `${size}%`;
-        pixel.style.left = `${col * size}%`;
-        pixel.style.top = `${row * size}%`;
+        pixel.style.width = `${100 / cols}%`;
+        pixel.style.height = `${100 / rows}%`;
+        pixel.style.left = `${(col * 100) / cols}%`;
+        pixel.style.top = `${(row * 100) / rows}%`;
         pixelGridEl.appendChild(pixel);
       }
     }
-  }, [gridSize, pixelColor]);
+  }, [pixelSize, pixelColor]);
 
   const animatePixels = (activate: boolean) => {
     setIsActive(activate);
@@ -81,6 +89,7 @@ export default function PixelTransition({
 
   return (
     <button
+      ref={containerRef}
       type="button"
       className="pixel-transition"
       style={{

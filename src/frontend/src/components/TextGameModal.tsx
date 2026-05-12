@@ -487,7 +487,7 @@ function StartScreen({
                     className="text-muted-foreground"
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
+                      fontSize: "0.45em",
                       letterSpacing: "0.05em",
                       textAlign: "center",
                       wordBreak: "keep-all",
@@ -499,7 +499,7 @@ function StartScreen({
                   </div>
                 }
                 pixelColor="var(--foreground)"
-                gridSize={7}
+                pixelSize={6}
                 animationStepDuration={0.3}
               />
             </div>
