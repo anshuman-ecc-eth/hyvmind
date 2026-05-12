@@ -20,6 +20,10 @@ export default function PixelTransition({
   const activeRef = useRef<HTMLDivElement>(null);
   const delayedCallRef = useRef<gsap.core.Tween | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const isTouchDevice =
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => {
     const pixelGridEl = pixelGridRef.current;
@@ -76,15 +80,37 @@ export default function PixelTransition({
   };
 
   return (
-    <div
+    <button
+      type="button"
       className="pixel-transition"
-      style={{ position: "relative", display: "inline-block" }}
-      onMouseEnter={() => {
-        if (!isActive) animatePixels(true);
+      style={{
+        position: "relative",
+        display: "inline-block",
+        background: "none",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+        textAlign: "left",
       }}
-      onMouseLeave={() => {
-        if (isActive) animatePixels(false);
+      onMouseEnter={
+        isTouchDevice
+          ? undefined
+          : () => {
+              if (!isActive) animatePixels(true);
+            }
+      }
+      onMouseLeave={
+        isTouchDevice
+          ? undefined
+          : () => {
+              if (isActive) animatePixels(false);
+            }
+      }
+      onClick={() => {
+        if (!isTouchDevice) return;
+        animatePixels(!isActive);
       }}
+      aria-label="Toggle title"
     >
       <div
         className="pixel-transition__default"
@@ -114,6 +140,6 @@ export default function PixelTransition({
           inset: 0,
         }}
       />
-    </div>
+    </button>
   );
 }
