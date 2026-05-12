@@ -5,6 +5,7 @@ import {
   useGenerateBuzzSecret,
   useGetBuzzLeaderboard,
 } from "../hooks/useQueries";
+import HexagonBackground from "./Backgrounds/HexagonBackground";
 import ChessPuzzleGame from "./ChessPuzzleGame";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
@@ -443,7 +444,8 @@ function StartScreen({
   ]);
 
   return (
-    <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
+    <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none overflow-hidden">
+      <HexagonBackground />
       {/* Content box — flat, no card */}
       <div className="flex flex-col items-center">
         {/* Title / Puzzles heading */}
@@ -1474,7 +1476,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       {/* Floating window */}
       <div
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
-        style={{ inset: "5%", fontSize: "100%" }}
+        style={{ inset: "5%", fontSize: "80%" }}
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
