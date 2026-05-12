@@ -6,7 +6,7 @@ import {
   useGetBuzzLeaderboard,
 } from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
-import ShuffleText from "./TextAnimations/ShuffleText";
+import PixelTransition from "./TextAnimations/PixelTransition";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -451,47 +451,57 @@ function StartScreen({
         {subMenu === "main" ? (
           <>
             <div className="flex flex-col items-center gap-3">
-              <div
-                className="text-foreground tracking-widest"
-                style={{
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "2em",
-                  lineHeight: 1,
-                  letterSpacing: "0.05em",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                aria-label="HYVMIND"
-              >
-                <ShuffleText text="H" />
-                <span
-                  style={{
-                    fontSize: "1.25em",
-                    verticalAlign: "middle",
-                    lineHeight: 1,
-                  }}
-                >
-                  Y
-                </span>
-                <ShuffleText text="V" />
-                <ShuffleText text="M" />
-                <ShuffleText text="I" />
-                <ShuffleText text="N" />
-                <ShuffleText text="D" />
-              </div>
-            </div>
-            <div
-              className="text-muted-foreground text-center mt-3"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.5em",
-                letterSpacing: "0.05em",
-                wordBreak: "keep-all",
-                overflowWrap: "break-word",
-                padding: "0 1em",
-              }}
-            >
-              a digital sanctuary for legal researchers
+              <PixelTransition
+                firstContent={
+                  <div
+                    className="text-foreground tracking-widest"
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "2em",
+                      lineHeight: 1,
+                      letterSpacing: "0.05em",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    aria-label="HYVMIND"
+                  >
+                    <span>H</span>
+                    <span
+                      style={{
+                        fontSize: "1.25em",
+                        verticalAlign: "middle",
+                        lineHeight: 1,
+                      }}
+                    >
+                      Y
+                    </span>
+                    <span>V</span>
+                    <span>M</span>
+                    <span>I</span>
+                    <span>N</span>
+                    <span>D</span>
+                  </div>
+                }
+                secondContent={
+                  <div
+                    className="text-muted-foreground"
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.65em",
+                      letterSpacing: "0.05em",
+                      textAlign: "center",
+                      wordBreak: "keep-all",
+                      overflowWrap: "break-word",
+                      padding: "0 1em",
+                    }}
+                  >
+                    a digital sanctuary for legal researchers
+                  </div>
+                }
+                pixelColor="var(--foreground)"
+                gridSize={7}
+                animationStepDuration={0.3}
+              />
             </div>
           </>
         ) : (
