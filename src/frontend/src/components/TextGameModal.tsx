@@ -5,8 +5,8 @@ import {
   useGenerateBuzzSecret,
   useGetBuzzLeaderboard,
 } from "../hooks/useQueries";
-import HexagonBackground from "./Backgrounds/HexagonBackground";
 import ChessPuzzleGame from "./ChessPuzzleGame";
+import ShuffleText from "./TextAnimations/ShuffleText";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -451,56 +451,33 @@ function StartScreen({
         {subMenu === "main" ? (
           <>
             <div className="flex flex-col items-center gap-3">
-              <div
-                className="text-foreground tracking-widest transition-transform duration-150 hover:scale-105"
+              <ShuffleText
+                text="HYVMIND"
+                className="text-foreground tracking-widest"
                 style={{
                   fontFamily: '"Press Start 2P", monospace',
-                  display: "flex",
-                  alignItems: "center",
+                  fontSize: "2em",
+                  lineHeight: 1,
+                  letterSpacing: "0.05em",
                 }}
+                as="div"
                 aria-label="HYVMIND"
-              >
-                {"HYVMIND".split("").map((letter) =>
-                  letter === "Y" ? (
-                    <span
-                      key={letter}
-                      style={{
-                        fontSize: "2.5em",
-                        verticalAlign: "middle",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {letter}
-                    </span>
-                  ) : (
-                    <span
-                      key={letter}
-                      style={{
-                        fontSize: "2em",
-                        verticalAlign: "middle",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {letter}
-                    </span>
-                  ),
-                )}
-              </div>
+              />
             </div>
-            <div
-              className="text-muted-foreground text-center mt-3 transition-transform duration-150 hover:scale-105"
+            <ShuffleText
+              text="a digital sanctuary for legal researchers"
+              className="text-muted-foreground text-center mt-3"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.5em",
                 letterSpacing: "0.05em",
               }}
-            >
-              a digital sanctuary for legal researchers
-            </div>
+              as="div"
+            />
           </>
         ) : (
           <div
-            className="text-foreground tracking-widest transition-transform duration-150 hover:scale-105"
+            className="text-foreground tracking-widest"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "1em",
@@ -1241,23 +1218,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     switch (phase.type) {
       case "idle":
         return (
-          <div
-            className="flex-1 relative overflow-hidden"
-            data-zone="background"
-          >
-            <HexagonBackground />
-            <StartScreen
-              onStart={handleStart}
-              onChess={handleStartChess}
-              onWordle={handleStartWordle}
-              onSettings={handleOpenSettings}
-              onHiScores={handleOpenLeaderboard}
-              onExit={handleExit}
-              showScoreConfirmation={showScoreConfirmation}
-              setShowScoreConfirmation={setShowScoreConfirmation}
-              setSecretCode={setSecretCode}
-            />
-          </div>
+          <StartScreen
+            onStart={handleStart}
+            onChess={handleStartChess}
+            onWordle={handleStartWordle}
+            onSettings={handleOpenSettings}
+            onHiScores={handleOpenLeaderboard}
+            onExit={handleExit}
+            showScoreConfirmation={showScoreConfirmation}
+            setShowScoreConfirmation={setShowScoreConfirmation}
+            setSecretCode={setSecretCode}
+          />
         );
 
       case "settings":
