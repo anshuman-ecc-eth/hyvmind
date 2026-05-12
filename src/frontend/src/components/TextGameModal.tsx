@@ -482,6 +482,9 @@ function StartScreen({
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.5em",
                 letterSpacing: "0.05em",
+                wordBreak: "keep-all",
+                overflowWrap: "break-word",
+                padding: "0 1em",
               }}
             >
               a digital sanctuary for legal researchers
