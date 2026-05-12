@@ -476,16 +476,16 @@ function StartScreen({
                 <ShuffleText text="VMIND" />
               </div>
             </div>
-            <ShuffleText
-              text="a digital sanctuary for legal researchers"
+            <div
               className="text-muted-foreground text-center mt-3"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.5em",
                 letterSpacing: "0.05em",
               }}
-              as="div"
-            />
+            >
+              a digital sanctuary for legal researchers
+            </div>
           </>
         ) : (
           <div
