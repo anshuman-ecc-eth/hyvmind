@@ -229,9 +229,6 @@ export function SettingsView() {
       <div className="max-w-2xl mx-auto px-8 py-10 space-y-10">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your appearance and profile.
-          </p>
         </div>
 
         {/* Appearance Section */}

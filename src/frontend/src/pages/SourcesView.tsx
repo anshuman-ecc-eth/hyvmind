@@ -364,11 +364,8 @@ export default function SourcesView() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-sm font-semibold text-foreground mb-1">
-            source graphs
+            Graphs
           </h2>
-          <p className="text-xs text-muted-foreground">
-            import a structured zip folder with markdown interpretations
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -405,28 +402,6 @@ export default function SourcesView() {
         </div>
       )}
 
-      {/* Empty state */}
-      {graphs.length === 0 && !importing && (
-        <div
-          className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border"
-          data-ocid="sources.empty_state"
-        >
-          <p className="text-xs text-muted-foreground mb-3">
-            no source graphs yet.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            import a zip file to get started.
-          </p>
-          <button
-            type="button"
-            onClick={handleImportClick}
-            className="mt-5 text-xs border border-dashed border-border px-4 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors"
-            data-ocid="sources.empty_import_button"
-          >
-            import graph
-          </button>
-        </div>
-      )}
 
       {/* Graph list */}
       {graphs.length > 0 && (

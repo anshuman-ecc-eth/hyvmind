@@ -6,12 +6,12 @@ interface SidebarProps {
 }
 
 const TABS = [
-  { id: "notes", label: "notes", ocid: "sidebar.tab.notes" },
-  { id: "graphs", label: "graphs", ocid: "sidebar.tab.graphs" },
-  { id: "chat", label: "chat", ocid: "sidebar.tab.chat" },
-  { id: "public", label: "public", ocid: "sidebar.tab.public" },
-  { id: "settings", label: "settings", ocid: "sidebar.tab.settings" },
-  { id: "terminal", label: "terminal", ocid: "sidebar.tab.terminal" },
+  { id: "notes", label: "Notes", ocid: "sidebar.tab.notes" },
+  { id: "graphs", label: "Graphs", ocid: "sidebar.tab.graphs" },
+  { id: "chat", label: "Chat", ocid: "sidebar.tab.chat" },
+  { id: "public", label: "Public", ocid: "sidebar.tab.public" },
+  { id: "settings", label: "Settings", ocid: "sidebar.tab.settings" },
+  { id: "terminal", label: "Terminal", ocid: "sidebar.tab.terminal" },
 ] as const;
 
 export function Sidebar({

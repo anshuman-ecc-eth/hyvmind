@@ -102,6 +102,24 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                 className="bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none"
                 data-ocid="header.dropdown_menu"
               >
+                {!isAuthenticated ? (
+                  <DropdownMenuItem
+                    onClick={handleLogin}
+                    disabled={loginStatus === "logging-in"}
+                    className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    data-ocid="header.login.button"
+                  >
+                    {loginStatus === "logging-in" ? "Logging in..." : "Login"}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    data-ocid="header.logout.button"
+                  >
+                    Logout
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     if (typeof Supademo !== "undefined") {
@@ -120,56 +138,38 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                   }}
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
-                  tutorial
+                  Tutorial
                 </DropdownMenuItem>
-                {!isAuthenticated ? (
-                  <>
-                    <DropdownMenuItem
-                      onClick={handleLogin}
-                      disabled={loginStatus === "logging-in"}
-                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                      data-ocid="header.login.button"
-                    >
-                      {loginStatus === "logging-in" ? "logging in..." : "login"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        window.open("https://telegram.me/hyvmind_tg", "_blank")
-                      }
-                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                    >
-                      telegram
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        window.open(
-                          "https://nodes.desci.com/dpid/969",
-                          "_blank",
-                        )
-                      }
-                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                    >
-                      whitepaper
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem
-                      onClick={onNavigateToSettings}
-                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                      data-ocid="header.settings.nav"
-                    >
-                      settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                      data-ocid="header.logout.button"
-                    >
-                      logout
-                    </DropdownMenuItem>
-                  </>
-                )}
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open("https://telegram.me/hyvmind_tg", "_blank")
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Telegram
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      "https://nodes.desci.com/dpid/969",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Whitepaper
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      "https://github.com/anshuman-ecc-eth/hyvmind",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  GitHub
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

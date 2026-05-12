@@ -348,17 +348,7 @@ export default function SwarmsView() {
           {channelsLoading && (
             <p className="px-2 py-3 text-xs text-muted-foreground">loading…</p>
           )}
-          {!channelsLoading && filteredGroups.length === 0 && !isEnabled && (
-            <div
-              className="flex flex-col items-center gap-2 px-3 py-8 text-center"
-              data-ocid="swarms.channels.empty_state"
-            >
-              <MessageSquare className="h-6 w-6 text-muted-foreground/40" />
-              <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                publish a source graph to join channels
-              </p>
-            </div>
-          )}
+
           {filteredGroups.map((group) => (
             <CurationGroup
               key={group.curationName}

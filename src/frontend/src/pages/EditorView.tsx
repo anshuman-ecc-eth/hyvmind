@@ -1,7 +1,6 @@
 import { DeleteConfirmDialog } from "@/components/markdown-editor/DeleteConfirmDialog";
 import { FileTree } from "@/components/markdown-editor/FileTree";
 import { FrontmatterEditor } from "@/components/markdown-editor/FrontmatterEditor";
-import { GettingStarted } from "@/components/markdown-editor/GettingStarted";
 import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
@@ -682,7 +681,7 @@ export default function EditorView() {
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground mr-auto">
-          notes
+          Notes
         </span>
 
         {/* View mode tabs */}
@@ -754,12 +753,7 @@ export default function EditorView() {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Center content area */}
         <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-          {isEmpty ? (
-            <GettingStarted
-              onCreate={() => setShowCreateCuration(true)}
-              onImport={() => fileInputRef.current?.click()}
-            />
-          ) : (
+          {isEmpty ? <div /> : (
             <>
               {viewMode === "edit" && (
                 <div className="flex flex-col flex-1 min-h-0 overflow-hidden">

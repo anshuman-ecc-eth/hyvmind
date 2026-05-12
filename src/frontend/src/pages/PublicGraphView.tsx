@@ -454,11 +454,8 @@ export default function PublicGraphView({
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="font-mono text-sm text-foreground font-semibold">
-              public graphs
+              Public Graphs
             </h2>
-            <p className="font-mono text-xs text-muted-foreground mt-0.5">
-              extensible curations by the community
-            </p>
           </div>
           <GraphFuzzyFinder onSelect={handleFuzzySelect} />
         </div>
@@ -478,17 +475,7 @@ export default function PublicGraphView({
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-auto px-4 py-4">
         {graphs.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center py-16 text-center"
-            data-ocid="public_graphs.empty_state"
-          >
-            <span className="font-mono text-xs text-muted-foreground">
-              No published graphs yet.
-            </span>
-            <span className="font-mono text-xs text-muted-foreground mt-1">
-              Publish a source graph from the Sources page to see it here.
-            </span>
-          </div>
+          <div data-ocid="public_graphs.empty_state" />
         ) : (
           <div className="space-y-1" data-ocid="public_graphs.list">
             {sortedCreators.map((curationName) => {
