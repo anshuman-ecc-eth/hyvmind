@@ -444,16 +444,15 @@ function StartScreen({
   ]);
 
   return (
-    <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none overflow-hidden">
-      <HexagonBackground />
+    <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
       {/* Content box — flat, no card */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center" data-zone="content">
         {/* Title / Puzzles heading */}
         {subMenu === "main" ? (
           <>
             <div className="flex flex-col items-center gap-3">
               <div
-                className="text-foreground tracking-widest"
+                className="text-foreground tracking-widest transition-transform duration-150 hover:scale-105"
                 style={{
                   fontFamily: '"Press Start 2P", monospace',
                   display: "flex",
@@ -489,7 +488,7 @@ function StartScreen({
               </div>
             </div>
             <div
-              className="text-muted-foreground text-center mt-3"
+              className="text-muted-foreground text-center mt-3 transition-transform duration-150 hover:scale-105"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.5em",
@@ -501,7 +500,7 @@ function StartScreen({
           </>
         ) : (
           <div
-            className="text-foreground tracking-widest"
+            className="text-foreground tracking-widest transition-transform duration-150 hover:scale-105"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "1em",
@@ -522,7 +521,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
@@ -554,7 +553,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.puzzle_${item.toLowerCase()}`}
-                    className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
@@ -1242,17 +1241,23 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     switch (phase.type) {
       case "idle":
         return (
-          <StartScreen
-            onStart={handleStart}
-            onChess={handleStartChess}
-            onWordle={handleStartWordle}
-            onSettings={handleOpenSettings}
-            onHiScores={handleOpenLeaderboard}
-            onExit={handleExit}
-            showScoreConfirmation={showScoreConfirmation}
-            setShowScoreConfirmation={setShowScoreConfirmation}
-            setSecretCode={setSecretCode}
-          />
+          <div
+            className="flex-1 relative overflow-hidden"
+            data-zone="background"
+          >
+            <HexagonBackground />
+            <StartScreen
+              onStart={handleStart}
+              onChess={handleStartChess}
+              onWordle={handleStartWordle}
+              onSettings={handleOpenSettings}
+              onHiScores={handleOpenLeaderboard}
+              onExit={handleExit}
+              showScoreConfirmation={showScoreConfirmation}
+              setShowScoreConfirmation={setShowScoreConfirmation}
+              setSecretCode={setSecretCode}
+            />
+          </div>
         );
 
       case "settings":
