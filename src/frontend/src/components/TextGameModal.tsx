@@ -482,20 +482,19 @@ function StartScreen({
                     <span>D</span>
                   </div>
                 }
-                secondContent={
+                  secondContent={
                   <div
                     className="text-muted-foreground"
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.45em",
+                      fontSize: "0.65em",
                       letterSpacing: "0.05em",
                       textAlign: "center",
-                      wordBreak: "keep-all",
-                      overflowWrap: "break-word",
-                      padding: "0 1em",
+                      lineHeight: 1.6,
                     }}
                   >
-                    a digital sanctuary for legal researchers
+                    <div style={{ whiteSpace: "nowrap" }}>a digital sanctuary</div>
+                    <div style={{ whiteSpace: "nowrap" }}>for legal researchers</div>
                   </div>
                 }
                 pixelColor="var(--foreground)"
