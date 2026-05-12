@@ -13,11 +13,7 @@ import { clearTreeCache } from "../hooks/useQueries";
 import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
 declare const Supademo: { open: (id: string) => void };
 
-interface HeaderProps {
-  onNavigateToSettings: () => void;
-}
-
-export default function Header({ onNavigateToSettings }: HeaderProps) {
+export default function Header() {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -150,10 +146,7 @@ export default function Header({ onNavigateToSettings }: HeaderProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
-                    window.open(
-                      "https://nodes.desci.com/dpid/969",
-                      "_blank",
-                    )
+                    window.open("https://nodes.desci.com/dpid/969", "_blank")
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >

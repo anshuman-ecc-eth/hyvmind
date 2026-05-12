@@ -233,7 +233,7 @@ function AppShell() {
   if (!isAuthenticated) {
     return (
       <div className="flex h-[100dvh] flex-col bg-background">
-        <Header onNavigateToSettings={() => {}} />
+        <Header />
         <main className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full min-h-0 relative">
             {/* Graph loads in background, hidden until game completes */}
@@ -270,7 +270,7 @@ function AppShell() {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header onNavigateToSettings={() => setActiveTab("settings")} />
+        <Header />
         <main className="flex-1 overflow-hidden relative">
           <div
             style={{
