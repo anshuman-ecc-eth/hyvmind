@@ -6,6 +6,7 @@ import {
   useGetBuzzLeaderboard,
 } from "../hooks/useQueries";
 import ChessPuzzleGame from "./ChessPuzzleGame";
+import FlyingBee from "./FlyingBee";
 import PixelTransition from "./TextAnimations/PixelTransition";
 import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
@@ -371,6 +372,7 @@ interface StartScreenProps {
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
+  modalRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function StartScreen({
@@ -383,7 +385,9 @@ function StartScreen({
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
+  modalRef,
 }: StartScreenProps) {
+  const yRef = useRef<HTMLSpanElement>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [subMenu, setSubMenu] = useState<"main" | "puzzles">("main");
   const [puzzleSelectedIdx, setPuzzleSelectedIdx] = useState(0);
@@ -439,6 +443,9 @@ function StartScreen({
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
+      {subMenu === "main" && (
+        <FlyingBee modalRef={modalRef} yRef={yRef} visible />
+      )}
       {/* Content box — flat, no card */}
       <div className="flex flex-col items-center" data-zone="content">
         {/* Title / Puzzles heading */}
@@ -461,6 +468,7 @@ function StartScreen({
                   >
                     <span>H</span>
                     <span
+                      ref={yRef}
                       style={{
                         fontSize: "1.25em",
                         verticalAlign: "middle",
@@ -742,6 +750,7 @@ interface TextGameModalProps {
 }
 
 export default function TextGameModal({ onComplete }: TextGameModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
@@ -1146,6 +1155,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "idle":
         return (
           <StartScreen
+            modalRef={modalRef}
             onStart={handleStart}
             onChess={handleStartChess}
             onWordle={handleStartWordle}
@@ -1440,6 +1450,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
       {/* Floating window */}
       <div
+        ref={modalRef}
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
         style={{ inset: "5%", fontSize: "80%" }}
         data-ocid="text_game.modal"
