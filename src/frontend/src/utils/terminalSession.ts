@@ -1,7 +1,7 @@
 import type { TerminalMessage } from "../pages/TerminalPage";
 
 const TERMINAL_SESSION_KEY = "hyvmind_terminal_session";
-const SESSION_VERSION = 4; // Incremented to invalidate old sessions with renamed ontologyData fields
+const SESSION_VERSION = 5; // Incremented to invalidate old sessions with removed welcome message
 
 interface StoredSession {
   version: number;

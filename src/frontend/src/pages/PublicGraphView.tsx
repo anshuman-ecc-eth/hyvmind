@@ -282,8 +282,8 @@ function GraphDetail({
   }, [convertedGraph, filterState.searchText, filterState.visibleNodeTypes]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full">
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-border bg-card shrink-0">
+    <div className="flex flex-col h-full bg-background font-mono">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <button
           type="button"
           onClick={onBack}
@@ -383,7 +383,7 @@ export default function PublicGraphView({
   if (isLoading) {
     return (
       <div
-        className={`flex flex-col min-h-0 ${isLanding ? "h-full" : "flex-1 h-full"}`}
+        className="flex flex-col h-full bg-background font-mono"
         data-ocid="public_graphs.loading_state"
       >
         <Spinner />
@@ -443,9 +443,7 @@ export default function PublicGraphView({
     );
   }
 
-  const containerClass = isLanding
-    ? "flex flex-col h-full min-h-0"
-    : "flex flex-col flex-1 min-h-0";
+  const containerClass = "flex flex-col h-full bg-background font-mono";
 
   return (
     <div className={containerClass} data-ocid="public_graphs.page">
