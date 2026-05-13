@@ -4331,7 +4331,7 @@ let w$1 = class w extends Error {
 };
 const m$3 = 55799, L$2 = Symbol("CBOR_STOP_CODE");
 var g$1 = /* @__PURE__ */ ((t2) => (t2[t2.False = 20] = "False", t2[t2.True = 21] = "True", t2[t2.Null = 22] = "Null", t2[t2.Undefined = 23] = "Undefined", t2[t2.Break = 31] = "Break", t2))(g$1 || {}), c$2 = /* @__PURE__ */ ((t2) => (t2[t2.UnsignedInteger = 0] = "UnsignedInteger", t2[t2.NegativeInteger = 1] = "NegativeInteger", t2[t2.ByteString = 2] = "ByteString", t2[t2.TextString = 3] = "TextString", t2[t2.Array = 4] = "Array", t2[t2.Map = 5] = "Map", t2[t2.Tag = 6] = "Tag", t2[t2.Simple = 7] = "Simple", t2))(c$2 || {});
-const z$4 = 23, Y$2 = 255, G$3 = 65535, P$2 = 4294967295, H$3 = BigInt("0xffffffffffffffff");
+const z$3 = 23, Y$2 = 255, G$2 = 65535, P$2 = 4294967295, H$3 = BigInt("0xffffffffffffffff");
 var d$1 = /* @__PURE__ */ ((t2) => (t2[t2.Value = 23] = "Value", t2[t2.OneByte = 24] = "OneByte", t2[t2.TwoBytes = 25] = "TwoBytes", t2[t2.FourBytes = 26] = "FourBytes", t2[t2.EightBytes = 27] = "EightBytes", t2[t2.Indefinite = 31] = "Indefinite", t2))(d$1 || {});
 const h$1 = false;
 function W$3(t2) {
@@ -4362,7 +4362,7 @@ function B$3(t2) {
     case c$2.NegativeInteger:
       return j$1(e2);
     case c$2.ByteString:
-      return $$4(e2);
+      return $$3(e2);
     case c$2.TextString:
       return F(e2);
     case c$2.Array:
@@ -4455,7 +4455,7 @@ function j$1(t2) {
   const n2 = E$2(t2);
   return typeof n2 == "number" ? -1 - n2 : -1n - n2;
 }
-function $$4(t2) {
+function $$3(t2) {
   const n2 = E$2(t2);
   if (n2 > Number.MAX_SAFE_INTEGER)
     throw new w$1("Byte length is too large");
@@ -4463,7 +4463,7 @@ function $$4(t2) {
   return a$2 += e2, A$1.slice(a$2 - e2, a$2);
 }
 function F(t2) {
-  const n2 = $$4(t2);
+  const n2 = $$3(t2);
   return K$3.decode(n2);
 }
 function M$2(t2, n2) {
@@ -4497,7 +4497,7 @@ function _$2(t2, n2) {
     return;
   }
   if (typeof t2 == "string") {
-    X$3(t2);
+    X$2(t2);
     return;
   }
   if (t2 instanceof Uint8Array) {
@@ -4525,11 +4525,11 @@ function tt$1(t2, n2) {
 }
 function nt(t2, n2) {
   O$2 = Object.entries(t2), I$2(c$2.Map, O$2.length), O$2.forEach(([e2, i2]) => {
-    X$3(e2), _$2((n2 == null ? void 0 : n2(i2, e2)) ?? i2, n2);
+    X$2(e2), _$2((n2 == null ? void 0 : n2(i2, e2)) ?? i2, n2);
   });
 }
 function I$2(t2, n2) {
-  if (n2 <= z$4) {
+  if (n2 <= z$3) {
     r$2.setUint8(
       s$1++,
       S$1(t2) | Number(n2)
@@ -4543,7 +4543,7 @@ function I$2(t2, n2) {
     ), r$2.setUint8(s$1, Number(n2)), s$1 += 1;
     return;
   }
-  if (n2 <= G$3) {
+  if (n2 <= G$2) {
     r$2.setUint8(
       s$1++,
       S$1(t2) | d$1.TwoBytes
@@ -4598,7 +4598,7 @@ function ot(t2) {
 function ft(t2) {
   t2 >= 0 ? ct(t2) : ot(t2);
 }
-function X$3(t2) {
+function X$2(t2) {
   k$3(c$2.TextString, v$2.encode(t2));
 }
 function V$2(t2) {
@@ -27820,7 +27820,7 @@ var M$1 = (e2, i2, s2, u2, m2, a2, l2, h2) => {
   }
 };
 var b$1 = ["light", "dark"], I$1 = "(prefers-color-scheme: dark)", O$1 = typeof window == "undefined", x$2 = reactExports.createContext(void 0), U$1 = { setTheme: (e2) => {
-}, themes: [] }, z$3 = () => {
+}, themes: [] }, z$2 = () => {
   var e2;
   return (e2 = reactExports.useContext(x$2)) != null ? e2 : U$1;
 }, J$2 = (e2) => reactExports.useContext(x$2) ? reactExports.createElement(reactExports.Fragment, null, e2.children) : reactExports.createElement(V$1, { ...e2 }), N$2 = ["light", "dark"], V$1 = ({ forcedTheme: e2, disableTransitionOnChange: i2 = false, enableSystem: s2 = true, enableColorScheme: u2 = true, storageKey: m2 = "theme", themes: a2 = N$2, defaultTheme: l2 = s2 ? "system" : "light", attribute: h2 = "data-theme", value: d2, children: w3, nonce: p2, scriptProps: R2 }) => {
@@ -27934,7 +27934,7 @@ var bt = 1, yt = class {
       t2.loading !== void 0 && (a2 = this.create({ ...t2, promise: e2, type: "loading", message: t2.loading, description: typeof t2.description != "function" ? t2.description : void 0 }));
       let u2 = e2 instanceof Promise ? e2 : e2(), f2 = a2 !== void 0, w3, S2 = u2.then(async (i2) => {
         if (w3 = ["resolve", i2], React$2.isValidElement(i2)) f2 = false, this.create({ id: a2, type: "default", message: i2 });
-        else if (ie$1(i2) && !i2.ok) {
+        else if (ie(i2) && !i2.ok) {
           f2 = false;
           let T2 = typeof t2.error == "function" ? await t2.error(`HTTP error! status: ${i2.status}`) : t2.error, F2 = typeof t2.description == "function" ? await t2.description(`HTTP error! status: ${i2.status}`) : t2.description;
           this.create({ id: a2, type: "error", message: T2, description: F2 });
@@ -27965,7 +27965,7 @@ var bt = 1, yt = class {
 }, v$1 = new yt(), ne = (n2, e2) => {
   let t2 = (e2 == null ? void 0 : e2.id) || bt++;
   return v$1.addToast({ title: n2, ...e2, id: t2 }), t2;
-}, ie$1 = (n2) => n2 && typeof n2 == "object" && "ok" in n2 && typeof n2.ok == "boolean" && "status" in n2 && typeof n2.status == "number", le$1 = ne, ce$1 = () => v$1.toasts, de$2 = () => v$1.getActiveToasts(), ue$1 = Object.assign(le$1, { success: v$1.success, info: v$1.info, warning: v$1.warning, error: v$1.error, custom: v$1.custom, message: v$1.message, promise: v$1.promise, dismiss: v$1.dismiss, loading: v$1.loading }, { getHistory: ce$1, getToasts: de$2 });
+}, ie = (n2) => n2 && typeof n2 == "object" && "ok" in n2 && typeof n2.ok == "boolean" && "status" in n2 && typeof n2.status == "number", le$1 = ne, ce$1 = () => v$1.toasts, de$1 = () => v$1.getActiveToasts(), ue$1 = Object.assign(le$1, { success: v$1.success, info: v$1.info, warning: v$1.warning, error: v$1.error, custom: v$1.custom, message: v$1.message, promise: v$1.promise, dismiss: v$1.dismiss, loading: v$1.loading }, { getHistory: ce$1, getToasts: de$1 });
 function wt(n2, { insertAt: e2 } = {}) {
   if (typeof document == "undefined") return;
   let t2 = document.head || document.getElementsByTagName("head")[0], a2 = document.createElement("style");
@@ -27976,7 +27976,7 @@ wt(`:where(html[dir="ltr"]),:where([data-sonner-toaster][dir="ltr"]){--toast-ico
 function tt(n2) {
   return n2.label !== void 0;
 }
-var pe$1 = 3, me$2 = "32px", ge = "16px", Wt = 4e3, he$1 = 356, be$1 = 14, ye$1 = 20, we$1 = 200;
+var pe$1 = 3, me$1 = "32px", ge = "16px", Wt = 4e3, he$1 = 356, be$1 = 14, ye$1 = 20, we$1 = 200;
 function M(...n2) {
   return n2.filter(Boolean).join(" ");
 }
@@ -28075,7 +28075,7 @@ function _t() {
 function Te$1(n2, e2) {
   let t2 = {};
   return [n2, e2].forEach((a2, u2) => {
-    let f2 = u2 === 1, w3 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me$2;
+    let f2 = u2 === 1, w3 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me$1;
     function g2(i2) {
       ["top", "right", "bottom", "left"].forEach((D2) => {
         t2[`${w3}-${D2}`] = typeof i2 == "number" ? `${i2}px` : i2;
@@ -28086,7 +28086,7 @@ function Te$1(n2, e2) {
     }) : g2(S2);
   }), t2;
 }
-var $e$1 = reactExports.forwardRef(function(e2, t2) {
+var $e = reactExports.forwardRef(function(e2, t2) {
   let { invert: a2, position: u2 = "bottom-right", hotkey: f2 = ["altKey", "KeyT"], expand: w3, closeButton: S2, className: g2, offset: i2, mobileOffset: D2, theme: T2 = "light", richColors: F2, duration: et2, style: ut2, visibleToasts: ft2 = pe$1, toastOptions: l2, dir: ot2 = _t(), gap: at = be$1, loadingIcon: X2, icons: st2, containerAriaLabel: pt = "Notifications", pauseWhenPageIsHidden: rt } = e2, [B2, s2] = React$2.useState([]), P2 = React$2.useMemo(() => Array.from(new Set([u2].concat(B2.filter((d2) => d2.position).map((d2) => d2.position)))), [B2, u2]), [nt2, it2] = React$2.useState([]), [Y2, C2] = React$2.useState(false), [lt, J2] = React$2.useState(false), [W2, H2] = React$2.useState(T2 !== "system" ? T2 : typeof window != "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"), A2 = React$2.useRef(null), mt = f2.join("+").replace(/Key/g, "").replace(/Digit/g, ""), L2 = React$2.useRef(null), z2 = React$2.useRef(false), ct2 = React$2.useCallback((d2) => {
     s2((h2) => {
       var y2;
@@ -28156,9 +28156,9 @@ var $e$1 = reactExports.forwardRef(function(e2, t2) {
   }));
 });
 const Toaster = ({ ...props }) => {
-  const { theme = "system" } = z$3();
+  const { theme = "system" } = z$2();
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    $e$1,
+    $e,
     {
       theme,
       className: "toaster group",
@@ -30685,20 +30685,20 @@ function createActor(canisterId, _uploadFile, _downloadFile, options = {}) {
   });
   return new Backend(actor, _uploadFile, _downloadFile, options.processError);
 }
-var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$2 = 0.1, u$1 = 0.999, $$3 = 0.9999;
-var k$2 = 0.99, m$2 = /[\\\/_+.#"@\[\(\{&]/, B$2 = /[\\\/_+.#"@\[\(\{&]/g, K$2 = /[\s-]/, X$2 = /[\s-]/g;
-function G$2(_2, C2, h2, P2, A2, f2, O2) {
+var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$2 = 0.1, u$1 = 0.999, $$2 = 0.9999;
+var k$2 = 0.99, m$2 = /[\\\/_+.#"@\[\(\{&]/, B$2 = /[\\\/_+.#"@\[\(\{&]/g, K$2 = /[\s-]/, X$1 = /[\s-]/g;
+function G$1(_2, C2, h2, P2, A2, f2, O2) {
   if (f2 === C2.length) return A2 === _2.length ? U : k$2;
   var T2 = `${A2},${f2}`;
   if (O2[T2] !== void 0) return O2[T2];
-  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$2(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$2), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$3)), (E2 < p$2 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$2(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$2 > E2 && (E2 = N2 * p$2)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
+  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$1), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$2)), (E2 < p$2 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$2 > E2 && (E2 = N2 * p$2)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
   return O2[T2] = S2, S2;
 }
 function D$1(_2) {
-  return _2.toLowerCase().replace(X$2, " ");
+  return _2.toLowerCase().replace(X$1, " ");
 }
 function W$1(_2, C2, h2) {
-  return _2 = h2 && h2.length > 0 ? `${_2 + " " + h2.join(" ")}` : _2, G$2(_2, C2, D$1(_2), D$1(C2), 0, 0, {});
+  return _2 = h2 && h2.length > 0 ? `${_2 + " " + h2.join(" ")}` : _2, G$1(_2, C2, D$1(_2), D$1(C2), 0, 0, {});
 }
 function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
   return function handleEvent(event) {
@@ -32817,7 +32817,7 @@ var Primitive = NODES.reduce((primitive, node2) => {
   Node2.displayName = `Primitive.${node2}`;
   return { ...primitive, [node2]: Node2 };
 }, {});
-var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-heading=""]', le = '[cmdk-item=""]', ce = `${le}:not([aria-disabled="true"])`, Z = "cmdk-item-select", T$1 = "data-value", Re = (r2, o2, n2) => W$1(r2, o2, n2), ue = reactExports.createContext(void 0), K$1 = () => reactExports.useContext(ue), de$1 = reactExports.createContext(void 0), ee = () => reactExports.useContext(de$1), fe = reactExports.createContext(void 0), me$1 = reactExports.forwardRef((r2, o2) => {
+var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-heading=""]', le = '[cmdk-item=""]', ce = `${le}:not([aria-disabled="true"])`, Z = "cmdk-item-select", T$1 = "data-value", Re = (r2, o2, n2) => W$1(r2, o2, n2), ue = reactExports.createContext(void 0), K$1 = () => reactExports.useContext(ue), de = reactExports.createContext(void 0), ee = () => reactExports.useContext(de), fe = reactExports.createContext(void 0), me = reactExports.forwardRef((r2, o2) => {
   let n2 = L$1(() => {
     var e2, a2;
     return { search: "", value: (a2 = (e2 = r2.value) != null ? e2 : r2.defaultValue) != null ? a2 : "", selectedItemId: void 0, filtered: { count: 0, items: /* @__PURE__ */ new Map(), groups: /* @__PURE__ */ new Set() } };
@@ -32943,7 +32943,7 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
   }
   function re2(e2) {
     let a2 = M2(), s2 = a2 == null ? void 0 : a2.closest(N$1), i2;
-    for (; s2 && !i2; ) s2 = e2 > 0 ? we(s2, N$1) : De$1(s2, N$1), i2 = s2 == null ? void 0 : s2.querySelector(ce);
+    for (; s2 && !i2; ) s2 = e2 > 0 ? we(s2, N$1) : De(s2, N$1), i2 = s2 == null ? void 0 : s2.querySelector(ce);
     i2 ? E2.setState("value", i2.getAttribute(T$1)) : Q2(e2);
   }
   let oe2 = () => X2(V2().length - 1), ie2 = (e2) => {
@@ -32991,7 +32991,7 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
         }
       }
     }
-  } }, reactExports.createElement("label", { "cmdk-label": "", htmlFor: U2.inputId, id: U2.labelId, style: Te }, b2), B$1(r2, (e2) => reactExports.createElement(de$1.Provider, { value: E2 }, reactExports.createElement(ue.Provider, { value: U2 }, e2))));
+  } }, reactExports.createElement("label", { "cmdk-label": "", htmlFor: U2.inputId, id: U2.labelId, style: Te }, b2), B$1(r2, (e2) => reactExports.createElement(de.Provider, { value: E2 }, reactExports.createElement(ue.Provider, { value: U2 }, e2))));
 }), he = reactExports.forwardRef((r2, o2) => {
   var _2, I2;
   let n2 = useId(), u2 = reactExports.useRef(null), c2 = reactExports.useContext(fe), d2 = K$1(), f2 = pe(r2), p2 = (I2 = (_2 = f2.current) == null ? void 0 : _2.forceMount) != null ? I2 : c2 == null ? void 0 : c2.forceMount;
@@ -33045,11 +33045,11 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
   }, []), reactExports.createElement(Primitive.div, { ref: composeRefs(d2, o2), ...c2, "cmdk-list": "", role: "listbox", tabIndex: -1, "aria-activedescendant": p2, "aria-label": u2, id: b2.listId }, B$1(r2, (m2) => reactExports.createElement("div", { ref: composeRefs(f2, b2.listInnerRef), "cmdk-list-sizer": "" }, m2)));
 }), xe = reactExports.forwardRef((r2, o2) => {
   let { open: n2, onOpenChange: u2, overlayClassName: c2, contentClassName: d2, container: f2, ...p2 } = r2;
-  return reactExports.createElement(Root$5, { open: n2, onOpenChange: u2 }, reactExports.createElement(Portal$2, { container: f2 }, reactExports.createElement(Overlay, { "cmdk-overlay": "", className: c2 }), reactExports.createElement(Content$1, { "aria-label": r2.label, "cmdk-dialog": "", className: d2 }, reactExports.createElement(me$1, { ref: o2, ...p2 }))));
+  return reactExports.createElement(Root$5, { open: n2, onOpenChange: u2 }, reactExports.createElement(Portal$2, { container: f2 }, reactExports.createElement(Overlay, { "cmdk-overlay": "", className: c2 }), reactExports.createElement(Content$1, { "aria-label": r2.label, "cmdk-dialog": "", className: d2 }, reactExports.createElement(me, { ref: o2, ...p2 }))));
 }), Ie = reactExports.forwardRef((r2, o2) => P$1((u2) => u2.filtered.count === 0) ? reactExports.createElement(Primitive.div, { ref: o2, ...r2, "cmdk-empty": "", role: "presentation" }) : null), Pe = reactExports.forwardRef((r2, o2) => {
   let { progress: n2, children: u2, label: c2 = "Loading...", ...d2 } = r2;
   return reactExports.createElement(Primitive.div, { ref: o2, ...d2, "cmdk-loading": "", role: "progressbar", "aria-valuenow": n2, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": c2 }, B$1(r2, (f2) => reactExports.createElement("div", { "aria-hidden": true }, f2)));
-}), _e = Object.assign(me$1, { List: Ce, Item: he, Input: Se, Group: Ee, Separator: ye, Dialog: xe, Empty: Ie, Loading: Pe });
+}), _e = Object.assign(me, { List: Ce, Item: he, Input: Se, Group: Ee, Separator: ye, Dialog: xe, Empty: Ie, Loading: Pe });
 function we(r2, o2) {
   let n2 = r2.nextElementSibling;
   for (; n2; ) {
@@ -33057,7 +33057,7 @@ function we(r2, o2) {
     n2 = n2.nextElementSibling;
   }
 }
-function De$1(r2, o2) {
+function De(r2, o2) {
   let n2 = r2.previousElementSibling;
   for (; n2; ) {
     if (n2.matches(o2)) return n2;
@@ -33475,7 +33475,7 @@ const __iconNode = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-const X$1 = createLucideIcon("x", __iconNode);
+const X = createLucideIcon("x", __iconNode);
 function r$1(e2) {
   var t2, f2, n2 = "";
   if ("string" == typeof e2 || "number" == typeof e2) n2 += e2;
@@ -36002,7 +36002,7 @@ function DialogContent({
               "data-slot": "dialog-close",
               className: "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
               children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, {}),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(X, {}),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "sr-only", children: "Close" })
               ]
             }
@@ -38088,253 +38088,6 @@ const cva = (base, config3) => (props) => {
   }, []);
   return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
 };
-(function() {
-  try {
-    if (typeof document < "u") {
-      var t2 = document.createElement("style");
-      t2.appendChild(document.createTextNode('.soft-btn{--button-raise-level: 14px;--press-inset: 5px;--press-compensated: 0px;--button-hover-pressure: 2;--transform-speed: .16s;--radius: 14px;--surface-color: #f3f4f6;--side-color: #d1d5db;--text-color: #111827;--border-color: rgba(0, 0, 0, .35);--border-width: 2px;--glare-rgb: 255, 255, 255;--glare-alpha: 0;--glare-width: 0;--edge-aa: 0px;position:relative;border:none;background:transparent;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}.soft-btn:focus{outline:none}.soft-btn:focus-visible .soft-btn__content{outline:2px solid #2563eb;outline-offset:3px}.soft-btn__wrapper{position:relative;display:block;width:100%;height:100%;transform-style:preserve-3d}.soft-btn__wrapper:before{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(100% - var(--button-raise-level));background:var(--side-color);border-radius:var(--radius);z-index:1}.soft-btn--active .soft-btn__wrapper:before{border-radius:var(--radius)}.soft-btn__content{position:relative;width:100%;height:calc(100% - var(--button-raise-level));background:var(--surface-color);color:var(--text-color);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;transform:translateY(0);transition:transform var(--transform-speed) ease-out;will-change:transform;backface-visibility:hidden;transform-origin:center;z-index:2;box-shadow:inset 0 0 0 var(--border-width) var(--border-color),0 0 var(--edge-aa) #00000073}.soft-btn__inner{display:inline-flex;align-items:center;justify-content:center;gap:10px;z-index:4;width:100%;height:100%}.soft-btn--middle .soft-btn__content{transform:translateY(calc(1px * var(--button-hover-pressure)))}.soft-btn--left .soft-btn__content{transform:skewY(calc(-1deg * var(--button-hover-pressure)))}.soft-btn--right .soft-btn__content{transform:skewY(calc(1deg * var(--button-hover-pressure)))}.soft-btn--left,.soft-btn--right{--edge-aa: 1px}.soft-btn--active .soft-btn__content{transform:translateY(var(--press-inset));transition:transform calc(var(--transform-speed) * .8) ease-out}.soft-btn--press-tilt.soft-btn--active.soft-btn--left .soft-btn__content{transform:skewY(calc(-1deg * var(--button-hover-pressure))) translateY(var(--press-compensated))}.soft-btn--press-tilt.soft-btn--active.soft-btn--right .soft-btn__content{transform:skewY(calc(1deg * var(--button-hover-pressure))) translateY(var(--press-compensated))}.soft-btn--disabled{opacity:.6;cursor:not-allowed}.soft-btn--disabled .soft-btn__content:after{opacity:0}.soft-btn__content:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,rgba(var(--glare-rgb),0) calc(50% - var(--glare-width) * 1%),rgba(var(--glare-rgb),calc(var(--glare-alpha) * .5)) calc(50% - var(--glare-width) * .5%),rgba(var(--glare-rgb),var(--glare-alpha)) 50%,rgba(var(--glare-rgb),calc(var(--glare-alpha) * .5)) calc(50% + var(--glare-width) * .5%),rgba(var(--glare-rgb),0) calc(50% + var(--glare-width) * 1%));background-size:200% 100%;background-position:50% 50%;opacity:0;transition:opacity .16s ease,background-position var(--transform-speed) ease;z-index:3}.soft-btn--right .soft-btn__content:after{opacity:1;background-position:0% 50%}.soft-btn--middle .soft-btn__content:after{opacity:1;background-position:50% 50%}.soft-btn--left .soft-btn__content:after{opacity:1;background-position:100% 50%}.soft-btn--active .soft-btn__content:after{opacity:1;background:rgba(var(--glare-rgb),var(--glare-alpha));background-position:50% 50%}@supports (-moz-appearance: none){.soft-btn--left,.soft-btn--right{--edge-aa: 1.25px}}@media(prefers-reduced-motion:reduce){.soft-btn__content{transition:none}.soft-btn__content:after{transition:none}}')), document.head.appendChild(t2);
-    }
-  } catch (e2) {
-    console.error("vite-plugin-css-injected-by-js", e2);
-  }
-})();
-var X = { exports: {} }, $$2 = {};
-var ie;
-function $e() {
-  if (ie) return $$2;
-  ie = 1;
-  var u2 = /* @__PURE__ */ Symbol.for("react.transitional.element"), c2 = /* @__PURE__ */ Symbol.for("react.fragment");
-  function n2(E2, i2, f2) {
-    var T2 = null;
-    if (f2 !== void 0 && (T2 = "" + f2), i2.key !== void 0 && (T2 = "" + i2.key), "key" in i2) {
-      f2 = {};
-      for (var C2 in i2)
-        C2 !== "key" && (f2[C2] = i2[C2]);
-    } else f2 = i2;
-    return i2 = f2.ref, {
-      $$typeof: u2,
-      type: E2,
-      key: T2,
-      ref: i2 !== void 0 ? i2 : null,
-      props: f2
-    };
-  }
-  return $$2.Fragment = c2, $$2.jsx = n2, $$2.jsxs = n2, $$2;
-}
-var de;
-function De() {
-  return de || (de = 1, X.exports = $e()), X.exports;
-}
-var z$2 = De();
-const me = {
-  solid: {
-    surfaceColor: "#3b82f6",
-    sideColor: "#1d4ed8",
-    textColor: "#ffffff",
-    borderColor: "transparent",
-    borderWidth: 0
-  },
-  outline: {
-    surfaceColor: "#ffffff",
-    sideColor: "#2563eb",
-    textColor: "#2563eb",
-    borderColor: "#2563eb",
-    borderWidth: 3
-  },
-  dark: {
-    surfaceColor: "#181818",
-    sideColor: "#494949",
-    textColor: "#e5e7eb",
-    borderColor: "#5e5e5e",
-    borderWidth: 3
-  },
-  arcade: {
-    surfaceColor: "#22b8c7",
-    sideColor: "#e5dd4a",
-    textColor: "#fef08a",
-    borderColor: "#fef08a",
-    borderWidth: 3
-  },
-  gum: {
-    surfaceColor: "#f472b6",
-    sideColor: "#db2777",
-    textColor: "#ffffff",
-    borderColor: "transparent",
-    borderWidth: 0
-  },
-  carbon: {
-    surfaceColor: "#2a2a37",
-    sideColor: "#8b5e3c",
-    textColor: "#c4a484",
-    borderColor: "#8b5f39",
-    borderWidth: 4
-  },
-  warning: {
-    surfaceColor: "#2c2c39",
-    sideColor: "#b22b3b",
-    textColor: "#fff7ed",
-    borderColor: "#d9445b",
-    borderWidth: 4
-  },
-  steel: {
-    surfaceColor: "#cbd5e1",
-    sideColor: "#64748b",
-    textColor: "#020617",
-    borderColor: "#475569",
-    borderWidth: 2
-  },
-  gold: {
-    surfaceColor: "#ffcf10",
-    sideColor: "#d29000",
-    textColor: "#422006",
-    borderColor: "#fff0a8",
-    borderWidth: 2
-  },
-  lavender: {
-    surfaceColor: "#cec3fd",
-    sideColor: "#b489ff",
-    textColor: "#2e1065",
-    borderColor: "#a36eff",
-    borderWidth: 4
-  }
-};
-function G$1(u2, c2, n2) {
-  return Math.max(c2, Math.min(n2, u2));
-}
-function Ve({
-  children: u2,
-  onClick: c2,
-  disabled: n2 = false,
-  variant: E2 = "solid",
-  elevation: i2 = 14,
-  pressInset: f2 = 5,
-  tilt: T2 = 2,
-  pressTilt: C2 = true,
-  motion: H2 = 160,
-  width: g2 = 260,
-  height: x3 = 64,
-  radius: D2 = 14,
-  surfaceColor: Y2,
-  sideColor: w3,
-  textColor: U2,
-  borderColor: A2,
-  borderWidth: h2,
-  glareColor: K2 = "#ffffff",
-  glareOpacity: Z2 = 0,
-  glareWidth: Q2 = 0,
-  className: ee2 = "",
-  type: re2 = "button",
-  style: O2,
-  ...te2
-}) {
-  var _a3, _b3;
-  const P2 = reactExports.useRef(null), [S2, _2] = reactExports.useState(false), [F2, m2] = reactExports.useState(null), N2 = reactExports.useRef(0), l2 = reactExports.useRef(null), b2 = reactExports.useRef(null);
-  reactExports.useEffect(() => () => clearTimeout(l2.current), []), reactExports.useEffect(() => {
-    n2 && (l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), _2(false), m2(null));
-  }, [n2]);
-  const j2 = Math.max(0, Number(x3) || 0), L2 = Math.max(0, Number(i2) || 0), V2 = j2 * 0.3, y2 = G$1(L2, 0, V2), e2 = Math.max(0, Number(f2) || 0), r2 = G$1(e2, 0, y2), o2 = Math.max(0, Number(T2) || 0), a2 = Number((y2 / 9).toFixed(2)), k2 = G$1(o2, 0, a2), s2 = ((_b3 = (_a3 = P2.current) == null ? void 0 : _a3.getBoundingClientRect()) == null ? void 0 : _b3.width) || Number(g2) || 0, v2 = k2 * Math.PI / 180, M2 = s2 / 2 * Math.tan(v2), ne2 = Math.max(0, r2 - M2), be2 = j2 - y2, pe2 = Math.max(0, Math.floor(be2 / 4)), Ee2 = Math.max(0, Number(D2) || 0), _e3 = G$1(Ee2, 0, pe2), ae2 = Math.max(0, Number(H2) || 0), ve2 = ae2;
-  function se2(t2, d2) {
-    const p2 = d2.getBoundingClientRect(), R2 = t2.clientX - p2.left, le2 = p2.width || 1;
-    return R2 < le2 * 0.33 ? "left" : R2 > le2 * 0.66 ? "right" : "middle";
-  }
-  const Re2 = (t2) => {
-    if (n2 || t2.button !== 0 && t2.pointerType === "mouse") return;
-    const d2 = P2.current;
-    if (!d2) return;
-    l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null, _2(false), m2(null)), d2.setPointerCapture(t2.pointerId), N2.current = Date.now();
-    const p2 = se2(t2, d2);
-    m2((R2) => R2 === p2 ? R2 : p2), _2(true);
-  }, Te2 = (t2) => {
-    if (n2 || t2.pointerType !== "mouse") return;
-    const d2 = P2.current;
-    if (!d2) return;
-    const p2 = se2(t2, d2);
-    m2((R2) => R2 === p2 ? R2 : p2);
-  }, q2 = reactExports.useCallback((t2) => {
-    const d2 = P2.current;
-    try {
-      (d2 == null ? void 0 : d2.hasPointerCapture(t2.pointerId)) && d2.releasePointerCapture(t2.pointerId);
-    } catch {
-    }
-    _2(false), m2(null);
-  }, []), Ce2 = (t2) => {
-    if (n2) return;
-    const d2 = Date.now() - N2.current, p2 = ve2 - d2;
-    p2 > 0 ? (b2.current = t2, l2.current = setTimeout(() => {
-      l2.current = null, q2(b2.current), b2.current = null;
-    }, p2)) : q2(t2);
-  }, xe2 = (t2) => {
-    n2 || (l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), q2(t2));
-  }, he2 = (t2) => {
-    l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), q2(t2);
-  }, Pe2 = (t2) => {
-    if (!n2 && (t2.key === "Enter" || t2.key === " ")) {
-      if (t2.key === " " && t2.preventDefault(), t2.repeat) return;
-      _2(true), m2("middle");
-    }
-  }, ye2 = (t2) => {
-    n2 || (t2.key === "Enter" || t2.key === " ") && (_2(false), m2(null));
-  }, ke2 = (t2) => {
-    n2 || (c2 == null ? void 0 : c2(t2));
-  }, I2 = me[E2] || me.solid, ge2 = Y2 ?? I2.surfaceColor, we2 = w3 ?? I2.sideColor, Ae = U2 ?? I2.textColor, Oe = typeof A2 == "string" && A2.trim() !== "" ? A2 : I2.borderColor || "transparent", Se2 = typeof h2 == "number" && h2 >= 0 ? h2 : I2.borderWidth ?? 0, Ne = {
-    ...{
-      "--button-raise-level": `${y2}px`,
-      "--press-inset": `${r2}px`,
-      "--press-compensated": `${ne2}px`,
-      "--button-hover-pressure": k2,
-      "--transform-speed": `${ae2}ms`,
-      "--radius": `${_e3}px`,
-      "--surface-color": ge2,
-      "--side-color": we2,
-      "--text-color": Ae,
-      "--border-color": Oe,
-      "--border-width": `${Se2}px`,
-      "--glare-rgb": Ye(K2),
-      "--glare-alpha": Z2,
-      "--glare-width": Q2,
-      width: typeof g2 == "number" ? `${g2}px` : g2,
-      height: typeof x3 == "number" ? `${x3}px` : x3
-    },
-    ...O2 && typeof O2 == "object" ? O2 : {}
-  }, je = [
-    "soft-btn",
-    S2 && "soft-btn--active",
-    F2 && `soft-btn--${F2}`,
-    n2 && "soft-btn--disabled",
-    C2 && "soft-btn--press-tilt",
-    ee2
-  ].filter(Boolean).join(" ");
-  return /* @__PURE__ */ z$2.jsx(
-    "button",
-    {
-      ...te2,
-      ref: P2,
-      type: re2,
-      className: je,
-      style: Ne,
-      "aria-disabled": n2 || void 0,
-      onPointerDown: Re2,
-      onPointerMove: Te2,
-      onPointerUp: Ce2,
-      onPointerLeave: xe2,
-      onPointerCancel: he2,
-      onKeyDown: Pe2,
-      onKeyUp: ye2,
-      onClick: ke2,
-      disabled: n2,
-      children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__wrapper", children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__content", children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__inner", children: u2 }) }) })
-    }
-  );
-}
-function Ye(u2) {
-  if (!u2 || typeof u2 != "string")
-    return "255,255,255";
-  let c2 = u2.replace("#", "");
-  if (c2.length === 3 && (c2 = c2.split("").map((f2) => f2 + f2).join("")), c2.length !== 6)
-    return "255,255,255";
-  const n2 = parseInt(c2.slice(0, 2), 16), E2 = parseInt(c2.slice(2, 4), 16), i2 = parseInt(c2.slice(4, 6), 16);
-  return `${n2},${E2},${i2}`;
-}
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
@@ -38360,117 +38113,20 @@ const buttonVariants = cva(
     }
   }
 );
-const variantTiltMap = {
-  default: {
-    variant: "solid",
-    surfaceColor: "var(--primary)",
-    sideColor: "color-mix(in srgb, var(--primary), #000 25%)",
-    textColor: "var(--primary-foreground)",
-    borderColor: "transparent",
-    borderWidth: 0,
-    elevation: 10,
-    pressInset: 4,
-    tilt: 2,
-    radius: 6
-  },
-  destructive: {
-    variant: "solid",
-    surfaceColor: "var(--destructive)",
-    sideColor: "color-mix(in srgb, var(--destructive), #000 25%)",
-    textColor: "var(--destructive-foreground)",
-    borderColor: "transparent",
-    borderWidth: 0,
-    elevation: 10,
-    pressInset: 4,
-    tilt: 2,
-    radius: 6
-  },
-  outline: {
-    variant: "outline",
-    surfaceColor: "var(--background)",
-    sideColor: "color-mix(in srgb, var(--muted), #000 15%)",
-    textColor: "var(--foreground)",
-    borderColor: "var(--border)",
-    borderWidth: 1,
-    elevation: 8,
-    pressInset: 3,
-    tilt: 1,
-    radius: 6
-  },
-  secondary: {
-    variant: "solid",
-    surfaceColor: "var(--secondary)",
-    sideColor: "color-mix(in srgb, var(--secondary), #000 25%)",
-    textColor: "var(--secondary-foreground)",
-    borderColor: "transparent",
-    borderWidth: 0,
-    elevation: 10,
-    pressInset: 4,
-    tilt: 2,
-    radius: 6
-  },
-  ghost: {
-    variant: "solid",
-    surfaceColor: "transparent",
-    sideColor: "transparent",
-    textColor: "var(--foreground)",
-    borderColor: "transparent",
-    borderWidth: 0,
-    elevation: 0,
-    pressInset: 0,
-    tilt: 0,
-    radius: 4
-  },
-  link: {
-    variant: "solid",
-    surfaceColor: "transparent",
-    sideColor: "transparent",
-    textColor: "var(--primary)",
-    borderColor: "transparent",
-    borderWidth: 0,
-    elevation: 0,
-    pressInset: 0,
-    tilt: 0,
-    radius: 0
-  }
-};
 function Button({
   className,
   variant,
   size: size2,
   asChild = false,
-  children: children2,
   ...props
 }) {
-  if (asChild) {
-    const Comp = Slot$2;
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Comp,
-      {
-        "data-slot": "button",
-        className: cn(buttonVariants({ variant, size: size2, className })),
-        ...props,
-        children: children2
-      }
-    );
-  }
-  const tiltVariant = variant ?? "default";
-  const tiltSize = size2 ?? "default";
-  const tiltProps = variantTiltMap[tiltVariant] ?? variantTiltMap.default;
-  const width = tiltSize === "icon" ? 36 : "auto";
-  const heightMap = { default: 36, sm: 32, lg: 40, icon: 36 };
-  const height = heightMap[tiltSize] ?? heightMap.default;
+  const Comp = asChild ? Slot$2 : "button";
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Ve,
+    Comp,
     {
       "data-slot": "button",
-      ...tiltProps,
-      width,
-      height,
-      motion: 120,
-      className: cn("font-mono text-xs", className),
-      ...props,
-      children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center gap-1.5 text-xs font-mono", children: children2 })
+      className: cn(buttonVariants({ variant, size: size2, className })),
+      ...props
     }
   );
 }
@@ -42191,7 +41847,7 @@ function applyVariant(base, variant) {
 function Header() {
   const { login, clear, loginStatus, identity: identity2 } = useInternetIdentity();
   const queryClient2 = useQueryClient();
-  const { theme, setTheme } = z$3();
+  const { theme, setTheme } = z$2();
   const isAuthenticated = !!identity2;
   const handleLogout = async () => {
     await clear();
@@ -42478,11 +42134,11 @@ function FilterPanel({
       "data-ocid": "filter_panel.panel",
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          Button,
+          "button",
           {
-            variant: "outline",
+            type: "button",
             onClick: onToggleCollapsed,
-            className: "flex flex-col items-center justify-start pt-3 px-1.5 border-l border-t border-b border-dashed text-muted-foreground hover:text-foreground hover:border-foreground shrink-0",
+            className: "flex flex-col items-center justify-start pt-3 px-1.5 bg-background border-l border-t border-b border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors shrink-0",
             style: { writingMode: "vertical-rl", gap: "6px" },
             "aria-label": isCollapsed ? "Expand filter panel" : "Collapse filter panel",
             "data-ocid": "filter_panel.toggle",
@@ -42557,23 +42213,23 @@ function FilterPanel({
                   ) }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-3 py-2 flex flex-col gap-1.5 shrink-0", children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      Button,
+                      "button",
                       {
-                        variant: "outline",
+                        type: "button",
                         onClick: onFitToVisible,
-                        className: "w-full border-dashed px-2 py-1 hover:border-foreground text-left",
+                        className: "w-full text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left",
                         "data-ocid": "filter_panel.fit_to_visible",
                         "aria-label": "Zoom to fit visible nodes",
                         children: "fit to visible"
                       }
                     ),
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      Button,
+                      "button",
                       {
-                        variant: "outline",
+                        type: "button",
                         onClick: onReset,
                         disabled: !isFiltered,
-                        className: "w-full border-dashed px-2 py-1 text-muted-foreground hover:border-foreground text-left disabled:opacity-30",
+                        className: "w-full text-xs border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed",
                         "data-ocid": "filter_panel.reset_button",
                         "aria-label": "Reset all filters",
                         children: "reset filters"
@@ -64585,7 +64241,7 @@ function SourceGraphDiagram({
 }) {
   const containerRef = reactExports.useRef(null);
   const fgRef = reactExports.useRef(null);
-  const { resolvedTheme } = z$3();
+  const { resolvedTheme } = z$2();
   const positionCacheRef = reactExports.useRef(/* @__PURE__ */ new Map());
   const currentGraphIdRef = reactExports.useRef("");
   const hoveredNodeIdRef = reactExports.useRef(null);
@@ -64979,33 +64635,33 @@ function GraphCardWithSave({ meta, onView, onSave }) {
         }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mt-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
-              variant: "outline",
+              type: "button",
               onClick: () => setShowArtworkModal(true),
               disabled: !artworkUrl,
-              className: "px-2 py-1 disabled:opacity-40",
+              className: "border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
               "data-ocid": "public_graph.artwork_thumbnail",
               "aria-label": artworkUrl ? `View terrain for ${meta.name}` : "Terrain generating",
               children: artworkUrl ? "Terrain" : "Generating."
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
-              variant: "outline",
+              type: "button",
               onClick: () => onView(meta.id),
-              className: "px-3 py-1",
+              className: "border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors",
               "data-ocid": "public_graph.view_button",
               children: "View Graph"
             }
           ),
           onSave && /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
-              variant: "outline",
+              type: "button",
               onClick: () => onSave(meta.id),
-              className: "border-primary bg-primary/10 px-3 py-1 text-primary hover:bg-primary/20",
+              className: "border border-primary bg-primary/10 px-3 py-1 font-mono text-xs text-primary hover:bg-primary/20 transition-colors",
               "data-ocid": "public_graph.save_button",
               children: "Save"
             }
@@ -65097,11 +64753,11 @@ function GraphDetail({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+        "button",
         {
-          variant: "ghost",
+          type: "button",
           onClick: onBack,
-          className: "gap-1 text-muted-foreground",
+          className: "font-mono text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1",
           "data-ocid": "public_graph.back_button",
           children: "← Back to Graphs"
         }
@@ -67818,7 +67474,7 @@ function CreateBuzzModal({ isOpen, onClose }) {
   ] }) });
 }
 function SettingsView() {
-  const { theme, setTheme } = z$3();
+  const { theme, setTheme } = z$2();
   const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
   const rawActor = useActor(createActor);
@@ -68506,24 +68162,24 @@ function Sidebar({
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 pt-2", children: TABS.map((tab2) => {
           const isActive = activeTab === tab2.id;
           return /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
-              variant: "ghost",
+              type: "button",
               "data-ocid": tab2.ocid,
               onClick: () => onTabChange(tab2.id),
-              className: `w-full py-3 px-2 ${isActive ? "bg-accent text-accent-foreground border-l-2 border-primary" : "text-muted-foreground"}`,
+              className: `w-full py-3 px-2 flex items-center justify-center transition-colors duration-150 ${isActive ? "bg-accent text-accent-foreground border-l-2 border-primary" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`,
               children: collapsed ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium uppercase select-none", children: tab2.label[0] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium select-none", children: tab2.label })
             },
             tab2.id
           );
         }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
+          "button",
           {
-            variant: "ghost",
+            type: "button",
             "data-ocid": "sidebar.toggle-collapse",
             onClick: onToggleCollapse,
-            className: "p-2 w-full text-center border-t border-border",
+            className: "p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-border transition-colors duration-150",
             children: collapsed ? "»" : "«"
           }
         )
@@ -97036,7 +96692,7 @@ function TextGameModal({ onComplete }) {
   const modalRef = reactExports.useRef(null);
   const onCompleteRef = reactExports.useRef(onComplete);
   onCompleteRef.current = onComplete;
-  const { resolvedTheme } = z$3();
+  const { resolvedTheme } = z$2();
   const isLight2 = resolvedTheme === "light";
   const [secretCode, setSecretCode] = reactExports.useState(null);
   const [copiedCode, setCopiedCode] = reactExports.useState(false);
@@ -99126,7 +98782,7 @@ function FrontmatterEditor({
                   "data-ocid": `frontmatter_editor.remove_button.${idx + 1}`,
                   className: "flex-shrink-0 p-0.5 text-muted-foreground hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10",
                   onClick: () => handleRemove(key2),
-                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { size: 11 })
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 11 })
                 }
               )
             ]
@@ -113900,26 +113556,24 @@ function InlineDialog({
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 justify-end", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Button,
+              "button",
               {
                 type: "button",
-                variant: "outline",
-                size: "sm",
                 onClick: onClose,
+                className: "text-xs px-3 py-1.5 border border-dashed border-border text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-colors",
                 "data-ocid": `${ocidPrefix}.cancel_button`,
                 children: "Cancel"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Button,
+              "button",
               {
                 type: "button",
-                variant: "outline",
-                size: "sm",
                 disabled: !name.trim(),
                 onClick: () => {
                   if (name.trim()) onSubmit(name.trim());
                 },
+                className: "text-xs px-3 py-1.5 border border-dashed border-border text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
                 "data-ocid": `${ocidPrefix}.submit_button`,
                 children: "Confirm"
               }
@@ -114369,65 +114023,62 @@ ${fmEntries.map(
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Notes" }),
           !isEmpty2 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "preview"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
               type: "button",
-              variant: viewMode === mode ? "outline" : "ghost",
-              size: "sm",
               onClick: () => setViewMode(mode),
-              className: viewMode === mode ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+              className: [
+                "text-xs px-2 py-1 transition-colors border",
+                viewMode === mode ? "border-border bg-accent text-accent-foreground" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              ].join(" "),
               "data-ocid": `editor.view_mode.${mode}`,
               children: mode
             },
             mode
           )) }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
               type: "button",
-              variant: "outline",
-              size: "sm",
               onClick: undo,
               disabled: !canUndo,
               "aria-label": "Undo",
+              className: "text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed",
               "data-ocid": "editor.undo_button",
               children: "↩"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
               type: "button",
-              variant: "outline",
-              size: "sm",
               onClick: redo,
               disabled: !canRedo,
               "aria-label": "Redo",
+              className: "text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed",
               "data-ocid": "editor.redo_button",
               children: "↪"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
               type: "button",
-              variant: "outline",
-              size: "sm",
               onClick: () => setShowCreateCuration(true),
+              className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "editor.create_button",
               children: "+ create"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+            "button",
             {
               type: "button",
-              variant: "outline",
-              size: "sm",
               onClick: () => {
                 var _a4;
                 return (_a4 = fileInputRef.current) == null ? void 0 : _a4.click();
               },
+              className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "editor.import_button",
               children: "import zip"
             }
@@ -114507,13 +114158,15 @@ ${fmEntries.map(
               className: "fixed z-50 bg-card border border-border shadow-lg py-0.5 min-w-[150px]",
               style: { left: contextMenu.x, top: contextMenu.y },
               children: options.map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-                Button,
+                "button",
                 {
                   type: "button",
-                  variant: opt === "delete" ? "destructive" : "ghost",
                   role: "menuitem",
                   onClick: () => handleContextOption(opt),
-                  className: "w-full text-left px-3 py-1.5 text-xs justify-start",
+                  className: [
+                    "w-full text-left px-3 py-1.5 text-xs transition-colors",
+                    opt === "delete" ? "text-destructive hover:bg-destructive hover:text-destructive-foreground" : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                  ].join(" "),
                   "data-ocid": `editor.context_menu.${opt}`,
                   children: OPTION_LABELS[opt]
                 },
@@ -116532,11 +116185,11 @@ function SourcesView() {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
+          "button",
           {
-            variant: "ghost",
+            type: "button",
             onClick: handleBackToList,
-            className: "text-muted-foreground",
+            className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
             "data-ocid": "sources.back_to_list",
             children: "← back"
           }
@@ -116593,13 +116246,12 @@ function SourcesView() {
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Graphs" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+        "button",
         {
-          variant: "outline",
-          size: "sm",
+          type: "button",
           onClick: handleImportClick,
           disabled: importing,
-          className: "border-dashed",
+          className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
           "data-ocid": "sources.import_button",
           children: importing ? "parsing..." : "import graph"
         }
@@ -116683,35 +116335,32 @@ function SourcesView() {
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 shrink-0", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
+                  "button",
                   {
-                    variant: "outline",
-                    size: "sm",
+                    type: "button",
                     onClick: () => handleView(graph),
-                    className: "border-dashed",
+                    className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors",
                     "data-ocid": `sources.view_button.${graph.id}`,
                     children: "view"
                   }
                 ),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
+                  "button",
                   {
-                    variant: "outline",
-                    size: "sm",
+                    type: "button",
                     onClick: () => handlePublish(graph),
                     disabled: isPublishing || isPreviewLoading,
-                    className: "border-dashed",
+                    className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                     "data-ocid": `sources.publish_button.${graph.id}`,
                     children: isPreviewLoading && (previewGraph == null ? void 0 : previewGraph.id) === graph.id ? "previewing..." : published ? "update" : "publish"
                   }
                 ),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
+                  "button",
                   {
-                    variant: "destructive",
-                    size: "sm",
+                    type: "button",
                     onClick: () => handleDeleteRequest(graph.id),
-                    className: "border-dashed",
+                    className: "text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
                     "data-ocid": `sources.delete_button.${graph.id}`,
                     children: "delete"
                   }
@@ -116748,23 +116397,21 @@ function SourcesView() {
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
+                  "button",
                   {
-                    variant: "destructive",
-                    size: "sm",
+                    type: "button",
                     onClick: handleDeleteConfirm,
-                    className: "flex-1 border-dashed",
+                    className: "flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
                     "data-ocid": "sources.confirm_delete_yes",
                     children: "delete"
                   }
                 ),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
+                  "button",
                   {
-                    variant: "outline",
-                    size: "sm",
+                    type: "button",
                     onClick: handleDeleteCancel,
-                    className: "flex-1 border-dashed",
+                    className: "flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors",
                     "data-ocid": "sources.confirm_delete_cancel",
                     children: "cancel"
                   }
@@ -117124,11 +116771,11 @@ function ChannelItem({
   indent: indent2
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    Button,
+    "button",
     {
-      variant: "ghost",
+      type: "button",
       onClick: onSelect,
-      className: `flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs ${indent2 ? "pl-6 border-l-4 border-l-orange-500" : "border-l-4 border-l-blue-500"} ${selected ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+      className: `flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs transition-colors ${indent2 ? "pl-6 border-l-4 border-l-orange-500" : "border-l-4 border-l-blue-500"} ${selected ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
       "data-ocid": `swarms.channel.item.${channel.id}`,
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", children: channel.name }),
@@ -117149,12 +116796,11 @@ function CurationGroup({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-1", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
       hasSubChannels ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+        "button",
         {
-          variant: "ghost",
-          size: "icon",
+          type: "button",
           onClick: () => setExpanded((v2) => !v2),
-          className: "shrink-0 h-5 w-5",
+          className: "shrink-0 text-muted-foreground hover:text-foreground p-0.5",
           "aria-label": expanded ? "Collapse" : "Expand",
           "data-ocid": `swarms.group.toggle.${curationName}`,
           children: expanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { className: "h-3 w-3" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { className: "h-3 w-3" })
@@ -117271,12 +116917,12 @@ function SwarmsView() {
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Chat" }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        Button,
+        "button",
         {
-          variant: "outline",
+          type: "button",
           onClick: toggleEnabled,
           disabled: !canEnable || tgLoading,
-          className: "text-xs px-3 py-1 border-dashed border-border disabled:opacity-50 disabled:cursor-not-allowed",
+          className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
           "data-ocid": "swarms.telegram.toggle",
           title: isEnabled ? isConnected ? "Connected — click to disable" : "Connecting..." : "Click to enable Telegram bridge",
           children: [
@@ -117417,11 +117063,11 @@ function SwarmsView() {
           isEnabled && tgChannels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-1 text-xs text-muted-foreground/60 font-mono border-t border-dashed border-border mt-2 pt-2", children: "Telegram Channels" }),
             tgChannels.map((tgCh) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Button,
+              "button",
               {
-                variant: "ghost",
+                type: "button",
                 onClick: () => setSelectedId(tgCh.id),
-                className: `w-full text-left px-3 py-2 text-xs font-mono hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${selectedId === tgCh.id ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`,
+                className: `w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${selectedId === tgCh.id ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`,
                 "data-ocid": `swarms.telegram.channel.${tgCh.id}`,
                 children: tgCh.name
               },
@@ -117566,11 +117212,11 @@ function TerminalOntologyOutput({
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-mono text-muted-foreground", children: "Turtle (TTL)" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
+          "button",
           {
-            variant: "ghost",
+            type: "button",
             onClick: handleCopyTurtle,
-            className: "px-2 py-0.5",
+            className: "text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5",
             children: copiedTurtle ? "Copied!" : "Copy"
           }
         )
@@ -117581,11 +117227,11 @@ function TerminalOntologyOutput({
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-mono text-muted-foreground", children: "Mermaid Diagram" }),
         mermaidText && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
+          "button",
           {
-            variant: "ghost",
+            type: "button",
             onClick: handleCopyMermaid,
-            className: "px-2 py-0.5",
+            className: "text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5",
             children: copiedMermaid ? "Copied!" : "Copy"
           }
         )

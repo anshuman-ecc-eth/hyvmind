@@ -5585,6 +5585,9 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .hover\:bg-background:hover{
   background-color: var(--background);
 }
+.hover\:bg-destructive:hover{
+  background-color: var(--destructive);
+}
 .hover\:bg-muted:hover{
   background-color: var(--muted);
 }
@@ -5599,6 +5602,9 @@ html[class*="-dark"] .voronoi-tooltip-type {
 }
 .hover\:text-destructive:hover{
   color: var(--destructive);
+}
+.hover\:text-destructive-foreground:hover{
+  color: var(--destructive-foreground);
 }
 .hover\:text-foreground:hover{
   color: var(--foreground);
