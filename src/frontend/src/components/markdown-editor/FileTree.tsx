@@ -93,12 +93,12 @@ function TreeNode({
         aria-expanded={isFolder ? isExpanded : undefined}
         data-ocid={`file_tree.item.${nodeId}`}
         className={[
-          "flex items-center gap-1 px-2 py-1 cursor-pointer select-none text-sm",
-          "hover:bg-accent hover:text-accent-foreground transition-colors duration-150",
+          "flex w-full items-center gap-0.5 px-2 py-1.5 text-left text-xs font-mono rounded",
+          "hover:bg-muted hover:text-foreground transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           isActive
-            ? "bg-accent text-accent-foreground font-medium"
-            : "text-foreground",
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground",
         ].join(" ")}
         style={{ paddingLeft: `${indent + 8}px` }}
         onClick={handleClick}
@@ -112,27 +112,27 @@ function TreeNode({
       >
         {/* Chevron for folders */}
         {isFolder ? (
-          <span className="w-3 h-3 flex-shrink-0 text-muted-foreground">
+          <span className="w-2.5 h-2.5 flex-shrink-0 text-muted-foreground">
             {isExpanded ? (
-              <ChevronDown size={12} />
+              <ChevronDown size={10} />
             ) : (
-              <ChevronRight size={12} />
+              <ChevronRight size={10} />
             )}
           </span>
         ) : (
-          <span className="w-3 h-3 flex-shrink-0" />
+          <span className="w-2.5 h-2.5 flex-shrink-0" />
         )}
 
         {/* Icon */}
         <span className="flex-shrink-0">
           {isFolder ? (
             isExpanded ? (
-              <FolderOpen size={13} fill="currentColor" />
+              <FolderOpen size={10} />
             ) : (
-              <Folder size={13} fill="currentColor" />
+              <Folder size={10} />
             )
           ) : (
-            <File size={13} />
+            <File size={10} />
           )}
         </span>
 
