@@ -3,7 +3,6 @@ import { FileTree } from "@/components/markdown-editor/FileTree";
 import { FrontmatterEditor } from "@/components/markdown-editor/FrontmatterEditor";
 import { MarkdownEditor } from "@/components/markdown-editor/MarkdownEditor";
 import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
-import { Button } from "@/components/ui/button";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
 import { useActor } from "@caffeineai/core-infrastructure";
@@ -129,27 +128,25 @@ function InlineDialog({
           data-ocid={`${ocidPrefix}.input`}
         />
         <div className="flex gap-2 justify-end">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={onClose}
+            className="text-xs px-3 py-1.5 border border-dashed border-border text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-colors"
             data-ocid={`${ocidPrefix}.cancel_button`}
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             disabled={!name.trim()}
             onClick={() => {
               if (name.trim()) onSubmit(name.trim());
             }}
+            className="text-xs px-3 py-1.5 border border-dashed border-border text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-ocid={`${ocidPrefix}.submit_button`}
           >
             Confirm
-          </Button>
+          </button>
         </div>
       </dialog>
     </>
@@ -691,70 +688,65 @@ export default function EditorView() {
         {!isEmpty && (
           <div className="flex items-center gap-0.5 mr-2">
             {(["edit", "preview"] as const).map((mode) => (
-              <Button
+              <button
                 key={mode}
                 type="button"
-                variant={viewMode === mode ? "outline" : "ghost"}
-                size="sm"
                 onClick={() => setViewMode(mode)}
-                className={
+                className={[
+                  "text-xs px-2 py-1 transition-colors border",
                   viewMode === mode
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                }
+                    ? "border-border bg-accent text-accent-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
+                ].join(" ")}
                 data-ocid={`editor.view_mode.${mode}`}
               >
                 {mode}
-              </Button>
+              </button>
             ))}
           </div>
         )}
 
         {/* Undo / Redo */}
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={undo}
           disabled={!canUndo}
           aria-label="Undo"
+          className="text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           data-ocid="editor.undo_button"
         >
           ↩
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={redo}
           disabled={!canRedo}
           aria-label="Redo"
+          className="text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           data-ocid="editor.redo_button"
         >
           ↪
-        </Button>
+        </button>
 
         {/* Create curation */}
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={() => setShowCreateCuration(true)}
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
           data-ocid="editor.create_button"
         >
           + create
-        </Button>
+        </button>
 
         {/* Import ZIP */}
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           onClick={() => fileInputRef.current?.click()}
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
           data-ocid="editor.import_button"
         >
           import zip
-        </Button>
+        </button>
       </div>
 
       {/* Body */}
@@ -849,17 +841,21 @@ export default function EditorView() {
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
               {options.map((opt) => (
-                <Button
+                <button
                   key={opt}
                   type="button"
-                  variant={opt === "delete" ? "destructive" : "ghost"}
                   role="menuitem"
                   onClick={() => handleContextOption(opt)}
-                  className="w-full text-left px-3 py-1.5 text-xs justify-start"
+                  className={[
+                    "w-full text-left px-3 py-1.5 text-xs transition-colors",
+                    opt === "delete"
+                      ? "text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                  ].join(" ")}
                   data-ocid={`editor.context_menu.${opt}`}
                 >
                   {OPTION_LABELS[opt]}
-                </Button>
+                </button>
               ))}
             </div>
           );

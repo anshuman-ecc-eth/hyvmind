@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
 
 // ---------------------------------------------------------------------------
@@ -125,10 +124,10 @@ export default function FilterPanel({
       data-ocid="filter_panel.panel"
     >
       {/* Collapsed tab — vertical label */}
-      <Button
-        variant="outline"
+      <button
+        type="button"
         onClick={onToggleCollapsed}
-        className="flex flex-col items-center justify-start pt-3 px-1.5 border-l border-t border-b border-dashed text-muted-foreground hover:text-foreground hover:border-foreground shrink-0"
+        className="flex flex-col items-center justify-start pt-3 px-1.5 bg-background border-l border-t border-b border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors shrink-0"
         style={{ writingMode: "vertical-rl", gap: "6px" }}
         aria-label={
           isCollapsed ? "Expand filter panel" : "Collapse filter panel"
@@ -141,7 +140,7 @@ export default function FilterPanel({
         {isFiltered && (
           <span className="w-1.5 h-1.5 rounded-full bg-foreground shrink-0 mt-1" />
         )}
-      </Button>
+      </button>
 
       {/* Expanded panel — slides in/out via width transition */}
       <div
@@ -212,25 +211,25 @@ export default function FilterPanel({
 
           {/* Actions */}
           <div className="px-3 py-2 flex flex-col gap-1.5 shrink-0">
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={onFitToVisible}
-              className="w-full border-dashed px-2 py-1 hover:border-foreground text-left"
+              className="w-full text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
               data-ocid="filter_panel.fit_to_visible"
               aria-label="Zoom to fit visible nodes"
             >
               fit to visible
-            </Button>
-            <Button
-              variant="outline"
+            </button>
+            <button
+              type="button"
               onClick={onReset}
               disabled={!isFiltered}
-              className="w-full border-dashed px-2 py-1 text-muted-foreground hover:border-foreground text-left disabled:opacity-30"
+              className="w-full text-xs border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed"
               data-ocid="filter_panel.reset_button"
               aria-label="Reset all filters"
             >
               reset filters
-            </Button>
+            </button>
           </div>
         </div>
       </div>
