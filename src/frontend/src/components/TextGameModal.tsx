@@ -1450,7 +1450,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       <div
         ref={modalRef}
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
-        style={{ inset: "5%", fontSize: "80%" }}
+        style={{ inset: 0, fontSize: "80%" }}
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
