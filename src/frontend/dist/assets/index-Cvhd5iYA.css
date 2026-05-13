@@ -1881,6 +1881,153 @@ html.sage-garden-dark {
   --sidebar-ring: #7c9082;
   --shadow-color: #000000;
 }
+/*
+ * custom-themes.css
+ * Manually curated themes that are not part of the tweakcn preset set.
+ * Catppuccin and Tokyo Night — popular neovim colorschemes.
+ */
+/* ── catppuccin (Mocha dark / Latte light) ── */
+html.catppuccin-light {
+  --background: #eff1f5;
+  --foreground: #4c4f69;
+  --card: #e6e9ef;
+  --card-foreground: #4c4f69;
+  --popover: #ccd0da;
+  --popover-foreground: #4c4f69;
+  --primary: #1e66f5;
+  --primary-foreground: #eff1f5;
+  --secondary: #9ca0b0;
+  --secondary-foreground: #4c4f69;
+  --muted: #ccd0da;
+  --muted-foreground: #6c6f85;
+  --accent: #8839ef;
+  --accent-foreground: #eff1f5;
+  --destructive: #d20f39;
+  --destructive-foreground: #eff1f5;
+  --border: #bcc0cc;
+  --input: #bcc0cc;
+  --ring: #1e66f5;
+  --chart-1: #1e66f5;
+  --chart-2: #40a02b;
+  --chart-3: #df8e1d;
+  --chart-4: #fe640b;
+  --chart-5: #8839ef;
+  --radius: 0px;
+  --sidebar: #dce0e8;
+  --sidebar-foreground: #4c4f69;
+  --sidebar-primary: #1e66f5;
+  --sidebar-primary-foreground: #eff1f5;
+  --sidebar-accent: #ccd0da;
+  --sidebar-accent-foreground: #4c4f69;
+  --sidebar-border: #bcc0cc;
+  --sidebar-ring: #1e66f5;
+}
+html.catppuccin-dark {
+  --background: #1e1e2e;
+  --foreground: #cdd6f4;
+  --card: #181825;
+  --card-foreground: #cdd6f4;
+  --popover: #313244;
+  --popover-foreground: #cdd6f4;
+  --primary: #89b4fa;
+  --primary-foreground: #1e1e2e;
+  --secondary: #585b70;
+  --secondary-foreground: #cdd6f4;
+  --muted: #313244;
+  --muted-foreground: #a6adc8;
+  --accent: #cba6f7;
+  --accent-foreground: #1e1e2e;
+  --destructive: #f38ba8;
+  --destructive-foreground: #1e1e2e;
+  --border: #45475a;
+  --input: #45475a;
+  --ring: #89b4fa;
+  --chart-1: #89b4fa;
+  --chart-2: #a6e3a1;
+  --chart-3: #f9e2af;
+  --chart-4: #fab387;
+  --chart-5: #cba6f7;
+  --radius: 0px;
+  --sidebar: #11111b;
+  --sidebar-foreground: #cdd6f4;
+  --sidebar-primary: #89b4fa;
+  --sidebar-primary-foreground: #1e1e2e;
+  --sidebar-accent: #313244;
+  --sidebar-accent-foreground: #cdd6f4;
+  --sidebar-border: #45475a;
+  --sidebar-ring: #89b4fa;
+}
+/* ── tokyo-night (Night dark / Day light) ── */
+html.tokyo-night-light {
+  --background: #e1e2e7;
+  --foreground: #3760bf;
+  --card: #d4d6e0;
+  --card-foreground: #3760bf;
+  --popover: #c4c8da;
+  --popover-foreground: #3760bf;
+  --primary: #2e7de9;
+  --primary-foreground: #e1e2e7;
+  --secondary: #b2b9d2;
+  --secondary-foreground: #3760bf;
+  --muted: #c8ccdc;
+  --muted-foreground: #848cb5;
+  --accent: #9854f0;
+  --accent-foreground: #e1e2e7;
+  --destructive: #f52a65;
+  --destructive-foreground: #e1e2e7;
+  --border: #b2b9d2;
+  --input: #b2b9d2;
+  --ring: #2e7de9;
+  --chart-1: #2e7de9;
+  --chart-2: #587539;
+  --chart-3: #8c6c00;
+  --chart-4: #b15c00;
+  --chart-5: #9854f0;
+  --radius: 0px;
+  --sidebar: #d4d6e0;
+  --sidebar-foreground: #3760bf;
+  --sidebar-primary: #2e7de9;
+  --sidebar-primary-foreground: #e1e2e7;
+  --sidebar-accent: #c8ccdc;
+  --sidebar-accent-foreground: #3760bf;
+  --sidebar-border: #b2b9d2;
+  --sidebar-ring: #2e7de9;
+}
+html.tokyo-night-dark {
+  --background: #1a1b26;
+  --foreground: #c0caf5;
+  --card: #16161e;
+  --card-foreground: #c0caf5;
+  --popover: #1f2335;
+  --popover-foreground: #c0caf5;
+  --primary: #7aa2f7;
+  --primary-foreground: #1a1b26;
+  --secondary: #3b4261;
+  --secondary-foreground: #c0caf5;
+  --muted: #292e42;
+  --muted-foreground: #565f89;
+  --accent: #bb9af7;
+  --accent-foreground: #1a1b26;
+  --destructive: #f7768e;
+  --destructive-foreground: #1a1b26;
+  --border: #3b4261;
+  --input: #3b4261;
+  --ring: #7aa2f7;
+  --chart-1: #7aa2f7;
+  --chart-2: #9ece6a;
+  --chart-3: #e0af68;
+  --chart-4: #ff9e64;
+  --chart-5: #bb9af7;
+  --radius: 0px;
+  --sidebar: #16161e;
+  --sidebar-foreground: #a9b1d6;
+  --sidebar-primary: #7aa2f7;
+  --sidebar-primary-foreground: #1a1b26;
+  --sidebar-accent: #292e42;
+  --sidebar-accent-foreground: #c0caf5;
+  --sidebar-border: #3b4261;
+  --sidebar-ring: #7aa2f7;
+}
 *, ::before, ::after{
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -3074,9 +3221,6 @@ body{
 .mt-4{
   margin-top: 1rem;
 }
-.mt-5{
-  margin-top: 1.25rem;
-}
 .mt-6{
   margin-top: 1.5rem;
 }
@@ -3179,6 +3323,9 @@ body{
 }
 .h-10{
   height: 2.5rem;
+}
+.h-11{
+  height: 2.75rem;
 }
 .h-12{
   height: 3rem;
@@ -3476,6 +3623,9 @@ body{
 .max-w-\[400px\]{
   max-width: 400px;
 }
+.max-w-\[600px\]{
+  max-width: 600px;
+}
 .max-w-\[calc\(100\%-2rem\)\]{
   max-width: calc(100% - 2rem);
 }
@@ -3568,6 +3718,11 @@ body{
   --tw-rotate: 90deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
+.scale-105{
+  --tw-scale-x: 1.05;
+  --tw-scale-y: 1.05;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
 .transform{
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
@@ -3589,9 +3744,6 @@ body{
 }
 .cursor-default{
   cursor: default;
-}
-.cursor-not-allowed{
-  cursor: not-allowed;
 }
 .cursor-pointer{
   cursor: pointer;
@@ -3783,6 +3935,9 @@ body{
   --tw-divide-y-reverse: 0;
   border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
   border-bottom-width: calc(1px * var(--tw-divide-y-reverse));
+}
+.divide-dashed > :not([hidden]) ~ :not([hidden]){
+  border-style: dashed;
 }
 .divide-border > :not([hidden]) ~ :not([hidden]){
   border-color: var(--border);
@@ -4020,9 +4175,6 @@ body{
 .bg-card{
   background-color: var(--card);
 }
-.bg-cyan-400\/10{
-  background-color: rgb(34 211 238 / 0.1);
-}
 .bg-destructive{
   background-color: var(--destructive);
 }
@@ -4173,10 +4325,6 @@ body{
   padding-top: 3rem;
   padding-bottom: 3rem;
 }
-.py-16{
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-}
 .py-2{
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
@@ -4184,10 +4332,6 @@ body{
 .py-2\.5{
   padding-top: 0.625rem;
   padding-bottom: 0.625rem;
-}
-.py-20{
-  padding-top: 5rem;
-  padding-bottom: 5rem;
 }
 .py-24{
   padding-top: 6rem;
@@ -4314,15 +4458,6 @@ body{
 .text-\[0\.8rem\]{
   font-size: 0.8rem;
 }
-.text-\[10px\]{
-  font-size: 10px;
-}
-.text-\[11px\]{
-  font-size: 11px;
-}
-.text-\[9px\]{
-  font-size: 9px;
-}
 .text-base{
   font-size: 1rem;
   line-height: 1.5rem;
@@ -4411,10 +4546,6 @@ body{
 }
 .text-current{
   color: currentColor;
-}
-.text-cyan-400{
-  --tw-text-opacity: 1;
-  color: rgb(34 211 238 / var(--tw-text-opacity, 1));
 }
 .text-cyan-400\/70{
   color: rgb(34 211 238 / 0.7);
@@ -5434,6 +5565,11 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .last\:border-b-0:last-child{
   border-bottom-width: 0px;
 }
+.hover\:scale-105:hover{
+  --tw-scale-x: 1.05;
+  --tw-scale-y: 1.05;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
 .hover\:border-border:hover{
   border-color: var(--border);
 }
@@ -5449,12 +5585,6 @@ html[class*="-dark"] .voronoi-tooltip-type {
 .hover\:bg-background:hover{
   background-color: var(--background);
 }
-.hover\:bg-cyan-400\/20:hover{
-  background-color: rgb(34 211 238 / 0.2);
-}
-.hover\:bg-destructive:hover{
-  background-color: var(--destructive);
-}
 .hover\:bg-muted:hover{
   background-color: var(--muted);
 }
@@ -5469,9 +5599,6 @@ html[class*="-dark"] .voronoi-tooltip-type {
 }
 .hover\:text-destructive:hover{
   color: var(--destructive);
-}
-.hover\:text-destructive-foreground:hover{
-  color: var(--destructive-foreground);
 }
 .hover\:text-foreground:hover{
   color: var(--foreground);

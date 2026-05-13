@@ -90,21 +90,21 @@ var reactJsxRuntime_production = {};
  * LICENSE file in the root directory of this source tree.
  */
 var REACT_ELEMENT_TYPE$2 = Symbol.for("react.transitional.element"), REACT_FRAGMENT_TYPE$2 = Symbol.for("react.fragment");
-function jsxProd(type, config, maybeKey) {
+function jsxProd(type, config3, maybeKey) {
   var key2 = null;
   void 0 !== maybeKey && (key2 = "" + maybeKey);
-  void 0 !== config.key && (key2 = "" + config.key);
-  if ("key" in config) {
+  void 0 !== config3.key && (key2 = "" + config3.key);
+  if ("key" in config3) {
     maybeKey = {};
-    for (var propName in config)
-      "key" !== propName && (maybeKey[propName] = config[propName]);
-  } else maybeKey = config;
-  config = maybeKey.ref;
+    for (var propName in config3)
+      "key" !== propName && (maybeKey[propName] = config3[propName]);
+  } else maybeKey = config3;
+  config3 = maybeKey.ref;
   return {
     $$typeof: REACT_ELEMENT_TYPE$2,
     type,
     key: key2,
-    ref: void 0 !== config ? config : null,
+    ref: void 0 !== config3 ? config3 : null,
     props: maybeKey
   };
 }
@@ -2096,14 +2096,14 @@ function iexp2(n2) {
 function eob() {
   throw new Error("unexpected end of buffer");
 }
-function safeRead(pipe, num) {
-  if (pipe.byteLength < num) {
+function safeRead(pipe3, num) {
+  if (pipe3.byteLength < num) {
     eob();
   }
-  return pipe.read(num);
+  return pipe3.read(num);
 }
-function safeReadUint8(pipe) {
-  const byte = pipe.readUint8();
+function safeReadUint8(pipe3) {
+  const byte = pipe3.readUint8();
   if (byte === void 0) {
     eob();
   }
@@ -2117,25 +2117,25 @@ function lebEncode(value) {
     throw new Error("Cannot leb encode negative values.");
   }
   const byteLength = (value === BigInt(0) ? 0 : ilog2(value)) + 1;
-  const pipe = new PipeArrayBuffer(new Uint8Array(byteLength), 0);
+  const pipe3 = new PipeArrayBuffer(new Uint8Array(byteLength), 0);
   while (true) {
     const i2 = Number(value & BigInt(127));
     value /= BigInt(128);
     if (value === BigInt(0)) {
-      pipe.write(new Uint8Array([i2]));
+      pipe3.write(new Uint8Array([i2]));
       break;
     } else {
-      pipe.write(new Uint8Array([i2 | 128]));
+      pipe3.write(new Uint8Array([i2 | 128]));
     }
   }
-  return pipe.buffer;
+  return pipe3.buffer;
 }
-function lebDecode(pipe) {
+function lebDecode(pipe3) {
   let weight = BigInt(1);
   let value = BigInt(0);
   let byte;
   do {
-    byte = safeReadUint8(pipe);
+    byte = safeReadUint8(pipe3);
     value += BigInt(byte & 127).valueOf() * weight;
     weight *= BigInt(128);
   } while (byte >= 128);
@@ -2150,15 +2150,15 @@ function slebEncode(value) {
     value = -value - BigInt(1);
   }
   const byteLength = (value === BigInt(0) ? 0 : ilog2(value)) + 1;
-  const pipe = new PipeArrayBuffer(new Uint8Array(byteLength), 0);
+  const pipe3 = new PipeArrayBuffer(new Uint8Array(byteLength), 0);
   while (true) {
     const i2 = getLowerBytes(value);
     value /= BigInt(128);
     if (isNeg && value === BigInt(0) && (i2 & 64) !== 0 || !isNeg && value === BigInt(0) && (i2 & 64) === 0) {
-      pipe.write(new Uint8Array([i2]));
+      pipe3.write(new Uint8Array([i2]));
       break;
     } else {
-      pipe.write(new Uint8Array([i2 | 128]));
+      pipe3.write(new Uint8Array([i2 | 128]));
     }
   }
   function getLowerBytes(num) {
@@ -2169,20 +2169,20 @@ function slebEncode(value) {
       return Number(bytes);
     }
   }
-  return pipe.buffer;
+  return pipe3.buffer;
 }
-function slebDecode(pipe) {
-  const pipeView = new Uint8Array(pipe.buffer);
+function slebDecode(pipe3) {
+  const pipeView = new Uint8Array(pipe3.buffer);
   let len = 0;
   for (; len < pipeView.byteLength; len++) {
     if (pipeView[len] < 128) {
       if ((pipeView[len] & 64) === 0) {
-        return lebDecode(pipe);
+        return lebDecode(pipe3);
       }
       break;
     }
   }
-  const bytes = new Uint8Array(safeRead(pipe, len + 1));
+  const bytes = new Uint8Array(safeRead(pipe3, len + 1));
   let value = BigInt(0);
   for (let i2 = bytes.byteLength - 1; i2 >= 0; i2--) {
     value = value * BigInt(128) + BigInt(128 - (bytes[i2] & 127) - 1);
@@ -2197,41 +2197,41 @@ function writeUIntLE(value, byteLength) {
 }
 function writeIntLE(value, byteLength) {
   value = BigInt(value);
-  const pipe = new PipeArrayBuffer(new Uint8Array(Math.min(1, byteLength)), 0);
+  const pipe3 = new PipeArrayBuffer(new Uint8Array(Math.min(1, byteLength)), 0);
   let i2 = 0;
   let mul = BigInt(256);
   let sub = BigInt(0);
   let byte = Number(value % mul);
-  pipe.write(new Uint8Array([byte]));
+  pipe3.write(new Uint8Array([byte]));
   while (++i2 < byteLength) {
     if (value < 0 && sub === BigInt(0) && byte !== 0) {
       sub = BigInt(1);
     }
     byte = Number((value / mul - sub) % BigInt(256));
-    pipe.write(new Uint8Array([byte]));
+    pipe3.write(new Uint8Array([byte]));
     mul *= BigInt(256);
   }
-  return pipe.buffer;
+  return pipe3.buffer;
 }
-function readUIntLE(pipe, byteLength) {
+function readUIntLE(pipe3, byteLength) {
   if (byteLength <= 0 || !Number.isInteger(byteLength)) {
     throw new Error("Byte length must be a positive integer");
   }
-  let val = BigInt(safeReadUint8(pipe));
+  let val = BigInt(safeReadUint8(pipe3));
   let mul = BigInt(1);
   let i2 = 0;
   while (++i2 < byteLength) {
     mul *= BigInt(256);
-    const byte = BigInt(safeReadUint8(pipe));
+    const byte = BigInt(safeReadUint8(pipe3));
     val = val + mul * byte;
   }
   return val;
 }
-function readIntLE(pipe, byteLength) {
+function readIntLE(pipe3, byteLength) {
   if (byteLength <= 0 || !Number.isInteger(byteLength)) {
     throw new Error("Byte length must be a positive integer");
   }
-  let val = readUIntLE(pipe, byteLength);
+  let val = readUIntLE(pipe3, byteLength);
   const mul = BigInt(2) ** (BigInt(8) * BigInt(byteLength - 1) + BigInt(7));
   if (val >= mul) {
     val -= mul * BigInt(2);
@@ -3719,25 +3719,25 @@ function decode$2(retTypes, bytes) {
   if (magic !== magicNumber) {
     throw new Error("Wrong magic number: " + JSON.stringify(magic));
   }
-  function readTypeTable(pipe) {
+  function readTypeTable(pipe3) {
     const typeTable = [];
-    const len = Number(lebDecode(pipe));
+    const len = Number(lebDecode(pipe3));
     for (let i2 = 0; i2 < len; i2++) {
-      const ty = Number(slebDecode(pipe));
+      const ty = Number(slebDecode(pipe3));
       switch (ty) {
         case IDLTypeIds.Opt:
         case IDLTypeIds.Vector: {
-          const t2 = Number(slebDecode(pipe));
+          const t2 = Number(slebDecode(pipe3));
           typeTable.push([ty, t2]);
           break;
         }
         case IDLTypeIds.Record:
         case IDLTypeIds.Variant: {
           const fields = [];
-          let objectLength = Number(lebDecode(pipe));
+          let objectLength = Number(lebDecode(pipe3));
           let prevHash;
           while (objectLength--) {
-            const hash = Number(lebDecode(pipe));
+            const hash = Number(lebDecode(pipe3));
             if (hash >= Math.pow(2, 32)) {
               throw new Error("field id out of 32-bit range");
             }
@@ -3745,7 +3745,7 @@ function decode$2(retTypes, bytes) {
               throw new Error("field id collision or not sorted");
             }
             prevHash = hash;
-            const t2 = Number(slebDecode(pipe));
+            const t2 = Number(slebDecode(pipe3));
             fields.push([hash, t2]);
           }
           typeTable.push([ty, fields]);
@@ -3753,19 +3753,19 @@ function decode$2(retTypes, bytes) {
         }
         case IDLTypeIds.Func: {
           const args = [];
-          let argLength = Number(lebDecode(pipe));
+          let argLength = Number(lebDecode(pipe3));
           while (argLength--) {
-            args.push(Number(slebDecode(pipe)));
+            args.push(Number(slebDecode(pipe3)));
           }
           const returnValues = [];
-          let returnValuesLength = Number(lebDecode(pipe));
+          let returnValuesLength = Number(lebDecode(pipe3));
           while (returnValuesLength--) {
-            returnValues.push(Number(slebDecode(pipe)));
+            returnValues.push(Number(slebDecode(pipe3)));
           }
           const annotations = [];
-          let annotationLength = Number(lebDecode(pipe));
+          let annotationLength = Number(lebDecode(pipe3));
           while (annotationLength--) {
-            const annotation = Number(lebDecode(pipe));
+            const annotation = Number(lebDecode(pipe3));
             switch (annotation) {
               case 1: {
                 annotations.push("query");
@@ -3787,12 +3787,12 @@ function decode$2(retTypes, bytes) {
           break;
         }
         case IDLTypeIds.Service: {
-          let servLength = Number(lebDecode(pipe));
+          let servLength = Number(lebDecode(pipe3));
           const methods = [];
           while (servLength--) {
-            const nameLength = Number(lebDecode(pipe));
-            const funcName = new TextDecoder().decode(safeRead(pipe, nameLength));
-            const funcType = slebDecode(pipe);
+            const nameLength = Number(lebDecode(pipe3));
+            const funcName = new TextDecoder().decode(safeRead(pipe3, nameLength));
+            const funcType = slebDecode(pipe3);
             methods.push([funcName, funcType]);
           }
           typeTable.push([ty, methods]);
@@ -3803,9 +3803,9 @@ function decode$2(retTypes, bytes) {
       }
     }
     const rawList = [];
-    const length = Number(lebDecode(pipe));
+    const length = Number(lebDecode(pipe3));
     for (let i2 = 0; i2 < length; i2++) {
-      rawList.push(Number(slebDecode(pipe)));
+      rawList.push(Number(slebDecode(pipe3)));
     }
     return [typeTable, rawList];
   }
@@ -4331,7 +4331,7 @@ let w$1 = class w extends Error {
 };
 const m$3 = 55799, L$2 = Symbol("CBOR_STOP_CODE");
 var g$1 = /* @__PURE__ */ ((t2) => (t2[t2.False = 20] = "False", t2[t2.True = 21] = "True", t2[t2.Null = 22] = "Null", t2[t2.Undefined = 23] = "Undefined", t2[t2.Break = 31] = "Break", t2))(g$1 || {}), c$2 = /* @__PURE__ */ ((t2) => (t2[t2.UnsignedInteger = 0] = "UnsignedInteger", t2[t2.NegativeInteger = 1] = "NegativeInteger", t2[t2.ByteString = 2] = "ByteString", t2[t2.TextString = 3] = "TextString", t2[t2.Array = 4] = "Array", t2[t2.Map = 5] = "Map", t2[t2.Tag = 6] = "Tag", t2[t2.Simple = 7] = "Simple", t2))(c$2 || {});
-const z$3 = 23, Y$2 = 255, G$2 = 65535, P$2 = 4294967295, H$3 = BigInt("0xffffffffffffffff");
+const z$4 = 23, Y$2 = 255, G$3 = 65535, P$2 = 4294967295, H$3 = BigInt("0xffffffffffffffff");
 var d$1 = /* @__PURE__ */ ((t2) => (t2[t2.Value = 23] = "Value", t2[t2.OneByte = 24] = "OneByte", t2[t2.TwoBytes = 25] = "TwoBytes", t2[t2.FourBytes = 26] = "FourBytes", t2[t2.EightBytes = 27] = "EightBytes", t2[t2.Indefinite = 31] = "Indefinite", t2))(d$1 || {});
 const h$1 = false;
 function W$3(t2) {
@@ -4362,7 +4362,7 @@ function B$3(t2) {
     case c$2.NegativeInteger:
       return j$1(e2);
     case c$2.ByteString:
-      return $$3(e2);
+      return $$4(e2);
     case c$2.TextString:
       return F(e2);
     case c$2.Array:
@@ -4455,7 +4455,7 @@ function j$1(t2) {
   const n2 = E$2(t2);
   return typeof n2 == "number" ? -1 - n2 : -1n - n2;
 }
-function $$3(t2) {
+function $$4(t2) {
   const n2 = E$2(t2);
   if (n2 > Number.MAX_SAFE_INTEGER)
     throw new w$1("Byte length is too large");
@@ -4463,7 +4463,7 @@ function $$3(t2) {
   return a$2 += e2, A$1.slice(a$2 - e2, a$2);
 }
 function F(t2) {
-  const n2 = $$3(t2);
+  const n2 = $$4(t2);
   return K$3.decode(n2);
 }
 function M$2(t2, n2) {
@@ -4497,7 +4497,7 @@ function _$2(t2, n2) {
     return;
   }
   if (typeof t2 == "string") {
-    X$2(t2);
+    X$3(t2);
     return;
   }
   if (t2 instanceof Uint8Array) {
@@ -4525,11 +4525,11 @@ function tt$1(t2, n2) {
 }
 function nt(t2, n2) {
   O$2 = Object.entries(t2), I$2(c$2.Map, O$2.length), O$2.forEach(([e2, i2]) => {
-    X$2(e2), _$2((n2 == null ? void 0 : n2(i2, e2)) ?? i2, n2);
+    X$3(e2), _$2((n2 == null ? void 0 : n2(i2, e2)) ?? i2, n2);
   });
 }
 function I$2(t2, n2) {
-  if (n2 <= z$3) {
+  if (n2 <= z$4) {
     r$2.setUint8(
       s$1++,
       S$1(t2) | Number(n2)
@@ -4543,7 +4543,7 @@ function I$2(t2, n2) {
     ), r$2.setUint8(s$1, Number(n2)), s$1 += 1;
     return;
   }
-  if (n2 <= G$2) {
+  if (n2 <= G$3) {
     r$2.setUint8(
       s$1++,
       S$1(t2) | d$1.TwoBytes
@@ -4598,7 +4598,7 @@ function ot(t2) {
 function ft(t2) {
   t2 >= 0 ? ct(t2) : ot(t2);
 }
-function X$2(t2) {
+function X$3(t2) {
   k$3(c$2.TextString, v$2.encode(t2));
 }
 function V$2(t2) {
@@ -5102,7 +5102,7 @@ function Field(ORDER, bitLenOrOpts, isLE = false, opts = {}) {
   if (ORDER <= _0n$6)
     throw new Error("invalid field: expected ORDER > 0, got " + ORDER);
   let _nbitLength = void 0;
-  let _sqrt = void 0;
+  let _sqrt2 = void 0;
   let modFromBytes = false;
   let allowedLengths = void 0;
   if (typeof bitLenOrOpts === "object" && bitLenOrOpts != null) {
@@ -5112,7 +5112,7 @@ function Field(ORDER, bitLenOrOpts, isLE = false, opts = {}) {
     if (_opts.BITS)
       _nbitLength = _opts.BITS;
     if (_opts.sqrt)
-      _sqrt = _opts.sqrt;
+      _sqrt2 = _opts.sqrt;
     if (typeof _opts.isLE === "boolean")
       isLE = _opts.isLE;
     if (typeof _opts.modFromBytes === "boolean")
@@ -5122,7 +5122,7 @@ function Field(ORDER, bitLenOrOpts, isLE = false, opts = {}) {
     if (typeof bitLenOrOpts === "number")
       _nbitLength = bitLenOrOpts;
     if (opts.sqrt)
-      _sqrt = opts.sqrt;
+      _sqrt2 = opts.sqrt;
   }
   const { nBitLength: BITS2, nByteLength: BYTES } = nLength(ORDER, _nbitLength);
   if (BYTES > 2048)
@@ -5161,7 +5161,7 @@ function Field(ORDER, bitLenOrOpts, isLE = false, opts = {}) {
     subN: (lhs, rhs) => lhs - rhs,
     mulN: (lhs, rhs) => lhs * rhs,
     inv: (num) => invert(num, ORDER),
-    sqrt: _sqrt || ((n2) => {
+    sqrt: _sqrt2 || ((n2) => {
       if (!sqrtP)
         sqrtP = FpSqrt(ORDER);
       return sqrtP(f2, n2);
@@ -5604,7 +5604,7 @@ function isogenyMap(field, map2) {
   };
 }
 const _DST_scalar = utf8ToBytes("HashToScalar-");
-function createHasher(Point, mapToCurve, defaults) {
+function createHasher(Point, mapToCurve, defaults2) {
   if (typeof mapToCurve !== "function")
     throw new Error("mapToCurve() must be defined");
   function map2(num) {
@@ -5618,17 +5618,17 @@ function createHasher(Point, mapToCurve, defaults) {
     return P2;
   }
   return {
-    defaults,
+    defaults: defaults2,
     hashToCurve(msg, options) {
-      const opts = Object.assign({}, defaults, options);
+      const opts = Object.assign({}, defaults2, options);
       const u2 = hash_to_field(msg, 2, opts);
       const u0 = map2(u2[0]);
       const u1 = map2(u2[1]);
       return clear(u0.add(u1));
     },
     encodeToCurve(msg, options) {
-      const optsDst = defaults.encodeDST ? { DST: defaults.encodeDST } : {};
-      const opts = Object.assign({}, defaults, optsDst, options);
+      const optsDst = defaults2.encodeDST ? { DST: defaults2.encodeDST } : {};
+      const opts = Object.assign({}, defaults2, optsDst, options);
       const u2 = hash_to_field(msg, 1, opts);
       const u0 = map2(u2[0]);
       return clear(u0);
@@ -5646,7 +5646,7 @@ function createHasher(Point, mapToCurve, defaults) {
     // RFC 9380, draft-irtf-cfrg-bbs-signatures-08
     hashToScalar(msg, options) {
       const N2 = Point.Fn.ORDER;
-      const opts = Object.assign({}, defaults, { p: N2, m: 1, DST: _DST_scalar }, options);
+      const opts = Object.assign({}, defaults2, { p: N2, m: 1, DST: _DST_scalar }, options);
       return hash_to_field(msg, 1, opts)[0][0];
     }
   };
@@ -8803,9 +8803,9 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
   function getPublicKey(secretKey) {
     return getExtendedPublicKey(secretKey).pointBytes;
   }
-  function hashDomainToScalar(context = Uint8Array.of(), ...msgs) {
+  function hashDomainToScalar(context3 = Uint8Array.of(), ...msgs) {
     const msg = concatBytes(...msgs);
-    return modN_LE(cHash(domain2(msg, ensureBytes("context", context), !!prehash)));
+    return modN_LE(cHash(domain2(msg, ensureBytes("context", context3), !!prehash)));
   }
   function sign(msg, secretKey, options = {}) {
     msg = ensureBytes("message", msg);
@@ -8823,7 +8823,7 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
   }
   const verifyOpts = { zip215: true };
   function verify(sig, msg, publicKey, options = verifyOpts) {
-    const { context, zip215 } = options;
+    const { context: context3, zip215 } = options;
     const len = lengths.signature;
     sig = ensureBytes("signature", sig, len);
     msg = ensureBytes("message", msg);
@@ -8845,7 +8845,7 @@ function eddsa(Point, cHash, eddsaOpts = {}) {
     }
     if (!zip215 && A2.isSmallOrder())
       return false;
-    const k2 = hashDomainToScalar(context, R2.toBytes(), A2.toBytes(), msg);
+    const k2 = hashDomainToScalar(context3, R2.toBytes(), A2.toBytes(), msg);
     const RkA = R2.add(A2.multiplyUnsafe(k2));
     return RkA.subtract(SB).clearCofactor().is0();
   }
@@ -10492,15 +10492,15 @@ class Actor {
   static createActorClass(interfaceFactory, options) {
     const service = interfaceFactory({ IDL });
     class CanisterActor extends Actor {
-      constructor(config) {
-        if (!config.canisterId) {
-          throw InputError.fromCode(new MissingCanisterIdErrorCode(config.canisterId));
+      constructor(config3) {
+        if (!config3.canisterId) {
+          throw InputError.fromCode(new MissingCanisterIdErrorCode(config3.canisterId));
         }
-        const canisterId = typeof config.canisterId === "string" ? Principal$1.fromText(config.canisterId) : config.canisterId;
+        const canisterId = typeof config3.canisterId === "string" ? Principal$1.fromText(config3.canisterId) : config3.canisterId;
         super({
           config: {
             ...DEFAULT_ACTOR_CONFIG,
-            ...config,
+            ...config3,
             canisterId
           },
           service
@@ -10512,7 +10512,7 @@ class Actor {
           if (options == null ? void 0 : options.certificate) {
             func.annotations.push(ACTOR_METHOD_WITH_CERTIFICATE);
           }
-          this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
+          this[methodName] = _createActorMethod(this, methodName, func, config3.blsVerify);
         }
       }
     }
@@ -10821,19 +10821,19 @@ function isRetriableError(error) {
   }
   return true;
 }
-function validateHashFormat(hash, context) {
+function validateHashFormat(hash, context3) {
   if (!hash) {
-    throw new Error(`${context}: Hash cannot be empty`);
+    throw new Error(`${context3}: Hash cannot be empty`);
   }
   if (!hash.startsWith(SHA256_PREFIX)) {
-    throw new Error(`${context}: Invalid hash format. Expected format: ${SHA256_PREFIX}<64-char-hex>, got: ${hash}`);
+    throw new Error(`${context3}: Invalid hash format. Expected format: ${SHA256_PREFIX}<64-char-hex>, got: ${hash}`);
   }
   const hexPart = hash.substring(SHA256_PREFIX.length);
   if (hexPart.length !== 64) {
-    throw new Error(`${context}: Invalid hash format. Expected 64 hex characters after ${SHA256_PREFIX}, got ${hexPart.length} characters: ${hash}`);
+    throw new Error(`${context3}: Invalid hash format. Expected 64 hex characters after ${SHA256_PREFIX}, got ${hexPart.length} characters: ${hash}`);
   }
   if (!/^[0-9a-f]{64}$/i.test(hexPart)) {
-    throw new Error(`${context}: Invalid hash format. Hash must contain only hex characters (0-9, a-f), got: ${hash}`);
+    throw new Error(`${context3}: Invalid hash format. Hash must contain only hex characters (0-9, a-f), got: ${hash}`);
   }
 }
 class YHash {
@@ -11163,18 +11163,18 @@ async function loadConfig$1() {
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
   try {
     const response = await fetch(`${baseUrl}env.json`);
-    const config = await response.json();
-    if (!backendCanisterId && config.backend_canister_id === "undefined") {
+    const config3 = await response.json();
+    if (!backendCanisterId && config3.backend_canister_id === "undefined") {
       console.error("CANISTER_ID_BACKEND is not set");
       throw new Error("CANISTER_ID_BACKEND is not set");
     }
     const fullConfig = {
-      backend_host: config.backend_host === "undefined" ? void 0 : config.backend_host,
-      backend_canister_id: config.backend_canister_id === "undefined" ? backendCanisterId : config.backend_canister_id,
+      backend_host: config3.backend_host === "undefined" ? void 0 : config3.backend_host,
+      backend_canister_id: config3.backend_canister_id === "undefined" ? backendCanisterId : config3.backend_canister_id,
       storage_gateway_url: "https://blob.caffeine.ai",
       bucket_name: DEFAULT_BUCKET_NAME,
-      project_id: config.project_id !== "undefined" ? config.project_id : DEFAULT_PROJECT_ID,
-      ii_derivation_origin: config.ii_derivation_origin === "undefined" ? void 0 : config.ii_derivation_origin
+      project_id: config3.project_id !== "undefined" ? config3.project_id : DEFAULT_PROJECT_ID,
+      ii_derivation_origin: config3.ii_derivation_origin === "undefined" ? void 0 : config3.ii_derivation_origin
     };
     configCache = fullConfig;
     return fullConfig;
@@ -11216,13 +11216,13 @@ async function createActorWithConfig(createActor2, options) {
   if (mock) {
     return mock;
   }
-  const config = await loadConfig$1();
+  const config3 = await loadConfig$1();
   const resolvedOptions = options ?? {};
   const agent = new HttpAgent({
     ...resolvedOptions.agentOptions,
-    host: config.backend_host
+    host: config3.backend_host
   });
-  if ((_a3 = config.backend_host) == null ? void 0 : _a3.includes("localhost")) {
+  if ((_a3 = config3.backend_host) == null ? void 0 : _a3.includes("localhost")) {
     await agent.fetchRootKey().catch((err) => {
       console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
       console.error(err);
@@ -11233,7 +11233,7 @@ async function createActorWithConfig(createActor2, options) {
     agent,
     processError
   };
-  const storageClient = new StorageClient(config.bucket_name, config.storage_gateway_url, config.backend_canister_id, config.project_id, agent);
+  const storageClient = new StorageClient(config3.bucket_name, config3.storage_gateway_url, config3.backend_canister_id, config3.project_id, agent);
   const MOTOKO_DEDUPLICATION_SENTINEL = "!caf!";
   const uploadFile = async (file2) => {
     const { hash } = await storageClient.putFile(await file2.getBytes(), file2.onProgress);
@@ -11245,7 +11245,7 @@ async function createActorWithConfig(createActor2, options) {
     const url = await storageClient.getDirectURL(hash);
     return ExternalBlob.fromURL(url);
   };
-  return createActor2(config.backend_canister_id, uploadFile, downloadFile, actorOptions);
+  return createActor2(config3.backend_canister_id, uploadFile, downloadFile, actorOptions);
 }
 var Subscribable = class {
   constructor() {
@@ -11801,7 +11801,7 @@ var CancelledError = class extends Error {
     this.silent = options == null ? void 0 : options.silent;
   }
 };
-function createRetryer(config) {
+function createRetryer(config3) {
   let isRetryCancelled = false;
   let failureCount = 0;
   let continueFn;
@@ -11812,7 +11812,7 @@ function createRetryer(config) {
     if (!isResolved()) {
       const error = new CancelledError(cancelOptions);
       reject(error);
-      (_a3 = config.onCancel) == null ? void 0 : _a3.call(config, error);
+      (_a3 = config3.onCancel) == null ? void 0 : _a3.call(config3, error);
     }
   };
   const cancelRetry = () => {
@@ -11821,8 +11821,8 @@ function createRetryer(config) {
   const continueRetry = () => {
     isRetryCancelled = false;
   };
-  const canContinue = () => focusManager.isFocused() && (config.networkMode === "always" || onlineManager.isOnline()) && config.canRun();
-  const canStart = () => canFetch(config.networkMode) && config.canRun();
+  const canContinue = () => focusManager.isFocused() && (config3.networkMode === "always" || onlineManager.isOnline()) && config3.canRun();
+  const canStart = () => canFetch(config3.networkMode) && config3.canRun();
   const resolve = (value) => {
     if (!isResolved()) {
       continueFn == null ? void 0 : continueFn();
@@ -11843,12 +11843,12 @@ function createRetryer(config) {
           continueResolve(value);
         }
       };
-      (_a3 = config.onPause) == null ? void 0 : _a3.call(config);
+      (_a3 = config3.onPause) == null ? void 0 : _a3.call(config3);
     }).then(() => {
       var _a3;
       continueFn = void 0;
       if (!isResolved()) {
-        (_a3 = config.onContinue) == null ? void 0 : _a3.call(config);
+        (_a3 = config3.onContinue) == null ? void 0 : _a3.call(config3);
       }
     });
   };
@@ -11857,9 +11857,9 @@ function createRetryer(config) {
       return;
     }
     let promiseOrValue;
-    const initialPromise = failureCount === 0 ? config.initialPromise : void 0;
+    const initialPromise = failureCount === 0 ? config3.initialPromise : void 0;
     try {
-      promiseOrValue = initialPromise ?? config.fn();
+      promiseOrValue = initialPromise ?? config3.fn();
     } catch (error) {
       promiseOrValue = Promise.reject(error);
     }
@@ -11868,8 +11868,8 @@ function createRetryer(config) {
       if (isResolved()) {
         return;
       }
-      const retry = config.retry ?? (environmentManager.isServer() ? 0 : 3);
-      const retryDelay = config.retryDelay ?? defaultRetryDelay;
+      const retry = config3.retry ?? (environmentManager.isServer() ? 0 : 3);
+      const retryDelay = config3.retryDelay ?? defaultRetryDelay;
       const delay = typeof retryDelay === "function" ? retryDelay(failureCount, error) : retryDelay;
       const shouldRetry = retry === true || typeof retry === "number" && failureCount < retry || typeof retry === "function" && retry(failureCount, error);
       if (isRetryCancelled || !shouldRetry) {
@@ -11877,7 +11877,7 @@ function createRetryer(config) {
         return;
       }
       failureCount++;
-      (_a3 = config.onFail) == null ? void 0 : _a3.call(config, failureCount, error);
+      (_a3 = config3.onFail) == null ? void 0 : _a3.call(config3, failureCount, error);
       sleep$1(delay).then(() => {
         return canContinue() ? void 0 : pause();
       }).then(() => {
@@ -11939,7 +11939,7 @@ var Removable = (_e2 = class {
   }
 }, _gcTimeout = new WeakMap(), _e2);
 var Query = (_f = class extends Removable {
-  constructor(config) {
+  constructor(config3) {
     super();
     __privateAdd(this, _Query_instances);
     __privateAdd(this, _initialState);
@@ -11950,15 +11950,15 @@ var Query = (_f = class extends Removable {
     __privateAdd(this, _defaultOptions);
     __privateAdd(this, _abortSignalConsumed);
     __privateSet(this, _abortSignalConsumed, false);
-    __privateSet(this, _defaultOptions, config.defaultOptions);
-    this.setOptions(config.options);
+    __privateSet(this, _defaultOptions, config3.defaultOptions);
+    this.setOptions(config3.options);
     this.observers = [];
-    __privateSet(this, _client, config.client);
+    __privateSet(this, _client, config3.client);
     __privateSet(this, _cache, __privateGet(this, _client).getQueryCache());
-    this.queryKey = config.queryKey;
-    this.queryHash = config.queryHash;
+    this.queryKey = config3.queryKey;
+    this.queryHash = config3.queryHash;
     __privateSet(this, _initialState, getDefaultState$1(this.options));
-    this.state = config.state ?? __privateGet(this, _initialState);
+    this.state = config3.state ?? __privateGet(this, _initialState);
     this.scheduleGc();
   }
   get meta() {
@@ -12156,7 +12156,7 @@ var Query = (_f = class extends Removable {
       return queryFn(queryFnContext);
     };
     const createFetchContext = () => {
-      const context2 = {
+      const context22 = {
         fetchOptions,
         options: this.options,
         queryKey: this.queryKey,
@@ -12164,18 +12164,18 @@ var Query = (_f = class extends Removable {
         state: this.state,
         fetchFn
       };
-      addSignalProperty(context2);
-      return context2;
+      addSignalProperty(context22);
+      return context22;
     };
-    const context = createFetchContext();
-    (_b3 = this.options.behavior) == null ? void 0 : _b3.onFetch(context, this);
+    const context3 = createFetchContext();
+    (_b3 = this.options.behavior) == null ? void 0 : _b3.onFetch(context3, this);
     __privateSet(this, _revertState, this.state);
-    if (this.state.fetchStatus === "idle" || this.state.fetchMeta !== ((_c2 = context.fetchOptions) == null ? void 0 : _c2.meta)) {
-      __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "fetch", meta: (_d2 = context.fetchOptions) == null ? void 0 : _d2.meta });
+    if (this.state.fetchStatus === "idle" || this.state.fetchMeta !== ((_c2 = context3.fetchOptions) == null ? void 0 : _c2.meta)) {
+      __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "fetch", meta: (_d2 = context3.fetchOptions) == null ? void 0 : _d2.meta });
     }
     __privateSet(this, _retryer, createRetryer({
       initialPromise: fetchOptions == null ? void 0 : fetchOptions.initialPromise,
-      fn: context.fetchFn,
+      fn: context3.fetchFn,
       onCancel: (error) => {
         if (error instanceof CancelledError && error.revert) {
           this.setState({
@@ -12194,9 +12194,9 @@ var Query = (_f = class extends Removable {
       onContinue: () => {
         __privateMethod(this, _Query_instances, dispatch_fn).call(this, { type: "continue" });
       },
-      retry: context.options.retry,
-      retryDelay: context.options.retryDelay,
-      networkMode: context.options.networkMode,
+      retry: context3.options.retry,
+      retryDelay: context3.options.retryDelay,
+      networkMode: context3.options.networkMode,
       canRun: () => true
     }));
     try {
@@ -12805,12 +12805,12 @@ function shouldAssignObserverCurrentProperties(observer, optimisticResult) {
 }
 function infiniteQueryBehavior(pages) {
   return {
-    onFetch: (context, query) => {
+    onFetch: (context3, query) => {
       var _a3, _b3, _c2, _d2, _e3;
-      const options = context.options;
-      const direction = (_c2 = (_b3 = (_a3 = context.fetchOptions) == null ? void 0 : _a3.meta) == null ? void 0 : _b3.fetchMore) == null ? void 0 : _c2.direction;
-      const oldPages = ((_d2 = context.state.data) == null ? void 0 : _d2.pages) || [];
-      const oldPageParams = ((_e3 = context.state.data) == null ? void 0 : _e3.pageParams) || [];
+      const options = context3.options;
+      const direction = (_c2 = (_b3 = (_a3 = context3.fetchOptions) == null ? void 0 : _a3.meta) == null ? void 0 : _b3.fetchMore) == null ? void 0 : _c2.direction;
+      const oldPages = ((_d2 = context3.state.data) == null ? void 0 : _d2.pages) || [];
+      const oldPageParams = ((_e3 = context3.state.data) == null ? void 0 : _e3.pageParams) || [];
       let result = { pages: [], pageParams: [] };
       let currentPage = 0;
       const fetchFn = async () => {
@@ -12818,11 +12818,11 @@ function infiniteQueryBehavior(pages) {
         const addSignalProperty = (object) => {
           addConsumeAwareSignal(
             object,
-            () => context.signal,
+            () => context3.signal,
             () => cancelled = true
           );
         };
-        const queryFn = ensureQueryFn(context.options, context.fetchOptions);
+        const queryFn = ensureQueryFn(context3.options, context3.fetchOptions);
         const fetchPage = async (data, param, previous2) => {
           if (cancelled) {
             return Promise.reject();
@@ -12832,18 +12832,18 @@ function infiniteQueryBehavior(pages) {
           }
           const createQueryFnContext = () => {
             const queryFnContext2 = {
-              client: context.client,
-              queryKey: context.queryKey,
+              client: context3.client,
+              queryKey: context3.queryKey,
               pageParam: param,
               direction: previous2 ? "backward" : "forward",
-              meta: context.options.meta
+              meta: context3.options.meta
             };
             addSignalProperty(queryFnContext2);
             return queryFnContext2;
           };
           const queryFnContext = createQueryFnContext();
           const page = await queryFn(queryFnContext);
-          const { maxPages } = context.options;
+          const { maxPages } = context3.options;
           const addTo = previous2 ? addToStart : addToEnd;
           return {
             pages: addTo(data.pages, page, maxPages),
@@ -12872,23 +12872,23 @@ function infiniteQueryBehavior(pages) {
         }
         return result;
       };
-      if (context.options.persister) {
-        context.fetchFn = () => {
+      if (context3.options.persister) {
+        context3.fetchFn = () => {
           var _a4, _b4;
-          return (_b4 = (_a4 = context.options).persister) == null ? void 0 : _b4.call(
+          return (_b4 = (_a4 = context3.options).persister) == null ? void 0 : _b4.call(
             _a4,
             fetchFn,
             {
-              client: context.client,
-              queryKey: context.queryKey,
-              meta: context.options.meta,
-              signal: context.signal
+              client: context3.client,
+              queryKey: context3.queryKey,
+              meta: context3.options.meta,
+              signal: context3.signal
             },
             query
           );
         };
       } else {
-        context.fetchFn = fetchFn;
+        context3.fetchFn = fetchFn;
       }
     }
   };
@@ -12907,19 +12907,19 @@ function getPreviousPageParam(options, { pages, pageParams }) {
   return pages.length > 0 ? (_a3 = options.getPreviousPageParam) == null ? void 0 : _a3.call(options, pages[0], pages, pageParams[0], pageParams) : void 0;
 }
 var Mutation = (_h = class extends Removable {
-  constructor(config) {
+  constructor(config3) {
     super();
     __privateAdd(this, _Mutation_instances);
     __privateAdd(this, _client3);
     __privateAdd(this, _observers);
     __privateAdd(this, _mutationCache);
     __privateAdd(this, _retryer2);
-    __privateSet(this, _client3, config.client);
-    this.mutationId = config.mutationId;
-    __privateSet(this, _mutationCache, config.mutationCache);
+    __privateSet(this, _client3, config3.client);
+    this.mutationId = config3.mutationId;
+    __privateSet(this, _mutationCache, config3.mutationCache);
     __privateSet(this, _observers, []);
-    this.state = config.state || getDefaultState();
-    this.setOptions(config.options);
+    this.state = config3.state || getDefaultState();
+    this.setOptions(config3.options);
     this.scheduleGc();
   }
   setOptions(options) {
@@ -13006,15 +13006,15 @@ var Mutation = (_h = class extends Removable {
             mutationFnContext
           );
         }
-        const context = await ((_b3 = (_a3 = this.options).onMutate) == null ? void 0 : _b3.call(
+        const context3 = await ((_b3 = (_a3 = this.options).onMutate) == null ? void 0 : _b3.call(
           _a3,
           variables,
           mutationFnContext
         ));
-        if (context !== this.state.context) {
+        if (context3 !== this.state.context) {
           __privateMethod(this, _Mutation_instances, dispatch_fn2).call(this, {
             type: "pending",
-            context,
+            context: context3,
             variables,
             isPaused
           });
@@ -13190,12 +13190,12 @@ function getDefaultState() {
   };
 }
 var MutationCache = (_i = class extends Subscribable {
-  constructor(config = {}) {
+  constructor(config3 = {}) {
     super();
     __privateAdd(this, _mutations);
     __privateAdd(this, _scopes);
     __privateAdd(this, _mutationId);
-    this.config = config;
+    this.config = config3;
     __privateSet(this, _mutations, /* @__PURE__ */ new Set());
     __privateSet(this, _scopes, /* @__PURE__ */ new Map());
     __privateSet(this, _mutationId, 0);
@@ -13386,7 +13386,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
     if (__privateGet(this, _mutateOptions) && this.hasListeners()) {
       const variables = __privateGet(this, _currentResult2).variables;
       const onMutateResult = __privateGet(this, _currentResult2).context;
-      const context = {
+      const context3 = {
         client: __privateGet(this, _client4),
         meta: this.options.meta,
         mutationKey: this.options.mutationKey
@@ -13398,7 +13398,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.data,
             variables,
             onMutateResult,
-            context
+            context3
           );
         } catch (e2) {
           void Promise.reject(e2);
@@ -13410,7 +13410,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             null,
             variables,
             onMutateResult,
-            context
+            context3
           );
         } catch (e2) {
           void Promise.reject(e2);
@@ -13422,7 +13422,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.error,
             variables,
             onMutateResult,
-            context
+            context3
           );
         } catch (e2) {
           void Promise.reject(e2);
@@ -13434,7 +13434,7 @@ var MutationObserver$1 = (_j = class extends Subscribable {
             action.error,
             variables,
             onMutateResult,
-            context
+            context3
           );
         } catch (e2) {
           void Promise.reject(e2);
@@ -13638,10 +13638,10 @@ var QueriesObserver = (_k = class extends Subscribable {
   }
 }, _k);
 var QueryCache = (_l = class extends Subscribable {
-  constructor(config = {}) {
+  constructor(config3 = {}) {
     super();
     __privateAdd(this, _queries2);
-    this.config = config;
+    this.config = config3;
     __privateSet(this, _queries2, /* @__PURE__ */ new Map());
   }
   build(client2, options, state) {
@@ -13726,7 +13726,7 @@ var QueryCache = (_l = class extends Subscribable {
   }
 }, _queries2 = new WeakMap(), _l);
 var QueryClient = (_m = class {
-  constructor(config = {}) {
+  constructor(config3 = {}) {
     __privateAdd(this, _queryCache);
     __privateAdd(this, _mutationCache2);
     __privateAdd(this, _defaultOptions2);
@@ -13735,9 +13735,9 @@ var QueryClient = (_m = class {
     __privateAdd(this, _mountCount);
     __privateAdd(this, _unsubscribeFocus);
     __privateAdd(this, _unsubscribeOnline);
-    __privateSet(this, _queryCache, config.queryCache || new QueryCache());
-    __privateSet(this, _mutationCache2, config.mutationCache || new MutationCache());
-    __privateSet(this, _defaultOptions2, config.defaultOptions || {});
+    __privateSet(this, _queryCache, config3.queryCache || new QueryCache());
+    __privateSet(this, _mutationCache2, config3.mutationCache || new MutationCache());
+    __privateSet(this, _defaultOptions2, config3.defaultOptions || {});
     __privateSet(this, _queryDefaults, /* @__PURE__ */ new Map());
     __privateSet(this, _mutationDefaults, /* @__PURE__ */ new Map());
     __privateSet(this, _mountCount, 0);
@@ -13942,9 +13942,9 @@ var QueryClient = (_m = class {
     });
   }
   getQueryDefaults(queryKey) {
-    const defaults = [...__privateGet(this, _queryDefaults).values()];
+    const defaults2 = [...__privateGet(this, _queryDefaults).values()];
     const result = {};
-    defaults.forEach((queryDefault) => {
+    defaults2.forEach((queryDefault) => {
       if (partialMatchKey(queryKey, queryDefault.queryKey)) {
         Object.assign(result, queryDefault.defaultOptions);
       }
@@ -13958,9 +13958,9 @@ var QueryClient = (_m = class {
     });
   }
   getMutationDefaults(mutationKey) {
-    const defaults = [...__privateGet(this, _mutationDefaults).values()];
+    const defaults2 = [...__privateGet(this, _mutationDefaults).values()];
     const result = {};
-    defaults.forEach((queryDefault) => {
+    defaults2.forEach((queryDefault) => {
       if (partialMatchKey(mutationKey, queryDefault.mutationKey)) {
         Object.assign(result, queryDefault.defaultOptions);
       }
@@ -14041,9 +14041,9 @@ var ReactNoopUpdateQueue = {
   enqueueSetState: function() {
   }
 }, assign$1 = Object.assign, emptyObject = {};
-function Component(props, context, updater) {
+function Component(props, context3, updater) {
   this.props = props;
-  this.context = context;
+  this.context = context3;
   this.refs = emptyObject;
   this.updater = updater || ReactNoopUpdateQueue;
 }
@@ -14061,9 +14061,9 @@ Component.prototype.forceUpdate = function(callback) {
 function ComponentDummy() {
 }
 ComponentDummy.prototype = Component.prototype;
-function PureComponent(props, context, updater) {
+function PureComponent(props, context3, updater) {
   this.props = props;
-  this.context = context;
+  this.context = context3;
   this.refs = emptyObject;
   this.updater = updater || ReactNoopUpdateQueue;
 }
@@ -14204,11 +14204,11 @@ function mapIntoArray(children2, array2, escapedPrefix, nameSoFar, callback) {
   }
   return invokeCallback;
 }
-function mapChildren(children2, func, context) {
+function mapChildren(children2, func, context3) {
   if (null == children2) return children2;
   var result = [], count2 = 0;
   mapIntoArray(children2, result, "", "", function(child) {
-    return func.call(context, child, count2++);
+    return func.call(context3, child, count2++);
   });
   return result;
 }
@@ -14297,15 +14297,15 @@ react_production.cache = function(fn) {
     return fn.apply(null, arguments);
   };
 };
-react_production.cloneElement = function(element2, config, children2) {
+react_production.cloneElement = function(element2, config3, children2) {
   if (null === element2 || void 0 === element2)
     throw Error(
       "The argument must be a React element, but you passed " + element2 + "."
     );
   var props = assign$1({}, element2.props), key2 = element2.key, owner = void 0;
-  if (null != config)
-    for (propName in void 0 !== config.ref && (owner = void 0), void 0 !== config.key && (key2 = "" + config.key), config)
-      !hasOwnProperty$3.call(config, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config.ref || (props[propName] = config[propName]);
+  if (null != config3)
+    for (propName in void 0 !== config3.ref && (owner = void 0), void 0 !== config3.key && (key2 = "" + config3.key), config3)
+      !hasOwnProperty$3.call(config3, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config3.ref || (props[propName] = config3[propName]);
   var propName = arguments.length - 2;
   if (1 === propName) props.children = children2;
   else if (1 < propName) {
@@ -14331,11 +14331,11 @@ react_production.createContext = function(defaultValue) {
   };
   return defaultValue;
 };
-react_production.createElement = function(type, config, children2) {
+react_production.createElement = function(type, config3, children2) {
   var propName, props = {}, key2 = null;
-  if (null != config)
-    for (propName in void 0 !== config.key && (key2 = "" + config.key), config)
-      hasOwnProperty$3.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config[propName]);
+  if (null != config3)
+    for (propName in void 0 !== config3.key && (key2 = "" + config3.key), config3)
+      hasOwnProperty$3.call(config3, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config3[propName]);
   var childrenLength = arguments.length - 2;
   if (1 === childrenLength) props.children = children2;
   else if (1 < childrenLength) {
@@ -14351,8 +14351,8 @@ react_production.createElement = function(type, config, children2) {
 react_production.createRef = function() {
   return { current: null };
 };
-react_production.forwardRef = function(render3) {
-  return { $$typeof: REACT_FORWARD_REF_TYPE$1, render: render3 };
+react_production.forwardRef = function(render5) {
+  return { $$typeof: REACT_FORWARD_REF_TYPE$1, render: render5 };
 };
 react_production.isValidElement = isValidElement;
 react_production.lazy = function(ctor) {
@@ -14394,8 +14394,8 @@ react_production.useActionState = function(action, initialState2, permalink) {
 react_production.useCallback = function(callback, deps) {
   return ReactSharedInternals$2.H.useCallback(callback, deps);
 };
-react_production.useContext = function(Context) {
-  return ReactSharedInternals$2.H.useContext(Context);
+react_production.useContext = function(Context2) {
+  return ReactSharedInternals$2.H.useContext(Context2);
 };
 react_production.useDebugValue = function() {
 };
@@ -14428,8 +14428,8 @@ react_production.useMemo = function(create2, deps) {
 react_production.useOptimistic = function(passthrough, reducer) {
   return ReactSharedInternals$2.H.useOptimistic(passthrough, reducer);
 };
-react_production.useReducer = function(reducer, initialArg, init5) {
-  return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init5);
+react_production.useReducer = function(reducer, initialArg, init8) {
+  return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init8);
 };
 react_production.useRef = function(initialValue) {
   return ReactSharedInternals$2.H.useRef(initialValue);
@@ -14523,9 +14523,9 @@ var getHasError = ({
 var ensureSuspenseTimers = (defaultedOptions) => {
   if (defaultedOptions.suspense) {
     const MIN_SUSPENSE_TIME_MS = 1e3;
-    const clamp2 = (value) => value === "static" ? value : Math.max(value ?? MIN_SUSPENSE_TIME_MS, MIN_SUSPENSE_TIME_MS);
+    const clamp3 = (value) => value === "static" ? value : Math.max(value ?? MIN_SUSPENSE_TIME_MS, MIN_SUSPENSE_TIME_MS);
     const originalStaleTime = defaultedOptions.staleTime;
-    defaultedOptions.staleTime = typeof originalStaleTime === "function" ? (...args) => clamp2(originalStaleTime(...args)) : clamp2(originalStaleTime);
+    defaultedOptions.staleTime = typeof originalStaleTime === "function" ? (...args) => clamp3(originalStaleTime(...args)) : clamp3(originalStaleTime);
     if (typeof defaultedOptions.gcTime === "number") {
       defaultedOptions.gcTime = Math.max(
         defaultedOptions.gcTime,
@@ -15310,10 +15310,10 @@ class IdleManager {
     const debounce2 = (func, wait) => {
       let timeout2;
       return (...args) => {
-        const context = this;
+        const context3 = this;
         const later = function() {
           timeout2 = void 0;
-          func.apply(context, args);
+          func.apply(context3, args);
         };
         clearTimeout(timeout2);
         timeout2 = window.setTimeout(later, wait);
@@ -15395,7 +15395,7 @@ function promisifyRequest(request2) {
       request2.removeEventListener("error", error);
     };
     const success = () => {
-      resolve(wrap$2(request2.result));
+      resolve(wrap$3(request2.result));
       unlisten();
     };
     const error = () => {
@@ -15449,7 +15449,7 @@ let idbProxyTraps = {
         return receiver.objectStoreNames[1] ? void 0 : receiver.objectStore(receiver.objectStoreNames[0]);
       }
     }
-    return wrap$2(target[prop]);
+    return wrap$3(target[prop]);
   },
   set(target, prop, value) {
     target[prop] = value;
@@ -15470,17 +15470,17 @@ function wrapFunction(func) {
     return function(storeNames, ...args) {
       const tx = func.call(unwrap(this), storeNames, ...args);
       transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.sort() : [storeNames]);
-      return wrap$2(tx);
+      return wrap$3(tx);
     };
   }
   if (getCursorAdvanceMethods().includes(func)) {
     return function(...args) {
       func.apply(unwrap(this), args);
-      return wrap$2(cursorRequestMap.get(this));
+      return wrap$3(cursorRequestMap.get(this));
     };
   }
   return function(...args) {
-    return wrap$2(func.apply(unwrap(this), args));
+    return wrap$3(func.apply(unwrap(this), args));
   };
 }
 function transformCachableValue(value) {
@@ -15492,7 +15492,7 @@ function transformCachableValue(value) {
     return new Proxy(value, idbProxyTraps);
   return value;
 }
-function wrap$2(value) {
+function wrap$3(value) {
   if (value instanceof IDBRequest)
     return promisifyRequest(value);
   if (transformCache.has(value))
@@ -15507,10 +15507,10 @@ function wrap$2(value) {
 const unwrap = (value) => reverseTransformCache.get(value);
 function openDB(name, version, { blocked, upgrade, blocking, terminated } = {}) {
   const request2 = indexedDB.open(name, version);
-  const openPromise = wrap$2(request2);
+  const openPromise = wrap$3(request2);
   if (upgrade) {
     request2.addEventListener("upgradeneeded", (event) => {
-      upgrade(wrap$2(request2.result), event.oldVersion, event.newVersion, wrap$2(request2.transaction), event);
+      upgrade(wrap$3(request2.result), event.oldVersion, event.newVersion, wrap$3(request2.transaction), event);
     });
   }
   if (blocked) {
@@ -16036,10 +16036,10 @@ function mergeLoginOptions(loginOptions, otherLoginOptions) {
   };
 }
 const ONE_HOUR_IN_NANOSECONDS = BigInt(36e11);
-const DEFAULT_IDENTITY_PROVIDER = "https://id.ai";
+const DEFAULT_IDENTITY_PROVIDER = "https://identity.internetcomputer.org/";
 const InternetIdentityReactContext = reactExports.createContext(void 0);
 async function createAuthClient(createOptions) {
-  const config = await loadConfig$1();
+  const config3 = await loadConfig$1();
   const options = {
     idleOptions: {
       // Default behaviour of this hook is not to logout and reload window on identity expiration
@@ -16048,22 +16048,22 @@ async function createAuthClient(createOptions) {
       ...createOptions == null ? void 0 : createOptions.idleOptions
     },
     loginOptions: {
-      derivationOrigin: config.ii_derivation_origin
+      derivationOrigin: config3.ii_derivation_origin
     },
     ...createOptions
   };
   const authClient = await AuthClient.create(options);
   return authClient;
 }
-function assertProviderPresent(context) {
-  if (!context) {
+function assertProviderPresent(context3) {
+  if (!context3) {
     throw new Error("InternetIdentityProvider is not present. Wrap your component tree with it.");
   }
 }
 const useInternetIdentity = () => {
-  const context = reactExports.useContext(InternetIdentityReactContext);
-  assertProviderPresent(context);
-  return context;
+  const context3 = reactExports.useContext(InternetIdentityReactContext);
+  assertProviderPresent(context3);
+  return context3;
 };
 function InternetIdentityProvider({ children: children2, createOptions }) {
   const [authClient, setAuthClient] = reactExports.useState(void 0);
@@ -16889,9 +16889,9 @@ function popHostContainer() {
 }
 function pushHostContext(fiber) {
   null !== fiber.memoizedState && push$1(hostTransitionProviderCursor, fiber);
-  var context = contextStackCursor.current;
-  var JSCompiler_inline_result = getChildHostContextProd(context, fiber.type);
-  context !== JSCompiler_inline_result && (push$1(contextFiberStackCursor, fiber), push$1(contextStackCursor, JSCompiler_inline_result));
+  var context3 = contextStackCursor.current;
+  var JSCompiler_inline_result = getChildHostContextProd(context3, fiber.type);
+  context3 !== JSCompiler_inline_result && (push$1(contextFiberStackCursor, fiber), push$1(contextStackCursor, JSCompiler_inline_result));
 }
 function popHostContext(fiber) {
   contextFiberStackCursor.current === fiber && (pop(contextStackCursor), pop(contextFiberStackCursor));
@@ -18655,12 +18655,12 @@ function queueHydrationError(error) {
   null === hydrationErrors ? hydrationErrors = [error] : hydrationErrors.push(error);
 }
 var valueCursor = createCursor(null), currentlyRenderingFiber$1 = null, lastContextDependency = null;
-function pushProvider(providerFiber, context, nextValue) {
-  push$1(valueCursor, context._currentValue);
-  context._currentValue = nextValue;
+function pushProvider(providerFiber, context3, nextValue) {
+  push$1(valueCursor, context3._currentValue);
+  context3._currentValue = nextValue;
 }
-function popProvider(context) {
-  context._currentValue = valueCursor.current;
+function popProvider(context3) {
+  context3._currentValue = valueCursor.current;
   pop(valueCursor);
 }
 function scheduleContextWorkOnParentPath(parent, renderLanes2, propagationRoot) {
@@ -18736,8 +18736,8 @@ function propagateParentContextChanges(current, workInProgress2, renderLanes2, f
       if (null === currentParent) throw Error(formatProdErrorMessage(387));
       currentParent = currentParent.memoizedProps;
       if (null !== currentParent) {
-        var context = parent.type;
-        objectIs(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context) : current = [context]);
+        var context3 = parent.type;
+        objectIs(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context3) : current = [context3]);
       }
     } else if (parent === hostTransitionProviderCursor.current) {
       currentParent = parent.alternate;
@@ -18771,22 +18771,22 @@ function prepareToReadContext(workInProgress2) {
   workInProgress2 = workInProgress2.dependencies;
   null !== workInProgress2 && (workInProgress2.firstContext = null);
 }
-function readContext(context) {
-  return readContextForConsumer(currentlyRenderingFiber$1, context);
+function readContext(context3) {
+  return readContextForConsumer(currentlyRenderingFiber$1, context3);
 }
-function readContextDuringReconciliation(consumer, context) {
+function readContextDuringReconciliation(consumer, context3) {
   null === currentlyRenderingFiber$1 && prepareToReadContext(consumer);
-  return readContextForConsumer(consumer, context);
+  return readContextForConsumer(consumer, context3);
 }
-function readContextForConsumer(consumer, context) {
-  var value = context._currentValue;
-  context = { context, memoizedValue: value, next: null };
+function readContextForConsumer(consumer, context3) {
+  var value = context3._currentValue;
+  context3 = { context: context3, memoizedValue: value, next: null };
   if (null === lastContextDependency) {
     if (null === consumer) throw Error(formatProdErrorMessage(308));
-    lastContextDependency = context;
-    consumer.dependencies = { lanes: 0, firstContext: context };
+    lastContextDependency = context3;
+    consumer.dependencies = { lanes: 0, firstContext: context3 };
     consumer.flags |= 524288;
-  } else lastContextDependency = lastContextDependency.next = context;
+  } else lastContextDependency = lastContextDependency.next = context3;
   return value;
 }
 var AbortControllerLocal = "undefined" !== typeof AbortController ? AbortController : function() {
@@ -19124,23 +19124,23 @@ function processUpdateQueue(workInProgress$jscomp$0, props, instance$jscomp$0, r
     workInProgress$jscomp$0.memoizedState = newState;
   }
 }
-function callCallback(callback, context) {
+function callCallback(callback, context3) {
   if ("function" !== typeof callback)
     throw Error(formatProdErrorMessage(191, callback));
-  callback.call(context);
+  callback.call(context3);
 }
-function commitCallbacks(updateQueue, context) {
+function commitCallbacks(updateQueue, context3) {
   var callbacks = updateQueue.callbacks;
   if (null !== callbacks)
     for (updateQueue.callbacks = null, updateQueue = 0; updateQueue < callbacks.length; updateQueue++)
-      callCallback(callbacks[updateQueue], context);
+      callCallback(callbacks[updateQueue], context3);
 }
 var currentTreeHiddenStackCursor = createCursor(null), prevEntangledRenderLanesCursor = createCursor(0);
-function pushHiddenContext(fiber, context) {
+function pushHiddenContext(fiber, context3) {
   fiber = entangledRenderLanes;
   push$1(prevEntangledRenderLanesCursor, fiber);
-  push$1(currentTreeHiddenStackCursor, context);
-  entangledRenderLanes = fiber | context.baseLanes;
+  push$1(currentTreeHiddenStackCursor, context3);
+  entangledRenderLanes = fiber | context3.baseLanes;
 }
 function reuseHiddenContextOnStack() {
   push$1(prevEntangledRenderLanesCursor, entangledRenderLanes);
@@ -20100,14 +20100,14 @@ var ContextOnlyDispatcher = {
     hook.memoizedState = [nextValue, deps];
     return nextValue;
   },
-  useReducer: function(reducer, initialArg, init5) {
+  useReducer: function(reducer, initialArg, init8) {
     var hook = mountWorkInProgressHook();
-    if (void 0 !== init5) {
-      var initialState2 = init5(initialArg);
+    if (void 0 !== init8) {
+      var initialState2 = init8(initialArg);
       if (shouldDoubleInvokeUserFnsInHooksDEV) {
         setIsStrictModeForDevtools(true);
         try {
-          init5(initialArg);
+          init8(initialArg);
         } finally {
           setIsStrictModeForDevtools(false);
         }
@@ -20346,8 +20346,8 @@ function throwOnInvalidObjectType(returnFiber, newChild) {
   );
 }
 function resolveLazy(lazyType) {
-  var init5 = lazyType._init;
-  return init5(lazyType._payload);
+  var init8 = lazyType._init;
+  return init8(lazyType._payload);
 }
 function createChildReconciler(shouldTrackSideEffects) {
   function deleteChild(returnFiber, childToDelete) {
@@ -20462,8 +20462,8 @@ function createChildReconciler(shouldTrackSideEffects) {
             lanes
           ), newChild.return = returnFiber, newChild;
         case REACT_LAZY_TYPE$1:
-          var init5 = newChild._init;
-          newChild = init5(newChild._payload);
+          var init8 = newChild._init;
+          newChild = init8(newChild._payload);
           return createChild(returnFiber, newChild, lanes);
       }
       if (isArrayImpl(newChild) || getIteratorFn(newChild))
@@ -20532,8 +20532,8 @@ function createChildReconciler(shouldTrackSideEffects) {
             null === newChild.key ? newIdx : newChild.key
           ) || null, updatePortal(returnFiber, existingChildren, newChild, lanes);
         case REACT_LAZY_TYPE$1:
-          var init5 = newChild._init;
-          newChild = init5(newChild._payload);
+          var init8 = newChild._init;
+          newChild = init8(newChild._payload);
           return updateFromMap(
             existingChildren,
             returnFiber,
@@ -21226,51 +21226,51 @@ function replayFunctionComponent(current, workInProgress2, nextProps, Component2
 function updateClassComponent(current, workInProgress2, Component2, nextProps, renderLanes2) {
   prepareToReadContext(workInProgress2);
   if (null === workInProgress2.stateNode) {
-    var context = emptyContextObject, contextType = Component2.contextType;
-    "object" === typeof contextType && null !== contextType && (context = readContext(contextType));
-    context = new Component2(nextProps, context);
-    workInProgress2.memoizedState = null !== context.state && void 0 !== context.state ? context.state : null;
-    context.updater = classComponentUpdater;
-    workInProgress2.stateNode = context;
-    context._reactInternals = workInProgress2;
-    context = workInProgress2.stateNode;
-    context.props = nextProps;
-    context.state = workInProgress2.memoizedState;
-    context.refs = {};
+    var context3 = emptyContextObject, contextType = Component2.contextType;
+    "object" === typeof contextType && null !== contextType && (context3 = readContext(contextType));
+    context3 = new Component2(nextProps, context3);
+    workInProgress2.memoizedState = null !== context3.state && void 0 !== context3.state ? context3.state : null;
+    context3.updater = classComponentUpdater;
+    workInProgress2.stateNode = context3;
+    context3._reactInternals = workInProgress2;
+    context3 = workInProgress2.stateNode;
+    context3.props = nextProps;
+    context3.state = workInProgress2.memoizedState;
+    context3.refs = {};
     initializeUpdateQueue(workInProgress2);
     contextType = Component2.contextType;
-    context.context = "object" === typeof contextType && null !== contextType ? readContext(contextType) : emptyContextObject;
-    context.state = workInProgress2.memoizedState;
+    context3.context = "object" === typeof contextType && null !== contextType ? readContext(contextType) : emptyContextObject;
+    context3.state = workInProgress2.memoizedState;
     contextType = Component2.getDerivedStateFromProps;
     "function" === typeof contextType && (applyDerivedStateFromProps(
       workInProgress2,
       Component2,
       contextType,
       nextProps
-    ), context.state = workInProgress2.memoizedState);
-    "function" === typeof Component2.getDerivedStateFromProps || "function" === typeof context.getSnapshotBeforeUpdate || "function" !== typeof context.UNSAFE_componentWillMount && "function" !== typeof context.componentWillMount || (contextType = context.state, "function" === typeof context.componentWillMount && context.componentWillMount(), "function" === typeof context.UNSAFE_componentWillMount && context.UNSAFE_componentWillMount(), contextType !== context.state && classComponentUpdater.enqueueReplaceState(context, context.state, null), processUpdateQueue(workInProgress2, nextProps, context, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction(), context.state = workInProgress2.memoizedState);
-    "function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308);
+    ), context3.state = workInProgress2.memoizedState);
+    "function" === typeof Component2.getDerivedStateFromProps || "function" === typeof context3.getSnapshotBeforeUpdate || "function" !== typeof context3.UNSAFE_componentWillMount && "function" !== typeof context3.componentWillMount || (contextType = context3.state, "function" === typeof context3.componentWillMount && context3.componentWillMount(), "function" === typeof context3.UNSAFE_componentWillMount && context3.UNSAFE_componentWillMount(), contextType !== context3.state && classComponentUpdater.enqueueReplaceState(context3, context3.state, null), processUpdateQueue(workInProgress2, nextProps, context3, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction(), context3.state = workInProgress2.memoizedState);
+    "function" === typeof context3.componentDidMount && (workInProgress2.flags |= 4194308);
     nextProps = true;
   } else if (null === current) {
-    context = workInProgress2.stateNode;
+    context3 = workInProgress2.stateNode;
     var unresolvedOldProps = workInProgress2.memoizedProps, oldProps = resolveClassComponentProps(Component2, unresolvedOldProps);
-    context.props = oldProps;
-    var oldContext = context.context, contextType$jscomp$0 = Component2.contextType;
+    context3.props = oldProps;
+    var oldContext = context3.context, contextType$jscomp$0 = Component2.contextType;
     contextType = emptyContextObject;
     "object" === typeof contextType$jscomp$0 && null !== contextType$jscomp$0 && (contextType = readContext(contextType$jscomp$0));
     var getDerivedStateFromProps = Component2.getDerivedStateFromProps;
-    contextType$jscomp$0 = "function" === typeof getDerivedStateFromProps || "function" === typeof context.getSnapshotBeforeUpdate;
+    contextType$jscomp$0 = "function" === typeof getDerivedStateFromProps || "function" === typeof context3.getSnapshotBeforeUpdate;
     unresolvedOldProps = workInProgress2.pendingProps !== unresolvedOldProps;
-    contextType$jscomp$0 || "function" !== typeof context.UNSAFE_componentWillReceiveProps && "function" !== typeof context.componentWillReceiveProps || (unresolvedOldProps || oldContext !== contextType) && callComponentWillReceiveProps(
+    contextType$jscomp$0 || "function" !== typeof context3.UNSAFE_componentWillReceiveProps && "function" !== typeof context3.componentWillReceiveProps || (unresolvedOldProps || oldContext !== contextType) && callComponentWillReceiveProps(
       workInProgress2,
-      context,
+      context3,
       nextProps,
       contextType
     );
     hasForceUpdate = false;
     var oldState = workInProgress2.memoizedState;
-    context.state = oldState;
-    processUpdateQueue(workInProgress2, nextProps, context, renderLanes2);
+    context3.state = oldState;
+    processUpdateQueue(workInProgress2, nextProps, context3, renderLanes2);
     suspendIfUpdateReadFromEntangledAsyncAction();
     oldContext = workInProgress2.memoizedState;
     unresolvedOldProps || oldState !== oldContext || hasForceUpdate ? ("function" === typeof getDerivedStateFromProps && (applyDerivedStateFromProps(
@@ -21286,29 +21286,29 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
       oldState,
       oldContext,
       contextType
-    )) ? (contextType$jscomp$0 || "function" !== typeof context.UNSAFE_componentWillMount && "function" !== typeof context.componentWillMount || ("function" === typeof context.componentWillMount && context.componentWillMount(), "function" === typeof context.UNSAFE_componentWillMount && context.UNSAFE_componentWillMount()), "function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308)) : ("function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = oldContext), context.props = nextProps, context.state = oldContext, context.context = contextType, nextProps = oldProps) : ("function" === typeof context.componentDidMount && (workInProgress2.flags |= 4194308), nextProps = false);
+    )) ? (contextType$jscomp$0 || "function" !== typeof context3.UNSAFE_componentWillMount && "function" !== typeof context3.componentWillMount || ("function" === typeof context3.componentWillMount && context3.componentWillMount(), "function" === typeof context3.UNSAFE_componentWillMount && context3.UNSAFE_componentWillMount()), "function" === typeof context3.componentDidMount && (workInProgress2.flags |= 4194308)) : ("function" === typeof context3.componentDidMount && (workInProgress2.flags |= 4194308), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = oldContext), context3.props = nextProps, context3.state = oldContext, context3.context = contextType, nextProps = oldProps) : ("function" === typeof context3.componentDidMount && (workInProgress2.flags |= 4194308), nextProps = false);
   } else {
-    context = workInProgress2.stateNode;
+    context3 = workInProgress2.stateNode;
     cloneUpdateQueue(current, workInProgress2);
     contextType = workInProgress2.memoizedProps;
     contextType$jscomp$0 = resolveClassComponentProps(Component2, contextType);
-    context.props = contextType$jscomp$0;
+    context3.props = contextType$jscomp$0;
     getDerivedStateFromProps = workInProgress2.pendingProps;
-    oldState = context.context;
+    oldState = context3.context;
     oldContext = Component2.contextType;
     oldProps = emptyContextObject;
     "object" === typeof oldContext && null !== oldContext && (oldProps = readContext(oldContext));
     unresolvedOldProps = Component2.getDerivedStateFromProps;
-    (oldContext = "function" === typeof unresolvedOldProps || "function" === typeof context.getSnapshotBeforeUpdate) || "function" !== typeof context.UNSAFE_componentWillReceiveProps && "function" !== typeof context.componentWillReceiveProps || (contextType !== getDerivedStateFromProps || oldState !== oldProps) && callComponentWillReceiveProps(
+    (oldContext = "function" === typeof unresolvedOldProps || "function" === typeof context3.getSnapshotBeforeUpdate) || "function" !== typeof context3.UNSAFE_componentWillReceiveProps && "function" !== typeof context3.componentWillReceiveProps || (contextType !== getDerivedStateFromProps || oldState !== oldProps) && callComponentWillReceiveProps(
       workInProgress2,
-      context,
+      context3,
       nextProps,
       oldProps
     );
     hasForceUpdate = false;
     oldState = workInProgress2.memoizedState;
-    context.state = oldState;
-    processUpdateQueue(workInProgress2, nextProps, context, renderLanes2);
+    context3.state = oldState;
+    processUpdateQueue(workInProgress2, nextProps, context3, renderLanes2);
     suspendIfUpdateReadFromEntangledAsyncAction();
     var newState = workInProgress2.memoizedState;
     contextType !== getDerivedStateFromProps || oldState !== newState || hasForceUpdate || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies) ? ("function" === typeof unresolvedOldProps && (applyDerivedStateFromProps(
@@ -21324,16 +21324,16 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
       oldState,
       newState,
       oldProps
-    ) || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies)) ? (oldContext || "function" !== typeof context.UNSAFE_componentWillUpdate && "function" !== typeof context.componentWillUpdate || ("function" === typeof context.componentWillUpdate && context.componentWillUpdate(nextProps, newState, oldProps), "function" === typeof context.UNSAFE_componentWillUpdate && context.UNSAFE_componentWillUpdate(
+    ) || null !== current && null !== current.dependencies && checkIfContextChanged(current.dependencies)) ? (oldContext || "function" !== typeof context3.UNSAFE_componentWillUpdate && "function" !== typeof context3.componentWillUpdate || ("function" === typeof context3.componentWillUpdate && context3.componentWillUpdate(nextProps, newState, oldProps), "function" === typeof context3.UNSAFE_componentWillUpdate && context3.UNSAFE_componentWillUpdate(
       nextProps,
       newState,
       oldProps
-    )), "function" === typeof context.componentDidUpdate && (workInProgress2.flags |= 4), "function" === typeof context.getSnapshotBeforeUpdate && (workInProgress2.flags |= 1024)) : ("function" !== typeof context.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = newState), context.props = nextProps, context.state = newState, context.context = oldProps, nextProps = contextType$jscomp$0) : ("function" !== typeof context.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), nextProps = false);
+    )), "function" === typeof context3.componentDidUpdate && (workInProgress2.flags |= 4), "function" === typeof context3.getSnapshotBeforeUpdate && (workInProgress2.flags |= 1024)) : ("function" !== typeof context3.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context3.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), workInProgress2.memoizedProps = nextProps, workInProgress2.memoizedState = newState), context3.props = nextProps, context3.state = newState, context3.context = oldProps, nextProps = contextType$jscomp$0) : ("function" !== typeof context3.componentDidUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 4), "function" !== typeof context3.getSnapshotBeforeUpdate || contextType === current.memoizedProps && oldState === current.memoizedState || (workInProgress2.flags |= 1024), nextProps = false);
   }
-  context = nextProps;
+  context3 = nextProps;
   markRef(current, workInProgress2);
   nextProps = 0 !== (workInProgress2.flags & 128);
-  context || nextProps ? (context = workInProgress2.stateNode, Component2 = nextProps && "function" !== typeof Component2.getDerivedStateFromError ? null : context.render(), workInProgress2.flags |= 1, null !== current && nextProps ? (workInProgress2.child = reconcileChildFibers(
+  context3 || nextProps ? (context3 = workInProgress2.stateNode, Component2 = nextProps && "function" !== typeof Component2.getDerivedStateFromError ? null : context3.render(), workInProgress2.flags |= 1, null !== current && nextProps ? (workInProgress2.child = reconcileChildFibers(
     workInProgress2,
     current.child,
     null,
@@ -21343,7 +21343,7 @@ function updateClassComponent(current, workInProgress2, Component2, nextProps, r
     null,
     Component2,
     renderLanes2
-  )) : reconcileChildren(current, workInProgress2, Component2, renderLanes2), workInProgress2.memoizedState = context.state, current = workInProgress2.child) : current = bailoutOnAlreadyFinishedWork(
+  )) : reconcileChildren(current, workInProgress2, Component2, renderLanes2), workInProgress2.memoizedState = context3.state, current = workInProgress2.child) : current = bailoutOnAlreadyFinishedWork(
     current,
     workInProgress2,
     renderLanes2
@@ -21765,8 +21765,8 @@ function beginWork(current, workInProgress2, renderLanes2) {
     case 16:
       a: {
         current = workInProgress2.pendingProps;
-        var lazyComponent = workInProgress2.elementType, init5 = lazyComponent._init;
-        lazyComponent = init5(lazyComponent._payload);
+        var lazyComponent = workInProgress2.elementType, init8 = lazyComponent._init;
+        lazyComponent = init8(lazyComponent._payload);
         workInProgress2.type = lazyComponent;
         if ("function" === typeof lazyComponent)
           shouldConstruct(lazyComponent) ? (current = resolveClassComponentProps(lazyComponent, current), workInProgress2.tag = 1, workInProgress2 = updateClassComponent(
@@ -21784,7 +21784,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
           ));
         else {
           if (void 0 !== lazyComponent && null !== lazyComponent) {
-            if (init5 = lazyComponent.$$typeof, init5 === REACT_FORWARD_REF_TYPE) {
+            if (init8 = lazyComponent.$$typeof, init8 === REACT_FORWARD_REF_TYPE) {
               workInProgress2.tag = 11;
               workInProgress2 = updateForwardRef(
                 null,
@@ -21794,7 +21794,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
                 renderLanes2
               );
               break a;
-            } else if (init5 === REACT_MEMO_TYPE) {
+            } else if (init8 === REACT_MEMO_TYPE) {
               workInProgress2.tag = 14;
               workInProgress2 = updateMemoComponent(
                 null,
@@ -21820,14 +21820,14 @@ function beginWork(current, workInProgress2, renderLanes2) {
         renderLanes2
       );
     case 1:
-      return lazyComponent = workInProgress2.type, init5 = resolveClassComponentProps(
+      return lazyComponent = workInProgress2.type, init8 = resolveClassComponentProps(
         lazyComponent,
         workInProgress2.pendingProps
       ), updateClassComponent(
         current,
         workInProgress2,
         lazyComponent,
-        init5,
+        init8,
         renderLanes2
       );
     case 3:
@@ -21839,7 +21839,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
         if (null === current) throw Error(formatProdErrorMessage(387));
         lazyComponent = workInProgress2.pendingProps;
         var prevState = workInProgress2.memoizedState;
-        init5 = prevState.element;
+        init8 = prevState.element;
         cloneUpdateQueue(current, workInProgress2);
         processUpdateQueue(workInProgress2, lazyComponent, null, renderLanes2);
         var nextState = workInProgress2.memoizedState;
@@ -21866,12 +21866,12 @@ function beginWork(current, workInProgress2, renderLanes2) {
               renderLanes2
             );
             break a;
-          } else if (lazyComponent !== init5) {
-            init5 = createCapturedValueAtFiber(
+          } else if (lazyComponent !== init8) {
+            init8 = createCapturedValueAtFiber(
               Error(formatProdErrorMessage(424)),
               workInProgress2
             );
-            queueHydrationError(init5);
+            queueHydrationError(init8);
             workInProgress2 = mountHostRootWithoutHydrating(
               current,
               workInProgress2,
@@ -21904,7 +21904,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
           }
         else {
           resetHydrationState();
-          if (lazyComponent === init5) {
+          if (lazyComponent === init8) {
             workInProgress2 = bailoutOnAlreadyFinishedWork(
               current,
               workInProgress2,
@@ -21941,9 +21941,9 @@ function beginWork(current, workInProgress2, renderLanes2) {
         workInProgress2.type,
         workInProgress2.pendingProps,
         rootInstanceStackCursor.current
-      ), hydrationParentFiber = workInProgress2, rootOrSingletonContext = true, init5 = nextHydratableInstance, isSingletonScope(workInProgress2.type) ? (previousHydratableOnEnteringScopedSingleton = init5, nextHydratableInstance = getNextHydratable(
+      ), hydrationParentFiber = workInProgress2, rootOrSingletonContext = true, init8 = nextHydratableInstance, isSingletonScope(workInProgress2.type) ? (previousHydratableOnEnteringScopedSingleton = init8, nextHydratableInstance = getNextHydratable(
         lazyComponent.firstChild
-      )) : nextHydratableInstance = init5), reconcileChildren(
+      )) : nextHydratableInstance = init8), reconcileChildren(
         current,
         workInProgress2,
         workInProgress2.pendingProps.children,
@@ -21951,7 +21951,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
       ), markRef(current, workInProgress2), null === current && (workInProgress2.flags |= 4194304), workInProgress2.child;
     case 5:
       if (null === current && isHydrating) {
-        if (init5 = lazyComponent = nextHydratableInstance)
+        if (init8 = lazyComponent = nextHydratableInstance)
           lazyComponent = canHydrateInstance(
             lazyComponent,
             workInProgress2.type,
@@ -21959,23 +21959,23 @@ function beginWork(current, workInProgress2, renderLanes2) {
             rootOrSingletonContext
           ), null !== lazyComponent ? (workInProgress2.stateNode = lazyComponent, hydrationParentFiber = workInProgress2, nextHydratableInstance = getNextHydratable(
             lazyComponent.firstChild
-          ), rootOrSingletonContext = false, init5 = true) : init5 = false;
-        init5 || throwOnHydrationMismatch(workInProgress2);
+          ), rootOrSingletonContext = false, init8 = true) : init8 = false;
+        init8 || throwOnHydrationMismatch(workInProgress2);
       }
       pushHostContext(workInProgress2);
-      init5 = workInProgress2.type;
+      init8 = workInProgress2.type;
       prevState = workInProgress2.pendingProps;
       nextState = null !== current ? current.memoizedProps : null;
       lazyComponent = prevState.children;
-      shouldSetTextContent(init5, prevState) ? lazyComponent = null : null !== nextState && shouldSetTextContent(init5, nextState) && (workInProgress2.flags |= 32);
-      null !== workInProgress2.memoizedState && (init5 = renderWithHooks(
+      shouldSetTextContent(init8, prevState) ? lazyComponent = null : null !== nextState && shouldSetTextContent(init8, nextState) && (workInProgress2.flags |= 32);
+      null !== workInProgress2.memoizedState && (init8 = renderWithHooks(
         current,
         workInProgress2,
         TransitionAwareHostComponent,
         null,
         null,
         renderLanes2
-      ), HostTransitionContext._currentValue = init5);
+      ), HostTransitionContext._currentValue = init8);
       markRef(current, workInProgress2);
       reconcileChildren(current, workInProgress2, lazyComponent, renderLanes2);
       return workInProgress2.child;
@@ -22044,7 +22044,7 @@ function beginWork(current, workInProgress2, renderLanes2) {
         renderLanes2
       ), workInProgress2.child;
     case 9:
-      return init5 = workInProgress2.type._context, lazyComponent = workInProgress2.pendingProps.children, prepareToReadContext(workInProgress2), init5 = readContext(init5), lazyComponent = lazyComponent(init5), workInProgress2.flags |= 1, reconcileChildren(current, workInProgress2, lazyComponent, renderLanes2), workInProgress2.child;
+      return init8 = workInProgress2.type._context, lazyComponent = workInProgress2.pendingProps.children, prepareToReadContext(workInProgress2), init8 = readContext(init8), lazyComponent = lazyComponent(init8), workInProgress2.flags |= 1, reconcileChildren(current, workInProgress2, lazyComponent, renderLanes2), workInProgress2.child;
     case 14:
       return updateMemoComponent(
         current,
@@ -22074,10 +22074,10 @@ function beginWork(current, workInProgress2, renderLanes2) {
     case 22:
       return updateOffscreenComponent(current, workInProgress2, renderLanes2);
     case 24:
-      return prepareToReadContext(workInProgress2), lazyComponent = readContext(CacheContext), null === current ? (init5 = peekCacheFromPool(), null === init5 && (init5 = workInProgressRoot, prevState = createCache(), init5.pooledCache = prevState, prevState.refCount++, null !== prevState && (init5.pooledCacheLanes |= renderLanes2), init5 = prevState), workInProgress2.memoizedState = {
+      return prepareToReadContext(workInProgress2), lazyComponent = readContext(CacheContext), null === current ? (init8 = peekCacheFromPool(), null === init8 && (init8 = workInProgressRoot, prevState = createCache(), init8.pooledCache = prevState, prevState.refCount++, null !== prevState && (init8.pooledCacheLanes |= renderLanes2), init8 = prevState), workInProgress2.memoizedState = {
         parent: lazyComponent,
-        cache: init5
-      }, initializeUpdateQueue(workInProgress2), pushProvider(workInProgress2, CacheContext, init5)) : (0 !== (current.lanes & renderLanes2) && (cloneUpdateQueue(current, workInProgress2), processUpdateQueue(workInProgress2, null, null, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction()), init5 = current.memoizedState, prevState = workInProgress2.memoizedState, init5.parent !== lazyComponent ? (init5 = { parent: lazyComponent, cache: lazyComponent }, workInProgress2.memoizedState = init5, 0 === workInProgress2.lanes && (workInProgress2.memoizedState = workInProgress2.updateQueue.baseState = init5), pushProvider(workInProgress2, CacheContext, lazyComponent)) : (lazyComponent = prevState.cache, pushProvider(workInProgress2, CacheContext, lazyComponent), lazyComponent !== init5.cache && propagateContextChanges(
+        cache: init8
+      }, initializeUpdateQueue(workInProgress2), pushProvider(workInProgress2, CacheContext, init8)) : (0 !== (current.lanes & renderLanes2) && (cloneUpdateQueue(current, workInProgress2), processUpdateQueue(workInProgress2, null, null, renderLanes2), suspendIfUpdateReadFromEntangledAsyncAction()), init8 = current.memoizedState, prevState = workInProgress2.memoizedState, init8.parent !== lazyComponent ? (init8 = { parent: lazyComponent, cache: lazyComponent }, workInProgress2.memoizedState = init8, 0 === workInProgress2.lanes && (workInProgress2.memoizedState = workInProgress2.updateQueue.baseState = init8), pushProvider(workInProgress2, CacheContext, lazyComponent)) : (lazyComponent = prevState.cache, pushProvider(workInProgress2, CacheContext, lazyComponent), lazyComponent !== init8.cache && propagateContextChanges(
         workInProgress2,
         [CacheContext],
         renderLanes2,
@@ -27820,7 +27820,7 @@ var M$1 = (e2, i2, s2, u2, m2, a2, l2, h2) => {
   }
 };
 var b$1 = ["light", "dark"], I$1 = "(prefers-color-scheme: dark)", O$1 = typeof window == "undefined", x$2 = reactExports.createContext(void 0), U$1 = { setTheme: (e2) => {
-}, themes: [] }, z$2 = () => {
+}, themes: [] }, z$3 = () => {
   var e2;
   return (e2 = reactExports.useContext(x$2)) != null ? e2 : U$1;
 }, J$2 = (e2) => reactExports.useContext(x$2) ? reactExports.createElement(reactExports.Fragment, null, e2.children) : reactExports.createElement(V$1, { ...e2 }), N$2 = ["light", "dark"], V$1 = ({ forcedTheme: e2, disableTransitionOnChange: i2 = false, enableSystem: s2 = true, enableColorScheme: u2 = true, storageKey: m2 = "theme", themes: a2 = N$2, defaultTheme: l2 = s2 ? "system" : "light", attribute: h2 = "data-theme", value: d2, children: w3, nonce: p2, scriptProps: R2 }) => {
@@ -27934,7 +27934,7 @@ var bt = 1, yt = class {
       t2.loading !== void 0 && (a2 = this.create({ ...t2, promise: e2, type: "loading", message: t2.loading, description: typeof t2.description != "function" ? t2.description : void 0 }));
       let u2 = e2 instanceof Promise ? e2 : e2(), f2 = a2 !== void 0, w3, S2 = u2.then(async (i2) => {
         if (w3 = ["resolve", i2], React$2.isValidElement(i2)) f2 = false, this.create({ id: a2, type: "default", message: i2 });
-        else if (ie(i2) && !i2.ok) {
+        else if (ie$1(i2) && !i2.ok) {
           f2 = false;
           let T2 = typeof t2.error == "function" ? await t2.error(`HTTP error! status: ${i2.status}`) : t2.error, F2 = typeof t2.description == "function" ? await t2.description(`HTTP error! status: ${i2.status}`) : t2.description;
           this.create({ id: a2, type: "error", message: T2, description: F2 });
@@ -27965,7 +27965,7 @@ var bt = 1, yt = class {
 }, v$1 = new yt(), ne = (n2, e2) => {
   let t2 = (e2 == null ? void 0 : e2.id) || bt++;
   return v$1.addToast({ title: n2, ...e2, id: t2 }), t2;
-}, ie = (n2) => n2 && typeof n2 == "object" && "ok" in n2 && typeof n2.ok == "boolean" && "status" in n2 && typeof n2.status == "number", le$1 = ne, ce$1 = () => v$1.toasts, de$1 = () => v$1.getActiveToasts(), ue$1 = Object.assign(le$1, { success: v$1.success, info: v$1.info, warning: v$1.warning, error: v$1.error, custom: v$1.custom, message: v$1.message, promise: v$1.promise, dismiss: v$1.dismiss, loading: v$1.loading }, { getHistory: ce$1, getToasts: de$1 });
+}, ie$1 = (n2) => n2 && typeof n2 == "object" && "ok" in n2 && typeof n2.ok == "boolean" && "status" in n2 && typeof n2.status == "number", le$1 = ne, ce$1 = () => v$1.toasts, de$2 = () => v$1.getActiveToasts(), ue$1 = Object.assign(le$1, { success: v$1.success, info: v$1.info, warning: v$1.warning, error: v$1.error, custom: v$1.custom, message: v$1.message, promise: v$1.promise, dismiss: v$1.dismiss, loading: v$1.loading }, { getHistory: ce$1, getToasts: de$2 });
 function wt(n2, { insertAt: e2 } = {}) {
   if (typeof document == "undefined") return;
   let t2 = document.head || document.getElementsByTagName("head")[0], a2 = document.createElement("style");
@@ -27976,7 +27976,7 @@ wt(`:where(html[dir="ltr"]),:where([data-sonner-toaster][dir="ltr"]){--toast-ico
 function tt(n2) {
   return n2.label !== void 0;
 }
-var pe$1 = 3, me$1 = "32px", ge = "16px", Wt = 4e3, he$1 = 356, be$1 = 14, ye$1 = 20, we$1 = 200;
+var pe$1 = 3, me$2 = "32px", ge = "16px", Wt = 4e3, he$1 = 356, be$1 = 14, ye$1 = 20, we$1 = 200;
 function M(...n2) {
   return n2.filter(Boolean).join(" ");
 }
@@ -28075,7 +28075,7 @@ function _t() {
 function Te$1(n2, e2) {
   let t2 = {};
   return [n2, e2].forEach((a2, u2) => {
-    let f2 = u2 === 1, w3 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me$1;
+    let f2 = u2 === 1, w3 = f2 ? "--mobile-offset" : "--offset", S2 = f2 ? ge : me$2;
     function g2(i2) {
       ["top", "right", "bottom", "left"].forEach((D2) => {
         t2[`${w3}-${D2}`] = typeof i2 == "number" ? `${i2}px` : i2;
@@ -28086,7 +28086,7 @@ function Te$1(n2, e2) {
     }) : g2(S2);
   }), t2;
 }
-var $e = reactExports.forwardRef(function(e2, t2) {
+var $e$1 = reactExports.forwardRef(function(e2, t2) {
   let { invert: a2, position: u2 = "bottom-right", hotkey: f2 = ["altKey", "KeyT"], expand: w3, closeButton: S2, className: g2, offset: i2, mobileOffset: D2, theme: T2 = "light", richColors: F2, duration: et2, style: ut2, visibleToasts: ft2 = pe$1, toastOptions: l2, dir: ot2 = _t(), gap: at = be$1, loadingIcon: X2, icons: st2, containerAriaLabel: pt = "Notifications", pauseWhenPageIsHidden: rt } = e2, [B2, s2] = React$2.useState([]), P2 = React$2.useMemo(() => Array.from(new Set([u2].concat(B2.filter((d2) => d2.position).map((d2) => d2.position)))), [B2, u2]), [nt2, it2] = React$2.useState([]), [Y2, C2] = React$2.useState(false), [lt, J2] = React$2.useState(false), [W2, H2] = React$2.useState(T2 !== "system" ? T2 : typeof window != "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"), A2 = React$2.useRef(null), mt = f2.join("+").replace(/Key/g, "").replace(/Digit/g, ""), L2 = React$2.useRef(null), z2 = React$2.useRef(false), ct2 = React$2.useCallback((d2) => {
     s2((h2) => {
       var y2;
@@ -28156,9 +28156,9 @@ var $e = reactExports.forwardRef(function(e2, t2) {
   }));
 });
 const Toaster = ({ ...props }) => {
-  const { theme = "system" } = z$2();
+  const { theme = "system" } = z$3();
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    $e,
+    $e$1,
     {
       theme,
       className: "toaster group",
@@ -30685,20 +30685,20 @@ function createActor(canisterId, _uploadFile, _downloadFile, options = {}) {
   });
   return new Backend(actor, _uploadFile, _downloadFile, options.processError);
 }
-var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$2 = 0.1, u$1 = 0.999, $$2 = 0.9999;
-var k$2 = 0.99, m$2 = /[\\\/_+.#"@\[\(\{&]/, B$2 = /[\\\/_+.#"@\[\(\{&]/g, K$2 = /[\s-]/, X$1 = /[\s-]/g;
-function G$1(_2, C2, h2, P2, A2, f2, O2) {
+var U = 1, Y$1 = 0.9, H$1 = 0.8, J$1 = 0.17, p$2 = 0.1, u$1 = 0.999, $$3 = 0.9999;
+var k$2 = 0.99, m$2 = /[\\\/_+.#"@\[\(\{&]/, B$2 = /[\\\/_+.#"@\[\(\{&]/g, K$2 = /[\s-]/, X$2 = /[\s-]/g;
+function G$2(_2, C2, h2, P2, A2, f2, O2) {
   if (f2 === C2.length) return A2 === _2.length ? U : k$2;
   var T2 = `${A2},${f2}`;
   if (O2[T2] !== void 0) return O2[T2];
-  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$1), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$2)), (E2 < p$2 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$1(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$2 > E2 && (E2 = N2 * p$2)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
+  for (var L2 = P2.charAt(f2), c2 = h2.indexOf(L2, A2), S2 = 0, E2, N2, R2, M2; c2 >= 0; ) E2 = G$2(_2, C2, h2, P2, c2 + 1, f2 + 1, O2), E2 > S2 && (c2 === A2 ? E2 *= U : m$2.test(_2.charAt(c2 - 1)) ? (E2 *= H$1, R2 = _2.slice(A2, c2 - 1).match(B$2), R2 && A2 > 0 && (E2 *= Math.pow(u$1, R2.length))) : K$2.test(_2.charAt(c2 - 1)) ? (E2 *= Y$1, M2 = _2.slice(A2, c2 - 1).match(X$2), M2 && A2 > 0 && (E2 *= Math.pow(u$1, M2.length))) : (E2 *= J$1, A2 > 0 && (E2 *= Math.pow(u$1, c2 - A2))), _2.charAt(c2) !== C2.charAt(f2) && (E2 *= $$3)), (E2 < p$2 && h2.charAt(c2 - 1) === P2.charAt(f2 + 1) || P2.charAt(f2 + 1) === P2.charAt(f2) && h2.charAt(c2 - 1) !== P2.charAt(f2)) && (N2 = G$2(_2, C2, h2, P2, c2 + 1, f2 + 2, O2), N2 * p$2 > E2 && (E2 = N2 * p$2)), E2 > S2 && (S2 = E2), c2 = h2.indexOf(L2, c2 + 1);
   return O2[T2] = S2, S2;
 }
 function D$1(_2) {
-  return _2.toLowerCase().replace(X$1, " ");
+  return _2.toLowerCase().replace(X$2, " ");
 }
 function W$1(_2, C2, h2) {
-  return _2 = h2 && h2.length > 0 ? `${_2 + " " + h2.join(" ")}` : _2, G$1(_2, C2, D$1(_2), D$1(C2), 0, 0, {});
+  return _2 = h2 && h2.length > 0 ? `${_2 + " " + h2.join(" ")}` : _2, G$2(_2, C2, D$1(_2), D$1(C2), 0, 0, {});
 }
 function composeEventHandlers(originalEventHandler, ourEventHandler, { checkForDefaultPrevented = true } = {}) {
   return function handleEvent(event) {
@@ -30743,16 +30743,16 @@ function useComposedRefs(...refs) {
   return reactExports.useCallback(composeRefs(...refs), refs);
 }
 function createContext2(rootComponentName, defaultContext) {
-  const Context = reactExports.createContext(defaultContext);
+  const Context2 = reactExports.createContext(defaultContext);
   const Provider = (props) => {
-    const { children: children2, ...context } = props;
-    const value = reactExports.useMemo(() => context, Object.values(context));
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children: children2 });
+    const { children: children2, ...context3 } = props;
+    const value = reactExports.useMemo(() => context3, Object.values(context3));
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Context2.Provider, { value, children: children2 });
   };
   Provider.displayName = rootComponentName + "Provider";
   function useContext2(consumerName) {
-    const context = reactExports.useContext(Context);
-    if (context) return context;
+    const context3 = reactExports.useContext(Context2);
+    if (context3) return context3;
     if (defaultContext !== void 0) return defaultContext;
     throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
   }
@@ -30766,17 +30766,17 @@ function createContextScope(scopeName, createContextScopeDeps = []) {
     defaultContexts = [...defaultContexts, defaultContext];
     const Provider = (props) => {
       var _a3;
-      const { scope, children: children2, ...context } = props;
-      const Context = ((_a3 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a3[index2]) || BaseContext;
-      const value = reactExports.useMemo(() => context, Object.values(context));
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(Context.Provider, { value, children: children2 });
+      const { scope, children: children2, ...context3 } = props;
+      const Context2 = ((_a3 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a3[index2]) || BaseContext;
+      const value = reactExports.useMemo(() => context3, Object.values(context3));
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(Context2.Provider, { value, children: children2 });
     };
     Provider.displayName = rootComponentName + "Provider";
     function useContext2(consumerName, scope) {
       var _a3;
-      const Context = ((_a3 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a3[index2]) || BaseContext;
-      const context = reactExports.useContext(Context);
-      if (context) return context;
+      const Context2 = ((_a3 = scope == null ? void 0 : scope[scopeName]) == null ? void 0 : _a3[index2]) || BaseContext;
+      const context3 = reactExports.useContext(Context2);
+      if (context3) return context3;
       if (defaultContext !== void 0) return defaultContext;
       throw new Error(`\`${consumerName}\` must be used within \`${rootComponentName}\``);
     }
@@ -31064,20 +31064,20 @@ var DismissableLayer = reactExports.forwardRef(
       onDismiss,
       ...layerProps
     } = props;
-    const context = reactExports.useContext(DismissableLayerContext);
+    const context3 = reactExports.useContext(DismissableLayerContext);
     const [node2, setNode] = reactExports.useState(null);
     const ownerDocument = (node2 == null ? void 0 : node2.ownerDocument) ?? (globalThis == null ? void 0 : globalThis.document);
     const [, force] = reactExports.useState({});
     const composedRefs = useComposedRefs(forwardedRef, (node22) => setNode(node22));
-    const layers = Array.from(context.layers);
-    const [highestLayerWithOutsidePointerEventsDisabled] = [...context.layersWithOutsidePointerEventsDisabled].slice(-1);
+    const layers = Array.from(context3.layers);
+    const [highestLayerWithOutsidePointerEventsDisabled] = [...context3.layersWithOutsidePointerEventsDisabled].slice(-1);
     const highestLayerWithOutsidePointerEventsDisabledIndex = layers.indexOf(highestLayerWithOutsidePointerEventsDisabled);
     const index2 = node2 ? layers.indexOf(node2) : -1;
-    const isBodyPointerEventsDisabled = context.layersWithOutsidePointerEventsDisabled.size > 0;
+    const isBodyPointerEventsDisabled = context3.layersWithOutsidePointerEventsDisabled.size > 0;
     const isPointerEventsEnabled = index2 >= highestLayerWithOutsidePointerEventsDisabledIndex;
     const pointerDownOutside = usePointerDownOutside((event) => {
       const target = event.target;
-      const isPointerDownOnBranch = [...context.branches].some((branch) => branch.contains(target));
+      const isPointerDownOnBranch = [...context3.branches].some((branch) => branch.contains(target));
       if (!isPointerEventsEnabled || isPointerDownOnBranch) return;
       onPointerDownOutside == null ? void 0 : onPointerDownOutside(event);
       onInteractOutside == null ? void 0 : onInteractOutside(event);
@@ -31085,14 +31085,14 @@ var DismissableLayer = reactExports.forwardRef(
     }, ownerDocument);
     const focusOutside = useFocusOutside((event) => {
       const target = event.target;
-      const isFocusInBranch = [...context.branches].some((branch) => branch.contains(target));
+      const isFocusInBranch = [...context3.branches].some((branch) => branch.contains(target));
       if (isFocusInBranch) return;
       onFocusOutside == null ? void 0 : onFocusOutside(event);
       onInteractOutside == null ? void 0 : onInteractOutside(event);
       if (!event.defaultPrevented) onDismiss == null ? void 0 : onDismiss();
     }, ownerDocument);
     useEscapeKeydown((event) => {
-      const isHighestLayer = index2 === context.layers.size - 1;
+      const isHighestLayer = index2 === context3.layers.size - 1;
       if (!isHighestLayer) return;
       onEscapeKeyDown == null ? void 0 : onEscapeKeyDown(event);
       if (!event.defaultPrevented && onDismiss) {
@@ -31103,28 +31103,28 @@ var DismissableLayer = reactExports.forwardRef(
     reactExports.useEffect(() => {
       if (!node2) return;
       if (disableOutsidePointerEvents) {
-        if (context.layersWithOutsidePointerEventsDisabled.size === 0) {
+        if (context3.layersWithOutsidePointerEventsDisabled.size === 0) {
           originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;
           ownerDocument.body.style.pointerEvents = "none";
         }
-        context.layersWithOutsidePointerEventsDisabled.add(node2);
+        context3.layersWithOutsidePointerEventsDisabled.add(node2);
       }
-      context.layers.add(node2);
+      context3.layers.add(node2);
       dispatchUpdate();
       return () => {
-        if (disableOutsidePointerEvents && context.layersWithOutsidePointerEventsDisabled.size === 1) {
+        if (disableOutsidePointerEvents && context3.layersWithOutsidePointerEventsDisabled.size === 1) {
           ownerDocument.body.style.pointerEvents = originalBodyPointerEvents;
         }
       };
-    }, [node2, ownerDocument, disableOutsidePointerEvents, context]);
+    }, [node2, ownerDocument, disableOutsidePointerEvents, context3]);
     reactExports.useEffect(() => {
       return () => {
         if (!node2) return;
-        context.layers.delete(node2);
-        context.layersWithOutsidePointerEventsDisabled.delete(node2);
+        context3.layers.delete(node2);
+        context3.layersWithOutsidePointerEventsDisabled.delete(node2);
         dispatchUpdate();
       };
-    }, [node2, context]);
+    }, [node2, context3]);
     reactExports.useEffect(() => {
       const handleUpdate = () => force({});
       document.addEventListener(CONTEXT_UPDATE, handleUpdate);
@@ -31152,18 +31152,18 @@ var DismissableLayer = reactExports.forwardRef(
 DismissableLayer.displayName = DISMISSABLE_LAYER_NAME;
 var BRANCH_NAME = "DismissableLayerBranch";
 var DismissableLayerBranch = reactExports.forwardRef((props, forwardedRef) => {
-  const context = reactExports.useContext(DismissableLayerContext);
+  const context3 = reactExports.useContext(DismissableLayerContext);
   const ref = reactExports.useRef(null);
   const composedRefs = useComposedRefs(forwardedRef, ref);
   reactExports.useEffect(() => {
     const node2 = ref.current;
     if (node2) {
-      context.branches.add(node2);
+      context3.branches.add(node2);
       return () => {
-        context.branches.delete(node2);
+        context3.branches.delete(node2);
       };
     }
-  }, [context.branches]);
+  }, [context3.branches]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...props, ref: composedRefs });
 });
 DismissableLayerBranch.displayName = BRANCH_NAME;
@@ -31705,7 +31705,7 @@ function useMergeRefs(refs, defaultValue) {
 function ItoI(a2) {
   return a2;
 }
-function innerCreateMedium(defaults, middleware) {
+function innerCreateMedium(defaults2, middleware) {
   if (middleware === void 0) {
     middleware = ItoI;
   }
@@ -31719,7 +31719,7 @@ function innerCreateMedium(defaults, middleware) {
       if (buffer.length) {
         return buffer[buffer.length - 1];
       }
-      return defaults;
+      return defaults2;
     },
     useMedium: function(data) {
       var item = middleware(data, assigned);
@@ -32423,19 +32423,19 @@ var TRIGGER_NAME$5 = "DialogTrigger";
 var DialogTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...triggerProps } = props;
-    const context = useDialogContext(TRIGGER_NAME$5, __scopeDialog);
-    const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
+    const context3 = useDialogContext(TRIGGER_NAME$5, __scopeDialog);
+    const composedTriggerRef = useComposedRefs(forwardedRef, context3.triggerRef);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
         type: "button",
         "aria-haspopup": "dialog",
-        "aria-expanded": context.open,
-        "aria-controls": context.contentId,
-        "data-state": getState$1(context.open),
+        "aria-expanded": context3.open,
+        "aria-controls": context3.contentId,
+        "data-state": getState$1(context3.open),
         ...triggerProps,
         ref: composedTriggerRef,
-        onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
+        onClick: composeEventHandlers(props.onClick, context3.onOpenToggle)
       }
     );
   }
@@ -32447,8 +32447,8 @@ var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$5, 
 });
 var DialogPortal$1 = (props) => {
   const { __scopeDialog, forceMount, children: children2, container } = props;
-  const context = useDialogContext(PORTAL_NAME$5, __scopeDialog);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children2, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
+  const context3 = useDialogContext(PORTAL_NAME$5, __scopeDialog);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider$1, { scope: __scopeDialog, forceMount, children: reactExports.Children.map(children2, (child) => /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: child }) })) });
 };
 DialogPortal$1.displayName = PORTAL_NAME$5;
 var OVERLAY_NAME$1 = "DialogOverlay";
@@ -32456,8 +32456,8 @@ var DialogOverlay$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext$1(OVERLAY_NAME$1, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME$1, props.__scopeDialog);
-    return context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
+    const context3 = useDialogContext(OVERLAY_NAME$1, props.__scopeDialog);
+    return context3.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogOverlayImpl, { ...overlayProps, ref: forwardedRef }) }) : null;
   }
 );
 DialogOverlay$1.displayName = OVERLAY_NAME$1;
@@ -32465,14 +32465,14 @@ var Slot$3 = /* @__PURE__ */ createSlot$1("DialogOverlay.RemoveScroll");
 var DialogOverlayImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...overlayProps } = props;
-    const context = useDialogContext(OVERLAY_NAME$1, __scopeDialog);
+    const context3 = useDialogContext(OVERLAY_NAME$1, __scopeDialog);
     return (
       // Make sure `Content` is scrollable even when it doesn't live inside `RemoveScroll`
       // ie. when `Overlay` and `Content` are siblings
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$3, allowPinchZoom: true, shards: [context.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ReactRemoveScroll, { as: Slot$3, allowPinchZoom: true, shards: [context3.contentRef], children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         Primitive$1.div,
         {
-          "data-state": getState$1(context.open),
+          "data-state": getState$1(context3.open),
           ...overlayProps,
           ref: forwardedRef,
           style: { pointerEvents: "auto", ...overlayProps.style }
@@ -32486,16 +32486,16 @@ var DialogContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext$1(CONTENT_NAME$6, props.__scopeDialog);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: context.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
+    const context3 = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: context3.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(DialogContentNonModal, { ...contentProps, ref: forwardedRef }) });
   }
 );
 DialogContent$1.displayName = CONTENT_NAME$6;
 var DialogContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
+    const context3 = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
+    const composedRefs = useComposedRefs(forwardedRef, context3.contentRef, contentRef);
     reactExports.useEffect(() => {
       const content2 = contentRef.current;
       if (content2) return hideOthers(content2);
@@ -32505,12 +32505,12 @@ var DialogContentModal = reactExports.forwardRef(
       {
         ...props,
         ref: composedRefs,
-        trapFocus: context.open,
+        trapFocus: context3.open,
         disableOutsidePointerEvents: true,
         onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
           var _a3;
           event.preventDefault();
-          (_a3 = context.triggerRef.current) == null ? void 0 : _a3.focus();
+          (_a3 = context3.triggerRef.current) == null ? void 0 : _a3.focus();
         }),
         onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
           const originalEvent = event.detail.originalEvent;
@@ -32528,7 +32528,7 @@ var DialogContentModal = reactExports.forwardRef(
 );
 var DialogContentNonModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
+    const context3 = useDialogContext(CONTENT_NAME$6, props.__scopeDialog);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     const hasPointerDownOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -32542,7 +32542,7 @@ var DialogContentNonModal = reactExports.forwardRef(
           var _a3, _b3;
           (_a3 = props.onCloseAutoFocus) == null ? void 0 : _a3.call(props, event);
           if (!event.defaultPrevented) {
-            if (!hasInteractedOutsideRef.current) (_b3 = context.triggerRef.current) == null ? void 0 : _b3.focus();
+            if (!hasInteractedOutsideRef.current) (_b3 = context3.triggerRef.current) == null ? void 0 : _b3.focus();
             event.preventDefault();
           }
           hasInteractedOutsideRef.current = false;
@@ -32558,7 +32558,7 @@ var DialogContentNonModal = reactExports.forwardRef(
             }
           }
           const target = event.target;
-          const targetIsTrigger = (_b3 = context.triggerRef.current) == null ? void 0 : _b3.contains(target);
+          const targetIsTrigger = (_b3 = context3.triggerRef.current) == null ? void 0 : _b3.contains(target);
           if (targetIsTrigger) event.preventDefault();
           if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) {
             event.preventDefault();
@@ -32571,7 +32571,7 @@ var DialogContentNonModal = reactExports.forwardRef(
 var DialogContentImpl = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-    const context = useDialogContext(CONTENT_NAME$6, __scopeDialog);
+    const context3 = useDialogContext(CONTENT_NAME$6, __scopeDialog);
     const contentRef = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, contentRef);
     useFocusGuards();
@@ -32588,20 +32588,20 @@ var DialogContentImpl = reactExports.forwardRef(
             DismissableLayer,
             {
               role: "dialog",
-              id: context.contentId,
-              "aria-describedby": context.descriptionId,
-              "aria-labelledby": context.titleId,
-              "data-state": getState$1(context.open),
+              id: context3.contentId,
+              "aria-describedby": context3.descriptionId,
+              "aria-labelledby": context3.titleId,
+              "data-state": getState$1(context3.open),
               ...contentProps,
               ref: composedRefs,
-              onDismiss: () => context.onOpenChange(false)
+              onDismiss: () => context3.onOpenChange(false)
             }
           )
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context.titleId }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning$1, { contentRef, descriptionId: context.descriptionId })
+        /* @__PURE__ */ jsxRuntimeExports.jsx(TitleWarning, { titleId: context3.titleId }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(DescriptionWarning$1, { contentRef, descriptionId: context3.descriptionId })
       ] })
     ] });
   }
@@ -32610,8 +32610,8 @@ var TITLE_NAME$1 = "DialogTitle";
 var DialogTitle$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...titleProps } = props;
-    const context = useDialogContext(TITLE_NAME$1, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context.titleId, ...titleProps, ref: forwardedRef });
+    const context3 = useDialogContext(TITLE_NAME$1, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.h2, { id: context3.titleId, ...titleProps, ref: forwardedRef });
   }
 );
 DialogTitle$1.displayName = TITLE_NAME$1;
@@ -32619,8 +32619,8 @@ var DESCRIPTION_NAME$1 = "DialogDescription";
 var DialogDescription$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...descriptionProps } = props;
-    const context = useDialogContext(DESCRIPTION_NAME$1, __scopeDialog);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context.descriptionId, ...descriptionProps, ref: forwardedRef });
+    const context3 = useDialogContext(DESCRIPTION_NAME$1, __scopeDialog);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.p, { id: context3.descriptionId, ...descriptionProps, ref: forwardedRef });
   }
 );
 DialogDescription$1.displayName = DESCRIPTION_NAME$1;
@@ -32628,14 +32628,14 @@ var CLOSE_NAME = "DialogClose";
 var DialogClose = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDialog, ...closeProps } = props;
-    const context = useDialogContext(CLOSE_NAME, __scopeDialog);
+    const context3 = useDialogContext(CLOSE_NAME, __scopeDialog);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
         type: "button",
         ...closeProps,
         ref: forwardedRef,
-        onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
+        onClick: composeEventHandlers(props.onClick, () => context3.onOpenChange(false))
       }
     );
   }
@@ -32817,7 +32817,7 @@ var Primitive = NODES.reduce((primitive, node2) => {
   Node2.displayName = `Primitive.${node2}`;
   return { ...primitive, [node2]: Node2 };
 }, {});
-var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-heading=""]', le = '[cmdk-item=""]', ce = `${le}:not([aria-disabled="true"])`, Z = "cmdk-item-select", T$1 = "data-value", Re = (r2, o2, n2) => W$1(r2, o2, n2), ue = reactExports.createContext(void 0), K$1 = () => reactExports.useContext(ue), de = reactExports.createContext(void 0), ee = () => reactExports.useContext(de), fe = reactExports.createContext(void 0), me = reactExports.forwardRef((r2, o2) => {
+var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-heading=""]', le = '[cmdk-item=""]', ce = `${le}:not([aria-disabled="true"])`, Z = "cmdk-item-select", T$1 = "data-value", Re = (r2, o2, n2) => W$1(r2, o2, n2), ue = reactExports.createContext(void 0), K$1 = () => reactExports.useContext(ue), de$1 = reactExports.createContext(void 0), ee = () => reactExports.useContext(de$1), fe = reactExports.createContext(void 0), me$1 = reactExports.forwardRef((r2, o2) => {
   let n2 = L$1(() => {
     var e2, a2;
     return { search: "", value: (a2 = (e2 = r2.value) != null ? e2 : r2.defaultValue) != null ? a2 : "", selectedItemId: void 0, filtered: { count: 0, items: /* @__PURE__ */ new Map(), groups: /* @__PURE__ */ new Set() } };
@@ -32943,7 +32943,7 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
   }
   function re2(e2) {
     let a2 = M2(), s2 = a2 == null ? void 0 : a2.closest(N$1), i2;
-    for (; s2 && !i2; ) s2 = e2 > 0 ? we(s2, N$1) : De(s2, N$1), i2 = s2 == null ? void 0 : s2.querySelector(ce);
+    for (; s2 && !i2; ) s2 = e2 > 0 ? we(s2, N$1) : De$1(s2, N$1), i2 = s2 == null ? void 0 : s2.querySelector(ce);
     i2 ? E2.setState("value", i2.getAttribute(T$1)) : Q2(e2);
   }
   let oe2 = () => X2(V2().length - 1), ie2 = (e2) => {
@@ -32991,7 +32991,7 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
         }
       }
     }
-  } }, reactExports.createElement("label", { "cmdk-label": "", htmlFor: U2.inputId, id: U2.labelId, style: Te }, b2), B$1(r2, (e2) => reactExports.createElement(de.Provider, { value: E2 }, reactExports.createElement(ue.Provider, { value: U2 }, e2))));
+  } }, reactExports.createElement("label", { "cmdk-label": "", htmlFor: U2.inputId, id: U2.labelId, style: Te }, b2), B$1(r2, (e2) => reactExports.createElement(de$1.Provider, { value: E2 }, reactExports.createElement(ue.Provider, { value: U2 }, e2))));
 }), he = reactExports.forwardRef((r2, o2) => {
   var _2, I2;
   let n2 = useId(), u2 = reactExports.useRef(null), c2 = reactExports.useContext(fe), d2 = K$1(), f2 = pe(r2), p2 = (I2 = (_2 = f2.current) == null ? void 0 : _2.forceMount) != null ? I2 : c2 == null ? void 0 : c2.forceMount;
@@ -33045,11 +33045,11 @@ var N$1 = '[cmdk-group=""]', Y = '[cmdk-group-items=""]', be = '[cmdk-group-head
   }, []), reactExports.createElement(Primitive.div, { ref: composeRefs(d2, o2), ...c2, "cmdk-list": "", role: "listbox", tabIndex: -1, "aria-activedescendant": p2, "aria-label": u2, id: b2.listId }, B$1(r2, (m2) => reactExports.createElement("div", { ref: composeRefs(f2, b2.listInnerRef), "cmdk-list-sizer": "" }, m2)));
 }), xe = reactExports.forwardRef((r2, o2) => {
   let { open: n2, onOpenChange: u2, overlayClassName: c2, contentClassName: d2, container: f2, ...p2 } = r2;
-  return reactExports.createElement(Root$5, { open: n2, onOpenChange: u2 }, reactExports.createElement(Portal$2, { container: f2 }, reactExports.createElement(Overlay, { "cmdk-overlay": "", className: c2 }), reactExports.createElement(Content$1, { "aria-label": r2.label, "cmdk-dialog": "", className: d2 }, reactExports.createElement(me, { ref: o2, ...p2 }))));
+  return reactExports.createElement(Root$5, { open: n2, onOpenChange: u2 }, reactExports.createElement(Portal$2, { container: f2 }, reactExports.createElement(Overlay, { "cmdk-overlay": "", className: c2 }), reactExports.createElement(Content$1, { "aria-label": r2.label, "cmdk-dialog": "", className: d2 }, reactExports.createElement(me$1, { ref: o2, ...p2 }))));
 }), Ie = reactExports.forwardRef((r2, o2) => P$1((u2) => u2.filtered.count === 0) ? reactExports.createElement(Primitive.div, { ref: o2, ...r2, "cmdk-empty": "", role: "presentation" }) : null), Pe = reactExports.forwardRef((r2, o2) => {
   let { progress: n2, children: u2, label: c2 = "Loading...", ...d2 } = r2;
   return reactExports.createElement(Primitive.div, { ref: o2, ...d2, "cmdk-loading": "", role: "progressbar", "aria-valuenow": n2, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": c2 }, B$1(r2, (f2) => reactExports.createElement("div", { "aria-hidden": true }, f2)));
-}), _e = Object.assign(me, { List: Ce, Item: he, Input: Se, Group: Ee, Separator: ye, Dialog: xe, Empty: Ie, Loading: Pe });
+}), _e = Object.assign(me$1, { List: Ce, Item: he, Input: Se, Group: Ee, Separator: ye, Dialog: xe, Empty: Ie, Loading: Pe });
 function we(r2, o2) {
   let n2 = r2.nextElementSibling;
   for (; n2; ) {
@@ -33057,7 +33057,7 @@ function we(r2, o2) {
     n2 = n2.nextElementSibling;
   }
 }
-function De(r2, o2) {
+function De$1(r2, o2) {
   let n2 = r2.previousElementSibling;
   for (; n2; ) {
     if (n2.matches(o2)) return n2;
@@ -33214,55 +33214,32 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$o = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$o);
+const __iconNode$m = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$m);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$n = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$n);
+const __iconNode$l = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$l);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$m = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-const ChevronRight = createLucideIcon("chevron-right", __iconNode$m);
+const __iconNode$k = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+const ChevronRight = createLucideIcon("chevron-right", __iconNode$k);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$l = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
-const ChevronUp = createLucideIcon("chevron-up", __iconNode$l);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$k = [
-  ["path", { d: "M21.801 10A10 10 0 1 1 17 3.335", key: "yps3ct" }],
-  ["path", { d: "m9 11 3 3L22 4", key: "1pflzl" }]
-];
-const CircleCheckBig = createLucideIcon("circle-check-big", __iconNode$k);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$j = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
-  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
-];
-const CircleX = createLucideIcon("circle-x", __iconNode$j);
+const __iconNode$j = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
+const ChevronUp = createLucideIcon("chevron-up", __iconNode$j);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33270,10 +33247,10 @@ const CircleX = createLucideIcon("circle-x", __iconNode$j);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$i = [
-  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
-  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
+  ["path", { d: "M21.801 10A10 10 0 1 1 17 3.335", key: "yps3ct" }],
+  ["path", { d: "m9 11 3 3L22 4", key: "1pflzl" }]
 ];
-const Copy = createLucideIcon("copy", __iconNode$i);
+const CircleCheckBig = createLucideIcon("circle-check-big", __iconNode$i);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33281,11 +33258,11 @@ const Copy = createLucideIcon("copy", __iconNode$i);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$h = [
-  ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
-  ["path", { d: "M10 14 21 3", key: "gplh6r" }],
-  ["path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", key: "a6xqqp" }]
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
+  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
 ];
-const ExternalLink = createLucideIcon("external-link", __iconNode$h);
+const CircleX = createLucideIcon("circle-x", __iconNode$h);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33293,13 +33270,10 @@ const ExternalLink = createLucideIcon("external-link", __iconNode$h);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$g = [
-  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
-  ["path", { d: "M10 9H8", key: "b1mrlr" }],
-  ["path", { d: "M16 13H8", key: "t4e002" }],
-  ["path", { d: "M16 17H8", key: "z1uh3a" }]
+  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
+  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
 ];
-const FileText = createLucideIcon("file-text", __iconNode$g);
+const Copy = createLucideIcon("copy", __iconNode$g);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33307,10 +33281,11 @@ const FileText = createLucideIcon("file-text", __iconNode$g);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$f = [
-  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }]
+  ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
+  ["path", { d: "M10 14 21 3", key: "gplh6r" }],
+  ["path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", key: "a6xqqp" }]
 ];
-const File = createLucideIcon("file", __iconNode$f);
+const ExternalLink = createLucideIcon("external-link", __iconNode$f);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33318,15 +33293,13 @@ const File = createLucideIcon("file", __iconNode$f);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$e = [
-  [
-    "path",
-    {
-      d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
-      key: "usdka0"
-    }
-  ]
+  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
+  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
+  ["path", { d: "M10 9H8", key: "b1mrlr" }],
+  ["path", { d: "M16 13H8", key: "t4e002" }],
+  ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-const FolderOpen = createLucideIcon("folder-open", __iconNode$e);
+const FileText = createLucideIcon("file-text", __iconNode$e);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33334,17 +33307,10 @@ const FolderOpen = createLucideIcon("folder-open", __iconNode$e);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$d = [
-  ["path", { d: "M12 10v6", key: "1bos4e" }],
-  ["path", { d: "M9 13h6", key: "1uhe8q" }],
-  [
-    "path",
-    {
-      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
-      key: "1kt360"
-    }
-  ]
+  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
+  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }]
 ];
-const FolderPlus = createLucideIcon("folder-plus", __iconNode$d);
+const File = createLucideIcon("file", __iconNode$d);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33355,32 +33321,36 @@ const __iconNode$c = [
   [
     "path",
     {
+      d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
+      key: "usdka0"
+    }
+  ]
+];
+const FolderOpen = createLucideIcon("folder-open", __iconNode$c);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$b = [
+  [
+    "path",
+    {
       d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
       key: "1kt360"
     }
   ]
 ];
-const Folder = createLucideIcon("folder", __iconNode$c);
+const Folder = createLucideIcon("folder", __iconNode$b);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$b = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
-const LoaderCircle = createLucideIcon("loader-circle", __iconNode$b);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$a = [
-  ["path", { d: "M4 12h16", key: "1lakjw" }],
-  ["path", { d: "M4 18h16", key: "19g7jn" }],
-  ["path", { d: "M4 6h16", key: "1o0s65" }]
-];
-const Menu$1 = createLucideIcon("menu", __iconNode$a);
+const __iconNode$a = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
+const LoaderCircle = createLucideIcon("loader-circle", __iconNode$a);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33388,9 +33358,11 @@ const Menu$1 = createLucideIcon("menu", __iconNode$a);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$9 = [
-  ["path", { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z", key: "1lielz" }]
+  ["path", { d: "M4 12h16", key: "1lakjw" }],
+  ["path", { d: "M4 18h16", key: "19g7jn" }],
+  ["path", { d: "M4 6h16", key: "1o0s65" }]
 ];
-const MessageSquare = createLucideIcon("message-square", __iconNode$9);
+const Menu$1 = createLucideIcon("menu", __iconNode$9);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33398,9 +33370,9 @@ const MessageSquare = createLucideIcon("message-square", __iconNode$9);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$8 = [
-  ["path", { d: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z", key: "a7tn18" }]
+  ["path", { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z", key: "1lielz" }]
 ];
-const Moon = createLucideIcon("moon", __iconNode$8);
+const MessageSquare = createLucideIcon("message-square", __iconNode$8);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33408,10 +33380,9 @@ const Moon = createLucideIcon("moon", __iconNode$8);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$7 = [
-  ["path", { d: "M5 12h14", key: "1ays0h" }],
-  ["path", { d: "M12 5v14", key: "s699le" }]
+  ["path", { d: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z", key: "a7tn18" }]
 ];
-const Plus = createLucideIcon("plus", __iconNode$7);
+const Moon = createLucideIcon("moon", __iconNode$7);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33419,10 +33390,10 @@ const Plus = createLucideIcon("plus", __iconNode$7);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$6 = [
-  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
-  ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
+  ["path", { d: "M5 12h14", key: "1ays0h" }],
+  ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$6);
+const Plus = createLucideIcon("plus", __iconNode$6);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33430,10 +33401,10 @@ const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$6);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$5 = [
-  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
-  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
+  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+  ["path", { d: "M3 3v5h5", key: "1xhq8a" }]
 ];
-const Search = createLucideIcon("search", __iconNode$5);
+const RotateCcw = createLucideIcon("rotate-ccw", __iconNode$5);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33441,6 +33412,17 @@ const Search = createLucideIcon("search", __iconNode$5);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$4 = [
+  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
+  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
+];
+const Search = createLucideIcon("search", __iconNode$4);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$3 = [
   [
     "path",
     {
@@ -33450,14 +33432,14 @@ const __iconNode$4 = [
   ],
   ["path", { d: "m21.854 2.147-10.94 10.939", key: "12cjpa" }]
 ];
-const Send = createLucideIcon("send", __iconNode$4);
+const Send = createLucideIcon("send", __iconNode$3);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$3 = [
+const __iconNode$2 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -33468,21 +33450,7 @@ const __iconNode$3 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-const Sun = createLucideIcon("sun", __iconNode$3);
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$2 = [
-  ["path", { d: "M3 6h18", key: "d0wm0j" }],
-  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
-  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
-  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
-  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
-];
-const Trash2 = createLucideIcon("trash-2", __iconNode$2);
+const Sun = createLucideIcon("sun", __iconNode$2);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33490,11 +33458,13 @@ const Trash2 = createLucideIcon("trash-2", __iconNode$2);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$1 = [
-  ["path", { d: "M12 3v12", key: "1x0j5s" }],
-  ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
-  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
 ];
-const Upload = createLucideIcon("upload", __iconNode$1);
+const Trash2 = createLucideIcon("trash-2", __iconNode$1);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -33505,7 +33475,7 @@ const __iconNode = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-const X = createLucideIcon("x", __iconNode);
+const X$1 = createLucideIcon("x", __iconNode);
 function r$1(e2) {
   var t2, f2, n2 = "";
   if ("string" == typeof e2 || "number" == typeof e2) n2 += e2;
@@ -33520,12 +33490,12 @@ function clsx() {
   return n2;
 }
 const CLASS_PART_SEPARATOR = "-";
-const createClassGroupUtils = (config) => {
-  const classMap = createClassMap(config);
+const createClassGroupUtils = (config3) => {
+  const classMap = createClassMap(config3);
   const {
     conflictingClassGroups,
     conflictingClassGroupModifiers
-  } = config;
+  } = config3;
   const getClassGroupId = (className) => {
     const classParts = className.split(CLASS_PART_SEPARATOR);
     if (classParts[0] === "" && classParts.length !== 1) {
@@ -33574,16 +33544,16 @@ const getGroupIdForArbitraryProperty = (className) => {
     }
   }
 };
-const createClassMap = (config) => {
+const createClassMap = (config3) => {
   const {
     theme,
     prefix: prefix2
-  } = config;
+  } = config3;
   const classMap = {
     nextPart: /* @__PURE__ */ new Map(),
     validators: []
   };
-  const prefixedClassGroupEntries = getPrefixedClassGroupEntries(Object.entries(config.classGroups), prefix2);
+  const prefixedClassGroupEntries = getPrefixedClassGroupEntries(Object.entries(config3.classGroups), prefix2);
   prefixedClassGroupEntries.forEach(([classGroupId, classGroup]) => {
     processClassesRecursively(classGroup, classMap, classGroupId, theme);
   });
@@ -33684,11 +33654,11 @@ const createLruCache = (maxCacheSize) => {
   };
 };
 const IMPORTANT_MODIFIER = "!";
-const createParseClassName = (config) => {
+const createParseClassName = (config3) => {
   const {
     separator,
     experimentalParseClassName
-  } = config;
+  } = config3;
   const isSeparatorSingleCharacter = separator.length === 1;
   const firstSeparatorCharacter = separator[0];
   const separatorLength = separator.length;
@@ -33753,10 +33723,10 @@ const sortModifiers = (modifiers) => {
   sortedModifiers.push(...unsortedModifiers.sort());
   return sortedModifiers;
 };
-const createConfigUtils = (config) => ({
-  cache: createLruCache(config.cacheSize),
-  parseClassName: createParseClassName(config),
-  ...createClassGroupUtils(config)
+const createConfigUtils = (config3) => ({
+  cache: createLruCache(config3.cacheSize),
+  parseClassName: createParseClassName(config3),
+  ...createClassGroupUtils(config3)
 });
 const SPLIT_CLASSES_REGEX = /\s+/;
 const mergeClassList = (classList2, configUtils) => {
@@ -33843,8 +33813,8 @@ function createTailwindMerge(createConfigFirst, ...createConfigRest) {
   let cacheSet;
   let functionToCall = initTailwindMerge;
   function initTailwindMerge(classList2) {
-    const config = createConfigRest.reduce((previousConfig, createConfigCurrent) => createConfigCurrent(previousConfig), createConfigFirst());
-    configUtils = createConfigUtils(config);
+    const config3 = createConfigRest.reduce((previousConfig, createConfigCurrent) => createConfigCurrent(previousConfig), createConfigFirst());
+    configUtils = createConfigUtils(config3);
     cacheGet = configUtils.cache.get;
     cacheSet = configUtils.cache.set;
     functionToCall = tailwindMerge;
@@ -36032,7 +36002,7 @@ function DialogContent({
               "data-slot": "dialog-close",
               className: "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
               children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(X, {}),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, {}),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "sr-only", children: "Close" })
               ]
             }
@@ -38080,10 +38050,10 @@ function Footer() {
 }
 const falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
 const cx = clsx;
-const cva = (base, config) => (props) => {
+const cva = (base, config3) => (props) => {
   var _config_compoundVariants;
-  if ((config === null || config === void 0 ? void 0 : config.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
-  const { variants, defaultVariants } = config;
+  if ((config3 === null || config3 === void 0 ? void 0 : config3.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
+  const { variants, defaultVariants } = config3;
   const getVariantClassNames = Object.keys(variants).map((variant) => {
     const variantProp = props === null || props === void 0 ? void 0 : props[variant];
     const defaultVariantProp = defaultVariants === null || defaultVariants === void 0 ? void 0 : defaultVariants[variant];
@@ -38099,7 +38069,7 @@ const cva = (base, config) => (props) => {
     acc[key2] = value;
     return acc;
   }, {});
-  const getCompoundVariantClassNames = config === null || config === void 0 ? void 0 : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
+  const getCompoundVariantClassNames = config3 === null || config3 === void 0 ? void 0 : (_config_compoundVariants = config3.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
     let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
     return Object.entries(compoundVariantOptions).every((param2) => {
       let [key2, value] = param2;
@@ -38118,6 +38088,253 @@ const cva = (base, config) => (props) => {
   }, []);
   return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
 };
+(function() {
+  try {
+    if (typeof document < "u") {
+      var t2 = document.createElement("style");
+      t2.appendChild(document.createTextNode('.soft-btn{--button-raise-level: 14px;--press-inset: 5px;--press-compensated: 0px;--button-hover-pressure: 2;--transform-speed: .16s;--radius: 14px;--surface-color: #f3f4f6;--side-color: #d1d5db;--text-color: #111827;--border-color: rgba(0, 0, 0, .35);--border-width: 2px;--glare-rgb: 255, 255, 255;--glare-alpha: 0;--glare-width: 0;--edge-aa: 0px;position:relative;border:none;background:transparent;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}.soft-btn:focus{outline:none}.soft-btn:focus-visible .soft-btn__content{outline:2px solid #2563eb;outline-offset:3px}.soft-btn__wrapper{position:relative;display:block;width:100%;height:100%;transform-style:preserve-3d}.soft-btn__wrapper:before{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(100% - var(--button-raise-level));background:var(--side-color);border-radius:var(--radius);z-index:1}.soft-btn--active .soft-btn__wrapper:before{border-radius:var(--radius)}.soft-btn__content{position:relative;width:100%;height:calc(100% - var(--button-raise-level));background:var(--surface-color);color:var(--text-color);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;transform:translateY(0);transition:transform var(--transform-speed) ease-out;will-change:transform;backface-visibility:hidden;transform-origin:center;z-index:2;box-shadow:inset 0 0 0 var(--border-width) var(--border-color),0 0 var(--edge-aa) #00000073}.soft-btn__inner{display:inline-flex;align-items:center;justify-content:center;gap:10px;z-index:4;width:100%;height:100%}.soft-btn--middle .soft-btn__content{transform:translateY(calc(1px * var(--button-hover-pressure)))}.soft-btn--left .soft-btn__content{transform:skewY(calc(-1deg * var(--button-hover-pressure)))}.soft-btn--right .soft-btn__content{transform:skewY(calc(1deg * var(--button-hover-pressure)))}.soft-btn--left,.soft-btn--right{--edge-aa: 1px}.soft-btn--active .soft-btn__content{transform:translateY(var(--press-inset));transition:transform calc(var(--transform-speed) * .8) ease-out}.soft-btn--press-tilt.soft-btn--active.soft-btn--left .soft-btn__content{transform:skewY(calc(-1deg * var(--button-hover-pressure))) translateY(var(--press-compensated))}.soft-btn--press-tilt.soft-btn--active.soft-btn--right .soft-btn__content{transform:skewY(calc(1deg * var(--button-hover-pressure))) translateY(var(--press-compensated))}.soft-btn--disabled{opacity:.6;cursor:not-allowed}.soft-btn--disabled .soft-btn__content:after{opacity:0}.soft-btn__content:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,rgba(var(--glare-rgb),0) calc(50% - var(--glare-width) * 1%),rgba(var(--glare-rgb),calc(var(--glare-alpha) * .5)) calc(50% - var(--glare-width) * .5%),rgba(var(--glare-rgb),var(--glare-alpha)) 50%,rgba(var(--glare-rgb),calc(var(--glare-alpha) * .5)) calc(50% + var(--glare-width) * .5%),rgba(var(--glare-rgb),0) calc(50% + var(--glare-width) * 1%));background-size:200% 100%;background-position:50% 50%;opacity:0;transition:opacity .16s ease,background-position var(--transform-speed) ease;z-index:3}.soft-btn--right .soft-btn__content:after{opacity:1;background-position:0% 50%}.soft-btn--middle .soft-btn__content:after{opacity:1;background-position:50% 50%}.soft-btn--left .soft-btn__content:after{opacity:1;background-position:100% 50%}.soft-btn--active .soft-btn__content:after{opacity:1;background:rgba(var(--glare-rgb),var(--glare-alpha));background-position:50% 50%}@supports (-moz-appearance: none){.soft-btn--left,.soft-btn--right{--edge-aa: 1.25px}}@media(prefers-reduced-motion:reduce){.soft-btn__content{transition:none}.soft-btn__content:after{transition:none}}')), document.head.appendChild(t2);
+    }
+  } catch (e2) {
+    console.error("vite-plugin-css-injected-by-js", e2);
+  }
+})();
+var X = { exports: {} }, $$2 = {};
+var ie;
+function $e() {
+  if (ie) return $$2;
+  ie = 1;
+  var u2 = /* @__PURE__ */ Symbol.for("react.transitional.element"), c2 = /* @__PURE__ */ Symbol.for("react.fragment");
+  function n2(E2, i2, f2) {
+    var T2 = null;
+    if (f2 !== void 0 && (T2 = "" + f2), i2.key !== void 0 && (T2 = "" + i2.key), "key" in i2) {
+      f2 = {};
+      for (var C2 in i2)
+        C2 !== "key" && (f2[C2] = i2[C2]);
+    } else f2 = i2;
+    return i2 = f2.ref, {
+      $$typeof: u2,
+      type: E2,
+      key: T2,
+      ref: i2 !== void 0 ? i2 : null,
+      props: f2
+    };
+  }
+  return $$2.Fragment = c2, $$2.jsx = n2, $$2.jsxs = n2, $$2;
+}
+var de;
+function De() {
+  return de || (de = 1, X.exports = $e()), X.exports;
+}
+var z$2 = De();
+const me = {
+  solid: {
+    surfaceColor: "#3b82f6",
+    sideColor: "#1d4ed8",
+    textColor: "#ffffff",
+    borderColor: "transparent",
+    borderWidth: 0
+  },
+  outline: {
+    surfaceColor: "#ffffff",
+    sideColor: "#2563eb",
+    textColor: "#2563eb",
+    borderColor: "#2563eb",
+    borderWidth: 3
+  },
+  dark: {
+    surfaceColor: "#181818",
+    sideColor: "#494949",
+    textColor: "#e5e7eb",
+    borderColor: "#5e5e5e",
+    borderWidth: 3
+  },
+  arcade: {
+    surfaceColor: "#22b8c7",
+    sideColor: "#e5dd4a",
+    textColor: "#fef08a",
+    borderColor: "#fef08a",
+    borderWidth: 3
+  },
+  gum: {
+    surfaceColor: "#f472b6",
+    sideColor: "#db2777",
+    textColor: "#ffffff",
+    borderColor: "transparent",
+    borderWidth: 0
+  },
+  carbon: {
+    surfaceColor: "#2a2a37",
+    sideColor: "#8b5e3c",
+    textColor: "#c4a484",
+    borderColor: "#8b5f39",
+    borderWidth: 4
+  },
+  warning: {
+    surfaceColor: "#2c2c39",
+    sideColor: "#b22b3b",
+    textColor: "#fff7ed",
+    borderColor: "#d9445b",
+    borderWidth: 4
+  },
+  steel: {
+    surfaceColor: "#cbd5e1",
+    sideColor: "#64748b",
+    textColor: "#020617",
+    borderColor: "#475569",
+    borderWidth: 2
+  },
+  gold: {
+    surfaceColor: "#ffcf10",
+    sideColor: "#d29000",
+    textColor: "#422006",
+    borderColor: "#fff0a8",
+    borderWidth: 2
+  },
+  lavender: {
+    surfaceColor: "#cec3fd",
+    sideColor: "#b489ff",
+    textColor: "#2e1065",
+    borderColor: "#a36eff",
+    borderWidth: 4
+  }
+};
+function G$1(u2, c2, n2) {
+  return Math.max(c2, Math.min(n2, u2));
+}
+function Ve({
+  children: u2,
+  onClick: c2,
+  disabled: n2 = false,
+  variant: E2 = "solid",
+  elevation: i2 = 14,
+  pressInset: f2 = 5,
+  tilt: T2 = 2,
+  pressTilt: C2 = true,
+  motion: H2 = 160,
+  width: g2 = 260,
+  height: x3 = 64,
+  radius: D2 = 14,
+  surfaceColor: Y2,
+  sideColor: w3,
+  textColor: U2,
+  borderColor: A2,
+  borderWidth: h2,
+  glareColor: K2 = "#ffffff",
+  glareOpacity: Z2 = 0,
+  glareWidth: Q2 = 0,
+  className: ee2 = "",
+  type: re2 = "button",
+  style: O2,
+  ...te2
+}) {
+  var _a3, _b3;
+  const P2 = reactExports.useRef(null), [S2, _2] = reactExports.useState(false), [F2, m2] = reactExports.useState(null), N2 = reactExports.useRef(0), l2 = reactExports.useRef(null), b2 = reactExports.useRef(null);
+  reactExports.useEffect(() => () => clearTimeout(l2.current), []), reactExports.useEffect(() => {
+    n2 && (l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), _2(false), m2(null));
+  }, [n2]);
+  const j2 = Math.max(0, Number(x3) || 0), L2 = Math.max(0, Number(i2) || 0), V2 = j2 * 0.3, y2 = G$1(L2, 0, V2), e2 = Math.max(0, Number(f2) || 0), r2 = G$1(e2, 0, y2), o2 = Math.max(0, Number(T2) || 0), a2 = Number((y2 / 9).toFixed(2)), k2 = G$1(o2, 0, a2), s2 = ((_b3 = (_a3 = P2.current) == null ? void 0 : _a3.getBoundingClientRect()) == null ? void 0 : _b3.width) || Number(g2) || 0, v2 = k2 * Math.PI / 180, M2 = s2 / 2 * Math.tan(v2), ne2 = Math.max(0, r2 - M2), be2 = j2 - y2, pe2 = Math.max(0, Math.floor(be2 / 4)), Ee2 = Math.max(0, Number(D2) || 0), _e3 = G$1(Ee2, 0, pe2), ae2 = Math.max(0, Number(H2) || 0), ve2 = ae2;
+  function se2(t2, d2) {
+    const p2 = d2.getBoundingClientRect(), R2 = t2.clientX - p2.left, le2 = p2.width || 1;
+    return R2 < le2 * 0.33 ? "left" : R2 > le2 * 0.66 ? "right" : "middle";
+  }
+  const Re2 = (t2) => {
+    if (n2 || t2.button !== 0 && t2.pointerType === "mouse") return;
+    const d2 = P2.current;
+    if (!d2) return;
+    l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null, _2(false), m2(null)), d2.setPointerCapture(t2.pointerId), N2.current = Date.now();
+    const p2 = se2(t2, d2);
+    m2((R2) => R2 === p2 ? R2 : p2), _2(true);
+  }, Te2 = (t2) => {
+    if (n2 || t2.pointerType !== "mouse") return;
+    const d2 = P2.current;
+    if (!d2) return;
+    const p2 = se2(t2, d2);
+    m2((R2) => R2 === p2 ? R2 : p2);
+  }, q2 = reactExports.useCallback((t2) => {
+    const d2 = P2.current;
+    try {
+      (d2 == null ? void 0 : d2.hasPointerCapture(t2.pointerId)) && d2.releasePointerCapture(t2.pointerId);
+    } catch {
+    }
+    _2(false), m2(null);
+  }, []), Ce2 = (t2) => {
+    if (n2) return;
+    const d2 = Date.now() - N2.current, p2 = ve2 - d2;
+    p2 > 0 ? (b2.current = t2, l2.current = setTimeout(() => {
+      l2.current = null, q2(b2.current), b2.current = null;
+    }, p2)) : q2(t2);
+  }, xe2 = (t2) => {
+    n2 || (l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), q2(t2));
+  }, he2 = (t2) => {
+    l2.current && (clearTimeout(l2.current), l2.current = null, b2.current = null), q2(t2);
+  }, Pe2 = (t2) => {
+    if (!n2 && (t2.key === "Enter" || t2.key === " ")) {
+      if (t2.key === " " && t2.preventDefault(), t2.repeat) return;
+      _2(true), m2("middle");
+    }
+  }, ye2 = (t2) => {
+    n2 || (t2.key === "Enter" || t2.key === " ") && (_2(false), m2(null));
+  }, ke2 = (t2) => {
+    n2 || (c2 == null ? void 0 : c2(t2));
+  }, I2 = me[E2] || me.solid, ge2 = Y2 ?? I2.surfaceColor, we2 = w3 ?? I2.sideColor, Ae = U2 ?? I2.textColor, Oe = typeof A2 == "string" && A2.trim() !== "" ? A2 : I2.borderColor || "transparent", Se2 = typeof h2 == "number" && h2 >= 0 ? h2 : I2.borderWidth ?? 0, Ne = {
+    ...{
+      "--button-raise-level": `${y2}px`,
+      "--press-inset": `${r2}px`,
+      "--press-compensated": `${ne2}px`,
+      "--button-hover-pressure": k2,
+      "--transform-speed": `${ae2}ms`,
+      "--radius": `${_e3}px`,
+      "--surface-color": ge2,
+      "--side-color": we2,
+      "--text-color": Ae,
+      "--border-color": Oe,
+      "--border-width": `${Se2}px`,
+      "--glare-rgb": Ye(K2),
+      "--glare-alpha": Z2,
+      "--glare-width": Q2,
+      width: typeof g2 == "number" ? `${g2}px` : g2,
+      height: typeof x3 == "number" ? `${x3}px` : x3
+    },
+    ...O2 && typeof O2 == "object" ? O2 : {}
+  }, je = [
+    "soft-btn",
+    S2 && "soft-btn--active",
+    F2 && `soft-btn--${F2}`,
+    n2 && "soft-btn--disabled",
+    C2 && "soft-btn--press-tilt",
+    ee2
+  ].filter(Boolean).join(" ");
+  return /* @__PURE__ */ z$2.jsx(
+    "button",
+    {
+      ...te2,
+      ref: P2,
+      type: re2,
+      className: je,
+      style: Ne,
+      "aria-disabled": n2 || void 0,
+      onPointerDown: Re2,
+      onPointerMove: Te2,
+      onPointerUp: Ce2,
+      onPointerLeave: xe2,
+      onPointerCancel: he2,
+      onKeyDown: Pe2,
+      onKeyUp: ye2,
+      onClick: ke2,
+      disabled: n2,
+      children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__wrapper", children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__content", children: /* @__PURE__ */ z$2.jsx("span", { className: "soft-btn__inner", children: u2 }) }) })
+    }
+  );
+}
+function Ye(u2) {
+  if (!u2 || typeof u2 != "string")
+    return "255,255,255";
+  let c2 = u2.replace("#", "");
+  if (c2.length === 3 && (c2 = c2.split("").map((f2) => f2 + f2).join("")), c2.length !== 6)
+    return "255,255,255";
+  const n2 = parseInt(c2.slice(0, 2), 16), E2 = parseInt(c2.slice(2, 4), 16), i2 = parseInt(c2.slice(4, 6), 16);
+  return `${n2},${E2},${i2}`;
+}
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
@@ -38143,20 +38360,117 @@ const buttonVariants = cva(
     }
   }
 );
+const variantTiltMap = {
+  default: {
+    variant: "solid",
+    surfaceColor: "var(--primary)",
+    sideColor: "color-mix(in srgb, var(--primary), #000 25%)",
+    textColor: "var(--primary-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6
+  },
+  destructive: {
+    variant: "solid",
+    surfaceColor: "var(--destructive)",
+    sideColor: "color-mix(in srgb, var(--destructive), #000 25%)",
+    textColor: "var(--destructive-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6
+  },
+  outline: {
+    variant: "outline",
+    surfaceColor: "var(--background)",
+    sideColor: "color-mix(in srgb, var(--muted), #000 15%)",
+    textColor: "var(--foreground)",
+    borderColor: "var(--border)",
+    borderWidth: 1,
+    elevation: 8,
+    pressInset: 3,
+    tilt: 1,
+    radius: 6
+  },
+  secondary: {
+    variant: "solid",
+    surfaceColor: "var(--secondary)",
+    sideColor: "color-mix(in srgb, var(--secondary), #000 25%)",
+    textColor: "var(--secondary-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6
+  },
+  ghost: {
+    variant: "solid",
+    surfaceColor: "transparent",
+    sideColor: "transparent",
+    textColor: "var(--foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 0,
+    pressInset: 0,
+    tilt: 0,
+    radius: 4
+  },
+  link: {
+    variant: "solid",
+    surfaceColor: "transparent",
+    sideColor: "transparent",
+    textColor: "var(--primary)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 0,
+    pressInset: 0,
+    tilt: 0,
+    radius: 0
+  }
+};
 function Button({
   className,
   variant,
   size: size2,
   asChild = false,
+  children: children2,
   ...props
 }) {
-  const Comp = asChild ? Slot$2 : "button";
+  if (asChild) {
+    const Comp = Slot$2;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Comp,
+      {
+        "data-slot": "button",
+        className: cn(buttonVariants({ variant, size: size2, className })),
+        ...props,
+        children: children2
+      }
+    );
+  }
+  const tiltVariant = variant ?? "default";
+  const tiltSize = size2 ?? "default";
+  const tiltProps = variantTiltMap[tiltVariant] ?? variantTiltMap.default;
+  const width = tiltSize === "icon" ? 36 : "auto";
+  const heightMap = { default: 36, sm: 32, lg: 40, icon: 36 };
+  const height = heightMap[tiltSize] ?? heightMap.default;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Comp,
+    Ve,
     {
       "data-slot": "button",
-      className: cn(buttonVariants({ variant, size: size2, className })),
-      ...props
+      ...tiltProps,
+      width,
+      height,
+      motion: 120,
+      className: cn("font-mono text-xs", className),
+      ...props,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center gap-1.5 text-xs font-mono", children: children2 })
     }
   );
 }
@@ -38179,8 +38493,8 @@ function createCollection(name) {
   const CollectionSlot = React$2.forwardRef(
     (props, forwardedRef) => {
       const { scope, children: children2 } = props;
-      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
-      const composedRefs = useComposedRefs(forwardedRef, context.collectionRef);
+      const context3 = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs(forwardedRef, context3.collectionRef);
       return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionSlotImpl, { ref: composedRefs, children: children2 });
     }
   );
@@ -38193,27 +38507,27 @@ function createCollection(name) {
       const { scope, children: children2, ...itemData } = props;
       const ref = React$2.useRef(null);
       const composedRefs = useComposedRefs(forwardedRef, ref);
-      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+      const context3 = useCollectionContext(ITEM_SLOT_NAME, scope);
       React$2.useEffect(() => {
-        context.itemMap.set(ref, { ref, ...itemData });
-        return () => void context.itemMap.delete(ref);
+        context3.itemMap.set(ref, { ref, ...itemData });
+        return () => void context3.itemMap.delete(ref);
       });
       return /* @__PURE__ */ jsxRuntimeExports.jsx(CollectionItemSlotImpl, { ...{ [ITEM_DATA_ATTR]: "" }, ref: composedRefs, children: children2 });
     }
   );
   CollectionItemSlot.displayName = ITEM_SLOT_NAME;
   function useCollection2(scope) {
-    const context = useCollectionContext(name + "CollectionConsumer", scope);
+    const context3 = useCollectionContext(name + "CollectionConsumer", scope);
     const getItems = React$2.useCallback(() => {
-      const collectionNode = context.collectionRef.current;
+      const collectionNode = context3.collectionRef.current;
       if (!collectionNode) return [];
       const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
-      const items = Array.from(context.itemMap.values());
+      const items = Array.from(context3.itemMap.values());
       const orderedItems = items.sort(
         (a2, b2) => orderedNodes.indexOf(a2.ref.current) - orderedNodes.indexOf(b2.ref.current)
       );
       return orderedItems;
-    }, [context.collectionRef, context.itemMap]);
+    }, [context3.collectionRef, context3.itemMap]);
     return getItems;
   }
   return [
@@ -38242,7 +38556,7 @@ const oppositeSideMap = {
   bottom: "top",
   top: "bottom"
 };
-function clamp$1(start2, value, end) {
+function clamp$2(start2, value, end) {
   return max$2(start2, min$2(value, end));
 }
 function evaluate(value, param) {
@@ -38466,13 +38780,13 @@ async function detectOverflow(state, options) {
   };
 }
 const MAX_RESET_COUNT = 50;
-const computePosition$1 = async (reference, floating, config) => {
+const computePosition$1 = async (reference, floating, config3) => {
   const {
     placement = "bottom",
     strategy = "absolute",
     middleware = [],
     platform: platform2
-  } = config;
+  } = config3;
   const platformWithDetectOverflow = platform2.detectOverflow ? platform2 : {
     ...platform2,
     detectOverflow
@@ -38599,7 +38913,7 @@ const arrow$3 = (options) => ({
     const min$12 = minPadding;
     const max2 = clientSize - arrowDimensions[length] - maxPadding;
     const center = clientSize / 2 - arrowDimensions[length] / 2 + centerToReference;
-    const offset2 = clamp$1(min$12, center, max2);
+    const offset2 = clamp$2(min$12, center, max2);
     const shouldAddOffset = !middlewareData.arrow && getAlignment(placement) != null && center !== offset2 && rects.reference[length] / 2 - (center < min$12 ? minPadding : maxPadding) - arrowDimensions[length] / 2 < 0;
     const alignmentOffset = shouldAddOffset ? center < min$12 ? center - min$12 : center - max2 : 0;
     return {
@@ -38898,14 +39212,14 @@ const shift$2 = function(options) {
         const maxSide = mainAxis === "y" ? "bottom" : "right";
         const min2 = mainAxisCoord + overflow[minSide];
         const max2 = mainAxisCoord - overflow[maxSide];
-        mainAxisCoord = clamp$1(min2, mainAxisCoord, max2);
+        mainAxisCoord = clamp$2(min2, mainAxisCoord, max2);
       }
       if (checkCrossAxis) {
         const minSide = crossAxis === "y" ? "top" : "left";
         const maxSide = crossAxis === "y" ? "bottom" : "right";
         const min2 = crossAxisCoord + overflow[minSide];
         const max2 = crossAxisCoord - overflow[maxSide];
-        crossAxisCoord = clamp$1(min2, crossAxisCoord, max2);
+        crossAxisCoord = clamp$2(min2, crossAxisCoord, max2);
       }
       const limitedCoords = limiter.fn({
         ...state,
@@ -39961,15 +40275,15 @@ function useFloating(options) {
     if (!referenceRef.current || !floatingRef.current) {
       return;
     }
-    const config = {
+    const config3 = {
       placement,
       strategy,
       middleware: latestMiddleware
     };
     if (platformRef.current) {
-      config.platform = platformRef.current;
+      config3.platform = platformRef.current;
     }
-    computePosition(referenceRef.current, floatingRef.current, config).then((data2) => {
+    computePosition(referenceRef.current, floatingRef.current, config3).then((data2) => {
       const fullData = {
         ...data2,
         // The floating element's position may be recomputed while it's closed
@@ -40207,7 +40521,7 @@ var ANCHOR_NAME$1 = "PopperAnchor";
 var PopperAnchor = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopePopper, virtualRef, ...anchorProps } = props;
-    const context = usePopperContext(ANCHOR_NAME$1, __scopePopper);
+    const context3 = usePopperContext(ANCHOR_NAME$1, __scopePopper);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
     const anchorRef = reactExports.useRef(null);
@@ -40215,7 +40529,7 @@ var PopperAnchor = reactExports.forwardRef(
       const previousAnchor = anchorRef.current;
       anchorRef.current = (virtualRef == null ? void 0 : virtualRef.current) || ref.current;
       if (previousAnchor !== anchorRef.current) {
-        context.onAnchorChange(anchorRef.current);
+        context3.onAnchorChange(anchorRef.current);
       }
     });
     return virtualRef ? null : /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.div, { ...anchorProps, ref: composedRefs });
@@ -40243,7 +40557,7 @@ var PopperContent = reactExports.forwardRef(
       onPlaced,
       ...contentProps
     } = props;
-    const context = usePopperContext(CONTENT_NAME$5, __scopePopper);
+    const context3 = usePopperContext(CONTENT_NAME$5, __scopePopper);
     const [content2, setContent] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node2) => setContent(node2));
     const [arrow$12, setArrow] = reactExports.useState(null);
@@ -40271,7 +40585,7 @@ var PopperContent = reactExports.forwardRef(
         return cleanup;
       },
       elements: {
-        reference: context.anchor
+        reference: context3.anchor
       },
       middleware: [
         offset({ mainAxis: sideOffset + arrowHeight, alignmentAxis: alignOffset }),
@@ -40583,10 +40897,10 @@ var RovingFocusGroupItem = reactExports.forwardRef(
     } = props;
     const autoId = useId();
     const id2 = tabStopId || autoId;
-    const context = useRovingFocusContext(ITEM_NAME$4, __scopeRovingFocusGroup);
-    const isCurrentTabStop = context.currentTabStopId === id2;
+    const context3 = useRovingFocusContext(ITEM_NAME$4, __scopeRovingFocusGroup);
+    const isCurrentTabStop = context3.currentTabStopId === id2;
     const getItems = useCollection$2(__scopeRovingFocusGroup);
-    const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context;
+    const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context3;
     reactExports.useEffect(() => {
       if (focusable) {
         onFocusableItemAdd();
@@ -40604,21 +40918,21 @@ var RovingFocusGroupItem = reactExports.forwardRef(
           Primitive$1.span,
           {
             tabIndex: isCurrentTabStop ? 0 : -1,
-            "data-orientation": context.orientation,
+            "data-orientation": context3.orientation,
             ...itemProps,
             ref: forwardedRef,
             onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
               if (!focusable) event.preventDefault();
-              else context.onItemFocus(id2);
+              else context3.onItemFocus(id2);
             }),
-            onFocus: composeEventHandlers(props.onFocus, () => context.onItemFocus(id2)),
+            onFocus: composeEventHandlers(props.onFocus, () => context3.onItemFocus(id2)),
             onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
               if (event.key === "Tab" && event.shiftKey) {
-                context.onItemShiftTab();
+                context3.onItemShiftTab();
                 return;
               }
               if (event.target !== event.currentTarget) return;
-              const focusIntent = getFocusIntent(event, context.orientation, context.dir);
+              const focusIntent = getFocusIntent(event, context3.orientation, context3.dir);
               if (focusIntent !== void 0) {
                 if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
                 event.preventDefault();
@@ -40628,7 +40942,7 @@ var RovingFocusGroupItem = reactExports.forwardRef(
                 else if (focusIntent === "prev" || focusIntent === "next") {
                   if (focusIntent === "prev") candidateNodes.reverse();
                   const currentIndex = candidateNodes.indexOf(event.currentTarget);
-                  candidateNodes = context.loop ? wrapArray$2(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
+                  candidateNodes = context3.loop ? wrapArray$2(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
                 }
                 setTimeout(() => focusFirst$1(candidateNodes));
               }
@@ -40756,8 +41070,8 @@ var [PortalProvider, usePortalContext] = createMenuContext(PORTAL_NAME$4, {
 });
 var MenuPortal = (props) => {
   const { __scopeMenu, forceMount, children: children2, container } = props;
-  const context = useMenuContext(PORTAL_NAME$4, __scopeMenu);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeMenu, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: children2 }) }) });
+  const context3 = useMenuContext(PORTAL_NAME$4, __scopeMenu);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PortalProvider, { scope: __scopeMenu, forceMount, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Portal$3, { asChild: true, container, children: children2 }) }) });
 };
 MenuPortal.displayName = PORTAL_NAME$4;
 var CONTENT_NAME$4 = "MenuContent";
@@ -40766,14 +41080,14 @@ var MenuContent = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext(CONTENT_NAME$4, props.__scopeMenu);
     const { forceMount = portalContext.forceMount, ...contentProps } = props;
-    const context = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
+    const context3 = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
     const rootContext = useMenuRootContext(CONTENT_NAME$4, props.__scopeMenu);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: rootContext.modal ? /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentModal, { ...contentProps, ref: forwardedRef }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MenuRootContentNonModal, { ...contentProps, ref: forwardedRef }) }) }) });
   }
 );
 var MenuRootContentModal = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
+    const context3 = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
     reactExports.useEffect(() => {
@@ -40785,21 +41099,21 @@ var MenuRootContentModal = reactExports.forwardRef(
       {
         ...props,
         ref: composedRefs,
-        trapFocus: context.open,
-        disableOutsidePointerEvents: context.open,
+        trapFocus: context3.open,
+        disableOutsidePointerEvents: context3.open,
         disableOutsideScroll: true,
         onFocusOutside: composeEventHandlers(
           props.onFocusOutside,
           (event) => event.preventDefault(),
           { checkForDefaultPrevented: false }
         ),
-        onDismiss: () => context.onOpenChange(false)
+        onDismiss: () => context3.onOpenChange(false)
       }
     );
   }
 );
 var MenuRootContentNonModal = reactExports.forwardRef((props, forwardedRef) => {
-  const context = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
+  const context3 = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     MenuContentImpl,
     {
@@ -40808,7 +41122,7 @@ var MenuRootContentNonModal = reactExports.forwardRef((props, forwardedRef) => {
       trapFocus: false,
       disableOutsidePointerEvents: false,
       disableOutsideScroll: false,
-      onDismiss: () => context.onOpenChange(false)
+      onDismiss: () => context3.onOpenChange(false)
     }
   );
 });
@@ -40831,14 +41145,14 @@ var MenuContentImpl = reactExports.forwardRef(
       disableOutsideScroll,
       ...contentProps
     } = props;
-    const context = useMenuContext(CONTENT_NAME$4, __scopeMenu);
+    const context3 = useMenuContext(CONTENT_NAME$4, __scopeMenu);
     const rootContext = useMenuRootContext(CONTENT_NAME$4, __scopeMenu);
     const popperScope = usePopperScope$1(__scopeMenu);
     const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeMenu);
     const getItems = useCollection$1(__scopeMenu);
     const [currentItemId, setCurrentItemId] = reactExports.useState(null);
     const contentRef = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, contentRef, context.onContentChange);
+    const composedRefs = useComposedRefs(forwardedRef, contentRef, context3.onContentChange);
     const timerRef = reactExports.useRef(0);
     const searchRef = reactExports.useRef("");
     const pointerGraceTimerRef = reactExports.useRef(0);
@@ -40944,7 +41258,7 @@ var MenuContentImpl = reactExports.forwardRef(
                       {
                         role: "menu",
                         "aria-orientation": "vertical",
-                        "data-state": getOpenState(context.open),
+                        "data-state": getOpenState(context3.open),
                         "data-radix-menu-content": "",
                         dir: rootContext.dir,
                         ...popperScope,
@@ -41164,8 +41478,8 @@ var RADIO_ITEM_NAME$2 = "MenuRadioItem";
 var MenuRadioItem = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { value, ...radioItemProps } = props;
-    const context = useRadioGroupContext(RADIO_ITEM_NAME$2, props.__scopeMenu);
-    const checked = value === context.value;
+    const context3 = useRadioGroupContext(RADIO_ITEM_NAME$2, props.__scopeMenu);
+    const checked = value === context3.value;
     return /* @__PURE__ */ jsxRuntimeExports.jsx(ItemIndicatorProvider, { scope: props.__scopeMenu, checked, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuItem,
       {
@@ -41178,7 +41492,7 @@ var MenuRadioItem = reactExports.forwardRef(
           radioItemProps.onSelect,
           () => {
             var _a3;
-            return (_a3 = context.onValueChange) == null ? void 0 : _a3.call(context, value);
+            return (_a3 = context3.onValueChange) == null ? void 0 : _a3.call(context3, value);
           },
           { checkForDefaultPrevented: false }
         )
@@ -41277,7 +41591,7 @@ MenuSub.displayName = SUB_NAME$1;
 var SUB_TRIGGER_NAME$2 = "MenuSubTrigger";
 var MenuSubTrigger = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useMenuContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
+    const context3 = useMenuContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
     const rootContext = useMenuRootContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
     const subContext = useMenuSubContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
     const contentContext = useMenuContentContext(SUB_TRIGGER_NAME$2, props.__scopeMenu);
@@ -41301,9 +41615,9 @@ var MenuSubTrigger = reactExports.forwardRef(
       {
         id: subContext.triggerId,
         "aria-haspopup": "menu",
-        "aria-expanded": context.open,
+        "aria-expanded": context3.open,
         "aria-controls": subContext.contentId,
-        "data-state": getOpenState(context.open),
+        "data-state": getOpenState(context3.open),
         ...props,
         ref: composeRefs(forwardedRef, subContext.onTriggerChange),
         onClick: (event) => {
@@ -41311,17 +41625,17 @@ var MenuSubTrigger = reactExports.forwardRef(
           (_a3 = props.onClick) == null ? void 0 : _a3.call(props, event);
           if (props.disabled || event.defaultPrevented) return;
           event.currentTarget.focus();
-          if (!context.open) context.onOpenChange(true);
+          if (!context3.open) context3.onOpenChange(true);
         },
         onPointerMove: composeEventHandlers(
           props.onPointerMove,
           whenMouse((event) => {
             contentContext.onItemEnter(event);
             if (event.defaultPrevented) return;
-            if (!props.disabled && !context.open && !openTimerRef.current) {
+            if (!props.disabled && !context3.open && !openTimerRef.current) {
               contentContext.onPointerGraceIntentChange(null);
               openTimerRef.current = window.setTimeout(() => {
-                context.onOpenChange(true);
+                context3.onOpenChange(true);
                 clearOpenTimer();
               }, 100);
             }
@@ -41332,9 +41646,9 @@ var MenuSubTrigger = reactExports.forwardRef(
           whenMouse((event) => {
             var _a3, _b3;
             clearOpenTimer();
-            const contentRect = (_a3 = context.content) == null ? void 0 : _a3.getBoundingClientRect();
+            const contentRect = (_a3 = context3.content) == null ? void 0 : _a3.getBoundingClientRect();
             if (contentRect) {
-              const side = (_b3 = context.content) == null ? void 0 : _b3.dataset.side;
+              const side = (_b3 = context3.content) == null ? void 0 : _b3.dataset.side;
               const rightSide = side === "right";
               const bleed = rightSide ? -5 : 5;
               const contentNearEdge = contentRect[rightSide ? "left" : "right"];
@@ -41368,8 +41682,8 @@ var MenuSubTrigger = reactExports.forwardRef(
           const isTypingAhead = contentContext.searchRef.current !== "";
           if (props.disabled || isTypingAhead && event.key === " ") return;
           if (SUB_OPEN_KEYS[rootContext.dir].includes(event.key)) {
-            context.onOpenChange(true);
-            (_a3 = context.content) == null ? void 0 : _a3.focus();
+            context3.onOpenChange(true);
+            (_a3 = context3.content) == null ? void 0 : _a3.focus();
             event.preventDefault();
           }
         })
@@ -41383,12 +41697,12 @@ var MenuSubContent = reactExports.forwardRef(
   (props, forwardedRef) => {
     const portalContext = usePortalContext(CONTENT_NAME$4, props.__scopeMenu);
     const { forceMount = portalContext.forceMount, ...subContentProps } = props;
-    const context = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
+    const context3 = useMenuContext(CONTENT_NAME$4, props.__scopeMenu);
     const rootContext = useMenuRootContext(CONTENT_NAME$4, props.__scopeMenu);
     const subContext = useMenuSubContext(SUB_CONTENT_NAME$2, props.__scopeMenu);
     const ref = reactExports.useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, ref);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Provider, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || context3.open, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection$2.Slot, { scope: props.__scopeMenu, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       MenuContentImpl,
       {
         id: subContext.contentId,
@@ -41407,7 +41721,7 @@ var MenuSubContent = reactExports.forwardRef(
         },
         onCloseAutoFocus: (event) => event.preventDefault(),
         onFocusOutside: composeEventHandlers(props.onFocusOutside, (event) => {
-          if (event.target !== subContext.trigger) context.onOpenChange(false);
+          if (event.target !== subContext.trigger) context3.onOpenChange(false);
         }),
         onEscapeKeyDown: composeEventHandlers(props.onEscapeKeyDown, (event) => {
           rootContext.onClose();
@@ -41418,7 +41732,7 @@ var MenuSubContent = reactExports.forwardRef(
           const isKeyDownInside = event.currentTarget.contains(event.target);
           const isCloseKey = SUB_CLOSE_KEYS[rootContext.dir].includes(event.key);
           if (isKeyDownInside && isCloseKey) {
-            context.onOpenChange(false);
+            context3.onOpenChange(false);
             (_a3 = subContext.trigger) == null ? void 0 : _a3.focus();
             event.preventDefault();
           }
@@ -41544,31 +41858,31 @@ var TRIGGER_NAME$4 = "DropdownMenuTrigger";
 var DropdownMenuTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, disabled = false, ...triggerProps } = props;
-    const context = useDropdownMenuContext(TRIGGER_NAME$4, __scopeDropdownMenu);
+    const context3 = useDropdownMenuContext(TRIGGER_NAME$4, __scopeDropdownMenu);
     const menuScope = useMenuScope$1(__scopeDropdownMenu);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Anchor2, { asChild: true, ...menuScope, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       Primitive$1.button,
       {
         type: "button",
-        id: context.triggerId,
+        id: context3.triggerId,
         "aria-haspopup": "menu",
-        "aria-expanded": context.open,
-        "aria-controls": context.open ? context.contentId : void 0,
-        "data-state": context.open ? "open" : "closed",
+        "aria-expanded": context3.open,
+        "aria-controls": context3.open ? context3.contentId : void 0,
+        "data-state": context3.open ? "open" : "closed",
         "data-disabled": disabled ? "" : void 0,
         disabled,
         ...triggerProps,
-        ref: composeRefs(forwardedRef, context.triggerRef),
+        ref: composeRefs(forwardedRef, context3.triggerRef),
         onPointerDown: composeEventHandlers(props.onPointerDown, (event) => {
           if (!disabled && event.button === 0 && event.ctrlKey === false) {
-            context.onOpenToggle();
-            if (!context.open) event.preventDefault();
+            context3.onOpenToggle();
+            if (!context3.open) event.preventDefault();
           }
         }),
         onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
           if (disabled) return;
-          if (["Enter", " "].includes(event.key)) context.onOpenToggle();
-          if (event.key === "ArrowDown") context.onOpenChange(true);
+          if (["Enter", " "].includes(event.key)) context3.onOpenToggle();
+          if (event.key === "ArrowDown") context3.onOpenChange(true);
           if (["Enter", " ", "ArrowDown"].includes(event.key)) event.preventDefault();
         })
       }
@@ -41587,20 +41901,20 @@ var CONTENT_NAME$3 = "DropdownMenuContent";
 var DropdownMenuContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeDropdownMenu, ...contentProps } = props;
-    const context = useDropdownMenuContext(CONTENT_NAME$3, __scopeDropdownMenu);
+    const context3 = useDropdownMenuContext(CONTENT_NAME$3, __scopeDropdownMenu);
     const menuScope = useMenuScope$1(__scopeDropdownMenu);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Content2$4,
       {
-        id: context.contentId,
-        "aria-labelledby": context.triggerId,
+        id: context3.contentId,
+        "aria-labelledby": context3.triggerId,
         ...menuScope,
         ...contentProps,
         ref: forwardedRef,
         onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
           var _a3;
-          if (!hasInteractedOutsideRef.current) (_a3 = context.triggerRef.current) == null ? void 0 : _a3.focus();
+          if (!hasInteractedOutsideRef.current) (_a3 = context3.triggerRef.current) == null ? void 0 : _a3.focus();
           hasInteractedOutsideRef.current = false;
           event.preventDefault();
         }),
@@ -41608,7 +41922,7 @@ var DropdownMenuContent$1 = reactExports.forwardRef(
           const originalEvent = event.detail.originalEvent;
           const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
           const isRightClick = originalEvent.button === 2 || ctrlLeftClick;
-          if (!context.modal || isRightClick) hasInteractedOutsideRef.current = true;
+          if (!context3.modal || isRightClick) hasInteractedOutsideRef.current = true;
         }),
         style: {
           ...props.style,
@@ -41812,7 +42126,9 @@ const TWEAKCN_THEME_NAMES = [
   "sunset-horizon",
   "starry-night",
   "soft-pop",
-  "sage-garden"
+  "sage-garden",
+  "catppuccin",
+  "tokyo-night"
 ];
 const THEME_NAMES = ["minimalist", ...TWEAKCN_THEME_NAMES];
 const THEME_DISPLAY_NAMES = {
@@ -41840,7 +42156,9 @@ const THEME_DISPLAY_NAMES = {
   "sunset-horizon": "Sunset Horizon",
   "starry-night": "Starry Night",
   "soft-pop": "Soft Pop",
-  "sage-garden": "Sage Garden"
+  "sage-garden": "Sage Garden",
+  catppuccin: "Catppuccin",
+  "tokyo-night": "Tokyo Night"
 };
 const ALL_THEMES = THEME_NAMES.flatMap((name) => [
   `${name}-light`,
@@ -41870,10 +42188,10 @@ function toggleVariant(theme) {
 function applyVariant(base, variant) {
   return `${base}-${variant}`;
 }
-function Header({ onNavigateToSettings }) {
+function Header() {
   const { login, clear, loginStatus, identity: identity2 } = useInternetIdentity();
   const queryClient2 = useQueryClient();
-  const { theme, setTheme } = z$2();
+  const { theme, setTheme } = z$3();
   const isAuthenticated = !!identity2;
   const handleLogout = async () => {
     await clear();
@@ -41939,6 +42257,24 @@ function Header({ onNavigateToSettings }) {
             className: "bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none",
             "data-ocid": "header.dropdown_menu",
             children: [
+              !isAuthenticated ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                DropdownMenuItem,
+                {
+                  onClick: handleLogin,
+                  disabled: loginStatus === "logging-in",
+                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                  "data-ocid": "header.login.button",
+                  children: loginStatus === "logging-in" ? "Logging in..." : "Login"
+                }
+              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                DropdownMenuItem,
+                {
+                  onClick: handleLogout,
+                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                  "data-ocid": "header.logout.button",
+                  children: "Logout"
+                }
+              ),
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 DropdownMenuItem,
                 {
@@ -41956,59 +42292,36 @@ function Header({ onNavigateToSettings }) {
                     }
                   },
                   className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                  children: "tutorial"
+                  children: "Tutorial"
                 }
               ),
-              !isAuthenticated ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  DropdownMenuItem,
-                  {
-                    onClick: handleLogin,
-                    disabled: loginStatus === "logging-in",
-                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                    "data-ocid": "header.login.button",
-                    children: loginStatus === "logging-in" ? "logging in..." : "login"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  DropdownMenuItem,
-                  {
-                    onClick: () => window.open("https://telegram.me/hyvmind_tg", "_blank"),
-                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                    children: "telegram"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  DropdownMenuItem,
-                  {
-                    onClick: () => window.open(
-                      "https://nodes.desci.com/dpid/969",
-                      "_blank"
-                    ),
-                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                    children: "whitepaper"
-                  }
-                )
-              ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  DropdownMenuItem,
-                  {
-                    onClick: onNavigateToSettings,
-                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                    "data-ocid": "header.settings.nav",
-                    children: "settings"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  DropdownMenuItem,
-                  {
-                    onClick: handleLogout,
-                    className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
-                    "data-ocid": "header.logout.button",
-                    children: "logout"
-                  }
-                )
-              ] })
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                DropdownMenuItem,
+                {
+                  onClick: () => window.open("https://telegram.me/hyvmind_tg", "_blank"),
+                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                  children: "Telegram"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                DropdownMenuItem,
+                {
+                  onClick: () => window.open("https://nodes.desci.com/dpid/969", "_blank"),
+                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                  children: "Whitepaper"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                DropdownMenuItem,
+                {
+                  onClick: () => window.open(
+                    "https://github.com/anshuman-ecc-eth/hyvmind",
+                    "_blank"
+                  ),
+                  className: "font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground",
+                  children: "GitHub"
+                }
+              )
             ]
           }
         )
@@ -42119,7 +42432,7 @@ function NodeTypeCheckbox({
       "label",
       {
         htmlFor: inputId,
-        className: "text-[10px] text-muted-foreground group-hover:text-foreground transition-colors cursor-pointer",
+        className: "text-xs text-muted-foreground group-hover:text-foreground transition-colors cursor-pointer",
         children: label
       }
     )
@@ -42165,16 +42478,16 @@ function FilterPanel({
       "data-ocid": "filter_panel.panel",
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "button",
+          Button,
           {
-            type: "button",
+            variant: "outline",
             onClick: onToggleCollapsed,
-            className: "flex flex-col items-center justify-start pt-3 px-1.5 bg-background border-l border-t border-b border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors shrink-0",
+            className: "flex flex-col items-center justify-start pt-3 px-1.5 border-l border-t border-b border-dashed text-muted-foreground hover:text-foreground hover:border-foreground shrink-0",
             style: { writingMode: "vertical-rl", gap: "6px" },
             "aria-label": isCollapsed ? "Expand filter panel" : "Collapse filter panel",
             "data-ocid": "filter_panel.toggle",
             children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[9px] tracking-widest uppercase select-none", children: isCollapsed ? "▶ filter" : "◀ filter" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs tracking-widest uppercase select-none", children: isCollapsed ? "▶ filter" : "◀ filter" }),
               isFiltered && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-1.5 h-1.5 rounded-full bg-foreground shrink-0 mt-1" })
             ]
           }
@@ -42194,7 +42507,7 @@ function FilterPanel({
                 "data-ocid": "filter_panel.content",
                 children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-3 pt-3 pb-2 border-b border-dashed border-border shrink-0", children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-[9px] uppercase tracking-widest text-muted-foreground mb-1.5", children: "search" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs uppercase tracking-widest text-muted-foreground mb-1.5", children: "search" }),
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       "input",
                       {
@@ -42211,7 +42524,7 @@ function FilterPanel({
                     )
                   ] }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-3 pt-2 pb-2 border-b border-dashed border-border shrink-0", children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-[9px] uppercase tracking-widest text-muted-foreground mb-2", children: "node types" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs uppercase tracking-widest text-muted-foreground mb-2", children: "node types" }),
                     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-1.5", children: ALL_NODE_TYPES$3.map((nt2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
                       NodeTypeCheckbox,
                       {
@@ -42227,7 +42540,7 @@ function FilterPanel({
                   /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-2 border-b border-dashed border-border shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
                     "span",
                     {
-                      className: "text-[10px] text-muted-foreground",
+                      className: "text-xs text-muted-foreground",
                       "data-ocid": "filter_panel.node_count",
                       children: [
                         "showing",
@@ -42244,23 +42557,23 @@ function FilterPanel({
                   ) }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-3 py-2 flex flex-col gap-1.5 shrink-0", children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "button",
+                      Button,
                       {
-                        type: "button",
+                        variant: "outline",
                         onClick: onFitToVisible,
-                        className: "w-full text-[10px] border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors text-left",
+                        className: "w-full border-dashed px-2 py-1 hover:border-foreground text-left",
                         "data-ocid": "filter_panel.fit_to_visible",
                         "aria-label": "Zoom to fit visible nodes",
                         children: "fit to visible"
                       }
                     ),
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "button",
+                      Button,
                       {
-                        type: "button",
+                        variant: "outline",
                         onClick: onReset,
                         disabled: !isFiltered,
-                        className: "w-full text-[10px] border border-dashed border-border px-2 py-1 text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-accent transition-colors text-left disabled:opacity-30 disabled:cursor-not-allowed",
+                        className: "w-full border-dashed px-2 py-1 text-muted-foreground hover:border-foreground text-left disabled:opacity-30",
                         "data-ocid": "filter_panel.reset_button",
                         "aria-label": "Reset all filters",
                         children: "reset filters"
@@ -44386,7 +44699,7 @@ function graphDataToSourceGraph(data, name, id2) {
   };
 }
 function SectionLabel({ label }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/30", children: label });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-1 font-mono text-xs uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/30", children: label });
 }
 function GraphFuzzyFinder({
   onSelect,
@@ -44562,7 +44875,7 @@ function GraphFuzzyFinder({
                 if (query.length > 0 && results.length > 0) setIsOpen(true);
               },
               placeholder: "Search nodes, edges, attributes...",
-              className: "flex-1 bg-transparent py-1.5 px-1 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none",
+              className: "flex-1 bg-transparent py-1 px-1 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none",
               "data-ocid": "fuzzy_finder.search_input",
               "aria-label": "Search knowledge graph nodes, edges, and attributes",
               "aria-autocomplete": "list"
@@ -44678,7 +44991,7 @@ function ResultRow({
       "data-ocid": `fuzzy_finder.result.${index2 + 1}`,
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-xs font-medium text-foreground truncate", children: item.label }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-mono text-[10px] text-muted-foreground truncate", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-mono text-xs text-muted-foreground truncate", children: [
           item.description,
           " · ",
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "opacity-60", children: item.curationName })
@@ -44739,45 +45052,45 @@ function PublicNodeDetailsPanel({
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4 space-y-3 text-xs max-h-[70vh] overflow-y-auto", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "NAME" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "NAME" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-foreground break-words", children: node2.name })
                 ] }),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "TYPE" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "TYPE" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-foreground", children: typeLabel })
                 ] }),
                 node2.id && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "ID" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "ID" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-foreground/70 break-all", children: node2.id })
                 ] }),
                 node2.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "PARENT" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "PARENT" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-foreground break-words", children: node2.parentName })
                 ] }),
                 tagList && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "TAGS" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "TAGS" }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 flex flex-wrap gap-1", children: tagList.map((tag) => /* @__PURE__ */ jsxRuntimeExports.jsx(
                     "span",
                     {
-                      className: "border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground",
+                      className: "border border-border px-1.5 py-0.5 text-xs text-muted-foreground",
                       children: tag
                     },
                     tag
                   )) })
                 ] }),
                 presentOptional.map(({ label, value }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: label }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: label }),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-foreground/80 break-words whitespace-pre-wrap", children: value })
                 ] }, label)),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "ATTRIBUTES" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "ATTRIBUTES" }),
                   attrs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-muted-foreground italic", children: "No attributes" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 border border-border divide-y divide-border", children: attrs.map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 px-2 py-1", children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground shrink-0 min-w-0 break-words", children: key2 }),
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80 ml-auto text-right break-words", children: typeof value === "string" ? value : JSON.stringify(value) })
                   ] }, key2)) })
                 ] }),
                 node2.sources !== void 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-[10px]", children: "SOURCES" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground tracking-widest uppercase text-xs", children: "SOURCES" }),
                   node2.sources.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-muted-foreground italic", children: "No sources" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 space-y-1", children: node2.sources.map((s2, i2) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: flat list, no stable key
                     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs break-words", children: s2.url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -45113,7 +45426,7 @@ function CheckboxProvider(props) {
     // We set this to true by default so that events bubble to forms without JS (SSR)
     true
   );
-  const context = {
+  const context3 = {
     checked,
     disabled,
     setChecked,
@@ -45133,8 +45446,8 @@ function CheckboxProvider(props) {
     CheckboxProviderImpl,
     {
       scope: __scopeCheckbox,
-      ...context,
-      children: isFunction(internal_do_not_use_render) ? internal_do_not_use_render(context) : children2
+      ...context3,
+      children: isFunction(internal_do_not_use_render) ? internal_do_not_use_render(context3) : children2
     }
   );
 }
@@ -45242,16 +45555,16 @@ var INDICATOR_NAME$1 = "CheckboxIndicator";
 var CheckboxIndicator = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeCheckbox, forceMount, ...indicatorProps } = props;
-    const context = useCheckboxContext(INDICATOR_NAME$1, __scopeCheckbox);
+    const context3 = useCheckboxContext(INDICATOR_NAME$1, __scopeCheckbox);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       Presence,
       {
-        present: forceMount || isIndeterminate(context.checked) || context.checked === true,
+        present: forceMount || isIndeterminate(context3.checked) || context3.checked === true,
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
           Primitive$1.span,
           {
-            "data-state": getState(context.checked),
-            "data-disabled": context.disabled ? "" : void 0,
+            "data-state": getState(context3.checked),
+            "data-disabled": context3.disabled ? "" : void 0,
             ...indicatorProps,
             ref: forwardedRef,
             style: { pointerEvents: "none", ...props.style }
@@ -53678,11 +53991,11 @@ function parseDocument(source, options = {}) {
   const parser = new Parser(lineCounter == null ? void 0 : lineCounter.addNewLine);
   const composer = new Composer(options);
   let doc = null;
-  for (const _doc of composer.compose(parser.parse(source), true, source.length)) {
+  for (const _doc2 of composer.compose(parser.parse(source), true, source.length)) {
     if (!doc)
-      doc = _doc;
+      doc = _doc2;
     else if (doc.options.logLevel !== "silent") {
-      doc.errors.push(new YAMLParseError(_doc.range.slice(0, 2), "MULTIPLE_DOCS", "Source contains multiple documents; please use YAML.parseAllDocuments()"));
+      doc.errors.push(new YAMLParseError(_doc2.range.slice(0, 2), "MULTIPLE_DOCS", "Source contains multiple documents; please use YAML.parseAllDocuments()"));
       break;
     }
   }
@@ -54584,13 +54897,13 @@ function creator(name) {
 }
 function none() {
 }
-function selector(selector2) {
-  return selector2 == null ? none : function() {
-    return this.querySelector(selector2);
+function selector$1(selector3) {
+  return selector3 == null ? none : function() {
+    return this.querySelector(selector3);
   };
 }
 function selection_select(select2) {
-  if (typeof select2 !== "function") select2 = selector(select2);
+  if (typeof select2 !== "function") select2 = selector$1(select2);
   for (var groups = this._groups, m2 = groups.length, subgroups = new Array(m2), j2 = 0; j2 < m2; ++j2) {
     for (var group = groups[j2], n2 = group.length, subgroup = subgroups[j2] = new Array(n2), node2, subnode, i2 = 0; i2 < n2; ++i2) {
       if ((node2 = group[i2]) && (subnode = select2.call(node2, node2.__data__, i2, group))) {
@@ -54607,9 +54920,9 @@ function array(x3) {
 function empty$2() {
   return [];
 }
-function selectorAll(selector2) {
-  return selector2 == null ? empty$2 : function() {
-    return this.querySelectorAll(selector2);
+function selectorAll(selector3) {
+  return selector3 == null ? empty$2 : function() {
+    return this.querySelectorAll(selector3);
   };
 }
 function arrayAll(select2) {
@@ -54630,14 +54943,14 @@ function selection_selectAll(select2) {
   }
   return new Selection$1(subgroups, parents);
 }
-function matcher(selector2) {
+function matcher(selector3) {
   return function() {
-    return this.matches(selector2);
+    return this.matches(selector3);
   };
 }
-function childMatcher(selector2) {
+function childMatcher(selector3) {
   return function(node2) {
-    return node2.matches(selector2);
+    return node2.matches(selector3);
   };
 }
 var find$2 = Array.prototype.find;
@@ -54696,11 +55009,11 @@ EnterNode.prototype = {
   insertBefore: function(child, next) {
     return this._parent.insertBefore(child, next);
   },
-  querySelector: function(selector2) {
-    return this._parent.querySelector(selector2);
+  querySelector: function(selector3) {
+    return this._parent.querySelector(selector3);
   },
-  querySelectorAll: function(selector2) {
-    return this._parent.querySelectorAll(selector2);
+  querySelectorAll: function(selector3) {
+    return this._parent.querySelectorAll(selector3);
   }
 };
 function constant$4(x3) {
@@ -54797,8 +55110,8 @@ function selection_join(onenter, onupdate, onexit) {
   else onexit(exit2);
   return enter && update3 ? enter.merge(update3).order() : update3;
 }
-function selection_merge(context) {
-  var selection2 = context.selection ? context.selection() : context;
+function selection_merge(context3) {
+  var selection2 = context3.selection ? context3.selection() : context3;
   for (var groups0 = this._groups, groups1 = selection2._groups, m0 = groups0.length, m1 = groups1.length, m2 = Math.min(m0, m1), merges = new Array(m0), j2 = 0; j2 < m2; ++j2) {
     for (var group0 = groups0[j2], group1 = groups1[j2], n2 = group0.length, merge2 = merges[j2] = new Array(n2), node2, i2 = 0; i2 < n2; ++i2) {
       if (node2 = group0[i2] || group1[i2]) {
@@ -55079,7 +55392,7 @@ function constantNull() {
   return null;
 }
 function selection_insert(name, before) {
-  var create2 = typeof name === "function" ? name : creator(name), select2 = before == null ? constantNull : typeof before === "function" ? before : selector(before);
+  var create2 = typeof name === "function" ? name : creator(name), select2 = before == null ? constantNull : typeof before === "function" ? before : selector$1(before);
   return this.select(function() {
     return this.insertBefore(create2.apply(this, arguments), select2.apply(this, arguments) || null);
   });
@@ -55246,8 +55559,8 @@ Selection$1.prototype = selection.prototype = {
   dispatch: selection_dispatch,
   [Symbol.iterator]: selection_iterator
 };
-function select(selector2) {
-  return typeof selector2 === "string" ? new Selection$1([[document.querySelector(selector2)]], [document.documentElement]) : new Selection$1([[selector2]], root$4);
+function select(selector3) {
+  return typeof selector3 === "string" ? new Selection$1([[document.querySelector(selector3)]], [document.documentElement]) : new Selection$1([[selector3]], root$4);
 }
 function sourceEvent(event) {
   let sourceEvent2;
@@ -56381,7 +56694,7 @@ function tweenValue(transition, name, value) {
     return get(node2, id2).value[name];
   };
 }
-function interpolate(a2, b2) {
+function interpolate$1(a2, b2) {
   var c2;
   return (typeof b2 === "number" ? interpolateNumber : b2 instanceof color$1 ? interpolateRgb : (c2 = color$1(b2)) ? (b2 = c2, interpolateRgb) : interpolateString)(a2, b2);
 }
@@ -56395,42 +56708,42 @@ function attrRemoveNS(fullname) {
     this.removeAttributeNS(fullname.space, fullname.local);
   };
 }
-function attrConstant(name, interpolate2, value1) {
+function attrConstant(name, interpolate3, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = this.getAttribute(name);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate3(string00 = string0, value1);
   };
 }
-function attrConstantNS(fullname, interpolate2, value1) {
+function attrConstantNS(fullname, interpolate3, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = this.getAttributeNS(fullname.space, fullname.local);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate3(string00 = string0, value1);
   };
 }
-function attrFunction(name, interpolate2, value) {
+function attrFunction(name, interpolate3, value) {
   var string00, string10, interpolate0;
   return function() {
     var string0, value1 = value(this), string1;
     if (value1 == null) return void this.removeAttribute(name);
     string0 = this.getAttribute(name);
     string1 = value1 + "";
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate3(string00 = string0, value1));
   };
 }
-function attrFunctionNS(fullname, interpolate2, value) {
+function attrFunctionNS(fullname, interpolate3, value) {
   var string00, string10, interpolate0;
   return function() {
     var string0, value1 = value(this), string1;
     if (value1 == null) return void this.removeAttributeNS(fullname.space, fullname.local);
     string0 = this.getAttributeNS(fullname.space, fullname.local);
     string1 = value1 + "";
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate3(string00 = string0, value1));
   };
 }
 function transition_attr(name, value) {
-  var fullname = namespace(name), i2 = fullname === "transform" ? interpolateTransformSvg : interpolate;
+  var fullname = namespace(name), i2 = fullname === "transform" ? interpolateTransformSvg : interpolate$1;
   return this.attrTween(name, typeof value === "function" ? (fullname.local ? attrFunctionNS : attrFunction)(fullname, i2, tweenValue(this, "attr." + name, value)) : value == null ? (fullname.local ? attrRemoveNS : attrRemove)(fullname) : (fullname.local ? attrConstantNS : attrConstant)(fullname, i2, value));
 }
 function attrInterpolate(name, i2) {
@@ -56576,7 +56889,7 @@ function transition_remove() {
 }
 function transition_select(select2) {
   var name = this._name, id2 = this._id;
-  if (typeof select2 !== "function") select2 = selector(select2);
+  if (typeof select2 !== "function") select2 = selector$1(select2);
   for (var groups = this._groups, m2 = groups.length, subgroups = new Array(m2), j2 = 0; j2 < m2; ++j2) {
     for (var group = groups[j2], n2 = group.length, subgroup = subgroups[j2] = new Array(n2), node2, subnode, i2 = 0; i2 < n2; ++i2) {
       if ((node2 = group[i2]) && (subnode = select2.call(node2, node2.__data__, i2, group))) {
@@ -56610,11 +56923,11 @@ var Selection = selection.prototype.constructor;
 function transition_selection() {
   return new Selection(this._groups, this._parents);
 }
-function styleNull(name, interpolate2) {
+function styleNull(name, interpolate3) {
   var string00, string10, interpolate0;
   return function() {
     var string0 = styleValue(this, name), string1 = (this.style.removeProperty(name), styleValue(this, name));
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, string10 = string1);
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : interpolate0 = interpolate3(string00 = string0, string10 = string1);
   };
 }
 function styleRemove(name) {
@@ -56622,19 +56935,19 @@ function styleRemove(name) {
     this.style.removeProperty(name);
   };
 }
-function styleConstant(name, interpolate2, value1) {
+function styleConstant(name, interpolate3, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = styleValue(this, name);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate3(string00 = string0, value1);
   };
 }
-function styleFunction(name, interpolate2, value) {
+function styleFunction(name, interpolate3, value) {
   var string00, string10, interpolate0;
   return function() {
     var string0 = styleValue(this, name), value1 = value(this), string1 = value1 + "";
     if (value1 == null) string1 = value1 = (this.style.removeProperty(name), styleValue(this, name));
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate3(string00 = string0, value1));
   };
 }
 function styleMaybeRemove(id2, name) {
@@ -56646,7 +56959,7 @@ function styleMaybeRemove(id2, name) {
   };
 }
 function transition_style(name, value, priority) {
-  var i2 = (name += "") === "transform" ? interpolateTransformCss : interpolate;
+  var i2 = (name += "") === "transform" ? interpolateTransformCss : interpolate$1;
   return value == null ? this.styleTween(name, styleNull(name, i2)).on("end.style." + name, styleRemove(name)) : typeof value === "function" ? this.styleTween(name, styleFunction(name, i2, tweenValue(this, "style." + name, value))).each(styleMaybeRemove(this._id, name)) : this.styleTween(name, styleConstant(name, i2, value), priority).on("end.style." + name, null);
 }
 function styleInterpolate(name, i2, priority) {
@@ -56924,7 +57237,7 @@ function defaultConstrain(transform2, extent, translateExtent) {
   );
 }
 function zoom() {
-  var filter2 = defaultFilter, extent = defaultExtent, constrain = defaultConstrain, wheelDelta = defaultWheelDelta, touchable = defaultTouchable, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate2 = interpolateZoom, listeners2 = dispatch("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
+  var filter2 = defaultFilter, extent = defaultExtent, constrain = defaultConstrain, wheelDelta = defaultWheelDelta, touchable = defaultTouchable, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate3 = interpolateZoom, listeners2 = dispatch("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
   function zoom3(selection2) {
     selection2.property("__zoom", defaultTransform).on("wheel.zoom", wheeled, { passive: false }).on("mousedown.zoom", mousedowned).on("dblclick.zoom", dblclicked).filter(touchable).on("touchstart.zoom", touchstarted).on("touchmove.zoom", touchmoved).on("touchend.zoom touchcancel.zoom", touchended).style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
@@ -56985,7 +57298,7 @@ function zoom() {
     }).on("interrupt.zoom end.zoom", function() {
       gesture(this, arguments).event(event).end();
     }).tween("zoom", function() {
-      var that = this, args = arguments, g2 = gesture(that, args).event(event), e2 = extent.apply(that, args), p2 = point2 == null ? centroid(e2) : typeof point2 === "function" ? point2.apply(that, args) : point2, w3 = Math.max(e2[1][0] - e2[0][0], e2[1][1] - e2[0][1]), a2 = that.__zoom, b2 = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i2 = interpolate2(a2.invert(p2).concat(w3 / a2.k), b2.invert(p2).concat(w3 / b2.k));
+      var that = this, args = arguments, g2 = gesture(that, args).event(event), e2 = extent.apply(that, args), p2 = point2 == null ? centroid(e2) : typeof point2 === "function" ? point2.apply(that, args) : point2, w3 = Math.max(e2[1][0] - e2[0][0], e2[1][1] - e2[0][1]), a2 = that.__zoom, b2 = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i2 = interpolate3(a2.invert(p2).concat(w3 / a2.k), b2.invert(p2).concat(w3 / b2.k));
       return function(t2) {
         if (t2 === 1) t2 = b2;
         else {
@@ -57190,7 +57503,7 @@ function zoom() {
     return arguments.length ? (duration = +_2, zoom3) : duration;
   };
   zoom3.interpolate = function(_2) {
-    return arguments.length ? (interpolate2 = _2, zoom3) : interpolate2;
+    return arguments.length ? (interpolate3 = _2, zoom3) : interpolate3;
   };
   zoom3.on = function() {
     var value = listeners2.on.apply(listeners2, arguments);
@@ -57773,7 +58086,7 @@ var Sequence = (
   }()
 );
 var mainGroup = new Group();
-var Tween = (
+var Tween$1 = (
   /** @class */
   function() {
     function Tween2(_object, _group) {
@@ -60790,8 +61103,8 @@ function constant(x3) {
     return x3;
   };
 }
-function jiggle(random) {
-  return (random() - 0.5) * 1e-6;
+function jiggle(random3) {
+  return (random3() - 0.5) * 1e-6;
 }
 function index$3(d2) {
   return d2.index;
@@ -60802,7 +61115,7 @@ function find$1(nodeById, nodeId) {
   return node2;
 }
 function forceLink(links) {
-  var id2 = index$3, strength = defaultStrength, strengths, distance2 = constant(30), distances, nodes, nDim, count2, bias, random, iterations = 1;
+  var id2 = index$3, strength = defaultStrength, strengths, distance2 = constant(30), distances, nodes, nDim, count2, bias, random3, iterations = 1;
   if (links == null) links = [];
   function defaultStrength(link2) {
     return 1 / Math.min(count2[link2.source.index], count2[link2.target.index]);
@@ -60811,12 +61124,12 @@ function forceLink(links) {
     for (var k2 = 0, n2 = links.length; k2 < iterations; ++k2) {
       for (var i2 = 0, link2, source, target, x3 = 0, y2 = 0, z2 = 0, l2, b2; i2 < n2; ++i2) {
         link2 = links[i2], source = link2.source, target = link2.target;
-        x3 = target.x + target.vx - source.x - source.vx || jiggle(random);
+        x3 = target.x + target.vx - source.x - source.vx || jiggle(random3);
         if (nDim > 1) {
-          y2 = target.y + target.vy - source.y - source.vy || jiggle(random);
+          y2 = target.y + target.vy - source.y - source.vy || jiggle(random3);
         }
         if (nDim > 2) {
-          z2 = target.z + target.vz - source.z - source.vz || jiggle(random);
+          z2 = target.z + target.vz - source.z - source.vz || jiggle(random3);
         }
         l2 = Math.sqrt(x3 * x3 + y2 * y2 + z2 * z2);
         l2 = (l2 - distances[i2]) / l2 * alpha * strengths[i2];
@@ -60868,7 +61181,7 @@ function forceLink(links) {
   }
   force.initialize = function(_nodes, ...args) {
     nodes = _nodes;
-    random = args.find((arg) => typeof arg === "function") || Math.random;
+    random3 = args.find((arg) => typeof arg === "function") || Math.random;
     nDim = args.find((arg) => [1, 2, 3].includes(arg)) || 2;
     initialize();
   };
@@ -60909,7 +61222,7 @@ function z(d2) {
 var initialRadius = 10, initialAngleRoll = Math.PI * (3 - Math.sqrt(5)), initialAngleYaw = Math.PI * 20 / (9 + Math.sqrt(221));
 function forceSimulation(nodes, numDimensions) {
   numDimensions = numDimensions || 2;
-  var nDim = Math.min(MAX_DIMENSIONS, Math.max(1, Math.round(numDimensions))), simulation, alpha = 1, alphaMin = 1e-3, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = /* @__PURE__ */ new Map(), stepper = timer(step), event = dispatch("tick", "end"), random = lcg();
+  var nDim = Math.min(MAX_DIMENSIONS, Math.max(1, Math.round(numDimensions))), simulation, alpha = 1, alphaMin = 1e-3, alphaDecay = 1 - Math.pow(alphaMin, 1 / 300), alphaTarget = 0, velocityDecay = 0.6, forces = /* @__PURE__ */ new Map(), stepper = timer(step), event = dispatch("tick", "end"), random3 = lcg();
   if (nodes == null) nodes = [];
   function step() {
     tick();
@@ -60974,7 +61287,7 @@ function forceSimulation(nodes, numDimensions) {
     }
   }
   function initializeForce(force) {
-    if (force.initialize) force.initialize(nodes, random, nDim);
+    if (force.initialize) force.initialize(nodes, random3, nDim);
     return force;
   }
   initializeNodes();
@@ -61008,7 +61321,7 @@ function forceSimulation(nodes, numDimensions) {
       return arguments.length ? (velocityDecay = 1 - _2, simulation) : 1 - velocityDecay;
     },
     randomSource: function(_2) {
-      return arguments.length ? (random = _2, forces.forEach(initializeForce), simulation) : random;
+      return arguments.length ? (random3 = _2, forces.forEach(initializeForce), simulation) : random3;
     },
     force: function(name, _2) {
       return arguments.length > 1 ? (_2 == null ? forces.delete(name) : forces.set(name, initializeForce(_2)), simulation) : forces.get(name);
@@ -61034,7 +61347,7 @@ function forceSimulation(nodes, numDimensions) {
   };
 }
 function forceManyBody() {
-  var nodes, nDim, node2, random, alpha, strength = constant(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
+  var nodes, nDim, node2, random3, alpha, strength = constant(-30), strengths, distanceMin2 = 1, distanceMax2 = Infinity, theta2 = 0.81;
   function force(_2) {
     var i2, n2 = nodes.length, tree = (nDim === 1 ? binarytree(nodes, x2) : nDim === 2 ? quadtree(nodes, x2, y) : nDim === 3 ? octree(nodes, x2, y, z) : null).visitAfter(accumulate);
     for (alpha = _2, i2 = 0; i2 < n2; ++i2) node2 = nodes[i2], tree.visit(apply);
@@ -61083,9 +61396,9 @@ function forceManyBody() {
     var x3 = treeNode.x - node2.x, y2 = nDim > 1 ? treeNode.y - node2.y : 0, z2 = nDim > 2 ? treeNode.z - node2.z : 0, w3 = x22 - x1, l2 = x3 * x3 + y2 * y2 + z2 * z2;
     if (w3 * w3 / theta2 < l2) {
       if (l2 < distanceMax2) {
-        if (x3 === 0) x3 = jiggle(random), l2 += x3 * x3;
-        if (nDim > 1 && y2 === 0) y2 = jiggle(random), l2 += y2 * y2;
-        if (nDim > 2 && z2 === 0) z2 = jiggle(random), l2 += z2 * z2;
+        if (x3 === 0) x3 = jiggle(random3), l2 += x3 * x3;
+        if (nDim > 1 && y2 === 0) y2 = jiggle(random3), l2 += y2 * y2;
+        if (nDim > 2 && z2 === 0) z2 = jiggle(random3), l2 += z2 * z2;
         if (l2 < distanceMin2) l2 = Math.sqrt(distanceMin2 * l2);
         node2.vx += x3 * treeNode.value * alpha / l2;
         if (nDim > 1) {
@@ -61098,9 +61411,9 @@ function forceManyBody() {
       return true;
     } else if (treeNode.length || l2 >= distanceMax2) return;
     if (treeNode.data !== node2 || treeNode.next) {
-      if (x3 === 0) x3 = jiggle(random), l2 += x3 * x3;
-      if (nDim > 1 && y2 === 0) y2 = jiggle(random), l2 += y2 * y2;
-      if (nDim > 2 && z2 === 0) z2 = jiggle(random), l2 += z2 * z2;
+      if (x3 === 0) x3 = jiggle(random3), l2 += x3 * x3;
+      if (nDim > 1 && y2 === 0) y2 = jiggle(random3), l2 += y2 * y2;
+      if (nDim > 2 && z2 === 0) z2 = jiggle(random3), l2 += z2 * z2;
       if (l2 < distanceMin2) l2 = Math.sqrt(distanceMin2 * l2);
     }
     do
@@ -61118,7 +61431,7 @@ function forceManyBody() {
   }
   force.initialize = function(_nodes, ...args) {
     nodes = _nodes;
-    random = args.find((arg) => typeof arg === "function") || Math.random;
+    random3 = args.find((arg) => typeof arg === "function") || Math.random;
     nDim = args.find((arg) => [1, 2, 3].includes(arg)) || 2;
     initialize();
   };
@@ -63890,7 +64203,7 @@ var forceGraph = index$6({
         if (!transitionDuration) {
           setCenter(finalPos);
         } else {
-          state.tweenGroup.add(new Tween(getCenter()).to(finalPos, transitionDuration).easing(Easing.Quadratic.Out).onUpdate(setCenter).onComplete(function() {
+          state.tweenGroup.add(new Tween$1(getCenter()).to(finalPos, transitionDuration).easing(Easing.Quadratic.Out).onUpdate(setCenter).onComplete(function() {
             state.tweenGroup.remove(this);
           }).start());
         }
@@ -63916,7 +64229,7 @@ var forceGraph = index$6({
         if (!transitionDuration) {
           setZoom(k2);
         } else {
-          state.tweenGroup.add(new Tween({
+          state.tweenGroup.add(new Tween$1({
             k: getZoom()
           }).to({
             k: k2
@@ -64272,9 +64585,11 @@ function SourceGraphDiagram({
 }) {
   const containerRef = reactExports.useRef(null);
   const fgRef = reactExports.useRef(null);
-  const { resolvedTheme } = z$2();
+  const { resolvedTheme } = z$3();
   const positionCacheRef = reactExports.useRef(/* @__PURE__ */ new Map());
   const currentGraphIdRef = reactExports.useRef("");
+  const hoveredNodeIdRef = reactExports.useRef(null);
+  const neighborIdsRef = reactExports.useRef(/* @__PURE__ */ new Set());
   const isDark2 = getVariant(resolvedTheme || "minimalist-dark") === "dark";
   const onNodeClickRef = reactExports.useRef(onNodeClick);
   reactExports.useEffect(() => {
@@ -64358,9 +64673,38 @@ function SourceGraphDiagram({
     const fg = new forceGraph(el);
     fgRef.current = fg;
     fg.backgroundColor(isDarkRef.current ? BG_DARK : BG_LIGHT);
-    fg.nodeId("id").nodeLabel("name").linkLabel("label").linkDirectionalArrowLength(6).linkDirectionalArrowRelPos(1).linkColor(() => "#888888").linkDirectionalArrowColor(() => "#888888").nodeColor((node2) => NODE_COLORS[node2.nodeType] ?? "#888888").nodeCanvasObject((node2, ctx, globalScale) => {
+    fg.autoPauseRedraw(false).nodeId("id").nodeLabel("name").linkLabel("label").linkDirectionalArrowLength(6).linkDirectionalArrowRelPos(1).linkColor((link2) => {
+      const neighborIds = neighborIdsRef.current;
+      if (neighborIds.size === 0) return "#888888";
+      const sourceId = String(
+        typeof link2.source === "object" ? link2.source.id : link2.source
+      );
+      const targetId = String(
+        typeof link2.target === "object" ? link2.target.id : link2.target
+      );
+      if (sourceId && targetId && neighborIds.has(sourceId) && neighborIds.has(targetId)) {
+        return "#888888";
+      }
+      return "rgba(136,136,136,0.08)";
+    }).linkDirectionalArrowColor((link2) => {
+      const neighborIds = neighborIdsRef.current;
+      if (neighborIds.size === 0) return "#888888";
+      const sourceId = String(
+        typeof link2.source === "object" ? link2.source.id : link2.source
+      );
+      const targetId = String(
+        typeof link2.target === "object" ? link2.target.id : link2.target
+      );
+      if (sourceId && targetId && neighborIds.has(sourceId) && neighborIds.has(targetId)) {
+        return "#888888";
+      }
+      return "rgba(136,136,136,0.08)";
+    }).nodeColor((node2) => NODE_COLORS[node2.nodeType] ?? "#888888").nodeCanvasObject((node2, ctx, globalScale) => {
       const label = node2.name ?? "";
       const r2 = 6;
+      const neighborIds = neighborIdsRef.current;
+      const isDimmed = neighborIds.size > 0 && !neighborIds.has(node2.id);
+      ctx.globalAlpha = isDimmed ? 0.15 : 1;
       ctx.beginPath();
       ctx.arc(node2.x ?? 0, node2.y ?? 0, r2, 0, 2 * Math.PI);
       ctx.fillStyle = NODE_COLORS[node2.nodeType] ?? "#888888";
@@ -64373,7 +64717,28 @@ function SourceGraphDiagram({
         ctx.fillStyle = isDarkRef.current ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.8)";
         ctx.fillText(label, node2.x ?? 0, (node2.y ?? 0) + r2 + 2);
       }
-    }).nodeCanvasObjectMode(() => "replace").onNodeClick((node2) => {
+      ctx.globalAlpha = 1;
+    }).nodeCanvasObjectMode(() => "replace").onNodeHover((node2) => {
+      if (node2) {
+        const neighborIds = /* @__PURE__ */ new Set();
+        neighborIds.add(node2.id);
+        for (const link2 of graphDataRef.current.links) {
+          const srcId = String(
+            typeof link2.source === "object" ? link2.source.id : link2.source
+          );
+          const tgtId = String(
+            typeof link2.target === "object" ? link2.target.id : link2.target
+          );
+          if (srcId === node2.id) neighborIds.add(tgtId);
+          if (tgtId === node2.id) neighborIds.add(srcId);
+        }
+        neighborIdsRef.current = neighborIds;
+        hoveredNodeIdRef.current = node2.id;
+      } else {
+        neighborIdsRef.current = /* @__PURE__ */ new Set();
+        hoveredNodeIdRef.current = null;
+      }
+    }).onNodeClick((node2) => {
       if (onNodeClickRef.current) {
         const sourceNode = {
           id: node2.id,
@@ -64428,11 +64793,21 @@ function SourceGraphDiagram({
     const noSearch2 = search22.length === 0;
     if (allTypesVisible2 && noSearch2) {
       fgRef.current.nodeVisibility(true);
+      fgRef.current.linkVisibility(true);
     } else {
-      fgRef.current.nodeVisibility((node2) => {
+      const isNodeVisible = (node2) => {
         const typeOk = allTypesVisible2 || ((types22 == null ? void 0 : types22.has(node2.nodeType)) ?? true);
         const searchOk = noSearch2 || node2.name.toLowerCase().includes(search22);
         return typeOk && searchOk;
+      };
+      fgRef.current.nodeVisibility(isNodeVisible);
+      fgRef.current.linkVisibility((link2) => {
+        const src = link2.source;
+        const tgt = link2.target;
+        if (typeof src === "object" && typeof tgt === "object") {
+          return isNodeVisible(src) && isNodeVisible(tgt);
+        }
+        return true;
       });
     }
   }, [searchText, visibleNodeTypes]);
@@ -64581,7 +64956,7 @@ function GraphCardWithSave({ meta, onView, onSave }) {
           return /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "li",
             {
-              className: "font-mono text-[10px] text-muted-foreground",
+              className: "font-mono text-xs text-muted-foreground",
               children: [
                 "Ext #",
                 i2 + 1,
@@ -64604,33 +64979,33 @@ function GraphCardWithSave({ meta, onView, onSave }) {
         }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mt-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
-              type: "button",
+              variant: "outline",
               onClick: () => setShowArtworkModal(true),
               disabled: !artworkUrl,
-              className: "border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+              className: "px-2 py-1 disabled:opacity-40",
               "data-ocid": "public_graph.artwork_thumbnail",
               "aria-label": artworkUrl ? `View terrain for ${meta.name}` : "Terrain generating",
               children: artworkUrl ? "Terrain" : "Generating."
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
-              type: "button",
+              variant: "outline",
               onClick: () => onView(meta.id),
-              className: "border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors",
+              className: "px-3 py-1",
               "data-ocid": "public_graph.view_button",
               children: "View Graph"
             }
           ),
           onSave && /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
-              type: "button",
+              variant: "outline",
               onClick: () => onSave(meta.id),
-              className: "border border-primary bg-primary/10 px-3 py-1 font-mono text-xs text-primary hover:bg-primary/20 transition-colors",
+              className: "border-primary bg-primary/10 px-3 py-1 text-primary hover:bg-primary/20",
               "data-ocid": "public_graph.save_button",
               children: "Save"
             }
@@ -64719,14 +65094,14 @@ function GraphDetail({
       return typeOk && searchOk;
     }).length;
   }, [convertedGraph, filterState.searchText, filterState.visibleNodeTypes]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col flex-1 min-h-0 h-full", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-4 px-4 py-3 border-b border-border bg-card shrink-0", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
+        Button,
         {
-          type: "button",
+          variant: "ghost",
           onClick: onBack,
-          className: "font-mono text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1",
+          className: "gap-1 text-muted-foreground",
           "data-ocid": "public_graph.back_button",
           children: "← Back to Graphs"
         }
@@ -64798,7 +65173,7 @@ function PublicGraphView({
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
-        className: `flex flex-col min-h-0 ${isLanding ? "h-full" : "flex-1 h-full"}`,
+        className: "flex flex-col h-full bg-background font-mono",
         "data-ocid": "public_graphs.loading_state",
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(Spinner, {})
       }
@@ -64840,15 +65215,12 @@ function PublicGraphView({
       [...gs].sort((a2, b2) => a2.publishedAt < b2.publishedAt ? 1 : -1)
     );
   }
-  const containerClass = isLanding ? "flex flex-col h-full min-h-0 overflow-auto" : "flex flex-col flex-1 min-h-0 overflow-auto";
+  const containerClass = "flex flex-col h-full bg-background font-mono";
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: containerClass, "data-ocid": "public_graphs.page", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-4 py-3 border-b border-border bg-card shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start justify-between gap-4 flex-wrap", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-mono text-sm text-foreground font-semibold", children: "public graphs" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-mono text-xs text-muted-foreground mt-0.5", children: "extensible curations by the community" })
-      ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Public Graphs" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(GraphFuzzyFinder, { onSelect: handleFuzzySelect })
-    ] }) }),
+    ] }),
     savingGraphId && savingGraphData.data && savingMeta && /* @__PURE__ */ jsxRuntimeExports.jsx(
       SaveGraphDialog,
       {
@@ -64859,17 +65231,7 @@ function PublicGraphView({
         graphId: savingGraphId
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-h-0 overflow-auto px-4 py-4", children: graphs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "flex flex-col items-center justify-center py-16 text-center",
-        "data-ocid": "public_graphs.empty_state",
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-xs text-muted-foreground", children: "No published graphs yet." }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-xs text-muted-foreground mt-1", children: "Publish a source graph from the Sources page to see it here." })
-        ]
-      }
-    ) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1", "data-ocid": "public_graphs.list", children: sortedCreators.map((curationName) => {
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-h-0 overflow-auto px-4 py-4", children: graphs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { "data-ocid": "public_graphs.empty_state" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1", "data-ocid": "public_graphs.list", children: sortedCreators.map((curationName) => {
       const gs = byCreator.get(curationName) ?? [];
       return /* @__PURE__ */ jsxRuntimeExports.jsx(
         GraphCardGroup,
@@ -64994,7 +65356,7 @@ function ProfileSetupModal() {
     ] })
   ] }) });
 }
-function clamp(value, [min2, max2]) {
+function clamp$1(value, [min2, max2]) {
   return Math.min(max2, Math.max(min2, value));
 }
 function useStateMachine(initialState2, machine) {
@@ -65072,9 +65434,9 @@ var VIEWPORT_NAME$1 = "ScrollAreaViewport";
 var ScrollAreaViewport = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeScrollArea, children: children2, nonce, ...viewportProps } = props;
-    const context = useScrollAreaContext(VIEWPORT_NAME$1, __scopeScrollArea);
+    const context3 = useScrollAreaContext(VIEWPORT_NAME$1, __scopeScrollArea);
     const ref = reactExports.useRef(null);
-    const composedRefs = useComposedRefs(forwardedRef, ref, context.onViewportChange);
+    const composedRefs = useComposedRefs(forwardedRef, ref, context3.onViewportChange);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "style",
@@ -65103,11 +65465,11 @@ var ScrollAreaViewport = reactExports.forwardRef(
              * the browser from having to work out whether to render native scrollbars or not,
              * we tell it to with the intention of hiding them in CSS.
              */
-            overflowX: context.scrollbarXEnabled ? "scroll" : "hidden",
-            overflowY: context.scrollbarYEnabled ? "scroll" : "hidden",
+            overflowX: context3.scrollbarXEnabled ? "scroll" : "hidden",
+            overflowY: context3.scrollbarYEnabled ? "scroll" : "hidden",
             ...props.style
           },
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: context.onContentChange, style: { minWidth: "100%", display: "table" }, children: children2 })
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: context3.onContentChange, style: { minWidth: "100%", display: "table" }, children: children2 })
         }
       )
     ] });
@@ -65118,8 +65480,8 @@ var SCROLLBAR_NAME = "ScrollAreaScrollbar";
 var ScrollAreaScrollbar = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { forceMount, ...scrollbarProps } = props;
-    const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
-    const { onScrollbarXEnabledChange, onScrollbarYEnabledChange } = context;
+    const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+    const { onScrollbarXEnabledChange, onScrollbarYEnabledChange } = context3;
     const isHorizontal = props.orientation === "horizontal";
     reactExports.useEffect(() => {
       isHorizontal ? onScrollbarXEnabledChange(true) : onScrollbarYEnabledChange(true);
@@ -65127,16 +65489,16 @@ var ScrollAreaScrollbar = reactExports.forwardRef(
         isHorizontal ? onScrollbarXEnabledChange(false) : onScrollbarYEnabledChange(false);
       };
     }, [isHorizontal, onScrollbarXEnabledChange, onScrollbarYEnabledChange]);
-    return context.type === "hover" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarHover, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context.type === "scroll" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarScroll, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context.type === "auto" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarAuto, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context.type === "always" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarVisible, { ...scrollbarProps, ref: forwardedRef }) : null;
+    return context3.type === "hover" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarHover, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context3.type === "scroll" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarScroll, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context3.type === "auto" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarAuto, { ...scrollbarProps, ref: forwardedRef, forceMount }) : context3.type === "always" ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaScrollbarVisible, { ...scrollbarProps, ref: forwardedRef }) : null;
   }
 );
 ScrollAreaScrollbar.displayName = SCROLLBAR_NAME;
 var ScrollAreaScrollbarHover = reactExports.forwardRef((props, forwardedRef) => {
   const { forceMount, ...scrollbarProps } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const [visible, setVisible] = reactExports.useState(false);
   reactExports.useEffect(() => {
-    const scrollArea = context.scrollArea;
+    const scrollArea = context3.scrollArea;
     let hideTimer = 0;
     if (scrollArea) {
       const handlePointerEnter = () => {
@@ -65144,7 +65506,7 @@ var ScrollAreaScrollbarHover = reactExports.forwardRef((props, forwardedRef) => 
         setVisible(true);
       };
       const handlePointerLeave = () => {
-        hideTimer = window.setTimeout(() => setVisible(false), context.scrollHideDelay);
+        hideTimer = window.setTimeout(() => setVisible(false), context3.scrollHideDelay);
       };
       scrollArea.addEventListener("pointerenter", handlePointerEnter);
       scrollArea.addEventListener("pointerleave", handlePointerLeave);
@@ -65154,7 +65516,7 @@ var ScrollAreaScrollbarHover = reactExports.forwardRef((props, forwardedRef) => 
         scrollArea.removeEventListener("pointerleave", handlePointerLeave);
       };
     }
-  }, [context.scrollArea, context.scrollHideDelay]);
+  }, [context3.scrollArea, context3.scrollHideDelay]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || visible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     ScrollAreaScrollbarAuto,
     {
@@ -65166,7 +65528,7 @@ var ScrollAreaScrollbarHover = reactExports.forwardRef((props, forwardedRef) => 
 });
 var ScrollAreaScrollbarScroll = reactExports.forwardRef((props, forwardedRef) => {
   const { forceMount, ...scrollbarProps } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const isHorizontal = props.orientation === "horizontal";
   const debounceScrollEnd = useDebounceCallback(() => send("SCROLL_END"), 100);
   const [state, send] = useStateMachine("hidden", {
@@ -65189,12 +65551,12 @@ var ScrollAreaScrollbarScroll = reactExports.forwardRef((props, forwardedRef) =>
   });
   reactExports.useEffect(() => {
     if (state === "idle") {
-      const hideTimer = window.setTimeout(() => send("HIDE"), context.scrollHideDelay);
+      const hideTimer = window.setTimeout(() => send("HIDE"), context3.scrollHideDelay);
       return () => window.clearTimeout(hideTimer);
     }
-  }, [state, context.scrollHideDelay, send]);
+  }, [state, context3.scrollHideDelay, send]);
   reactExports.useEffect(() => {
-    const viewport = context.viewport;
+    const viewport = context3.viewport;
     const scrollDirection = isHorizontal ? "scrollLeft" : "scrollTop";
     if (viewport) {
       let prevScrollPos = viewport[scrollDirection];
@@ -65210,7 +65572,7 @@ var ScrollAreaScrollbarScroll = reactExports.forwardRef((props, forwardedRef) =>
       viewport.addEventListener("scroll", handleScroll2);
       return () => viewport.removeEventListener("scroll", handleScroll2);
     }
-  }, [context.viewport, isHorizontal, send, debounceScrollEnd]);
+  }, [context3.viewport, isHorizontal, send, debounceScrollEnd]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || state !== "hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     ScrollAreaScrollbarVisible,
     {
@@ -65223,19 +65585,19 @@ var ScrollAreaScrollbarScroll = reactExports.forwardRef((props, forwardedRef) =>
   ) });
 });
 var ScrollAreaScrollbarAuto = reactExports.forwardRef((props, forwardedRef) => {
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const { forceMount, ...scrollbarProps } = props;
   const [visible, setVisible] = reactExports.useState(false);
   const isHorizontal = props.orientation === "horizontal";
   const handleResize = useDebounceCallback(() => {
-    if (context.viewport) {
-      const isOverflowX = context.viewport.offsetWidth < context.viewport.scrollWidth;
-      const isOverflowY = context.viewport.offsetHeight < context.viewport.scrollHeight;
+    if (context3.viewport) {
+      const isOverflowX = context3.viewport.offsetWidth < context3.viewport.scrollWidth;
+      const isOverflowY = context3.viewport.offsetHeight < context3.viewport.scrollHeight;
       setVisible(isHorizontal ? isOverflowX : isOverflowY);
     }
   }, 10);
-  useResizeObserver(context.viewport, handleResize);
-  useResizeObserver(context.content, handleResize);
+  useResizeObserver(context3.viewport, handleResize);
+  useResizeObserver(context3.content, handleResize);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Presence, { present: forceMount || visible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     ScrollAreaScrollbarVisible,
     {
@@ -65247,7 +65609,7 @@ var ScrollAreaScrollbarAuto = reactExports.forwardRef((props, forwardedRef) => {
 });
 var ScrollAreaScrollbarVisible = reactExports.forwardRef((props, forwardedRef) => {
   const { orientation = "vertical", ...scrollbarProps } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const thumbRef = reactExports.useRef(null);
   const pointerOffsetRef = reactExports.useRef(0);
   const [sizes, setSizes] = reactExports.useState({
@@ -65275,18 +65637,18 @@ var ScrollAreaScrollbarVisible = reactExports.forwardRef((props, forwardedRef) =
         ...commonProps,
         ref: forwardedRef,
         onThumbPositionChange: () => {
-          if (context.viewport && thumbRef.current) {
-            const scrollPos = context.viewport.scrollLeft;
-            const offset2 = getThumbOffsetFromScroll(scrollPos, sizes, context.dir);
+          if (context3.viewport && thumbRef.current) {
+            const scrollPos = context3.viewport.scrollLeft;
+            const offset2 = getThumbOffsetFromScroll(scrollPos, sizes, context3.dir);
             thumbRef.current.style.transform = `translate3d(${offset2}px, 0, 0)`;
           }
         },
         onWheelScroll: (scrollPos) => {
-          if (context.viewport) context.viewport.scrollLeft = scrollPos;
+          if (context3.viewport) context3.viewport.scrollLeft = scrollPos;
         },
         onDragScroll: (pointerPos) => {
-          if (context.viewport) {
-            context.viewport.scrollLeft = getScrollPosition(pointerPos, context.dir);
+          if (context3.viewport) {
+            context3.viewport.scrollLeft = getScrollPosition(pointerPos, context3.dir);
           }
         }
       }
@@ -65299,17 +65661,17 @@ var ScrollAreaScrollbarVisible = reactExports.forwardRef((props, forwardedRef) =
         ...commonProps,
         ref: forwardedRef,
         onThumbPositionChange: () => {
-          if (context.viewport && thumbRef.current) {
-            const scrollPos = context.viewport.scrollTop;
+          if (context3.viewport && thumbRef.current) {
+            const scrollPos = context3.viewport.scrollTop;
             const offset2 = getThumbOffsetFromScroll(scrollPos, sizes);
             thumbRef.current.style.transform = `translate3d(0, ${offset2}px, 0)`;
           }
         },
         onWheelScroll: (scrollPos) => {
-          if (context.viewport) context.viewport.scrollTop = scrollPos;
+          if (context3.viewport) context3.viewport.scrollTop = scrollPos;
         },
         onDragScroll: (pointerPos) => {
-          if (context.viewport) context.viewport.scrollTop = getScrollPosition(pointerPos);
+          if (context3.viewport) context3.viewport.scrollTop = getScrollPosition(pointerPos);
         }
       }
     );
@@ -65318,10 +65680,10 @@ var ScrollAreaScrollbarVisible = reactExports.forwardRef((props, forwardedRef) =
 });
 var ScrollAreaScrollbarX = reactExports.forwardRef((props, forwardedRef) => {
   const { sizes, onSizesChange, ...scrollbarProps } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const [computedStyle, setComputedStyle] = reactExports.useState();
   const ref = reactExports.useRef(null);
-  const composeRefs2 = useComposedRefs(forwardedRef, ref, context.onScrollbarXChange);
+  const composeRefs2 = useComposedRefs(forwardedRef, ref, context3.onScrollbarXChange);
   reactExports.useEffect(() => {
     if (ref.current) setComputedStyle(getComputedStyle(ref.current));
   }, [ref]);
@@ -65334,16 +65696,16 @@ var ScrollAreaScrollbarX = reactExports.forwardRef((props, forwardedRef) => {
       sizes,
       style: {
         bottom: 0,
-        left: context.dir === "rtl" ? "var(--radix-scroll-area-corner-width)" : 0,
-        right: context.dir === "ltr" ? "var(--radix-scroll-area-corner-width)" : 0,
+        left: context3.dir === "rtl" ? "var(--radix-scroll-area-corner-width)" : 0,
+        right: context3.dir === "ltr" ? "var(--radix-scroll-area-corner-width)" : 0,
         ["--radix-scroll-area-thumb-width"]: getThumbSize(sizes) + "px",
         ...props.style
       },
       onThumbPointerDown: (pointerPos) => props.onThumbPointerDown(pointerPos.x),
       onDragScroll: (pointerPos) => props.onDragScroll(pointerPos.x),
       onWheelScroll: (event, maxScrollPos) => {
-        if (context.viewport) {
-          const scrollPos = context.viewport.scrollLeft + event.deltaX;
+        if (context3.viewport) {
+          const scrollPos = context3.viewport.scrollLeft + event.deltaX;
           props.onWheelScroll(scrollPos);
           if (isScrollingWithinScrollbarBounds(scrollPos, maxScrollPos)) {
             event.preventDefault();
@@ -65351,10 +65713,10 @@ var ScrollAreaScrollbarX = reactExports.forwardRef((props, forwardedRef) => {
         }
       },
       onResize: () => {
-        if (ref.current && context.viewport && computedStyle) {
+        if (ref.current && context3.viewport && computedStyle) {
           onSizesChange({
-            content: context.viewport.scrollWidth,
-            viewport: context.viewport.offsetWidth,
+            content: context3.viewport.scrollWidth,
+            viewport: context3.viewport.offsetWidth,
             scrollbar: {
               size: ref.current.clientWidth,
               paddingStart: toInt(computedStyle.paddingLeft),
@@ -65368,10 +65730,10 @@ var ScrollAreaScrollbarX = reactExports.forwardRef((props, forwardedRef) => {
 });
 var ScrollAreaScrollbarY = reactExports.forwardRef((props, forwardedRef) => {
   const { sizes, onSizesChange, ...scrollbarProps } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
   const [computedStyle, setComputedStyle] = reactExports.useState();
   const ref = reactExports.useRef(null);
-  const composeRefs2 = useComposedRefs(forwardedRef, ref, context.onScrollbarYChange);
+  const composeRefs2 = useComposedRefs(forwardedRef, ref, context3.onScrollbarYChange);
   reactExports.useEffect(() => {
     if (ref.current) setComputedStyle(getComputedStyle(ref.current));
   }, [ref]);
@@ -65384,8 +65746,8 @@ var ScrollAreaScrollbarY = reactExports.forwardRef((props, forwardedRef) => {
       sizes,
       style: {
         top: 0,
-        right: context.dir === "ltr" ? 0 : void 0,
-        left: context.dir === "rtl" ? 0 : void 0,
+        right: context3.dir === "ltr" ? 0 : void 0,
+        left: context3.dir === "rtl" ? 0 : void 0,
         bottom: "var(--radix-scroll-area-corner-height)",
         ["--radix-scroll-area-thumb-height"]: getThumbSize(sizes) + "px",
         ...props.style
@@ -65393,8 +65755,8 @@ var ScrollAreaScrollbarY = reactExports.forwardRef((props, forwardedRef) => {
       onThumbPointerDown: (pointerPos) => props.onThumbPointerDown(pointerPos.y),
       onDragScroll: (pointerPos) => props.onDragScroll(pointerPos.y),
       onWheelScroll: (event, maxScrollPos) => {
-        if (context.viewport) {
-          const scrollPos = context.viewport.scrollTop + event.deltaY;
+        if (context3.viewport) {
+          const scrollPos = context3.viewport.scrollTop + event.deltaY;
           props.onWheelScroll(scrollPos);
           if (isScrollingWithinScrollbarBounds(scrollPos, maxScrollPos)) {
             event.preventDefault();
@@ -65402,10 +65764,10 @@ var ScrollAreaScrollbarY = reactExports.forwardRef((props, forwardedRef) => {
         }
       },
       onResize: () => {
-        if (ref.current && context.viewport && computedStyle) {
+        if (ref.current && context3.viewport && computedStyle) {
           onSizesChange({
-            content: context.viewport.scrollHeight,
-            viewport: context.viewport.offsetHeight,
+            content: context3.viewport.scrollHeight,
+            viewport: context3.viewport.offsetHeight,
             scrollbar: {
               size: ref.current.clientHeight,
               paddingStart: toInt(computedStyle.paddingTop),
@@ -65432,12 +65794,12 @@ var ScrollAreaScrollbarImpl = reactExports.forwardRef((props, forwardedRef) => {
     onResize,
     ...scrollbarProps
   } = props;
-  const context = useScrollAreaContext(SCROLLBAR_NAME, __scopeScrollArea);
+  const context3 = useScrollAreaContext(SCROLLBAR_NAME, __scopeScrollArea);
   const [scrollbar, setScrollbar] = reactExports.useState(null);
   const composeRefs2 = useComposedRefs(forwardedRef, (node2) => setScrollbar(node2));
   const rectRef = reactExports.useRef(null);
   const prevWebkitUserSelectRef = reactExports.useRef("");
-  const viewport = context.viewport;
+  const viewport = context3.viewport;
   const maxScrollPos = sizes.content - sizes.viewport;
   const handleWheelScroll = useCallbackRef$1(onWheelScroll);
   const handleThumbPositionChange = useCallbackRef$1(onThumbPositionChange);
@@ -65460,7 +65822,7 @@ var ScrollAreaScrollbarImpl = reactExports.forwardRef((props, forwardedRef) => {
   }, [viewport, scrollbar, maxScrollPos, handleWheelScroll]);
   reactExports.useEffect(handleThumbPositionChange, [sizes, handleThumbPositionChange]);
   useResizeObserver(scrollbar, handleResize);
-  useResizeObserver(context.content, handleResize);
+  useResizeObserver(context3.content, handleResize);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     ScrollbarProvider,
     {
@@ -65485,7 +65847,7 @@ var ScrollAreaScrollbarImpl = reactExports.forwardRef((props, forwardedRef) => {
               rectRef.current = scrollbar.getBoundingClientRect();
               prevWebkitUserSelectRef.current = document.body.style.webkitUserSelect;
               document.body.style.webkitUserSelect = "none";
-              if (context.viewport) context.viewport.style.scrollBehavior = "auto";
+              if (context3.viewport) context3.viewport.style.scrollBehavior = "auto";
               handleDragScroll(event);
             }
           }),
@@ -65496,7 +65858,7 @@ var ScrollAreaScrollbarImpl = reactExports.forwardRef((props, forwardedRef) => {
               element2.releasePointerCapture(event.pointerId);
             }
             document.body.style.webkitUserSelect = prevWebkitUserSelectRef.current;
-            if (context.viewport) context.viewport.style.scrollBehavior = "";
+            if (context3.viewport) context3.viewport.style.scrollBehavior = "";
             rectRef.current = null;
           })
         }
@@ -65572,29 +65934,29 @@ ScrollAreaThumb.displayName = THUMB_NAME;
 var CORNER_NAME = "ScrollAreaCorner";
 var ScrollAreaCorner = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useScrollAreaContext(CORNER_NAME, props.__scopeScrollArea);
-    const hasBothScrollbarsVisible = Boolean(context.scrollbarX && context.scrollbarY);
-    const hasCorner = context.type !== "scroll" && hasBothScrollbarsVisible;
+    const context3 = useScrollAreaContext(CORNER_NAME, props.__scopeScrollArea);
+    const hasBothScrollbarsVisible = Boolean(context3.scrollbarX && context3.scrollbarY);
+    const hasCorner = context3.type !== "scroll" && hasBothScrollbarsVisible;
     return hasCorner ? /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollAreaCornerImpl, { ...props, ref: forwardedRef }) : null;
   }
 );
 ScrollAreaCorner.displayName = CORNER_NAME;
 var ScrollAreaCornerImpl = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeScrollArea, ...cornerProps } = props;
-  const context = useScrollAreaContext(CORNER_NAME, __scopeScrollArea);
+  const context3 = useScrollAreaContext(CORNER_NAME, __scopeScrollArea);
   const [width, setWidth] = reactExports.useState(0);
   const [height, setHeight] = reactExports.useState(0);
   const hasSize = Boolean(width && height);
-  useResizeObserver(context.scrollbarX, () => {
+  useResizeObserver(context3.scrollbarX, () => {
     var _a3;
-    const height2 = ((_a3 = context.scrollbarX) == null ? void 0 : _a3.offsetHeight) || 0;
-    context.onCornerHeightChange(height2);
+    const height2 = ((_a3 = context3.scrollbarX) == null ? void 0 : _a3.offsetHeight) || 0;
+    context3.onCornerHeightChange(height2);
     setHeight(height2);
   });
-  useResizeObserver(context.scrollbarY, () => {
+  useResizeObserver(context3.scrollbarY, () => {
     var _a3;
-    const width2 = ((_a3 = context.scrollbarY) == null ? void 0 : _a3.offsetWidth) || 0;
-    context.onCornerWidthChange(width2);
+    const width2 = ((_a3 = context3.scrollbarY) == null ? void 0 : _a3.offsetWidth) || 0;
+    context3.onCornerWidthChange(width2);
     setWidth(width2);
   });
   return hasSize ? /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -65606,8 +65968,8 @@ var ScrollAreaCornerImpl = reactExports.forwardRef((props, forwardedRef) => {
         width,
         height,
         position: "absolute",
-        right: context.dir === "ltr" ? 0 : void 0,
-        left: context.dir === "rtl" ? 0 : void 0,
+        right: context3.dir === "ltr" ? 0 : void 0,
+        left: context3.dir === "rtl" ? 0 : void 0,
         bottom: 0,
         ...props.style
       }
@@ -65636,8 +65998,8 @@ function getScrollPositionFromPointer(pointerPos, pointerOffset, sizes, dir = "l
   const maxPointerPos = sizes.scrollbar.size - sizes.scrollbar.paddingEnd - thumbOffsetFromEnd;
   const maxScrollPos = sizes.content - sizes.viewport;
   const scrollRange = dir === "ltr" ? [0, maxScrollPos] : [maxScrollPos * -1, 0];
-  const interpolate2 = linearScale([minPointerPos, maxPointerPos], scrollRange);
-  return interpolate2(pointerPos);
+  const interpolate3 = linearScale([minPointerPos, maxPointerPos], scrollRange);
+  return interpolate3(pointerPos);
 }
 function getThumbOffsetFromScroll(scrollPos, sizes, dir = "ltr") {
   const thumbSizePx = getThumbSize(sizes);
@@ -65646,9 +66008,9 @@ function getThumbOffsetFromScroll(scrollPos, sizes, dir = "ltr") {
   const maxScrollPos = sizes.content - sizes.viewport;
   const maxThumbPos = scrollbar - thumbSizePx;
   const scrollClampRange = dir === "ltr" ? [0, maxScrollPos] : [maxScrollPos * -1, 0];
-  const scrollWithoutMomentum = clamp(scrollPos, scrollClampRange);
-  const interpolate2 = linearScale([0, maxScrollPos], [0, maxThumbPos]);
-  return interpolate2(scrollWithoutMomentum);
+  const scrollWithoutMomentum = clamp$1(scrollPos, scrollClampRange);
+  const interpolate3 = linearScale([0, maxScrollPos], [0, maxThumbPos]);
+  return interpolate3(scrollWithoutMomentum);
 }
 function linearScale(input, output) {
   return (value) => {
@@ -65898,26 +66260,26 @@ var SelectTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, disabled = false, ...triggerProps } = props;
     const popperScope = usePopperScope(__scopeSelect);
-    const context = useSelectContext(TRIGGER_NAME$1, __scopeSelect);
-    const isDisabled = context.disabled || disabled;
-    const composedRefs = useComposedRefs(forwardedRef, context.onTriggerChange);
+    const context3 = useSelectContext(TRIGGER_NAME$1, __scopeSelect);
+    const isDisabled = context3.disabled || disabled;
+    const composedRefs = useComposedRefs(forwardedRef, context3.onTriggerChange);
     const getItems = useCollection(__scopeSelect);
     const pointerTypeRef = reactExports.useRef("touch");
     const [searchRef, handleTypeaheadSearch, resetTypeahead] = useTypeaheadSearch((search2) => {
       const enabledItems = getItems().filter((item) => !item.disabled);
-      const currentItem = enabledItems.find((item) => item.value === context.value);
+      const currentItem = enabledItems.find((item) => item.value === context3.value);
       const nextItem = findNextItem(enabledItems, search2, currentItem);
       if (nextItem !== void 0) {
-        context.onValueChange(nextItem.value);
+        context3.onValueChange(nextItem.value);
       }
     });
     const handleOpen = (pointerEvent) => {
       if (!isDisabled) {
-        context.onOpenChange(true);
+        context3.onOpenChange(true);
         resetTypeahead();
       }
       if (pointerEvent) {
-        context.triggerPointerDownPosRef.current = {
+        context3.triggerPointerDownPosRef.current = {
           x: Math.round(pointerEvent.pageX),
           y: Math.round(pointerEvent.pageY)
         };
@@ -65928,15 +66290,15 @@ var SelectTrigger$1 = reactExports.forwardRef(
       {
         type: "button",
         role: "combobox",
-        "aria-controls": context.contentId,
-        "aria-expanded": context.open,
-        "aria-required": context.required,
+        "aria-controls": context3.contentId,
+        "aria-expanded": context3.open,
+        "aria-required": context3.required,
         "aria-autocomplete": "none",
-        dir: context.dir,
-        "data-state": context.open ? "open" : "closed",
+        dir: context3.dir,
+        "data-state": context3.open ? "open" : "closed",
         disabled: isDisabled,
         "data-disabled": isDisabled ? "" : void 0,
-        "data-placeholder": shouldShowPlaceholder(context.value) ? "" : void 0,
+        "data-placeholder": shouldShowPlaceholder(context3.value) ? "" : void 0,
         ...triggerProps,
         ref: composedRefs,
         onClick: composeEventHandlers(triggerProps.onClick, (event) => {
@@ -65975,10 +66337,10 @@ var VALUE_NAME = "SelectValue";
 var SelectValue$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, className, style: style2, children: children2, placeholder = "", ...valueProps } = props;
-    const context = useSelectContext(VALUE_NAME, __scopeSelect);
-    const { onValueNodeHasChildrenChange } = context;
+    const context3 = useSelectContext(VALUE_NAME, __scopeSelect);
+    const { onValueNodeHasChildrenChange } = context3;
     const hasChildren = children2 !== void 0;
-    const composedRefs = useComposedRefs(forwardedRef, context.onValueNodeChange);
+    const composedRefs = useComposedRefs(forwardedRef, context3.onValueNodeChange);
     useLayoutEffect2(() => {
       onValueNodeHasChildrenChange(hasChildren);
     }, [onValueNodeHasChildrenChange, hasChildren]);
@@ -65988,7 +66350,7 @@ var SelectValue$1 = reactExports.forwardRef(
         ...valueProps,
         ref: composedRefs,
         style: { pointerEvents: "none" },
-        children: shouldShowPlaceholder(context.value) ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: placeholder }) : children2
+        children: shouldShowPlaceholder(context3.value) ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: placeholder }) : children2
       }
     );
   }
@@ -66010,12 +66372,12 @@ SelectPortal.displayName = PORTAL_NAME$1;
 var CONTENT_NAME$1 = "SelectContent";
 var SelectContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
-    const context = useSelectContext(CONTENT_NAME$1, props.__scopeSelect);
+    const context3 = useSelectContext(CONTENT_NAME$1, props.__scopeSelect);
     const [fragment, setFragment] = reactExports.useState();
     useLayoutEffect2(() => {
       setFragment(new DocumentFragment());
     }, []);
-    if (!context.open) {
+    if (!context3.open) {
       const frag = fragment;
       return frag ? reactDomExports.createPortal(
         /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContentProvider, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Collection2.Slot, { scope: props.__scopeSelect, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: props.children }) }) }),
@@ -66053,7 +66415,7 @@ var SelectContentImpl = reactExports.forwardRef(
       //
       ...contentProps
     } = props;
-    const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
+    const context3 = useSelectContext(CONTENT_NAME$1, __scopeSelect);
     const [content2, setContent] = reactExports.useState(null);
     const [viewport, setViewport] = reactExports.useState(null);
     const composedRefs = useComposedRefs(forwardedRef, (node2) => setContent(node2));
@@ -66093,7 +66455,7 @@ var SelectContentImpl = reactExports.forwardRef(
         focusSelectedItem();
       }
     }, [isPositioned, focusSelectedItem]);
-    const { onOpenChange, triggerPointerDownPosRef } = context;
+    const { onOpenChange, triggerPointerDownPosRef } = context3;
     reactExports.useEffect(() => {
       if (content2) {
         let pointerMoveDelta = { x: 0, y: 0 };
@@ -66145,24 +66507,24 @@ var SelectContentImpl = reactExports.forwardRef(
     const itemRefCallback = reactExports.useCallback(
       (node2, value, disabled) => {
         const isFirstValidItem = !firstValidItemFoundRef.current && !disabled;
-        const isSelectedItem = context.value !== void 0 && context.value === value;
+        const isSelectedItem = context3.value !== void 0 && context3.value === value;
         if (isSelectedItem || isFirstValidItem) {
           setSelectedItem(node2);
           if (isFirstValidItem) firstValidItemFoundRef.current = true;
         }
       },
-      [context.value]
+      [context3.value]
     );
     const handleItemLeave = reactExports.useCallback(() => content2 == null ? void 0 : content2.focus(), [content2]);
     const itemTextRefCallback = reactExports.useCallback(
       (node2, value, disabled) => {
         const isFirstValidItem = !firstValidItemFoundRef.current && !disabled;
-        const isSelectedItem = context.value !== void 0 && context.value === value;
+        const isSelectedItem = context3.value !== void 0 && context3.value === value;
         if (isSelectedItem || isFirstValidItem) {
           setSelectedItemText(node2);
         }
       },
-      [context.value]
+      [context3.value]
     );
     const SelectPosition = position2 === "popper" ? SelectPopperPosition : SelectItemAlignedPosition;
     const popperContentProps = SelectPosition === SelectPopperPosition ? {
@@ -66197,13 +66559,13 @@ var SelectContentImpl = reactExports.forwardRef(
           FocusScope,
           {
             asChild: true,
-            trapped: context.open,
+            trapped: context3.open,
             onMountAutoFocus: (event) => {
               event.preventDefault();
             },
             onUnmountAutoFocus: composeEventHandlers(onCloseAutoFocus, (event) => {
               var _a3;
-              (_a3 = context.trigger) == null ? void 0 : _a3.focus({ preventScroll: true });
+              (_a3 = context3.trigger) == null ? void 0 : _a3.focus({ preventScroll: true });
               event.preventDefault();
             }),
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -66214,14 +66576,14 @@ var SelectContentImpl = reactExports.forwardRef(
                 onEscapeKeyDown,
                 onPointerDownOutside,
                 onFocusOutside: (event) => event.preventDefault(),
-                onDismiss: () => context.onOpenChange(false),
+                onDismiss: () => context3.onOpenChange(false),
                 children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                   SelectPosition,
                   {
                     role: "listbox",
-                    id: context.contentId,
-                    "data-state": context.open ? "open" : "closed",
-                    dir: context.dir,
+                    id: context3.contentId,
+                    "data-state": context3.open ? "open" : "closed",
+                    dir: context3.dir,
                     onContextMenu: (event) => event.preventDefault(),
                     ...contentProps,
                     ...popperContentProps,
@@ -66268,7 +66630,7 @@ SelectContentImpl.displayName = CONTENT_IMPL_NAME;
 var ITEM_ALIGNED_POSITION_NAME = "SelectItemAlignedPosition";
 var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) => {
   const { __scopeSelect, onPlaced, ...popperProps } = props;
-  const context = useSelectContext(CONTENT_NAME$1, __scopeSelect);
+  const context3 = useSelectContext(CONTENT_NAME$1, __scopeSelect);
   const contentContext = useSelectContentContext(CONTENT_NAME$1, __scopeSelect);
   const [contentWrapper, setContentWrapper] = reactExports.useState(null);
   const [content2, setContent] = reactExports.useState(null);
@@ -66278,19 +66640,19 @@ var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) =>
   const shouldRepositionRef = reactExports.useRef(true);
   const { viewport, selectedItem, selectedItemText, focusSelectedItem } = contentContext;
   const position2 = reactExports.useCallback(() => {
-    if (context.trigger && context.valueNode && contentWrapper && content2 && viewport && selectedItem && selectedItemText) {
-      const triggerRect = context.trigger.getBoundingClientRect();
+    if (context3.trigger && context3.valueNode && contentWrapper && content2 && viewport && selectedItem && selectedItemText) {
+      const triggerRect = context3.trigger.getBoundingClientRect();
       const contentRect = content2.getBoundingClientRect();
-      const valueNodeRect = context.valueNode.getBoundingClientRect();
+      const valueNodeRect = context3.valueNode.getBoundingClientRect();
       const itemTextRect = selectedItemText.getBoundingClientRect();
-      if (context.dir !== "rtl") {
+      if (context3.dir !== "rtl") {
         const itemTextOffset = itemTextRect.left - contentRect.left;
         const left = valueNodeRect.left - itemTextOffset;
         const leftDelta = triggerRect.left - left;
         const minContentWidth = triggerRect.width + leftDelta;
         const contentWidth = Math.max(minContentWidth, contentRect.width);
         const rightEdge = window.innerWidth - CONTENT_MARGIN;
-        const clampedLeft = clamp(left, [
+        const clampedLeft = clamp$1(left, [
           CONTENT_MARGIN,
           // Prevents the content from going off the starting edge of the
           // viewport. It may still go off the ending edge, but this can be
@@ -66308,7 +66670,7 @@ var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) =>
         const minContentWidth = triggerRect.width + rightDelta;
         const contentWidth = Math.max(minContentWidth, contentRect.width);
         const leftEdge = window.innerWidth - CONTENT_MARGIN;
-        const clampedRight = clamp(right, [
+        const clampedRight = clamp$1(right, [
           CONTENT_MARGIN,
           Math.max(CONTENT_MARGIN, leftEdge - contentWidth)
         ]);
@@ -66366,14 +66728,14 @@ var SelectItemAlignedPosition = reactExports.forwardRef((props, forwardedRef) =>
     }
   }, [
     getItems,
-    context.trigger,
-    context.valueNode,
+    context3.trigger,
+    context3.valueNode,
     contentWrapper,
     content2,
     viewport,
     selectedItem,
     selectedItemText,
-    context.dir,
+    context3.dir,
     onPlaced
   ]);
   useLayoutEffect2(() => position2(), [position2]);
@@ -66562,9 +66924,9 @@ var SelectItem$1 = reactExports.forwardRef(
       textValue: textValueProp,
       ...itemProps
     } = props;
-    const context = useSelectContext(ITEM_NAME$1, __scopeSelect);
+    const context3 = useSelectContext(ITEM_NAME$1, __scopeSelect);
     const contentContext = useSelectContentContext(ITEM_NAME$1, __scopeSelect);
-    const isSelected = context.value === value;
+    const isSelected = context3.value === value;
     const [textValue, setTextValue] = reactExports.useState(textValueProp ?? "");
     const [isFocused, setIsFocused] = reactExports.useState(false);
     const composedRefs = useComposedRefs(
@@ -66578,8 +66940,8 @@ var SelectItem$1 = reactExports.forwardRef(
     const pointerTypeRef = reactExports.useRef("touch");
     const handleSelect = () => {
       if (!disabled) {
-        context.onValueChange(value);
-        context.onOpenChange(false);
+        context3.onValueChange(value);
+        context3.onOpenChange(false);
       }
     };
     if (value === "") {
@@ -66664,7 +67026,7 @@ var ITEM_TEXT_NAME = "SelectItemText";
 var SelectItemText = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, className, style: style2, ...itemTextProps } = props;
-    const context = useSelectContext(ITEM_TEXT_NAME, __scopeSelect);
+    const context3 = useSelectContext(ITEM_TEXT_NAME, __scopeSelect);
     const contentContext = useSelectContentContext(ITEM_TEXT_NAME, __scopeSelect);
     const itemContext = useSelectItemContext(ITEM_TEXT_NAME, __scopeSelect);
     const nativeOptionsContext = useSelectNativeOptionsContext(ITEM_TEXT_NAME, __scopeSelect);
@@ -66690,7 +67052,7 @@ var SelectItemText = reactExports.forwardRef(
     }, [onNativeOptionAdd, onNativeOptionRemove, nativeOption]);
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(Primitive$1.span, { id: itemContext.textId, ...itemTextProps, ref: composedRefs }),
-      itemContext.isSelected && context.valueNode && !context.valueNodeHasChildren ? reactDomExports.createPortal(itemTextProps.children, context.valueNode) : null
+      itemContext.isSelected && context3.valueNode && !context3.valueNodeHasChildren ? reactDomExports.createPortal(itemTextProps.children, context3.valueNode) : null
     ] });
   }
 );
@@ -66828,9 +67190,9 @@ var SelectArrow = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeSelect, ...arrowProps } = props;
     const popperScope = usePopperScope(__scopeSelect);
-    const context = useSelectContext(ARROW_NAME$1, __scopeSelect);
+    const context3 = useSelectContext(ARROW_NAME$1, __scopeSelect);
     const contentContext = useSelectContentContext(ARROW_NAME$1, __scopeSelect);
-    return context.open && contentContext.position === "popper" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef }) : null;
+    return context3.open && contentContext.position === "popper" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Arrow, { ...popperScope, ...arrowProps, ref: forwardedRef }) : null;
   }
 );
 SelectArrow.displayName = ARROW_NAME$1;
@@ -67455,12 +67817,8 @@ function CreateBuzzModal({ isOpen, onClose }) {
     ] })
   ] }) });
 }
-function maskApiKey(key2) {
-  if (key2.length < 8) return "••••••••••••••••";
-  return `${key2.slice(0, 4)}••••••••••••••••${key2.slice(-4)}`;
-}
 function SettingsView() {
-  const { theme, setTheme } = z$2();
+  const { theme, setTheme } = z$3();
   const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
   const rawActor = useActor(createActor);
@@ -67486,12 +67844,7 @@ function SettingsView() {
   const [approvingKey, setApprovingKey] = reactExports.useState(null);
   const [confirmRevokeKey, setConfirmRevokeKey] = reactExports.useState(null);
   const [revokingKey, setRevokingKey] = reactExports.useState(null);
-  const [apiKey, setApiKey] = reactExports.useState(null);
-  const [apiKeyLoading, setApiKeyLoading] = reactExports.useState(false);
-  const [copied, setCopied] = reactExports.useState(false);
-  const [revokeConfirm, setRevokeConfirm] = reactExports.useState(false);
-  const [revokeLoading, setRevokeLoading] = reactExports.useState(false);
-  const [generateLoading, setGenerateLoading] = reactExports.useState(false);
+  const [selectedSection, setSelectedSection] = reactExports.useState(null);
   reactExports.useEffect(() => {
     if (!actor) return;
     setPluginSectionLoading(true);
@@ -67520,11 +67873,6 @@ function SettingsView() {
         setPluginSectionLoading(false);
       }
     })();
-  }, [actor]);
-  reactExports.useEffect(() => {
-    if (!actor) return;
-    setApiKeyLoading(true);
-    actor.getMyApiKey().then((key2) => setApiKey(key2 ?? null)).catch(() => setApiKey(null)).finally(() => setApiKeyLoading(false));
   }, [actor]);
   reactExports.useEffect(() => {
     if (userProfile) {
@@ -67586,39 +67934,6 @@ function SettingsView() {
       setRevokingKey(null);
     }
   };
-  const handleCopy = async () => {
-    if (!apiKey) return;
-    await navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2e3);
-  };
-  const handleGenerate = async () => {
-    if (!actor) return;
-    setGenerateLoading(true);
-    try {
-      const newKey = await actor.generateApiKey();
-      setApiKey(newKey);
-      ue$1.success("API key generated");
-    } catch {
-      ue$1.error("Failed to generate API key");
-    } finally {
-      setGenerateLoading(false);
-    }
-  };
-  const handleRevoke = async () => {
-    if (!actor) return;
-    setRevokeLoading(true);
-    try {
-      await actor.revokeApiKey();
-      setApiKey(null);
-      setRevokeConfirm(false);
-      ue$1.success("API key revoked");
-    } catch {
-      ue$1.error("Failed to revoke API key");
-    } finally {
-      setRevokeLoading(false);
-    }
-  };
   const handleSave = async () => {
     if (!profileName.trim()) {
       ue$1.error("Profile name is required");
@@ -67647,392 +67962,141 @@ function SettingsView() {
   const handleThemeChange = (newBase) => {
     setTheme(applyVariant(newBase, currentVariant));
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full overflow-y-auto bg-background", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl mx-auto px-8 py-10 space-y-10", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-2xl font-semibold tracking-tight", children: "Settings" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground mt-1", children: "Manage your appearance, profile, and API access." })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-5", "data-ocid": "settings.appearance.section", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Appearance" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-5", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-1 block text-sm font-medium", children: "Theme" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mb-3", children: "Use the sun/moon toggle in the nav bar to switch light/dark variants." }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(Select, { value: currentBase, onValueChange: handleThemeChange, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              SelectTrigger,
-              {
-                className: "w-full font-mono text-sm",
-                "data-ocid": "settings.theme_select",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "Select theme" })
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContent, { className: "font-mono max-h-72", children: THEME_NAMES.map((slug) => /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: slug, className: "text-sm", children: THEME_DISPLAY_NAMES[slug] ?? slug }, slug)) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-1 block text-sm font-medium", children: "Font Pairing" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mb-3", children: "Choose a heading + body font combination." }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(Select, { value: fontPairing, onValueChange: setFontPairing, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              SelectTrigger,
-              {
-                className: "w-full font-mono text-sm",
-                "data-ocid": "settings.font-pairing.select",
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "Select font pairing" })
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContent, { className: "font-mono max-h-72", children: FONT_PAIRINGS.map((p2) => /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: p2.id, className: "text-sm", children: p2.name }, p2.id)) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-3 block text-sm font-medium", children: "Font Size" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-3", children: ["small", "medium", "large"].map((size2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              onClick: () => setFontSize(size2),
-              "data-ocid": `settings.font-size.${size2}`,
-              className: `flex-1 rounded border px-3 py-2 text-xs font-mono capitalize transition-colors ${fontSize === size2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"}`,
-              children: size2
-            },
-            size2
-          )) })
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-5", "data-ocid": "settings.profile.section", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Profile Information" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { htmlFor: "settings-profileName", children: "Profile Name" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Input,
-            {
-              id: "settings-profileName",
-              value: profileName,
-              onChange: (e2) => setProfileName(e2.target.value),
-              placeholder: "Enter your profile name",
-              disabled: profileLoading || saveProfile.isPending,
-              "data-ocid": "settings.profile.name_input"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { htmlFor: "settings-socialUrl", children: "Social URL (optional)" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Input,
-            {
-              id: "settings-socialUrl",
-              value: socialUrl,
-              onChange: (e2) => setSocialUrl(e2.target.value),
-              placeholder: "https://...",
-              disabled: profileLoading || saveProfile.isPending,
-              "data-ocid": "settings.profile.social_input"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-end gap-2 pt-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
-            {
-              variant: "outline",
-              onClick: handleCancel,
-              disabled: saveProfile.isPending,
-              "data-ocid": "settings.cancel_button",
-              children: "Cancel"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
-            {
-              onClick: handleSave,
-              disabled: profileLoading || saveProfile.isPending,
-              "data-ocid": "settings.save_button",
-              children: saveProfile.isPending ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-4 w-4 animate-spin" }),
-                "Saving..."
-              ] }) : "Save Changes"
-            }
-          )
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "section",
-      {
-        className: "space-y-5",
-        "data-ocid": "settings.plugin_binding.section",
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Plugin Binding" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Link this Obsidian plugin to your Hyvmind account so uploaded notes appear here." })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-5", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Your Principal ID" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "Copy this into the Obsidian plugin so it can request binding." }),
-              pluginSectionLoading && !myPrincipal ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
-                "Loading..."
-              ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "code",
-                  {
-                    className: "font-mono text-xs bg-muted px-2 py-1 rounded break-all",
-                    "data-ocid": "settings.plugin_binding.principal_display",
-                    children: myPrincipal ?? "—"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
-                  {
-                    variant: "outline",
-                    size: "sm",
-                    onClick: handleCopyPrincipal,
-                    disabled: !myPrincipal,
-                    className: "shrink-0",
-                    "data-ocid": "settings.plugin_binding.copy_principal_button",
-                    children: principalCopied ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-4 w-4 text-foreground" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "h-4 w-4" })
-                  }
-                )
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Binding Status" }),
-              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin text-muted-foreground" }) : pluginBound ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "p",
-                {
-                  className: "text-sm font-medium",
-                  style: { color: "oklch(0.55 0.15 145)" },
-                  "data-ocid": "settings.plugin_binding.status_bound",
-                  children: "✓ Plugin bound"
-                }
-              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "p",
-                {
-                  className: "text-sm text-muted-foreground",
-                  "data-ocid": "settings.plugin_binding.status_unbound",
-                  children: "No plugin bound"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Pending Plugin Requests" }),
-              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
-                "Loading..."
-              ] }) : pendingBindings.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "p",
-                {
-                  className: "text-sm text-muted-foreground",
-                  "data-ocid": "settings.plugin_binding.pending.empty_state",
-                  children: "(no pending requests)"
-                }
-              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "div",
-                {
-                  className: "space-y-2",
-                  "data-ocid": "settings.plugin_binding.pending_list",
-                  children: pendingBindings.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                    "div",
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Settings" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl mx-auto px-8 py-10 space-y-10", children: [
+        !selectedSection && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center justify-center gap-3 py-24 text-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground/40", children: "select a section from the sidebar" }) }),
+        selectedSection === "settings-appearance" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "section",
+          {
+            id: "settings-appearance",
+            className: "space-y-5",
+            "data-ocid": "settings.appearance.section",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold", children: "Appearance" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-5", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-1 block text-sm font-medium", children: "Theme" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mb-3", children: "Use the sun/moon toggle in the nav bar to switch light/dark variants." }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    Select,
                     {
-                      className: "flex items-center gap-2",
-                      "data-ocid": `settings.plugin_binding.pending.item.${idx + 1}`,
+                      value: currentBase,
+                      onValueChange: handleThemeChange,
                       children: [
-                        /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
-                          key2.slice(0, 20),
-                          "..."
-                        ] }),
                         /* @__PURE__ */ jsxRuntimeExports.jsx(
-                          Button,
+                          SelectTrigger,
                           {
-                            size: "sm",
-                            variant: "outline",
-                            disabled: approvingKey === key2,
-                            onClick: () => handleApproveBinding(key2),
-                            "data-ocid": `settings.plugin_binding.approve_button.${idx + 1}`,
-                            children: approvingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                              /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
-                              "Approving..."
-                            ] }) : "Approve"
+                            className: "w-full font-mono text-sm",
+                            "data-ocid": "settings.theme_select",
+                            children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "Select theme" })
                           }
-                        )
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContent, { className: "font-mono max-h-72", children: THEME_NAMES.map((slug) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SelectItem,
+                          {
+                            value: slug,
+                            className: "text-sm",
+                            children: THEME_DISPLAY_NAMES[slug] ?? slug
+                          },
+                          slug
+                        )) })
                       ]
-                    },
-                    key2
-                  ))
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Bound Plugin Keys" }),
-              pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
-                "Loading..."
-              ] }) : boundPluginKeys.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "p",
-                {
-                  className: "text-sm text-muted-foreground",
-                  "data-ocid": "settings.plugin_binding.bound.empty_state",
-                  children: "(no bound plugins)"
-                }
-              ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "div",
-                {
-                  className: "space-y-3",
-                  "data-ocid": "settings.plugin_binding.bound_list",
-                  children: boundPluginKeys.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                    "div",
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-1 block text-sm font-medium", children: "Font Pairing" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mb-3", children: "Choose a heading + body font combination." }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(Select, { value: fontPairing, onValueChange: setFontPairing, children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      SelectTrigger,
+                      {
+                        className: "w-full font-mono text-sm",
+                        "data-ocid": "settings.font-pairing.select",
+                        children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "Select font pairing" })
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(SelectContent, { className: "font-mono max-h-72", children: FONT_PAIRINGS.map((p2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      SelectItem,
+                      {
+                        value: p2.id,
+                        className: "text-sm",
+                        children: p2.name
+                      },
+                      p2.id
+                    )) })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { className: "mb-3 block text-sm font-medium", children: "Font Size" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-3", children: ["small", "medium", "large"].map(
+                    (size2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => setFontSize(size2),
+                        "data-ocid": `settings.font-size.${size2}`,
+                        className: `flex-1 rounded border px-3 py-2 text-xs font-mono capitalize transition-colors ${fontSize === size2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"}`,
+                        children: size2
+                      },
+                      size2
+                    )
+                  ) })
+                ] })
+              ] })
+            ]
+          }
+        ),
+        selectedSection === "settings-profile" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "section",
+          {
+            id: "settings-profile",
+            className: "space-y-5",
+            "data-ocid": "settings.profile.section",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold", children: "Profile" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { htmlFor: "settings-profileName", children: "Profile Name" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    Input,
                     {
-                      className: "space-y-2",
-                      "data-ocid": `settings.plugin_binding.bound.item.${idx + 1}`,
-                      children: [
-                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-                          /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
-                            key2.slice(0, 20),
-                            "..."
-                          ] }),
-                          confirmRevokeKey !== key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                            Button,
-                            {
-                              size: "sm",
-                              variant: "outline",
-                              className: "text-xs text-destructive hover:text-destructive shrink-0",
-                              onClick: () => setConfirmRevokeKey(key2),
-                              "data-ocid": `settings.plugin_binding.revoke_button.${idx + 1}`,
-                              children: [
-                                /* @__PURE__ */ jsxRuntimeExports.jsx(Trash2, { className: "mr-1 h-3 w-3" }),
-                                "Revoke"
-                              ]
-                            }
-                          ) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 shrink-0", children: [
-                            /* @__PURE__ */ jsxRuntimeExports.jsx(
-                              Button,
-                              {
-                                size: "sm",
-                                variant: "outline",
-                                onClick: () => setConfirmRevokeKey(null),
-                                disabled: revokingKey === key2,
-                                "data-ocid": `settings.plugin_binding.cancel_revoke_button.${idx + 1}`,
-                                children: "Cancel"
-                              }
-                            ),
-                            /* @__PURE__ */ jsxRuntimeExports.jsx(
-                              Button,
-                              {
-                                size: "sm",
-                                variant: "destructive",
-                                disabled: revokingKey === key2,
-                                onClick: () => handleRevokeBinding(key2),
-                                "data-ocid": `settings.plugin_binding.confirm_revoke_button.${idx + 1}`,
-                                children: revokingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                                  /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
-                                  "Revoking..."
-                                ] }) : "Confirm Revoke"
-                              }
-                            )
-                          ] })
-                        ] }),
-                        confirmRevokeKey === key2 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "This will disconnect the plugin. It will need to re-bind to send notes again." })
-                      ]
-                    },
-                    key2
-                  ))
-                }
-              )
-            ] })
-          ] })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-4", "data-ocid": "settings.api_key.section", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "API Key" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "a",
-          {
-            href: "/skills",
-            target: "_blank",
-            rel: "noopener noreferrer",
-            className: "flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors",
-            "data-ocid": "settings.api_key.mcp_link",
-            children: [
-              "Give your agent Hyvmind skills",
-              /* @__PURE__ */ jsxRuntimeExports.jsx(ExternalLink, { className: "h-3 w-3" })
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-primary font-medium", children: "No API key required — Hyvmind is now open access" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "opacity-50 grayscale pointer-events-none space-y-4", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Use this key to connect MCP clients to your Hyvmind knowledge graphs." }),
-        apiKeyLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "flex items-center gap-2 text-sm text-muted-foreground",
-            "data-ocid": "settings.api_key.loading_state",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
-              "Loading API key..."
-            ]
-          }
-        ) : apiKey ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "code",
-              {
-                className: "flex-1 rounded border border-border bg-muted/40 px-3 py-2 font-mono text-sm tracking-wider text-foreground select-none",
-                "data-ocid": "settings.api_key.display",
-                children: maskApiKey(apiKey)
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Button,
-              {
-                variant: "outline",
-                size: "sm",
-                onClick: handleCopy,
-                className: "shrink-0",
-                "data-ocid": "settings.api_key.copy_button",
-                children: copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-4 w-4 text-foreground" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "h-4 w-4" })
-              }
-            )
-          ] }),
-          !revokeConfirm ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            Button,
-            {
-              variant: "outline",
-              size: "sm",
-              onClick: () => setRevokeConfirm(true),
-              className: "text-xs text-destructive hover:text-destructive",
-              "data-ocid": "settings.api_key.revoke_button",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(Trash2, { className: "mr-2 h-3 w-3" }),
-                "Revoke Key"
-              ]
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "div",
-            {
-              className: "rounded border border-border bg-muted/30 p-4 space-y-3",
-              "data-ocid": "settings.api_key.revoke_dialog",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground", children: "This will permanently invalidate your API key. All existing integrations will stop working. Are you sure?" }),
+                      id: "settings-profileName",
+                      value: profileName,
+                      onChange: (e2) => setProfileName(e2.target.value),
+                      placeholder: "Enter your profile name",
+                      disabled: profileLoading || saveProfile.isPending,
+                      "data-ocid": "settings.profile.name_input"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(Label, { htmlFor: "settings-socialUrl", children: "Social URL (optional)" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    Input,
+                    {
+                      id: "settings-socialUrl",
+                      value: socialUrl,
+                      onChange: (e2) => setSocialUrl(e2.target.value),
+                      placeholder: "https://example.com/@you",
+                      disabled: profileLoading || saveProfile.isPending,
+                      "data-ocid": "settings.profile.social_url_input"
+                    }
+                  )
+                ] }),
                 /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
                     Button,
                     {
-                      variant: "outline",
                       size: "sm",
-                      onClick: () => setRevokeConfirm(false),
-                      disabled: revokeLoading,
-                      "data-ocid": "settings.api_key.cancel_button",
+                      variant: "outline",
+                      onClick: handleCancel,
+                      disabled: profileLoading || saveProfile.isPending,
+                      "data-ocid": "settings.profile.cancel_button",
                       children: "Cancel"
                     }
                   ),
@@ -68040,162 +68104,393 @@ function SettingsView() {
                     Button,
                     {
                       size: "sm",
-                      variant: "destructive",
-                      onClick: handleRevoke,
-                      disabled: revokeLoading,
-                      "data-ocid": "settings.api_key.confirm_button",
-                      children: revokeLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                        /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
-                        "Revoking..."
-                      ] }) : "Confirm Revoke"
+                      variant: "outline",
+                      onClick: handleSave,
+                      disabled: profileLoading || saveProfile.isPending,
+                      "data-ocid": "settings.profile.save_button",
+                      children: "Save"
                     }
                   )
                 ] })
-              ]
-            }
-          )
-        ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "space-y-3",
-            "data-ocid": "settings.api_key.empty_state",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "No API key yet. Generate one to connect MCP clients." }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                Button,
-                {
-                  variant: "outline",
-                  size: "sm",
-                  onClick: handleGenerate,
-                  disabled: generateLoading,
-                  "data-ocid": "settings.api_key.generate_button",
-                  children: generateLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
-                    "Generating..."
-                  ] }) : "Generate Key"
-                }
-              )
+              ] })
             ]
           }
-        )
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, {}),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-4", "data-ocid": "settings.wallet.section", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-medium", children: "Wallet" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Manage your Buzz and Trust balances." }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "p",
-            {
-              className: "text-sm font-medium",
-              "data-ocid": "settings.wallet.buzz_balance",
-              children: [
-                buzzBalance !== void 0 ? (Number(buzzBalance) / 10).toFixed(1) : "0.0",
-                " ",
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", children: "Buzz" })
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "p",
-            {
-              className: "text-sm text-muted-foreground",
-              "data-ocid": "settings.wallet.trust_balance",
-              children: [
-                trustBalance !== void 0 ? (Number(trustBalance) / 1e7).toFixed(7) : "0.0000000",
-                " ",
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Trust" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  Button,
-                  {
-                    variant: "ghost",
-                    size: "icon",
-                    className: "h-4 w-4 ml-1 align-middle",
-                    onClick: () => {
-                      refetchTrust();
-                      refetchTransactions();
-                    },
-                    "data-ocid": "settings.wallet.refresh_trust",
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      RotateCcw,
+        ),
+        selectedSection === "settings-obsidian" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "section",
+          {
+            id: "settings-obsidian",
+            className: "space-y-5",
+            "data-ocid": "settings.plugin_binding.section",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold", children: "Obsidian" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Link this Obsidian plugin to your Hyvmind account so uploaded notes appear here." })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-5", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Your Principal ID" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "Copy this into the Obsidian plugin so it can request binding." }),
+                  pluginSectionLoading && !myPrincipal ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                    "Loading..."
+                  ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "code",
                       {
-                        className: `h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`
+                        className: "font-mono text-xs bg-muted px-2 py-1 rounded break-all",
+                        "data-ocid": "settings.plugin_binding.principal_display",
+                        children: myPrincipal ?? "—"
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      Button,
+                      {
+                        variant: "outline",
+                        size: "sm",
+                        onClick: handleCopyPrincipal,
+                        disabled: !myPrincipal,
+                        className: "shrink-0",
+                        "data-ocid": "settings.plugin_binding.copy_principal_button",
+                        children: principalCopied ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-4 w-4 text-foreground" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "h-4 w-4" })
                       }
                     )
-                  }
-                ),
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Binding Status" }),
+                  pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin text-muted-foreground" }) : pluginBound ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "p",
+                    {
+                      className: "text-sm font-medium",
+                      style: { color: "oklch(0.55 0.15 145)" },
+                      "data-ocid": "settings.plugin_binding.status_bound",
+                      children: "✓ Plugin bound"
+                    }
+                  ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "p",
+                    {
+                      className: "text-sm text-muted-foreground",
+                      "data-ocid": "settings.plugin_binding.status_unbound",
+                      children: "No plugin bound"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Pending Plugin Requests" }),
+                  pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                    "Loading..."
+                  ] }) : pendingBindings.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "p",
+                    {
+                      className: "text-sm text-muted-foreground",
+                      "data-ocid": "settings.plugin_binding.pending.empty_state",
+                      children: "(no pending requests)"
+                    }
+                  ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "div",
+                    {
+                      className: "space-y-2",
+                      "data-ocid": "settings.plugin_binding.pending_list",
+                      children: pendingBindings.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                        "div",
+                        {
+                          className: "flex items-center gap-2",
+                          "data-ocid": `settings.plugin_binding.pending.item.${idx + 1}`,
+                          children: [
+                            /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
+                              key2.slice(0, 20),
+                              "..."
+                            ] }),
+                            /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              Button,
+                              {
+                                size: "sm",
+                                variant: "outline",
+                                disabled: approvingKey === key2,
+                                onClick: () => handleApproveBinding(key2),
+                                "data-ocid": `settings.plugin_binding.approve_button.${idx + 1}`,
+                                children: approvingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                                  /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
+                                  "Approving..."
+                                ] }) : "Approve"
+                              }
+                            )
+                          ]
+                        },
+                        key2
+                      ))
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Bound Plugin Keys" }),
+                  pluginSectionLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-4 w-4 animate-spin" }),
+                    "Loading..."
+                  ] }) : boundPluginKeys.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "p",
+                    {
+                      className: "text-sm text-muted-foreground",
+                      "data-ocid": "settings.plugin_binding.bound.empty_state",
+                      children: "(no bound plugins)"
+                    }
+                  ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "div",
+                    {
+                      className: "space-y-3",
+                      "data-ocid": "settings.plugin_binding.bound_list",
+                      children: boundPluginKeys.map((key2, idx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                        "div",
+                        {
+                          className: "space-y-2",
+                          "data-ocid": `settings.plugin_binding.bound.item.${idx + 1}`,
+                          children: [
+                            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                              /* @__PURE__ */ jsxRuntimeExports.jsxs("code", { className: "font-mono text-xs flex-1 truncate", children: [
+                                key2.slice(0, 20),
+                                "..."
+                              ] }),
+                              confirmRevokeKey !== key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                                Button,
+                                {
+                                  size: "sm",
+                                  variant: "outline",
+                                  className: "text-xs text-destructive hover:text-destructive shrink-0",
+                                  onClick: () => setConfirmRevokeKey(key2),
+                                  "data-ocid": `settings.plugin_binding.revoke_button.${idx + 1}`,
+                                  children: [
+                                    /* @__PURE__ */ jsxRuntimeExports.jsx(Trash2, { className: "mr-1 h-3 w-3" }),
+                                    "Revoke"
+                                  ]
+                                }
+                              ) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 shrink-0", children: [
+                                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                  Button,
+                                  {
+                                    size: "sm",
+                                    variant: "outline",
+                                    onClick: () => setConfirmRevokeKey(null),
+                                    disabled: revokingKey === key2,
+                                    "data-ocid": `settings.plugin_binding.cancel_revoke_button.${idx + 1}`,
+                                    children: "Cancel"
+                                  }
+                                ),
+                                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                  Button,
+                                  {
+                                    size: "sm",
+                                    variant: "destructive",
+                                    disabled: revokingKey === key2,
+                                    onClick: () => handleRevokeBinding(key2),
+                                    "data-ocid": `settings.plugin_binding.confirm_revoke_button.${idx + 1}`,
+                                    children: revokingKey === key2 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                                      /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-3 w-3 animate-spin" }),
+                                      "Revoking..."
+                                    ] }) : "Confirm Revoke"
+                                  }
+                                )
+                              ] })
+                            ] }),
+                            confirmRevokeKey === key2 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "This will disconnect the plugin. It will need to re-bind to send notes again." })
+                          ]
+                        },
+                        key2
+                      ))
+                    }
+                  )
+                ] })
+              ] })
+            ]
+          }
+        ),
+        selectedSection === "settings-wallet" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "section",
+          {
+            id: "settings-wallet",
+            className: "space-y-4",
+            "data-ocid": "settings.wallet.section",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold", children: "Wallet" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Manage your Buzz and Trust balances." }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg border border-border bg-muted/30 p-5 space-y-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "p",
+                    {
+                      className: "text-sm font-medium",
+                      "data-ocid": "settings.wallet.buzz_balance",
+                      children: [
+                        buzzBalance !== void 0 ? (Number(buzzBalance) / 10).toFixed(1) : "0.0",
+                        " ",
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", children: "Buzz" })
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "p",
+                    {
+                      className: "text-sm text-muted-foreground",
+                      "data-ocid": "settings.wallet.trust_balance",
+                      children: [
+                        trustBalance !== void 0 ? (Number(trustBalance) / 1e7).toFixed(7) : "0.0000000",
+                        " ",
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Trust" }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          Button,
+                          {
+                            variant: "ghost",
+                            size: "icon",
+                            className: "h-4 w-4 ml-1 align-middle",
+                            onClick: () => {
+                              refetchTrust();
+                              refetchTransactions();
+                            },
+                            "data-ocid": "settings.wallet.refresh_trust",
+                            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              RotateCcw,
+                              {
+                                className: `h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`
+                              }
+                            )
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          Button,
+                          {
+                            variant: "ghost",
+                            size: "icon",
+                            className: "h-4 w-4 ml-1 align-middle",
+                            onClick: () => setTxLogOpen(true),
+                            "data-ocid": "settings.wallet.trust_tx_log",
+                            children: /* @__PURE__ */ jsxRuntimeExports.jsx(FileText, { className: "h-3 w-3" })
+                          }
+                        )
+                      ]
+                    }
+                  )
+                ] }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
                   Button,
                   {
-                    variant: "ghost",
-                    size: "icon",
-                    className: "h-4 w-4 ml-1 align-middle",
-                    onClick: () => setTxLogOpen(true),
-                    "data-ocid": "settings.wallet.trust_tx_log",
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(FileText, { className: "h-3 w-3" })
+                    variant: "outline",
+                    size: "sm",
+                    onClick: () => setCreateBuzzOpen(true),
+                    "data-ocid": "settings.wallet.create_buzz_button",
+                    children: "Create Buzz"
                   }
                 )
-              ]
+              ] }) })
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          CreateBuzzModal,
+          {
+            isOpen: createBuzzOpen,
+            onClose: () => setCreateBuzzOpen(false)
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open: txLogOpen, onOpenChange: setTxLogOpen, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "sm:max-w-2xl max-h-[80vh]", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(DialogHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogTitle, { children: "Trust Transactions" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollArea, { className: "max-h-[60vh]", children: trustTransactions && trustTransactions.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(Table, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TableHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Saver" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Date" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Multiplier" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Buzz Base" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Trust Earned" })
+            ] }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TableBody, { children: trustTransactions.map((tx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              TableRow,
+              {
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "font-mono text-xs", children: typeof tx.saver.toText === "function" ? `${tx.saver.toText().slice(0, 10)}...` : `${String(tx.saver).slice(0, 10)}...` }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: new Date(
+                    Number(tx.savedAt) / 1e6
+                  ).toLocaleString() }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: `√${tx.saveNumber.toString()}` }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: (Number(tx.totalBuzzCost) / 10).toFixed(1) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: (Number(tx.earned) / 1e7).toFixed(7) })
+                ]
+              },
+              `${String(tx.saver)}-${String(tx.savedAt)}`
+            )) })
+          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground p-4 text-center", children: "No trust transactions yet." }) })
+        ] }) })
+      ] }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-2 py-1.5 border-b border-dashed border-border shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs uppercase tracking-widest text-muted-foreground font-medium", children: "sections" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 overflow-y-auto min-h-0 p-2 space-y-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => {
+                var _a3;
+                setSelectedSection("settings-profile");
+                (_a3 = document.getElementById("settings-profile")) == null ? void 0 : _a3.scrollIntoView({ behavior: "smooth" });
+              },
+              className: `w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${selectedSection === "settings-profile" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+              "data-ocid": "settings.nav.profile",
+              children: "profile"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => {
+                var _a3;
+                setSelectedSection("settings-appearance");
+                (_a3 = document.getElementById("settings-appearance")) == null ? void 0 : _a3.scrollIntoView({ behavior: "smooth" });
+              },
+              className: `w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${selectedSection === "settings-appearance" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+              "data-ocid": "settings.nav.appearance",
+              children: "appearance"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => {
+                var _a3;
+                setSelectedSection("settings-obsidian");
+                (_a3 = document.getElementById("settings-obsidian")) == null ? void 0 : _a3.scrollIntoView({ behavior: "smooth" });
+              },
+              className: `w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${selectedSection === "settings-obsidian" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+              "data-ocid": "settings.nav.obsidian",
+              children: "obsidian"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => {
+                var _a3;
+                setSelectedSection("settings-wallet");
+                (_a3 = document.getElementById("settings-wallet")) == null ? void 0 : _a3.scrollIntoView({ behavior: "smooth" });
+              },
+              className: `w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${selectedSection === "settings-wallet" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+              "data-ocid": "settings.nav.wallet",
+              children: "wallet"
             }
           )
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          Button,
-          {
-            variant: "outline",
-            size: "sm",
-            onClick: () => setCreateBuzzOpen(true),
-            "data-ocid": "settings.wallet.create_buzz_button",
-            children: "Create Buzz"
-          }
-        )
-      ] }) })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      CreateBuzzModal,
-      {
-        isOpen: createBuzzOpen,
-        onClose: () => setCreateBuzzOpen(false)
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Dialog, { open: txLogOpen, onOpenChange: setTxLogOpen, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(DialogContent, { className: "sm:max-w-2xl max-h-[80vh]", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(DialogHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DialogTitle, { children: "Trust Transactions" }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollArea, { className: "max-h-[60vh]", children: trustTransactions && trustTransactions.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(Table, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TableHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(TableRow, { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Saver" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Date" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Multiplier" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Buzz Base" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TableHead, { children: "Trust Earned" })
-        ] }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(TableBody, { children: trustTransactions.map((tx) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          TableRow,
-          {
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "font-mono text-xs", children: typeof tx.saver.toText === "function" ? `${tx.saver.toText().slice(0, 10)}...` : `${String(tx.saver).slice(0, 10)}...` }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: new Date(
-                Number(tx.savedAt) / 1e6
-              ).toLocaleString() }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: `√${tx.saveNumber.toString()}` }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: (Number(tx.totalBuzzCost) / 10).toFixed(1) }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(TableCell, { className: "text-xs", children: (Number(tx.earned) / 1e7).toFixed(7) })
-            ]
-          },
-          `${String(tx.saver)}-${String(tx.savedAt)}`
-        )) })
-      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground p-4 text-center", children: "No trust transactions yet." }) })
-    ] }) })
-  ] }) });
+        ] })
+      ] })
+    ] })
+  ] });
 }
 const TABS = [
-  { id: "notes", label: "notes", ocid: "sidebar.tab.notes" },
-  { id: "graphs", label: "graphs", ocid: "sidebar.tab.graphs" },
-  { id: "chat", label: "chat", ocid: "sidebar.tab.chat" },
-  { id: "public", label: "public", ocid: "sidebar.tab.public" },
-  { id: "settings", label: "settings", ocid: "sidebar.tab.settings" },
-  { id: "terminal", label: "terminal", ocid: "sidebar.tab.terminal" }
+  { id: "notes", label: "Notes", ocid: "sidebar.tab.notes" },
+  { id: "graphs", label: "Graphs", ocid: "sidebar.tab.graphs" },
+  { id: "chat", label: "Chat", ocid: "sidebar.tab.chat" },
+  { id: "public", label: "Public", ocid: "sidebar.tab.public" },
+  { id: "settings", label: "Settings", ocid: "sidebar.tab.settings" },
+  { id: "terminal", label: "Terminal", ocid: "sidebar.tab.terminal" }
 ];
 function Sidebar({
   activeTab,
@@ -68211,24 +68506,24 @@ function Sidebar({
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 pt-2", children: TABS.map((tab2) => {
           const isActive = activeTab === tab2.id;
           return /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
-              type: "button",
+              variant: "ghost",
               "data-ocid": tab2.ocid,
               onClick: () => onTabChange(tab2.id),
-              className: `w-full py-3 px-2 flex items-center justify-center transition-colors duration-150 ${isActive ? "bg-accent text-accent-foreground border-l-2 border-primary" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`,
+              className: `w-full py-3 px-2 ${isActive ? "bg-accent text-accent-foreground border-l-2 border-primary" : "text-muted-foreground"}`,
               children: collapsed ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium uppercase select-none", children: tab2.label[0] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium select-none", children: tab2.label })
             },
             tab2.id
           );
         }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
+          Button,
           {
-            type: "button",
+            variant: "ghost",
             "data-ocid": "sidebar.toggle-collapse",
             onClick: onToggleCollapse,
-            className: "p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-border transition-colors duration-150",
+            className: "p-2 w-full text-center border-t border-border",
             children: collapsed ? "»" : "«"
           }
         )
@@ -71796,8 +72091,8 @@ var jquery = { exports: {} };
       }
       return typeof obj === "object" || typeof obj === "function" ? class2type[toString3.call(obj)] || "object" : typeof obj;
     }
-    var version = "3.7.1", rhtmlSuffix = /HTML$/i, jQuery = function(selector2, context) {
-      return new jQuery.fn.init(selector2, context);
+    var version = "3.7.1", rhtmlSuffix = /HTML$/i, jQuery = function(selector3, context3) {
+      return new jQuery.fn.init(selector3, context3);
     };
     jQuery.fn = jQuery.prototype = {
       // The current version of jQuery being used
@@ -72149,20 +72444,20 @@ var jquery = { exports: {} };
           }
         };
       }
-      function find2(selector2, context, results, seed) {
-        var m2, i3, elem, nid, match, groups, newSelector, newContext = context && context.ownerDocument, nodeType = context ? context.nodeType : 9;
+      function find2(selector3, context3, results, seed) {
+        var m2, i3, elem, nid, match, groups, newSelector, newContext = context3 && context3.ownerDocument, nodeType = context3 ? context3.nodeType : 9;
         results = results || [];
-        if (typeof selector2 !== "string" || !selector2 || nodeType !== 1 && nodeType !== 9 && nodeType !== 11) {
+        if (typeof selector3 !== "string" || !selector3 || nodeType !== 1 && nodeType !== 9 && nodeType !== 11) {
           return results;
         }
         if (!seed) {
-          setDocument(context);
-          context = context || document3;
+          setDocument(context3);
+          context3 = context3 || document3;
           if (documentIsHTML) {
-            if (nodeType !== 11 && (match = rquickExpr2.exec(selector2))) {
+            if (nodeType !== 11 && (match = rquickExpr2.exec(selector3))) {
               if (m2 = match[1]) {
                 if (nodeType === 9) {
-                  if (elem = context.getElementById(m2)) {
+                  if (elem = context3.getElementById(m2)) {
                     if (elem.id === m2) {
                       push3.call(results, elem);
                       return results;
@@ -72171,32 +72466,32 @@ var jquery = { exports: {} };
                     return results;
                   }
                 } else {
-                  if (newContext && (elem = newContext.getElementById(m2)) && find2.contains(context, elem) && elem.id === m2) {
+                  if (newContext && (elem = newContext.getElementById(m2)) && find2.contains(context3, elem) && elem.id === m2) {
                     push3.call(results, elem);
                     return results;
                   }
                 }
               } else if (match[2]) {
-                push3.apply(results, context.getElementsByTagName(selector2));
+                push3.apply(results, context3.getElementsByTagName(selector3));
                 return results;
-              } else if ((m2 = match[3]) && context.getElementsByClassName) {
-                push3.apply(results, context.getElementsByClassName(m2));
+              } else if ((m2 = match[3]) && context3.getElementsByClassName) {
+                push3.apply(results, context3.getElementsByClassName(m2));
                 return results;
               }
             }
-            if (!nonnativeSelectorCache[selector2 + " "] && (!rbuggyQSA || !rbuggyQSA.test(selector2))) {
-              newSelector = selector2;
-              newContext = context;
-              if (nodeType === 1 && (rdescend.test(selector2) || rleadingCombinator.test(selector2))) {
-                newContext = rsibling.test(selector2) && testContext(context.parentNode) || context;
-                if (newContext != context || !support.scope) {
-                  if (nid = context.getAttribute("id")) {
+            if (!nonnativeSelectorCache[selector3 + " "] && (!rbuggyQSA || !rbuggyQSA.test(selector3))) {
+              newSelector = selector3;
+              newContext = context3;
+              if (nodeType === 1 && (rdescend.test(selector3) || rleadingCombinator.test(selector3))) {
+                newContext = rsibling.test(selector3) && testContext(context3.parentNode) || context3;
+                if (newContext != context3 || !support.scope) {
+                  if (nid = context3.getAttribute("id")) {
                     nid = jQuery.escapeSelector(nid);
                   } else {
-                    context.setAttribute("id", nid = expando);
+                    context3.setAttribute("id", nid = expando);
                   }
                 }
-                groups = tokenize2(selector2);
+                groups = tokenize2(selector3);
                 i3 = groups.length;
                 while (i3--) {
                   groups[i3] = (nid ? "#" + nid : ":scope") + " " + toSelector(groups[i3]);
@@ -72210,16 +72505,16 @@ var jquery = { exports: {} };
                 );
                 return results;
               } catch (qsaError) {
-                nonnativeSelectorCache(selector2, true);
+                nonnativeSelectorCache(selector3, true);
               } finally {
                 if (nid === expando) {
-                  context.removeAttribute("id");
+                  context3.removeAttribute("id");
                 }
               }
             }
           }
         }
-        return select2(selector2.replace(rtrimCSS, "$1"), context, results, seed);
+        return select2(selector3.replace(rtrimCSS, "$1"), context3, results, seed);
       }
       function createCache2() {
         var keys2 = [];
@@ -72292,8 +72587,8 @@ var jquery = { exports: {} };
           });
         });
       }
-      function testContext(context) {
-        return context && typeof context.getElementsByTagName !== "undefined" && context;
+      function testContext(context3) {
+        return context3 && typeof context3.getElementsByTagName !== "undefined" && context3;
       }
       function setDocument(node2) {
         var subWindow, doc = node2 ? node2.ownerDocument || node2 : preferredDoc;
@@ -72336,9 +72631,9 @@ var jquery = { exports: {} };
               return elem.getAttribute("id") === attrId;
             };
           };
-          Expr.find.ID = function(id2, context) {
-            if (typeof context.getElementById !== "undefined" && documentIsHTML) {
-              var elem = context.getElementById(id2);
+          Expr.find.ID = function(id2, context3) {
+            if (typeof context3.getElementById !== "undefined" && documentIsHTML) {
+              var elem = context3.getElementById(id2);
               return elem ? [elem] : [];
             }
           };
@@ -72350,15 +72645,15 @@ var jquery = { exports: {} };
               return node3 && node3.value === attrId;
             };
           };
-          Expr.find.ID = function(id2, context) {
-            if (typeof context.getElementById !== "undefined" && documentIsHTML) {
-              var node3, i3, elems, elem = context.getElementById(id2);
+          Expr.find.ID = function(id2, context3) {
+            if (typeof context3.getElementById !== "undefined" && documentIsHTML) {
+              var node3, i3, elems, elem = context3.getElementById(id2);
               if (elem) {
                 node3 = elem.getAttributeNode("id");
                 if (node3 && node3.value === id2) {
                   return [elem];
                 }
-                elems = context.getElementsByName(id2);
+                elems = context3.getElementsByName(id2);
                 i3 = 0;
                 while (elem = elems[i3++]) {
                   node3 = elem.getAttributeNode("id");
@@ -72371,16 +72666,16 @@ var jquery = { exports: {} };
             }
           };
         }
-        Expr.find.TAG = function(tag, context) {
-          if (typeof context.getElementsByTagName !== "undefined") {
-            return context.getElementsByTagName(tag);
+        Expr.find.TAG = function(tag, context3) {
+          if (typeof context3.getElementsByTagName !== "undefined") {
+            return context3.getElementsByTagName(tag);
           } else {
-            return context.querySelectorAll(tag);
+            return context3.querySelectorAll(tag);
           }
         };
-        Expr.find.CLASS = function(className, context) {
-          if (typeof context.getElementsByClassName !== "undefined" && documentIsHTML) {
-            return context.getElementsByClassName(className);
+        Expr.find.CLASS = function(className, context3) {
+          if (typeof context3.getElementsByClassName !== "undefined" && documentIsHTML) {
+            return context3.getElementsByClassName(className);
           }
         };
         rbuggyQSA = [];
@@ -72462,11 +72757,11 @@ var jquery = { exports: {} };
         }
         return find2(expr, document3, null, [elem]).length > 0;
       };
-      find2.contains = function(context, elem) {
-        if ((context.ownerDocument || context) != document3) {
-          setDocument(context);
+      find2.contains = function(context3, elem) {
+        if ((context3.ownerDocument || context3) != document3) {
+          setDocument(context3);
         }
-        return jQuery.contains(context, elem);
+        return jQuery.contains(context3, elem);
       };
       find2.attr = function(elem, name) {
         if ((elem.ownerDocument || elem) != document3) {
@@ -72611,7 +72906,7 @@ var jquery = { exports: {} };
               function(elem) {
                 return !!elem.parentNode;
               }
-            ) : function(elem, _context, xml2) {
+            ) : function(elem, _context2, xml2) {
               var cache, outerCache, node2, nodeIndex, start2, dir2 = simple !== forward ? "nextSibling" : "previousSibling", parent = elem.parentNode, name = ofType && elem.nodeName.toLowerCase(), useCache = !xml2 && !ofType, diff = false;
               if (parent) {
                 if (simple) {
@@ -72688,25 +72983,25 @@ var jquery = { exports: {} };
         },
         pseudos: {
           // Potentially complex pseudos
-          not: markFunction(function(selector2) {
-            var input = [], results = [], matcher2 = compile(selector2.replace(rtrimCSS, "$1"));
-            return matcher2[expando] ? markFunction(function(seed, matches2, _context, xml2) {
+          not: markFunction(function(selector3) {
+            var input = [], results = [], matcher2 = compile(selector3.replace(rtrimCSS, "$1"));
+            return matcher2[expando] ? markFunction(function(seed, matches2, _context2, xml2) {
               var elem, unmatched = matcher2(seed, null, xml2, []), i3 = seed.length;
               while (i3--) {
                 if (elem = unmatched[i3]) {
                   seed[i3] = !(matches2[i3] = elem);
                 }
               }
-            }) : function(elem, _context, xml2) {
+            }) : function(elem, _context2, xml2) {
               input[0] = elem;
               matcher2(input, null, xml2, results);
               input[0] = null;
               return !results.pop();
             };
           }),
-          has: markFunction(function(selector2) {
+          has: markFunction(function(selector3) {
             return function(elem) {
-              return find2(selector2, elem).length > 0;
+              return find2(selector3, elem).length > 0;
             };
           }),
           contains: markFunction(function(text2) {
@@ -72848,12 +73143,12 @@ var jquery = { exports: {} };
       }
       setFilters.prototype = Expr.filters = Expr.pseudos;
       Expr.setFilters = new setFilters();
-      function tokenize2(selector2, parseOnly) {
-        var matched, match, tokens, type, soFar, groups, preFilters, cached = tokenCache[selector2 + " "];
+      function tokenize2(selector3, parseOnly) {
+        var matched, match, tokens, type, soFar, groups, preFilters, cached = tokenCache[selector3 + " "];
         if (cached) {
           return parseOnly ? 0 : cached.slice(0);
         }
-        soFar = selector2;
+        soFar = selector3;
         groups = [];
         preFilters = Expr.preFilter;
         while (soFar) {
@@ -72891,38 +73186,38 @@ var jquery = { exports: {} };
         if (parseOnly) {
           return soFar.length;
         }
-        return soFar ? find2.error(selector2) : (
+        return soFar ? find2.error(selector3) : (
           // Cache the tokens
-          tokenCache(selector2, groups).slice(0)
+          tokenCache(selector3, groups).slice(0)
         );
       }
       function toSelector(tokens) {
-        var i3 = 0, len = tokens.length, selector2 = "";
+        var i3 = 0, len = tokens.length, selector3 = "";
         for (; i3 < len; i3++) {
-          selector2 += tokens[i3].value;
+          selector3 += tokens[i3].value;
         }
-        return selector2;
+        return selector3;
       }
       function addCombinator(matcher2, combinator, base) {
         var dir2 = combinator.dir, skip = combinator.next, key2 = skip || dir2, checkNonElements = base && key2 === "parentNode", doneName = done++;
         return combinator.first ? (
           // Check against closest ancestor/preceding element
-          function(elem, context, xml2) {
+          function(elem, context3, xml2) {
             while (elem = elem[dir2]) {
               if (elem.nodeType === 1 || checkNonElements) {
-                return matcher2(elem, context, xml2);
+                return matcher2(elem, context3, xml2);
               }
             }
             return false;
           }
         ) : (
           // Check against all ancestor/preceding elements
-          function(elem, context, xml2) {
+          function(elem, context3, xml2) {
             var oldCache, outerCache, newCache = [dirruns, doneName];
             if (xml2) {
               while (elem = elem[dir2]) {
                 if (elem.nodeType === 1 || checkNonElements) {
-                  if (matcher2(elem, context, xml2)) {
+                  if (matcher2(elem, context3, xml2)) {
                     return true;
                   }
                 }
@@ -72937,7 +73232,7 @@ var jquery = { exports: {} };
                     return newCache[2] = oldCache[2];
                   } else {
                     outerCache[key2] = newCache;
-                    if (newCache[2] = matcher2(elem, context, xml2)) {
+                    if (newCache[2] = matcher2(elem, context3, xml2)) {
                       return true;
                     }
                   }
@@ -72949,28 +73244,28 @@ var jquery = { exports: {} };
         );
       }
       function elementMatcher(matchers2) {
-        return matchers2.length > 1 ? function(elem, context, xml2) {
+        return matchers2.length > 1 ? function(elem, context3, xml2) {
           var i3 = matchers2.length;
           while (i3--) {
-            if (!matchers2[i3](elem, context, xml2)) {
+            if (!matchers2[i3](elem, context3, xml2)) {
               return false;
             }
           }
           return true;
         } : matchers2[0];
       }
-      function multipleContexts(selector2, contexts, results) {
+      function multipleContexts(selector3, contexts, results) {
         var i3 = 0, len = contexts.length;
         for (; i3 < len; i3++) {
-          find2(selector2, contexts[i3], results);
+          find2(selector3, contexts[i3], results);
         }
         return results;
       }
-      function condense(unmatched, map2, filter2, context, xml2) {
+      function condense(unmatched, map2, filter2, context3, xml2) {
         var elem, newUnmatched = [], i3 = 0, len = unmatched.length, mapped = map2 != null;
         for (; i3 < len; i3++) {
           if (elem = unmatched[i3]) {
-            if (!filter2 || filter2(elem, context, xml2)) {
+            if (!filter2 || filter2(elem, context3, xml2)) {
               newUnmatched.push(elem);
               if (mapped) {
                 map2.push(i3);
@@ -72980,19 +73275,19 @@ var jquery = { exports: {} };
         }
         return newUnmatched;
       }
-      function setMatcher(preFilter, selector2, matcher2, postFilter, postFinder, postSelector) {
+      function setMatcher(preFilter, selector3, matcher2, postFilter, postFinder, postSelector) {
         if (postFilter && !postFilter[expando]) {
           postFilter = setMatcher(postFilter);
         }
         if (postFinder && !postFinder[expando]) {
           postFinder = setMatcher(postFinder, postSelector);
         }
-        return markFunction(function(seed, results, context, xml2) {
+        return markFunction(function(seed, results, context3, xml2) {
           var temp, i3, elem, matcherOut, preMap = [], postMap = [], preexisting = results.length, elems = seed || multipleContexts(
-            selector2 || "*",
-            context.nodeType ? [context] : context,
+            selector3 || "*",
+            context3.nodeType ? [context3] : context3,
             []
-          ), matcherIn = preFilter && (seed || !selector2) ? condense(elems, preMap, preFilter, context, xml2) : elems;
+          ), matcherIn = preFilter && (seed || !selector3) ? condense(elems, preMap, preFilter, context3, xml2) : elems;
           if (matcher2) {
             matcherOut = postFinder || (seed ? preFilter : preexisting || postFilter) ? (
               // ...intermediate processing is necessary
@@ -73001,13 +73296,13 @@ var jquery = { exports: {} };
               // ...otherwise use results directly
               results
             );
-            matcher2(matcherIn, matcherOut, context, xml2);
+            matcher2(matcherIn, matcherOut, context3, xml2);
           } else {
             matcherOut = matcherIn;
           }
           if (postFilter) {
             temp = condense(matcherOut, postMap);
-            postFilter(temp, [], context, xml2);
+            postFilter(temp, [], context3, xml2);
             i3 = temp.length;
             while (i3--) {
               if (elem = temp[i3]) {
@@ -73051,8 +73346,8 @@ var jquery = { exports: {} };
           return elem === checkContext;
         }, implicitRelative, true), matchAnyContext = addCombinator(function(elem) {
           return indexOf.call(checkContext, elem) > -1;
-        }, implicitRelative, true), matchers2 = [function(elem, context, xml2) {
-          var ret = !leadingRelative && (xml2 || context != outermostContext) || ((checkContext = context).nodeType ? matchContext(elem, context, xml2) : matchAnyContext(elem, context, xml2));
+        }, implicitRelative, true), matchers2 = [function(elem, context3, xml2) {
+          var ret = !leadingRelative && (xml2 || context3 != outermostContext) || ((checkContext = context3).nodeType ? matchContext(elem, context3, xml2) : matchAnyContext(elem, context3, xml2));
           checkContext = null;
           return ret;
         }];
@@ -73086,20 +73381,20 @@ var jquery = { exports: {} };
         return elementMatcher(matchers2);
       }
       function matcherFromGroupMatchers(elementMatchers, setMatchers) {
-        var bySet = setMatchers.length > 0, byElement = elementMatchers.length > 0, superMatcher = function(seed, context, xml2, results, outermost) {
+        var bySet = setMatchers.length > 0, byElement = elementMatchers.length > 0, superMatcher = function(seed, context3, xml2, results, outermost) {
           var elem, j2, matcher2, matchedCount = 0, i3 = "0", unmatched = seed && [], setMatched = [], contextBackup = outermostContext, elems = seed || byElement && Expr.find.TAG("*", outermost), dirrunsUnique = dirruns += contextBackup == null ? 1 : Math.random() || 0.1, len = elems.length;
           if (outermost) {
-            outermostContext = context == document3 || context || outermost;
+            outermostContext = context3 == document3 || context3 || outermost;
           }
           for (; i3 !== len && (elem = elems[i3]) != null; i3++) {
             if (byElement && elem) {
               j2 = 0;
-              if (!context && elem.ownerDocument != document3) {
+              if (!context3 && elem.ownerDocument != document3) {
                 setDocument(elem);
                 xml2 = !documentIsHTML;
               }
               while (matcher2 = elementMatchers[j2++]) {
-                if (matcher2(elem, context || document3, xml2)) {
+                if (matcher2(elem, context3 || document3, xml2)) {
                   push3.call(results, elem);
                   break;
                 }
@@ -73121,7 +73416,7 @@ var jquery = { exports: {} };
           if (bySet && i3 !== matchedCount) {
             j2 = 0;
             while (matcher2 = setMatchers[j2++]) {
-              matcher2(unmatched, setMatched, context, xml2);
+              matcher2(unmatched, setMatched, context3, xml2);
             }
             if (seed) {
               if (matchedCount > 0) {
@@ -73146,11 +73441,11 @@ var jquery = { exports: {} };
         };
         return bySet ? markFunction(superMatcher) : superMatcher;
       }
-      function compile(selector2, match) {
-        var i3, setMatchers = [], elementMatchers = [], cached = compilerCache[selector2 + " "];
+      function compile(selector3, match) {
+        var i3, setMatchers = [], elementMatchers = [], cached = compilerCache[selector3 + " "];
         if (!cached) {
           if (!match) {
-            match = tokenize2(selector2);
+            match = tokenize2(selector3);
           }
           i3 = match.length;
           while (i3--) {
@@ -73162,31 +73457,31 @@ var jquery = { exports: {} };
             }
           }
           cached = compilerCache(
-            selector2,
+            selector3,
             matcherFromGroupMatchers(elementMatchers, setMatchers)
           );
-          cached.selector = selector2;
+          cached.selector = selector3;
         }
         return cached;
       }
-      function select2(selector2, context, results, seed) {
-        var i3, tokens, token, type, find3, compiled = typeof selector2 === "function" && selector2, match = !seed && tokenize2(selector2 = compiled.selector || selector2);
+      function select2(selector3, context3, results, seed) {
+        var i3, tokens, token, type, find3, compiled = typeof selector3 === "function" && selector3, match = !seed && tokenize2(selector3 = compiled.selector || selector3);
         results = results || [];
         if (match.length === 1) {
           tokens = match[0] = match[0].slice(0);
-          if (tokens.length > 2 && (token = tokens[0]).type === "ID" && context.nodeType === 9 && documentIsHTML && Expr.relative[tokens[1].type]) {
-            context = (Expr.find.ID(
+          if (tokens.length > 2 && (token = tokens[0]).type === "ID" && context3.nodeType === 9 && documentIsHTML && Expr.relative[tokens[1].type]) {
+            context3 = (Expr.find.ID(
               token.matches[0].replace(runescape, funescape),
-              context
+              context3
             ) || [])[0];
-            if (!context) {
+            if (!context3) {
               return results;
             } else if (compiled) {
-              context = context.parentNode;
+              context3 = context3.parentNode;
             }
-            selector2 = selector2.slice(tokens.shift().value.length);
+            selector3 = selector3.slice(tokens.shift().value.length);
           }
-          i3 = matchExpr.needsContext.test(selector2) ? 0 : tokens.length;
+          i3 = matchExpr.needsContext.test(selector3) ? 0 : tokens.length;
           while (i3--) {
             token = tokens[i3];
             if (Expr.relative[type = token.type]) {
@@ -73195,11 +73490,11 @@ var jquery = { exports: {} };
             if (find3 = Expr.find[type]) {
               if (seed = find3(
                 token.matches[0].replace(runescape, funescape),
-                rsibling.test(tokens[0].type) && testContext(context.parentNode) || context
+                rsibling.test(tokens[0].type) && testContext(context3.parentNode) || context3
               )) {
                 tokens.splice(i3, 1);
-                selector2 = seed.length && toSelector(tokens);
-                if (!selector2) {
+                selector3 = seed.length && toSelector(tokens);
+                if (!selector3) {
                   push3.apply(results, seed);
                   return results;
                 }
@@ -73208,12 +73503,12 @@ var jquery = { exports: {} };
             }
           }
         }
-        (compiled || compile(selector2, match))(
+        (compiled || compile(selector3, match))(
           seed,
-          context,
+          context3,
           !documentIsHTML,
           results,
-          !context || rsibling.test(selector2) && testContext(context.parentNode) || context
+          !context3 || rsibling.test(selector3) && testContext(context3.parentNode) || context3
         );
         return results;
       }
@@ -73290,10 +73585,10 @@ var jquery = { exports: {} };
       }));
     };
     jQuery.fn.extend({
-      find: function(selector2) {
+      find: function(selector3) {
         var i2, ret, len = this.length, self2 = this;
-        if (typeof selector2 !== "string") {
-          return this.pushStack(jQuery(selector2).filter(function() {
+        if (typeof selector3 !== "string") {
+          return this.pushStack(jQuery(selector3).filter(function() {
             for (i2 = 0; i2 < len; i2++) {
               if (jQuery.contains(self2[i2], this)) {
                 return true;
@@ -73303,52 +73598,52 @@ var jquery = { exports: {} };
         }
         ret = this.pushStack([]);
         for (i2 = 0; i2 < len; i2++) {
-          jQuery.find(selector2, self2[i2], ret);
+          jQuery.find(selector3, self2[i2], ret);
         }
         return len > 1 ? jQuery.uniqueSort(ret) : ret;
       },
-      filter: function(selector2) {
-        return this.pushStack(winnow(this, selector2 || [], false));
+      filter: function(selector3) {
+        return this.pushStack(winnow(this, selector3 || [], false));
       },
-      not: function(selector2) {
-        return this.pushStack(winnow(this, selector2 || [], true));
+      not: function(selector3) {
+        return this.pushStack(winnow(this, selector3 || [], true));
       },
-      is: function(selector2) {
+      is: function(selector3) {
         return !!winnow(
           this,
           // If this is a positional/relative selector, check membership in the returned set
           // so $("p:first").is("p:last") won't return true for a doc with two "p".
-          typeof selector2 === "string" && rneedsContext.test(selector2) ? jQuery(selector2) : selector2 || [],
+          typeof selector3 === "string" && rneedsContext.test(selector3) ? jQuery(selector3) : selector3 || [],
           false
         ).length;
       }
     });
-    var rootjQuery, rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]+))$/, init5 = jQuery.fn.init = function(selector2, context, root2) {
+    var rootjQuery, rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]+))$/, init8 = jQuery.fn.init = function(selector3, context3, root2) {
       var match, elem;
-      if (!selector2) {
+      if (!selector3) {
         return this;
       }
       root2 = root2 || rootjQuery;
-      if (typeof selector2 === "string") {
-        if (selector2[0] === "<" && selector2[selector2.length - 1] === ">" && selector2.length >= 3) {
-          match = [null, selector2, null];
+      if (typeof selector3 === "string") {
+        if (selector3[0] === "<" && selector3[selector3.length - 1] === ">" && selector3.length >= 3) {
+          match = [null, selector3, null];
         } else {
-          match = rquickExpr.exec(selector2);
+          match = rquickExpr.exec(selector3);
         }
-        if (match && (match[1] || !context)) {
+        if (match && (match[1] || !context3)) {
           if (match[1]) {
-            context = context instanceof jQuery ? context[0] : context;
+            context3 = context3 instanceof jQuery ? context3[0] : context3;
             jQuery.merge(this, jQuery.parseHTML(
               match[1],
-              context && context.nodeType ? context.ownerDocument || context : document2,
+              context3 && context3.nodeType ? context3.ownerDocument || context3 : document2,
               true
             ));
-            if (rsingleTag.test(match[1]) && jQuery.isPlainObject(context)) {
-              for (match in context) {
+            if (rsingleTag.test(match[1]) && jQuery.isPlainObject(context3)) {
+              for (match in context3) {
                 if (isFunction2(this[match])) {
-                  this[match](context[match]);
+                  this[match](context3[match]);
                 } else {
-                  this.attr(match, context[match]);
+                  this.attr(match, context3[match]);
                 }
               }
             }
@@ -73361,24 +73656,24 @@ var jquery = { exports: {} };
             }
             return this;
           }
-        } else if (!context || context.jquery) {
-          return (context || root2).find(selector2);
+        } else if (!context3 || context3.jquery) {
+          return (context3 || root2).find(selector3);
         } else {
-          return this.constructor(context).find(selector2);
+          return this.constructor(context3).find(selector3);
         }
-      } else if (selector2.nodeType) {
-        this[0] = selector2;
+      } else if (selector3.nodeType) {
+        this[0] = selector3;
         this.length = 1;
         return this;
-      } else if (isFunction2(selector2)) {
-        return root2.ready !== void 0 ? root2.ready(selector2) : (
+      } else if (isFunction2(selector3)) {
+        return root2.ready !== void 0 ? root2.ready(selector3) : (
           // Execute immediately if ready is not present
-          selector2(jQuery)
+          selector3(jQuery)
         );
       }
-      return jQuery.makeArray(selector2, this);
+      return jQuery.makeArray(selector3, this);
     };
-    init5.prototype = jQuery.fn;
+    init8.prototype = jQuery.fn;
     rootjQuery = jQuery(document2);
     var rparentsprev = /^(?:parents|prev(?:Until|All))/, guaranteedUnique = {
       children: true,
@@ -73398,11 +73693,11 @@ var jquery = { exports: {} };
           }
         });
       },
-      closest: function(selectors, context) {
+      closest: function(selectors, context3) {
         var cur, i2 = 0, l2 = this.length, matched = [], targets = typeof selectors !== "string" && jQuery(selectors);
         if (!rneedsContext.test(selectors)) {
           for (; i2 < l2; i2++) {
-            for (cur = this[i2]; cur && cur !== context; cur = cur.parentNode) {
+            for (cur = this[i2]; cur && cur !== context3; cur = cur.parentNode) {
               if (cur.nodeType < 11 && (targets ? targets.index(cur) > -1 : (
                 // Don't pass non-elements to jQuery#find
                 cur.nodeType === 1 && jQuery.find.matchesSelector(cur, selectors)
@@ -73429,16 +73724,16 @@ var jquery = { exports: {} };
           elem.jquery ? elem[0] : elem
         );
       },
-      add: function(selector2, context) {
+      add: function(selector3, context3) {
         return this.pushStack(
           jQuery.uniqueSort(
-            jQuery.merge(this.get(), jQuery(selector2, context))
+            jQuery.merge(this.get(), jQuery(selector3, context3))
           )
         );
       },
-      addBack: function(selector2) {
+      addBack: function(selector3) {
         return this.add(
-          selector2 == null ? this.prevObject : this.prevObject.filter(selector2)
+          selector3 == null ? this.prevObject : this.prevObject.filter(selector3)
         );
       }
     });
@@ -73495,13 +73790,13 @@ var jquery = { exports: {} };
         return jQuery.merge([], elem.childNodes);
       }
     }, function(name, fn) {
-      jQuery.fn[name] = function(until, selector2) {
+      jQuery.fn[name] = function(until, selector3) {
         var matched = jQuery.map(this, fn, until);
         if (name.slice(-5) !== "Until") {
-          selector2 = until;
+          selector3 = until;
         }
-        if (selector2 && typeof selector2 === "string") {
-          matched = jQuery.filter(selector2, matched);
+        if (selector3 && typeof selector3 === "string") {
+          matched = jQuery.filter(selector3, matched);
         }
         if (this.length > 1) {
           if (!guaranteedUnique[name]) {
@@ -73622,10 +73917,10 @@ var jquery = { exports: {} };
           return !!locked;
         },
         // Call all callbacks with the given context and arguments
-        fireWith: function(context, args) {
+        fireWith: function(context3, args) {
           if (!locked) {
             args = args || [];
-            args = [context, args.slice ? args.slice() : args];
+            args = [context3, args.slice ? args.slice() : args];
             queue.push(args);
             if (!firing) {
               fire();
@@ -74426,17 +74721,17 @@ var jquery = { exports: {} };
     if (!support.option) {
       wrapMap.optgroup = wrapMap.option = [1, "<select multiple='multiple'>", "</select>"];
     }
-    function getAll(context, tag) {
+    function getAll(context3, tag) {
       var ret;
-      if (typeof context.getElementsByTagName !== "undefined") {
-        ret = context.getElementsByTagName(tag || "*");
-      } else if (typeof context.querySelectorAll !== "undefined") {
-        ret = context.querySelectorAll(tag || "*");
+      if (typeof context3.getElementsByTagName !== "undefined") {
+        ret = context3.getElementsByTagName(tag || "*");
+      } else if (typeof context3.querySelectorAll !== "undefined") {
+        ret = context3.querySelectorAll(tag || "*");
       } else {
         ret = [];
       }
-      if (tag === void 0 || tag && nodeName(context, tag)) {
-        return jQuery.merge([context], ret);
+      if (tag === void 0 || tag && nodeName(context3, tag)) {
+        return jQuery.merge([context3], ret);
       }
       return ret;
     }
@@ -74451,21 +74746,21 @@ var jquery = { exports: {} };
       }
     }
     var rhtml = /<|&#?\w+;/;
-    function buildFragment(elems, context, scripts, selection2, ignored) {
-      var elem, tmp, tag, wrap2, attached, j2, fragment = context.createDocumentFragment(), nodes = [], i2 = 0, l2 = elems.length;
+    function buildFragment(elems, context3, scripts, selection2, ignored) {
+      var elem, tmp, tag, wrap3, attached, j2, fragment = context3.createDocumentFragment(), nodes = [], i2 = 0, l2 = elems.length;
       for (; i2 < l2; i2++) {
         elem = elems[i2];
         if (elem || elem === 0) {
           if (toType(elem) === "object") {
             jQuery.merge(nodes, elem.nodeType ? [elem] : elem);
           } else if (!rhtml.test(elem)) {
-            nodes.push(context.createTextNode(elem));
+            nodes.push(context3.createTextNode(elem));
           } else {
-            tmp = tmp || fragment.appendChild(context.createElement("div"));
+            tmp = tmp || fragment.appendChild(context3.createElement("div"));
             tag = (rtagName.exec(elem) || ["", ""])[1].toLowerCase();
-            wrap2 = wrapMap[tag] || wrapMap._default;
-            tmp.innerHTML = wrap2[1] + jQuery.htmlPrefilter(elem) + wrap2[2];
-            j2 = wrap2[0];
+            wrap3 = wrapMap[tag] || wrapMap._default;
+            tmp.innerHTML = wrap3[1] + jQuery.htmlPrefilter(elem) + wrap3[2];
+            j2 = wrap3[0];
             while (j2--) {
               tmp = tmp.lastChild;
             }
@@ -74507,29 +74802,29 @@ var jquery = { exports: {} };
     function returnFalse() {
       return false;
     }
-    function on(elem, types2, selector2, data, fn, one2) {
+    function on(elem, types2, selector3, data, fn, one2) {
       var origFn, type;
       if (typeof types2 === "object") {
-        if (typeof selector2 !== "string") {
-          data = data || selector2;
-          selector2 = void 0;
+        if (typeof selector3 !== "string") {
+          data = data || selector3;
+          selector3 = void 0;
         }
         for (type in types2) {
-          on(elem, type, selector2, data, types2[type], one2);
+          on(elem, type, selector3, data, types2[type], one2);
         }
         return elem;
       }
       if (data == null && fn == null) {
-        fn = selector2;
-        data = selector2 = void 0;
+        fn = selector3;
+        data = selector3 = void 0;
       } else if (fn == null) {
-        if (typeof selector2 === "string") {
+        if (typeof selector3 === "string") {
           fn = data;
           data = void 0;
         } else {
           fn = data;
-          data = selector2;
-          selector2 = void 0;
+          data = selector3;
+          selector3 = void 0;
         }
       }
       if (fn === false) {
@@ -74546,12 +74841,12 @@ var jquery = { exports: {} };
         fn.guid = origFn.guid || (origFn.guid = jQuery.guid++);
       }
       return elem.each(function() {
-        jQuery.event.add(this, types2, fn, data, selector2);
+        jQuery.event.add(this, types2, fn, data, selector3);
       });
     }
     jQuery.event = {
       global: {},
-      add: function(elem, types2, handler, data, selector2) {
+      add: function(elem, types2, handler, data, selector3) {
         var handleObjIn, eventHandle, tmp, events2, t2, handleObj, special, handlers2, type, namespaces2, origType, elemData = dataPriv.get(elem);
         if (!acceptData(elem)) {
           return;
@@ -74559,10 +74854,10 @@ var jquery = { exports: {} };
         if (handler.handler) {
           handleObjIn = handler;
           handler = handleObjIn.handler;
-          selector2 = handleObjIn.selector;
+          selector3 = handleObjIn.selector;
         }
-        if (selector2) {
-          jQuery.find.matchesSelector(documentElement, selector2);
+        if (selector3) {
+          jQuery.find.matchesSelector(documentElement, selector3);
         }
         if (!handler.guid) {
           handler.guid = jQuery.guid++;
@@ -74585,7 +74880,7 @@ var jquery = { exports: {} };
             continue;
           }
           special = jQuery.event.special[type] || {};
-          type = (selector2 ? special.delegateType : special.bindType) || type;
+          type = (selector3 ? special.delegateType : special.bindType) || type;
           special = jQuery.event.special[type] || {};
           handleObj = jQuery.extend({
             type,
@@ -74593,8 +74888,8 @@ var jquery = { exports: {} };
             data,
             handler,
             guid: handler.guid,
-            selector: selector2,
-            needsContext: selector2 && jQuery.expr.match.needsContext.test(selector2),
+            selector: selector3,
+            needsContext: selector3 && jQuery.expr.match.needsContext.test(selector3),
             namespace: namespaces2.join(".")
           }, handleObjIn);
           if (!(handlers2 = events2[type])) {
@@ -74612,7 +74907,7 @@ var jquery = { exports: {} };
               handleObj.handler.guid = handler.guid;
             }
           }
-          if (selector2) {
+          if (selector3) {
             handlers2.splice(handlers2.delegateCount++, 0, handleObj);
           } else {
             handlers2.push(handleObj);
@@ -74621,7 +74916,7 @@ var jquery = { exports: {} };
         }
       },
       // Detach an event or set of events from an element
-      remove: function(elem, types2, handler, selector2, mappedTypes) {
+      remove: function(elem, types2, handler, selector3, mappedTypes) {
         var j2, origCount, tmp, events2, t2, handleObj, special, handlers2, type, namespaces2, origType, elemData = dataPriv.hasData(elem) && dataPriv.get(elem);
         if (!elemData || !(events2 = elemData.events)) {
           return;
@@ -74634,18 +74929,18 @@ var jquery = { exports: {} };
           namespaces2 = (tmp[2] || "").split(".").sort();
           if (!type) {
             for (type in events2) {
-              jQuery.event.remove(elem, type + types2[t2], handler, selector2, true);
+              jQuery.event.remove(elem, type + types2[t2], handler, selector3, true);
             }
             continue;
           }
           special = jQuery.event.special[type] || {};
-          type = (selector2 ? special.delegateType : special.bindType) || type;
+          type = (selector3 ? special.delegateType : special.bindType) || type;
           handlers2 = events2[type] || [];
           tmp = tmp[2] && new RegExp("(^|\\.)" + namespaces2.join("\\.(?:.*\\.|)") + "(\\.|$)");
           origCount = j2 = handlers2.length;
           while (j2--) {
             handleObj = handlers2[j2];
-            if ((mappedTypes || origType === handleObj.origType) && (!handler || handler.guid === handleObj.guid) && (!tmp || tmp.test(handleObj.namespace)) && (!selector2 || selector2 === handleObj.selector || selector2 === "**" && handleObj.selector)) {
+            if ((mappedTypes || origType === handleObj.origType) && (!handler || handler.guid === handleObj.guid) && (!tmp || tmp.test(handleObj.namespace)) && (!selector3 || selector3 === handleObj.selector || selector3 === "**" && handleObj.selector)) {
               handlers2.splice(j2, 1);
               if (handleObj.selector) {
                 handlers2.delegateCount--;
@@ -75032,13 +75327,13 @@ var jquery = { exports: {} };
       };
     });
     jQuery.fn.extend({
-      on: function(types2, selector2, data, fn) {
-        return on(this, types2, selector2, data, fn);
+      on: function(types2, selector3, data, fn) {
+        return on(this, types2, selector3, data, fn);
       },
-      one: function(types2, selector2, data, fn) {
-        return on(this, types2, selector2, data, fn, 1);
+      one: function(types2, selector3, data, fn) {
+        return on(this, types2, selector3, data, fn, 1);
       },
-      off: function(types2, selector2, fn) {
+      off: function(types2, selector3, fn) {
         var handleObj, type;
         if (types2 && types2.preventDefault && types2.handleObj) {
           handleObj = types2.handleObj;
@@ -75051,19 +75346,19 @@ var jquery = { exports: {} };
         }
         if (typeof types2 === "object") {
           for (type in types2) {
-            this.off(type, selector2, types2[type]);
+            this.off(type, selector3, types2[type]);
           }
           return this;
         }
-        if (selector2 === false || typeof selector2 === "function") {
-          fn = selector2;
-          selector2 = void 0;
+        if (selector3 === false || typeof selector3 === "function") {
+          fn = selector3;
+          selector3 = void 0;
         }
         if (fn === false) {
           fn = returnFalse;
         }
         return this.each(function() {
-          jQuery.event.remove(this, types2, fn, selector2);
+          jQuery.event.remove(this, types2, fn, selector3);
         });
       }
     });
@@ -75170,8 +75465,8 @@ var jquery = { exports: {} };
       }
       return collection;
     }
-    function remove2(elem, selector2, keepData) {
-      var node2, nodes = selector2 ? jQuery.filter(selector2, elem) : elem, i2 = 0;
+    function remove2(elem, selector3, keepData) {
+      var node2, nodes = selector3 ? jQuery.filter(selector3, elem) : elem, i2 = 0;
       for (; (node2 = nodes[i2]) != null; i2++) {
         if (!keepData && node2.nodeType === 1) {
           jQuery.cleanData(getAll(node2));
@@ -75239,11 +75534,11 @@ var jquery = { exports: {} };
       }
     });
     jQuery.fn.extend({
-      detach: function(selector2) {
-        return remove2(this, selector2, true);
+      detach: function(selector3) {
+        return remove2(this, selector3, true);
       },
-      remove: function(selector2) {
-        return remove2(this, selector2);
+      remove: function(selector3) {
+        return remove2(this, selector3);
       },
       text: function(value) {
         return access(this, function(value2) {
@@ -75346,8 +75641,8 @@ var jquery = { exports: {} };
       insertAfter: "after",
       replaceAll: "replaceWith"
     }, function(name, original) {
-      jQuery.fn[name] = function(selector2) {
-        var elems, ret = [], insert = jQuery(selector2), last = insert.length - 1, i2 = 0;
+      jQuery.fn[name] = function(selector3) {
+        var elems, ret = [], insert = jQuery(selector3), last = insert.length - 1, i2 = 0;
         for (; i2 <= last; i2++) {
           elems = i2 === last ? this : this.clone(true);
           jQuery(insert[i2])[original](elems);
@@ -75898,7 +76193,7 @@ var jquery = { exports: {} };
       return attrs;
     }
     function createTween(value, prop, animation) {
-      var tween, collection = (Animation.tweeners[prop] || []).concat(Animation.tweeners["*"]), index2 = 0, length = collection.length;
+      var tween, collection = (Animation2.tweeners[prop] || []).concat(Animation2.tweeners["*"]), index2 = 0, length = collection.length;
       for (; index2 < length; index2++) {
         if (tween = collection[index2].call(animation, prop, value)) {
           return tween;
@@ -76052,8 +76347,8 @@ var jquery = { exports: {} };
         }
       }
     }
-    function Animation(elem, properties, options) {
-      var result, stopped, index2 = 0, length = Animation.prefilters.length, deferred = jQuery.Deferred().always(function() {
+    function Animation2(elem, properties, options) {
+      var result, stopped, index2 = 0, length = Animation2.prefilters.length, deferred = jQuery.Deferred().always(function() {
         delete tick.elem;
       }), tick = function() {
         if (stopped) {
@@ -76115,7 +76410,7 @@ var jquery = { exports: {} };
       }), props = animation.props;
       propFilter(props, animation.opts.specialEasing);
       for (; index2 < length; index2++) {
-        result = Animation.prefilters[index2].call(animation, elem, props, animation.opts);
+        result = Animation2.prefilters[index2].call(animation, elem, props, animation.opts);
         if (result) {
           if (isFunction2(result.stop)) {
             jQuery._queueHooks(animation.elem, animation.opts.queue).stop = result.stop.bind(result);
@@ -76137,7 +76432,7 @@ var jquery = { exports: {} };
       );
       return animation;
     }
-    jQuery.Animation = jQuery.extend(Animation, {
+    jQuery.Animation = jQuery.extend(Animation2, {
       tweeners: {
         "*": [function(prop, value) {
           var tween = this.createTween(prop, value);
@@ -76155,16 +76450,16 @@ var jquery = { exports: {} };
         var prop, index2 = 0, length = props.length;
         for (; index2 < length; index2++) {
           prop = props[index2];
-          Animation.tweeners[prop] = Animation.tweeners[prop] || [];
-          Animation.tweeners[prop].unshift(callback);
+          Animation2.tweeners[prop] = Animation2.tweeners[prop] || [];
+          Animation2.tweeners[prop].unshift(callback);
         }
       },
       prefilters: [defaultPrefilter],
       prefilter: function(callback, prepend) {
         if (prepend) {
-          Animation.prefilters.unshift(callback);
+          Animation2.prefilters.unshift(callback);
         } else {
-          Animation.prefilters.push(callback);
+          Animation2.prefilters.push(callback);
         }
       }
     });
@@ -76205,7 +76500,7 @@ var jquery = { exports: {} };
       },
       animate: function(prop, speed, easing, callback) {
         var empty2 = jQuery.isEmptyObject(prop), optall = jQuery.speed(speed, easing, callback), doAnimation = function() {
-          var anim = Animation(this, jQuery.extend({}, prop), optall);
+          var anim = Animation2(this, jQuery.extend({}, prop), optall);
           if (empty2 || dataPriv.get(this, "finish")) {
             anim.stop(true);
           }
@@ -76638,9 +76933,9 @@ var jquery = { exports: {} };
           }
         });
       },
-      hasClass: function(selector2) {
+      hasClass: function(selector3) {
         var className, elem, i2 = 0;
-        className = " " + selector2 + " ";
+        className = " " + selector3 + " ";
         while (elem = this[i2++]) {
           if (elem.nodeType === 1 && (" " + stripAndCollapse(getClass(elem)) + " ").indexOf(className) > -1) {
             return true;
@@ -77473,16 +77768,16 @@ var jquery = { exports: {} };
     };
     jQuery.fn.extend({
       wrapAll: function(html2) {
-        var wrap2;
+        var wrap3;
         if (this[0]) {
           if (isFunction2(html2)) {
             html2 = html2.call(this[0]);
           }
-          wrap2 = jQuery(html2, this[0].ownerDocument).eq(0).clone(true);
+          wrap3 = jQuery(html2, this[0].ownerDocument).eq(0).clone(true);
           if (this[0].parentNode) {
-            wrap2.insertBefore(this[0]);
+            wrap3.insertBefore(this[0]);
           }
-          wrap2.map(function() {
+          wrap3.map(function() {
             var elem = this;
             while (elem.firstElementChild) {
               elem = elem.firstElementChild;
@@ -77513,8 +77808,8 @@ var jquery = { exports: {} };
           jQuery(this).wrapAll(htmlIsFunction ? html2.call(this, i2) : html2);
         });
       },
-      unwrap: function(selector2) {
-        this.parent(selector2).not("body").each(function() {
+      unwrap: function(selector3) {
+        this.parent(selector3).not("body").each(function() {
           jQuery(this).replaceWith(this.childNodes);
         });
         return this;
@@ -77731,40 +78026,40 @@ var jquery = { exports: {} };
       body2.innerHTML = "<form></form><form></form>";
       return body2.childNodes.length === 2;
     }();
-    jQuery.parseHTML = function(data, context, keepScripts) {
+    jQuery.parseHTML = function(data, context3, keepScripts) {
       if (typeof data !== "string") {
         return [];
       }
-      if (typeof context === "boolean") {
-        keepScripts = context;
-        context = false;
+      if (typeof context3 === "boolean") {
+        keepScripts = context3;
+        context3 = false;
       }
       var base, parsed, scripts;
-      if (!context) {
+      if (!context3) {
         if (support.createHTMLDocument) {
-          context = document2.implementation.createHTMLDocument("");
-          base = context.createElement("base");
+          context3 = document2.implementation.createHTMLDocument("");
+          base = context3.createElement("base");
           base.href = document2.location.href;
-          context.head.appendChild(base);
+          context3.head.appendChild(base);
         } else {
-          context = document2;
+          context3 = document2;
         }
       }
       parsed = rsingleTag.exec(data);
       scripts = !keepScripts && [];
       if (parsed) {
-        return [context.createElement(parsed[1])];
+        return [context3.createElement(parsed[1])];
       }
-      parsed = buildFragment([data], context, scripts);
+      parsed = buildFragment([data], context3, scripts);
       if (scripts && scripts.length) {
         jQuery(scripts).remove();
       }
       return jQuery.merge([], parsed.childNodes);
     };
     jQuery.fn.load = function(url, params, callback) {
-      var selector2, type, response, self2 = this, off = url.indexOf(" ");
+      var selector3, type, response, self2 = this, off = url.indexOf(" ");
       if (off > -1) {
-        selector2 = stripAndCollapse(url.slice(off));
+        selector3 = stripAndCollapse(url.slice(off));
         url = url.slice(0, off);
       }
       if (isFunction2(params)) {
@@ -77784,10 +78079,10 @@ var jquery = { exports: {} };
           data: params
         }).done(function(responseText) {
           response = arguments;
-          self2.html(selector2 ? (
+          self2.html(selector3 ? (
             // If a selector was specified, locate the right elements in a dummy div
             // Exclude scripts to avoid IE 'Permission Denied' errors
-            jQuery("<div>").append(jQuery.parseHTML(responseText)).find(selector2)
+            jQuery("<div>").append(jQuery.parseHTML(responseText)).find(selector3)
           ) : (
             // Otherwise use the full result
             responseText
@@ -77996,11 +78291,11 @@ var jquery = { exports: {} };
       unbind: function(types2, fn) {
         return this.off(types2, null, fn);
       },
-      delegate: function(selector2, types2, data, fn) {
-        return this.on(types2, selector2, data, fn);
+      delegate: function(selector3, types2, data, fn) {
+        return this.on(types2, selector3, data, fn);
       },
-      undelegate: function(selector2, types2, fn) {
-        return arguments.length === 1 ? this.off(selector2, "**") : this.off(types2, selector2 || "**", fn);
+      undelegate: function(selector3, types2, fn) {
+        return arguments.length === 1 ? this.off(selector3, "**") : this.off(types2, selector3 || "**", fn);
       },
       hover: function(fnOver, fnOut) {
         return this.on("mouseenter", fnOver).on("mouseleave", fnOut || fnOver);
@@ -78015,11 +78310,11 @@ var jquery = { exports: {} };
       }
     );
     var rtrim = /^[\s\uFEFF\xA0]+|([^\s\uFEFF\xA0])[\s\uFEFF\xA0]+$/g;
-    jQuery.proxy = function(fn, context) {
+    jQuery.proxy = function(fn, context3) {
       var tmp, args, proxy;
-      if (typeof context === "string") {
-        tmp = fn[context];
-        context = fn;
+      if (typeof context3 === "string") {
+        tmp = fn[context3];
+        context3 = fn;
         fn = tmp;
       }
       if (!isFunction2(fn)) {
@@ -78027,7 +78322,7 @@ var jquery = { exports: {} };
       }
       args = slice.call(arguments, 2);
       proxy = function() {
-        return fn.apply(context || this, args.concat(slice.call(arguments)));
+        return fn.apply(context3 || this, args.concat(slice.call(arguments)));
       };
       proxy.guid = fn.guid = fn.guid || jQuery.guid++;
       return proxy;
@@ -78992,6 +79287,4483 @@ function ChessPuzzleGame({
     }
   );
 }
+function _assertThisInitialized(self2) {
+  if (self2 === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+  return self2;
+}
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+  subClass.__proto__ = superClass;
+}
+/*!
+ * GSAP 3.15.0
+ * https://gsap.com
+ *
+ * @license Copyright 2008-2026, GreenSock. All rights reserved.
+ * Subject to the terms at https://gsap.com/standard-license
+ * @author: Jack Doyle, jack@greensock.com
+*/
+var _config = {
+  autoSleep: 120,
+  force3D: "auto",
+  nullTargetWarn: 1,
+  units: {
+    lineHeight: ""
+  }
+}, _defaults = {
+  duration: 0.5,
+  overwrite: false,
+  delay: 0
+}, _suppressOverwrites, _reverting$1, _context, _bigNum$1 = 1e8, _tinyNum = 1 / _bigNum$1, _2PI = Math.PI * 2, _HALF_PI = _2PI / 4, _gsID = 0, _sqrt = Math.sqrt, _cos = Math.cos, _sin = Math.sin, _isString = function _isString2(value) {
+  return typeof value === "string";
+}, _isFunction = function _isFunction2(value) {
+  return typeof value === "function";
+}, _isNumber = function _isNumber2(value) {
+  return typeof value === "number";
+}, _isUndefined = function _isUndefined2(value) {
+  return typeof value === "undefined";
+}, _isObject = function _isObject2(value) {
+  return typeof value === "object";
+}, _isNotFalse = function _isNotFalse2(value) {
+  return value !== false;
+}, _windowExists$1 = function _windowExists() {
+  return typeof window !== "undefined";
+}, _isFuncOrString = function _isFuncOrString2(value) {
+  return _isFunction(value) || _isString(value);
+}, _isTypedArray = typeof ArrayBuffer === "function" && ArrayBuffer.isView || function() {
+}, _isArray = Array.isArray, _randomExp = /random\([^)]+\)/g, _commaDelimExp = /,\s*/g, _strictNumExp = /(?:-?\.?\d|\.)+/gi, _numExp = /[-+=.]*\d+[.e\-+]*\d*[e\-+]*\d*/g, _numWithUnitExp = /[-+=.]*\d+[.e-]*\d*[a-z%]*/g, _complexStringNumExp = /[-+=.]*\d+\.?\d*(?:e-|e\+)?\d*/gi, _relExp = /[+-]=-?[.\d]+/, _delimitedValueExp = /[^,'"\[\]\s]+/gi, _unitExp = /^[+\-=e\s\d]*\d+[.\d]*([a-z]*|%)\s*$/i, _globalTimeline, _win$1, _coreInitted, _doc$1, _globals = {}, _installScope = {}, _coreReady, _install = function _install2(scope) {
+  return (_installScope = _merge(scope, _globals)) && gsap;
+}, _missingPlugin = function _missingPlugin2(property, value) {
+  return console.warn("Invalid property", property, "set to", value, "Missing plugin? gsap.registerPlugin()");
+}, _warn = function _warn2(message, suppress) {
+  return !suppress && console.warn(message);
+}, _addGlobal = function _addGlobal2(name, obj) {
+  return name && (_globals[name] = obj) && _installScope && (_installScope[name] = obj) || _globals;
+}, _emptyFunc = function _emptyFunc2() {
+  return 0;
+}, _startAtRevertConfig = {
+  suppressEvents: true,
+  isStart: true,
+  kill: false
+}, _revertConfigNoKill = {
+  suppressEvents: true,
+  kill: false
+}, _revertConfig = {
+  suppressEvents: true
+}, _reservedProps = {}, _lazyTweens = [], _lazyLookup = {}, _lastRenderedFrame, _plugins = {}, _effects = {}, _nextGCFrame = 30, _harnessPlugins = [], _callbackNames = "", _harness = function _harness2(targets) {
+  var target = targets[0], harnessPlugin, i2;
+  _isObject(target) || _isFunction(target) || (targets = [targets]);
+  if (!(harnessPlugin = (target._gsap || {}).harness)) {
+    i2 = _harnessPlugins.length;
+    while (i2-- && !_harnessPlugins[i2].targetTest(target)) {
+    }
+    harnessPlugin = _harnessPlugins[i2];
+  }
+  i2 = targets.length;
+  while (i2--) {
+    targets[i2] && (targets[i2]._gsap || (targets[i2]._gsap = new GSCache(targets[i2], harnessPlugin))) || targets.splice(i2, 1);
+  }
+  return targets;
+}, _getCache = function _getCache2(target) {
+  return target._gsap || _harness(toArray(target))[0]._gsap;
+}, _getProperty = function _getProperty2(target, property, v2) {
+  return (v2 = target[property]) && _isFunction(v2) ? target[property]() : _isUndefined(v2) && target.getAttribute && target.getAttribute(property) || v2;
+}, _forEachName = function _forEachName2(names2, func) {
+  return (names2 = names2.split(",")).forEach(func) || names2;
+}, _round = function _round2(value) {
+  return Math.round(value * 1e5) / 1e5 || 0;
+}, _roundPrecise = function _roundPrecise2(value) {
+  return Math.round(value * 1e7) / 1e7 || 0;
+}, _parseRelative = function _parseRelative2(start2, value) {
+  var operator = value.charAt(0), end = parseFloat(value.substr(2));
+  start2 = parseFloat(start2);
+  return operator === "+" ? start2 + end : operator === "-" ? start2 - end : operator === "*" ? start2 * end : start2 / end;
+}, _arrayContainsAny = function _arrayContainsAny2(toSearch, toFind) {
+  var l2 = toFind.length, i2 = 0;
+  for (; toSearch.indexOf(toFind[i2]) < 0 && ++i2 < l2; ) {
+  }
+  return i2 < l2;
+}, _lazyRender = function _lazyRender2() {
+  var l2 = _lazyTweens.length, a2 = _lazyTweens.slice(0), i2, tween;
+  _lazyLookup = {};
+  _lazyTweens.length = 0;
+  for (i2 = 0; i2 < l2; i2++) {
+    tween = a2[i2];
+    tween && tween._lazy && (tween.render(tween._lazy[0], tween._lazy[1], true)._lazy = 0);
+  }
+}, _isRevertWorthy = function _isRevertWorthy2(animation) {
+  return !!(animation._initted || animation._startAt || animation.add);
+}, _lazySafeRender = function _lazySafeRender2(animation, time, suppressEvents, force) {
+  _lazyTweens.length && !_reverting$1 && _lazyRender();
+  animation.render(time, suppressEvents, !!(_reverting$1 && time < 0 && _isRevertWorthy(animation)));
+  _lazyTweens.length && !_reverting$1 && _lazyRender();
+}, _numericIfPossible = function _numericIfPossible2(value) {
+  var n2 = parseFloat(value);
+  return (n2 || n2 === 0) && (value + "").match(_delimitedValueExp).length < 2 ? n2 : _isString(value) ? value.trim() : value;
+}, _passThrough = function _passThrough2(p2) {
+  return p2;
+}, _setDefaults = function _setDefaults2(obj, defaults2) {
+  for (var p2 in defaults2) {
+    p2 in obj || (obj[p2] = defaults2[p2]);
+  }
+  return obj;
+}, _setKeyframeDefaults = function _setKeyframeDefaults2(excludeDuration) {
+  return function(obj, defaults2) {
+    for (var p2 in defaults2) {
+      p2 in obj || p2 === "duration" && excludeDuration || p2 === "ease" || (obj[p2] = defaults2[p2]);
+    }
+  };
+}, _merge = function _merge2(base, toMerge) {
+  for (var p2 in toMerge) {
+    base[p2] = toMerge[p2];
+  }
+  return base;
+}, _mergeDeep = function _mergeDeep2(base, toMerge) {
+  for (var p2 in toMerge) {
+    p2 !== "__proto__" && p2 !== "constructor" && p2 !== "prototype" && (base[p2] = _isObject(toMerge[p2]) ? _mergeDeep2(base[p2] || (base[p2] = {}), toMerge[p2]) : toMerge[p2]);
+  }
+  return base;
+}, _copyExcluding = function _copyExcluding2(obj, excluding) {
+  var copy = {}, p2;
+  for (p2 in obj) {
+    p2 in excluding || (copy[p2] = obj[p2]);
+  }
+  return copy;
+}, _inheritDefaults = function _inheritDefaults2(vars) {
+  var parent = vars.parent || _globalTimeline, func = vars.keyframes ? _setKeyframeDefaults(_isArray(vars.keyframes)) : _setDefaults;
+  if (_isNotFalse(vars.inherit)) {
+    while (parent) {
+      func(vars, parent.vars.defaults);
+      parent = parent.parent || parent._dp;
+    }
+  }
+  return vars;
+}, _arraysMatch = function _arraysMatch2(a1, a2) {
+  var i2 = a1.length, match = i2 === a2.length;
+  while (match && i2-- && a1[i2] === a2[i2]) {
+  }
+  return i2 < 0;
+}, _addLinkedListItem = function _addLinkedListItem2(parent, child, firstProp, lastProp, sortBy) {
+  var prev = parent[lastProp], t2;
+  if (sortBy) {
+    t2 = child[sortBy];
+    while (prev && prev[sortBy] > t2) {
+      prev = prev._prev;
+    }
+  }
+  if (prev) {
+    child._next = prev._next;
+    prev._next = child;
+  } else {
+    child._next = parent[firstProp];
+    parent[firstProp] = child;
+  }
+  if (child._next) {
+    child._next._prev = child;
+  } else {
+    parent[lastProp] = child;
+  }
+  child._prev = prev;
+  child.parent = child._dp = parent;
+  return child;
+}, _removeLinkedListItem = function _removeLinkedListItem2(parent, child, firstProp, lastProp) {
+  if (firstProp === void 0) {
+    firstProp = "_first";
+  }
+  if (lastProp === void 0) {
+    lastProp = "_last";
+  }
+  var prev = child._prev, next = child._next;
+  if (prev) {
+    prev._next = next;
+  } else if (parent[firstProp] === child) {
+    parent[firstProp] = next;
+  }
+  if (next) {
+    next._prev = prev;
+  } else if (parent[lastProp] === child) {
+    parent[lastProp] = prev;
+  }
+  child._next = child._prev = child.parent = null;
+}, _removeFromParent = function _removeFromParent2(child, onlyIfParentHasAutoRemove) {
+  child.parent && (!onlyIfParentHasAutoRemove || child.parent.autoRemoveChildren) && child.parent.remove && child.parent.remove(child);
+  child._act = 0;
+}, _uncache = function _uncache2(animation, child) {
+  if (animation && (!child || child._end > animation._dur || child._start < 0)) {
+    var a2 = animation;
+    while (a2) {
+      a2._dirty = 1;
+      a2 = a2.parent;
+    }
+  }
+  return animation;
+}, _recacheAncestors = function _recacheAncestors2(animation) {
+  var parent = animation.parent;
+  while (parent && parent.parent) {
+    parent._dirty = 1;
+    parent.totalDuration();
+    parent = parent.parent;
+  }
+  return animation;
+}, _rewindStartAt = function _rewindStartAt2(tween, totalTime, suppressEvents, force) {
+  return tween._startAt && (_reverting$1 ? tween._startAt.revert(_revertConfigNoKill) : tween.vars.immediateRender && !tween.vars.autoRevert || tween._startAt.render(totalTime, true, force));
+}, _hasNoPausedAncestors = function _hasNoPausedAncestors2(animation) {
+  return !animation || animation._ts && _hasNoPausedAncestors2(animation.parent);
+}, _elapsedCycleDuration = function _elapsedCycleDuration2(animation) {
+  return animation._repeat ? _animationCycle(animation._tTime, animation = animation.duration() + animation._rDelay) * animation : 0;
+}, _animationCycle = function _animationCycle2(tTime, cycleDuration) {
+  var whole = Math.floor(tTime = _roundPrecise(tTime / cycleDuration));
+  return tTime && whole === tTime ? whole - 1 : whole;
+}, _parentToChildTotalTime = function _parentToChildTotalTime2(parentTime, child) {
+  return (parentTime - child._start) * child._ts + (child._ts >= 0 ? 0 : child._dirty ? child.totalDuration() : child._tDur);
+}, _setEnd = function _setEnd2(animation) {
+  return animation._end = _roundPrecise(animation._start + (animation._tDur / Math.abs(animation._ts || animation._rts || _tinyNum) || 0));
+}, _alignPlayhead = function _alignPlayhead2(animation, totalTime) {
+  var parent = animation._dp;
+  if (parent && parent.smoothChildTiming && animation._ts) {
+    animation._start = _roundPrecise(parent._time - (animation._ts > 0 ? totalTime / animation._ts : ((animation._dirty ? animation.totalDuration() : animation._tDur) - totalTime) / -animation._ts));
+    _setEnd(animation);
+    parent._dirty || _uncache(parent, animation);
+  }
+  return animation;
+}, _postAddChecks = function _postAddChecks2(timeline2, child) {
+  var t2;
+  if (child._time || !child._dur && child._initted || child._start < timeline2._time && (child._dur || !child.add)) {
+    t2 = _parentToChildTotalTime(timeline2.rawTime(), child);
+    if (!child._dur || _clamp(0, child.totalDuration(), t2) - child._tTime > _tinyNum) {
+      child.render(t2, true);
+    }
+  }
+  if (_uncache(timeline2, child)._dp && timeline2._initted && timeline2._time >= timeline2._dur && timeline2._ts) {
+    if (timeline2._dur < timeline2.duration()) {
+      t2 = timeline2;
+      while (t2._dp) {
+        t2.rawTime() >= 0 && t2.totalTime(t2._tTime);
+        t2 = t2._dp;
+      }
+    }
+    timeline2._zTime = -_tinyNum;
+  }
+}, _addToTimeline = function _addToTimeline2(timeline2, child, position2, skipChecks) {
+  child.parent && _removeFromParent(child);
+  child._start = _roundPrecise((_isNumber(position2) ? position2 : position2 || timeline2 !== _globalTimeline ? _parsePosition(timeline2, position2, child) : timeline2._time) + child._delay);
+  child._end = _roundPrecise(child._start + (child.totalDuration() / Math.abs(child.timeScale()) || 0));
+  _addLinkedListItem(timeline2, child, "_first", "_last", timeline2._sort ? "_start" : 0);
+  _isFromOrFromStart(child) || (timeline2._recent = child);
+  skipChecks || _postAddChecks(timeline2, child);
+  timeline2._ts < 0 && _alignPlayhead(timeline2, timeline2._tTime);
+  return timeline2;
+}, _scrollTrigger = function _scrollTrigger2(animation, trigger) {
+  return (_globals.ScrollTrigger || _missingPlugin("scrollTrigger", trigger)) && _globals.ScrollTrigger.create(trigger, animation);
+}, _attemptInitTween = function _attemptInitTween2(tween, time, force, suppressEvents, tTime) {
+  _initTween(tween, time, tTime);
+  if (!tween._initted) {
+    return 1;
+  }
+  if (!force && tween._pt && !_reverting$1 && (tween._dur && tween.vars.lazy !== false || !tween._dur && tween.vars.lazy) && _lastRenderedFrame !== _ticker.frame) {
+    _lazyTweens.push(tween);
+    tween._lazy = [tTime, suppressEvents];
+    return 1;
+  }
+}, _parentPlayheadIsBeforeStart = function _parentPlayheadIsBeforeStart2(_ref) {
+  var parent = _ref.parent;
+  return parent && parent._ts && parent._initted && !parent._lock && (parent.rawTime() < 0 || _parentPlayheadIsBeforeStart2(parent));
+}, _isFromOrFromStart = function _isFromOrFromStart2(_ref2) {
+  var data = _ref2.data;
+  return data === "isFromStart" || data === "isStart";
+}, _renderZeroDurationTween = function _renderZeroDurationTween2(tween, totalTime, suppressEvents, force) {
+  var prevRatio = tween.ratio, ratio = totalTime < 0 || !totalTime && (!tween._start && _parentPlayheadIsBeforeStart(tween) && !(!tween._initted && _isFromOrFromStart(tween)) || (tween._ts < 0 || tween._dp._ts < 0) && !_isFromOrFromStart(tween)) ? 0 : 1, repeatDelay = tween._rDelay, tTime = 0, pt, iteration, prevIteration;
+  if (repeatDelay && tween._repeat) {
+    tTime = _clamp(0, tween._tDur, totalTime);
+    iteration = _animationCycle(tTime, repeatDelay);
+    tween._yoyo && iteration & 1 && (ratio = 1 - ratio);
+    if (iteration !== _animationCycle(tween._tTime, repeatDelay)) {
+      prevRatio = 1 - ratio;
+      tween.vars.repeatRefresh && tween._initted && tween.invalidate();
+    }
+  }
+  if (ratio !== prevRatio || _reverting$1 || force || tween._zTime === _tinyNum || !totalTime && tween._zTime) {
+    if (!tween._initted && _attemptInitTween(tween, totalTime, force, suppressEvents, tTime)) {
+      return;
+    }
+    prevIteration = tween._zTime;
+    tween._zTime = totalTime || (suppressEvents ? _tinyNum : 0);
+    suppressEvents || (suppressEvents = totalTime && !prevIteration);
+    tween.ratio = ratio;
+    tween._from && (ratio = 1 - ratio);
+    tween._time = 0;
+    tween._tTime = tTime;
+    pt = tween._pt;
+    while (pt) {
+      pt.r(ratio, pt.d);
+      pt = pt._next;
+    }
+    totalTime < 0 && _rewindStartAt(tween, totalTime, suppressEvents, true);
+    tween._onUpdate && !suppressEvents && _callback(tween, "onUpdate");
+    tTime && tween._repeat && !suppressEvents && tween.parent && _callback(tween, "onRepeat");
+    if ((totalTime >= tween._tDur || totalTime < 0) && tween.ratio === ratio) {
+      ratio && _removeFromParent(tween, 1);
+      if (!suppressEvents && !_reverting$1) {
+        _callback(tween, ratio ? "onComplete" : "onReverseComplete", true);
+        tween._prom && tween._prom();
+      }
+    }
+  } else if (!tween._zTime) {
+    tween._zTime = totalTime;
+  }
+}, _findNextPauseTween = function _findNextPauseTween2(animation, prevTime, time) {
+  var child;
+  if (time > prevTime) {
+    child = animation._first;
+    while (child && child._start <= time) {
+      if (child.data === "isPause" && child._start > prevTime) {
+        return child;
+      }
+      child = child._next;
+    }
+  } else {
+    child = animation._last;
+    while (child && child._start >= time) {
+      if (child.data === "isPause" && child._start < prevTime) {
+        return child;
+      }
+      child = child._prev;
+    }
+  }
+}, _setDuration = function _setDuration2(animation, duration, skipUncache, leavePlayhead) {
+  var repeat = animation._repeat, dur = _roundPrecise(duration) || 0, totalProgress = animation._tTime / animation._tDur;
+  totalProgress && !leavePlayhead && (animation._time *= dur / animation._dur);
+  animation._dur = dur;
+  animation._tDur = !repeat ? dur : repeat < 0 ? 1e10 : _roundPrecise(dur * (repeat + 1) + animation._rDelay * repeat);
+  totalProgress > 0 && !leavePlayhead && _alignPlayhead(animation, animation._tTime = animation._tDur * totalProgress);
+  animation.parent && _setEnd(animation);
+  skipUncache || _uncache(animation.parent, animation);
+  return animation;
+}, _onUpdateTotalDuration = function _onUpdateTotalDuration2(animation) {
+  return animation instanceof Timeline ? _uncache(animation) : _setDuration(animation, animation._dur);
+}, _zeroPosition = {
+  _start: 0,
+  endTime: _emptyFunc,
+  totalDuration: _emptyFunc
+}, _parsePosition = function _parsePosition2(animation, position2, percentAnimation) {
+  var labels = animation.labels, recent = animation._recent || _zeroPosition, clippedDuration = animation.duration() >= _bigNum$1 ? recent.endTime(false) : animation._dur, i2, offset2, isPercent2;
+  if (_isString(position2) && (isNaN(position2) || position2 in labels)) {
+    offset2 = position2.charAt(0);
+    isPercent2 = position2.substr(-1) === "%";
+    i2 = position2.indexOf("=");
+    if (offset2 === "<" || offset2 === ">") {
+      i2 >= 0 && (position2 = position2.replace(/=/, ""));
+      return (offset2 === "<" ? recent._start : recent.endTime(recent._repeat >= 0)) + (parseFloat(position2.substr(1)) || 0) * (isPercent2 ? (i2 < 0 ? recent : percentAnimation).totalDuration() / 100 : 1);
+    }
+    if (i2 < 0) {
+      position2 in labels || (labels[position2] = clippedDuration);
+      return labels[position2];
+    }
+    offset2 = parseFloat(position2.charAt(i2 - 1) + position2.substr(i2 + 1));
+    if (isPercent2 && percentAnimation) {
+      offset2 = offset2 / 100 * (_isArray(percentAnimation) ? percentAnimation[0] : percentAnimation).totalDuration();
+    }
+    return i2 > 1 ? _parsePosition2(animation, position2.substr(0, i2 - 1), percentAnimation) + offset2 : clippedDuration + offset2;
+  }
+  return position2 == null ? clippedDuration : +position2;
+}, _createTweenType = function _createTweenType2(type, params, timeline2) {
+  var isLegacy = _isNumber(params[1]), varsIndex = (isLegacy ? 2 : 1) + (type < 2 ? 0 : 1), vars = params[varsIndex], irVars, parent;
+  isLegacy && (vars.duration = params[1]);
+  vars.parent = timeline2;
+  if (type) {
+    irVars = vars;
+    parent = timeline2;
+    while (parent && !("immediateRender" in irVars)) {
+      irVars = parent.vars.defaults || {};
+      parent = _isNotFalse(parent.vars.inherit) && parent.parent;
+    }
+    vars.immediateRender = _isNotFalse(irVars.immediateRender);
+    type < 2 ? vars.runBackwards = 1 : vars.startAt = params[varsIndex - 1];
+  }
+  return new Tween(params[0], vars, params[varsIndex + 1]);
+}, _conditionalReturn = function _conditionalReturn2(value, func) {
+  return value || value === 0 ? func(value) : func;
+}, _clamp = function _clamp2(min2, max2, value) {
+  return value < min2 ? min2 : value > max2 ? max2 : value;
+}, getUnit = function getUnit2(value, v2) {
+  return !_isString(value) || !(v2 = _unitExp.exec(value)) ? "" : v2[1];
+}, clamp = function clamp2(min2, max2, value) {
+  return _conditionalReturn(value, function(v2) {
+    return _clamp(min2, max2, v2);
+  });
+}, _slice = [].slice, _isArrayLike = function _isArrayLike2(value, nonEmpty) {
+  return value && _isObject(value) && "length" in value && (!nonEmpty && !value.length || value.length - 1 in value && _isObject(value[0])) && !value.nodeType && value !== _win$1;
+}, _flatten = function _flatten2(ar, leaveStrings, accumulator) {
+  if (accumulator === void 0) {
+    accumulator = [];
+  }
+  return ar.forEach(function(value) {
+    var _accumulator;
+    return _isString(value) && !leaveStrings || _isArrayLike(value, 1) ? (_accumulator = accumulator).push.apply(_accumulator, toArray(value)) : accumulator.push(value);
+  }) || accumulator;
+}, toArray = function toArray2(value, scope, leaveStrings) {
+  return _context && !scope && _context.selector ? _context.selector(value) : _isString(value) && !leaveStrings && (_coreInitted || !_wake()) ? _slice.call((scope || _doc$1).querySelectorAll(value), 0) : _isArray(value) ? _flatten(value, leaveStrings) : _isArrayLike(value) ? _slice.call(value, 0) : value ? [value] : [];
+}, selector = function selector2(value) {
+  value = toArray(value)[0] || _warn("Invalid scope") || {};
+  return function(v2) {
+    var el = value.current || value.nativeElement || value;
+    return toArray(v2, el.querySelectorAll ? el : el === value ? _warn("Invalid scope") || _doc$1.createElement("div") : value);
+  };
+}, shuffle = function shuffle2(a2) {
+  return a2.sort(function() {
+    return 0.5 - Math.random();
+  });
+}, distribute = function distribute2(v2) {
+  if (_isFunction(v2)) {
+    return v2;
+  }
+  var vars = _isObject(v2) ? v2 : {
+    each: v2
+  }, ease = _parseEase(vars.ease), from = vars.from || 0, base = parseFloat(vars.base) || 0, cache = {}, isDecimal = from > 0 && from < 1, ratios = isNaN(from) || isDecimal, axis = vars.axis, ratioX = from, ratioY = from;
+  if (_isString(from)) {
+    ratioX = ratioY = {
+      center: 0.5,
+      edges: 0.5,
+      end: 1
+    }[from] || 0;
+  } else if (!isDecimal && ratios) {
+    ratioX = from[0];
+    ratioY = from[1];
+  }
+  return function(i2, target, a2) {
+    var l2 = (a2 || vars).length, distances = cache[l2], originX, originY, x3, y2, d2, j2, max2, min2, wrapAt;
+    if (!distances) {
+      wrapAt = vars.grid === "auto" ? 0 : (vars.grid || [1, _bigNum$1])[1];
+      if (!wrapAt) {
+        max2 = -_bigNum$1;
+        while (max2 < (max2 = a2[wrapAt++].getBoundingClientRect().left) && wrapAt < l2) {
+        }
+        wrapAt < l2 && wrapAt--;
+      }
+      distances = cache[l2] = [];
+      originX = ratios ? Math.min(wrapAt, l2) * ratioX - 0.5 : from % wrapAt;
+      originY = wrapAt === _bigNum$1 ? 0 : ratios ? l2 * ratioY / wrapAt - 0.5 : from / wrapAt | 0;
+      max2 = 0;
+      min2 = _bigNum$1;
+      for (j2 = 0; j2 < l2; j2++) {
+        x3 = j2 % wrapAt - originX;
+        y2 = originY - (j2 / wrapAt | 0);
+        distances[j2] = d2 = !axis ? _sqrt(x3 * x3 + y2 * y2) : Math.abs(axis === "y" ? y2 : x3);
+        d2 > max2 && (max2 = d2);
+        d2 < min2 && (min2 = d2);
+      }
+      from === "random" && shuffle(distances);
+      distances.max = max2 - min2;
+      distances.min = min2;
+      distances.v = l2 = (parseFloat(vars.amount) || parseFloat(vars.each) * (wrapAt > l2 ? l2 - 1 : !axis ? Math.max(wrapAt, l2 / wrapAt) : axis === "y" ? l2 / wrapAt : wrapAt) || 0) * (from === "edges" ? -1 : 1);
+      distances.b = l2 < 0 ? base - l2 : base;
+      distances.u = getUnit(vars.amount || vars.each) || 0;
+      ease = ease && l2 < 0 ? _invertEase(ease) : ease;
+    }
+    l2 = (distances[i2] - distances.min) / distances.max || 0;
+    return _roundPrecise(distances.b + (ease ? ease(l2) : l2) * distances.v) + distances.u;
+  };
+}, _roundModifier = function _roundModifier2(v2) {
+  var p2 = Math.pow(10, ((v2 + "").split(".")[1] || "").length);
+  return function(raw2) {
+    var n2 = _roundPrecise(Math.round(parseFloat(raw2) / v2) * v2 * p2);
+    return (n2 - n2 % 1) / p2 + (_isNumber(raw2) ? 0 : getUnit(raw2));
+  };
+}, snap = function snap2(snapTo, value) {
+  var isArray3 = _isArray(snapTo), radius, is2D;
+  if (!isArray3 && _isObject(snapTo)) {
+    radius = isArray3 = snapTo.radius || _bigNum$1;
+    if (snapTo.values) {
+      snapTo = toArray(snapTo.values);
+      if (is2D = !_isNumber(snapTo[0])) {
+        radius *= radius;
+      }
+    } else {
+      snapTo = _roundModifier(snapTo.increment);
+    }
+  }
+  return _conditionalReturn(value, !isArray3 ? _roundModifier(snapTo) : _isFunction(snapTo) ? function(raw2) {
+    is2D = snapTo(raw2);
+    return Math.abs(is2D - raw2) <= radius ? is2D : raw2;
+  } : function(raw2) {
+    var x3 = parseFloat(is2D ? raw2.x : raw2), y2 = parseFloat(is2D ? raw2.y : 0), min2 = _bigNum$1, closest = 0, i2 = snapTo.length, dx, dy;
+    while (i2--) {
+      if (is2D) {
+        dx = snapTo[i2].x - x3;
+        dy = snapTo[i2].y - y2;
+        dx = dx * dx + dy * dy;
+      } else {
+        dx = Math.abs(snapTo[i2] - x3);
+      }
+      if (dx < min2) {
+        min2 = dx;
+        closest = i2;
+      }
+    }
+    closest = !radius || min2 <= radius ? snapTo[closest] : raw2;
+    return is2D || closest === raw2 || _isNumber(raw2) ? closest : closest + getUnit(raw2);
+  });
+}, random = function random2(min2, max2, roundingIncrement, returnFunction) {
+  return _conditionalReturn(_isArray(min2) ? !max2 : roundingIncrement === true ? !!(roundingIncrement = 0) : !returnFunction, function() {
+    return _isArray(min2) ? min2[~~(Math.random() * min2.length)] : (roundingIncrement = roundingIncrement || 1e-5) && (returnFunction = roundingIncrement < 1 ? Math.pow(10, (roundingIncrement + "").length - 2) : 1) && Math.floor(Math.round((min2 - roundingIncrement / 2 + Math.random() * (max2 - min2 + roundingIncrement * 0.99)) / roundingIncrement) * roundingIncrement * returnFunction) / returnFunction;
+  });
+}, pipe = function pipe2() {
+  for (var _len = arguments.length, functions = new Array(_len), _key = 0; _key < _len; _key++) {
+    functions[_key] = arguments[_key];
+  }
+  return function(value) {
+    return functions.reduce(function(v2, f2) {
+      return f2(v2);
+    }, value);
+  };
+}, unitize = function unitize2(func, unit) {
+  return function(value) {
+    return func(parseFloat(value)) + (unit || getUnit(value));
+  };
+}, normalize$2 = function normalize(min2, max2, value) {
+  return mapRange(min2, max2, 0, 1, value);
+}, _wrapArray = function _wrapArray2(a2, wrapper, value) {
+  return _conditionalReturn(value, function(index2) {
+    return a2[~~wrapper(index2)];
+  });
+}, wrap$2 = function wrap(min2, max2, value) {
+  var range = max2 - min2;
+  return _isArray(min2) ? _wrapArray(min2, wrap(0, min2.length), max2) : _conditionalReturn(value, function(value2) {
+    return (range + (value2 - min2) % range) % range + min2;
+  });
+}, wrapYoyo = function wrapYoyo2(min2, max2, value) {
+  var range = max2 - min2, total = range * 2;
+  return _isArray(min2) ? _wrapArray(min2, wrapYoyo2(0, min2.length - 1), max2) : _conditionalReturn(value, function(value2) {
+    value2 = (total + (value2 - min2) % total) % total || 0;
+    return min2 + (value2 > range ? total - value2 : value2);
+  });
+}, _replaceRandom = function _replaceRandom2(s2) {
+  return s2.replace(_randomExp, function(match) {
+    var arIndex = match.indexOf("[") + 1, values = match.substring(arIndex || 7, arIndex ? match.indexOf("]") : match.length - 1).split(_commaDelimExp);
+    return random(arIndex ? values : +values[0], arIndex ? 0 : +values[1], +values[2] || 1e-5);
+  });
+}, mapRange = function mapRange2(inMin, inMax, outMin, outMax, value) {
+  var inRange2 = inMax - inMin, outRange = outMax - outMin;
+  return _conditionalReturn(value, function(value2) {
+    return outMin + ((value2 - inMin) / inRange2 * outRange || 0);
+  });
+}, interpolate = function interpolate2(start2, end, progress, mutate) {
+  var func = isNaN(start2 + end) ? 0 : function(p3) {
+    return (1 - p3) * start2 + p3 * end;
+  };
+  if (!func) {
+    var isString2 = _isString(start2), master = {}, p2, i2, interpolators, l2, il;
+    progress === true && (mutate = 1) && (progress = null);
+    if (isString2) {
+      start2 = {
+        p: start2
+      };
+      end = {
+        p: end
+      };
+    } else if (_isArray(start2) && !_isArray(end)) {
+      interpolators = [];
+      l2 = start2.length;
+      il = l2 - 2;
+      for (i2 = 1; i2 < l2; i2++) {
+        interpolators.push(interpolate2(start2[i2 - 1], start2[i2]));
+      }
+      l2--;
+      func = function func2(p3) {
+        p3 *= l2;
+        var i3 = Math.min(il, ~~p3);
+        return interpolators[i3](p3 - i3);
+      };
+      progress = end;
+    } else if (!mutate) {
+      start2 = _merge(_isArray(start2) ? [] : {}, start2);
+    }
+    if (!interpolators) {
+      for (p2 in end) {
+        _addPropTween.call(master, start2, p2, "get", end[p2]);
+      }
+      func = function func2(p3) {
+        return _renderPropTweens(p3, master) || (isString2 ? start2.p : start2);
+      };
+    }
+  }
+  return _conditionalReturn(progress, func);
+}, _getLabelInDirection = function _getLabelInDirection2(timeline2, fromTime, backward) {
+  var labels = timeline2.labels, min2 = _bigNum$1, p2, distance2, label;
+  for (p2 in labels) {
+    distance2 = labels[p2] - fromTime;
+    if (distance2 < 0 === !!backward && distance2 && min2 > (distance2 = Math.abs(distance2))) {
+      label = p2;
+      min2 = distance2;
+    }
+  }
+  return label;
+}, _callback = function _callback2(animation, type, executeLazyFirst) {
+  var v2 = animation.vars, callback = v2[type], prevContext = _context, context3 = animation._ctx, params, scope, result;
+  if (!callback) {
+    return;
+  }
+  params = v2[type + "Params"];
+  scope = v2.callbackScope || animation;
+  executeLazyFirst && _lazyTweens.length && _lazyRender();
+  context3 && (_context = context3);
+  result = params ? callback.apply(scope, params) : callback.call(scope);
+  _context = prevContext;
+  return result;
+}, _interrupt = function _interrupt2(animation) {
+  _removeFromParent(animation);
+  animation.scrollTrigger && animation.scrollTrigger.kill(!!_reverting$1);
+  animation.progress() < 1 && _callback(animation, "onInterrupt");
+  return animation;
+}, _quickTween, _registerPluginQueue = [], _createPlugin = function _createPlugin2(config3) {
+  if (!config3) return;
+  config3 = !config3.name && config3["default"] || config3;
+  if (_windowExists$1() || config3.headless) {
+    var name = config3.name, isFunc = _isFunction(config3), Plugin = name && !isFunc && config3.init ? function() {
+      this._props = [];
+    } : config3, instanceDefaults = {
+      init: _emptyFunc,
+      render: _renderPropTweens,
+      add: _addPropTween,
+      kill: _killPropTweensOf,
+      modifier: _addPluginModifier,
+      rawVars: 0
+    }, statics = {
+      targetTest: 0,
+      get: 0,
+      getSetter: _getSetter,
+      aliases: {},
+      register: 0
+    };
+    _wake();
+    if (config3 !== Plugin) {
+      if (_plugins[name]) {
+        return;
+      }
+      _setDefaults(Plugin, _setDefaults(_copyExcluding(config3, instanceDefaults), statics));
+      _merge(Plugin.prototype, _merge(instanceDefaults, _copyExcluding(config3, statics)));
+      _plugins[Plugin.prop = name] = Plugin;
+      if (config3.targetTest) {
+        _harnessPlugins.push(Plugin);
+        _reservedProps[name] = 1;
+      }
+      name = (name === "css" ? "CSS" : name.charAt(0).toUpperCase() + name.substr(1)) + "Plugin";
+    }
+    _addGlobal(name, Plugin);
+    config3.register && config3.register(gsap, Plugin, PropTween);
+  } else {
+    _registerPluginQueue.push(config3);
+  }
+}, _255 = 255, _colorLookup = {
+  aqua: [0, _255, _255],
+  lime: [0, _255, 0],
+  silver: [192, 192, 192],
+  black: [0, 0, 0],
+  maroon: [128, 0, 0],
+  teal: [0, 128, 128],
+  blue: [0, 0, _255],
+  navy: [0, 0, 128],
+  white: [_255, _255, _255],
+  olive: [128, 128, 0],
+  yellow: [_255, _255, 0],
+  orange: [_255, 165, 0],
+  gray: [128, 128, 128],
+  purple: [128, 0, 128],
+  green: [0, 128, 0],
+  red: [_255, 0, 0],
+  pink: [_255, 192, 203],
+  cyan: [0, _255, _255],
+  transparent: [_255, _255, _255, 0]
+}, _hue = function _hue2(h2, m1, m2) {
+  h2 += h2 < 0 ? 1 : h2 > 1 ? -1 : 0;
+  return (h2 * 6 < 1 ? m1 + (m2 - m1) * h2 * 6 : h2 < 0.5 ? m2 : h2 * 3 < 2 ? m1 + (m2 - m1) * (2 / 3 - h2) * 6 : m1) * _255 + 0.5 | 0;
+}, splitColor = function splitColor2(v2, toHSL, forceAlpha) {
+  var a2 = !v2 ? _colorLookup.black : _isNumber(v2) ? [v2 >> 16, v2 >> 8 & _255, v2 & _255] : 0, r2, g2, b2, h2, s2, l2, max2, min2, d2, wasHSL;
+  if (!a2) {
+    if (v2.substr(-1) === ",") {
+      v2 = v2.substr(0, v2.length - 1);
+    }
+    if (_colorLookup[v2]) {
+      a2 = _colorLookup[v2];
+    } else if (v2.charAt(0) === "#") {
+      if (v2.length < 6) {
+        r2 = v2.charAt(1);
+        g2 = v2.charAt(2);
+        b2 = v2.charAt(3);
+        v2 = "#" + r2 + r2 + g2 + g2 + b2 + b2 + (v2.length === 5 ? v2.charAt(4) + v2.charAt(4) : "");
+      }
+      if (v2.length === 9) {
+        a2 = parseInt(v2.substr(1, 6), 16);
+        return [a2 >> 16, a2 >> 8 & _255, a2 & _255, parseInt(v2.substr(7), 16) / 255];
+      }
+      v2 = parseInt(v2.substr(1), 16);
+      a2 = [v2 >> 16, v2 >> 8 & _255, v2 & _255];
+    } else if (v2.substr(0, 3) === "hsl") {
+      a2 = wasHSL = v2.match(_strictNumExp);
+      if (!toHSL) {
+        h2 = +a2[0] % 360 / 360;
+        s2 = +a2[1] / 100;
+        l2 = +a2[2] / 100;
+        g2 = l2 <= 0.5 ? l2 * (s2 + 1) : l2 + s2 - l2 * s2;
+        r2 = l2 * 2 - g2;
+        a2.length > 3 && (a2[3] *= 1);
+        a2[0] = _hue(h2 + 1 / 3, r2, g2);
+        a2[1] = _hue(h2, r2, g2);
+        a2[2] = _hue(h2 - 1 / 3, r2, g2);
+      } else if (~v2.indexOf("=")) {
+        a2 = v2.match(_numExp);
+        forceAlpha && a2.length < 4 && (a2[3] = 1);
+        return a2;
+      }
+    } else {
+      a2 = v2.match(_strictNumExp) || _colorLookup.transparent;
+    }
+    a2 = a2.map(Number);
+  }
+  if (toHSL && !wasHSL) {
+    r2 = a2[0] / _255;
+    g2 = a2[1] / _255;
+    b2 = a2[2] / _255;
+    max2 = Math.max(r2, g2, b2);
+    min2 = Math.min(r2, g2, b2);
+    l2 = (max2 + min2) / 2;
+    if (max2 === min2) {
+      h2 = s2 = 0;
+    } else {
+      d2 = max2 - min2;
+      s2 = l2 > 0.5 ? d2 / (2 - max2 - min2) : d2 / (max2 + min2);
+      h2 = max2 === r2 ? (g2 - b2) / d2 + (g2 < b2 ? 6 : 0) : max2 === g2 ? (b2 - r2) / d2 + 2 : (r2 - g2) / d2 + 4;
+      h2 *= 60;
+    }
+    a2[0] = ~~(h2 + 0.5);
+    a2[1] = ~~(s2 * 100 + 0.5);
+    a2[2] = ~~(l2 * 100 + 0.5);
+  }
+  forceAlpha && a2.length < 4 && (a2[3] = 1);
+  return a2;
+}, _colorOrderData = function _colorOrderData2(v2) {
+  var values = [], c2 = [], i2 = -1;
+  v2.split(_colorExp).forEach(function(v3) {
+    var a2 = v3.match(_numWithUnitExp) || [];
+    values.push.apply(values, a2);
+    c2.push(i2 += a2.length + 1);
+  });
+  values.c = c2;
+  return values;
+}, _formatColors = function _formatColors2(s2, toHSL, orderMatchData) {
+  var result = "", colors2 = (s2 + result).match(_colorExp), type = toHSL ? "hsla(" : "rgba(", i2 = 0, c2, shell, d2, l2;
+  if (!colors2) {
+    return s2;
+  }
+  colors2 = colors2.map(function(color2) {
+    return (color2 = splitColor(color2, toHSL, 1)) && type + (toHSL ? color2[0] + "," + color2[1] + "%," + color2[2] + "%," + color2[3] : color2.join(",")) + ")";
+  });
+  if (orderMatchData) {
+    d2 = _colorOrderData(s2);
+    c2 = orderMatchData.c;
+    if (c2.join(result) !== d2.c.join(result)) {
+      shell = s2.replace(_colorExp, "1").split(_numWithUnitExp);
+      l2 = shell.length - 1;
+      for (; i2 < l2; i2++) {
+        result += shell[i2] + (~c2.indexOf(i2) ? colors2.shift() || type + "0,0,0,0)" : (d2.length ? d2 : colors2.length ? colors2 : orderMatchData).shift());
+      }
+    }
+  }
+  if (!shell) {
+    shell = s2.split(_colorExp);
+    l2 = shell.length - 1;
+    for (; i2 < l2; i2++) {
+      result += shell[i2] + colors2[i2];
+    }
+  }
+  return result + shell[l2];
+}, _colorExp = function() {
+  var s2 = "(?:\\b(?:(?:rgb|rgba|hsl|hsla)\\(.+?\\))|\\B#(?:[0-9a-f]{3,4}){1,2}\\b", p2;
+  for (p2 in _colorLookup) {
+    s2 += "|" + p2 + "\\b";
+  }
+  return new RegExp(s2 + ")", "gi");
+}(), _hslExp = /hsl[a]?\(/, _colorStringFilter = function _colorStringFilter2(a2) {
+  var combined = a2.join(" "), toHSL;
+  _colorExp.lastIndex = 0;
+  if (_colorExp.test(combined)) {
+    toHSL = _hslExp.test(combined);
+    a2[1] = _formatColors(a2[1], toHSL);
+    a2[0] = _formatColors(a2[0], toHSL, _colorOrderData(a2[1]));
+    return true;
+  }
+}, _tickerActive, _ticker = function() {
+  var _getTime = Date.now, _lagThreshold = 500, _adjustedLag = 33, _startTime2 = _getTime(), _lastUpdate = _startTime2, _gap = 1e3 / 240, _nextTime = _gap, _listeners2 = [], _id, _req, _raf, _self, _delta, _i2, _tick = function _tick2(v2) {
+    var elapsed = _getTime() - _lastUpdate, manual = v2 === true, overlap, dispatch2, time, frame2;
+    (elapsed > _lagThreshold || elapsed < 0) && (_startTime2 += elapsed - _adjustedLag);
+    _lastUpdate += elapsed;
+    time = _lastUpdate - _startTime2;
+    overlap = time - _nextTime;
+    if (overlap > 0 || manual) {
+      frame2 = ++_self.frame;
+      _delta = time - _self.time * 1e3;
+      _self.time = time = time / 1e3;
+      _nextTime += overlap + (overlap >= _gap ? 4 : _gap - overlap);
+      dispatch2 = 1;
+    }
+    manual || (_id = _req(_tick2));
+    if (dispatch2) {
+      for (_i2 = 0; _i2 < _listeners2.length; _i2++) {
+        _listeners2[_i2](time, _delta, frame2, v2);
+      }
+    }
+  };
+  _self = {
+    time: 0,
+    frame: 0,
+    tick: function tick() {
+      _tick(true);
+    },
+    deltaRatio: function deltaRatio(fps) {
+      return _delta / (1e3 / (fps || 60));
+    },
+    wake: function wake2() {
+      if (_coreReady) {
+        if (!_coreInitted && _windowExists$1()) {
+          _win$1 = _coreInitted = window;
+          _doc$1 = _win$1.document || {};
+          _globals.gsap = gsap;
+          (_win$1.gsapVersions || (_win$1.gsapVersions = [])).push(gsap.version);
+          _install(_installScope || _win$1.GreenSockGlobals || !_win$1.gsap && _win$1 || {});
+          _registerPluginQueue.forEach(_createPlugin);
+        }
+        _raf = typeof requestAnimationFrame !== "undefined" && requestAnimationFrame;
+        _id && _self.sleep();
+        _req = _raf || function(f2) {
+          return setTimeout(f2, _nextTime - _self.time * 1e3 + 1 | 0);
+        };
+        _tickerActive = 1;
+        _tick(2);
+      }
+    },
+    sleep: function sleep2() {
+      (_raf ? cancelAnimationFrame : clearTimeout)(_id);
+      _tickerActive = 0;
+      _req = _emptyFunc;
+    },
+    lagSmoothing: function lagSmoothing(threshold, adjustedLag) {
+      _lagThreshold = threshold || Infinity;
+      _adjustedLag = Math.min(adjustedLag || 33, _lagThreshold);
+    },
+    fps: function fps(_fps) {
+      _gap = 1e3 / (_fps || 240);
+      _nextTime = _self.time * 1e3 + _gap;
+    },
+    add: function add2(callback, once2, prioritize) {
+      var func = once2 ? function(t2, d2, f2, v2) {
+        callback(t2, d2, f2, v2);
+        _self.remove(func);
+      } : callback;
+      _self.remove(callback);
+      _listeners2[prioritize ? "unshift" : "push"](func);
+      _wake();
+      return func;
+    },
+    remove: function remove2(callback, i2) {
+      ~(i2 = _listeners2.indexOf(callback)) && _listeners2.splice(i2, 1) && _i2 >= i2 && _i2--;
+    },
+    _listeners: _listeners2
+  };
+  return _self;
+}(), _wake = function _wake2() {
+  return !_tickerActive && _ticker.wake();
+}, _easeMap = {}, _customEaseExp = /^[\d.\-M][\d.\-,\s]/, _quotesExp = /["']/g, _parseObjectInString = function _parseObjectInString2(value) {
+  var obj = {}, split2 = value.substr(1, value.length - 3).split(":"), key2 = split2[0], i2 = 1, l2 = split2.length, index2, val, parsedVal;
+  for (; i2 < l2; i2++) {
+    val = split2[i2];
+    index2 = i2 !== l2 - 1 ? val.lastIndexOf(",") : val.length;
+    parsedVal = val.substr(0, index2);
+    obj[key2] = isNaN(parsedVal) ? parsedVal.replace(_quotesExp, "").trim() : +parsedVal;
+    key2 = val.substr(index2 + 1).trim();
+  }
+  return obj;
+}, _valueInParentheses = function _valueInParentheses2(value) {
+  var open = value.indexOf("(") + 1, close = value.indexOf(")"), nested = value.indexOf("(", open);
+  return value.substring(open, ~nested && nested < close ? value.indexOf(")", close + 1) : close);
+}, _configEaseFromString = function _configEaseFromString2(name) {
+  var split2 = (name + "").split("("), ease = _easeMap[split2[0]];
+  return ease && split2.length > 1 && ease.config ? ease.config.apply(null, ~name.indexOf("{") ? [_parseObjectInString(split2[1])] : _valueInParentheses(name).split(",").map(_numericIfPossible)) : _easeMap._CE && _customEaseExp.test(name) ? _easeMap._CE("", name) : ease;
+}, _invertEase = function _invertEase2(ease) {
+  return function(p2) {
+    return 1 - ease(1 - p2);
+  };
+}, _parseEase = function _parseEase2(ease, defaultEase) {
+  return !ease ? defaultEase : (_isFunction(ease) ? ease : _easeMap[ease] || _configEaseFromString(ease)) || defaultEase;
+}, _insertEase = function _insertEase2(names2, easeIn, easeOut, easeInOut) {
+  if (easeOut === void 0) {
+    easeOut = function easeOut2(p2) {
+      return 1 - easeIn(1 - p2);
+    };
+  }
+  if (easeInOut === void 0) {
+    easeInOut = function easeInOut2(p2) {
+      return p2 < 0.5 ? easeIn(p2 * 2) / 2 : 1 - easeIn((1 - p2) * 2) / 2;
+    };
+  }
+  var ease = {
+    easeIn,
+    easeOut,
+    easeInOut
+  }, lowercaseName;
+  _forEachName(names2, function(name) {
+    _easeMap[name] = _globals[name] = ease;
+    _easeMap[lowercaseName = name.toLowerCase()] = easeOut;
+    for (var p2 in ease) {
+      _easeMap[lowercaseName + (p2 === "easeIn" ? ".in" : p2 === "easeOut" ? ".out" : ".inOut")] = _easeMap[name + "." + p2] = ease[p2];
+    }
+  });
+  return ease;
+}, _easeInOutFromOut = function _easeInOutFromOut2(easeOut) {
+  return function(p2) {
+    return p2 < 0.5 ? (1 - easeOut(1 - p2 * 2)) / 2 : 0.5 + easeOut((p2 - 0.5) * 2) / 2;
+  };
+}, _configElastic = function _configElastic2(type, amplitude, period) {
+  var p1 = amplitude >= 1 ? amplitude : 1, p2 = (period || (type ? 0.3 : 0.45)) / (amplitude < 1 ? amplitude : 1), p3 = p2 / _2PI * (Math.asin(1 / p1) || 0), easeOut = function easeOut2(p4) {
+    return p4 === 1 ? 1 : p1 * Math.pow(2, -10 * p4) * _sin((p4 - p3) * p2) + 1;
+  }, ease = type === "out" ? easeOut : type === "in" ? function(p4) {
+    return 1 - easeOut(1 - p4);
+  } : _easeInOutFromOut(easeOut);
+  p2 = _2PI / p2;
+  ease.config = function(amplitude2, period2) {
+    return _configElastic2(type, amplitude2, period2);
+  };
+  return ease;
+}, _configBack = function _configBack2(type, overshoot) {
+  if (overshoot === void 0) {
+    overshoot = 1.70158;
+  }
+  var easeOut = function easeOut2(p2) {
+    return p2 ? --p2 * p2 * ((overshoot + 1) * p2 + overshoot) + 1 : 0;
+  }, ease = type === "out" ? easeOut : type === "in" ? function(p2) {
+    return 1 - easeOut(1 - p2);
+  } : _easeInOutFromOut(easeOut);
+  ease.config = function(overshoot2) {
+    return _configBack2(type, overshoot2);
+  };
+  return ease;
+};
+_forEachName("Linear,Quad,Cubic,Quart,Quint,Strong", function(name, i2) {
+  var power = i2 < 5 ? i2 + 1 : i2;
+  _insertEase(name + ",Power" + (power - 1), i2 ? function(p2) {
+    return Math.pow(p2, power);
+  } : function(p2) {
+    return p2;
+  }, function(p2) {
+    return 1 - Math.pow(1 - p2, power);
+  }, function(p2) {
+    return p2 < 0.5 ? Math.pow(p2 * 2, power) / 2 : 1 - Math.pow((1 - p2) * 2, power) / 2;
+  });
+});
+_easeMap.Linear.easeNone = _easeMap.none = _easeMap.Linear.easeIn;
+_insertEase("Elastic", _configElastic("in"), _configElastic("out"), _configElastic());
+(function(n2, c2) {
+  var n1 = 1 / c2, n22 = 2 * n1, n3 = 2.5 * n1, easeOut = function easeOut2(p2) {
+    return p2 < n1 ? n2 * p2 * p2 : p2 < n22 ? n2 * Math.pow(p2 - 1.5 / c2, 2) + 0.75 : p2 < n3 ? n2 * (p2 -= 2.25 / c2) * p2 + 0.9375 : n2 * Math.pow(p2 - 2.625 / c2, 2) + 0.984375;
+  };
+  _insertEase("Bounce", function(p2) {
+    return 1 - easeOut(1 - p2);
+  }, easeOut);
+})(7.5625, 2.75);
+_insertEase("Expo", function(p2) {
+  return Math.pow(2, 10 * (p2 - 1)) * p2 + p2 * p2 * p2 * p2 * p2 * p2 * (1 - p2);
+});
+_insertEase("Circ", function(p2) {
+  return -(_sqrt(1 - p2 * p2) - 1);
+});
+_insertEase("Sine", function(p2) {
+  return p2 === 1 ? 1 : -_cos(p2 * _HALF_PI) + 1;
+});
+_insertEase("Back", _configBack("in"), _configBack("out"), _configBack());
+_easeMap.SteppedEase = _easeMap.steps = _globals.SteppedEase = {
+  config: function config(steps, immediateStart) {
+    if (steps === void 0) {
+      steps = 1;
+    }
+    var p1 = 1 / steps, p2 = steps + (immediateStart ? 0 : 1), p3 = immediateStart ? 1 : 0, max2 = 1 - _tinyNum;
+    return function(p4) {
+      return ((p2 * _clamp(0, max2, p4) | 0) + p3) * p1;
+    };
+  }
+};
+_defaults.ease = _easeMap["quad.out"];
+_forEachName("onComplete,onUpdate,onStart,onRepeat,onReverseComplete,onInterrupt", function(name) {
+  return _callbackNames += name + "," + name + "Params,";
+});
+var GSCache = function GSCache2(target, harness) {
+  this.id = _gsID++;
+  target._gsap = this;
+  this.target = target;
+  this.harness = harness;
+  this.get = harness ? harness.get : _getProperty;
+  this.set = harness ? harness.getSetter : _getSetter;
+};
+var Animation = /* @__PURE__ */ function() {
+  function Animation2(vars) {
+    this.vars = vars;
+    this._delay = +vars.delay || 0;
+    if (this._repeat = vars.repeat === Infinity ? -2 : vars.repeat || 0) {
+      this._rDelay = vars.repeatDelay || 0;
+      this._yoyo = !!vars.yoyo || !!vars.yoyoEase;
+    }
+    this._ts = 1;
+    _setDuration(this, +vars.duration, 1, 1);
+    this.data = vars.data;
+    if (_context) {
+      this._ctx = _context;
+      _context.data.push(this);
+    }
+    _tickerActive || _ticker.wake();
+  }
+  var _proto = Animation2.prototype;
+  _proto.delay = function delay(value) {
+    if (value || value === 0) {
+      this.parent && this.parent.smoothChildTiming && this.startTime(this._start + value - this._delay);
+      this._delay = value;
+      return this;
+    }
+    return this._delay;
+  };
+  _proto.duration = function duration(value) {
+    return arguments.length ? this.totalDuration(this._repeat > 0 ? value + (value + this._rDelay) * this._repeat : value) : this.totalDuration() && this._dur;
+  };
+  _proto.totalDuration = function totalDuration(value) {
+    if (!arguments.length) {
+      return this._tDur;
+    }
+    this._dirty = 0;
+    return _setDuration(this, this._repeat < 0 ? value : (value - this._repeat * this._rDelay) / (this._repeat + 1));
+  };
+  _proto.totalTime = function totalTime(_totalTime, suppressEvents) {
+    _wake();
+    if (!arguments.length) {
+      return this._tTime;
+    }
+    var parent = this._dp;
+    if (parent && parent.smoothChildTiming && this._ts) {
+      _alignPlayhead(this, _totalTime);
+      !parent._dp || parent.parent || _postAddChecks(parent, this);
+      while (parent && parent.parent) {
+        if (parent.parent._time !== parent._start + (parent._ts >= 0 ? parent._tTime / parent._ts : (parent.totalDuration() - parent._tTime) / -parent._ts)) {
+          parent.totalTime(parent._tTime, true);
+        }
+        parent = parent.parent;
+      }
+      if (!this.parent && this._dp.autoRemoveChildren && (this._ts > 0 && _totalTime < this._tDur || this._ts < 0 && _totalTime > 0 || !this._tDur && !_totalTime)) {
+        _addToTimeline(this._dp, this, this._start - this._delay);
+      }
+    }
+    if (this._tTime !== _totalTime || !this._dur && !suppressEvents || this._initted && Math.abs(this._zTime) === _tinyNum || !this._initted && this._dur && _totalTime || !_totalTime && !this._initted && (this.add || this._ptLookup)) {
+      this._ts || (this._pTime = _totalTime);
+      _lazySafeRender(this, _totalTime, suppressEvents);
+    }
+    return this;
+  };
+  _proto.time = function time(value, suppressEvents) {
+    return arguments.length ? this.totalTime(Math.min(this.totalDuration(), value + _elapsedCycleDuration(this)) % (this._dur + this._rDelay) || (value ? this._dur : 0), suppressEvents) : this._time;
+  };
+  _proto.totalProgress = function totalProgress(value, suppressEvents) {
+    return arguments.length ? this.totalTime(this.totalDuration() * value, suppressEvents) : this.totalDuration() ? Math.min(1, this._tTime / this._tDur) : this.rawTime() >= 0 && this._initted ? 1 : 0;
+  };
+  _proto.progress = function progress(value, suppressEvents) {
+    return arguments.length ? this.totalTime(this.duration() * (this._yoyo && !(this.iteration() & 1) ? 1 - value : value) + _elapsedCycleDuration(this), suppressEvents) : this.duration() ? Math.min(1, this._time / this._dur) : this.rawTime() > 0 ? 1 : 0;
+  };
+  _proto.iteration = function iteration(value, suppressEvents) {
+    var cycleDuration = this.duration() + this._rDelay;
+    return arguments.length ? this.totalTime(this._time + (value - 1) * cycleDuration, suppressEvents) : this._repeat ? _animationCycle(this._tTime, cycleDuration) + 1 : 1;
+  };
+  _proto.timeScale = function timeScale(value, suppressEvents) {
+    if (!arguments.length) {
+      return this._rts === -_tinyNum ? 0 : this._rts;
+    }
+    if (this._rts === value) {
+      return this;
+    }
+    var tTime = this.parent && this._ts ? _parentToChildTotalTime(this.parent._time, this) : this._tTime;
+    this._rts = +value || 0;
+    this._ts = this._ps || value === -_tinyNum ? 0 : this._rts;
+    this.totalTime(_clamp(-Math.abs(this._delay), this.totalDuration(), tTime), suppressEvents !== false);
+    _setEnd(this);
+    return _recacheAncestors(this);
+  };
+  _proto.paused = function paused(value) {
+    if (!arguments.length) {
+      return this._ps;
+    }
+    if (this._ps !== value) {
+      this._ps = value;
+      if (value) {
+        this._pTime = this._tTime || Math.max(-this._delay, this.rawTime());
+        this._ts = this._act = 0;
+      } else {
+        _wake();
+        this._ts = this._rts;
+        this.totalTime(this.parent && !this.parent.smoothChildTiming ? this.rawTime() : this._tTime || this._pTime, this.progress() === 1 && Math.abs(this._zTime) !== _tinyNum && (this._tTime -= _tinyNum));
+      }
+    }
+    return this;
+  };
+  _proto.startTime = function startTime(value) {
+    if (arguments.length) {
+      this._start = _roundPrecise(value);
+      var parent = this.parent || this._dp;
+      parent && (parent._sort || !this.parent) && _addToTimeline(parent, this, this._start - this._delay);
+      return this;
+    }
+    return this._start;
+  };
+  _proto.endTime = function endTime(includeRepeats) {
+    return this._start + (_isNotFalse(includeRepeats) ? this.totalDuration() : this.duration()) / Math.abs(this._ts || 1);
+  };
+  _proto.rawTime = function rawTime(wrapRepeats) {
+    var parent = this.parent || this._dp;
+    return !parent ? this._tTime : wrapRepeats && (!this._ts || this._repeat && this._time && this.totalProgress() < 1) ? this._tTime % (this._dur + this._rDelay) : !this._ts ? this._tTime : _parentToChildTotalTime(parent.rawTime(wrapRepeats), this);
+  };
+  _proto.revert = function revert2(config3) {
+    if (config3 === void 0) {
+      config3 = _revertConfig;
+    }
+    var prevIsReverting = _reverting$1;
+    _reverting$1 = config3;
+    if (_isRevertWorthy(this)) {
+      this.timeline && this.timeline.revert(config3);
+      this.totalTime(-0.01, config3.suppressEvents);
+    }
+    this.data !== "nested" && config3.kill !== false && this.kill();
+    _reverting$1 = prevIsReverting;
+    return this;
+  };
+  _proto.globalTime = function globalTime(rawTime) {
+    var animation = this, time = arguments.length ? rawTime : animation.rawTime();
+    while (animation) {
+      time = animation._start + time / (Math.abs(animation._ts) || 1);
+      animation = animation._dp;
+    }
+    return !this.parent && this._sat ? this._sat.globalTime(rawTime) : time;
+  };
+  _proto.repeat = function repeat(value) {
+    if (arguments.length) {
+      this._repeat = value === Infinity ? -2 : value;
+      return _onUpdateTotalDuration(this);
+    }
+    return this._repeat === -2 ? Infinity : this._repeat;
+  };
+  _proto.repeatDelay = function repeatDelay(value) {
+    if (arguments.length) {
+      var time = this._time;
+      this._rDelay = value;
+      _onUpdateTotalDuration(this);
+      return time ? this.time(time) : this;
+    }
+    return this._rDelay;
+  };
+  _proto.yoyo = function yoyo(value) {
+    if (arguments.length) {
+      this._yoyo = value;
+      return this;
+    }
+    return this._yoyo;
+  };
+  _proto.seek = function seek(position2, suppressEvents) {
+    return this.totalTime(_parsePosition(this, position2), _isNotFalse(suppressEvents));
+  };
+  _proto.restart = function restart(includeDelay, suppressEvents) {
+    this.play().totalTime(includeDelay ? -this._delay : 0, _isNotFalse(suppressEvents));
+    this._dur || (this._zTime = -_tinyNum);
+    return this;
+  };
+  _proto.play = function play(from, suppressEvents) {
+    from != null && this.seek(from, suppressEvents);
+    return this.reversed(false).paused(false);
+  };
+  _proto.reverse = function reverse(from, suppressEvents) {
+    from != null && this.seek(from || this.totalDuration(), suppressEvents);
+    return this.reversed(true).paused(false);
+  };
+  _proto.pause = function pause(atTime, suppressEvents) {
+    atTime != null && this.seek(atTime, suppressEvents);
+    return this.paused(true);
+  };
+  _proto.resume = function resume() {
+    return this.paused(false);
+  };
+  _proto.reversed = function reversed(value) {
+    if (arguments.length) {
+      !!value !== this.reversed() && this.timeScale(-this._rts || (value ? -_tinyNum : 0));
+      return this;
+    }
+    return this._rts < 0;
+  };
+  _proto.invalidate = function invalidate() {
+    this._initted = this._act = 0;
+    this._zTime = -_tinyNum;
+    return this;
+  };
+  _proto.isActive = function isActive() {
+    var parent = this.parent || this._dp, start2 = this._start, rawTime;
+    return !!(!parent || this._ts && this._initted && parent.isActive() && (rawTime = parent.rawTime(true)) >= start2 && rawTime < this.endTime(true) - _tinyNum);
+  };
+  _proto.eventCallback = function eventCallback(type, callback, params) {
+    var vars = this.vars;
+    if (arguments.length > 1) {
+      if (!callback) {
+        delete vars[type];
+      } else {
+        vars[type] = callback;
+        params && (vars[type + "Params"] = params);
+        type === "onUpdate" && (this._onUpdate = callback);
+      }
+      return this;
+    }
+    return vars[type];
+  };
+  _proto.then = function then(onFulfilled) {
+    var self2 = this, prevProm = self2._prom;
+    return new Promise(function(resolve) {
+      var f2 = _isFunction(onFulfilled) ? onFulfilled : _passThrough, _resolve = function _resolve2() {
+        var _then = self2.then;
+        self2.then = null;
+        prevProm && prevProm();
+        _isFunction(f2) && (f2 = f2(self2)) && (f2.then || f2 === self2) && (self2.then = _then);
+        resolve(f2);
+        self2.then = _then;
+      };
+      if (self2._initted && self2.totalProgress() === 1 && self2._ts >= 0 || !self2._tTime && self2._ts < 0) {
+        _resolve();
+      } else {
+        self2._prom = _resolve;
+      }
+    });
+  };
+  _proto.kill = function kill() {
+    _interrupt(this);
+  };
+  return Animation2;
+}();
+_setDefaults(Animation.prototype, {
+  _time: 0,
+  _start: 0,
+  _end: 0,
+  _tTime: 0,
+  _tDur: 0,
+  _dirty: 0,
+  _repeat: 0,
+  _yoyo: false,
+  parent: null,
+  _initted: false,
+  _rDelay: 0,
+  _ts: 1,
+  _dp: 0,
+  ratio: 0,
+  _zTime: -_tinyNum,
+  _prom: 0,
+  _ps: false,
+  _rts: 1
+});
+var Timeline = /* @__PURE__ */ function(_Animation) {
+  _inheritsLoose(Timeline2, _Animation);
+  function Timeline2(vars, position2) {
+    var _this;
+    if (vars === void 0) {
+      vars = {};
+    }
+    _this = _Animation.call(this, vars) || this;
+    _this.labels = {};
+    _this.smoothChildTiming = !!vars.smoothChildTiming;
+    _this.autoRemoveChildren = !!vars.autoRemoveChildren;
+    _this._sort = _isNotFalse(vars.sortChildren);
+    _globalTimeline && _addToTimeline(vars.parent || _globalTimeline, _assertThisInitialized(_this), position2);
+    vars.reversed && _this.reverse();
+    vars.paused && _this.paused(true);
+    vars.scrollTrigger && _scrollTrigger(_assertThisInitialized(_this), vars.scrollTrigger);
+    return _this;
+  }
+  var _proto2 = Timeline2.prototype;
+  _proto2.to = function to(targets, vars, position2) {
+    _createTweenType(0, arguments, this);
+    return this;
+  };
+  _proto2.from = function from(targets, vars, position2) {
+    _createTweenType(1, arguments, this);
+    return this;
+  };
+  _proto2.fromTo = function fromTo(targets, fromVars, toVars, position2) {
+    _createTweenType(2, arguments, this);
+    return this;
+  };
+  _proto2.set = function set2(targets, vars, position2) {
+    vars.duration = 0;
+    vars.parent = this;
+    _inheritDefaults(vars).repeatDelay || (vars.repeat = 0);
+    vars.immediateRender = !!vars.immediateRender;
+    new Tween(targets, vars, _parsePosition(this, position2), 1);
+    return this;
+  };
+  _proto2.call = function call(callback, params, position2) {
+    return _addToTimeline(this, Tween.delayedCall(0, callback, params), position2);
+  };
+  _proto2.staggerTo = function staggerTo(targets, duration, vars, stagger, position2, onCompleteAll, onCompleteAllParams) {
+    vars.duration = duration;
+    vars.stagger = vars.stagger || stagger;
+    vars.onComplete = onCompleteAll;
+    vars.onCompleteParams = onCompleteAllParams;
+    vars.parent = this;
+    new Tween(targets, vars, _parsePosition(this, position2));
+    return this;
+  };
+  _proto2.staggerFrom = function staggerFrom(targets, duration, vars, stagger, position2, onCompleteAll, onCompleteAllParams) {
+    vars.runBackwards = 1;
+    _inheritDefaults(vars).immediateRender = _isNotFalse(vars.immediateRender);
+    return this.staggerTo(targets, duration, vars, stagger, position2, onCompleteAll, onCompleteAllParams);
+  };
+  _proto2.staggerFromTo = function staggerFromTo(targets, duration, fromVars, toVars, stagger, position2, onCompleteAll, onCompleteAllParams) {
+    toVars.startAt = fromVars;
+    _inheritDefaults(toVars).immediateRender = _isNotFalse(toVars.immediateRender);
+    return this.staggerTo(targets, duration, toVars, stagger, position2, onCompleteAll, onCompleteAllParams);
+  };
+  _proto2.render = function render5(totalTime, suppressEvents, force) {
+    var prevTime = this._time, tDur = this._dirty ? this.totalDuration() : this._tDur, dur = this._dur, tTime = totalTime <= 0 ? 0 : _roundPrecise(totalTime), crossingStart = this._zTime < 0 !== totalTime < 0 && (this._initted || !dur), time, child, next, iteration, cycleDuration, prevPaused, pauseTween, timeScale, prevStart, prevIteration, yoyo, isYoyo;
+    this !== _globalTimeline && tTime > tDur && totalTime >= 0 && (tTime = tDur);
+    if (tTime !== this._tTime || force || crossingStart) {
+      if (prevTime !== this._time && dur) {
+        tTime += this._time - prevTime;
+        totalTime += this._time - prevTime;
+      }
+      time = tTime;
+      prevStart = this._start;
+      timeScale = this._ts;
+      prevPaused = !timeScale;
+      if (crossingStart) {
+        dur || (prevTime = this._zTime);
+        (totalTime || !suppressEvents) && (this._zTime = totalTime);
+      }
+      if (this._repeat) {
+        yoyo = this._yoyo;
+        cycleDuration = dur + this._rDelay;
+        if (this._repeat < -1 && totalTime < 0) {
+          return this.totalTime(cycleDuration * 100 + totalTime, suppressEvents, force);
+        }
+        time = _roundPrecise(tTime % cycleDuration);
+        if (tTime === tDur) {
+          iteration = this._repeat;
+          time = dur;
+        } else {
+          prevIteration = _roundPrecise(tTime / cycleDuration);
+          iteration = ~~prevIteration;
+          if (iteration && iteration === prevIteration) {
+            time = dur;
+            iteration--;
+          }
+          time > dur && (time = dur);
+        }
+        prevIteration = _animationCycle(this._tTime, cycleDuration);
+        !prevTime && this._tTime && prevIteration !== iteration && this._tTime - prevIteration * cycleDuration - this._dur <= 0 && (prevIteration = iteration);
+        if (yoyo && iteration & 1) {
+          time = dur - time;
+          isYoyo = 1;
+        }
+        if (iteration !== prevIteration && !this._lock) {
+          var rewinding = yoyo && prevIteration & 1, doesWrap = rewinding === (yoyo && iteration & 1);
+          iteration < prevIteration && (rewinding = !rewinding);
+          prevTime = rewinding ? 0 : tTime % dur ? dur : tTime;
+          this._lock = 1;
+          this.render(prevTime || (isYoyo ? 0 : _roundPrecise(iteration * cycleDuration)), suppressEvents, !dur)._lock = 0;
+          this._tTime = tTime;
+          !suppressEvents && this.parent && _callback(this, "onRepeat");
+          if (this.vars.repeatRefresh && !isYoyo) {
+            this.invalidate()._lock = 1;
+            prevIteration = iteration;
+          }
+          if (prevTime && prevTime !== this._time || prevPaused !== !this._ts || this.vars.onRepeat && !this.parent && !this._act) {
+            return this;
+          }
+          dur = this._dur;
+          tDur = this._tDur;
+          if (doesWrap) {
+            this._lock = 2;
+            prevTime = rewinding ? dur : -1e-4;
+            this.render(prevTime, true);
+            this.vars.repeatRefresh && !isYoyo && this.invalidate();
+          }
+          this._lock = 0;
+          if (!this._ts && !prevPaused) {
+            return this;
+          }
+        }
+      }
+      if (this._hasPause && !this._forcing && this._lock < 2) {
+        pauseTween = _findNextPauseTween(this, _roundPrecise(prevTime), _roundPrecise(time));
+        if (pauseTween) {
+          tTime -= time - (time = pauseTween._start);
+        }
+      }
+      this._tTime = tTime;
+      this._time = time;
+      this._act = !!timeScale;
+      if (!this._initted) {
+        this._onUpdate = this.vars.onUpdate;
+        this._initted = 1;
+        this._zTime = totalTime;
+        prevTime = 0;
+      }
+      if (!prevTime && tTime && dur && !suppressEvents && !prevIteration) {
+        _callback(this, "onStart");
+        if (this._tTime !== tTime) {
+          return this;
+        }
+      }
+      if (time >= prevTime && totalTime >= 0) {
+        child = this._first;
+        while (child) {
+          next = child._next;
+          if ((child._act || time >= child._start) && child._ts && pauseTween !== child) {
+            if (child.parent !== this) {
+              return this.render(totalTime, suppressEvents, force);
+            }
+            child.render(child._ts > 0 ? (time - child._start) * child._ts : (child._dirty ? child.totalDuration() : child._tDur) + (time - child._start) * child._ts, suppressEvents, force);
+            if (time !== this._time || !this._ts && !prevPaused) {
+              pauseTween = 0;
+              next && (tTime += this._zTime = -_tinyNum);
+              break;
+            }
+          }
+          child = next;
+        }
+      } else {
+        child = this._last;
+        var adjustedTime = totalTime < 0 ? totalTime : time;
+        while (child) {
+          next = child._prev;
+          if ((child._act || adjustedTime <= child._end) && child._ts && pauseTween !== child) {
+            if (child.parent !== this) {
+              return this.render(totalTime, suppressEvents, force);
+            }
+            child.render(child._ts > 0 ? (adjustedTime - child._start) * child._ts : (child._dirty ? child.totalDuration() : child._tDur) + (adjustedTime - child._start) * child._ts, suppressEvents, force || _reverting$1 && _isRevertWorthy(child));
+            if (time !== this._time || !this._ts && !prevPaused) {
+              pauseTween = 0;
+              next && (tTime += this._zTime = adjustedTime ? -_tinyNum : _tinyNum);
+              break;
+            }
+          }
+          child = next;
+        }
+      }
+      if (pauseTween && !suppressEvents) {
+        this.pause();
+        pauseTween.render(time >= prevTime ? 0 : -_tinyNum)._zTime = time >= prevTime ? 1 : -1;
+        if (this._ts) {
+          this._start = prevStart;
+          _setEnd(this);
+          return this.render(totalTime, suppressEvents, force);
+        }
+      }
+      this._onUpdate && !suppressEvents && _callback(this, "onUpdate", true);
+      if (tTime === tDur && this._tTime >= this.totalDuration() || !tTime && prevTime) {
+        if (prevStart === this._start || Math.abs(timeScale) !== Math.abs(this._ts)) {
+          if (!this._lock) {
+            (totalTime || !dur) && (tTime === tDur && this._ts > 0 || !tTime && this._ts < 0) && _removeFromParent(this, 1);
+            if (!suppressEvents && !(totalTime < 0 && !prevTime) && (tTime || prevTime || !tDur)) {
+              _callback(this, tTime === tDur && totalTime >= 0 ? "onComplete" : "onReverseComplete", true);
+              this._prom && !(tTime < tDur && this.timeScale() > 0) && this._prom();
+            }
+          }
+        }
+      }
+    }
+    return this;
+  };
+  _proto2.add = function add2(child, position2) {
+    var _this2 = this;
+    _isNumber(position2) || (position2 = _parsePosition(this, position2, child));
+    if (!(child instanceof Animation)) {
+      if (_isArray(child)) {
+        child.forEach(function(obj) {
+          return _this2.add(obj, position2);
+        });
+        return this;
+      }
+      if (_isString(child)) {
+        return this.addLabel(child, position2);
+      }
+      if (_isFunction(child)) {
+        child = Tween.delayedCall(0, child);
+      } else {
+        return this;
+      }
+    }
+    return this !== child ? _addToTimeline(this, child, position2) : this;
+  };
+  _proto2.getChildren = function getChildren(nested, tweens, timelines, ignoreBeforeTime) {
+    if (nested === void 0) {
+      nested = true;
+    }
+    if (tweens === void 0) {
+      tweens = true;
+    }
+    if (timelines === void 0) {
+      timelines = true;
+    }
+    if (ignoreBeforeTime === void 0) {
+      ignoreBeforeTime = -_bigNum$1;
+    }
+    var a2 = [], child = this._first;
+    while (child) {
+      if (child._start >= ignoreBeforeTime) {
+        if (child instanceof Tween) {
+          tweens && a2.push(child);
+        } else {
+          timelines && a2.push(child);
+          nested && a2.push.apply(a2, child.getChildren(true, tweens, timelines));
+        }
+      }
+      child = child._next;
+    }
+    return a2;
+  };
+  _proto2.getById = function getById2(id2) {
+    var animations = this.getChildren(1, 1, 1), i2 = animations.length;
+    while (i2--) {
+      if (animations[i2].vars.id === id2) {
+        return animations[i2];
+      }
+    }
+  };
+  _proto2.remove = function remove2(child) {
+    if (_isString(child)) {
+      return this.removeLabel(child);
+    }
+    if (_isFunction(child)) {
+      return this.killTweensOf(child);
+    }
+    child.parent === this && _removeLinkedListItem(this, child);
+    if (child === this._recent) {
+      this._recent = this._last;
+    }
+    return _uncache(this);
+  };
+  _proto2.totalTime = function totalTime(_totalTime2, suppressEvents) {
+    if (!arguments.length) {
+      return this._tTime;
+    }
+    this._forcing = 1;
+    if (!this._dp && this._ts) {
+      this._start = _roundPrecise(_ticker.time - (this._ts > 0 ? _totalTime2 / this._ts : (this.totalDuration() - _totalTime2) / -this._ts));
+    }
+    _Animation.prototype.totalTime.call(this, _totalTime2, suppressEvents);
+    this._forcing = 0;
+    return this;
+  };
+  _proto2.addLabel = function addLabel(label, position2) {
+    this.labels[label] = _parsePosition(this, position2);
+    return this;
+  };
+  _proto2.removeLabel = function removeLabel(label) {
+    delete this.labels[label];
+    return this;
+  };
+  _proto2.addPause = function addPause(position2, callback, params) {
+    var t2 = Tween.delayedCall(0, callback || _emptyFunc, params);
+    t2.data = "isPause";
+    this._hasPause = 1;
+    return _addToTimeline(this, t2, _parsePosition(this, position2));
+  };
+  _proto2.removePause = function removePause(position2) {
+    var child = this._first;
+    position2 = _parsePosition(this, position2);
+    while (child) {
+      if (child._start === position2 && child.data === "isPause") {
+        _removeFromParent(child);
+      }
+      child = child._next;
+    }
+  };
+  _proto2.killTweensOf = function killTweensOf(targets, props, onlyActive) {
+    var tweens = this.getTweensOf(targets, onlyActive), i2 = tweens.length;
+    while (i2--) {
+      _overwritingTween !== tweens[i2] && tweens[i2].kill(targets, props);
+    }
+    return this;
+  };
+  _proto2.getTweensOf = function getTweensOf2(targets, onlyActive) {
+    var a2 = [], parsedTargets = toArray(targets), child = this._first, isGlobalTime = _isNumber(onlyActive), children2;
+    while (child) {
+      if (child instanceof Tween) {
+        if (_arrayContainsAny(child._targets, parsedTargets) && (isGlobalTime ? (!_overwritingTween || child._initted && child._ts) && child.globalTime(0) <= onlyActive && child.globalTime(child.totalDuration()) > onlyActive : !onlyActive || child.isActive())) {
+          a2.push(child);
+        }
+      } else if ((children2 = child.getTweensOf(parsedTargets, onlyActive)).length) {
+        a2.push.apply(a2, children2);
+      }
+      child = child._next;
+    }
+    return a2;
+  };
+  _proto2.tweenTo = function tweenTo(position2, vars) {
+    vars = vars || {};
+    var tl = this, endTime = _parsePosition(tl, position2), _vars = vars, startAt = _vars.startAt, _onStart = _vars.onStart, onStartParams = _vars.onStartParams, immediateRender = _vars.immediateRender, initted, tween = Tween.to(tl, _setDefaults({
+      ease: vars.ease || "none",
+      lazy: false,
+      immediateRender: false,
+      time: endTime,
+      overwrite: "auto",
+      duration: vars.duration || Math.abs((endTime - (startAt && "time" in startAt ? startAt.time : tl._time)) / tl.timeScale()) || _tinyNum,
+      onStart: function onStart() {
+        tl.pause();
+        if (!initted) {
+          var duration = vars.duration || Math.abs((endTime - (startAt && "time" in startAt ? startAt.time : tl._time)) / tl.timeScale());
+          tween._dur !== duration && _setDuration(tween, duration, 0, 1).render(tween._time, true, true);
+          initted = 1;
+        }
+        _onStart && _onStart.apply(tween, onStartParams || []);
+      }
+    }, vars));
+    return immediateRender ? tween.render(0) : tween;
+  };
+  _proto2.tweenFromTo = function tweenFromTo(fromPosition, toPosition, vars) {
+    return this.tweenTo(toPosition, _setDefaults({
+      startAt: {
+        time: _parsePosition(this, fromPosition)
+      }
+    }, vars));
+  };
+  _proto2.recent = function recent() {
+    return this._recent;
+  };
+  _proto2.nextLabel = function nextLabel(afterTime) {
+    if (afterTime === void 0) {
+      afterTime = this._time;
+    }
+    return _getLabelInDirection(this, _parsePosition(this, afterTime));
+  };
+  _proto2.previousLabel = function previousLabel(beforeTime) {
+    if (beforeTime === void 0) {
+      beforeTime = this._time;
+    }
+    return _getLabelInDirection(this, _parsePosition(this, beforeTime), 1);
+  };
+  _proto2.currentLabel = function currentLabel(value) {
+    return arguments.length ? this.seek(value, true) : this.previousLabel(this._time + _tinyNum);
+  };
+  _proto2.shiftChildren = function shiftChildren(amount, adjustLabels, ignoreBeforeTime) {
+    if (ignoreBeforeTime === void 0) {
+      ignoreBeforeTime = 0;
+    }
+    var child = this._first, labels = this.labels, p2;
+    amount = _roundPrecise(amount);
+    while (child) {
+      if (child._start >= ignoreBeforeTime) {
+        child._start += amount;
+        child._end += amount;
+      }
+      child = child._next;
+    }
+    if (adjustLabels) {
+      for (p2 in labels) {
+        if (labels[p2] >= ignoreBeforeTime) {
+          labels[p2] += amount;
+        }
+      }
+    }
+    return _uncache(this);
+  };
+  _proto2.invalidate = function invalidate(soft) {
+    var child = this._first;
+    this._lock = 0;
+    while (child) {
+      child.invalidate(soft);
+      child = child._next;
+    }
+    return _Animation.prototype.invalidate.call(this, soft);
+  };
+  _proto2.clear = function clear(includeLabels) {
+    if (includeLabels === void 0) {
+      includeLabels = true;
+    }
+    var child = this._first, next;
+    while (child) {
+      next = child._next;
+      this.remove(child);
+      child = next;
+    }
+    this._dp && (this._time = this._tTime = this._pTime = 0);
+    includeLabels && (this.labels = {});
+    return _uncache(this);
+  };
+  _proto2.totalDuration = function totalDuration(value) {
+    var max2 = 0, self2 = this, child = self2._last, prevStart = _bigNum$1, prev, start2, parent;
+    if (arguments.length) {
+      return self2.timeScale((self2._repeat < 0 ? self2.duration() : self2.totalDuration()) / (self2.reversed() ? -value : value));
+    }
+    if (self2._dirty) {
+      parent = self2.parent;
+      while (child) {
+        prev = child._prev;
+        child._dirty && child.totalDuration();
+        start2 = child._start;
+        if (start2 > prevStart && self2._sort && child._ts && !self2._lock) {
+          self2._lock = 1;
+          _addToTimeline(self2, child, start2 - child._delay, 1)._lock = 0;
+        } else {
+          prevStart = start2;
+        }
+        if (start2 < 0 && child._ts) {
+          max2 -= start2;
+          if (!parent && !self2._dp || parent && parent.smoothChildTiming) {
+            self2._start += _roundPrecise(start2 / self2._ts);
+            self2._time -= start2;
+            self2._tTime -= start2;
+          }
+          self2.shiftChildren(-start2, false, -Infinity);
+          prevStart = 0;
+        }
+        child._end > max2 && child._ts && (max2 = child._end);
+        child = prev;
+      }
+      _setDuration(self2, self2 === _globalTimeline && self2._time > max2 ? self2._time : max2, 1, 1);
+      self2._dirty = 0;
+    }
+    return self2._tDur;
+  };
+  Timeline2.updateRoot = function updateRoot(time) {
+    if (_globalTimeline._ts) {
+      _lazySafeRender(_globalTimeline, _parentToChildTotalTime(time, _globalTimeline));
+      _lastRenderedFrame = _ticker.frame;
+    }
+    if (_ticker.frame >= _nextGCFrame) {
+      _nextGCFrame += _config.autoSleep || 120;
+      var child = _globalTimeline._first;
+      if (!child || !child._ts) {
+        if (_config.autoSleep && _ticker._listeners.length < 2) {
+          while (child && !child._ts) {
+            child = child._next;
+          }
+          child || _ticker.sleep();
+        }
+      }
+    }
+  };
+  return Timeline2;
+}(Animation);
+_setDefaults(Timeline.prototype, {
+  _lock: 0,
+  _hasPause: 0,
+  _forcing: 0
+});
+var _addComplexStringPropTween = function _addComplexStringPropTween2(target, prop, start2, end, setter, stringFilter, funcParam) {
+  var pt = new PropTween(this._pt, target, prop, 0, 1, _renderComplexString, null, setter), index2 = 0, matchIndex = 0, result, startNums, color2, endNum, chunk, startNum, hasRandom, a2;
+  pt.b = start2;
+  pt.e = end;
+  start2 += "";
+  end += "";
+  if (hasRandom = ~end.indexOf("random(")) {
+    end = _replaceRandom(end);
+  }
+  if (stringFilter) {
+    a2 = [start2, end];
+    stringFilter(a2, target, prop);
+    start2 = a2[0];
+    end = a2[1];
+  }
+  startNums = start2.match(_complexStringNumExp) || [];
+  while (result = _complexStringNumExp.exec(end)) {
+    endNum = result[0];
+    chunk = end.substring(index2, result.index);
+    if (color2) {
+      color2 = (color2 + 1) % 5;
+    } else if (chunk.substr(-5) === "rgba(") {
+      color2 = 1;
+    }
+    if (endNum !== startNums[matchIndex++]) {
+      startNum = parseFloat(startNums[matchIndex - 1]) || 0;
+      pt._pt = {
+        _next: pt._pt,
+        p: chunk || matchIndex === 1 ? chunk : ",",
+        //note: SVG spec allows omission of comma/space when a negative sign is wedged between two numbers, like 2.5-5.3 instead of 2.5,-5.3 but when tweening, the negative value may switch to positive, so we insert the comma just in case.
+        s: startNum,
+        c: endNum.charAt(1) === "=" ? _parseRelative(startNum, endNum) - startNum : parseFloat(endNum) - startNum,
+        m: color2 && color2 < 4 ? Math.round : 0
+      };
+      index2 = _complexStringNumExp.lastIndex;
+    }
+  }
+  pt.c = index2 < end.length ? end.substring(index2, end.length) : "";
+  pt.fp = funcParam;
+  if (_relExp.test(end) || hasRandom) {
+    pt.e = 0;
+  }
+  this._pt = pt;
+  return pt;
+}, _addPropTween = function _addPropTween2(target, prop, start2, end, index2, targets, modifier, stringFilter, funcParam, optional) {
+  _isFunction(end) && (end = end(index2 || 0, target, targets));
+  var currentValue = target[prop], parsedStart = start2 !== "get" ? start2 : !_isFunction(currentValue) ? currentValue : funcParam ? target[prop.indexOf("set") || !_isFunction(target["get" + prop.substr(3)]) ? prop : "get" + prop.substr(3)](funcParam) : target[prop](), setter = !_isFunction(currentValue) ? _setterPlain : funcParam ? _setterFuncWithParam : _setterFunc, pt;
+  if (_isString(end)) {
+    if (~end.indexOf("random(")) {
+      end = _replaceRandom(end);
+    }
+    if (end.charAt(1) === "=") {
+      pt = _parseRelative(parsedStart, end) + (getUnit(parsedStart) || 0);
+      if (pt || pt === 0) {
+        end = pt;
+      }
+    }
+  }
+  if (!optional || parsedStart !== end || _forceAllPropTweens) {
+    if (!isNaN(parsedStart * end) && end !== "") {
+      pt = new PropTween(this._pt, target, prop, +parsedStart || 0, end - (parsedStart || 0), typeof currentValue === "boolean" ? _renderBoolean : _renderPlain, 0, setter);
+      funcParam && (pt.fp = funcParam);
+      modifier && pt.modifier(modifier, this, target);
+      return this._pt = pt;
+    }
+    !currentValue && !(prop in target) && _missingPlugin(prop, end);
+    return _addComplexStringPropTween.call(this, target, prop, parsedStart, end, setter, stringFilter || _config.stringFilter, funcParam);
+  }
+}, _processVars = function _processVars2(vars, index2, target, targets, tween) {
+  _isFunction(vars) && (vars = _parseFuncOrString(vars, tween, index2, target, targets));
+  if (!_isObject(vars) || vars.style && vars.nodeType || _isArray(vars) || _isTypedArray(vars)) {
+    return _isString(vars) ? _parseFuncOrString(vars, tween, index2, target, targets) : vars;
+  }
+  var copy = {}, p2;
+  for (p2 in vars) {
+    copy[p2] = _parseFuncOrString(vars[p2], tween, index2, target, targets);
+  }
+  return copy;
+}, _checkPlugin = function _checkPlugin2(property, vars, tween, index2, target, targets) {
+  var plugin, pt, ptLookup, i2;
+  if (_plugins[property] && (plugin = new _plugins[property]()).init(target, plugin.rawVars ? vars[property] : _processVars(vars[property], index2, target, targets, tween), tween, index2, targets) !== false) {
+    tween._pt = pt = new PropTween(tween._pt, target, property, 0, 1, plugin.render, plugin, 0, plugin.priority);
+    if (tween !== _quickTween) {
+      ptLookup = tween._ptLookup[tween._targets.indexOf(target)];
+      i2 = plugin._props.length;
+      while (i2--) {
+        ptLookup[plugin._props[i2]] = pt;
+      }
+    }
+  }
+  return plugin;
+}, _overwritingTween, _forceAllPropTweens, _initTween = function _initTween2(tween, time, tTime) {
+  var vars = tween.vars, ease = vars.ease, startAt = vars.startAt, immediateRender = vars.immediateRender, lazy = vars.lazy, onUpdate = vars.onUpdate, runBackwards = vars.runBackwards, yoyoEase = vars.yoyoEase, keyframes = vars.keyframes, autoRevert = vars.autoRevert, dur = tween._dur, prevStartAt = tween._startAt, targets = tween._targets, parent = tween.parent, fullTargets = parent && parent.data === "nested" ? parent.vars.targets : targets, autoOverwrite = tween._overwrite === "auto" && !_suppressOverwrites, tl = tween.timeline, reverseEase = vars.easeReverse || yoyoEase, cleanVars, i2, p2, pt, target, hasPriority, gsData, harness, plugin, ptLookup, index2, harnessVars, overwritten;
+  tl && (!keyframes || !ease) && (ease = "none");
+  tween._ease = _parseEase(ease, _defaults.ease);
+  tween._rEase = reverseEase && (_parseEase(reverseEase) || tween._ease);
+  tween._from = !tl && !!vars.runBackwards;
+  if (tween._from) tween.ratio = 1;
+  if (!tl || keyframes && !vars.stagger) {
+    harness = targets[0] ? _getCache(targets[0]).harness : 0;
+    harnessVars = harness && vars[harness.prop];
+    cleanVars = _copyExcluding(vars, _reservedProps);
+    if (prevStartAt) {
+      prevStartAt._zTime < 0 && prevStartAt.progress(1);
+      time < 0 && runBackwards && immediateRender && !autoRevert ? prevStartAt.render(-1, true) : prevStartAt.revert(runBackwards && dur ? _revertConfigNoKill : _startAtRevertConfig);
+      prevStartAt._lazy = 0;
+    }
+    if (startAt) {
+      _removeFromParent(tween._startAt = Tween.set(targets, _setDefaults({
+        data: "isStart",
+        overwrite: false,
+        parent,
+        immediateRender: true,
+        lazy: !prevStartAt && _isNotFalse(lazy),
+        startAt: null,
+        delay: 0,
+        onUpdate: onUpdate && function() {
+          return _callback(tween, "onUpdate");
+        },
+        stagger: 0
+      }, startAt)));
+      tween._startAt._dp = 0;
+      tween._startAt._sat = tween;
+      time < 0 && (_reverting$1 || !immediateRender && !autoRevert) && tween._startAt.revert(_revertConfigNoKill);
+      if (immediateRender) {
+        if (dur && time <= 0 && tTime <= 0) {
+          time && (tween._zTime = time);
+          return;
+        }
+      }
+    } else if (runBackwards && dur) {
+      if (!prevStartAt) {
+        time && (immediateRender = false);
+        p2 = _setDefaults({
+          overwrite: false,
+          data: "isFromStart",
+          //we tag the tween with as "isFromStart" so that if [inside a plugin] we need to only do something at the very END of a tween, we have a way of identifying this tween as merely the one that's setting the beginning values for a "from()" tween. For example, clearProps in CSSPlugin should only get applied at the very END of a tween and without this tag, from(...{height:100, clearProps:"height", delay:1}) would wipe the height at the beginning of the tween and after 1 second, it'd kick back in.
+          lazy: immediateRender && !prevStartAt && _isNotFalse(lazy),
+          immediateRender,
+          //zero-duration tweens render immediately by default, but if we're not specifically instructed to render this tween immediately, we should skip this and merely _init() to record the starting values (rendering them immediately would push them to completion which is wasteful in that case - we'd have to render(-1) immediately after)
+          stagger: 0,
+          parent
+          //ensures that nested tweens that had a stagger are handled properly, like gsap.from(".class", {y: gsap.utils.wrap([-100,100]), stagger: 0.5})
+        }, cleanVars);
+        harnessVars && (p2[harness.prop] = harnessVars);
+        _removeFromParent(tween._startAt = Tween.set(targets, p2));
+        tween._startAt._dp = 0;
+        tween._startAt._sat = tween;
+        time < 0 && (_reverting$1 ? tween._startAt.revert(_revertConfigNoKill) : tween._startAt.render(-1, true));
+        tween._zTime = time;
+        if (!immediateRender) {
+          _initTween2(tween._startAt, _tinyNum, _tinyNum);
+        } else if (!time) {
+          return;
+        }
+      }
+    }
+    tween._pt = tween._ptCache = 0;
+    lazy = dur && _isNotFalse(lazy) || lazy && !dur;
+    for (i2 = 0; i2 < targets.length; i2++) {
+      target = targets[i2];
+      gsData = target._gsap || _harness(targets)[i2]._gsap;
+      tween._ptLookup[i2] = ptLookup = {};
+      _lazyLookup[gsData.id] && _lazyTweens.length && _lazyRender();
+      index2 = fullTargets === targets ? i2 : fullTargets.indexOf(target);
+      if (harness && (plugin = new harness()).init(target, harnessVars || cleanVars, tween, index2, fullTargets) !== false) {
+        tween._pt = pt = new PropTween(tween._pt, target, plugin.name, 0, 1, plugin.render, plugin, 0, plugin.priority);
+        plugin._props.forEach(function(name) {
+          ptLookup[name] = pt;
+        });
+        plugin.priority && (hasPriority = 1);
+      }
+      if (!harness || harnessVars) {
+        for (p2 in cleanVars) {
+          if (_plugins[p2] && (plugin = _checkPlugin(p2, cleanVars, tween, index2, target, fullTargets))) {
+            plugin.priority && (hasPriority = 1);
+          } else {
+            ptLookup[p2] = pt = _addPropTween.call(tween, target, p2, "get", cleanVars[p2], index2, fullTargets, 0, vars.stringFilter);
+          }
+        }
+      }
+      tween._op && tween._op[i2] && tween.kill(target, tween._op[i2]);
+      if (autoOverwrite && tween._pt) {
+        _overwritingTween = tween;
+        _globalTimeline.killTweensOf(target, ptLookup, tween.globalTime(time));
+        overwritten = !tween.parent;
+        _overwritingTween = 0;
+      }
+      tween._pt && lazy && (_lazyLookup[gsData.id] = 1);
+    }
+    hasPriority && _sortPropTweensByPriority(tween);
+    tween._onInit && tween._onInit(tween);
+  }
+  tween._onUpdate = onUpdate;
+  tween._initted = (!tween._op || tween._pt) && !overwritten;
+  keyframes && time <= 0 && tl.render(_bigNum$1, true, true);
+}, _updatePropTweens = function _updatePropTweens2(tween, property, value, start2, startIsRelative, ratio, time, skipRecursion) {
+  var ptCache = (tween._pt && tween._ptCache || (tween._ptCache = {}))[property], pt, rootPT, lookup, i2;
+  if (!ptCache) {
+    ptCache = tween._ptCache[property] = [];
+    lookup = tween._ptLookup;
+    i2 = tween._targets.length;
+    while (i2--) {
+      pt = lookup[i2][property];
+      if (pt && pt.d && pt.d._pt) {
+        pt = pt.d._pt;
+        while (pt && pt.p !== property && pt.fp !== property) {
+          pt = pt._next;
+        }
+      }
+      if (!pt) {
+        _forceAllPropTweens = 1;
+        tween.vars[property] = "+=0";
+        _initTween(tween, time);
+        _forceAllPropTweens = 0;
+        return skipRecursion ? _warn(property + " not eligible for reset. Try splitting into individual properties") : 1;
+      }
+      ptCache.push(pt);
+    }
+  }
+  i2 = ptCache.length;
+  while (i2--) {
+    rootPT = ptCache[i2];
+    pt = rootPT._pt || rootPT;
+    pt.s = (start2 || start2 === 0) && !startIsRelative ? start2 : pt.s + (start2 || 0) + ratio * pt.c;
+    pt.c = value - pt.s;
+    rootPT.e && (rootPT.e = _round(value) + getUnit(rootPT.e));
+    rootPT.b && (rootPT.b = pt.s + getUnit(rootPT.b));
+  }
+}, _addAliasesToVars = function _addAliasesToVars2(targets, vars) {
+  var harness = targets[0] ? _getCache(targets[0]).harness : 0, propertyAliases = harness && harness.aliases, copy, p2, i2, aliases2;
+  if (!propertyAliases) {
+    return vars;
+  }
+  copy = _merge({}, vars);
+  for (p2 in propertyAliases) {
+    if (p2 in copy) {
+      aliases2 = propertyAliases[p2].split(",");
+      i2 = aliases2.length;
+      while (i2--) {
+        copy[aliases2[i2]] = copy[p2];
+      }
+    }
+  }
+  return copy;
+}, _parseKeyframe = function _parseKeyframe2(prop, obj, allProps, easeEach) {
+  var ease = obj.ease || easeEach || "power1.inOut", p2, a2;
+  if (_isArray(obj)) {
+    a2 = allProps[prop] || (allProps[prop] = []);
+    obj.forEach(function(value, i2) {
+      return a2.push({
+        t: i2 / (obj.length - 1) * 100,
+        v: value,
+        e: ease
+      });
+    });
+  } else {
+    for (p2 in obj) {
+      a2 = allProps[p2] || (allProps[p2] = []);
+      p2 === "ease" || a2.push({
+        t: parseFloat(prop),
+        v: obj[p2],
+        e: ease
+      });
+    }
+  }
+}, _parseFuncOrString = function _parseFuncOrString2(value, tween, i2, target, targets) {
+  return _isFunction(value) ? value.call(tween, i2, target, targets) : _isString(value) && ~value.indexOf("random(") ? _replaceRandom(value) : value;
+}, _staggerTweenProps = _callbackNames + "repeat,repeatDelay,yoyo,repeatRefresh,yoyoEase,easeReverse,autoRevert", _staggerPropsToSkip = {};
+_forEachName(_staggerTweenProps + ",id,stagger,delay,duration,paused,scrollTrigger", function(name) {
+  return _staggerPropsToSkip[name] = 1;
+});
+var Tween = /* @__PURE__ */ function(_Animation2) {
+  _inheritsLoose(Tween2, _Animation2);
+  function Tween2(targets, vars, position2, skipInherit) {
+    var _this3;
+    if (typeof vars === "number") {
+      position2.duration = vars;
+      vars = position2;
+      position2 = null;
+    }
+    _this3 = _Animation2.call(this, skipInherit ? vars : _inheritDefaults(vars)) || this;
+    var _this3$vars = _this3.vars, duration = _this3$vars.duration, delay = _this3$vars.delay, immediateRender = _this3$vars.immediateRender, stagger = _this3$vars.stagger, overwrite = _this3$vars.overwrite, keyframes = _this3$vars.keyframes, defaults2 = _this3$vars.defaults, scrollTrigger = _this3$vars.scrollTrigger, parent = vars.parent || _globalTimeline, parsedTargets = (_isArray(targets) || _isTypedArray(targets) ? _isNumber(targets[0]) : "length" in vars) ? [targets] : toArray(targets), tl, i2, copy, l2, p2, curTarget, staggerFunc, staggerVarsToMerge;
+    _this3._targets = parsedTargets.length ? _harness(parsedTargets) : _warn("GSAP target " + targets + " not found. https://gsap.com", !_config.nullTargetWarn) || [];
+    _this3._ptLookup = [];
+    _this3._overwrite = overwrite;
+    if (keyframes || stagger || _isFuncOrString(duration) || _isFuncOrString(delay)) {
+      vars = _this3.vars;
+      var easeReverse = vars.easeReverse || vars.yoyoEase;
+      tl = _this3.timeline = new Timeline({
+        data: "nested",
+        defaults: defaults2 || {},
+        targets: parent && parent.data === "nested" ? parent.vars.targets : parsedTargets
+      });
+      tl.kill();
+      tl.parent = tl._dp = _assertThisInitialized(_this3);
+      tl._start = 0;
+      if (stagger || _isFuncOrString(duration) || _isFuncOrString(delay)) {
+        l2 = parsedTargets.length;
+        staggerFunc = stagger && distribute(stagger);
+        if (_isObject(stagger)) {
+          for (p2 in stagger) {
+            if (~_staggerTweenProps.indexOf(p2)) {
+              staggerVarsToMerge || (staggerVarsToMerge = {});
+              staggerVarsToMerge[p2] = stagger[p2];
+            }
+          }
+        }
+        for (i2 = 0; i2 < l2; i2++) {
+          copy = _copyExcluding(vars, _staggerPropsToSkip);
+          copy.stagger = 0;
+          easeReverse && (copy.easeReverse = easeReverse);
+          staggerVarsToMerge && _merge(copy, staggerVarsToMerge);
+          curTarget = parsedTargets[i2];
+          copy.duration = +_parseFuncOrString(duration, _assertThisInitialized(_this3), i2, curTarget, parsedTargets);
+          copy.delay = (+_parseFuncOrString(delay, _assertThisInitialized(_this3), i2, curTarget, parsedTargets) || 0) - _this3._delay;
+          if (!stagger && l2 === 1 && copy.delay) {
+            _this3._delay = delay = copy.delay;
+            _this3._start += delay;
+            copy.delay = 0;
+          }
+          tl.to(curTarget, copy, staggerFunc ? staggerFunc(i2, curTarget, parsedTargets) : 0);
+          tl._ease = _easeMap.none;
+        }
+        tl.duration() ? duration = delay = 0 : _this3.timeline = 0;
+      } else if (keyframes) {
+        _inheritDefaults(_setDefaults(tl.vars.defaults, {
+          ease: "none"
+        }));
+        tl._ease = _parseEase(keyframes.ease || vars.ease || "none");
+        var time = 0, a2, kf, v2;
+        if (_isArray(keyframes)) {
+          keyframes.forEach(function(frame2) {
+            return tl.to(parsedTargets, frame2, ">");
+          });
+          tl.duration();
+        } else {
+          copy = {};
+          for (p2 in keyframes) {
+            p2 === "ease" || p2 === "easeEach" || _parseKeyframe(p2, keyframes[p2], copy, keyframes.easeEach);
+          }
+          for (p2 in copy) {
+            a2 = copy[p2].sort(function(a3, b2) {
+              return a3.t - b2.t;
+            });
+            time = 0;
+            for (i2 = 0; i2 < a2.length; i2++) {
+              kf = a2[i2];
+              v2 = {
+                ease: kf.e,
+                duration: (kf.t - (i2 ? a2[i2 - 1].t : 0)) / 100 * duration
+              };
+              v2[p2] = kf.v;
+              tl.to(parsedTargets, v2, time);
+              time += v2.duration;
+            }
+          }
+          tl.duration() < duration && tl.to({}, {
+            duration: duration - tl.duration()
+          });
+        }
+      }
+      duration || _this3.duration(duration = tl.duration());
+    } else {
+      _this3.timeline = 0;
+    }
+    if (overwrite === true && !_suppressOverwrites) {
+      _overwritingTween = _assertThisInitialized(_this3);
+      _globalTimeline.killTweensOf(parsedTargets);
+      _overwritingTween = 0;
+    }
+    _addToTimeline(parent, _assertThisInitialized(_this3), position2);
+    vars.reversed && _this3.reverse();
+    vars.paused && _this3.paused(true);
+    if (immediateRender || !duration && !keyframes && _this3._start === _roundPrecise(parent._time) && _isNotFalse(immediateRender) && _hasNoPausedAncestors(_assertThisInitialized(_this3)) && parent.data !== "nested") {
+      _this3._tTime = -_tinyNum;
+      _this3.render(Math.max(0, -delay) || 0);
+    }
+    scrollTrigger && _scrollTrigger(_assertThisInitialized(_this3), scrollTrigger);
+    return _this3;
+  }
+  var _proto3 = Tween2.prototype;
+  _proto3.render = function render5(totalTime, suppressEvents, force) {
+    var prevTime = this._time, tDur = this._tDur, dur = this._dur, isNegative = totalTime < 0, tTime = totalTime > tDur - _tinyNum && !isNegative ? tDur : totalTime < _tinyNum ? 0 : totalTime, time, pt, iteration, cycleDuration, prevIteration, isYoyo, ratio, timeline2;
+    if (!dur) {
+      _renderZeroDurationTween(this, totalTime, suppressEvents, force);
+    } else if (tTime !== this._tTime || !totalTime || force || !this._initted && this._tTime || this._startAt && this._zTime < 0 !== isNegative || this._lazy) {
+      time = tTime;
+      timeline2 = this.timeline;
+      if (this._repeat) {
+        cycleDuration = dur + this._rDelay;
+        if (this._repeat < -1 && isNegative) {
+          return this.totalTime(cycleDuration * 100 + totalTime, suppressEvents, force);
+        }
+        time = _roundPrecise(tTime % cycleDuration);
+        if (tTime === tDur) {
+          iteration = this._repeat;
+          time = dur;
+        } else {
+          prevIteration = _roundPrecise(tTime / cycleDuration);
+          iteration = ~~prevIteration;
+          if (iteration && iteration === prevIteration) {
+            time = dur;
+            iteration--;
+          } else if (time > dur) {
+            time = dur;
+          }
+        }
+        isYoyo = this._yoyo && iteration & 1;
+        if (isYoyo) time = dur - time;
+        prevIteration = _animationCycle(this._tTime, cycleDuration);
+        if (time === prevTime && !force && this._initted && iteration === prevIteration) {
+          this._tTime = tTime;
+          return this;
+        }
+        if (iteration !== prevIteration) {
+          if (this.vars.repeatRefresh && !isYoyo && !this._lock && time !== cycleDuration && this._initted) {
+            this._lock = force = 1;
+            this.render(_roundPrecise(cycleDuration * iteration), true).invalidate()._lock = 0;
+          }
+        }
+      }
+      if (!this._initted) {
+        if (_attemptInitTween(this, isNegative ? totalTime : time, force, suppressEvents, tTime)) {
+          this._tTime = 0;
+          return this;
+        }
+        if (prevTime !== this._time && !(force && this.vars.repeatRefresh && iteration !== prevIteration)) {
+          return this;
+        }
+        if (dur !== this._dur) {
+          return this.render(totalTime, suppressEvents, force);
+        }
+      }
+      if (this._rEase) {
+        var inv = time < prevTime;
+        if (inv !== this._inv) {
+          var segDur = inv ? prevTime : dur - prevTime;
+          this._inv = inv;
+          if (this._from) this.ratio = 1 - this.ratio;
+          this._invRatio = this.ratio;
+          this._invTime = prevTime;
+          this._invRecip = segDur ? (inv ? -1 : 1) / segDur : 0;
+          this._invScale = inv ? -this.ratio : 1 - this.ratio;
+          this._invEase = inv ? this._rEase : this._ease;
+        }
+        this.ratio = ratio = this._invRatio + this._invScale * this._invEase((time - this._invTime) * this._invRecip);
+      } else {
+        this.ratio = ratio = this._ease(time / dur);
+      }
+      if (this._from) this.ratio = ratio = 1 - ratio;
+      this._tTime = tTime;
+      this._time = time;
+      if (!this._act && this._ts) {
+        this._act = 1;
+        this._lazy = 0;
+      }
+      if (!prevTime && tTime && !suppressEvents && !prevIteration) {
+        _callback(this, "onStart");
+        if (this._tTime !== tTime) {
+          return this;
+        }
+      }
+      pt = this._pt;
+      while (pt) {
+        pt.r(ratio, pt.d);
+        pt = pt._next;
+      }
+      timeline2 && timeline2.render(totalTime < 0 ? totalTime : timeline2._dur * timeline2._ease(time / this._dur), suppressEvents, force) || this._startAt && (this._zTime = totalTime);
+      if (this._onUpdate && !suppressEvents) {
+        isNegative && _rewindStartAt(this, totalTime, suppressEvents, force);
+        _callback(this, "onUpdate");
+      }
+      this._repeat && iteration !== prevIteration && this.vars.onRepeat && !suppressEvents && this.parent && _callback(this, "onRepeat");
+      if ((tTime === this._tDur || !tTime) && this._tTime === tTime) {
+        isNegative && !this._onUpdate && _rewindStartAt(this, totalTime, true, true);
+        (totalTime || !dur) && (tTime === this._tDur && this._ts > 0 || !tTime && this._ts < 0) && _removeFromParent(this, 1);
+        if (!suppressEvents && !(isNegative && !prevTime) && (tTime || prevTime || isYoyo)) {
+          _callback(this, tTime === tDur ? "onComplete" : "onReverseComplete", true);
+          this._prom && !(tTime < tDur && this.timeScale() > 0) && this._prom();
+        }
+      }
+    }
+    return this;
+  };
+  _proto3.targets = function targets() {
+    return this._targets;
+  };
+  _proto3.invalidate = function invalidate(soft) {
+    (!soft || !this.vars.runBackwards) && (this._startAt = 0);
+    this._pt = this._op = this._onUpdate = this._lazy = this.ratio = 0;
+    this._ptLookup = [];
+    this.timeline && this.timeline.invalidate(soft);
+    return _Animation2.prototype.invalidate.call(this, soft);
+  };
+  _proto3.resetTo = function resetTo(property, value, start2, startIsRelative, skipRecursion) {
+    _tickerActive || _ticker.wake();
+    this._ts || this.play();
+    var time = Math.min(this._dur, (this._dp._time - this._start) * this._ts), ratio;
+    this._initted || _initTween(this, time);
+    ratio = this._ease(time / this._dur);
+    if (_updatePropTweens(this, property, value, start2, startIsRelative, ratio, time, skipRecursion)) {
+      return this.resetTo(property, value, start2, startIsRelative, 1);
+    }
+    _alignPlayhead(this, 0);
+    this.parent || _addLinkedListItem(this._dp, this, "_first", "_last", this._dp._sort ? "_start" : 0);
+    return this.render(0);
+  };
+  _proto3.kill = function kill(targets, vars) {
+    if (vars === void 0) {
+      vars = "all";
+    }
+    if (!targets && (!vars || vars === "all")) {
+      this._lazy = this._pt = 0;
+      this.parent ? _interrupt(this) : this.scrollTrigger && this.scrollTrigger.kill(!!_reverting$1);
+      return this;
+    }
+    if (this.timeline) {
+      var tDur = this.timeline.totalDuration();
+      this.timeline.killTweensOf(targets, vars, _overwritingTween && _overwritingTween.vars.overwrite !== true)._first || _interrupt(this);
+      this.parent && tDur !== this.timeline.totalDuration() && _setDuration(this, this._dur * this.timeline._tDur / tDur, 0, 1);
+      return this;
+    }
+    var parsedTargets = this._targets, killingTargets = targets ? toArray(targets) : parsedTargets, propTweenLookup = this._ptLookup, firstPT = this._pt, overwrittenProps, curLookup, curOverwriteProps, props, p2, pt, i2;
+    if ((!vars || vars === "all") && _arraysMatch(parsedTargets, killingTargets)) {
+      vars === "all" && (this._pt = 0);
+      return _interrupt(this);
+    }
+    overwrittenProps = this._op = this._op || [];
+    if (vars !== "all") {
+      if (_isString(vars)) {
+        p2 = {};
+        _forEachName(vars, function(name) {
+          return p2[name] = 1;
+        });
+        vars = p2;
+      }
+      vars = _addAliasesToVars(parsedTargets, vars);
+    }
+    i2 = parsedTargets.length;
+    while (i2--) {
+      if (~killingTargets.indexOf(parsedTargets[i2])) {
+        curLookup = propTweenLookup[i2];
+        if (vars === "all") {
+          overwrittenProps[i2] = vars;
+          props = curLookup;
+          curOverwriteProps = {};
+        } else {
+          curOverwriteProps = overwrittenProps[i2] = overwrittenProps[i2] || {};
+          props = vars;
+        }
+        for (p2 in props) {
+          pt = curLookup && curLookup[p2];
+          if (pt) {
+            if (!("kill" in pt.d) || pt.d.kill(p2) === true) {
+              _removeLinkedListItem(this, pt, "_pt");
+            }
+            delete curLookup[p2];
+          }
+          if (curOverwriteProps !== "all") {
+            curOverwriteProps[p2] = 1;
+          }
+        }
+      }
+    }
+    this._initted && !this._pt && firstPT && _interrupt(this);
+    return this;
+  };
+  Tween2.to = function to(targets, vars) {
+    return new Tween2(targets, vars, arguments[2]);
+  };
+  Tween2.from = function from(targets, vars) {
+    return _createTweenType(1, arguments);
+  };
+  Tween2.delayedCall = function delayedCall(delay, callback, params, scope) {
+    return new Tween2(callback, 0, {
+      immediateRender: false,
+      lazy: false,
+      overwrite: false,
+      delay,
+      onComplete: callback,
+      onReverseComplete: callback,
+      onCompleteParams: params,
+      onReverseCompleteParams: params,
+      callbackScope: scope
+    });
+  };
+  Tween2.fromTo = function fromTo(targets, fromVars, toVars) {
+    return _createTweenType(2, arguments);
+  };
+  Tween2.set = function set2(targets, vars) {
+    vars.duration = 0;
+    vars.repeatDelay || (vars.repeat = 0);
+    return new Tween2(targets, vars);
+  };
+  Tween2.killTweensOf = function killTweensOf(targets, props, onlyActive) {
+    return _globalTimeline.killTweensOf(targets, props, onlyActive);
+  };
+  return Tween2;
+}(Animation);
+_setDefaults(Tween.prototype, {
+  _targets: [],
+  _lazy: 0,
+  _startAt: 0,
+  _op: 0,
+  _onInit: 0
+});
+_forEachName("staggerTo,staggerFrom,staggerFromTo", function(name) {
+  Tween[name] = function() {
+    var tl = new Timeline(), params = _slice.call(arguments, 0);
+    params.splice(name === "staggerFromTo" ? 5 : 4, 0, 0);
+    return tl[name].apply(tl, params);
+  };
+});
+var _setterPlain = function _setterPlain2(target, property, value) {
+  return target[property] = value;
+}, _setterFunc = function _setterFunc2(target, property, value) {
+  return target[property](value);
+}, _setterFuncWithParam = function _setterFuncWithParam2(target, property, value, data) {
+  return target[property](data.fp, value);
+}, _setterAttribute = function _setterAttribute2(target, property, value) {
+  return target.setAttribute(property, value);
+}, _getSetter = function _getSetter2(target, property) {
+  return _isFunction(target[property]) ? _setterFunc : _isUndefined(target[property]) && target.setAttribute ? _setterAttribute : _setterPlain;
+}, _renderPlain = function _renderPlain2(ratio, data) {
+  return data.set(data.t, data.p, Math.round((data.s + data.c * ratio) * 1e6) / 1e6, data);
+}, _renderBoolean = function _renderBoolean2(ratio, data) {
+  return data.set(data.t, data.p, !!(data.s + data.c * ratio), data);
+}, _renderComplexString = function _renderComplexString2(ratio, data) {
+  var pt = data._pt, s2 = "";
+  if (!ratio && data.b) {
+    s2 = data.b;
+  } else if (ratio === 1 && data.e) {
+    s2 = data.e;
+  } else {
+    while (pt) {
+      s2 = pt.p + (pt.m ? pt.m(pt.s + pt.c * ratio) : Math.round((pt.s + pt.c * ratio) * 1e4) / 1e4) + s2;
+      pt = pt._next;
+    }
+    s2 += data.c;
+  }
+  data.set(data.t, data.p, s2, data);
+}, _renderPropTweens = function _renderPropTweens2(ratio, data) {
+  var pt = data._pt;
+  while (pt) {
+    pt.r(ratio, pt.d);
+    pt = pt._next;
+  }
+}, _addPluginModifier = function _addPluginModifier2(modifier, tween, target, property) {
+  var pt = this._pt, next;
+  while (pt) {
+    next = pt._next;
+    pt.p === property && pt.modifier(modifier, tween, target);
+    pt = next;
+  }
+}, _killPropTweensOf = function _killPropTweensOf2(property) {
+  var pt = this._pt, hasNonDependentRemaining, next;
+  while (pt) {
+    next = pt._next;
+    if (pt.p === property && !pt.op || pt.op === property) {
+      _removeLinkedListItem(this, pt, "_pt");
+    } else if (!pt.dep) {
+      hasNonDependentRemaining = 1;
+    }
+    pt = next;
+  }
+  return !hasNonDependentRemaining;
+}, _setterWithModifier = function _setterWithModifier2(target, property, value, data) {
+  data.mSet(target, property, data.m.call(data.tween, value, data.mt), data);
+}, _sortPropTweensByPriority = function _sortPropTweensByPriority2(parent) {
+  var pt = parent._pt, next, pt2, first, last;
+  while (pt) {
+    next = pt._next;
+    pt2 = first;
+    while (pt2 && pt2.pr > pt.pr) {
+      pt2 = pt2._next;
+    }
+    if (pt._prev = pt2 ? pt2._prev : last) {
+      pt._prev._next = pt;
+    } else {
+      first = pt;
+    }
+    if (pt._next = pt2) {
+      pt2._prev = pt;
+    } else {
+      last = pt;
+    }
+    pt = next;
+  }
+  parent._pt = first;
+};
+var PropTween = /* @__PURE__ */ function() {
+  function PropTween2(next, target, prop, start2, change, renderer, data, setter, priority) {
+    this.t = target;
+    this.s = start2;
+    this.c = change;
+    this.p = prop;
+    this.r = renderer || _renderPlain;
+    this.d = data || this;
+    this.set = setter || _setterPlain;
+    this.pr = priority || 0;
+    this._next = next;
+    if (next) {
+      next._prev = this;
+    }
+  }
+  var _proto4 = PropTween2.prototype;
+  _proto4.modifier = function modifier(func, tween, target) {
+    this.mSet = this.mSet || this.set;
+    this.set = _setterWithModifier;
+    this.m = func;
+    this.mt = target;
+    this.tween = tween;
+  };
+  return PropTween2;
+}();
+_forEachName(_callbackNames + "parent,duration,ease,delay,overwrite,runBackwards,startAt,yoyo,immediateRender,repeat,repeatDelay,data,paused,reversed,lazy,callbackScope,stringFilter,id,yoyoEase,stagger,inherit,repeatRefresh,keyframes,autoRevert,scrollTrigger,easeReverse", function(name) {
+  return _reservedProps[name] = 1;
+});
+_globals.TweenMax = _globals.TweenLite = Tween;
+_globals.TimelineLite = _globals.TimelineMax = Timeline;
+_globalTimeline = new Timeline({
+  sortChildren: false,
+  defaults: _defaults,
+  autoRemoveChildren: true,
+  id: "root",
+  smoothChildTiming: true
+});
+_config.stringFilter = _colorStringFilter;
+var _media = [], _listeners = {}, _emptyArray = [], _lastMediaTime = 0, _contextID = 0, _dispatch = function _dispatch2(type) {
+  return (_listeners[type] || _emptyArray).map(function(f2) {
+    return f2();
+  });
+}, _onMediaChange = function _onMediaChange2() {
+  var time = Date.now(), matches = [];
+  if (time - _lastMediaTime > 2) {
+    _dispatch("matchMediaInit");
+    _media.forEach(function(c2) {
+      var queries = c2.queries, conditions = c2.conditions, match, p2, anyMatch, toggled;
+      for (p2 in queries) {
+        match = _win$1.matchMedia(queries[p2]).matches;
+        match && (anyMatch = 1);
+        if (match !== conditions[p2]) {
+          conditions[p2] = match;
+          toggled = 1;
+        }
+      }
+      if (toggled) {
+        c2.revert();
+        anyMatch && matches.push(c2);
+      }
+    });
+    _dispatch("matchMediaRevert");
+    matches.forEach(function(c2) {
+      return c2.onMatch(c2, function(func) {
+        return c2.add(null, func);
+      });
+    });
+    _lastMediaTime = time;
+    _dispatch("matchMedia");
+  }
+};
+var Context = /* @__PURE__ */ function() {
+  function Context2(func, scope) {
+    this.selector = scope && selector(scope);
+    this.data = [];
+    this._r = [];
+    this.isReverted = false;
+    this.id = _contextID++;
+    func && this.add(func);
+  }
+  var _proto5 = Context2.prototype;
+  _proto5.add = function add2(name, func, scope) {
+    if (_isFunction(name)) {
+      scope = func;
+      func = name;
+      name = _isFunction;
+    }
+    var self2 = this, f2 = function f3() {
+      var prev = _context, prevSelector = self2.selector, result;
+      prev && prev !== self2 && prev.data.push(self2);
+      scope && (self2.selector = selector(scope));
+      _context = self2;
+      result = func.apply(self2, arguments);
+      _isFunction(result) && self2._r.push(result);
+      _context = prev;
+      self2.selector = prevSelector;
+      self2.isReverted = false;
+      return result;
+    };
+    self2.last = f2;
+    return name === _isFunction ? f2(self2, function(func2) {
+      return self2.add(null, func2);
+    }) : name ? self2[name] = f2 : f2;
+  };
+  _proto5.ignore = function ignore2(func) {
+    var prev = _context;
+    _context = null;
+    func(this);
+    _context = prev;
+  };
+  _proto5.getTweens = function getTweens() {
+    var a2 = [];
+    this.data.forEach(function(e2) {
+      return e2 instanceof Context2 ? a2.push.apply(a2, e2.getTweens()) : e2 instanceof Tween && !(e2.parent && e2.parent.data === "nested") && a2.push(e2);
+    });
+    return a2;
+  };
+  _proto5.clear = function clear() {
+    this._r.length = this.data.length = 0;
+  };
+  _proto5.kill = function kill(revert2, matchMedia3) {
+    var _this4 = this;
+    if (revert2) {
+      (function() {
+        var tweens = _this4.getTweens(), i3 = _this4.data.length, t2;
+        while (i3--) {
+          t2 = _this4.data[i3];
+          if (t2.data === "isFlip") {
+            t2.revert();
+            t2.getChildren(true, true, false).forEach(function(tween) {
+              return tweens.splice(tweens.indexOf(tween), 1);
+            });
+          }
+        }
+        tweens.map(function(t3) {
+          return {
+            g: t3._dur || t3._delay || t3._sat && !t3._sat.vars.immediateRender ? t3.globalTime(0) : -Infinity,
+            t: t3
+          };
+        }).sort(function(a2, b2) {
+          return b2.g - a2.g || -Infinity;
+        }).forEach(function(o2) {
+          return o2.t.revert(revert2);
+        });
+        i3 = _this4.data.length;
+        while (i3--) {
+          t2 = _this4.data[i3];
+          if (t2 instanceof Timeline) {
+            if (t2.data !== "nested") {
+              t2.scrollTrigger && t2.scrollTrigger.revert();
+              t2.kill();
+            }
+          } else {
+            !(t2 instanceof Tween) && t2.revert && t2.revert(revert2);
+          }
+        }
+        _this4._r.forEach(function(f2) {
+          return f2(revert2, _this4);
+        });
+        _this4.isReverted = true;
+      })();
+    } else {
+      this.data.forEach(function(e2) {
+        return e2.kill && e2.kill();
+      });
+    }
+    this.clear();
+    if (matchMedia3) {
+      var i2 = _media.length;
+      while (i2--) {
+        _media[i2].id === this.id && _media.splice(i2, 1);
+      }
+    }
+  };
+  _proto5.revert = function revert2(config3) {
+    this.kill(config3 || {});
+  };
+  return Context2;
+}();
+var MatchMedia = /* @__PURE__ */ function() {
+  function MatchMedia2(scope) {
+    this.contexts = [];
+    this.scope = scope;
+    _context && _context.data.push(this);
+  }
+  var _proto6 = MatchMedia2.prototype;
+  _proto6.add = function add2(conditions, func, scope) {
+    _isObject(conditions) || (conditions = {
+      matches: conditions
+    });
+    var context3 = new Context(0, scope || this.scope), cond = context3.conditions = {}, mq, p2, active;
+    _context && !context3.selector && (context3.selector = _context.selector);
+    this.contexts.push(context3);
+    func = context3.add("onMatch", func);
+    context3.queries = conditions;
+    for (p2 in conditions) {
+      if (p2 === "all") {
+        active = 1;
+      } else {
+        mq = _win$1.matchMedia(conditions[p2]);
+        if (mq) {
+          _media.indexOf(context3) < 0 && _media.push(context3);
+          (cond[p2] = mq.matches) && (active = 1);
+          mq.addListener ? mq.addListener(_onMediaChange) : mq.addEventListener("change", _onMediaChange);
+        }
+      }
+    }
+    active && func(context3, function(f2) {
+      return context3.add(null, f2);
+    });
+    return this;
+  };
+  _proto6.revert = function revert2(config3) {
+    this.kill(config3 || {});
+  };
+  _proto6.kill = function kill(revert2) {
+    this.contexts.forEach(function(c2) {
+      return c2.kill(revert2, true);
+    });
+  };
+  return MatchMedia2;
+}();
+var _gsap = {
+  registerPlugin: function registerPlugin() {
+    for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+      args[_key2] = arguments[_key2];
+    }
+    args.forEach(function(config3) {
+      return _createPlugin(config3);
+    });
+  },
+  timeline: function timeline(vars) {
+    return new Timeline(vars);
+  },
+  getTweensOf: function getTweensOf(targets, onlyActive) {
+    return _globalTimeline.getTweensOf(targets, onlyActive);
+  },
+  getProperty: function getProperty(target, property, unit, uncache) {
+    _isString(target) && (target = toArray(target)[0]);
+    var getter = _getCache(target || {}).get, format2 = unit ? _passThrough : _numericIfPossible;
+    unit === "native" && (unit = "");
+    return !target ? target : !property ? function(property2, unit2, uncache2) {
+      return format2((_plugins[property2] && _plugins[property2].get || getter)(target, property2, unit2, uncache2));
+    } : format2((_plugins[property] && _plugins[property].get || getter)(target, property, unit, uncache));
+  },
+  quickSetter: function quickSetter(target, property, unit) {
+    target = toArray(target);
+    if (target.length > 1) {
+      var setters = target.map(function(t2) {
+        return gsap.quickSetter(t2, property, unit);
+      }), l2 = setters.length;
+      return function(value) {
+        var i2 = l2;
+        while (i2--) {
+          setters[i2](value);
+        }
+      };
+    }
+    target = target[0] || {};
+    var Plugin = _plugins[property], cache = _getCache(target), p2 = cache.harness && (cache.harness.aliases || {})[property] || property, setter = Plugin ? function(value) {
+      var p3 = new Plugin();
+      _quickTween._pt = 0;
+      p3.init(target, unit ? value + unit : value, _quickTween, 0, [target]);
+      p3.render(1, p3);
+      _quickTween._pt && _renderPropTweens(1, _quickTween);
+    } : cache.set(target, p2);
+    return Plugin ? setter : function(value) {
+      return setter(target, p2, unit ? value + unit : value, cache, 1);
+    };
+  },
+  quickTo: function quickTo(target, property, vars) {
+    var _setDefaults22;
+    var tween = gsap.to(target, _setDefaults((_setDefaults22 = {}, _setDefaults22[property] = "+=0.1", _setDefaults22.paused = true, _setDefaults22.stagger = 0, _setDefaults22), vars || {})), func = function func2(value, start2, startIsRelative) {
+      return tween.resetTo(property, value, start2, startIsRelative);
+    };
+    func.tween = tween;
+    return func;
+  },
+  isTweening: function isTweening(targets) {
+    return _globalTimeline.getTweensOf(targets, true).length > 0;
+  },
+  defaults: function defaults(value) {
+    value && value.ease && (value.ease = _parseEase(value.ease, _defaults.ease));
+    return _mergeDeep(_defaults, value || {});
+  },
+  config: function config2(value) {
+    return _mergeDeep(_config, value || {});
+  },
+  registerEffect: function registerEffect(_ref3) {
+    var name = _ref3.name, effect = _ref3.effect, plugins = _ref3.plugins, defaults2 = _ref3.defaults, extendTimeline = _ref3.extendTimeline;
+    (plugins || "").split(",").forEach(function(pluginName) {
+      return pluginName && !_plugins[pluginName] && !_globals[pluginName] && _warn(name + " effect requires " + pluginName + " plugin.");
+    });
+    _effects[name] = function(targets, vars, tl) {
+      return effect(toArray(targets), _setDefaults(vars || {}, defaults2), tl);
+    };
+    if (extendTimeline) {
+      Timeline.prototype[name] = function(targets, vars, position2) {
+        return this.add(_effects[name](targets, _isObject(vars) ? vars : (position2 = vars) && {}, this), position2);
+      };
+    }
+  },
+  registerEase: function registerEase(name, ease) {
+    _easeMap[name] = _parseEase(ease);
+  },
+  parseEase: function parseEase(ease, defaultEase) {
+    return arguments.length ? _parseEase(ease, defaultEase) : _easeMap;
+  },
+  getById: function getById(id2) {
+    return _globalTimeline.getById(id2);
+  },
+  exportRoot: function exportRoot(vars, includeDelayedCalls) {
+    if (vars === void 0) {
+      vars = {};
+    }
+    var tl = new Timeline(vars), child, next;
+    tl.smoothChildTiming = _isNotFalse(vars.smoothChildTiming);
+    _globalTimeline.remove(tl);
+    tl._dp = 0;
+    tl._time = tl._tTime = _globalTimeline._time;
+    child = _globalTimeline._first;
+    while (child) {
+      next = child._next;
+      if (includeDelayedCalls || !(!child._dur && child instanceof Tween && child.vars.onComplete === child._targets[0])) {
+        _addToTimeline(tl, child, child._start - child._delay);
+      }
+      child = next;
+    }
+    _addToTimeline(_globalTimeline, tl, 0);
+    return tl;
+  },
+  context: function context(func, scope) {
+    return func ? new Context(func, scope) : _context;
+  },
+  matchMedia: function matchMedia2(scope) {
+    return new MatchMedia(scope);
+  },
+  matchMediaRefresh: function matchMediaRefresh() {
+    return _media.forEach(function(c2) {
+      var cond = c2.conditions, found, p2;
+      for (p2 in cond) {
+        if (cond[p2]) {
+          cond[p2] = false;
+          found = 1;
+        }
+      }
+      found && c2.revert();
+    }) || _onMediaChange();
+  },
+  addEventListener: function addEventListener(type, callback) {
+    var a2 = _listeners[type] || (_listeners[type] = []);
+    ~a2.indexOf(callback) || a2.push(callback);
+  },
+  removeEventListener: function removeEventListener(type, callback) {
+    var a2 = _listeners[type], i2 = a2 && a2.indexOf(callback);
+    i2 >= 0 && a2.splice(i2, 1);
+  },
+  utils: {
+    wrap: wrap$2,
+    wrapYoyo,
+    distribute,
+    random,
+    snap,
+    normalize: normalize$2,
+    getUnit,
+    clamp,
+    splitColor,
+    toArray,
+    selector,
+    mapRange,
+    pipe,
+    unitize,
+    interpolate,
+    shuffle
+  },
+  install: _install,
+  effects: _effects,
+  ticker: _ticker,
+  updateRoot: Timeline.updateRoot,
+  plugins: _plugins,
+  globalTimeline: _globalTimeline,
+  core: {
+    PropTween,
+    globals: _addGlobal,
+    Tween,
+    Timeline,
+    Animation,
+    getCache: _getCache,
+    _removeLinkedListItem,
+    reverting: function reverting() {
+      return _reverting$1;
+    },
+    context: function context2(toAdd) {
+      if (toAdd && _context) {
+        _context.data.push(toAdd);
+        toAdd._ctx = _context;
+      }
+      return _context;
+    },
+    suppressOverwrites: function suppressOverwrites(value) {
+      return _suppressOverwrites = value;
+    }
+  }
+};
+_forEachName("to,from,fromTo,delayedCall,set,killTweensOf", function(name) {
+  return _gsap[name] = Tween[name];
+});
+_ticker.add(Timeline.updateRoot);
+_quickTween = _gsap.to({}, {
+  duration: 0
+});
+var _getPluginPropTween = function _getPluginPropTween2(plugin, prop) {
+  var pt = plugin._pt;
+  while (pt && pt.p !== prop && pt.op !== prop && pt.fp !== prop) {
+    pt = pt._next;
+  }
+  return pt;
+}, _addModifiers = function _addModifiers2(tween, modifiers) {
+  var targets = tween._targets, p2, i2, pt;
+  for (p2 in modifiers) {
+    i2 = targets.length;
+    while (i2--) {
+      pt = tween._ptLookup[i2][p2];
+      if (pt && (pt = pt.d)) {
+        if (pt._pt) {
+          pt = _getPluginPropTween(pt, p2);
+        }
+        pt && pt.modifier && pt.modifier(modifiers[p2], tween, targets[i2], p2);
+      }
+    }
+  }
+}, _buildModifierPlugin = function _buildModifierPlugin2(name, modifier) {
+  return {
+    name,
+    headless: 1,
+    rawVars: 1,
+    //don't pre-process function-based values or "random()" strings.
+    init: function init8(target, vars, tween) {
+      tween._onInit = function(tween2) {
+        var temp, p2;
+        if (_isString(vars)) {
+          temp = {};
+          _forEachName(vars, function(name2) {
+            return temp[name2] = 1;
+          });
+          vars = temp;
+        }
+        if (modifier) {
+          temp = {};
+          for (p2 in vars) {
+            temp[p2] = modifier(vars[p2]);
+          }
+          vars = temp;
+        }
+        _addModifiers(tween2, vars);
+      };
+    }
+  };
+};
+var gsap = _gsap.registerPlugin({
+  name: "attr",
+  init: function init5(target, vars, tween, index2, targets) {
+    var p2, pt, v2;
+    this.tween = tween;
+    for (p2 in vars) {
+      v2 = target.getAttribute(p2) || "";
+      pt = this.add(target, "setAttribute", (v2 || 0) + "", vars[p2], index2, targets, 0, 0, p2);
+      pt.op = p2;
+      pt.b = v2;
+      this._props.push(p2);
+    }
+  },
+  render: function render3(ratio, data) {
+    var pt = data._pt;
+    while (pt) {
+      _reverting$1 ? pt.set(pt.t, pt.p, pt.b, pt) : pt.r(ratio, pt.d);
+      pt = pt._next;
+    }
+  }
+}, {
+  name: "endArray",
+  headless: 1,
+  init: function init6(target, value) {
+    var i2 = value.length;
+    while (i2--) {
+      this.add(target, i2, target[i2] || 0, value[i2], 0, 0, 0, 0, 0, 1);
+    }
+  }
+}, _buildModifierPlugin("roundProps", _roundModifier), _buildModifierPlugin("modifiers"), _buildModifierPlugin("snap", snap)) || _gsap;
+Tween.version = Timeline.version = gsap.version = "3.15.0";
+_coreReady = 1;
+_windowExists$1() && _wake();
+_easeMap.Power0;
+_easeMap.Power1;
+_easeMap.Power2;
+_easeMap.Power3;
+_easeMap.Power4;
+_easeMap.Linear;
+_easeMap.Quad;
+_easeMap.Cubic;
+_easeMap.Quart;
+_easeMap.Quint;
+_easeMap.Strong;
+_easeMap.Elastic;
+_easeMap.Back;
+_easeMap.SteppedEase;
+_easeMap.Bounce;
+_easeMap.Sine;
+_easeMap.Expo;
+_easeMap.Circ;
+/*!
+ * CSSPlugin 3.15.0
+ * https://gsap.com
+ *
+ * Copyright 2008-2026, GreenSock. All rights reserved.
+ * Subject to the terms at https://gsap.com/standard-license
+ * @author: Jack Doyle, jack@greensock.com
+*/
+var _win, _doc, _docElement, _pluginInitted, _tempDiv, _recentSetterPlugin, _reverting, _windowExists2 = function _windowExists3() {
+  return typeof window !== "undefined";
+}, _transformProps = {}, _RAD2DEG = 180 / Math.PI, _DEG2RAD = Math.PI / 180, _atan2 = Math.atan2, _bigNum = 1e8, _capsExp = /([A-Z])/g, _horizontalExp = /(left|right|width|margin|padding|x)/i, _complexExp = /[\s,\(]\S/, _propertyAliases = {
+  autoAlpha: "opacity,visibility",
+  scale: "scaleX,scaleY",
+  alpha: "opacity"
+}, _renderCSSProp = function _renderCSSProp2(ratio, data) {
+  return data.set(data.t, data.p, Math.round((data.s + data.c * ratio) * 1e4) / 1e4 + data.u, data);
+}, _renderPropWithEnd = function _renderPropWithEnd2(ratio, data) {
+  return data.set(data.t, data.p, ratio === 1 ? data.e : Math.round((data.s + data.c * ratio) * 1e4) / 1e4 + data.u, data);
+}, _renderCSSPropWithBeginning = function _renderCSSPropWithBeginning2(ratio, data) {
+  return data.set(data.t, data.p, ratio ? Math.round((data.s + data.c * ratio) * 1e4) / 1e4 + data.u : data.b, data);
+}, _renderCSSPropWithBeginningAndEnd = function _renderCSSPropWithBeginningAndEnd2(ratio, data) {
+  return data.set(data.t, data.p, ratio === 1 ? data.e : ratio ? Math.round((data.s + data.c * ratio) * 1e4) / 1e4 + data.u : data.b, data);
+}, _renderRoundedCSSProp = function _renderRoundedCSSProp2(ratio, data) {
+  var value = data.s + data.c * ratio;
+  data.set(data.t, data.p, ~~(value + (value < 0 ? -0.5 : 0.5)) + data.u, data);
+}, _renderNonTweeningValue = function _renderNonTweeningValue2(ratio, data) {
+  return data.set(data.t, data.p, ratio ? data.e : data.b, data);
+}, _renderNonTweeningValueOnlyAtEnd = function _renderNonTweeningValueOnlyAtEnd2(ratio, data) {
+  return data.set(data.t, data.p, ratio !== 1 ? data.b : data.e, data);
+}, _setterCSSStyle = function _setterCSSStyle2(target, property, value) {
+  return target.style[property] = value;
+}, _setterCSSProp = function _setterCSSProp2(target, property, value) {
+  return target.style.setProperty(property, value);
+}, _setterTransform = function _setterTransform2(target, property, value) {
+  return target._gsap[property] = value;
+}, _setterScale = function _setterScale2(target, property, value) {
+  return target._gsap.scaleX = target._gsap.scaleY = value;
+}, _setterScaleWithRender = function _setterScaleWithRender2(target, property, value, data, ratio) {
+  var cache = target._gsap;
+  cache.scaleX = cache.scaleY = value;
+  cache.renderTransform(ratio, cache);
+}, _setterTransformWithRender = function _setterTransformWithRender2(target, property, value, data, ratio) {
+  var cache = target._gsap;
+  cache[property] = value;
+  cache.renderTransform(ratio, cache);
+}, _transformProp = "transform", _transformOriginProp = _transformProp + "Origin", _saveStyle = function _saveStyle2(property, isNotCSS) {
+  var _this = this;
+  var target = this.target, style2 = target.style, cache = target._gsap;
+  if (property in _transformProps && style2) {
+    this.tfm = this.tfm || {};
+    if (property !== "transform") {
+      property = _propertyAliases[property] || property;
+      ~property.indexOf(",") ? property.split(",").forEach(function(a2) {
+        return _this.tfm[a2] = _get(target, a2);
+      }) : this.tfm[property] = cache.x ? cache[property] : _get(target, property);
+      property === _transformOriginProp && (this.tfm.zOrigin = cache.zOrigin);
+    } else {
+      return _propertyAliases.transform.split(",").forEach(function(p2) {
+        return _saveStyle2.call(_this, p2, isNotCSS);
+      });
+    }
+    if (this.props.indexOf(_transformProp) >= 0) {
+      return;
+    }
+    if (cache.svg) {
+      this.svgo = target.getAttribute("data-svg-origin");
+      this.props.push(_transformOriginProp, isNotCSS, "");
+    }
+    property = _transformProp;
+  }
+  (style2 || isNotCSS) && this.props.push(property, isNotCSS, style2[property]);
+}, _removeIndependentTransforms = function _removeIndependentTransforms2(style2) {
+  if (style2.translate) {
+    style2.removeProperty("translate");
+    style2.removeProperty("scale");
+    style2.removeProperty("rotate");
+  }
+}, _revertStyle = function _revertStyle2() {
+  var props = this.props, target = this.target, style2 = target.style, cache = target._gsap, i2, p2;
+  for (i2 = 0; i2 < props.length; i2 += 3) {
+    if (!props[i2 + 1]) {
+      props[i2 + 2] ? style2[props[i2]] = props[i2 + 2] : style2.removeProperty(props[i2].substr(0, 2) === "--" ? props[i2] : props[i2].replace(_capsExp, "-$1").toLowerCase());
+    } else if (props[i2 + 1] === 2) {
+      target[props[i2]](props[i2 + 2]);
+    } else {
+      target[props[i2]] = props[i2 + 2];
+    }
+  }
+  if (this.tfm) {
+    for (p2 in this.tfm) {
+      cache[p2] = this.tfm[p2];
+    }
+    if (cache.svg) {
+      cache.renderTransform();
+      target.setAttribute("data-svg-origin", this.svgo || "");
+    }
+    i2 = _reverting();
+    if ((!i2 || !i2.isStart) && !style2[_transformProp]) {
+      _removeIndependentTransforms(style2);
+      if (cache.zOrigin && style2[_transformOriginProp]) {
+        style2[_transformOriginProp] += " " + cache.zOrigin + "px";
+        cache.zOrigin = 0;
+        cache.renderTransform();
+      }
+      cache.uncache = 1;
+    }
+  }
+}, _getStyleSaver = function _getStyleSaver2(target, properties) {
+  var saver = {
+    target,
+    props: [],
+    revert: _revertStyle,
+    save: _saveStyle
+  };
+  target._gsap || gsap.core.getCache(target);
+  properties && target.style && target.nodeType && properties.split(",").forEach(function(p2) {
+    return saver.save(p2);
+  });
+  return saver;
+}, _supports3D, _createElement = function _createElement2(type, ns) {
+  var e2 = _doc.createElementNS ? _doc.createElementNS((ns || "http://www.w3.org/1999/xhtml").replace(/^https/, "http"), type) : _doc.createElement(type);
+  return e2 && e2.style ? e2 : _doc.createElement(type);
+}, _getComputedProperty = function _getComputedProperty2(target, property, skipPrefixFallback) {
+  var cs = getComputedStyle(target);
+  return cs[property] || cs.getPropertyValue(property.replace(_capsExp, "-$1").toLowerCase()) || cs.getPropertyValue(property) || !skipPrefixFallback && _getComputedProperty2(target, _checkPropPrefix(property) || property, 1) || "";
+}, _prefixes = "O,Moz,ms,Ms,Webkit".split(","), _checkPropPrefix = function _checkPropPrefix2(property, element2, preferPrefix) {
+  var e2 = element2 || _tempDiv, s2 = e2.style, i2 = 5;
+  if (property in s2 && !preferPrefix) {
+    return property;
+  }
+  property = property.charAt(0).toUpperCase() + property.substr(1);
+  while (i2-- && !(_prefixes[i2] + property in s2)) {
+  }
+  return i2 < 0 ? null : (i2 === 3 ? "ms" : i2 >= 0 ? _prefixes[i2] : "") + property;
+}, _initCore = function _initCore2() {
+  if (_windowExists2() && window.document) {
+    _win = window;
+    _doc = _win.document;
+    _docElement = _doc.documentElement;
+    _tempDiv = _createElement("div") || {
+      style: {}
+    };
+    _createElement("div");
+    _transformProp = _checkPropPrefix(_transformProp);
+    _transformOriginProp = _transformProp + "Origin";
+    _tempDiv.style.cssText = "border-width:0;line-height:0;position:absolute;padding:0";
+    _supports3D = !!_checkPropPrefix("perspective");
+    _reverting = gsap.core.reverting;
+    _pluginInitted = 1;
+  }
+}, _getReparentedCloneBBox = function _getReparentedCloneBBox2(target) {
+  var owner = target.ownerSVGElement, svg2 = _createElement("svg", owner && owner.getAttribute("xmlns") || "http://www.w3.org/2000/svg"), clone2 = target.cloneNode(true), bbox;
+  clone2.style.display = "block";
+  svg2.appendChild(clone2);
+  _docElement.appendChild(svg2);
+  try {
+    bbox = clone2.getBBox();
+  } catch (e2) {
+  }
+  svg2.removeChild(clone2);
+  _docElement.removeChild(svg2);
+  return bbox;
+}, _getAttributeFallbacks = function _getAttributeFallbacks2(target, attributesArray) {
+  var i2 = attributesArray.length;
+  while (i2--) {
+    if (target.hasAttribute(attributesArray[i2])) {
+      return target.getAttribute(attributesArray[i2]);
+    }
+  }
+}, _getBBox = function _getBBox2(target) {
+  var bounds, cloned;
+  try {
+    bounds = target.getBBox();
+  } catch (error) {
+    bounds = _getReparentedCloneBBox(target);
+    cloned = 1;
+  }
+  bounds && (bounds.width || bounds.height) || cloned || (bounds = _getReparentedCloneBBox(target));
+  return bounds && !bounds.width && !bounds.x && !bounds.y ? {
+    x: +_getAttributeFallbacks(target, ["x", "cx", "x1"]) || 0,
+    y: +_getAttributeFallbacks(target, ["y", "cy", "y1"]) || 0,
+    width: 0,
+    height: 0
+  } : bounds;
+}, _isSVG = function _isSVG2(e2) {
+  return !!(e2.getCTM && (!e2.parentNode || e2.ownerSVGElement) && _getBBox(e2));
+}, _removeProperty = function _removeProperty2(target, property) {
+  if (property) {
+    var style2 = target.style, first2Chars;
+    if (property in _transformProps && property !== _transformOriginProp) {
+      property = _transformProp;
+    }
+    if (style2.removeProperty) {
+      first2Chars = property.substr(0, 2);
+      if (first2Chars === "ms" || property.substr(0, 6) === "webkit") {
+        property = "-" + property;
+      }
+      style2.removeProperty(first2Chars === "--" ? property : property.replace(_capsExp, "-$1").toLowerCase());
+    } else {
+      style2.removeAttribute(property);
+    }
+  }
+}, _addNonTweeningPT = function _addNonTweeningPT2(plugin, target, property, beginning, end, onlySetAtEnd) {
+  var pt = new PropTween(plugin._pt, target, property, 0, 1, onlySetAtEnd ? _renderNonTweeningValueOnlyAtEnd : _renderNonTweeningValue);
+  plugin._pt = pt;
+  pt.b = beginning;
+  pt.e = end;
+  plugin._props.push(property);
+  return pt;
+}, _nonConvertibleUnits = {
+  deg: 1,
+  rad: 1,
+  turn: 1
+}, _nonStandardLayouts = {
+  grid: 1,
+  flex: 1
+}, _convertToUnit = function _convertToUnit2(target, property, value, unit) {
+  var curValue = parseFloat(value) || 0, curUnit = (value + "").trim().substr((curValue + "").length) || "px", style2 = _tempDiv.style, horizontal = _horizontalExp.test(property), isRootSVG = target.tagName.toLowerCase() === "svg", measureProperty = (isRootSVG ? "client" : "offset") + (horizontal ? "Width" : "Height"), amount = 100, toPixels = unit === "px", toPercent = unit === "%", px, parent, cache, isSVG;
+  if (unit === curUnit || !curValue || _nonConvertibleUnits[unit] || _nonConvertibleUnits[curUnit]) {
+    return curValue;
+  }
+  curUnit !== "px" && !toPixels && (curValue = _convertToUnit2(target, property, value, "px"));
+  isSVG = target.getCTM && _isSVG(target);
+  if ((toPercent || curUnit === "%") && (_transformProps[property] || ~property.indexOf("adius"))) {
+    px = isSVG ? target.getBBox()[horizontal ? "width" : "height"] : target[measureProperty];
+    return _round(toPercent ? curValue / px * amount : curValue / 100 * px);
+  }
+  style2[horizontal ? "width" : "height"] = amount + (toPixels ? curUnit : unit);
+  parent = unit !== "rem" && ~property.indexOf("adius") || unit === "em" && target.appendChild && !isRootSVG ? target : target.parentNode;
+  if (isSVG) {
+    parent = (target.ownerSVGElement || {}).parentNode;
+  }
+  if (!parent || parent === _doc || !parent.appendChild) {
+    parent = _doc.body;
+  }
+  cache = parent._gsap;
+  if (cache && toPercent && cache.width && horizontal && cache.time === _ticker.time && !cache.uncache) {
+    return _round(curValue / cache.width * amount);
+  } else {
+    if (toPercent && (property === "height" || property === "width")) {
+      var v2 = target.style[property];
+      target.style[property] = amount + unit;
+      px = target[measureProperty];
+      v2 ? target.style[property] = v2 : _removeProperty(target, property);
+    } else {
+      (toPercent || curUnit === "%") && !_nonStandardLayouts[_getComputedProperty(parent, "display")] && (style2.position = _getComputedProperty(target, "position"));
+      parent === target && (style2.position = "static");
+      parent.appendChild(_tempDiv);
+      px = _tempDiv[measureProperty];
+      parent.removeChild(_tempDiv);
+      style2.position = "absolute";
+    }
+    if (horizontal && toPercent) {
+      cache = _getCache(parent);
+      cache.time = _ticker.time;
+      cache.width = parent[measureProperty];
+    }
+  }
+  return _round(toPixels ? px * curValue / amount : px && curValue ? amount / px * curValue : 0);
+}, _get = function _get2(target, property, unit, uncache) {
+  var value;
+  _pluginInitted || _initCore();
+  if (property in _propertyAliases && property !== "transform") {
+    property = _propertyAliases[property];
+    if (~property.indexOf(",")) {
+      property = property.split(",")[0];
+    }
+  }
+  if (_transformProps[property] && property !== "transform") {
+    value = _parseTransform(target, uncache);
+    value = property !== "transformOrigin" ? value[property] : value.svg ? value.origin : _firstTwoOnly(_getComputedProperty(target, _transformOriginProp)) + " " + value.zOrigin + "px";
+  } else {
+    value = target.style[property];
+    if (!value || value === "auto" || uncache || ~(value + "").indexOf("calc(")) {
+      value = _specialProps[property] && _specialProps[property](target, property, unit) || _getComputedProperty(target, property) || _getProperty(target, property) || (property === "opacity" ? 1 : 0);
+    }
+  }
+  return unit && !~(value + "").trim().indexOf(" ") ? _convertToUnit(target, property, value, unit) + unit : value;
+}, _tweenComplexCSSString = function _tweenComplexCSSString2(target, prop, start2, end) {
+  if (!start2 || start2 === "none") {
+    var p2 = _checkPropPrefix(prop, target, 1), s2 = p2 && _getComputedProperty(target, p2, 1);
+    if (s2 && s2 !== start2) {
+      prop = p2;
+      start2 = s2;
+    } else if (prop === "borderColor") {
+      start2 = _getComputedProperty(target, "borderTopColor");
+    }
+  }
+  var pt = new PropTween(this._pt, target.style, prop, 0, 1, _renderComplexString), index2 = 0, matchIndex = 0, a2, result, startValues, startNum, color2, startValue, endValue, endNum, chunk, endUnit, startUnit, endValues;
+  pt.b = start2;
+  pt.e = end;
+  start2 += "";
+  end += "";
+  if (end.substring(0, 6) === "var(--") {
+    end = _getComputedProperty(target, end.substring(4, end.indexOf(")")));
+  }
+  if (end === "auto") {
+    startValue = target.style[prop];
+    target.style[prop] = end;
+    end = _getComputedProperty(target, prop) || end;
+    startValue ? target.style[prop] = startValue : _removeProperty(target, prop);
+  }
+  a2 = [start2, end];
+  _colorStringFilter(a2);
+  start2 = a2[0];
+  end = a2[1];
+  startValues = start2.match(_numWithUnitExp) || [];
+  endValues = end.match(_numWithUnitExp) || [];
+  if (endValues.length) {
+    while (result = _numWithUnitExp.exec(end)) {
+      endValue = result[0];
+      chunk = end.substring(index2, result.index);
+      if (color2) {
+        color2 = (color2 + 1) % 5;
+      } else if (chunk.substr(-5) === "rgba(" || chunk.substr(-5) === "hsla(") {
+        color2 = 1;
+      }
+      if (endValue !== (startValue = startValues[matchIndex++] || "")) {
+        startNum = parseFloat(startValue) || 0;
+        startUnit = startValue.substr((startNum + "").length);
+        endValue.charAt(1) === "=" && (endValue = _parseRelative(startNum, endValue) + startUnit);
+        endNum = parseFloat(endValue);
+        endUnit = endValue.substr((endNum + "").length);
+        index2 = _numWithUnitExp.lastIndex - endUnit.length;
+        if (!endUnit) {
+          endUnit = endUnit || _config.units[prop] || startUnit;
+          if (index2 === end.length) {
+            end += endUnit;
+            pt.e += endUnit;
+          }
+        }
+        if (startUnit !== endUnit) {
+          startNum = _convertToUnit(target, prop, startValue, endUnit) || 0;
+        }
+        pt._pt = {
+          _next: pt._pt,
+          p: chunk || matchIndex === 1 ? chunk : ",",
+          //note: SVG spec allows omission of comma/space when a negative sign is wedged between two numbers, like 2.5-5.3 instead of 2.5,-5.3 but when tweening, the negative value may switch to positive, so we insert the comma just in case.
+          s: startNum,
+          c: endNum - startNum,
+          m: color2 && color2 < 4 || prop === "zIndex" ? Math.round : 0
+        };
+      }
+    }
+    pt.c = index2 < end.length ? end.substring(index2, end.length) : "";
+  } else {
+    pt.r = prop === "display" && end === "none" ? _renderNonTweeningValueOnlyAtEnd : _renderNonTweeningValue;
+  }
+  _relExp.test(end) && (pt.e = 0);
+  this._pt = pt;
+  return pt;
+}, _keywordToPercent = {
+  top: "0%",
+  bottom: "100%",
+  left: "0%",
+  right: "100%",
+  center: "50%"
+}, _convertKeywordsToPercentages = function _convertKeywordsToPercentages2(value) {
+  var split2 = value.split(" "), x3 = split2[0], y2 = split2[1] || "50%";
+  if (x3 === "top" || x3 === "bottom" || y2 === "left" || y2 === "right") {
+    value = x3;
+    x3 = y2;
+    y2 = value;
+  }
+  split2[0] = _keywordToPercent[x3] || x3;
+  split2[1] = _keywordToPercent[y2] || y2;
+  return split2.join(" ");
+}, _renderClearProps = function _renderClearProps2(ratio, data) {
+  if (data.tween && data.tween._time === data.tween._dur) {
+    var target = data.t, style2 = target.style, props = data.u, cache = target._gsap, prop, clearTransforms, i2;
+    if (props === "all" || props === true) {
+      style2.cssText = "";
+      clearTransforms = 1;
+    } else {
+      props = props.split(",");
+      i2 = props.length;
+      while (--i2 > -1) {
+        prop = props[i2];
+        if (_transformProps[prop]) {
+          clearTransforms = 1;
+          prop = prop === "transformOrigin" ? _transformOriginProp : _transformProp;
+        }
+        _removeProperty(target, prop);
+      }
+    }
+    if (clearTransforms) {
+      _removeProperty(target, _transformProp);
+      if (cache) {
+        cache.svg && target.removeAttribute("transform");
+        style2.scale = style2.rotate = style2.translate = "none";
+        _parseTransform(target, 1);
+        cache.uncache = 1;
+        _removeIndependentTransforms(style2);
+      }
+    }
+  }
+}, _specialProps = {
+  clearProps: function clearProps(plugin, target, property, endValue, tween) {
+    if (tween.data !== "isFromStart") {
+      var pt = plugin._pt = new PropTween(plugin._pt, target, property, 0, 0, _renderClearProps);
+      pt.u = endValue;
+      pt.pr = -10;
+      pt.tween = tween;
+      plugin._props.push(property);
+      return 1;
+    }
+  }
+  /* className feature (about 0.4kb gzipped).
+  , className(plugin, target, property, endValue, tween) {
+  	let _renderClassName = (ratio, data) => {
+  			data.css.render(ratio, data.css);
+  			if (!ratio || ratio === 1) {
+  				let inline = data.rmv,
+  					target = data.t,
+  					p;
+  				target.setAttribute("class", ratio ? data.e : data.b);
+  				for (p in inline) {
+  					_removeProperty(target, p);
+  				}
+  			}
+  		},
+  		_getAllStyles = (target) => {
+  			let styles = {},
+  				computed = getComputedStyle(target),
+  				p;
+  			for (p in computed) {
+  				if (isNaN(p) && p !== "cssText" && p !== "length") {
+  					styles[p] = computed[p];
+  				}
+  			}
+  			_setDefaults(styles, _parseTransform(target, 1));
+  			return styles;
+  		},
+  		startClassList = target.getAttribute("class"),
+  		style = target.style,
+  		cssText = style.cssText,
+  		cache = target._gsap,
+  		classPT = cache.classPT,
+  		inlineToRemoveAtEnd = {},
+  		data = {t:target, plugin:plugin, rmv:inlineToRemoveAtEnd, b:startClassList, e:(endValue.charAt(1) !== "=") ? endValue : startClassList.replace(new RegExp("(?:\\s|^)" + endValue.substr(2) + "(?![\\w-])"), "") + ((endValue.charAt(0) === "+") ? " " + endValue.substr(2) : "")},
+  		changingVars = {},
+  		startVars = _getAllStyles(target),
+  		transformRelated = /(transform|perspective)/i,
+  		endVars, p;
+  	if (classPT) {
+  		classPT.r(1, classPT.d);
+  		_removeLinkedListItem(classPT.d.plugin, classPT, "_pt");
+  	}
+  	target.setAttribute("class", data.e);
+  	endVars = _getAllStyles(target, true);
+  	target.setAttribute("class", startClassList);
+  	for (p in endVars) {
+  		if (endVars[p] !== startVars[p] && !transformRelated.test(p)) {
+  			changingVars[p] = endVars[p];
+  			if (!style[p] && style[p] !== "0") {
+  				inlineToRemoveAtEnd[p] = 1;
+  			}
+  		}
+  	}
+  	cache.classPT = plugin._pt = new PropTween(plugin._pt, target, "className", 0, 0, _renderClassName, data, 0, -11);
+  	if (style.cssText !== cssText) { //only apply if things change. Otherwise, in cases like a background-image that's pulled dynamically, it could cause a refresh. See https://gsap.com/forums/topic/20368-possible-gsap-bug-switching-classnames-in-chrome/.
+  		style.cssText = cssText; //we recorded cssText before we swapped classes and ran _getAllStyles() because in cases when a className tween is overwritten, we remove all the related tweening properties from that class change (otherwise class-specific stuff can't override properties we've directly set on the target's style object due to specificity).
+  	}
+  	_parseTransform(target, true); //to clear the caching of transforms
+  	data.css = new gsap.plugins.css();
+  	data.css.init(target, changingVars, tween);
+  	plugin._props.push(...data.css._props);
+  	return 1;
+  }
+  */
+}, _identity2DMatrix = [1, 0, 0, 1, 0, 0], _rotationalProperties = {}, _isNullTransform = function _isNullTransform2(value) {
+  return value === "matrix(1, 0, 0, 1, 0, 0)" || value === "none" || !value;
+}, _getComputedTransformMatrixAsArray = function _getComputedTransformMatrixAsArray2(target) {
+  var matrixString = _getComputedProperty(target, _transformProp);
+  return _isNullTransform(matrixString) ? _identity2DMatrix : matrixString.substr(7).match(_numExp).map(_round);
+}, _getMatrix = function _getMatrix2(target, force2D) {
+  var cache = target._gsap || _getCache(target), style2 = target.style, matrix = _getComputedTransformMatrixAsArray(target), parent, nextSibling, temp, addedToDOM;
+  if (cache.svg && target.getAttribute("transform")) {
+    temp = target.transform.baseVal.consolidate().matrix;
+    matrix = [temp.a, temp.b, temp.c, temp.d, temp.e, temp.f];
+    return matrix.join(",") === "1,0,0,1,0,0" ? _identity2DMatrix : matrix;
+  } else if (matrix === _identity2DMatrix && !target.offsetParent && target !== _docElement && !cache.svg) {
+    temp = style2.display;
+    style2.display = "block";
+    parent = target.parentNode;
+    if (!parent || !target.offsetParent && !target.getBoundingClientRect().width) {
+      addedToDOM = 1;
+      nextSibling = target.nextElementSibling;
+      _docElement.appendChild(target);
+    }
+    matrix = _getComputedTransformMatrixAsArray(target);
+    temp ? style2.display = temp : _removeProperty(target, "display");
+    if (addedToDOM) {
+      nextSibling ? parent.insertBefore(target, nextSibling) : parent ? parent.appendChild(target) : _docElement.removeChild(target);
+    }
+  }
+  return force2D && matrix.length > 6 ? [matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]] : matrix;
+}, _applySVGOrigin = function _applySVGOrigin2(target, origin, originIsAbsolute, smooth, matrixArray, pluginToAddPropTweensTo) {
+  var cache = target._gsap, matrix = matrixArray || _getMatrix(target, true), xOriginOld = cache.xOrigin || 0, yOriginOld = cache.yOrigin || 0, xOffsetOld = cache.xOffset || 0, yOffsetOld = cache.yOffset || 0, a2 = matrix[0], b2 = matrix[1], c2 = matrix[2], d2 = matrix[3], tx = matrix[4], ty = matrix[5], originSplit = origin.split(" "), xOrigin = parseFloat(originSplit[0]) || 0, yOrigin = parseFloat(originSplit[1]) || 0, bounds, determinant, x3, y2;
+  if (!originIsAbsolute) {
+    bounds = _getBBox(target);
+    xOrigin = bounds.x + (~originSplit[0].indexOf("%") ? xOrigin / 100 * bounds.width : xOrigin);
+    yOrigin = bounds.y + (~(originSplit[1] || originSplit[0]).indexOf("%") ? yOrigin / 100 * bounds.height : yOrigin);
+  } else if (matrix !== _identity2DMatrix && (determinant = a2 * d2 - b2 * c2)) {
+    x3 = xOrigin * (d2 / determinant) + yOrigin * (-c2 / determinant) + (c2 * ty - d2 * tx) / determinant;
+    y2 = xOrigin * (-b2 / determinant) + yOrigin * (a2 / determinant) - (a2 * ty - b2 * tx) / determinant;
+    xOrigin = x3;
+    yOrigin = y2;
+  }
+  if (smooth || smooth !== false && cache.smooth) {
+    tx = xOrigin - xOriginOld;
+    ty = yOrigin - yOriginOld;
+    cache.xOffset = xOffsetOld + (tx * a2 + ty * c2) - tx;
+    cache.yOffset = yOffsetOld + (tx * b2 + ty * d2) - ty;
+  } else {
+    cache.xOffset = cache.yOffset = 0;
+  }
+  cache.xOrigin = xOrigin;
+  cache.yOrigin = yOrigin;
+  cache.smooth = !!smooth;
+  cache.origin = origin;
+  cache.originIsAbsolute = !!originIsAbsolute;
+  target.style[_transformOriginProp] = "0px 0px";
+  if (pluginToAddPropTweensTo) {
+    _addNonTweeningPT(pluginToAddPropTweensTo, cache, "xOrigin", xOriginOld, xOrigin);
+    _addNonTweeningPT(pluginToAddPropTweensTo, cache, "yOrigin", yOriginOld, yOrigin);
+    _addNonTweeningPT(pluginToAddPropTweensTo, cache, "xOffset", xOffsetOld, cache.xOffset);
+    _addNonTweeningPT(pluginToAddPropTweensTo, cache, "yOffset", yOffsetOld, cache.yOffset);
+  }
+  target.setAttribute("data-svg-origin", xOrigin + " " + yOrigin);
+}, _parseTransform = function _parseTransform2(target, uncache) {
+  var cache = target._gsap || new GSCache(target);
+  if ("x" in cache && !uncache && !cache.uncache) {
+    return cache;
+  }
+  var style2 = target.style, invertedScaleX = cache.scaleX < 0, px = "px", deg = "deg", cs = getComputedStyle(target), origin = _getComputedProperty(target, _transformOriginProp) || "0", x3, y2, z2, scaleX, scaleY, rotation, rotationX, rotationY, skewX, skewY, perspective, xOrigin, yOrigin, matrix, angle, cos2, sin2, a2, b2, c2, d2, a12, a22, t1, t2, t3, a13, a23, a33, a42, a43, a32;
+  x3 = y2 = z2 = rotation = rotationX = rotationY = skewX = skewY = perspective = 0;
+  scaleX = scaleY = 1;
+  cache.svg = !!(target.getCTM && _isSVG(target));
+  if (cs.translate) {
+    if (cs.translate !== "none" || cs.scale !== "none" || cs.rotate !== "none") {
+      style2[_transformProp] = (cs.translate !== "none" ? "translate3d(" + (cs.translate + " 0 0").split(" ").slice(0, 3).join(", ") + ") " : "") + (cs.rotate !== "none" ? "rotate(" + cs.rotate + ") " : "") + (cs.scale !== "none" ? "scale(" + cs.scale.split(" ").join(",") + ") " : "") + (cs[_transformProp] !== "none" ? cs[_transformProp] : "");
+    }
+    style2.scale = style2.rotate = style2.translate = "none";
+  }
+  matrix = _getMatrix(target, cache.svg);
+  if (cache.svg) {
+    if (cache.uncache) {
+      t2 = target.getBBox();
+      origin = cache.xOrigin - t2.x + "px " + (cache.yOrigin - t2.y) + "px";
+      t1 = "";
+    } else {
+      t1 = !uncache && target.getAttribute("data-svg-origin");
+    }
+    _applySVGOrigin(target, t1 || origin, !!t1 || cache.originIsAbsolute, cache.smooth !== false, matrix);
+  }
+  xOrigin = cache.xOrigin || 0;
+  yOrigin = cache.yOrigin || 0;
+  if (matrix !== _identity2DMatrix) {
+    a2 = matrix[0];
+    b2 = matrix[1];
+    c2 = matrix[2];
+    d2 = matrix[3];
+    x3 = a12 = matrix[4];
+    y2 = a22 = matrix[5];
+    if (matrix.length === 6) {
+      scaleX = Math.sqrt(a2 * a2 + b2 * b2);
+      scaleY = Math.sqrt(d2 * d2 + c2 * c2);
+      rotation = a2 || b2 ? _atan2(b2, a2) * _RAD2DEG : 0;
+      skewX = c2 || d2 ? _atan2(c2, d2) * _RAD2DEG + rotation : 0;
+      skewX && (scaleY *= Math.abs(Math.cos(skewX * _DEG2RAD)));
+      if (cache.svg) {
+        x3 -= xOrigin - (xOrigin * a2 + yOrigin * c2);
+        y2 -= yOrigin - (xOrigin * b2 + yOrigin * d2);
+      }
+    } else {
+      a32 = matrix[6];
+      a42 = matrix[7];
+      a13 = matrix[8];
+      a23 = matrix[9];
+      a33 = matrix[10];
+      a43 = matrix[11];
+      x3 = matrix[12];
+      y2 = matrix[13];
+      z2 = matrix[14];
+      angle = _atan2(a32, a33);
+      rotationX = angle * _RAD2DEG;
+      if (angle) {
+        cos2 = Math.cos(-angle);
+        sin2 = Math.sin(-angle);
+        t1 = a12 * cos2 + a13 * sin2;
+        t2 = a22 * cos2 + a23 * sin2;
+        t3 = a32 * cos2 + a33 * sin2;
+        a13 = a12 * -sin2 + a13 * cos2;
+        a23 = a22 * -sin2 + a23 * cos2;
+        a33 = a32 * -sin2 + a33 * cos2;
+        a43 = a42 * -sin2 + a43 * cos2;
+        a12 = t1;
+        a22 = t2;
+        a32 = t3;
+      }
+      angle = _atan2(-c2, a33);
+      rotationY = angle * _RAD2DEG;
+      if (angle) {
+        cos2 = Math.cos(-angle);
+        sin2 = Math.sin(-angle);
+        t1 = a2 * cos2 - a13 * sin2;
+        t2 = b2 * cos2 - a23 * sin2;
+        t3 = c2 * cos2 - a33 * sin2;
+        a43 = d2 * sin2 + a43 * cos2;
+        a2 = t1;
+        b2 = t2;
+        c2 = t3;
+      }
+      angle = _atan2(b2, a2);
+      rotation = angle * _RAD2DEG;
+      if (angle) {
+        cos2 = Math.cos(angle);
+        sin2 = Math.sin(angle);
+        t1 = a2 * cos2 + b2 * sin2;
+        t2 = a12 * cos2 + a22 * sin2;
+        b2 = b2 * cos2 - a2 * sin2;
+        a22 = a22 * cos2 - a12 * sin2;
+        a2 = t1;
+        a12 = t2;
+      }
+      if (rotationX && Math.abs(rotationX) + Math.abs(rotation) > 359.9) {
+        rotationX = rotation = 0;
+        rotationY = 180 - rotationY;
+      }
+      scaleX = _round(Math.sqrt(a2 * a2 + b2 * b2 + c2 * c2));
+      scaleY = _round(Math.sqrt(a22 * a22 + a32 * a32));
+      angle = _atan2(a12, a22);
+      skewX = Math.abs(angle) > 2e-4 ? angle * _RAD2DEG : 0;
+      perspective = a43 ? 1 / (a43 < 0 ? -a43 : a43) : 0;
+    }
+    if (cache.svg) {
+      t1 = target.getAttribute("transform");
+      cache.forceCSS = target.setAttribute("transform", "") || !_isNullTransform(_getComputedProperty(target, _transformProp));
+      t1 && target.setAttribute("transform", t1);
+    }
+  }
+  if (Math.abs(skewX) > 90 && Math.abs(skewX) < 270) {
+    if (invertedScaleX) {
+      scaleX *= -1;
+      skewX += rotation <= 0 ? 180 : -180;
+      rotation += rotation <= 0 ? 180 : -180;
+    } else {
+      scaleY *= -1;
+      skewX += skewX <= 0 ? 180 : -180;
+    }
+  }
+  uncache = uncache || cache.uncache;
+  cache.x = x3 - ((cache.xPercent = x3 && (!uncache && cache.xPercent || (Math.round(target.offsetWidth / 2) === Math.round(-x3) ? -50 : 0))) ? target.offsetWidth * cache.xPercent / 100 : 0) + px;
+  cache.y = y2 - ((cache.yPercent = y2 && (!uncache && cache.yPercent || (Math.round(target.offsetHeight / 2) === Math.round(-y2) ? -50 : 0))) ? target.offsetHeight * cache.yPercent / 100 : 0) + px;
+  cache.z = z2 + px;
+  cache.scaleX = _round(scaleX);
+  cache.scaleY = _round(scaleY);
+  cache.rotation = _round(rotation) + deg;
+  cache.rotationX = _round(rotationX) + deg;
+  cache.rotationY = _round(rotationY) + deg;
+  cache.skewX = skewX + deg;
+  cache.skewY = skewY + deg;
+  cache.transformPerspective = perspective + px;
+  if (cache.zOrigin = parseFloat(origin.split(" ")[2]) || !uncache && cache.zOrigin || 0) {
+    style2[_transformOriginProp] = _firstTwoOnly(origin);
+  }
+  cache.xOffset = cache.yOffset = 0;
+  cache.force3D = _config.force3D;
+  cache.renderTransform = cache.svg ? _renderSVGTransforms : _supports3D ? _renderCSSTransforms : _renderNon3DTransforms;
+  cache.uncache = 0;
+  return cache;
+}, _firstTwoOnly = function _firstTwoOnly2(value) {
+  return (value = value.split(" "))[0] + " " + value[1];
+}, _addPxTranslate = function _addPxTranslate2(target, start2, value) {
+  var unit = getUnit(start2);
+  return _round(parseFloat(start2) + parseFloat(_convertToUnit(target, "x", value + "px", unit))) + unit;
+}, _renderNon3DTransforms = function _renderNon3DTransforms2(ratio, cache) {
+  cache.z = "0px";
+  cache.rotationY = cache.rotationX = "0deg";
+  cache.force3D = 0;
+  _renderCSSTransforms(ratio, cache);
+}, _zeroDeg = "0deg", _zeroPx = "0px", _endParenthesis = ") ", _renderCSSTransforms = function _renderCSSTransforms2(ratio, cache) {
+  var _ref = cache || this, xPercent = _ref.xPercent, yPercent = _ref.yPercent, x3 = _ref.x, y2 = _ref.y, z2 = _ref.z, rotation = _ref.rotation, rotationY = _ref.rotationY, rotationX = _ref.rotationX, skewX = _ref.skewX, skewY = _ref.skewY, scaleX = _ref.scaleX, scaleY = _ref.scaleY, transformPerspective = _ref.transformPerspective, force3D = _ref.force3D, target = _ref.target, zOrigin = _ref.zOrigin, transforms = "", use3D = force3D === "auto" && ratio && ratio !== 1 || force3D === true;
+  if (zOrigin && (rotationX !== _zeroDeg || rotationY !== _zeroDeg)) {
+    var angle = parseFloat(rotationY) * _DEG2RAD, a13 = Math.sin(angle), a33 = Math.cos(angle), cos2;
+    angle = parseFloat(rotationX) * _DEG2RAD;
+    cos2 = Math.cos(angle);
+    x3 = _addPxTranslate(target, x3, a13 * cos2 * -zOrigin);
+    y2 = _addPxTranslate(target, y2, -Math.sin(angle) * -zOrigin);
+    z2 = _addPxTranslate(target, z2, a33 * cos2 * -zOrigin + zOrigin);
+  }
+  if (transformPerspective !== _zeroPx) {
+    transforms += "perspective(" + transformPerspective + _endParenthesis;
+  }
+  if (xPercent || yPercent) {
+    transforms += "translate(" + xPercent + "%, " + yPercent + "%) ";
+  }
+  if (use3D || x3 !== _zeroPx || y2 !== _zeroPx || z2 !== _zeroPx) {
+    transforms += z2 !== _zeroPx || use3D ? "translate3d(" + x3 + ", " + y2 + ", " + z2 + ") " : "translate(" + x3 + ", " + y2 + _endParenthesis;
+  }
+  if (rotation !== _zeroDeg) {
+    transforms += "rotate(" + rotation + _endParenthesis;
+  }
+  if (rotationY !== _zeroDeg) {
+    transforms += "rotateY(" + rotationY + _endParenthesis;
+  }
+  if (rotationX !== _zeroDeg) {
+    transforms += "rotateX(" + rotationX + _endParenthesis;
+  }
+  if (skewX !== _zeroDeg || skewY !== _zeroDeg) {
+    transforms += "skew(" + skewX + ", " + skewY + _endParenthesis;
+  }
+  if (scaleX !== 1 || scaleY !== 1) {
+    transforms += "scale(" + scaleX + ", " + scaleY + _endParenthesis;
+  }
+  target.style[_transformProp] = transforms || "translate(0, 0)";
+}, _renderSVGTransforms = function _renderSVGTransforms2(ratio, cache) {
+  var _ref2 = cache || this, xPercent = _ref2.xPercent, yPercent = _ref2.yPercent, x3 = _ref2.x, y2 = _ref2.y, rotation = _ref2.rotation, skewX = _ref2.skewX, skewY = _ref2.skewY, scaleX = _ref2.scaleX, scaleY = _ref2.scaleY, target = _ref2.target, xOrigin = _ref2.xOrigin, yOrigin = _ref2.yOrigin, xOffset = _ref2.xOffset, yOffset = _ref2.yOffset, forceCSS = _ref2.forceCSS, tx = parseFloat(x3), ty = parseFloat(y2), a11, a21, a12, a22, temp;
+  rotation = parseFloat(rotation);
+  skewX = parseFloat(skewX);
+  skewY = parseFloat(skewY);
+  if (skewY) {
+    skewY = parseFloat(skewY);
+    skewX += skewY;
+    rotation += skewY;
+  }
+  if (rotation || skewX) {
+    rotation *= _DEG2RAD;
+    skewX *= _DEG2RAD;
+    a11 = Math.cos(rotation) * scaleX;
+    a21 = Math.sin(rotation) * scaleX;
+    a12 = Math.sin(rotation - skewX) * -scaleY;
+    a22 = Math.cos(rotation - skewX) * scaleY;
+    if (skewX) {
+      skewY *= _DEG2RAD;
+      temp = Math.tan(skewX - skewY);
+      temp = Math.sqrt(1 + temp * temp);
+      a12 *= temp;
+      a22 *= temp;
+      if (skewY) {
+        temp = Math.tan(skewY);
+        temp = Math.sqrt(1 + temp * temp);
+        a11 *= temp;
+        a21 *= temp;
+      }
+    }
+    a11 = _round(a11);
+    a21 = _round(a21);
+    a12 = _round(a12);
+    a22 = _round(a22);
+  } else {
+    a11 = scaleX;
+    a22 = scaleY;
+    a21 = a12 = 0;
+  }
+  if (tx && !~(x3 + "").indexOf("px") || ty && !~(y2 + "").indexOf("px")) {
+    tx = _convertToUnit(target, "x", x3, "px");
+    ty = _convertToUnit(target, "y", y2, "px");
+  }
+  if (xOrigin || yOrigin || xOffset || yOffset) {
+    tx = _round(tx + xOrigin - (xOrigin * a11 + yOrigin * a12) + xOffset);
+    ty = _round(ty + yOrigin - (xOrigin * a21 + yOrigin * a22) + yOffset);
+  }
+  if (xPercent || yPercent) {
+    temp = target.getBBox();
+    tx = _round(tx + xPercent / 100 * temp.width);
+    ty = _round(ty + yPercent / 100 * temp.height);
+  }
+  temp = "matrix(" + a11 + "," + a21 + "," + a12 + "," + a22 + "," + tx + "," + ty + ")";
+  target.setAttribute("transform", temp);
+  forceCSS && (target.style[_transformProp] = temp);
+}, _addRotationalPropTween = function _addRotationalPropTween2(plugin, target, property, startNum, endValue) {
+  var cap2 = 360, isString2 = _isString(endValue), endNum = parseFloat(endValue) * (isString2 && ~endValue.indexOf("rad") ? _RAD2DEG : 1), change = endNum - startNum, finalValue = startNum + change + "deg", direction, pt;
+  if (isString2) {
+    direction = endValue.split("_")[1];
+    if (direction === "short") {
+      change %= cap2;
+      if (change !== change % (cap2 / 2)) {
+        change += change < 0 ? cap2 : -cap2;
+      }
+    }
+    if (direction === "cw" && change < 0) {
+      change = (change + cap2 * _bigNum) % cap2 - ~~(change / cap2) * cap2;
+    } else if (direction === "ccw" && change > 0) {
+      change = (change - cap2 * _bigNum) % cap2 - ~~(change / cap2) * cap2;
+    }
+  }
+  plugin._pt = pt = new PropTween(plugin._pt, target, property, startNum, change, _renderPropWithEnd);
+  pt.e = finalValue;
+  pt.u = "deg";
+  plugin._props.push(property);
+  return pt;
+}, _assign = function _assign2(target, source) {
+  for (var p2 in source) {
+    target[p2] = source[p2];
+  }
+  return target;
+}, _addRawTransformPTs = function _addRawTransformPTs2(plugin, transforms, target) {
+  var startCache = _assign({}, target._gsap), exclude = "perspective,force3D,transformOrigin,svgOrigin", style2 = target.style, endCache, p2, startValue, endValue, startNum, endNum, startUnit, endUnit;
+  if (startCache.svg) {
+    startValue = target.getAttribute("transform");
+    target.setAttribute("transform", "");
+    style2[_transformProp] = transforms;
+    endCache = _parseTransform(target, 1);
+    _removeProperty(target, _transformProp);
+    target.setAttribute("transform", startValue);
+  } else {
+    startValue = getComputedStyle(target)[_transformProp];
+    style2[_transformProp] = transforms;
+    endCache = _parseTransform(target, 1);
+    style2[_transformProp] = startValue;
+  }
+  for (p2 in _transformProps) {
+    startValue = startCache[p2];
+    endValue = endCache[p2];
+    if (startValue !== endValue && exclude.indexOf(p2) < 0) {
+      startUnit = getUnit(startValue);
+      endUnit = getUnit(endValue);
+      startNum = startUnit !== endUnit ? _convertToUnit(target, p2, startValue, endUnit) : parseFloat(startValue);
+      endNum = parseFloat(endValue);
+      plugin._pt = new PropTween(plugin._pt, endCache, p2, startNum, endNum - startNum, _renderCSSProp);
+      plugin._pt.u = endUnit || 0;
+      plugin._props.push(p2);
+    }
+  }
+  _assign(endCache, startCache);
+};
+_forEachName("padding,margin,Width,Radius", function(name, index2) {
+  var t2 = "Top", r2 = "Right", b2 = "Bottom", l2 = "Left", props = (index2 < 3 ? [t2, r2, b2, l2] : [t2 + l2, t2 + r2, b2 + r2, b2 + l2]).map(function(side) {
+    return index2 < 2 ? name + side : "border" + side + name;
+  });
+  _specialProps[index2 > 1 ? "border" + name : name] = function(plugin, target, property, endValue, tween) {
+    var a2, vars;
+    if (arguments.length < 4) {
+      a2 = props.map(function(prop) {
+        return _get(plugin, prop, property);
+      });
+      vars = a2.join(" ");
+      return vars.split(a2[0]).length === 5 ? a2[0] : vars;
+    }
+    a2 = (endValue + "").split(" ");
+    vars = {};
+    props.forEach(function(prop, i2) {
+      return vars[prop] = a2[i2] = a2[i2] || a2[(i2 - 1) / 2 | 0];
+    });
+    plugin.init(target, vars, tween);
+  };
+});
+var CSSPlugin = {
+  name: "css",
+  register: _initCore,
+  targetTest: function targetTest(target) {
+    return target.style && target.nodeType;
+  },
+  init: function init7(target, vars, tween, index2, targets) {
+    var props = this._props, style2 = target.style, startAt = tween.vars.startAt, startValue, endValue, endNum, startNum, type, specialProp, p2, startUnit, endUnit, relative, isTransformRelated, transformPropTween, cache, smooth, hasPriority, inlineProps, finalTransformValue;
+    _pluginInitted || _initCore();
+    this.styles = this.styles || _getStyleSaver(target);
+    inlineProps = this.styles.props;
+    this.tween = tween;
+    for (p2 in vars) {
+      if (p2 === "autoRound") {
+        continue;
+      }
+      endValue = vars[p2];
+      if (_plugins[p2] && _checkPlugin(p2, vars, tween, index2, target, targets)) {
+        continue;
+      }
+      type = typeof endValue;
+      specialProp = _specialProps[p2];
+      if (type === "function") {
+        endValue = endValue.call(tween, index2, target, targets);
+        type = typeof endValue;
+      }
+      if (type === "string" && ~endValue.indexOf("random(")) {
+        endValue = _replaceRandom(endValue);
+      }
+      if (specialProp) {
+        specialProp(this, target, p2, endValue, tween) && (hasPriority = 1);
+      } else if (p2.substr(0, 2) === "--") {
+        startValue = (getComputedStyle(target).getPropertyValue(p2) + "").trim();
+        endValue += "";
+        _colorExp.lastIndex = 0;
+        if (!_colorExp.test(startValue)) {
+          startUnit = getUnit(startValue);
+          endUnit = getUnit(endValue);
+          endUnit ? startUnit !== endUnit && (startValue = _convertToUnit(target, p2, startValue, endUnit) + endUnit) : startUnit && (endValue += startUnit);
+        }
+        this.add(style2, "setProperty", startValue, endValue, index2, targets, 0, 0, p2);
+        props.push(p2);
+        inlineProps.push(p2, 0, style2[p2]);
+      } else if (type !== "undefined") {
+        if (startAt && p2 in startAt) {
+          startValue = typeof startAt[p2] === "function" ? startAt[p2].call(tween, index2, target, targets) : startAt[p2];
+          _isString(startValue) && ~startValue.indexOf("random(") && (startValue = _replaceRandom(startValue));
+          getUnit(startValue + "") || startValue === "auto" || (startValue += _config.units[p2] || getUnit(_get(target, p2)) || "");
+          (startValue + "").charAt(1) === "=" && (startValue = _get(target, p2));
+        } else {
+          startValue = _get(target, p2);
+        }
+        startNum = parseFloat(startValue);
+        relative = type === "string" && endValue.charAt(1) === "=" && endValue.substr(0, 2);
+        relative && (endValue = endValue.substr(2));
+        endNum = parseFloat(endValue);
+        if (p2 in _propertyAliases) {
+          if (p2 === "autoAlpha") {
+            if (startNum === 1 && _get(target, "visibility") === "hidden" && endNum) {
+              startNum = 0;
+            }
+            inlineProps.push("visibility", 0, style2.visibility);
+            _addNonTweeningPT(this, style2, "visibility", startNum ? "inherit" : "hidden", endNum ? "inherit" : "hidden", !endNum);
+          }
+          if (p2 !== "scale" && p2 !== "transform") {
+            p2 = _propertyAliases[p2];
+            ~p2.indexOf(",") && (p2 = p2.split(",")[0]);
+          }
+        }
+        isTransformRelated = p2 in _transformProps;
+        if (isTransformRelated) {
+          this.styles.save(p2);
+          finalTransformValue = endValue;
+          if (type === "string" && endValue.substring(0, 6) === "var(--") {
+            endValue = _getComputedProperty(target, endValue.substring(4, endValue.indexOf(")")));
+            if (endValue.substring(0, 5) === "calc(") {
+              var origPerspective = target.style.perspective;
+              target.style.perspective = endValue;
+              endValue = _getComputedProperty(target, "perspective");
+              origPerspective ? target.style.perspective = origPerspective : _removeProperty(target, "perspective");
+            }
+            endNum = parseFloat(endValue);
+          }
+          if (!transformPropTween) {
+            cache = target._gsap;
+            cache.renderTransform && !vars.parseTransform || _parseTransform(target, vars.parseTransform);
+            smooth = vars.smoothOrigin !== false && cache.smooth;
+            transformPropTween = this._pt = new PropTween(this._pt, style2, _transformProp, 0, 1, cache.renderTransform, cache, 0, -1);
+            transformPropTween.dep = 1;
+          }
+          if (p2 === "scale") {
+            this._pt = new PropTween(this._pt, cache, "scaleY", cache.scaleY, (relative ? _parseRelative(cache.scaleY, relative + endNum) : endNum) - cache.scaleY || 0, _renderCSSProp);
+            this._pt.u = 0;
+            props.push("scaleY", p2);
+            p2 += "X";
+          } else if (p2 === "transformOrigin") {
+            inlineProps.push(_transformOriginProp, 0, style2[_transformOriginProp]);
+            endValue = _convertKeywordsToPercentages(endValue);
+            if (cache.svg) {
+              _applySVGOrigin(target, endValue, 0, smooth, 0, this);
+            } else {
+              endUnit = parseFloat(endValue.split(" ")[2]) || 0;
+              endUnit !== cache.zOrigin && _addNonTweeningPT(this, cache, "zOrigin", cache.zOrigin, endUnit);
+              _addNonTweeningPT(this, style2, p2, _firstTwoOnly(startValue), _firstTwoOnly(endValue));
+            }
+            continue;
+          } else if (p2 === "svgOrigin") {
+            _applySVGOrigin(target, endValue, 1, smooth, 0, this);
+            continue;
+          } else if (p2 in _rotationalProperties) {
+            _addRotationalPropTween(this, cache, p2, startNum, relative ? _parseRelative(startNum, relative + endValue) : endValue);
+            continue;
+          } else if (p2 === "smoothOrigin") {
+            _addNonTweeningPT(this, cache, "smooth", cache.smooth, endValue);
+            continue;
+          } else if (p2 === "force3D") {
+            cache[p2] = endValue;
+            continue;
+          } else if (p2 === "transform") {
+            _addRawTransformPTs(this, endValue, target);
+            continue;
+          }
+        } else if (!(p2 in style2)) {
+          p2 = _checkPropPrefix(p2) || p2;
+        }
+        if (isTransformRelated || (endNum || endNum === 0) && (startNum || startNum === 0) && !_complexExp.test(endValue) && p2 in style2) {
+          startUnit = (startValue + "").substr((startNum + "").length);
+          endNum || (endNum = 0);
+          endUnit = getUnit(endValue) || (p2 in _config.units ? _config.units[p2] : startUnit);
+          startUnit !== endUnit && (startNum = _convertToUnit(target, p2, startValue, endUnit));
+          this._pt = new PropTween(this._pt, isTransformRelated ? cache : style2, p2, startNum, (relative ? _parseRelative(startNum, relative + endNum) : endNum) - startNum, !isTransformRelated && (endUnit === "px" || p2 === "zIndex") && vars.autoRound !== false ? _renderRoundedCSSProp : _renderCSSProp);
+          this._pt.u = endUnit || 0;
+          if (isTransformRelated && finalTransformValue !== endValue) {
+            this._pt.b = startValue;
+            this._pt.e = finalTransformValue;
+            this._pt.r = _renderCSSPropWithBeginningAndEnd;
+          } else if (startUnit !== endUnit && endUnit !== "%") {
+            this._pt.b = startValue;
+            this._pt.r = _renderCSSPropWithBeginning;
+          }
+        } else if (!(p2 in style2)) {
+          if (p2 in target) {
+            this.add(target, p2, startValue || target[p2], relative ? relative + endValue : endValue, index2, targets);
+          } else if (p2 !== "parseTransform") {
+            _missingPlugin(p2, endValue);
+            continue;
+          }
+        } else {
+          _tweenComplexCSSString.call(this, target, p2, startValue, relative ? relative + endValue : endValue);
+        }
+        isTransformRelated || (p2 in style2 ? inlineProps.push(p2, 0, style2[p2]) : typeof target[p2] === "function" ? inlineProps.push(p2, 2, target[p2]()) : inlineProps.push(p2, 1, startValue || target[p2]));
+        props.push(p2);
+      }
+    }
+    hasPriority && _sortPropTweensByPriority(this);
+  },
+  render: function render4(ratio, data) {
+    if (data.tween._time || !_reverting()) {
+      var pt = data._pt;
+      while (pt) {
+        pt.r(ratio, pt.d);
+        pt = pt._next;
+      }
+    } else {
+      data.styles.revert();
+    }
+  },
+  get: _get,
+  aliases: _propertyAliases,
+  getSetter: function getSetter(target, property, plugin) {
+    var p2 = _propertyAliases[property];
+    p2 && p2.indexOf(",") < 0 && (property = p2);
+    return property in _transformProps && property !== _transformOriginProp && (target._gsap.x || _get(target, "x")) ? plugin && _recentSetterPlugin === plugin ? property === "scale" ? _setterScale : _setterTransform : (_recentSetterPlugin = plugin || {}) && (property === "scale" ? _setterScaleWithRender : _setterTransformWithRender) : target.style && !_isUndefined(target.style[property]) ? _setterCSSStyle : ~property.indexOf("-") ? _setterCSSProp : _getSetter(target, property);
+  },
+  core: {
+    _removeProperty,
+    _getMatrix
+  }
+};
+gsap.utils.checkPrefix = _checkPropPrefix;
+gsap.core.getStyleSaver = _getStyleSaver;
+(function(positionAndScale, rotation, others, aliases2) {
+  var all2 = _forEachName(positionAndScale + "," + rotation + "," + others, function(name) {
+    _transformProps[name] = 1;
+  });
+  _forEachName(rotation, function(name) {
+    _config.units[name] = "deg";
+    _rotationalProperties[name] = 1;
+  });
+  _propertyAliases[all2[13]] = positionAndScale + "," + rotation;
+  _forEachName(aliases2, function(name) {
+    var split2 = name.split(":");
+    _propertyAliases[split2[1]] = all2[split2[0]];
+  });
+})("x,y,z,scale,scaleX,scaleY,xPercent,yPercent", "rotation,rotationX,rotationY,skewX,skewY", "transform,transformOrigin,svgOrigin,force3D,smoothOrigin,transformPerspective", "0:translateX,1:translateY,2:translateZ,8:rotate,8:rotationZ,8:rotateZ,9:rotateX,10:rotateY");
+_forEachName("x,y,z,top,right,bottom,left,width,height,fontSize,padding,margin,perspective", function(name) {
+  _config.units[name] = "px";
+});
+gsap.registerPlugin(CSSPlugin);
+var gsapWithCSS = gsap.registerPlugin(CSSPlugin) || gsap;
+gsapWithCSS.core.Tween;
+function FlyingBee({ modalRef, yRef }) {
+  const beeRef = reactExports.useRef(null);
+  const statusRef = reactExports.useRef("idle");
+  const mouseRef = reactExports.useRef({ x: 0, y: 0 });
+  const returnTimer = reactExports.useRef(null);
+  const getPerch = () => {
+    if (!yRef.current) return null;
+    const yr = yRef.current.getBoundingClientRect();
+    const titleEl = yRef.current.parentElement;
+    if (!titleEl) return { x: yr.left - 6, y: yr.top - 18 };
+    const tr2 = titleEl.getBoundingClientRect();
+    return { x: yr.left - 6, y: tr2.top - 18 };
+  };
+  const getCorner = () => {
+    if (!modalRef.current) return { x: 0, y: 0 };
+    const mr = modalRef.current.getBoundingClientRect();
+    const corners = [
+      { x: mr.left - 40, y: mr.top - 40 },
+      { x: mr.right + 40, y: mr.top - 40 },
+      { x: mr.left - 40, y: mr.bottom + 40 },
+      { x: mr.right + 40, y: mr.bottom + 40 }
+    ];
+    return corners[Math.floor(Math.random() * 4)];
+  };
+  const getEscape = () => {
+    if (!modalRef.current) return { x: 0, y: 0 };
+    const mr = modalRef.current.getBoundingClientRect();
+    const sides2 = [
+      { x: mr.left - 60, y: mr.top + Math.random() * mr.height },
+      { x: mr.right + 60, y: mr.top + Math.random() * mr.height },
+      { x: mr.left + Math.random() * mr.width, y: mr.top - 60 },
+      { x: mr.left + Math.random() * mr.width, y: mr.bottom + 60 }
+    ];
+    return sides2[Math.floor(Math.random() * 4)];
+  };
+  const zigzag = (fx, fy, tx, ty, n2 = 5) => {
+    const out = [];
+    for (let i2 = 1; i2 <= n2; i2++) {
+      const t2 = i2 / n2;
+      const bx = fx + (tx - fx) * t2;
+      const by = fy + (ty - fy) * t2;
+      out.push({
+        x: bx + (i2 % 2 === 0 ? 1 : -1) * (15 + Math.random() * 25),
+        y: by + (i2 % 3 === 0 ? 1 : -1) * (10 + Math.random() * 20),
+        d: 0.08 + Math.random() * 0.07
+      });
+    }
+    out.push({ x: tx, y: ty, d: 0.05 });
+    return out;
+  };
+  const gsapFly = (tx, ty, zigs, cb) => {
+    if (!beeRef.current) return;
+    gsapWithCSS.killTweensOf(beeRef.current);
+    const x3 = gsapWithCSS.getProperty(beeRef.current, "x");
+    const y2 = gsapWithCSS.getProperty(beeRef.current, "y");
+    const frames = zigzag(x3, y2, tx, ty, zigs);
+    const tl = gsapWithCSS.timeline({ onComplete: cb });
+    for (const f2 of frames) {
+      tl.to(beeRef.current, {
+        x: f2.x,
+        y: f2.y,
+        rotation: `+=${(Math.random() - 0.5) * 30}`,
+        duration: f2.d,
+        ease: "power1.out"
+      });
+    }
+  };
+  const startPerch = () => {
+    if (!beeRef.current) return;
+    statusRef.current = "perched";
+    gsapWithCSS.set(beeRef.current, { rotation: 0 });
+  };
+  const doFlee = () => {
+    statusRef.current = "fleeing";
+    const ep = getEscape();
+    gsapFly(ep.x, ep.y, 4, () => {
+      if (returnTimer.current) clearTimeout(returnTimer.current);
+      returnTimer.current = setTimeout(() => {
+        if (statusRef.current === "fleeing") doReturn();
+      }, 1500);
+    });
+  };
+  const doReturn = () => {
+    const pp = getPerch();
+    if (!pp) return;
+    statusRef.current = "returning";
+    gsapFly(pp.x, pp.y, 5, startPerch);
+  };
+  const doEnter = () => {
+    if (!beeRef.current) return;
+    const pp = getPerch();
+    if (!pp) return;
+    statusRef.current = "entering";
+    const cp = getCorner();
+    gsapWithCSS.set(beeRef.current, { x: cp.x, y: cp.y, rotation: 0, opacity: 1 });
+    gsapFly(pp.x, pp.y, 6, startPerch);
+  };
+  const fleeRef = reactExports.useRef(doFlee);
+  fleeRef.current = doFlee;
+  const enterRef = reactExports.useRef(doEnter);
+  enterRef.current = doEnter;
+  reactExports.useEffect(() => {
+    const t2 = setTimeout(() => enterRef.current(), 100);
+    return () => clearTimeout(t2);
+  }, []);
+  reactExports.useEffect(() => {
+    const el = modalRef.current;
+    if (!el) return;
+    const onMove = (e2) => {
+      mouseRef.current = { x: e2.clientX, y: e2.clientY };
+    };
+    el.addEventListener("pointermove", onMove);
+    return () => el.removeEventListener("pointermove", onMove);
+  }, [modalRef]);
+  reactExports.useEffect(() => {
+    let raf;
+    const loop = () => {
+      if (statusRef.current === "perched" || statusRef.current === "entering") {
+        if (!beeRef.current) {
+          raf = requestAnimationFrame(loop);
+          return;
+        }
+        const br = beeRef.current.getBoundingClientRect();
+        const bx = br.left + br.width / 2;
+        const by = br.top + br.height / 2;
+        if (Math.sqrt(
+          (mouseRef.current.x - bx) ** 2 + (mouseRef.current.y - by) ** 2
+        ) < 120) {
+          fleeRef.current();
+        }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        pointerEvents: "none",
+        zIndex: 9999,
+        inset: 0
+      },
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "img",
+        {
+          ref: beeRef,
+          src: "/assets/generated/pixel-bee.svg",
+          alt: "",
+          style: {
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "28px",
+            height: "auto",
+            imageRendering: "pixelated",
+            opacity: 0
+          }
+        }
+      )
+    }
+  );
+}
+function PixelTransition({
+  firstContent,
+  secondContent,
+  pixelSize = 6,
+  pixelColor = "var(--foreground)",
+  animationStepDuration = 0.3
+}) {
+  const containerRef = reactExports.useRef(null);
+  const pixelGridRef = reactExports.useRef(null);
+  const activeRef = reactExports.useRef(null);
+  const delayedCallRef = reactExports.useRef(null);
+  const [isActive, setIsActive] = reactExports.useState(false);
+  const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+  reactExports.useEffect(() => {
+    const pixelGridEl = pixelGridRef.current;
+    const containerEl = containerRef.current;
+    if (!pixelGridEl || !containerEl) return;
+    pixelGridEl.innerHTML = "";
+    const w3 = containerEl.offsetWidth;
+    const h2 = containerEl.offsetHeight;
+    if (w3 === 0 || h2 === 0) return;
+    const cols = Math.ceil(w3 / pixelSize);
+    const rows = Math.ceil(h2 / pixelSize);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const pixel = document.createElement("div");
+        pixel.style.cssText = `display:none;position:absolute;background-color:${pixelColor};`;
+        pixel.style.width = `${100 / cols}%`;
+        pixel.style.height = `${100 / rows}%`;
+        pixel.style.left = `${col * 100 / cols}%`;
+        pixel.style.top = `${row * 100 / rows}%`;
+        pixelGridEl.appendChild(pixel);
+      }
+    }
+  }, [pixelSize, pixelColor]);
+  const animatePixels = (activate) => {
+    var _a3;
+    setIsActive(activate);
+    const pixelGridEl = pixelGridRef.current;
+    const activeEl = activeRef.current;
+    if (!pixelGridEl || !activeEl) return;
+    const pixels = Array.from(pixelGridEl.querySelectorAll("div"));
+    if (!pixels.length) return;
+    gsapWithCSS.killTweensOf(pixels);
+    (_a3 = delayedCallRef.current) == null ? void 0 : _a3.kill();
+    gsapWithCSS.set(pixels, { display: "none" });
+    const totalPixels = pixels.length;
+    const staggerDuration = animationStepDuration / totalPixels;
+    gsapWithCSS.to(pixels, {
+      display: "block",
+      duration: 0,
+      stagger: { each: staggerDuration, from: "random" }
+    });
+    delayedCallRef.current = gsapWithCSS.delayedCall(animationStepDuration, () => {
+      activeEl.style.display = activate ? "flex" : "none";
+    });
+    gsapWithCSS.to(pixels, {
+      display: "none",
+      duration: 0,
+      delay: animationStepDuration,
+      stagger: { each: staggerDuration, from: "random" }
+    });
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "button",
+    {
+      ref: containerRef,
+      type: "button",
+      className: "pixel-transition",
+      style: {
+        position: "relative",
+        display: "inline-block",
+        background: "none",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+        textAlign: "left"
+      },
+      onMouseEnter: isTouchDevice ? void 0 : () => {
+        if (!isActive) animatePixels(true);
+      },
+      onMouseLeave: isTouchDevice ? void 0 : () => {
+        if (isActive) animatePixels(false);
+      },
+      onClick: () => {
+        if (!isTouchDevice) return;
+        animatePixels(!isActive);
+      },
+      "aria-label": "Toggle title",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "pixel-transition__default",
+            style: { opacity: isActive ? 0 : 1 },
+            children: firstContent
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            ref: activeRef,
+            className: "pixel-transition__active",
+            style: {
+              display: "none",
+              position: "absolute",
+              inset: 0,
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: secondContent
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            ref: pixelGridRef,
+            className: "pixel-transition__pixels",
+            style: {
+              pointerEvents: "none",
+              position: "absolute",
+              inset: 0
+            }
+          }
+        )
+      ]
+    }
+  );
+}
+const TextType = ({
+  text: text2,
+  as: Component2 = "div",
+  typingSpeed = 50,
+  initialDelay = 0,
+  pauseDuration = 2e3,
+  deletingSpeed = 30,
+  loop = true,
+  className = "",
+  showCursor = true,
+  hideCursorWhileTyping = false,
+  cursorCharacter = "|",
+  cursorClassName = "",
+  cursorBlinkDuration = 0.5,
+  textColors = [],
+  variableSpeed,
+  onSentenceComplete,
+  startOnVisible = false,
+  reverseMode = false,
+  ...props
+}) => {
+  const [displayedText, setDisplayedText] = reactExports.useState("");
+  const [currentCharIndex, setCurrentCharIndex] = reactExports.useState(0);
+  const [isDeleting, setIsDeleting] = reactExports.useState(false);
+  const [currentTextIndex, setCurrentTextIndex] = reactExports.useState(0);
+  const [isVisible, setIsVisible] = reactExports.useState(!startOnVisible);
+  const cursorRef = reactExports.useRef(null);
+  const containerRef = reactExports.useRef(null);
+  const textArray = reactExports.useMemo(
+    () => Array.isArray(text2) ? text2 : [text2],
+    [text2]
+  );
+  const getRandomSpeed = reactExports.useCallback(() => {
+    if (!variableSpeed) return typingSpeed;
+    const { min: min2, max: max2 } = variableSpeed;
+    return Math.random() * (max2 - min2) + min2;
+  }, [variableSpeed, typingSpeed]);
+  const getCurrentTextColor = () => {
+    if (textColors.length === 0) return "inherit";
+    return textColors[currentTextIndex % textColors.length];
+  };
+  reactExports.useEffect(() => {
+    if (!startOnVisible || !containerRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [startOnVisible]);
+  reactExports.useEffect(() => {
+    if (showCursor && cursorRef.current) {
+      gsapWithCSS.set(cursorRef.current, { opacity: 1 });
+      gsapWithCSS.to(cursorRef.current, {
+        opacity: 0,
+        duration: cursorBlinkDuration,
+        repeat: -1,
+        yoyo: true,
+        ease: "power2.inOut"
+      });
+    }
+  }, [showCursor, cursorBlinkDuration]);
+  reactExports.useEffect(() => {
+    if (!isVisible) return;
+    let timeout2;
+    const currentText = textArray[currentTextIndex];
+    const processedText = reverseMode ? currentText.split("").reverse().join("") : currentText;
+    const executeTypingAnimation = () => {
+      if (isDeleting) {
+        if (displayedText === "") {
+          setIsDeleting(false);
+          if (currentTextIndex === textArray.length - 1 && !loop) {
+            return;
+          }
+          if (onSentenceComplete) {
+            onSentenceComplete(textArray[currentTextIndex], currentTextIndex);
+          }
+          setCurrentTextIndex((prev) => (prev + 1) % textArray.length);
+          setCurrentCharIndex(0);
+          timeout2 = setTimeout(() => {
+          }, pauseDuration);
+        } else {
+          timeout2 = setTimeout(() => {
+            setDisplayedText((prev) => prev.slice(0, -1));
+          }, deletingSpeed);
+        }
+      } else {
+        if (currentCharIndex < processedText.length) {
+          timeout2 = setTimeout(
+            () => {
+              setDisplayedText(
+                (prev) => prev + processedText[currentCharIndex]
+              );
+              setCurrentCharIndex((prev) => prev + 1);
+            },
+            variableSpeed ? getRandomSpeed() : typingSpeed
+          );
+        } else if (textArray.length >= 1) {
+          if (!loop && currentTextIndex === textArray.length - 1) {
+            onSentenceComplete == null ? void 0 : onSentenceComplete(textArray[currentTextIndex], currentTextIndex);
+            return;
+          }
+          timeout2 = setTimeout(() => {
+            setIsDeleting(true);
+          }, pauseDuration);
+        }
+      }
+    };
+    if (currentCharIndex === 0 && !isDeleting && displayedText === "") {
+      timeout2 = setTimeout(executeTypingAnimation, initialDelay);
+    } else {
+      executeTypingAnimation();
+    }
+    return () => clearTimeout(timeout2);
+  }, [
+    currentCharIndex,
+    displayedText,
+    isDeleting,
+    typingSpeed,
+    deletingSpeed,
+    pauseDuration,
+    textArray,
+    currentTextIndex,
+    loop,
+    initialDelay,
+    isVisible,
+    reverseMode,
+    variableSpeed,
+    onSentenceComplete,
+    getRandomSpeed
+  ]);
+  const shouldHideCursor = hideCursorWhileTyping && (currentCharIndex < textArray[currentTextIndex].length || isDeleting);
+  return reactExports.createElement(
+    Component2,
+    {
+      ref: containerRef,
+      className: `inline-block whitespace-pre-wrap tracking-tight ${className}`,
+      ...props
+    },
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "span",
+      {
+        className: "inline",
+        style: { color: getCurrentTextColor() || "inherit" },
+        children: displayedText
+      }
+    ),
+    showCursor && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "span",
+      {
+        ref: cursorRef,
+        className: `ml-1 inline-block opacity-100 ${shouldHideCursor ? "hidden" : ""} ${cursorClassName}`,
+        children: cursorCharacter
+      }
+    )
+  );
+};
 const TARGET_WORDS = [
   "ABOUT",
   "THEIR",
@@ -91715,10 +96487,6 @@ const CONTENT = {
   choice2cPath: ["..."],
   outro: ["game not over"]
 };
-const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-function randomChar() {
-  return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-}
 function getCurrentMessage(phase) {
   switch (phase.type) {
     case "intro":
@@ -91803,7 +96571,7 @@ function SettingsScreen({
       "div",
       {
         className: "text-foreground tracking-widest",
-        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" },
+        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1em" },
         children: heading2 ?? "Settings"
       }
     ),
@@ -91817,7 +96585,7 @@ function SettingsScreen({
           className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
           style: {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.6rem",
+            fontSize: "0.6em",
             letterSpacing: "0.15em",
             background: "none",
             border: "none",
@@ -91870,7 +96638,7 @@ function LeaderboardScreen({
       "div",
       {
         className: "text-foreground tracking-widest",
-        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1rem" },
+        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "1em" },
         children: heading2 ?? "Leaderboard"
       }
     ),
@@ -91885,7 +96653,7 @@ function LeaderboardScreen({
             className: "text-muted-foreground",
             style: {
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.55rem",
+              fontSize: "0.55em",
               letterSpacing: "0.1em"
             },
             children: "No scores yet"
@@ -91897,7 +96665,7 @@ function LeaderboardScreen({
             className: "text-foreground",
             style: {
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6rem",
+              fontSize: "0.6em",
               letterSpacing: "0.1em",
               display: "flex",
               gap: "1rem"
@@ -91923,7 +96691,7 @@ function LeaderboardScreen({
         className: "text-foreground transition-colors hover:text-muted-foreground",
         style: {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.6rem",
+          fontSize: "0.6em",
           letterSpacing: "0.15em",
           background: "none",
           border: "none",
@@ -91945,8 +96713,10 @@ function StartScreen({
   onExit,
   showScoreConfirmation,
   setShowScoreConfirmation,
-  setSecretCode
+  setSecretCode,
+  modalRef
 }) {
+  const yRef = reactExports.useRef(null);
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
   const [puzzleSelectedIdx, setPuzzleSelectedIdx] = reactExports.useState(0);
@@ -91997,156 +96767,168 @@ function StartScreen({
     onHiScores,
     onExit
   ]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", children: [
-    subMenu === "main" ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: [
+    subMenu === "main" && /* @__PURE__ */ jsxRuntimeExports.jsx(FlyingBee, { modalRef, yRef }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", "data-zone": "content", children: [
+      subMenu === "main" ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        PixelTransition,
+        {
+          firstContent: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "text-foreground tracking-widest",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "2em",
+                lineHeight: 1,
+                letterSpacing: "0.05em",
+                display: "flex",
+                alignItems: "center"
+              },
+              "aria-label": "HYVMIND",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "H" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    ref: yRef,
+                    style: {
+                      fontSize: "1.25em",
+                      verticalAlign: "middle",
+                      lineHeight: 1
+                    },
+                    children: "Y"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "V" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "M" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "I" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "N" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "D" })
+              ]
+            }
+          ),
+          secondContent: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "text-muted-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65em",
+                letterSpacing: "0.05em",
+                textAlign: "center",
+                lineHeight: 1.6
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { whiteSpace: "nowrap" }, children: "a digital sanctuary" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { whiteSpace: "nowrap" }, children: "for legal researchers" })
+              ]
+            }
+          ),
+          pixelColor: "var(--foreground)",
+          pixelSize: 6,
+          animationStepDuration: 0.3
+        }
+      ) }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx(
         "div",
         {
           className: "text-foreground tracking-widest",
           style: {
             fontFamily: '"Press Start 2P", monospace',
-            display: "flex",
-            alignItems: "center"
+            fontSize: "1em",
+            letterSpacing: "0.15em"
           },
-          "aria-label": "HYVMIND",
-          children: "HYVMIND".split("").map(
-            (letter) => letter === "Y" ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                style: {
-                  fontSize: "2.5rem",
-                  verticalAlign: "middle",
-                  lineHeight: 1
-                },
-                children: letter
-              },
-              letter
-            ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                style: {
-                  fontSize: "2rem",
-                  verticalAlign: "middle",
-                  lineHeight: 1
-                },
-                children: letter
-              },
-              letter
-            )
-          )
+          children: "Puzzles"
         }
-      ) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
+        const isSelected = activeIdx === selectedIdx;
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "data-ocid": `text_game.start_screen.${item.toLowerCase().replace("-", "_")}`,
+            className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.65em",
+              letterSpacing: "0.2em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0"
+            },
+            onClick: () => {
+              setSelectedIdx(activeIdx);
+              if (item === "Story") onStart();
+              else if (item === "Puzzles") {
+                setSubMenu("puzzles");
+                setPuzzleSelectedIdx(0);
+              } else if (item === "Settings") onSettings();
+              else if (item === "Leaderboard") onHiScores();
+              else if (item === "Exit") onExit();
+            },
+            children: isSelected ? `> ${item}` : `  ${item}`
+          },
+          item
+        );
+      }) : PUZZLE_MENU_ITEMS.map((item, activeIdx) => {
+        const isSelected = activeIdx === puzzleSelectedIdx;
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "data-ocid": `text_game.start_screen.puzzle_${item.toLowerCase()}`,
+            className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.65em",
+              letterSpacing: "0.2em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0"
+            },
+            onClick: () => {
+              setPuzzleSelectedIdx(activeIdx);
+              if (item === "Chess") onChess();
+              else if (item === "Wordle") onWordle();
+              else if (item === "Back") setSubMenu("main");
+            },
+            children: isSelected ? `> ${item}` : `  ${item}`
+          },
+          item
+        );
+      }) }),
+      showScoreConfirmation && /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "div",
         {
-          className: "text-muted-foreground text-center mt-3",
+          className: "text-foreground text-center mt-4",
           style: {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.5rem",
-            letterSpacing: "0.05em"
+            fontSize: "0.5em",
+            letterSpacing: "0.1em"
           },
-          children: "a digital sanctuary for legal researchers"
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-2", children: "SCORE SAVED!" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-yellow-500 mb-2", children: "BUZZ CODE GENERATED" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "mt-3 text-muted-foreground hover:text-foreground text-xs",
+                onClick: () => {
+                  setShowScoreConfirmation == null ? void 0 : setShowScoreConfirmation(false);
+                  setSecretCode == null ? void 0 : setSecretCode(null);
+                },
+                children: "[DISMISS]"
+              }
+            )
+          ]
         }
       )
-    ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-foreground tracking-widest",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "1rem",
-          letterSpacing: "0.15em"
-        },
-        children: "Puzzles"
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
-      const isSelected = activeIdx === selectedIdx;
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          "data-ocid": `text_game.start_screen.${item.toLowerCase().replace("-", "_")}`,
-          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
-          style: {
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.65rem",
-            letterSpacing: "0.2em",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0"
-          },
-          onClick: () => {
-            setSelectedIdx(activeIdx);
-            if (item === "Story") onStart();
-            else if (item === "Puzzles") {
-              setSubMenu("puzzles");
-              setPuzzleSelectedIdx(0);
-            } else if (item === "Settings") onSettings();
-            else if (item === "Leaderboard") onHiScores();
-            else if (item === "Exit") onExit();
-          },
-          children: isSelected ? `> ${item}` : `  ${item}`
-        },
-        item
-      );
-    }) : PUZZLE_MENU_ITEMS.map((item, activeIdx) => {
-      const isSelected = activeIdx === puzzleSelectedIdx;
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          "data-ocid": `text_game.start_screen.puzzle_${item.toLowerCase()}`,
-          className: `transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`,
-          style: {
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.65rem",
-            letterSpacing: "0.2em",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0"
-          },
-          onClick: () => {
-            setPuzzleSelectedIdx(activeIdx);
-            if (item === "Chess") onChess();
-            else if (item === "Wordle") onWordle();
-            else if (item === "Back") setSubMenu("main");
-          },
-          children: isSelected ? `> ${item}` : `  ${item}`
-        },
-        item
-      );
-    }) }),
-    showScoreConfirmation && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "text-foreground text-center mt-4",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.5rem",
-          letterSpacing: "0.1em"
-        },
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-2", children: "SCORE SAVED!" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-yellow-500 mb-2", children: "BUZZ CODE GENERATED" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              className: "mt-3 text-muted-foreground hover:text-foreground text-xs",
-              onClick: () => {
-                setShowScoreConfirmation == null ? void 0 : setShowScoreConfirmation(false);
-                setSecretCode == null ? void 0 : setSecretCode(null);
-              },
-              children: "[DISMISS]"
-            }
-          )
-        ]
-      }
-    )
-  ] }) });
+    ] })
+  ] });
 }
 function ChoiceMenu({
   options,
@@ -92182,7 +96964,7 @@ function ChoiceMenu({
             className: `text-left transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`,
             style: {
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6rem",
+              fontSize: "0.6em",
               letterSpacing: "0.05em",
               lineHeight: "2",
               background: "none",
@@ -92202,149 +96984,59 @@ function ChoiceMenu({
     }
   ) });
 }
-function ScrambleDisplay({
+function TypewriterDisplay({
   target,
-  tickMs = 50,
-  revealDurationMs = 1e3,
   onComplete,
   scrambleDone,
   onAdvance
 }) {
-  const [display, setDisplay] = reactExports.useState(
-    () => Array.from({ length: target.length }, () => randomChar())
-  );
-  const lockedRef = reactExports.useRef(new Array(target.length).fill(false));
-  const onCompleteRef = reactExports.useRef(onComplete);
-  onCompleteRef.current = onComplete;
-  const [cursorVisible, setCursorVisible] = reactExports.useState(false);
-  const cursorIntervalRef = reactExports.useRef(null);
-  reactExports.useEffect(() => {
-    if (scrambleDone) {
-      setCursorVisible(true);
-      cursorIntervalRef.current = setInterval(() => {
-        setCursorVisible((v2) => !v2);
-      }, 500);
-    } else {
-      setCursorVisible(false);
-      if (cursorIntervalRef.current) {
-        clearInterval(cursorIntervalRef.current);
-        cursorIntervalRef.current = null;
-      }
-    }
-    return () => {
-      if (cursorIntervalRef.current) {
-        clearInterval(cursorIntervalRef.current);
-        cursorIntervalRef.current = null;
-      }
-    };
-  }, [scrambleDone]);
-  reactExports.useEffect(() => {
-    lockedRef.current = new Array(target.length).fill(false);
-    setDisplay(Array.from({ length: target.length }, () => randomChar()));
-  }, [target]);
-  reactExports.useEffect(() => {
-    let lastTick = performance.now();
-    let raf;
-    function loop(now2) {
-      const delta = now2 - lastTick;
-      if (delta >= tickMs) {
-        lastTick = now2;
-        setDisplay((prev) => {
-          const next = [...prev];
-          for (let i2 = 0; i2 < target.length; i2++) {
-            if (!lockedRef.current[i2]) next[i2] = randomChar();
-          }
-          return next;
-        });
-      }
-      raf = requestAnimationFrame(loop);
-    }
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [target, tickMs]);
-  reactExports.useEffect(() => {
-    if (target.length === 0) {
-      onCompleteRef.current();
-      return;
-    }
-    const msPerChar = revealDurationMs / target.length;
-    const timers = [];
-    for (let i2 = 0; i2 < target.length; i2++) {
-      timers.push(
-        setTimeout(() => {
-          lockedRef.current[i2] = true;
-          setDisplay((prev) => {
-            const next = [...prev];
-            next[i2] = target[i2];
-            return next;
-          });
-          if (i2 === target.length - 1) {
-            onCompleteRef.current();
-          }
-        }, i2 * msPerChar)
-      );
-    }
-    return () => {
-      for (const t2 of timers) clearTimeout(t2);
-    };
-  }, [target, revealDurationMs]);
-  const handleAdvance = reactExports.useCallback(() => {
-    if (!scrambleDone) return;
-    if (cursorIntervalRef.current) {
-      clearInterval(cursorIntervalRef.current);
-      cursorIntervalRef.current = null;
-    }
-    setCursorVisible(false);
-    onAdvance == null ? void 0 : onAdvance();
-  }, [scrambleDone, onAdvance]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",
     {
       className: "flex-1 flex flex-col items-center justify-center gap-6 px-8 select-none cursor-pointer",
-      onClick: scrambleDone ? handleAdvance : void 0,
+      onClick: scrambleDone ? onAdvance : void 0,
       onKeyDown: scrambleDone ? (e2) => {
-        if (e2.key !== "Tab") handleAdvance();
+        if (e2.key !== "Tab") onAdvance == null ? void 0 : onAdvance();
       } : void 0,
       role: "button",
       tabIndex: 0,
       "aria-label": "Advance message",
       "data-ocid": "text_game.message_display",
-      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         "p",
         {
           className: "text-foreground text-center leading-relaxed",
           style: {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.7rem",
+            fontSize: "0.7em",
             letterSpacing: "0.05em",
             lineHeight: "2",
             maxWidth: "80%",
             fontWeight: "400"
           },
-          children: [
-            display.join(""),
-            scrambleDone && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                "aria-hidden": "true",
-                style: {
-                  fontFamily: '"Press Start 2P", monospace',
-                  opacity: cursorVisible ? 1 : 0,
-                  marginLeft: "2px"
-                },
-                children: "█"
-              }
-            )
-          ]
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            TextType,
+            {
+              text: target,
+              typingSpeed: 25,
+              showCursor: true,
+              hideCursorWhileTyping: true,
+              cursorCharacter: "█",
+              cursorBlinkDuration: 0.4,
+              loop: false,
+              onSentenceComplete: onComplete
+            }
+          )
         }
       )
     }
   );
 }
 function TextGameModal({ onComplete }) {
+  const modalRef = reactExports.useRef(null);
   const onCompleteRef = reactExports.useRef(onComplete);
   onCompleteRef.current = onComplete;
-  const { resolvedTheme } = z$2();
+  const { resolvedTheme } = z$3();
   const isLight2 = resolvedTheme === "light";
   const [secretCode, setSecretCode] = reactExports.useState(null);
   const [copiedCode, setCopiedCode] = reactExports.useState(false);
@@ -92362,6 +97054,12 @@ function TextGameModal({ onComplete }) {
     game2: 0,
     game3: 0
   });
+  const [gameLoaded, setGameLoaded] = reactExports.useState({});
+  reactExports.useEffect(() => {
+    if (phase.type === "game1" || phase.type === "game2" || phase.type === "game3") {
+      setGameLoaded({ [phase.type]: false });
+    }
+  }, [phase.type]);
   const [overrideAudio] = reactExports.useState(() => {
     const audio = new Audio("/assets/island-puzzle-mystery.ogg");
     audio.loop = true;
@@ -92669,6 +97367,7 @@ function TextGameModal({ onComplete }) {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           StartScreen,
           {
+            modalRef,
             onStart: handleStart,
             onChess: handleStartChess,
             onWordle: handleStartWordle,
@@ -92707,7 +97406,7 @@ function TextGameModal({ onComplete }) {
               className: "text-foreground",
               style: {
                 fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.65rem",
+                fontSize: "0.65em",
                 letterSpacing: "0.1em"
               },
               children: "Generating secret..."
@@ -92718,7 +97417,7 @@ function TextGameModal({ onComplete }) {
             {
               className: "text-foreground",
               style: {
-                fontSize: "0.55rem",
+                fontSize: "0.55em",
                 animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
               },
               children: "█"
@@ -92740,11 +97439,9 @@ function TextGameModal({ onComplete }) {
       case "choice1cSubPath":
       case "choice2c": {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
-          ScrambleDisplay,
+          TypewriterDisplay,
           {
             target: getCurrentMessage(phase),
-            revealDurationMs: 1e3,
-            tickMs: 50,
             onComplete: () => setScrambleComplete(true),
             scrambleDone: scrambleComplete,
             onAdvance: handleAdvance
@@ -92754,11 +97451,9 @@ function TextGameModal({ onComplete }) {
       }
       case "outro": {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
-          ScrambleDisplay,
+          TypewriterDisplay,
           {
             target: CONTENT.outro[0],
-            revealDurationMs: 1e3,
-            tickMs: 50,
             onComplete: () => onCompleteRef.current(),
             scrambleDone: scrambleComplete,
             onAdvance: void 0
@@ -92807,54 +97502,99 @@ function TextGameModal({ onComplete }) {
           }
         );
       case "game1":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "div",
           {
             className: `flex-1 flex items-center justify-center bg-background ${isLight2 ? "p-2" : "p-0"}`,
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/rebirth.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Rebirth",
-                "data-ocid": "text_game.game1_iframe"
-              }
-            )
+            children: [
+              !gameLoaded.game1 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: "text-foreground",
+                  style: {
+                    fontSize: "0.55em",
+                    animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                  },
+                  children: "█"
+                },
+                i2
+              )) }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "iframe",
+                {
+                  src: `/assets/rebirth.html${bgmParam}`,
+                  allow: "autoplay",
+                  className: "w-full h-full border-0",
+                  title: "Rebirth",
+                  "data-ocid": "text_game.game1_iframe",
+                  onLoad: () => setGameLoaded((prev) => ({ ...prev, game1: true }))
+                }
+              )
+            ]
           }
         ) });
       case "game2":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "div",
           {
             className: `flex-1 flex items-center justify-center bg-background ${isLight2 ? "p-2" : "p-0"}`,
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/squarebar.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Square Bar",
-                "data-ocid": "text_game.game2_iframe"
-              }
-            )
+            children: [
+              !gameLoaded.game2 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: "text-foreground",
+                  style: {
+                    fontSize: "0.55em",
+                    animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                  },
+                  children: "█"
+                },
+                i2
+              )) }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "iframe",
+                {
+                  src: `/assets/squarebar.html${bgmParam}`,
+                  allow: "autoplay",
+                  className: "w-full h-full border-0",
+                  title: "Square Bar",
+                  "data-ocid": "text_game.game2_iframe",
+                  onLoad: () => setGameLoaded((prev) => ({ ...prev, game2: true }))
+                }
+              )
+            ]
           }
         ) });
       case "game3":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "div",
           {
             className: `flex-1 flex items-center justify-center bg-background ${isLight2 ? "p-2" : "p-0"}`,
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/slalom.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Slalom",
-                "data-ocid": "text_game.game3_iframe"
-              }
-            )
+            children: [
+              !gameLoaded.game3 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: "text-foreground",
+                  style: {
+                    fontSize: "0.55em",
+                    animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                  },
+                  children: "█"
+                },
+                i2
+              )) }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "iframe",
+                {
+                  src: `/assets/slalom.html${bgmParam}`,
+                  allow: "autoplay",
+                  className: "w-full h-full border-0",
+                  title: "Slalom",
+                  "data-ocid": "text_game.game3_iframe",
+                  onLoad: () => setGameLoaded((prev) => ({ ...prev, game3: true }))
+                }
+              )
+            ]
           }
         ) });
       case "chess":
@@ -92884,8 +97624,9 @@ function TextGameModal({ onComplete }) {
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
+        ref: modalRef,
         className: "fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background",
-        style: { inset: "5%", fontSize: "100%" },
+        style: { inset: 0, fontSize: "80%" },
         "data-ocid": "text_game.modal",
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0", children: [
@@ -92894,7 +97635,7 @@ function TextGameModal({ onComplete }) {
               {
                 className: "text-foreground/50",
                 style: {
-                  fontSize: "0.5rem",
+                  fontSize: "0.5em",
                   letterSpacing: "0.3em",
                   fontFamily: '"Press Start 2P", monospace'
                 },
@@ -92909,7 +97650,7 @@ function TextGameModal({ onComplete }) {
                 className: "text-muted-foreground hover:text-foreground px-2 py-1 transition-colors",
                 style: {
                   fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.5rem",
+                  fontSize: "0.5em",
                   letterSpacing: "0.3em"
                 },
                 onClick: () => {
@@ -92978,7 +97719,7 @@ function TextGameModal({ onComplete }) {
                     className: "text-muted-foreground",
                     style: {
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.35rem",
+                      fontSize: "0.35em",
                       letterSpacing: "0.1em"
                     },
                     children: "SAVE THIS CODE! VALID FOR 24 HOURS. REDEEM IN SETTINGS → WALLET."
@@ -94046,13 +98787,6 @@ function DeleteConfirmDialog({
     )
   ] });
 }
-const nodeTypeColors = {
-  curation: "text-blue-400",
-  swarm: "text-orange-400",
-  location: "text-green-400",
-  lawEntity: "text-red-400",
-  interpEntity: "text-purple-400"
-};
 function TreeNode({
   nodeId,
   nodes,
@@ -94078,7 +98812,6 @@ function TreeNode({
   const isFolder = node2.type === "folder";
   const isExpanded = expandedIds.has(nodeId);
   const isActive = node2.id === activeFileId;
-  const colorClass = nodeTypeColors[node2.nodeType] ?? "text-muted-foreground";
   const indent2 = depth * 12;
   const handleClick = () => {
     if (isFolder) {
@@ -94096,10 +98829,10 @@ function TreeNode({
         "aria-expanded": isFolder ? isExpanded : void 0,
         "data-ocid": `file_tree.item.${nodeId}`,
         className: [
-          "flex items-center gap-1 px-2 py-1 cursor-pointer select-none text-xs",
-          "hover:bg-accent hover:text-accent-foreground transition-colors duration-150",
+          "flex w-full items-center gap-0.5 px-2 py-1.5 text-left text-xs font-mono rounded",
+          "hover:bg-muted hover:text-foreground transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          isActive ? "bg-accent text-accent-foreground font-medium" : "text-foreground"
+          isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
         ].join(" "),
         style: { paddingLeft: `${indent2 + 8}px` },
         onClick: handleClick,
@@ -94111,8 +98844,8 @@ function TreeNode({
           onContextMenu(e2, nodeId);
         },
         children: [
-          isFolder ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3 h-3 flex-shrink-0 text-muted-foreground", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 12 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { size: 12 }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3 h-3 flex-shrink-0" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `flex-shrink-0 ${colorClass}`, children: isFolder ? isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(FolderOpen, { size: 13 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Folder, { size: 13 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(File, { size: 13 }) }),
+          isFolder ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-2.5 h-2.5 flex-shrink-0 text-muted-foreground", children: isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 10 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { size: 10 }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-2.5 h-2.5 flex-shrink-0" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "flex-shrink-0", children: isFolder ? isExpanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(FolderOpen, { size: 10 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Folder, { size: 10 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(File, { size: 10 }) }),
           (renameTarget == null ? void 0 : renameTarget.id) === nodeId ? /* @__PURE__ */ jsxRuntimeExports.jsx(
             "input",
             {
@@ -94137,7 +98870,7 @@ function TreeNode({
               },
               onClick: (e2) => e2.stopPropagation()
             }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", children: node2.name })
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", title: node2.name, children: node2.name })
         ]
       }
     ),
@@ -94201,7 +98934,7 @@ function FileTree({
     {
       role: "tree",
       "aria-label": "File tree",
-      className: "w-full overflow-y-auto text-sm",
+      className: "w-full overflow-y-auto",
       "data-ocid": "file_tree.panel",
       children: rootIds.map((rootId) => /* @__PURE__ */ jsxRuntimeExports.jsx(
         TreeNode,
@@ -94337,7 +99070,7 @@ function FrontmatterEditor({
               type: "button",
               "aria-label": "Add frontmatter field",
               "data-ocid": "frontmatter_editor.add_button",
-              className: "flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 hover:bg-accent rounded-sm",
+              className: "flex items-center gap-1 text-xs text-muted-foreground hover:text-accent-foreground transition-colors px-1.5 py-0.5 hover:bg-accent rounded-sm",
               onClick: handleAdd,
               children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(Plus, { size: 11 }),
@@ -94391,61 +99124,15 @@ function FrontmatterEditor({
                   type: "button",
                   "aria-label": `Remove ${key2}`,
                   "data-ocid": `frontmatter_editor.remove_button.${idx + 1}`,
-                  className: "flex-shrink-0 p-0.5 text-muted-foreground hover:text-destructive transition-colors rounded-sm hover:bg-accent",
+                  className: "flex-shrink-0 p-0.5 text-muted-foreground hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10",
                   onClick: () => handleRemove(key2),
-                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { size: 11 })
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { size: 11 })
                 }
               )
             ]
           },
           stableKeys.current[idx]
         )) })
-      ]
-    }
-  );
-}
-function GettingStarted({ onCreate, onImport }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "div",
-    {
-      className: "flex-1 flex flex-col items-center justify-center gap-6 bg-background p-8",
-      "data-ocid": "getting_started.panel",
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-16 h-16 rounded-full bg-muted flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx(FolderPlus, { className: "w-8 h-8 text-muted-foreground" }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center space-y-1 max-w-xs", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-base font-semibold text-foreground", children: "Create your first curation" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground leading-relaxed", children: "Start by creating a new curation folder or importing a ZIP file" })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row gap-3", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            Button,
-            {
-              type: "button",
-              variant: "default",
-              "data-ocid": "getting_started.create_button",
-              onClick: onCreate,
-              className: "flex items-center gap-2",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(FolderPlus, { size: 15 }),
-                "Create Curation"
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            Button,
-            {
-              type: "button",
-              variant: "outline",
-              "data-ocid": "getting_started.import_button",
-              onClick: onImport,
-              className: "flex items-center gap-2",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(Upload, { size: 15 }),
-                "Import ZIP"
-              ]
-            }
-          )
-        ] })
       ]
     }
   );
@@ -94494,7 +99181,7 @@ var TRIGGER_NAME = "ContextMenuTrigger";
 var ContextMenuTrigger$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeContextMenu, disabled = false, ...triggerProps } = props;
-    const context = useContextMenuContext(TRIGGER_NAME, __scopeContextMenu);
+    const context3 = useContextMenuContext(TRIGGER_NAME, __scopeContextMenu);
     const menuScope = useMenuScope(__scopeContextMenu);
     const pointRef = reactExports.useRef({ x: 0, y: 0 });
     const virtualRef = reactExports.useRef({
@@ -94507,7 +99194,7 @@ var ContextMenuTrigger$1 = reactExports.forwardRef(
     );
     const handleOpen = (event) => {
       pointRef.current = { x: event.clientX, y: event.clientY };
-      context.onOpenChange(true);
+      context3.onOpenChange(true);
     };
     reactExports.useEffect(() => clearLongPress, [clearLongPress]);
     reactExports.useEffect(() => void (disabled && clearLongPress()), [disabled, clearLongPress]);
@@ -94516,7 +99203,7 @@ var ContextMenuTrigger$1 = reactExports.forwardRef(
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         Primitive$1.span,
         {
-          "data-state": context.open ? "open" : "closed",
+          "data-state": context3.open ? "open" : "closed",
           "data-disabled": disabled ? "" : void 0,
           ...triggerProps,
           ref: forwardedRef,
@@ -94553,7 +99240,7 @@ var CONTENT_NAME = "ContextMenuContent";
 var ContextMenuContent$1 = reactExports.forwardRef(
   (props, forwardedRef) => {
     const { __scopeContextMenu, ...contentProps } = props;
-    const context = useContextMenuContext(CONTENT_NAME, __scopeContextMenu);
+    const context3 = useContextMenuContext(CONTENT_NAME, __scopeContextMenu);
     const menuScope = useMenuScope(__scopeContextMenu);
     const hasInteractedOutsideRef = reactExports.useRef(false);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -94576,7 +99263,7 @@ var ContextMenuContent$1 = reactExports.forwardRef(
         onInteractOutside: (event) => {
           var _a3;
           (_a3 = props.onInteractOutside) == null ? void 0 : _a3.call(props, event);
-          if (!event.defaultPrevented && !context.modal) hasInteractedOutsideRef.current = true;
+          if (!event.defaultPrevented && !context3.modal) hasInteractedOutsideRef.current = true;
         },
         style: {
           ...props.style,
@@ -94903,7 +99590,7 @@ function ReferenceDropdown({
           left: anchorRect.left,
           zIndex: 50
         },
-        children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-popover text-popover-foreground border rounded shadow-md z-50 min-w-[200px] max-w-[400px] max-h-[300px] overflow-y-auto", children: filtered.map((node2, index2) => {
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-popover text-popover-foreground border rounded shadow-md z-50 min-w-[200px] max-w-[600px] max-h-[300px] overflow-y-auto", children: filtered.map((node2, index2) => {
           const isHighlighted = index2 === highlightedIndex;
           return /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "div",
@@ -94924,7 +99611,7 @@ function ReferenceDropdown({
                   "span",
                   {
                     className: [
-                      "font-medium truncate",
+                      "font-medium",
                       isHighlighted ? "text-accent-foreground" : "text-foreground"
                     ].join(" "),
                     children: node2.name
@@ -94934,7 +99621,7 @@ function ReferenceDropdown({
                   "span",
                   {
                     className: [
-                      "text-[10px] ml-auto truncate pl-2",
+                      "text-xs ml-auto truncate pl-2",
                       isHighlighted ? "text-accent-foreground/70" : "text-muted-foreground"
                     ].join(" "),
                     children: [
@@ -99995,13 +104682,13 @@ function normalizeUri(value) {
   }
   return result.join("") + value.slice(start2);
 }
-function resolveAll(constructs2, events2, context) {
+function resolveAll(constructs2, events2, context3) {
   const called = [];
   let index2 = -1;
   while (++index2 < constructs2.length) {
     const resolve = constructs2[index2].resolveAll;
     if (resolve && !called.includes(resolve)) {
-      events2 = resolve(events2, context);
+      events2 = resolve(events2, context3);
       called.push(resolve);
     }
   }
@@ -100012,7 +104699,7 @@ const attention = {
   resolveAll: resolveAllAttention,
   tokenize: tokenizeAttention
 };
-function resolveAllAttention(events2, context) {
+function resolveAllAttention(events2, context3) {
   let index2 = -1;
   let open;
   let group;
@@ -100027,7 +104714,7 @@ function resolveAllAttention(events2, context) {
       open = index2;
       while (open--) {
         if (events2[open][0] === "exit" && events2[open][1].type === "attentionSequence" && events2[open][1]._open && // If the markers are the same:
-        context.sliceSerialize(events2[open][1]).charCodeAt(0) === context.sliceSerialize(events2[index2][1]).charCodeAt(0)) {
+        context3.sliceSerialize(events2[open][1]).charCodeAt(0) === context3.sliceSerialize(events2[index2][1]).charCodeAt(0)) {
           if ((events2[open][1]._close || events2[index2][1]._open) && (events2[index2][1].end.offset - events2[index2][1].start.offset) % 3 && !((events2[open][1].end.offset - events2[open][1].start.offset + events2[index2][1].end.offset - events2[index2][1].start.offset) % 3)) {
             continue;
           }
@@ -100080,14 +104767,14 @@ function resolveAllAttention(events2, context) {
           };
           nextEvents = [];
           if (events2[open][1].end.offset - events2[open][1].start.offset) {
-            nextEvents = push(nextEvents, [["enter", events2[open][1], context], ["exit", events2[open][1], context]]);
+            nextEvents = push(nextEvents, [["enter", events2[open][1], context3], ["exit", events2[open][1], context3]]);
           }
-          nextEvents = push(nextEvents, [["enter", group, context], ["enter", openingSequence, context], ["exit", openingSequence, context], ["enter", text2, context]]);
-          nextEvents = push(nextEvents, resolveAll(context.parser.constructs.insideSpan.null, events2.slice(open + 1, index2), context));
-          nextEvents = push(nextEvents, [["exit", text2, context], ["enter", closingSequence, context], ["exit", closingSequence, context], ["exit", group, context]]);
+          nextEvents = push(nextEvents, [["enter", group, context3], ["enter", openingSequence, context3], ["exit", openingSequence, context3], ["enter", text2, context3]]);
+          nextEvents = push(nextEvents, resolveAll(context3.parser.constructs.insideSpan.null, events2.slice(open + 1, index2), context3));
+          nextEvents = push(nextEvents, [["exit", text2, context3], ["enter", closingSequence, context3], ["exit", closingSequence, context3], ["exit", group, context3]]);
           if (events2[index2][1].end.offset - events2[index2][1].start.offset) {
             offset2 = 2;
-            nextEvents = push(nextEvents, [["enter", events2[index2][1], context], ["exit", events2[index2][1], context]]);
+            nextEvents = push(nextEvents, [["enter", events2[index2][1], context3], ["exit", events2[index2][1], context3]]);
           } else {
             offset2 = 0;
           }
@@ -101030,12 +105717,12 @@ function subtokenize(eventsArray) {
 }
 function subcontent(events2, eventIndex) {
   const token = events2.get(eventIndex)[1];
-  const context = events2.get(eventIndex)[2];
+  const context3 = events2.get(eventIndex)[2];
   let startPosition = eventIndex - 1;
   const startPositions = [];
   let tokenizer = token._tokenizer;
   if (!tokenizer) {
-    tokenizer = context.parser[token.contentType](token.start);
+    tokenizer = context3.parser[token.contentType](token.start);
     if (token._contentTypeTextTrailing) {
       tokenizer._contentTypeTextTrailing = true;
     }
@@ -101055,7 +105742,7 @@ function subcontent(events2, eventIndex) {
     }
     startPositions.push(startPosition);
     if (!current._tokenizer) {
-      stream = context.sliceStream(current);
+      stream = context3.sliceStream(current);
       if (!current.next) {
         stream.push(null);
       }
@@ -101511,7 +106198,7 @@ const headingAtx = {
   resolve: resolveHeadingAtx,
   tokenize: tokenizeHeadingAtx
 };
-function resolveHeadingAtx(events2, context) {
+function resolveHeadingAtx(events2, context3) {
   let contentEnd = events2.length - 2;
   let contentStart = 3;
   let content2;
@@ -101537,7 +106224,7 @@ function resolveHeadingAtx(events2, context) {
       end: events2[contentEnd][1].end,
       contentType: "text"
     };
-    splice(events2, contentStart, contentEnd - contentStart + 1, [["enter", content2, context], ["enter", text2, context], ["exit", text2, context], ["exit", content2, context]]);
+    splice(events2, contentStart, contentEnd - contentStart + 1, [["enter", content2, context3], ["enter", text2, context3], ["exit", text2, context3], ["exit", content2, context3]]);
   }
   return events2;
 }
@@ -102373,7 +107060,7 @@ function resolveAllLabelEnd(events2) {
   }
   return events2;
 }
-function resolveToLabelEnd(events2, context) {
+function resolveToLabelEnd(events2, context3) {
   let index2 = events2.length;
   let offset2 = 0;
   let token;
@@ -102428,13 +107115,13 @@ function resolveToLabelEnd(events2, context) {
       ...events2[close - 2][1].start
     }
   };
-  media = [["enter", group, context], ["enter", label, context]];
+  media = [["enter", group, context3], ["enter", label, context3]];
   media = push(media, events2.slice(open + 1, open + offset2 + 3));
-  media = push(media, [["enter", text2, context]]);
-  media = push(media, resolveAll(context.parser.constructs.insideSpan.null, events2.slice(open + offset2 + 4, close - 3), context));
-  media = push(media, [["exit", text2, context], events2[close - 2], events2[close - 1], ["exit", label, context]]);
+  media = push(media, [["enter", text2, context3]]);
+  media = push(media, resolveAll(context3.parser.constructs.insideSpan.null, events2.slice(open + offset2 + 4, close - 3), context3));
+  media = push(media, [["exit", text2, context3], events2[close - 2], events2[close - 1], ["exit", label, context3]]);
   media = push(media, events2.slice(close + 1));
-  media = push(media, [["exit", group, context]]);
+  media = push(media, [["exit", group, context3]]);
   splice(events2, open, events2.length, media);
   return events2;
 }
@@ -102797,7 +107484,7 @@ const setextUnderline = {
   resolveTo: resolveToSetextUnderline,
   tokenize: tokenizeSetextUnderline
 };
-function resolveToSetextUnderline(events2, context) {
+function resolveToSetextUnderline(events2, context3) {
   let index2 = events2.length;
   let content2;
   let text2;
@@ -102831,15 +107518,15 @@ function resolveToSetextUnderline(events2, context) {
   };
   events2[text2][1].type = "setextHeadingText";
   if (definition2) {
-    events2.splice(text2, 0, ["enter", heading2, context]);
-    events2.splice(definition2 + 1, 0, ["exit", events2[content2][1], context]);
+    events2.splice(text2, 0, ["enter", heading2, context3]);
+    events2.splice(definition2 + 1, 0, ["exit", events2[content2][1], context3]);
     events2[content2][1].end = {
       ...events2[definition2][1].end
     };
   } else {
     events2[content2][1] = heading2;
   }
-  events2.push(["exit", heading2, context]);
+  events2.push(["exit", heading2, context3]);
   return events2;
 }
 function tokenizeSetextUnderline(effects, ok2, nok) {
@@ -102945,7 +107632,7 @@ function tokenizePotentialGfmFootnoteCall(effects, ok2, nok) {
     return ok2(code2);
   }
 }
-function resolveToPotentialGfmFootnoteCall(events2, context) {
+function resolveToPotentialGfmFootnoteCall(events2, context3) {
   let index2 = events2.length;
   while (index2--) {
     if (events2[index2][1].type === "labelImage" && events2[index2][0] === "enter") {
@@ -102983,22 +107670,22 @@ function resolveToPotentialGfmFootnoteCall(events2, context) {
     // Take the `labelImageMarker` (now `data`, the `!`)
     events2[index2 + 1],
     events2[index2 + 2],
-    ["enter", call, context],
+    ["enter", call, context3],
     // The `[`
     events2[index2 + 3],
     events2[index2 + 4],
     // The `^`.
-    ["enter", marker, context],
-    ["exit", marker, context],
+    ["enter", marker, context3],
+    ["exit", marker, context3],
     // Everything in between.
-    ["enter", string2, context],
-    ["enter", chunk, context],
-    ["exit", chunk, context],
-    ["exit", string2, context],
+    ["enter", string2, context3],
+    ["enter", chunk, context3],
+    ["exit", chunk, context3],
+    ["exit", string2, context3],
     // The ending (`]`, properly parsed and labelled).
     events2[events2.length - 2],
     events2[events2.length - 1],
-    ["exit", call, context]
+    ["exit", call, context3]
   ];
   events2.splice(index2, events2.length - index2 + 1, ...replacement);
   return events2;
@@ -103176,7 +107863,7 @@ function gfmStrikethrough(options) {
       null: [126]
     }
   };
-  function resolveAllStrikethrough(events2, context) {
+  function resolveAllStrikethrough(events2, context3) {
     let index2 = -1;
     while (++index2 < events2.length) {
       if (events2[index2][0] === "enter" && events2[index2][1].type === "strikethroughSequenceTemporary" && events2[index2][1]._close) {
@@ -103196,12 +107883,12 @@ function gfmStrikethrough(options) {
               start: Object.assign({}, events2[open][1].end),
               end: Object.assign({}, events2[index2][1].start)
             };
-            const nextEvents = [["enter", strikethrough2, context], ["enter", events2[open][1], context], ["exit", events2[open][1], context], ["enter", text2, context]];
-            const insideSpan2 = context.parser.constructs.insideSpan.null;
+            const nextEvents = [["enter", strikethrough2, context3], ["enter", events2[open][1], context3], ["exit", events2[open][1], context3], ["enter", text2, context3]];
+            const insideSpan2 = context3.parser.constructs.insideSpan.null;
             if (insideSpan2) {
-              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events2.slice(open + 1, index2), context));
+              splice(nextEvents, nextEvents.length, 0, resolveAll(insideSpan2, events2.slice(open + 1, index2), context3));
             }
-            splice(nextEvents, nextEvents.length, 0, [["exit", text2, context], ["enter", events2[index2][1], context], ["exit", events2[index2][1], context], ["exit", strikethrough2, context]]);
+            splice(nextEvents, nextEvents.length, 0, [["exit", text2, context3], ["enter", events2[index2][1], context3], ["exit", events2[index2][1], context3], ["exit", strikethrough2, context3]]);
             splice(events2, open - 1, index2 - open + 3, nextEvents);
             index2 = open + nextEvents.length - 2;
             break;
@@ -103574,7 +108261,7 @@ function tokenizeTable(effects, ok2, nok) {
     return bodyRowData(code2);
   }
 }
-function resolveTable(events2, context) {
+function resolveTable(events2, context3) {
   let index2 = -1;
   let inFirstCellAwaitingPipe = true;
   let rowKind = 0;
@@ -103593,7 +108280,7 @@ function resolveTable(events2, context) {
       if (token.type === "tableHead") {
         afterHeadAwaitingFirstBodyRow = false;
         if (lastTableEnd !== 0) {
-          flushTableEnd(map2, context, lastTableEnd, currentTable, currentBody);
+          flushTableEnd(map2, context3, lastTableEnd, currentTable, currentBody);
           currentBody = void 0;
           lastTableEnd = 0;
         }
@@ -103603,7 +108290,7 @@ function resolveTable(events2, context) {
           // Note: correct end is set later.
           end: Object.assign({}, token.end)
         };
-        map2.add(index2, 0, [["enter", currentTable, context]]);
+        map2.add(index2, 0, [["enter", currentTable, context3]]);
       } else if (token.type === "tableRow" || token.type === "tableDelimiterRow") {
         inFirstCellAwaitingPipe = true;
         currentCell = void 0;
@@ -103617,7 +108304,7 @@ function resolveTable(events2, context) {
             // Note: correct end is set later.
             end: Object.assign({}, token.end)
           };
-          map2.add(index2, 0, [["enter", currentBody, context]]);
+          map2.add(index2, 0, [["enter", currentBody, context3]]);
         }
         rowKind = token.type === "tableDelimiterRow" ? 2 : currentBody ? 3 : 1;
       } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
@@ -103625,7 +108312,7 @@ function resolveTable(events2, context) {
         if (cell[2] === 0) {
           if (lastCell[1] !== 0) {
             cell[0] = cell[1];
-            currentCell = flushCell(map2, context, lastCell, rowKind, void 0, currentCell);
+            currentCell = flushCell(map2, context3, lastCell, rowKind, void 0, currentCell);
             lastCell = [0, 0, 0, 0];
           }
           cell[2] = index2;
@@ -103636,7 +108323,7 @@ function resolveTable(events2, context) {
         } else {
           if (lastCell[1] !== 0) {
             cell[0] = cell[1];
-            currentCell = flushCell(map2, context, lastCell, rowKind, void 0, currentCell);
+            currentCell = flushCell(map2, context3, lastCell, rowKind, void 0, currentCell);
           }
           lastCell = cell;
           cell = [lastCell[1], index2, 0, 0];
@@ -103649,9 +108336,9 @@ function resolveTable(events2, context) {
       lastTableEnd = index2;
       if (lastCell[1] !== 0) {
         cell[0] = cell[1];
-        currentCell = flushCell(map2, context, lastCell, rowKind, index2, currentCell);
+        currentCell = flushCell(map2, context3, lastCell, rowKind, index2, currentCell);
       } else if (cell[1] !== 0) {
-        currentCell = flushCell(map2, context, cell, rowKind, index2, currentCell);
+        currentCell = flushCell(map2, context3, cell, rowKind, index2, currentCell);
       }
       rowKind = 0;
     } else if (rowKind && (token.type === "data" || token.type === "tableDelimiterMarker" || token.type === "tableDelimiterFiller")) {
@@ -103659,45 +108346,45 @@ function resolveTable(events2, context) {
     }
   }
   if (lastTableEnd !== 0) {
-    flushTableEnd(map2, context, lastTableEnd, currentTable, currentBody);
+    flushTableEnd(map2, context3, lastTableEnd, currentTable, currentBody);
   }
-  map2.consume(context.events);
+  map2.consume(context3.events);
   index2 = -1;
-  while (++index2 < context.events.length) {
-    const event = context.events[index2];
+  while (++index2 < context3.events.length) {
+    const event = context3.events[index2];
     if (event[0] === "enter" && event[1].type === "table") {
-      event[1]._align = gfmTableAlign(context.events, index2);
+      event[1]._align = gfmTableAlign(context3.events, index2);
     }
   }
   return events2;
 }
-function flushCell(map2, context, range, rowKind, rowEnd, previousCell) {
+function flushCell(map2, context3, range, rowKind, rowEnd, previousCell) {
   const groupName = rowKind === 1 ? "tableHeader" : rowKind === 2 ? "tableDelimiter" : "tableData";
   const valueName = "tableContent";
   if (range[0] !== 0) {
-    previousCell.end = Object.assign({}, getPoint(context.events, range[0]));
-    map2.add(range[0], 0, [["exit", previousCell, context]]);
+    previousCell.end = Object.assign({}, getPoint(context3.events, range[0]));
+    map2.add(range[0], 0, [["exit", previousCell, context3]]);
   }
-  const now2 = getPoint(context.events, range[1]);
+  const now2 = getPoint(context3.events, range[1]);
   previousCell = {
     type: groupName,
     start: Object.assign({}, now2),
     // Note: correct end is set later.
     end: Object.assign({}, now2)
   };
-  map2.add(range[1], 0, [["enter", previousCell, context]]);
+  map2.add(range[1], 0, [["enter", previousCell, context3]]);
   if (range[2] !== 0) {
-    const relatedStart = getPoint(context.events, range[2]);
-    const relatedEnd = getPoint(context.events, range[3]);
+    const relatedStart = getPoint(context3.events, range[2]);
+    const relatedEnd = getPoint(context3.events, range[3]);
     const valueToken = {
       type: valueName,
       start: Object.assign({}, relatedStart),
       end: Object.assign({}, relatedEnd)
     };
-    map2.add(range[2], 0, [["enter", valueToken, context]]);
+    map2.add(range[2], 0, [["enter", valueToken, context3]]);
     if (rowKind !== 2) {
-      const start2 = context.events[range[2]];
-      const end = context.events[range[3]];
+      const start2 = context3.events[range[2]];
+      const end = context3.events[range[3]];
       start2[1].end = Object.assign({}, end[1].end);
       start2[1].type = "chunkText";
       start2[1].contentType = "text";
@@ -103707,24 +108394,24 @@ function flushCell(map2, context, range, rowKind, rowEnd, previousCell) {
         map2.add(a2, b2, []);
       }
     }
-    map2.add(range[3] + 1, 0, [["exit", valueToken, context]]);
+    map2.add(range[3] + 1, 0, [["exit", valueToken, context3]]);
   }
   if (rowEnd !== void 0) {
-    previousCell.end = Object.assign({}, getPoint(context.events, rowEnd));
-    map2.add(rowEnd, 0, [["exit", previousCell, context]]);
+    previousCell.end = Object.assign({}, getPoint(context3.events, rowEnd));
+    map2.add(rowEnd, 0, [["exit", previousCell, context3]]);
     previousCell = void 0;
   }
   return previousCell;
 }
-function flushTableEnd(map2, context, index2, table2, tableBody) {
+function flushTableEnd(map2, context3, index2, table2, tableBody) {
   const exits = [];
-  const related = getPoint(context.events, index2);
+  const related = getPoint(context3.events, index2);
   if (tableBody) {
     tableBody.end = Object.assign({}, related);
-    exits.push(["exit", tableBody, context]);
+    exits.push(["exit", tableBody, context3]);
   }
   table2.end = Object.assign({}, related);
-  exits.push(["exit", table2, context]);
+  exits.push(["exit", table2, context3]);
   map2.add(index2 + 1, 0, exits);
 }
 function getPoint(events2, index2) {
@@ -104147,7 +108834,7 @@ function initializeFactory(field) {
 }
 function createResolver(extraResolver) {
   return resolveAllText;
-  function resolveAllText(events2, context) {
+  function resolveAllText(events2, context3) {
     let index2 = -1;
     let enter;
     while (++index2 <= events2.length) {
@@ -104165,15 +108852,15 @@ function createResolver(extraResolver) {
         enter = void 0;
       }
     }
-    return extraResolver ? extraResolver(events2, context) : events2;
+    return extraResolver ? extraResolver(events2, context3) : events2;
   }
 }
-function resolveAllLineSuffixes(events2, context) {
+function resolveAllLineSuffixes(events2, context3) {
   let eventIndex = 0;
   while (++eventIndex <= events2.length) {
     if ((eventIndex === events2.length || events2[eventIndex][1].type === "lineEnding") && events2[eventIndex - 1][1].type === "data") {
       const data = events2[eventIndex - 1][1];
-      const chunks = context.sliceStream(data);
+      const chunks = context3.sliceStream(data);
       let index2 = chunks.length;
       let bufferIndex = -1;
       let size2 = 0;
@@ -104197,7 +108884,7 @@ function resolveAllLineSuffixes(events2, context) {
           break;
         }
       }
-      if (context._contentTypeTextTrailing && eventIndex === events2.length) {
+      if (context3._contentTypeTextTrailing && eventIndex === events2.length) {
         size2 = 0;
       }
       if (size2) {
@@ -104220,7 +108907,7 @@ function resolveAllLineSuffixes(events2, context) {
         if (data.start.offset === data.end.offset) {
           Object.assign(data, token);
         } else {
-          events2.splice(eventIndex, 0, ["enter", token, context], ["exit", token, context]);
+          events2.splice(eventIndex, 0, ["enter", token, context3], ["exit", token, context3]);
           eventIndex += 2;
         }
       }
@@ -104324,7 +109011,7 @@ function createTokenizer(parser, initialize, from) {
       interrupt: true
     })
   };
-  const context = {
+  const context3 = {
     code: null,
     containerState: {},
     defineSkip,
@@ -104336,11 +109023,11 @@ function createTokenizer(parser, initialize, from) {
     sliceStream,
     write
   };
-  let state = initialize.tokenize.call(context, effects);
+  let state = initialize.tokenize.call(context3, effects);
   if (initialize.resolveAll) {
     resolveAllConstructs.push(initialize);
   }
-  return context;
+  return context3;
   function write(slice) {
     chunks = push(chunks, slice);
     main();
@@ -104348,8 +109035,8 @@ function createTokenizer(parser, initialize, from) {
       return [];
     }
     addResult(initialize, 0);
-    context.events = resolveAll(resolveAllConstructs, context.events, context);
-    return context.events;
+    context3.events = resolveAll(resolveAllConstructs, context3.events, context3);
+    return context3.events;
   }
   function sliceSerialize(token, expandTabs) {
     return serializeChunks(sliceStream(token), expandTabs);
@@ -104419,20 +109106,20 @@ function createTokenizer(parser, initialize, from) {
         point2._index++;
       }
     }
-    context.previous = code2;
+    context3.previous = code2;
   }
   function enter(type, fields) {
     const token = fields || {};
     token.type = type;
     token.start = now2();
-    context.events.push(["enter", token, context]);
+    context3.events.push(["enter", token, context3]);
     stack.push(token);
     return token;
   }
   function exit2(type) {
     const token = stack.pop();
     token.end = now2();
-    context.events.push(["exit", token, context]);
+    context3.events.push(["exit", token, context3]);
     return token;
   }
   function onsuccessfulconstruct(construct, info) {
@@ -104486,16 +109173,16 @@ function createTokenizer(parser, initialize, from) {
           info = store();
           currentConstruct = construct;
           if (!construct.partial) {
-            context.currentConstruct = construct;
+            context3.currentConstruct = construct;
           }
-          if (construct.name && context.parser.constructs.disable.null.includes(construct.name)) {
+          if (construct.name && context3.parser.constructs.disable.null.includes(construct.name)) {
             return nok();
           }
           return construct.tokenize.call(
             // If we do have fields, create an object w/ `context` as its
             // prototype.
             // This allows a “live binding”, which is needed for `interrupt`.
-            fields ? Object.assign(Object.create(context), fields) : context,
+            fields ? Object.assign(Object.create(context3), fields) : context3,
             effects,
             ok2,
             nok
@@ -104520,17 +109207,17 @@ function createTokenizer(parser, initialize, from) {
       resolveAllConstructs.push(construct);
     }
     if (construct.resolve) {
-      splice(context.events, from2, context.events.length - from2, construct.resolve(context.events.slice(from2), context));
+      splice(context3.events, from2, context3.events.length - from2, construct.resolve(context3.events.slice(from2), context3));
     }
     if (construct.resolveTo) {
-      context.events = construct.resolveTo(context.events, context);
+      context3.events = construct.resolveTo(context3.events, context3);
     }
   }
   function store() {
     const startPoint = now2();
-    const startPrevious = context.previous;
-    const startCurrentConstruct = context.currentConstruct;
-    const startEventsIndex = context.events.length;
+    const startPrevious = context3.previous;
+    const startCurrentConstruct = context3.currentConstruct;
+    const startEventsIndex = context3.events.length;
     const startStack = Array.from(stack);
     return {
       from: startEventsIndex,
@@ -104538,9 +109225,9 @@ function createTokenizer(parser, initialize, from) {
     };
     function restore() {
       point2 = startPoint;
-      context.previous = startPrevious;
-      context.currentConstruct = startCurrentConstruct;
-      context.events.length = startEventsIndex;
+      context3.previous = startPrevious;
+      context3.currentConstruct = startCurrentConstruct;
+      context3.events.length = startEventsIndex;
       stack = startStack;
       accountForPotentialSkip();
     }
@@ -104755,7 +109442,7 @@ function fromMarkdown(value, encoding, options) {
   return compiler(options)(postprocess(parse(options).document().write(preprocess()(value, encoding, true))));
 }
 function compiler(options) {
-  const config = {
+  const config3 = {
     transforms: [],
     canContainEols: ["emphasis", "fragment", "heading", "paragraph", "strong"],
     enter: {
@@ -104853,7 +109540,7 @@ function compiler(options) {
       thematicBreak: closer()
     }
   };
-  configure(config, (options || {}).mdastExtensions || []);
+  configure(config3, (options || {}).mdastExtensions || []);
   const data = {};
   return compile;
   function compile(events2) {
@@ -104861,10 +109548,10 @@ function compiler(options) {
       type: "root",
       children: []
     };
-    const context = {
+    const context3 = {
       stack: [tree],
       tokenStack: [],
-      config,
+      config: config3,
       enter,
       exit: exit2,
       buffer,
@@ -104885,17 +109572,17 @@ function compiler(options) {
     }
     index2 = -1;
     while (++index2 < events2.length) {
-      const handler = config[events2[index2][0]];
+      const handler = config3[events2[index2][0]];
       if (own$2.call(handler, events2[index2][1].type)) {
         handler[events2[index2][1].type].call(Object.assign({
           sliceSerialize: events2[index2][2].sliceSerialize
-        }, context), events2[index2][1]);
+        }, context3), events2[index2][1]);
       }
     }
-    if (context.tokenStack.length > 0) {
-      const tail = context.tokenStack[context.tokenStack.length - 1];
+    if (context3.tokenStack.length > 0) {
+      const tail = context3.tokenStack[context3.tokenStack.length - 1];
       const handler = tail[1] || defaultOnError;
-      handler.call(context, void 0, tail[0]);
+      handler.call(context3, void 0, tail[0]);
     }
     tree.position = {
       start: point$1(events2.length > 0 ? events2[0][1].start : {
@@ -104910,8 +109597,8 @@ function compiler(options) {
       })
     };
     index2 = -1;
-    while (++index2 < config.transforms.length) {
-      tree = config.transforms[index2](tree) || tree;
+    while (++index2 < config3.transforms.length) {
+      tree = config3.transforms[index2](tree) || tree;
     }
     return tree;
   }
@@ -105147,14 +109834,14 @@ function compiler(options) {
     tail.position.end = point$1(token.end);
   }
   function onexitlineending(token) {
-    const context = this.stack[this.stack.length - 1];
+    const context3 = this.stack[this.stack.length - 1];
     if (this.data.atHardBreak) {
-      const tail = context.children[context.children.length - 1];
+      const tail = context3.children[context3.children.length - 1];
       tail.position.end = point$1(token.end);
       this.data.atHardBreak = void 0;
       return;
     }
-    if (!this.data.setextHeadingSlurpLineEnding && config.canContainEols.includes(context.type)) {
+    if (!this.data.setextHeadingSlurpLineEnding && config3.canContainEols.includes(context3.type)) {
       onenterdata.call(this, token);
       onexitdata.call(this, token);
     }
@@ -106497,7 +111184,7 @@ var setProperty = function setProperty2(target, options) {
     target[options.name] = options.newValue;
   }
 };
-var getProperty = function getProperty2(obj, name) {
+var getProperty2 = function getProperty3(obj, name) {
   if (name === "__proto__") {
     if (!hasOwn.call(obj, name)) {
       return void 0;
@@ -106525,8 +111212,8 @@ var extend = function extend2() {
     options = arguments[i2];
     if (options != null) {
       for (name in options) {
-        src = getProperty(target, name);
-        copy = getProperty(options, name);
+        src = getProperty2(target, name);
+        copy = getProperty2(options, name);
         if (target !== copy) {
           if (deep && copy && (isPlainObject$1(copy) || (copyIsArray = isArray(copy)))) {
             if (copyIsArray) {
@@ -106578,7 +111265,7 @@ function trough() {
       }
       values = output;
       if (fn) {
-        wrap(fn, next)(...output);
+        wrap2(fn, next)(...output);
       } else {
         callback(null, ...output);
       }
@@ -106594,7 +111281,7 @@ function trough() {
     return pipeline;
   }
 }
-function wrap(middleware, callback) {
+function wrap2(middleware, callback) {
   let called;
   return wrapped;
   function wrapped(...parameters) {
@@ -106895,9 +111582,9 @@ function join(...segments) {
       joined = joined === void 0 ? segments[index2] : joined + "/" + segments[index2];
     }
   }
-  return joined === void 0 ? "." : normalize(joined);
+  return joined === void 0 ? "." : normalize2(joined);
 }
-function normalize(path2) {
+function normalize2(path2) {
   assertPath$1(path2);
   const absolute = path2.codePointAt(0) === 47;
   let value = normalizeString(path2, !absolute);
@@ -109126,6 +113813,7 @@ function applyInverseAction(action, nodes) {
 const CONTEXT_OPTIONS = {
   curation: [
     "new-swarm",
+    "download",
     "add-attributes",
     "add-sources",
     "rename",
@@ -109152,7 +113840,8 @@ const OPTION_LABELS = {
   "add-sources": "Add Sources",
   rename: "Rename",
   delete: "Delete",
-  "convert-to-source-graph": "Convert"
+  "convert-to-source-graph": "Convert",
+  download: "Download ZIP"
 };
 function InlineDialog({
   label,
@@ -109211,24 +113900,26 @@ function InlineDialog({
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 justify-end", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
+              Button,
               {
                 type: "button",
+                variant: "outline",
+                size: "sm",
                 onClick: onClose,
-                className: "text-xs px-3 py-1.5 border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors",
                 "data-ocid": `${ocidPrefix}.cancel_button`,
                 children: "Cancel"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
+              Button,
               {
                 type: "button",
+                variant: "outline",
+                size: "sm",
                 disabled: !name.trim(),
                 onClick: () => {
                   if (name.trim()) onSubmit(name.trim());
                 },
-                className: "text-xs px-3 py-1.5 border border-dashed border-border text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
                 "data-ocid": `${ocidPrefix}.submit_button`,
                 children: "Confirm"
               }
@@ -109242,15 +113933,36 @@ function InlineDialog({
 function convertObsidianData(data) {
   const nodes = /* @__PURE__ */ new Map();
   const rootIds = [];
-  function processFolder(folder, parentId, pathPrefix) {
+  function processFolder(folder, parentId, pathPrefix, depth = 0) {
     const id2 = parentId ? `${pathPrefix}@${folder.name}` : folder.name;
-    const nodeType = folder.content != null ? "interpEntity" : "curation";
+    let nodeType;
+    if (folder.content != null) {
+      nodeType = "interpEntity";
+    } else {
+      switch (depth) {
+        case 0:
+          nodeType = "curation";
+          break;
+        case 1:
+          nodeType = "swarm";
+          break;
+        case 2:
+          nodeType = "location";
+          break;
+        case 3:
+          nodeType = "lawEntity";
+          break;
+        default:
+          nodeType = "lawEntity";
+          break;
+      }
+    }
     const children2 = [];
     if (folder.folders) {
       for (const child of folder.folders) {
         const childId = `${id2}@${child.name}`;
         children2.push(childId);
-        processFolder(child, id2, id2);
+        processFolder(child, id2, id2, depth + 1);
       }
     }
     const node2 = {
@@ -109258,10 +113970,10 @@ function convertObsidianData(data) {
       name: folder.name,
       type: nodeType === "interpEntity" ? "file" : "folder",
       nodeType,
-      content: folder.content ?? "",
+      content: folder.content ? stripFrontmatter(folder.content) : "",
       parentId,
       children: children2,
-      frontmatter: {},
+      frontmatter: folder.content ? parseFrontmatter(folder.content) : {},
       inheritedAttributes: {},
       inheritedSources: [],
       createdAt: Date.now(),
@@ -109271,7 +113983,7 @@ function convertObsidianData(data) {
     if (parentId === null) rootIds.push(id2);
   }
   for (const folder of data.folders) {
-    processFolder(folder, null, folder.name);
+    processFolder(folder, null, folder.name, 0);
   }
   return { nodes, rootIds };
 }
@@ -109415,6 +114127,60 @@ function EditorView() {
           })();
           break;
         }
+        case "download": {
+          void (async () => {
+            if (!session) return;
+            const curationNode = session.nodes.get(nodeId);
+            if (!curationNode || curationNode.nodeType !== "curation") return;
+            const { default: JSZip2 } = await __vitePreload(async () => {
+              const { default: JSZip3 } = await Promise.resolve().then(() => jszip_min);
+              return { default: JSZip3 };
+            }, true ? void 0 : void 0);
+            const zip = new JSZip2();
+            const allNodes2 = [];
+            const stack = [nodeId];
+            while (stack.length > 0) {
+              const id2 = stack.pop();
+              const n2 = session.nodes.get(id2);
+              if (!n2) continue;
+              allNodes2.push(n2);
+              for (const cid of n2.children) stack.push(cid);
+            }
+            for (const n2 of allNodes2) {
+              const parts = [];
+              let cur = n2;
+              while (cur) {
+                parts.unshift(cur.name);
+                cur = cur.parentId ? session.nodes.get(cur.parentId) : void 0;
+              }
+              const path2 = parts.join("/");
+              if (n2.type === "folder") {
+                zip.folder(path2);
+              } else {
+                const fm = n2.frontmatter;
+                const fmEntries = Object.entries(fm);
+                const fmBlock = fmEntries.length > 0 ? `---
+${fmEntries.map(
+                  ([k2, v2]) => typeof v2 === "string" ? `${k2}: ${v2}` : `${k2}: ${JSON.stringify(v2)}`
+                ).join("\n")}
+---
+` : "";
+                const fullContent = `${fmBlock}${n2.content ?? ""}`;
+                zip.file(path2, fullContent);
+              }
+            }
+            const blob = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(blob);
+            const link2 = document.createElement("a");
+            link2.href = url;
+            link2.download = `${curationNode.name}.zip`;
+            document.body.appendChild(link2);
+            link2.click();
+            document.body.removeChild(link2);
+            URL.revokeObjectURL(url);
+          })();
+          break;
+        }
         case "add-attributes": {
           const parent = session == null ? void 0 : session.nodes.get(nodeId);
           if (parent) {
@@ -109514,7 +114280,7 @@ function EditorView() {
                 nodeType = "lawEntity";
                 break;
               default:
-                nodeType = "swarm";
+                nodeType = "lawEntity";
             }
           } else {
             nodeType = "interpEntity";
@@ -109600,81 +114366,75 @@ function EditorView() {
             "data-ocid": "editor.file_input"
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 border-b border-dashed border-border bg-card shrink-0", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "notes" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Notes" }),
           !isEmpty2 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-0.5 mr-2", children: ["edit", "preview"].map((mode) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
               type: "button",
+              variant: viewMode === mode ? "outline" : "ghost",
+              size: "sm",
               onClick: () => setViewMode(mode),
-              className: [
-                "text-xs px-2 py-1 transition-colors border",
-                viewMode === mode ? "border-border bg-accent text-accent-foreground" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-              ].join(" "),
+              className: viewMode === mode ? "bg-accent text-accent-foreground" : "text-muted-foreground",
               "data-ocid": `editor.view_mode.${mode}`,
               children: mode
             },
             mode
           )) }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
               type: "button",
+              variant: "outline",
+              size: "sm",
               onClick: undo,
               disabled: !canUndo,
               "aria-label": "Undo",
-              className: "text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed",
               "data-ocid": "editor.undo_button",
               children: "↩"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
               type: "button",
+              variant: "outline",
+              size: "sm",
               onClick: redo,
               disabled: !canRedo,
               "aria-label": "Redo",
-              className: "text-xs px-2 py-1 border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed",
               "data-ocid": "editor.redo_button",
               children: "↪"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
               type: "button",
+              variant: "outline",
+              size: "sm",
               onClick: () => setShowCreateCuration(true),
-              className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "editor.create_button",
               children: "+ create"
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
+            Button,
             {
               type: "button",
+              variant: "outline",
+              size: "sm",
               onClick: () => {
                 var _a4;
                 return (_a4 = fileInputRef.current) == null ? void 0 : _a4.click();
               },
-              className: "text-xs border border-dashed border-border px-3 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "editor.import_button",
               children: "import zip"
             }
           )
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0 overflow-hidden", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden", children: isEmpty2 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            GettingStarted,
-            {
-              onCreate: () => setShowCreateCuration(true),
-              onImport: () => {
-                var _a4;
-                return (_a4 = fileInputRef.current) == null ? void 0 : _a4.click();
-              }
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden", children: isEmpty2 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", {}) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             viewMode === "edit" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col flex-1 min-h-0 overflow-hidden", children: [
               (activeNode == null ? void 0 : activeNode.type) === "file" && /* @__PURE__ */ jsxRuntimeExports.jsx(
                 FrontmatterEditor,
@@ -109713,7 +114473,7 @@ function EditorView() {
               className: "w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden",
               "data-ocid": "editor.sidebar",
               children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-2 py-1.5 border-b border-dashed border-border shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] uppercase tracking-widest text-muted-foreground font-medium", children: "files" }) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-2 py-1.5 border-b border-dashed border-border shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs uppercase tracking-widest text-muted-foreground font-medium", children: "files" }) }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto min-h-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                   FileTree,
                   {
@@ -109747,15 +114507,13 @@ function EditorView() {
               className: "fixed z-50 bg-card border border-border shadow-lg py-0.5 min-w-[150px]",
               style: { left: contextMenu.x, top: contextMenu.y },
               children: options.map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
+                Button,
                 {
                   type: "button",
+                  variant: opt === "delete" ? "destructive" : "ghost",
                   role: "menuitem",
                   onClick: () => handleContextOption(opt),
-                  className: [
-                    "w-full text-left px-3 py-1.5 text-xs transition-colors",
-                    opt === "delete" ? "text-destructive hover:bg-destructive hover:text-destructive-foreground" : "text-foreground hover:bg-accent hover:text-accent-foreground"
-                  ].join(" "),
+                  className: "w-full text-left px-3 py-1.5 text-xs justify-start",
                   "data-ocid": `editor.context_menu.${opt}`,
                   children: OPTION_LABELS[opt]
                 },
@@ -110709,12 +115467,12 @@ function ObsidianTokenPage() {
   const handleSignIn = async () => {
     setState("signing_in");
     try {
-      const config = await (await fetch("/env.json")).json();
+      const config3 = await (await fetch("/env.json")).json();
       const authClient = await AuthClient.create({ keyType: "Ed25519" });
       await new Promise((resolve, reject) => {
         authClient.login({
           identityProvider: "https://identity.internetcomputer.org/",
-          derivationOrigin: config.ii_derivation_origin,
+          derivationOrigin: config3.ii_derivation_origin,
           maxTimeToLive: BigInt(30) * BigInt(24) * BigInt(36e11),
           onSuccess: async () => {
             try {
@@ -110885,36 +115643,22 @@ function buildInheritedSources(node2, nodeMap) {
 function NodeDetailsModal({
   node: node2,
   graph,
-  onSave,
   onClose
 }) {
-  const [editedName, setEditedName] = reactExports.useState(node2.name);
-  const [existingRows, setExistingRows] = reactExports.useState(
-    () => Object.entries(node2.attributes ?? {}).map(([key2, value]) => ({
-      key: key2,
-      value: typeof value === "string" ? value : JSON.stringify(value),
-      isNew: false
-    }))
-  );
-  const [newRows, setNewRows] = reactExports.useState([]);
   const nodeMap = reactExports.useRef(new Map(graph.nodes.map((n2) => [n2.id ?? n2.name, n2])));
   const inheritedAttributes = buildInheritedAttributes(node2, nodeMap.current);
   const hasInherited = Object.keys(inheritedAttributes).length > 0;
-  const [sourceRows, setSourceRows] = reactExports.useState(
-    () => (node2.sources ?? []).map((s2) => ({
-      name: s2.name,
-      url: s2.url,
-      isNew: false
-    }))
-  );
   const inheritedSources = buildInheritedSources(node2, nodeMap.current);
+  const ownAttrs = Object.entries(node2.attributes ?? {}).filter(
+    ([, v2]) => v2 !== ""
+  );
   const overlayRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     var _a3;
     const el = overlayRef.current;
     if (!el) return;
     const focusable = el.querySelectorAll(
-      'button, input, [tabindex="0"]'
+      'button, [tabindex="0"]'
     );
     (_a3 = focusable[0]) == null ? void 0 : _a3.focus();
     const handleKeyDown = (e2) => {
@@ -110923,56 +115667,6 @@ function NodeDetailsModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-  const handleExistingValueChange = (index2, value) => {
-    setExistingRows(
-      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, value } : r2)
-    );
-  };
-  const handleExistingRemove = (index2) => {
-    setExistingRows((rows) => rows.filter((_2, i2) => i2 !== index2));
-  };
-  const handleNewKeyChange = (index2, key2) => {
-    setNewRows((rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, key: key2 } : r2));
-  };
-  const handleNewValueChange = (index2, value) => {
-    setNewRows(
-      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, value } : r2)
-    );
-  };
-  const handleNewRemove = (index2) => {
-    setNewRows((rows) => rows.filter((_2, i2) => i2 !== index2));
-  };
-  const handleAddAttribute = () => {
-    setNewRows((rows) => [...rows, { key: "", value: "", isNew: true }]);
-  };
-  const handleSourceNameChange = (index2, value) => {
-    setSourceRows(
-      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, name: value } : r2)
-    );
-  };
-  const handleSourceUrlChange = (index2, value) => {
-    setSourceRows(
-      (rows) => rows.map((r2, i2) => i2 === index2 ? { ...r2, url: value } : r2)
-    );
-  };
-  const handleAddSource = () => {
-    setSourceRows((rows) => [...rows, { name: "", url: "", isNew: true }]);
-  };
-  const handleRemoveSource = (index2) => {
-    setSourceRows((rows) => rows.filter((_2, i2) => i2 !== index2));
-  };
-  const handleSave = () => {
-    const merged = {};
-    for (const row of existingRows) {
-      if (row.key.trim()) merged[row.key.trim()] = row.value;
-    }
-    for (const row of newRows) {
-      if (row.key.trim()) merged[row.key.trim()] = row.value;
-    }
-    const sources = sourceRows.filter((r2) => r2.name.trim() !== "").map((r2) => ({ name: r2.name.trim(), url: r2.url.trim() }));
-    onSave(node2.name, { name: editedName, attributes: merged, sources });
-    onClose();
-  };
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",
     {
@@ -111011,111 +115705,32 @@ function NodeDetailsModal({
               ] })
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 overflow-y-auto px-4 py-3 space-y-5", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "label",
-                  {
-                    htmlFor: "node-name-input",
-                    className: "block text-xs text-muted-foreground",
-                    children: "name"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "input",
-                  {
-                    id: "node-name-input",
-                    type: "text",
-                    value: editedName,
-                    onChange: (e2) => setEditedName(e2.target.value),
-                    className: "\n                w-full bg-background text-foreground border border-dashed border-border\n                px-2 py-1 text-sm font-mono\n                focus:outline-none focus:border-foreground\n              ",
-                    "data-ocid": "node-name-input"
-                  }
-                )
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs text-muted-foreground mb-0.5", children: "name" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground break-words", children: node2.name })
+              ] }),
+              node2.id && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs text-muted-foreground mb-0.5", children: "id" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-foreground/70 break-all", children: node2.id })
+              ] }),
+              node2.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs text-muted-foreground mb-0.5", children: "parent" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-foreground break-words", children: node2.parentName })
+              ] }),
+              node2.content && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs text-muted-foreground mb-0.5", children: "content" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-foreground/80 break-words whitespace-pre-wrap", children: node2.content })
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "own attributes" }),
-                existingRows.length === 0 && newRows.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" }),
-                existingRows.map((row, i2) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(
-                    "span",
-                    {
-                      className: "text-xs text-muted-foreground w-28 shrink-0 truncate",
-                      title: row.key,
-                      children: row.key
-                    }
-                  ),
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(
-                    "input",
-                    {
-                      type: "text",
-                      value: row.value,
-                      onChange: (e2) => handleExistingValueChange(i2, e2.target.value),
-                      className: "\n                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono\n                    focus:outline-none focus:border-foreground\n                  ",
-                      "data-ocid": `attr-value-${row.key}`
-                    }
-                  ),
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(
-                    "button",
-                    {
-                      type: "button",
-                      className: "text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0",
-                      onClick: () => handleExistingRemove(i2),
-                      "data-ocid": `attr-remove-${row.key}`,
-                      children: "[–]"
-                    }
-                  )
-                ] }, row.key)),
-                newRows.map((row, i2) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: new rows have no stable key
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "input",
-                      {
-                        type: "text",
-                        placeholder: "key",
-                        value: row.key,
-                        onChange: (e2) => handleNewKeyChange(i2, e2.target.value),
-                        className: "\n                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
-                        "data-ocid": "new-attr-key-input"
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "input",
-                      {
-                        type: "text",
-                        placeholder: "value",
-                        value: row.value,
-                        onChange: (e2) => handleNewValueChange(i2, e2.target.value),
-                        className: "\n                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
-                        "data-ocid": "new-attr-value-input"
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "button",
-                      {
-                        type: "button",
-                        className: "text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0",
-                        onClick: () => handleNewRemove(i2),
-                        "data-ocid": "new-attr-remove",
-                        children: "[–]"
-                      }
-                    )
-                  ] }, i2)
-                )),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    type: "button",
-                    className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors",
-                    onClick: handleAddAttribute,
-                    "data-ocid": "add-attribute-btn",
-                    children: "[+ add attribute]"
-                  }
-                )
+                ownAttrs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border border-dashed border-border divide-y divide-dashed divide-border", children: ownAttrs.map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 px-2 py-1 text-xs", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground shrink-0 min-w-0 break-words", children: key2 }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80 ml-auto text-right break-words", children: typeof value === "string" ? value : JSON.stringify(value) })
+                ] }, key2)) })
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "inherited attributes" }),
-                hasInherited ? Object.entries(inheritedAttributes).map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2 text-xs", children: [
+                hasInherited ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border border-dashed border-border divide-y divide-dashed divide-border", children: Object.entries(inheritedAttributes).map(([key2, value]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 px-2 py-1 text-xs", children: [
                   /* @__PURE__ */ jsxRuntimeExports.jsx(
                     "span",
                     {
@@ -111125,62 +115740,27 @@ function NodeDetailsModal({
                     }
                   ),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground break-words min-w-0", children: value })
-                ] }, key2)) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
+                ] }, key2)) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "own sources" }),
-                sourceRows.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" }),
-                sourceRows.map((row, i2) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: source rows have no stable key
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "input",
-                      {
-                        type: "text",
-                        placeholder: "name",
-                        value: row.name,
-                        onChange: (e2) => handleSourceNameChange(i2, e2.target.value),
-                        className: "\n                    w-28 shrink-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
-                        "data-ocid": `source-name-${i2}`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "input",
-                      {
-                        type: "text",
-                        placeholder: "url",
-                        value: row.url,
-                        onChange: (e2) => handleSourceUrlChange(i2, e2.target.value),
-                        className: "\n                    flex-1 min-w-0 bg-background text-foreground border border-dashed border-border\n                    px-2 py-0.5 text-xs font-mono placeholder:text-muted-foreground\n                    focus:outline-none focus:border-foreground\n                  ",
-                        "data-ocid": `source-url-${i2}`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "button",
-                      {
-                        type: "button",
-                        className: "text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0",
-                        onClick: () => handleRemoveSource(i2),
-                        "data-ocid": `source-remove-${i2}`,
-                        children: "[–]"
-                      }
-                    )
-                  ] }, i2)
-                )),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    type: "button",
-                    className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-1 transition-colors",
-                    onClick: handleAddSource,
-                    "data-ocid": "add-source-btn",
-                    children: "[+ add source]"
-                  }
-                )
+                !node2.sources || node2.sources.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1", children: node2.sources.map((s2, i2) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: flat list, no stable key
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs break-words", children: s2.url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: s2.url,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground/80 underline hover:text-foreground transition-colors",
+                      children: s2.name
+                    }
+                  ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80", children: s2.name }) }, i2)
+                )) })
               ] }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground border-b border-dashed border-border pb-1", children: "inherited sources" }),
-                inheritedSources.length > 0 ? inheritedSources.map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                inheritedSources.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1", children: inheritedSources.map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
                   "div",
                   {
                     className: "text-xs text-foreground break-words min-w-0",
@@ -111196,31 +115776,19 @@ function NodeDetailsModal({
                     ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: s2.name })
                   },
                   `${s2.name}-${s2.url}`
-                )) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
+                )) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "(none)" })
               ] })
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-end gap-3 px-4 py-3 border-t border-dashed border-border shrink-0", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-3 py-1 transition-colors",
-                  onClick: onClose,
-                  "data-ocid": "node-details-cancel",
-                  children: "[cancel]"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "text-xs text-foreground bg-foreground/10 hover:bg-foreground/20 border border-dashed border-foreground px-3 py-1 transition-colors",
-                  onClick: handleSave,
-                  "data-ocid": "node-details-save",
-                  children: "[save]"
-                }
-              )
-            ] })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center justify-end px-4 py-3 border-t border-dashed border-border shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-3 py-1 transition-colors",
+                onClick: onClose,
+                "data-ocid": "node-details-close-button",
+                children: "[close]"
+              }
+            ) })
           ]
         }
       )
@@ -111229,11 +115797,11 @@ function NodeDetailsModal({
 }
 function NodeTypeBadge({ type }) {
   const cls = "text-muted-foreground border-border";
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-[10px] border px-1 py-0.5 ${cls}`, children: type });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-xs border px-1 py-0.5 ${cls}`, children: type });
 }
 function AttributeChangesView({ changes }) {
   if (changes.length === 0) return null;
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 pl-2 border-l border-dashed border-border space-y-1", children: changes.map((c2) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-[10px]", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 pl-2 border-l border-dashed border-border space-y-1", children: changes.map((c2) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-muted-foreground", children: [
       c2.key,
       ": "
@@ -111256,7 +115824,7 @@ function CollapsibleSection({
       {
         type: "button",
         onClick: () => setOpen((v2) => !v2),
-        className: "w-full flex items-center justify-between px-3 py-2 text-xs text-foreground hover:bg-accent transition-colors",
+        className: "w-full flex items-center justify-between px-3 py-2 text-xs text-foreground hover:text-accent-foreground hover:bg-accent transition-colors",
         "data-ocid": `publish_dialog.section_toggle.${title.toLowerCase().replace(/\s+/g, "_")}`,
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
@@ -111279,7 +115847,7 @@ function NodeCreateRow({ op }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "py-1.5 border-b border-dashed border-border/40 last:border-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 flex-wrap", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground font-mono", children: op.localName }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType }),
-    op.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground", children: [
+    op.parentName && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground", children: [
       "← ",
       op.parentName
     ] })
@@ -111294,7 +115862,7 @@ function EdgeCreateRow({ op }) {
       " ",
       op.targetName
     ] }),
-    op.labels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-[10px] text-muted-foreground mt-0.5", children: op.labels.join(", ") })
+    op.labels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground mt-0.5", children: op.labels.join(", ") })
   ] });
 }
 function EdgeUpdateRow({ op }) {
@@ -111306,7 +115874,7 @@ function EdgeUpdateRow({ op }) {
       " ",
       op.targetName
     ] }),
-    op.newLabels && op.newLabels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-[10px] text-foreground mt-0.5", children: [
+    op.newLabels && op.newLabels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs text-foreground mt-0.5", children: [
       "+ ",
       op.newLabels.join(", ")
     ] })
@@ -111429,7 +115997,7 @@ function PublishConfirmDialog({
                       "button",
                       {
                         type: "button",
-                        className: "text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0",
+                        className: "text-xs text-muted-foreground hover:text-foreground cursor-pointer ml-2 bg-transparent border-none p-0",
                         onClick: () => setShowCostBreakdown((v2) => !v2),
                         children: showCostBreakdown ? "[hide]" : "[see breakdown]"
                       }
@@ -111569,19 +116137,12 @@ function PublishConfirmDialog({
                         " ",
                         /* @__PURE__ */ jsxRuntimeExports.jsx(NodeTypeBadge, { type: op.nodeType })
                       ] }),
-                      op.action === "create" ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: op.attributes.map(([k2, vals]) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                        "div",
-                        {
-                          className: "text-[10px] text-muted-foreground",
-                          children: [
-                            "+ ",
-                            k2,
-                            ": ",
-                            vals.join(", ")
-                          ]
-                        },
-                        k2
-                      )) }) : /* @__PURE__ */ jsxRuntimeExports.jsx(AttributeChangesView, { changes: op.attributeChanges ?? [] })
+                      op.action === "create" ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: op.attributes.map(([k2, vals]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs text-muted-foreground", children: [
+                        "+ ",
+                        k2,
+                        ": ",
+                        vals.join(", ")
+                      ] }, k2)) }) : /* @__PURE__ */ jsxRuntimeExports.jsx(AttributeChangesView, { changes: op.attributeChanges ?? [] })
                     ]
                   },
                   op.localName
@@ -111606,7 +116167,7 @@ function PublishConfirmDialog({
                       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-0.5 pl-2 space-y-0.5", children: (op.sourceChanges ?? []).map((s2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
                         "div",
                         {
-                          className: "text-[10px] text-muted-foreground",
+                          className: "text-xs text-muted-foreground",
                           children: [
                             "+ ",
                             s2.name,
@@ -111629,7 +116190,7 @@ function PublishConfirmDialog({
             {
               type: "button",
               onClick: onClose,
-              className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors",
+              className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors",
               "data-ocid": "publish_dialog.cancel_button",
               children: "cancel"
             }
@@ -111640,7 +116201,7 @@ function PublishConfirmDialog({
               type: "button",
               onClick: onConfirm,
               disabled: isLoading || noChanges,
-              className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+              className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
               "data-ocid": "publish_dialog.confirm_button",
               children: isLoading ? "working..." : isPublished ? "update" : "publish"
             }
@@ -111788,14 +116349,7 @@ const defaultFilterState = () => ({
 });
 function SourcesView() {
   var _a3;
-  const {
-    graphs,
-    activeGraphId,
-    saveGraph,
-    deleteGraph,
-    setActiveGraph,
-    updateNode
-  } = useSourceGraphs();
+  const { graphs, activeGraphId, saveGraph, deleteGraph, setActiveGraph } = useSourceGraphs();
   const { commit, isPublishing } = usePublishGraph();
   const {
     preview,
@@ -111916,12 +116470,6 @@ function SourcesView() {
   const handleNodeClick = (node2) => {
     setSelectedNode(node2);
   };
-  const handleNodeSave = (nodeName, updates) => {
-    if (activeGraphId && selectedNode) {
-      updateNode(activeGraphId, nodeName, updates, selectedNode.id);
-    }
-    setSelectedNode(null);
-  };
   const handlePublish = async (graph) => {
     setPreviewGraph(graph);
     setCommitError(null);
@@ -111981,21 +116529,21 @@ function SourcesView() {
     }).length;
   }, [activeGraph, filterState.searchText, filterState.visibleNodeTypes]);
   if (view === "graph" && activeGraph) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full font-mono", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 px-4 py-2 border-b border-dashed border-border bg-background shrink-0", children: [
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
+          Button,
           {
-            type: "button",
+            variant: "ghost",
             onClick: handleBackToList,
-            className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
+            className: "text-muted-foreground",
             "data-ocid": "sources.back_to_list",
-            children: "← back to list"
+            children: "← back"
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-border", children: "|" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-foreground", children: activeGraph.name }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground ml-auto", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: activeGraph.name }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground", children: [
           activeGraph.nodes.length,
           " nodes"
         ] })
@@ -112036,230 +116584,212 @@ function SourcesView() {
         {
           node: selectedNode,
           graph: activeGraph,
-          onSave: handleNodeSave,
           onClose: () => setSelectedNode(null)
         }
       )
     ] });
   }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "h-full overflow-auto p-6 font-mono", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "input",
-      {
-        ref: fileInputRef,
-        type: "file",
-        accept: ".zip",
-        className: "hidden",
-        onChange: handleFileChange,
-        "data-ocid": "sources.file_input",
-        "aria-label": "Import ZIP file"
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-6", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold text-foreground mb-1", children: "source graphs" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "import a structured zip folder with markdown interpretations" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Graphs" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Button,
         {
-          type: "button",
+          variant: "outline",
+          size: "sm",
           onClick: handleImportClick,
           disabled: importing,
-          className: "text-xs border border-dashed border-border px-3 py-1.5 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+          className: "border-dashed",
           "data-ocid": "sources.import_button",
           children: importing ? "parsing..." : "import graph"
         }
-      ) })
-    ] }),
-    error && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs",
-        "data-ocid": "sources.error_message",
-        role: "alert",
-        children: [
-          "[ERROR] ",
-          error
-        ]
-      }
-    ),
-    (commitError || previewError) && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs",
-        "data-ocid": "sources.publish_error_state",
-        role: "alert",
-        children: [
-          "[PUBLISH ERROR] ",
-          commitError ?? previewError
-        ]
-      }
-    ),
-    graphs.length === 0 && !importing && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "flex flex-col items-center justify-center py-20 text-center border border-dashed border-border",
-        "data-ocid": "sources.empty_state",
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mb-3", children: "no source graphs yet." }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "import a zip file to get started." }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              onClick: handleImportClick,
-              className: "mt-5 text-xs border border-dashed border-border px-4 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
-              "data-ocid": "sources.empty_import_button",
-              children: "import graph"
-            }
-          )
-        ]
-      }
-    ),
-    graphs.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-2", children: graphs.map((graph) => {
-      const published = isPublished(graph.id);
-      const publishedDate = published ? getPublishedDate(graph.id) : null;
-      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "div",
-        {
-          className: "flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors",
-          "data-ocid": `sources.graph_row.${graph.id}`,
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-foreground truncate", children: graph.name }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mt-0.5", children: [
-                formatDate(graph.createdAt),
-                " · ",
-                graph.nodes.length,
-                " nodes ·",
-                " ",
-                (() => {
-                  const hierarchyCount = graph.nodes.length - 1;
-                  const crossRefCount = graph.edges.length - hierarchyCount;
-                  return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
-                })()
-              ] }),
-              published && publishedDate && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-[10px] text-muted-foreground mt-0.5", children: [
-                "published ",
-                publishedDate
-              ] }),
-              commitSuccessId === graph.id && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                "p",
-                {
-                  className: "text-xs text-green-500 mt-0.5",
-                  "data-ocid": `sources.publish_success_state.${graph.id}`,
-                  children: [
-                    "✓ ",
-                    published ? "updated" : "published",
-                    " to backend"
-                  ]
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 shrink-0", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => handleView(graph),
-                  className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors",
-                  "data-ocid": `sources.view_button.${graph.id}`,
-                  children: "view"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => handlePublish(graph),
-                  disabled: isPublishing || isPreviewLoading,
-                  className: "text-xs border border-dashed border-border px-2 py-1 text-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                  "data-ocid": `sources.publish_button.${graph.id}`,
-                  children: isPreviewLoading && (previewGraph == null ? void 0 : previewGraph.id) === graph.id ? "previewing..." : published ? "update" : "publish"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => handleDeleteRequest(graph.id),
-                  className: "text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
-                  "data-ocid": `sources.delete_button.${graph.id}`,
-                  children: "delete"
-                }
-              )
-            ] })
-          ]
-        },
-        graph.id
-      );
-    }) }),
-    confirmDeleteId && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm",
-          "aria-hidden": "true",
-          onClick: handleDeleteCancel,
-          onKeyDown: (e2) => {
-            if (e2.key === "Escape") handleDeleteCancel();
-          }
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "div",
-        {
-          className: "fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono",
-          "data-ocid": "sources.confirm_delete_dialog",
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground mb-2", children: "delete graph?" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mb-6", children: [
-              ((_a3 = graphs.find((g2) => g2.id === confirmDeleteId)) == null ? void 0 : _a3.name) ?? "",
-              /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
-              "this action cannot be undone."
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: handleDeleteConfirm,
-                  className: "flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors",
-                  "data-ocid": "sources.confirm_delete_yes",
-                  children: "delete"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: handleDeleteCancel,
-                  className: "flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:border-foreground hover:bg-accent transition-colors",
-                  "data-ocid": "sources.confirm_delete_cancel",
-                  children: "cancel"
-                }
-              )
-            ] })
-          ]
-        }
       )
     ] }),
-    previewResult && /* @__PURE__ */ jsxRuntimeExports.jsx(
-      PublishConfirmDialog,
-      {
-        isOpen: isDialogOpen,
-        onClose: () => {
-          setIsDialogOpen(false);
-          setPreviewGraph(null);
-        },
-        onConfirm: handleConfirm,
-        previewResult,
-        graphName: (previewGraph == null ? void 0 : previewGraph.name) ?? "",
-        isPublished: previewGraph ? isPublished(previewGraph.id) : false,
-        isLoading: isPublishing || isPreviewLoading
-      }
-    )
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 overflow-auto p-6", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "input",
+        {
+          ref: fileInputRef,
+          type: "file",
+          accept: ".zip",
+          className: "hidden",
+          onChange: handleFileChange,
+          "data-ocid": "sources.file_input",
+          "aria-label": "Import ZIP file"
+        }
+      ),
+      error && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs",
+          "data-ocid": "sources.error_message",
+          role: "alert",
+          children: [
+            "[ERROR] ",
+            error
+          ]
+        }
+      ),
+      (commitError || previewError) && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs",
+          "data-ocid": "sources.publish_error_state",
+          role: "alert",
+          children: [
+            "[PUBLISH ERROR] ",
+            commitError ?? previewError
+          ]
+        }
+      ),
+      graphs.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-2", children: graphs.map((graph) => {
+        const published = isPublished(graph.id);
+        const publishedDate = published ? getPublishedDate(graph.id) : null;
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors",
+            "data-ocid": `sources.graph_row.${graph.id}`,
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground truncate", children: graph.name }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mt-0.5", children: [
+                  formatDate(graph.createdAt),
+                  " · ",
+                  graph.nodes.length,
+                  " nodes · ",
+                  (() => {
+                    const hierarchyCount = graph.nodes.length - 1;
+                    const crossRefCount = graph.edges.length - hierarchyCount;
+                    return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+                  })()
+                ] }),
+                published && publishedDate && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mt-0.5", children: [
+                  "published ",
+                  publishedDate
+                ] }),
+                commitSuccessId === graph.id && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "p",
+                  {
+                    className: "text-xs text-green-500 mt-0.5",
+                    "data-ocid": `sources.publish_success_state.${graph.id}`,
+                    children: [
+                      "✓ ",
+                      published ? "updated" : "published",
+                      " to backend"
+                    ]
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 shrink-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "outline",
+                    size: "sm",
+                    onClick: () => handleView(graph),
+                    className: "border-dashed",
+                    "data-ocid": `sources.view_button.${graph.id}`,
+                    children: "view"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "outline",
+                    size: "sm",
+                    onClick: () => handlePublish(graph),
+                    disabled: isPublishing || isPreviewLoading,
+                    className: "border-dashed",
+                    "data-ocid": `sources.publish_button.${graph.id}`,
+                    children: isPreviewLoading && (previewGraph == null ? void 0 : previewGraph.id) === graph.id ? "previewing..." : published ? "update" : "publish"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "destructive",
+                    size: "sm",
+                    onClick: () => handleDeleteRequest(graph.id),
+                    className: "border-dashed",
+                    "data-ocid": `sources.delete_button.${graph.id}`,
+                    children: "delete"
+                  }
+                )
+              ] })
+            ]
+          },
+          graph.id
+        );
+      }) }),
+      confirmDeleteId && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm",
+            "aria-hidden": "true",
+            onClick: handleDeleteCancel,
+            onKeyDown: (e2) => {
+              if (e2.key === "Escape") handleDeleteCancel();
+            }
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono",
+            "data-ocid": "sources.confirm_delete_dialog",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground mb-2", children: "delete graph?" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mb-6", children: [
+                ((_a3 = graphs.find((g2) => g2.id === confirmDeleteId)) == null ? void 0 : _a3.name) ?? "",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+                "this action cannot be undone."
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "destructive",
+                    size: "sm",
+                    onClick: handleDeleteConfirm,
+                    className: "flex-1 border-dashed",
+                    "data-ocid": "sources.confirm_delete_yes",
+                    children: "delete"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  Button,
+                  {
+                    variant: "outline",
+                    size: "sm",
+                    onClick: handleDeleteCancel,
+                    className: "flex-1 border-dashed",
+                    "data-ocid": "sources.confirm_delete_cancel",
+                    children: "cancel"
+                  }
+                )
+              ] })
+            ]
+          }
+        )
+      ] }),
+      previewResult && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        PublishConfirmDialog,
+        {
+          isOpen: isDialogOpen,
+          onClose: () => {
+            setIsDialogOpen(false);
+            setPreviewGraph(null);
+          },
+          onConfirm: handleConfirm,
+          previewResult,
+          graphName: (previewGraph == null ? void 0 : previewGraph.name) ?? "",
+          isPublished: previewGraph ? isPublished(previewGraph.id) : false,
+          isLoading: isPublishing || isPreviewLoading
+        }
+      )
+    ] })
   ] });
 }
 async function fetchTelegramConfig(actor) {
@@ -112358,18 +116888,18 @@ const createStoreImpl = (createState2) => {
 };
 const createStore = (createState2) => createState2 ? createStoreImpl(createState2) : createStoreImpl;
 const identity = (arg) => arg;
-function useStore(api, selector2 = identity) {
+function useStore(api, selector3 = identity) {
   const slice = React$2.useSyncExternalStore(
     api.subscribe,
-    React$2.useCallback(() => selector2(api.getState()), [api, selector2]),
-    React$2.useCallback(() => selector2(api.getInitialState()), [api, selector2])
+    React$2.useCallback(() => selector3(api.getState()), [api, selector3]),
+    React$2.useCallback(() => selector3(api.getInitialState()), [api, selector3])
   );
   React$2.useDebugValue(slice);
   return slice;
 }
 const createImpl = (createState2) => {
   const api = createStore(createState2);
-  const useBoundStore = (selector2) => useStore(api, selector2);
+  const useBoundStore = (selector3) => useStore(api, selector3);
   Object.assign(useBoundStore, api);
   return useBoundStore;
 };
@@ -112472,15 +117002,15 @@ function useTelegram() {
     null
   );
   const configRef = reactExports.useRef(null);
-  const { data: config } = useQuery({
+  const { data: config3 } = useQuery({
     queryKey: ["telegramConfig"],
     queryFn: () => actor ? fetchTelegramConfig(actor) : Promise.resolve(null),
     enabled: !!actor && !isFetching,
     staleTime: 5 * 60 * 1e3
   });
   reactExports.useEffect(() => {
-    configRef.current = config ?? null;
-  }, [config]);
+    configRef.current = config3 ?? null;
+  }, [config3]);
   const transformMessage = reactExports.useCallback(
     (msg) => ({
       id: `tg-${msg.messageId}`,
@@ -112559,7 +117089,7 @@ function useTelegram() {
     setEnabled(!isEnabled);
   }, [setEnabled, isEnabled]);
   reactExports.useEffect(() => {
-    if (isEnabled && config) {
+    if (isEnabled && config3) {
       startPolling();
     } else {
       stopPolling();
@@ -112567,8 +117097,8 @@ function useTelegram() {
     return () => {
       stopPolling();
     };
-  }, [isEnabled, config, startPolling, stopPolling]);
-  const canEnable = config !== null && config !== void 0;
+  }, [isEnabled, config3, startPolling, stopPolling]);
+  const canEnable = config3 !== null && config3 !== void 0;
   return {
     isEnabled,
     toggleEnabled,
@@ -112579,13 +117109,13 @@ function useTelegram() {
     messagesByChannel: messages,
     canEnable,
     /** Exposed so SwarmsView can call telegramService.sendMessage with the real credentials */
-    config: config ?? null
+    config: config3 ?? null
   };
 }
 function UnreadBadge({ count: count2 }) {
   if (count2 === BigInt(0)) return null;
   const display = count2 > BigInt(99) ? "99+" : count2.toString();
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-yellow-400 px-1 text-[10px] font-bold text-yellow-900 leading-none", children: display });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-yellow-400 px-1 text-xs font-bold text-yellow-900 leading-none", children: display });
 }
 function ChannelItem({
   channel,
@@ -112594,11 +117124,11 @@ function ChannelItem({
   indent: indent2
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "button",
+    Button,
     {
-      type: "button",
+      variant: "ghost",
       onClick: onSelect,
-      className: `flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs transition-colors ${indent2 ? "pl-6 border-l-4 border-l-orange-500" : "border-l-4 border-l-blue-500"} ${selected ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
+      className: `flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs ${indent2 ? "pl-6 border-l-4 border-l-orange-500" : "border-l-4 border-l-blue-500"} ${selected ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`,
       "data-ocid": `swarms.channel.item.${channel.id}`,
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate min-w-0 flex-1", children: channel.name }),
@@ -112619,11 +117149,12 @@ function CurationGroup({
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-1", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
       hasSubChannels ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
+        Button,
         {
-          type: "button",
+          variant: "ghost",
+          size: "icon",
           onClick: () => setExpanded((v2) => !v2),
-          className: "shrink-0 text-muted-foreground hover:text-foreground p-0.5",
+          className: "shrink-0 h-5 w-5",
           "aria-label": expanded ? "Collapse" : "Expand",
           "data-ocid": `swarms.group.toggle.${curationName}`,
           children: expanded ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { className: "h-3 w-3" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronRight, { className: "h-3 w-3" })
@@ -112736,175 +117267,168 @@ function SwarmsView() {
   };
   const activeChannelName = (selectedTgChannel == null ? void 0 : selectedTgChannel.name) ?? (selectedChannel == null ? void 0 : selectedChannel.name) ?? null;
   const activeChannelParent = !isTelegramChannel && (selectedChannel == null ? void 0 : selectedChannel.isSubchannel) ? selectedChannel.parentCuration : null;
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full min-h-0 font-mono", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex w-[260px] shrink-0 flex-col border-r border-dashed border-border bg-card", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-3 py-2 border-b border-dashed border-border", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground font-mono", children: "Telegram" }),
-        canEnable ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            onClick: toggleEnabled,
-            className: `text-xs px-2 py-1 rounded font-mono transition-colors ${isEnabled ? "text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20" : "text-muted-foreground hover:text-foreground"}`,
-            title: isEnabled ? isConnected ? "Connected — click to disable" : "Connecting..." : "Click to enable Telegram bridge",
-            "data-ocid": "swarms.telegram.toggle",
-            children: tgLoading ? "…" : isEnabled ? isConnected ? "on" : "connecting" : "off"
-          }
-        ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            disabled: true,
-            className: "text-xs px-2 py-1 rounded font-mono text-muted-foreground/50 cursor-not-allowed",
-            title: "Admin must configure Telegram via terminal: /config telegram_token=<token> and /config telegram_chat_id=<chatId>",
-            "data-ocid": "swarms.telegram.toggle",
-            children: "off"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-b border-dashed border-border px-2 py-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Select, { value: selectedCuration, onValueChange: setSelectedCuration, children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          SelectTrigger,
-          {
-            className: "h-7 w-full rounded-none border-dashed border-border bg-transparent font-mono text-[11px] text-muted-foreground focus:ring-0 focus:ring-offset-0 px-2",
-            "data-ocid": "swarms.curation.select",
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "all curations" })
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(SelectContent, { className: "font-mono text-xs", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: "__all__", className: "text-xs", children: "all curations" }),
-          allCurationNames.map((name) => /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: name, className: "text-xs", children: name }, name))
-        ] })
-      ] }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(ScrollArea, { className: "flex-1 min-h-0 px-2 py-2", children: [
-        channelsLoading && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "px-2 py-3 text-xs text-muted-foreground", children: "loading…" }),
-        !channelsLoading && filteredGroups.length === 0 && !isEnabled && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "flex flex-col items-center gap-2 px-3 py-8 text-center",
-            "data-ocid": "swarms.channels.empty_state",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(MessageSquare, { className: "h-6 w-6 text-muted-foreground/40" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground/60 leading-relaxed", children: "publish a source graph to join channels" })
-            ]
-          }
-        ),
-        filteredGroups.map((group) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-          CurationGroup,
-          {
-            curationName: group.curationName,
-            topChannel: group.topChannel,
-            subChannels: group.subChannels,
-            selectedId,
-            onSelect: setSelectedId
-          },
-          group.curationName
-        )),
-        isEnabled && tgChannels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-1 text-xs text-muted-foreground/60 font-mono border-t border-dashed border-border mt-2 pt-2", children: "Telegram Channels" }),
-          tgChannels.map((tgCh) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              type: "button",
-              onClick: () => setSelectedId(tgCh.id),
-              className: `w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${selectedId === tgCh.id ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`,
-              "data-ocid": `swarms.telegram.channel.${tgCh.id}`,
-              children: tgCh.name
-            },
-            tgCh.id
-          ))
-        ] })
-      ] })
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Chat" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        Button,
+        {
+          variant: "outline",
+          onClick: toggleEnabled,
+          disabled: !canEnable || tgLoading,
+          className: "text-xs px-3 py-1 border-dashed border-border disabled:opacity-50 disabled:cursor-not-allowed",
+          "data-ocid": "swarms.telegram.toggle",
+          title: isEnabled ? isConnected ? "Connected — click to disable" : "Connecting..." : "Click to enable Telegram bridge",
+          children: [
+            "telegram",
+            " ",
+            tgLoading ? "…" : isEnabled ? isConnected ? "on" : "connecting" : "off"
+          ]
+        }
+      )
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-w-0 flex-col bg-background", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-2 border-b border-dashed border-border bg-card px-4 py-2.5", children: activeChannelName ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-sm font-semibold text-foreground", children: activeChannelName }),
-        activeChannelParent && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "ml-1 text-xs text-muted-foreground/50", children: [
-          "in ",
-          activeChannelParent
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-h-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 min-w-0 flex-col bg-background", children: [
+        activeChannelName && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 border-b border-dashed border-border bg-card px-4 py-2.5", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-sm font-semibold text-foreground", children: activeChannelName }),
+          activeChannelParent && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "ml-1 text-xs text-muted-foreground/50", children: [
+            "in ",
+            activeChannelParent
+          ] }),
+          isTelegramChannel && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-xs text-cyan-400/70 font-mono", children: "· telegram" })
         ] }),
-        isTelegramChannel && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-xs text-cyan-400/70 font-mono", children: "· telegram" })
-      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground/60", children: "chat · group channels" }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(ScrollArea, { className: "flex-1 min-h-0 px-4 py-3", children: [
-        !selectedId && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "flex flex-col items-center justify-center gap-3 py-24 text-center",
-            "data-ocid": "swarms.messages.empty_state",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(MessageSquare, { className: "h-10 w-10 text-muted-foreground/20" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground/40", children: "select a channel to start chatting" })
-            ]
-          }
-        ),
-        selectedId && !isTelegramChannel && messagesLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "p",
-          {
-            className: "text-xs text-muted-foreground py-4",
-            "data-ocid": "swarms.messages.loading_state",
-            children: "loading messages…"
-          }
-        ),
-        selectedId && displayMessages.length === 0 && !messagesLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "div",
-          {
-            className: "flex flex-col items-center gap-2 py-12 text-center",
-            "data-ocid": "swarms.channel.empty_state",
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground/40", children: "no messages yet — be the first to say something" })
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-3", children: displayMessages.map((msg, i2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "group",
-            "data-ocid": `swarms.message.item.${i2 + 1}`,
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-baseline gap-2 mb-0.5", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold text-foreground", children: msg.senderName }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-150", children: formatTime(msg.timestamp) })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-foreground/80 leading-relaxed break-words", children: msg.text })
-            ]
-          },
-          i2
-        )) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: messagesEndRef })
-      ] }),
-      selectedId && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-dashed border-border bg-card px-4 py-3", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Input,
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(ScrollArea, { className: "flex-1 min-h-0 px-4 py-3", children: [
+          !selectedId && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
             {
-              value: inputText,
-              onChange: (e2) => setInputText(e2.target.value),
-              onKeyDown: handleKeyDown,
-              placeholder: `message ${activeChannelName ?? "channel"}`,
-              className: "flex-1 font-mono text-xs bg-background border-border focus-visible:ring-1 rounded-none",
-              disabled: !isTelegramChannel && sendMutation.isPending,
-              "data-ocid": "swarms.message.input"
+              className: "flex flex-col items-center justify-center gap-3 py-24 text-center",
+              "data-ocid": "swarms.messages.empty_state",
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(MessageSquare, { className: "h-10 w-10 text-muted-foreground/20" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground/40", children: "select a channel to start chatting" })
+              ]
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            Button,
+          selectedId && !isTelegramChannel && messagesLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
             {
-              size: "sm",
-              variant: "ghost",
-              onClick: handleSend,
-              disabled: !inputText.trim() || !isTelegramChannel && sendMutation.isPending,
-              className: "shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5",
-              "data-ocid": "swarms.message.submit_button",
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(Send, { className: "h-3.5 w-3.5" })
+              className: "text-xs text-muted-foreground py-4",
+              "data-ocid": "swarms.messages.loading_state",
+              children: "loading messages…"
+            }
+          ),
+          selectedId && displayMessages.length === 0 && !messagesLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "flex flex-col items-center gap-2 py-12 text-center",
+              "data-ocid": "swarms.channel.empty_state",
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground/40", children: "no messages yet — be the first to say something" })
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-3", children: displayMessages.map((msg, i2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "group",
+              "data-ocid": `swarms.message.item.${i2 + 1}`,
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-baseline gap-2 mb-0.5", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground", children: msg.senderName }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-150", children: formatTime(msg.timestamp) })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-foreground/80 leading-relaxed break-words", children: msg.text })
+              ]
+            },
+            i2
+          )) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: messagesEndRef })
+        ] }),
+        selectedId && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-dashed border-border bg-card px-4 py-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Input,
+              {
+                value: inputText,
+                onChange: (e2) => setInputText(e2.target.value),
+                onKeyDown: handleKeyDown,
+                placeholder: `message ${activeChannelName ?? "channel"}`,
+                className: "flex-1 font-mono text-xs bg-background border-border focus-visible:ring-1 rounded-none",
+                disabled: !isTelegramChannel && sendMutation.isPending,
+                "data-ocid": "swarms.message.input"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Button,
+              {
+                size: "sm",
+                variant: "ghost",
+                onClick: handleSend,
+                disabled: !inputText.trim() || !isTelegramChannel && sendMutation.isPending,
+                className: "shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5",
+                "data-ocid": "swarms.message.submit_button",
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Send, { className: "h-3.5 w-3.5" })
+              }
+            )
+          ] }),
+          !isTelegramChannel && sendMutation.isError && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: "mt-1 text-xs text-destructive",
+              "data-ocid": "swarms.message.error_state",
+              children: "failed to send — try again"
             }
           )
-        ] }),
-        !isTelegramChannel && sendMutation.isError && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "p",
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex w-[260px] shrink-0 flex-col border-l border-dashed border-border bg-card", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-b border-dashed border-border px-2 py-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          Select,
           {
-            className: "mt-1 text-[10px] text-destructive",
-            "data-ocid": "swarms.message.error_state",
-            children: "failed to send — try again"
+            value: selectedCuration,
+            onValueChange: setSelectedCuration,
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                SelectTrigger,
+                {
+                  className: "h-7 w-full rounded-none border-dashed border-border bg-transparent font-mono text-xs text-muted-foreground focus:ring-0 focus:ring-offset-0 px-2",
+                  "data-ocid": "swarms.curation.select",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(SelectValue, { placeholder: "all curations" })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(SelectContent, { className: "font-mono text-xs", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: "__all__", className: "text-xs", children: "all curations" }),
+                allCurationNames.map((name) => /* @__PURE__ */ jsxRuntimeExports.jsx(SelectItem, { value: name, className: "text-xs", children: name }, name))
+              ] })
+            ]
           }
-        )
+        ) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(ScrollArea, { className: "flex-1 min-h-0 px-2 py-2", children: [
+          channelsLoading && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "px-2 py-3 text-xs text-muted-foreground", children: "loading…" }),
+          filteredGroups.map((group) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+            CurationGroup,
+            {
+              curationName: group.curationName,
+              topChannel: group.topChannel,
+              subChannels: group.subChannels,
+              selectedId,
+              onSelect: setSelectedId
+            },
+            group.curationName
+          )),
+          isEnabled && tgChannels.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-1 text-xs text-muted-foreground/60 font-mono border-t border-dashed border-border mt-2 pt-2", children: "Telegram Channels" }),
+            tgChannels.map((tgCh) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Button,
+              {
+                variant: "ghost",
+                onClick: () => setSelectedId(tgCh.id),
+                className: `w-full text-left px-3 py-2 text-xs font-mono hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${selectedId === tgCh.id ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`,
+                "data-ocid": `swarms.telegram.channel.${tgCh.id}`,
+                children: tgCh.name
+              },
+              tgCh.id
+            ))
+          ] })
+        ] })
       ] })
     ] })
   ] });
@@ -113042,11 +117566,11 @@ function TerminalOntologyOutput({
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-mono text-muted-foreground", children: "Turtle (TTL)" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
+          Button,
           {
-            type: "button",
+            variant: "ghost",
             onClick: handleCopyTurtle,
-            className: "text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5",
+            className: "px-2 py-0.5",
             children: copiedTurtle ? "Copied!" : "Copy"
           }
         )
@@ -113057,11 +117581,11 @@ function TerminalOntologyOutput({
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-mono text-muted-foreground", children: "Mermaid Diagram" }),
         mermaidText && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
+          Button,
           {
-            type: "button",
+            variant: "ghost",
             onClick: handleCopyMermaid,
-            className: "text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5",
+            className: "px-2 py-0.5",
             children: copiedMermaid ? "Copied!" : "Copy"
           }
         )
@@ -113125,9 +117649,13 @@ function getMessageTypeEmoji(messageType) {
       return void 0;
   }
 }
-const TERMINAL_SESSION_KEY = "hyvmind_terminal_session";
-const SESSION_VERSION = 4;
-function saveTerminalSession(messages) {
+const SESSION_VERSION = 5;
+function getKey(principal) {
+  const base = "hyvmind_terminal_session";
+  if (!principal) return base;
+  return `${base}_${principal}`;
+}
+function saveTerminalSession(messages, principal) {
   try {
     const session = {
       version: SESSION_VERSION,
@@ -113138,18 +117666,18 @@ function saveTerminalSession(messages) {
         ontologyData: msg.ontologyData
       }))
     };
-    localStorage.setItem(TERMINAL_SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(getKey(principal), JSON.stringify(session));
   } catch (error) {
     console.error("Failed to save terminal session:", error);
   }
 }
-function loadTerminalSession() {
+function loadTerminalSession(principal) {
   try {
-    const stored = localStorage.getItem(TERMINAL_SESSION_KEY);
+    const stored = localStorage.getItem(getKey(principal));
     if (!stored) return null;
     const session = JSON.parse(stored);
     if (session.version !== SESSION_VERSION) {
-      clearTerminalSession();
+      clearTerminalSession(principal);
       return null;
     }
     return session.messages.map((msg) => ({
@@ -113163,18 +117691,13 @@ function loadTerminalSession() {
     return null;
   }
 }
-function clearTerminalSession() {
+function clearTerminalSession(principal) {
   try {
-    localStorage.removeItem(TERMINAL_SESSION_KEY);
+    localStorage.removeItem(getKey(principal));
   } catch (error) {
     console.error("Failed to clear terminal session:", error);
   }
 }
-const DEFAULT_MESSAGE = {
-  type: "success",
-  text: "Terminal ready. Type /help for list of commands.",
-  timestamp: Date.now()
-};
 function renderLineTokens(tokens) {
   return tokens.map((token, i2) => {
     if (token.type === "blank") {
@@ -113189,9 +117712,15 @@ function renderLineTokens(tokens) {
   });
 }
 function TerminalPage() {
+  const { identity: identity2 } = useInternetIdentity();
+  const principal = identity2 == null ? void 0 : identity2.getPrincipal().toString();
+  const principalRef = reactExports.useRef(principal);
+  reactExports.useEffect(() => {
+    principalRef.current = principal;
+  }, [principal]);
   const [messages, setMessages] = reactExports.useState(() => {
-    const loaded = loadTerminalSession();
-    return loaded && loaded.length > 0 ? loaded : [DEFAULT_MESSAGE];
+    const loaded = loadTerminalSession(principalRef.current);
+    return loaded && loaded.length > 0 ? loaded : [];
   });
   const [input, setInput] = reactExports.useState("");
   const [pendingExecution, setPendingExecution] = reactExports.useState(null);
@@ -113208,7 +117737,7 @@ function TerminalPage() {
   const { data: isAdmin } = useIsCallerAdmin();
   const resetAllData = useResetAllData();
   reactExports.useEffect(() => {
-    saveTerminalSession(messages);
+    saveTerminalSession(messages, principalRef.current);
   }, [messages]);
   reactExports.useEffect(() => {
     if (scrollAreaRef.current) {
@@ -114473,7 +119002,8 @@ ${codes.map((c2) => `  ${c2}`).join("\n")}`
       index2
     );
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono text-sm", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col h-full bg-background font-mono", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-semibold text-foreground mr-auto", children: "Terminal" }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollArea, { className: "flex-1 min-h-0", ref: scrollAreaRef, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4 space-y-0.5", children: [
       messages.map((message, index2) => renderMessage(message, index2)),
       pendingExecution && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2 mb-2", children: [
@@ -114497,22 +119027,19 @@ ${codes.map((c2) => `  ${c2}`).join("\n")}`
       ] }),
       isArchiving && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-muted-foreground text-xs animate-pulse", children: "Archiving node..." })
     ] }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border p-3 shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { onSubmit: handleSubmit, className: "flex items-center gap-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-accent font-medium shrink-0", children: "$" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Input,
-        {
-          ref: inputRef,
-          value: input,
-          onChange: (e2) => setInput(e2.target.value),
-          placeholder: isArchiving ? "Archiving..." : pendingExecution ? "Select an option above with ↑/↓ then Enter..." : pendingDebugJson !== null ? "Enter Y to show JSON or N to skip..." : debugResetPending ? "Type 'yes' to confirm reset..." : "Type a command (e.g. /help)",
-          disabled: isArchiving || !!pendingExecution,
-          className: "flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 font-mono text-sm placeholder:text-muted-foreground/50",
-          autoComplete: "off",
-          spellCheck: false
-        }
-      )
-    ] }) })
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border p-3 shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("form", { onSubmit: handleSubmit, className: "flex items-center gap-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Input,
+      {
+        ref: inputRef,
+        value: input,
+        onChange: (e2) => setInput(e2.target.value),
+        placeholder: isArchiving ? "Archiving..." : pendingExecution ? "Select an option above with ↑/↓ then Enter..." : pendingDebugJson !== null ? "Enter Y to show JSON or N to skip..." : debugResetPending ? "Type 'yes' to confirm reset..." : "Type a command (e.g. /help)",
+        disabled: isArchiving || !!pendingExecution,
+        className: "flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 font-mono text-sm placeholder:text-muted-foreground/50",
+        autoComplete: "off",
+        spellCheck: false
+      }
+    ) }) })
   ] });
 }
 const KEY_PREFIX = "hyvmind:hiddenCollectibles:";
@@ -114684,8 +119211,7 @@ function AppShell() {
   }
   if (!isAuthenticated) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-[100dvh] flex-col bg-background", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Header, { onNavigateToSettings: () => {
-      } }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Header, {}),
       /* @__PURE__ */ jsxRuntimeExports.jsx("main", { className: "flex-1 min-h-0 overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "h-full min-h-0 relative", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "div",
@@ -114721,7 +119247,7 @@ function AppShell() {
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col flex-1 overflow-hidden min-w-0", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Header, { onNavigateToSettings: () => setActiveTab("settings") }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Header, {}),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("main", { className: "flex-1 overflow-hidden relative", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "div",
