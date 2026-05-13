@@ -3,6 +3,7 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  isAdmin: boolean;
 }
 
 const TABS = [
@@ -19,7 +20,9 @@ export function Sidebar({
   onTabChange,
   collapsed,
   onToggleCollapse,
+  isAdmin,
 }: SidebarProps) {
+  const visibleTabs = TABS.filter((t) => t.id !== "terminal" || isAdmin);
   return (
     <div
       className={`flex flex-col h-full border-r border-border bg-background transition-all duration-200 ${
@@ -27,7 +30,7 @@ export function Sidebar({
       }`}
     >
       <div className="flex flex-col flex-1 pt-2">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button

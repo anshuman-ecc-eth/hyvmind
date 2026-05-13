@@ -5,6 +5,7 @@ import FilterPanel from "../components/FilterPanel";
 import GraphFuzzyFinder, {
   type SearchableItem,
 } from "../components/GraphFuzzyFinder";
+import OntologyModal from "../components/OntologyModal";
 import PublicNodeDetailsPanel from "../components/PublicNodeDetailsPanel";
 import SaveGraphDialog from "../components/SaveGraphDialog";
 import SourceGraphDiagram from "../components/SourceGraphDiagram";
@@ -15,6 +16,7 @@ import {
 } from "../hooks/usePublicGraphs";
 import type { SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
+import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
 
 // artworkDataUrl is included in the generated bindings as string | undefined
 type PublishedSourceGraphMeta = BasePublishedSourceGraphMeta;
@@ -219,6 +221,22 @@ function GraphDetail({
   const meta = graphs.find((g) => g.id === selectedId);
   const graphName = meta?.name ?? "Graph";
   const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
+  const [ontologyTurtle, setOntologyTurtle] = useState<string | null>(null);
+  const [copiedOntology, setCopiedOntology] = useState(false);
+
+  const handleOntology = () => {
+    if (!convertedGraph) return;
+    const turtle = generateFullSourceGraphTurtle(convertedGraph);
+    setOntologyTurtle(turtle);
+    setCopiedOntology(false);
+  };
+
+  const handleCopyOntology = () => {
+    if (!ontologyTurtle) return;
+    navigator.clipboard.writeText(ontologyTurtle);
+    setCopiedOntology(true);
+    setTimeout(() => setCopiedOntology(false), 2000);
+  };
 
   // Memoize converted graph to stabilize object reference
   const convertedGraph = useMemo(
@@ -331,6 +349,7 @@ function GraphDetail({
                 isCollapsed: !prev.isCollapsed,
               }))
             }
+            onOntology={handleOntology}
           />
         </div>
       )}
@@ -350,6 +369,16 @@ function GraphDetail({
         <PublicNodeDetailsPanel
           node={selectedNode}
           onClose={() => setSelectedNode(null)}
+        />
+      )}
+
+      {ontologyTurtle && (
+        <OntologyModal
+          turtle={ontologyTurtle}
+          onClose={() => setOntologyTurtle(null)}
+          onCopy={handleCopyOntology}
+          copied={copiedOntology}
+          graphName={graphName}
         />
       )}
     </div>

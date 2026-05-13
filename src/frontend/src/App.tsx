@@ -17,6 +17,7 @@ import {
   useGetArchivedNodeIds,
   useGetCallerUserProfile,
   useGetOwnedData,
+  useIsCallerAdmin,
 } from "./hooks/useQueries";
 import { useSettings } from "./hooks/useSettings";
 import {
@@ -159,6 +160,7 @@ function AppShell() {
   // Silent cleanup: fetch archived node IDs once per login and persist hidden collectibles
   const { data: archivedNodeIds } = useGetArchivedNodeIds();
   const { data: graphData } = useGetOwnedData();
+  const { data: isAdmin } = useIsCallerAdmin();
   const cleanupRanRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -268,6 +270,7 @@ function AppShell() {
         onTabChange={setActiveTab}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isAdmin={!!isAdmin}
       />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
@@ -312,14 +315,16 @@ function AppShell() {
           >
             <SettingsView />
           </div>
-          <div
-            style={{
-              display: activeTab === "terminal" ? "block" : "none",
-              height: "100%",
-            }}
-          >
-            <TerminalPage />
-          </div>
+          {isAdmin && (
+            <div
+              style={{
+                display: activeTab === "terminal" ? "block" : "none",
+                height: "100%",
+              }}
+            >
+              <TerminalPage />
+            </div>
+          )}
         </main>
         <Footer />
       </div>
