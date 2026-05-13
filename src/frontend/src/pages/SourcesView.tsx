@@ -45,11 +45,13 @@ function OntologyModal({
   onClose,
   onCopy,
   copied,
+  graphName,
 }: {
   turtle: string;
   onClose: () => void;
   onCopy: () => void;
   copied: boolean;
+  graphName: string;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,16 @@ function OntologyModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  const handleDownload = () => {
+    const blob = new Blob([turtle], { type: "text/turtle" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${graphName.replace(/[^a-zA-Z0-9_-]/g, "_")}.ttl`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div
@@ -87,6 +99,13 @@ function OntologyModal({
             ontology (turtle)
           </span>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-0.5 transition-colors"
+            >
+              download .ttl
+            </button>
             <button
               type="button"
               onClick={onCopy}
@@ -445,6 +464,7 @@ export default function SourcesView() {
             onClose={() => setOntologyTurtle(null)}
             onCopy={handleCopyOntology}
             copied={copiedOntology}
+            graphName={activeGraph.name}
           />
         )}
       </div>

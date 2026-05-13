@@ -84,5 +84,5 @@ export function generateFullSourceGraphTurtle(graph: SourceGraph): string {
     lines.push("");
   }
 
-  return lines.join("\n");
+  return `${lines.join("\n")}\n`;
 }
