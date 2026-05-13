@@ -9,6 +9,7 @@ import { usePublishMappings } from "../hooks/usePublishMappings";
 import { usePublishPreview } from "../hooks/usePublishPreview";
 import useSourceGraphs from "../hooks/useSourceGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
+import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
 import { parseSourceGraphZip } from "../utils/sourceGraphParser";
 
 // ---------------------------------------------------------------------------
@@ -34,6 +35,83 @@ const defaultFilterState = (): FilterState => ({
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
 });
+
+// ---------------------------------------------------------------------------
+// OntologyModal
+// ---------------------------------------------------------------------------
+
+function OntologyModal({
+  turtle,
+  onClose,
+  onCopy,
+  copied,
+}: {
+  turtle: string;
+  onClose: () => void;
+  onCopy: () => void;
+  copied: boolean;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    el.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={overlayRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 outline-none"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <div
+        className="relative w-full max-w-2xl mx-4 bg-background border border-dashed border-border font-mono flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-3 py-2 border-b border-dashed border-border shrink-0">
+          <span className="text-xs text-muted-foreground uppercase tracking-widest">
+            ontology (turtle)
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onCopy}
+              className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-0.5 transition-colors"
+            >
+              {copied ? "copied!" : "copy"}
+            </button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={onClose}
+            >
+              [x]
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <pre className="text-xs text-foreground/80 whitespace-pre-wrap break-all">
+            {turtle}
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -62,6 +140,8 @@ export default function SourcesView() {
   const [previewGraph, setPreviewGraph] = useState<SourceGraph | null>(null);
   const [commitError, setCommitError] = useState<string | null>(null);
   const [commitSuccessId, setCommitSuccessId] = useState<string | null>(null);
+  const [ontologyTurtle, setOntologyTurtle] = useState<string | null>(null);
+  const [copiedOntology, setCopiedOntology] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ---------------------------------------------------------------------------
@@ -208,6 +288,20 @@ export default function SourcesView() {
     setSelectedNode(node);
   };
 
+  const handleOntology = () => {
+    if (!activeGraph) return;
+    const turtle = generateFullSourceGraphTurtle(activeGraph);
+    setOntologyTurtle(turtle);
+    setCopiedOntology(false);
+  };
+
+  const handleCopyOntology = () => {
+    if (!ontologyTurtle) return;
+    navigator.clipboard.writeText(ontologyTurtle);
+    setCopiedOntology(true);
+    setTimeout(() => setCopiedOntology(false), 2000);
+  };
+
   const handlePublish = async (graph: SourceGraph) => {
     setPreviewGraph(graph);
     setCommitError(null);
@@ -331,6 +425,7 @@ export default function SourcesView() {
                 isCollapsed: !prev.isCollapsed,
               }))
             }
+            onOntology={handleOntology}
           />
         </div>
 
@@ -340,6 +435,16 @@ export default function SourcesView() {
             node={selectedNode}
             graph={activeGraph}
             onClose={() => setSelectedNode(null)}
+          />
+        )}
+
+        {/* Ontology modal */}
+        {ontologyTurtle && (
+          <OntologyModal
+            turtle={ontologyTurtle}
+            onClose={() => setOntologyTurtle(null)}
+            onCopy={handleCopyOntology}
+            copied={copiedOntology}
           />
         )}
       </div>

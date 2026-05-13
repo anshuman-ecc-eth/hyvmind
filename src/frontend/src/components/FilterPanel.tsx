@@ -15,6 +15,7 @@ export interface FilterPanelProps {
   onFitToVisible: () => void;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
+  onOntology?: () => void;
 }
 
 const ALL_NODE_TYPES: { key: string; label: string; color: string }[] = [
@@ -92,6 +93,7 @@ export default function FilterPanel({
   onFitToVisible,
   isCollapsed,
   onToggleCollapsed,
+  onOntology,
 }: FilterPanelProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -230,6 +232,17 @@ export default function FilterPanel({
             >
               reset filters
             </button>
+            {onOntology && (
+              <button
+                type="button"
+                onClick={onOntology}
+                className="w-full text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left"
+                data-ocid="filter_panel.ontology_button"
+                aria-label="Generate full turtle ontology"
+              >
+                ontology
+              </button>
+            )}
           </div>
         </div>
       </div>
