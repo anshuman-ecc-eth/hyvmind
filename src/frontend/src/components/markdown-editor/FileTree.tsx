@@ -44,18 +44,6 @@ interface TreeNodeProps {
 }
 
 // ---------------------------------------------------------------------------
-// Node icons by nodeType
-// ---------------------------------------------------------------------------
-
-const nodeTypeColors: Record<string, string> = {
-  curation: "text-blue-400",
-  swarm: "text-orange-400",
-  location: "text-green-400",
-  lawEntity: "text-red-400",
-  interpEntity: "text-purple-400",
-};
-
-// ---------------------------------------------------------------------------
 // Single tree node row
 // ---------------------------------------------------------------------------
 
@@ -87,7 +75,6 @@ function TreeNode({
   const isFolder = node.type === "folder";
   const isExpanded = expandedIds.has(nodeId);
   const isActive = node.id === activeFileId;
-  const colorClass = nodeTypeColors[node.nodeType] ?? "text-muted-foreground";
   const indent = depth * 12;
 
   const handleClick = () => {
@@ -137,7 +124,7 @@ function TreeNode({
         )}
 
         {/* Icon */}
-        <span className={`flex-shrink-0 ${colorClass}`}>
+        <span className="flex-shrink-0">
           {isFolder ? (
             isExpanded ? (
               <FolderOpen size={13} fill="currentColor" />
