@@ -48,10 +48,10 @@ function ChannelItem({
   indent,
 }: ChannelItemProps) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={onSelect}
-      className={`flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs transition-colors ${
+      className={`flex w-full items-center gap-2 rounded-r px-2 py-1.5 text-left font-mono text-xs ${
         indent
           ? "pl-6 border-l-4 border-l-orange-500"
           : "border-l-4 border-l-blue-500"
@@ -64,7 +64,7 @@ function ChannelItem({
     >
       <span className="truncate min-w-0 flex-1">{channel.name}</span>
       <UnreadBadge count={channel.unreadCount} />
-    </button>
+    </Button>
   );
 }
 
@@ -92,10 +92,11 @@ function CurationGroup({
     <div className="mb-1">
       <div className="flex items-center gap-1">
         {hasSubChannels ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setExpanded((v) => !v)}
-            className="shrink-0 text-muted-foreground hover:text-foreground p-0.5"
+            className="shrink-0 h-5 w-5"
             aria-label={expanded ? "Collapse" : "Expand"}
             data-ocid={`swarms.group.toggle.${curationName}`}
           >
@@ -104,7 +105,7 @@ function CurationGroup({
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-          </button>
+          </Button>
         ) : (
           <span className="w-4 shrink-0" />
         )}
@@ -281,11 +282,11 @@ export default function SwarmsView() {
         <span className="text-sm font-semibold text-foreground mr-auto">
           Chat
         </span>
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={toggleEnabled}
           disabled={!canEnable || tgLoading}
-          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-xs px-3 py-1 border-dashed border-border disabled:opacity-50 disabled:cursor-not-allowed"
           data-ocid="swarms.telegram.toggle"
           title={
             isEnabled
@@ -303,7 +304,7 @@ export default function SwarmsView() {
                 ? "on"
                 : "connecting"
               : "off"}
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -474,11 +475,11 @@ export default function SwarmsView() {
                   Telegram Channels
                 </div>
                 {tgChannels.map((tgCh) => (
-                  <button
+                  <Button
                     key={tgCh.id}
-                    type="button"
+                    variant="ghost"
                     onClick={() => setSelectedId(tgCh.id)}
-                    className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${
+                    className={`w-full text-left px-3 py-2 text-xs font-mono hover:bg-accent/50 border-l-4 border-l-cyan-400/60 rounded-r ${
                       selectedId === tgCh.id
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground"
@@ -486,7 +487,7 @@ export default function SwarmsView() {
                     data-ocid={`swarms.telegram.channel.${tgCh.id}`}
                   >
                     {tgCh.name}
-                  </button>
+                  </Button>
                 ))}
               </>
             )}

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GraphData } from "../backend.d";
 import ArtworkModal from "../components/ArtworkModal";
@@ -124,35 +125,35 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2 mt-2">
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={() => setShowArtworkModal(true)}
           disabled={!artworkUrl}
-          className="border border-border px-2 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-2 py-1 disabled:opacity-40"
           data-ocid="public_graph.artwork_thumbnail"
           aria-label={
             artworkUrl ? `View terrain for ${meta.name}` : "Terrain generating"
           }
         >
           {artworkUrl ? "Terrain" : "Generating."}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="outline"
           onClick={() => onView(meta.id)}
-          className="border border-border px-3 py-1 font-mono text-xs text-foreground hover:bg-secondary transition-colors"
+          className="px-3 py-1"
           data-ocid="public_graph.view_button"
         >
           View Graph
-        </button>
+        </Button>
         {onSave && (
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={() => onSave(meta.id)}
-            className="border border-primary bg-primary/10 px-3 py-1 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+            className="border-primary bg-primary/10 px-3 py-1 text-primary hover:bg-primary/20"
             data-ocid="public_graph.save_button"
           >
             Save
-          </button>
+          </Button>
         )}
       </div>
 
@@ -284,14 +285,14 @@ function GraphDetail({
   return (
     <div className="flex flex-col h-full bg-background font-mono">
       <div className="flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={onBack}
-          className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          className="gap-1 text-muted-foreground"
           data-ocid="public_graph.back_button"
         >
           ← Back to Graphs
-        </button>
+        </Button>
         <span className="font-mono text-sm text-foreground font-semibold">
           {graphName}
         </span>

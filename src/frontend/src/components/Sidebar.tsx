@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -30,15 +32,15 @@ export function Sidebar({
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               key={tab.id}
               data-ocid={tab.ocid}
               onClick={() => onTabChange(tab.id)}
-              className={`w-full py-3 px-2 flex items-center justify-center transition-colors duration-150 ${
+              className={`w-full py-3 px-2 ${
                 isActive
                   ? "bg-accent text-accent-foreground border-l-2 border-primary"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  : "text-muted-foreground"
               }`}
             >
               {collapsed ? (
@@ -50,19 +52,19 @@ export function Sidebar({
                   {tab.label}
                 </span>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         data-ocid="sidebar.toggle-collapse"
         onClick={onToggleCollapse}
-        className="p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-border transition-colors duration-150"
+        className="p-2 w-full text-center border-t border-border"
       >
         {collapsed ? "»" : "«"}
-      </button>
+      </Button>
     </div>
   );
 }

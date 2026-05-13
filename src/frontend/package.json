@@ -103,6 +103,7 @@
     "react-quill-new": "3.4.6",
     "react-resizable-panels": "^2.1.7",
     "react-text-annotate": "^0.3.0",
+    "react-tilt-button": "^0.1.4",
     "react-use": "~17.6.0",
     "recharts": "^2.15.1",
     "rehype-stringify": "^10.0.1",

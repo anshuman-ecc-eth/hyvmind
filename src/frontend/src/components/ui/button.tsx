@@ -1,6 +1,7 @@
 import { Slot } from "@radix-ui/react-slot";
 import { type VariantProps, cva } from "class-variance-authority";
 import type * as React from "react";
+import { TiltButton } from "react-tilt-button";
 
 import { cn } from "@/lib/utils";
 
@@ -35,24 +36,130 @@ const buttonVariants = cva(
   },
 );
 
+const variantTiltMap = {
+  default: {
+    variant: "solid" as const,
+    surfaceColor: "var(--primary)",
+    sideColor: "color-mix(in srgb, var(--primary), #000 25%)",
+    textColor: "var(--primary-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6,
+  },
+  destructive: {
+    variant: "solid" as const,
+    surfaceColor: "var(--destructive)",
+    sideColor: "color-mix(in srgb, var(--destructive), #000 25%)",
+    textColor: "var(--destructive-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6,
+  },
+  outline: {
+    variant: "outline" as const,
+    surfaceColor: "var(--background)",
+    sideColor: "color-mix(in srgb, var(--muted), #000 15%)",
+    textColor: "var(--foreground)",
+    borderColor: "var(--border)",
+    borderWidth: 1,
+    elevation: 8,
+    pressInset: 3,
+    tilt: 1,
+    radius: 6,
+  },
+  secondary: {
+    variant: "solid" as const,
+    surfaceColor: "var(--secondary)",
+    sideColor: "color-mix(in srgb, var(--secondary), #000 25%)",
+    textColor: "var(--secondary-foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 10,
+    pressInset: 4,
+    tilt: 2,
+    radius: 6,
+  },
+  ghost: {
+    variant: "solid" as const,
+    surfaceColor: "transparent",
+    sideColor: "transparent",
+    textColor: "var(--foreground)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 0,
+    pressInset: 0,
+    tilt: 0,
+    radius: 4,
+  },
+  link: {
+    variant: "solid" as const,
+    surfaceColor: "transparent",
+    sideColor: "transparent",
+    textColor: "var(--primary)",
+    borderColor: "transparent",
+    borderWidth: 0,
+    elevation: 0,
+    pressInset: 0,
+    tilt: 0,
+    radius: 0,
+  },
+};
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot : "button";
+  if (asChild) {
+    const Comp = Slot;
+    return (
+      <Comp
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      >
+        {children}
+      </Comp>
+    );
+  }
+
+  const tiltVariant = variant ?? "default";
+  const tiltSize = size ?? "default";
+  const tiltProps =
+    variantTiltMap[tiltVariant as keyof typeof variantTiltMap] ??
+    variantTiltMap.default;
+
+  const width = tiltSize === "icon" ? 36 : "auto";
+  const heightMap = { default: 36, sm: 32, lg: 40, icon: 36 } as const;
+  const height =
+    heightMap[tiltSize as keyof typeof heightMap] ?? heightMap.default;
 
   return (
-    <Comp
+    <TiltButton
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      {...tiltProps}
+      width={width}
+      height={height}
+      motion={120}
+      className={cn("font-mono text-xs", className)}
       {...props}
-    />
+    >
+      <span className="inline-flex items-center gap-1.5 text-xs font-mono">
+        {children}
+      </span>
+    </TiltButton>
   );
 }
 

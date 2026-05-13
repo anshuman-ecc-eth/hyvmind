@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import MermaidDiagram from "./MermaidDiagram";
 
@@ -47,13 +48,13 @@ export default function TerminalOntologyOutput({
           <span className="text-xs font-mono text-muted-foreground">
             Turtle (TTL)
           </span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleCopyTurtle}
-            className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5"
+            className="px-2 py-0.5"
           >
             {copiedTurtle ? "Copied!" : "Copy"}
-          </button>
+          </Button>
         </div>
         <pre className="font-mono text-xs bg-muted/30 p-3 rounded border border-border overflow-x-auto whitespace-pre">
           {turtleText}
@@ -67,13 +68,13 @@ export default function TerminalOntologyOutput({
             Mermaid Diagram
           </span>
           {mermaidText && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={handleCopyMermaid}
-              className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5"
+              className="px-2 py-0.5"
             >
               {copiedMermaid ? "Copied!" : "Copy"}
-            </button>
+            </Button>
           )}
         </div>
         {displayError ? (

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import FilterPanel from "../components/FilterPanel";
@@ -282,14 +283,14 @@ export default function SourcesView() {
       <div className="flex flex-col h-full bg-background font-mono">
         {/* Graph header */}
         <div className="flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleBackToList}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground"
             data-ocid="sources.back_to_list"
           >
             ← back
-          </button>
+          </Button>
           <span className="text-xs text-border">|</span>
           <span className="text-sm font-semibold text-foreground mr-auto">
             {activeGraph.name}
@@ -356,15 +357,16 @@ export default function SourcesView() {
         <span className="text-sm font-semibold text-foreground mr-auto">
           Graphs
         </span>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleImportClick}
           disabled={importing}
-          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="border-dashed"
           data-ocid="sources.import_button"
         >
           {importing ? "parsing..." : "import graph"}
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
@@ -443,19 +445,21 @@ export default function SourcesView() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleView(graph)}
-                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                      className="border-dashed"
                       data-ocid={`sources.view_button.${graph.id}`}
                     >
                       view
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handlePublish(graph)}
                       disabled={isPublishing || isPreviewLoading}
-                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="border-dashed"
                       data-ocid={`sources.publish_button.${graph.id}`}
                     >
                       {isPreviewLoading && previewGraph?.id === graph.id
@@ -463,15 +467,16 @@ export default function SourcesView() {
                         : published
                           ? "update"
                           : "publish"}
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() => handleDeleteRequest(graph.id)}
-                      className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      className="border-dashed"
                       data-ocid={`sources.delete_button.${graph.id}`}
                     >
                       delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -501,22 +506,24 @@ export default function SourcesView() {
                 this action cannot be undone.
               </p>
               <div className="flex gap-3">
-                <button
-                  type="button"
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleDeleteConfirm}
-                  className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  className="flex-1 border-dashed"
                   data-ocid="sources.confirm_delete_yes"
                 >
                   delete
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleDeleteCancel}
-                  className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                  className="flex-1 border-dashed"
                   data-ocid="sources.confirm_delete_cancel"
                 >
                   cancel
-                </button>
+                </Button>
               </div>
             </div>
           </>
