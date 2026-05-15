@@ -800,53 +800,84 @@ function TypewriterDisplay({
 // ── About Screen ────────────────────────────────────────────────────────────────
 
 function AboutScreen({ onBack }: { onBack: () => void }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [lineIdx, setLineIdx] = useState(0);
+  const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
+  const total = lines.length;
+  const lastWheel = useRef(0);
+
+  const goNext = useCallback(() => {
+    setLineIdx((prev) => Math.min(prev + 1, total - 1));
+  }, [total]);
+
+  const goPrev = useCallback(() => {
+    setLineIdx((prev) => Math.max(prev - 1, 0));
+  }, []);
 
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        container.scrollBy({ top: -40, behavior: "smooth" });
-      } else if (e.key === "ArrowDown") {
+        goNext();
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        container.scrollBy({ top: 40, behavior: "smooth" });
+        goPrev();
       } else if (e.key === "Escape") {
         onBack();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onBack]);
+  }, [goNext, goPrev, onBack]);
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastWheel.current < 500) return;
+      if (Math.abs(e.deltaY) < 10) return;
+      lastWheel.current = now;
+      if (e.deltaY > 0) goNext();
+      else goPrev();
+    },
+    [goNext, goPrev],
+  );
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="flex flex-col items-center gap-0 max-w-prose mx-auto">
-          <TextReveal
-            lines={ABOUT_LINES}
-            containerRef={scrollRef as React.RefObject<HTMLDivElement | null>}
-          />
-          <button
-            type="button"
-            className="text-foreground transition-colors hover:text-muted-foreground mt-8"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6em",
-              letterSpacing: "0.15em",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "0",
-            }}
-            onClick={onBack}
-            data-ocid="text_game.about.back_button"
-          >
-            {"> Back"}
-          </button>
-        </div>
+      <div
+        className="flex-1 flex items-center justify-center"
+        onWheel={handleWheel}
+      >
+        <TextReveal line={lines[lineIdx]} lineIndex={lineIdx} />
+      </div>
+      <div className="flex items-center justify-between px-3 pb-3">
+        <span
+          className="text-muted-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.4em",
+            letterSpacing: "0.1em",
+          }}
+        >
+          {lineIdx + 1}/{total}
+        </span>
+        <button
+          type="button"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.4em",
+            letterSpacing: "0.1em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0",
+          }}
+          onClick={onBack}
+          data-ocid="text_game.about.back_button"
+        >
+          ESC: Back
+        </button>
       </div>
     </div>
   );
