@@ -8,18 +8,72 @@ import {
 import ChessPuzzleGame from "./ChessPuzzleGame";
 import FlyingBee from "./FlyingBee";
 import PixelTransition from "./TextAnimations/PixelTransition";
+import TextReveal from "./TextReveal";
 import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const MENU_ITEMS = [
+  "About",
   "Story",
   "Puzzles",
   "Settings",
   "Leaderboard",
   "Exit",
 ] as const;
+
+const ABOUT_LINES = [
+  "Legal AI is a lie.",
+  "",
+  "It takes your data and interpretations.",
+  "",
+  "Stuffs them into an agentic box.",
+  "",
+  "Then tries to sell it back.",
+  "",
+  "It's neither product nor service.",
+  "",
+  "But a bad magic trick.",
+  "",
+  "You're paying to have your attention diverted, so you don't notice the theft.",
+  "",
+  "Marketing teams call it 'legal intelligence'.",
+  "",
+  "But it's a parrot trying to be a clerk.",
+  "",
+  "You know this well enough.",
+  "",
+  "Because you still verify everything.",
+  "",
+  "Because you know that law is adversarial.",
+  "",
+  "Because your goal is to beat an opponent.",
+  "",
+  "Not to give them a point-of-attack.",
+  "",
+  "You also understand the math.",
+  "",
+  "Productivity Gain = Work Time - Verification Time.",
+  "",
+  "If all three are measured in human terms, bots can't capture all the value.",
+  "",
+  "That's the part they don't talk about.",
+  "",
+  "Because they're hoping you won't ask.",
+  "",
+  "Also because they're testing you.",
+  "",
+  "If you're scared, they'll throw you into a shadow factory.",
+  "",
+  "If you're convinced, they'll fleece you.",
+  "",
+  "If you're neither..",
+  "",
+  "Welcome.",
+  "",
+  "We're building a sanctuary.",
+];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
 const CONTENT = {
@@ -89,6 +143,7 @@ interface GameSettings {
 
 type Phase =
   | { type: "idle" }
+  | { type: "about" }
   | { type: "settings" }
   | { type: "leaderboard" }
   | { type: "generating" }
@@ -364,6 +419,7 @@ function LeaderboardScreen({
 
 interface StartScreenProps {
   onStart: () => void;
+  onAbout: () => void;
   onChess: () => void;
   onWordle: () => void;
   onSettings: () => void;
@@ -377,6 +433,7 @@ interface StartScreenProps {
 
 function StartScreen({
   onStart,
+  onAbout,
   onChess,
   onWordle,
   onSettings,
@@ -403,7 +460,8 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Story") onStart();
+          if (chosen === "About") onAbout();
+          else if (chosen === "Story") onStart();
           else if (chosen === "Puzzles") {
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
@@ -434,6 +492,7 @@ function StartScreen({
     puzzleSelectedIdx,
     subMenu,
     onStart,
+    onAbout,
     onChess,
     onWordle,
     onSettings,
@@ -542,7 +601,8 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
-                      if (item === "Story") onStart();
+                      if (item === "About") onAbout();
+                      else if (item === "Story") onStart();
                       else if (item === "Puzzles") {
                         setSubMenu("puzzles");
                         setPuzzleSelectedIdx(0);
@@ -737,6 +797,61 @@ function TypewriterDisplay({
   );
 }
 
+// ── About Screen ────────────────────────────────────────────────────────────────
+
+function AboutScreen({ onBack }: { onBack: () => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        container.scrollBy({ top: -40, behavior: "smooth" });
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        container.scrollBy({ top: 40, behavior: "smooth" });
+      } else if (e.key === "Escape") {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="flex flex-col items-center gap-0 max-w-prose mx-auto">
+          <TextReveal
+            lines={ABOUT_LINES}
+            containerRef={scrollRef as React.RefObject<HTMLDivElement | null>}
+          />
+          <button
+            type="button"
+            className="text-foreground transition-colors hover:text-muted-foreground mt-8"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6em",
+              letterSpacing: "0.15em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+            }}
+            onClick={onBack}
+            data-ocid="text_game.about.back_button"
+          >
+            {"> Back"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface TextGameModalProps {
@@ -854,6 +969,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   const handleOpenLeaderboard = useCallback(() => {
     setPhase({ type: "leaderboard" });
+  }, []);
+
+  const handleOpenAbout = useCallback(() => {
+    setPhase({ type: "about" });
   }, []);
 
   const handleStartChess = useCallback(() => {
@@ -1155,6 +1274,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <StartScreen
             modalRef={modalRef}
             onStart={handleStart}
+            onAbout={handleOpenAbout}
             onChess={handleStartChess}
             onWordle={handleStartWordle}
             onSettings={handleOpenSettings}
@@ -1165,6 +1285,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             setSecretCode={setSecretCode}
           />
         );
+
+      case "about":
+        return <AboutScreen onBack={handleCloseSubScreen} />;
 
       case "settings":
         return (
