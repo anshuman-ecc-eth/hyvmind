@@ -24,7 +24,7 @@ const MENU_ITEMS = [
 ] as const;
 
 const ABOUT_LINES = [
-  "Legal AI can be shortened to LAI.",
+  "Our word for Legal AI is LAI.",
   "",
   "Rather fitting, don't you think?",
   "",
@@ -40,7 +40,7 @@ const ABOUT_LINES = [
   "",
   "You're paying to have your attention diverted, so you don't notice the theft.",
   "",
-  "Their marketing teams will tell you it's 'legal intelligence'.",
+  "LAI's marketing team will tell you it's 'legal intelligence'.",
   "",
   "But you know it's a parrot trying to be a clerk.",
   "",
@@ -57,8 +57,6 @@ const ABOUT_LINES = [
   "Everything is measured in human hours.",
   "",
   "How can parrots capture value?",
-  "",
-  "That's the big LAI.",
   "",
   "That's the part they don't talk about.",
   "",
@@ -78,7 +76,7 @@ const ABOUT_LINES = [
   "",
   "If you're neither..",
   "",
-  "You're a threat to LAI.",
+  "You're LAI's biggest threat.",
   "",
   "But you've come to the right place.",
   "",
