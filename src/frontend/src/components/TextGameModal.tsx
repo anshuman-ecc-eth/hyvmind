@@ -24,19 +24,23 @@ const MENU_ITEMS = [
 ] as const;
 
 const ABOUT_LINES = [
-  "The short-form of Legal AI is LAI.",
+  "Legal AI can be shortened to LAI.",
   "",
-  "Rather fitting.",
+  "Rather fitting, don't you think?",
   "",
-  "It takes your data and interpretations, stuffs them into an agentic box, then tries to sell it back.",
+  "It's taken your data and interpretations.",
+  "",
+  "Without attribution. Without compensation.",
+  "",
+  "Now it's trying to sell it back in a glossy agentic wrapper.",
   "",
   "That's neither product nor service.",
   "",
-  "It's a bad magic trick.",
+  "But a bad magic trick.",
   "",
   "You're paying to have your attention diverted, so you don't notice the theft.",
   "",
-  "Marketing teams tell you it 'legal intelligence'.",
+  "Their marketing teams tell you it 'legal intelligence'.",
   "",
   "But you know it's a parrot trying to be a clerk.",
   "",
@@ -60,15 +64,17 @@ const ABOUT_LINES = [
   "",
   "And because they're testing you.",
   "",
-  "If you're scared, they'll throw you into a shadow factory.",
+  "If you're scared..",
   "",
-  "If you're convinced, they'll fleece you.",
+  "they'll throw you into a shadow factory.",
+  "",
+  "If you're convinced..",
+  "",
+  "they'll fleece you.",
   "",
   "If you're neither..",
   "",
   "Welcome.",
-  "",
-  "We're building a sanctuary.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
@@ -856,17 +862,61 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
           direction={direction}
         />
       </div>
-      <div className="flex items-center justify-between px-3 pb-3">
-        <span
-          className="text-muted-foreground"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.4em",
-            letterSpacing: "0.1em",
-          }}
-        >
-          {lineIdx + 1}/{total}
-        </span>
+      <div className="flex flex-col items-center gap-2 pb-3">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            className={`transition-colors ${
+              lineIdx === 0
+                ? "opacity-30 cursor-default"
+                : "text-muted-foreground hover:text-foreground cursor-pointer"
+            }`}
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.5em",
+              letterSpacing: "0.1em",
+              background: "none",
+              border: "none",
+              padding: "0",
+            }}
+            onClick={() => lineIdx > 0 && goPrev()}
+            disabled={lineIdx === 0}
+            aria-label="Previous line"
+          >
+            {"<"}
+          </button>
+          <span
+            className="text-muted-foreground"
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.4em",
+              letterSpacing: "0.1em",
+            }}
+          >
+            {lineIdx + 1}/{total}
+          </span>
+          <button
+            type="button"
+            className={`transition-colors ${
+              lineIdx === total - 1
+                ? "opacity-30 cursor-default"
+                : "text-muted-foreground hover:text-foreground cursor-pointer"
+            }`}
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.5em",
+              letterSpacing: "0.1em",
+              background: "none",
+              border: "none",
+              padding: "0",
+            }}
+            onClick={() => lineIdx < total - 1 && goNext()}
+            disabled={lineIdx === total - 1}
+            aria-label="Next line"
+          >
+            {">"}
+          </button>
+        </div>
         <button
           type="button"
           className="text-muted-foreground transition-colors hover:text-foreground"
