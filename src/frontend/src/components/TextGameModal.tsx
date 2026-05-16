@@ -801,24 +801,27 @@ function TypewriterDisplay({
 
 function AboutScreen({ onBack }: { onBack: () => void }) {
   const [lineIdx, setLineIdx] = useState(0);
+  const [direction, setDirection] = useState(1);
   const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
   const total = lines.length;
-  const lastWheel = useRef(0);
+  const touchStartX = useRef(0);
 
   const goNext = useCallback(() => {
+    setDirection(1);
     setLineIdx((prev) => Math.min(prev + 1, total - 1));
   }, [total]);
 
   const goPrev = useCallback(() => {
+    setDirection(-1);
     setLineIdx((prev) => Math.max(prev - 1, 0));
   }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
+      if (e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         goPrev();
       } else if (e.key === "Escape") {
@@ -829,15 +832,17 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
     return () => window.removeEventListener("keydown", handler);
   }, [goNext, goPrev, onBack]);
 
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const now = Date.now();
-      if (now - lastWheel.current < 500) return;
-      if (Math.abs(e.deltaY) < 10) return;
-      lastWheel.current = now;
-      if (e.deltaY > 0) goNext();
-      else goPrev();
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const diff = e.changedTouches[0].clientX - touchStartX.current;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) goPrev();
+        else goNext();
+      }
     },
     [goNext, goPrev],
   );
@@ -846,9 +851,14 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
     <div className="flex-1 flex flex-col overflow-hidden">
       <div
         className="flex-1 flex items-center justify-center"
-        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <TextReveal line={lines[lineIdx]} lineIndex={lineIdx} />
+        <TextReveal
+          line={lines[lineIdx]}
+          lineIndex={lineIdx}
+          direction={direction}
+        />
       </div>
       <div className="flex items-center justify-between px-3 pb-3">
         <span

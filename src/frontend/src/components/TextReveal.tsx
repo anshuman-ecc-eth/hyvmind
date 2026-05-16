@@ -3,18 +3,31 @@ import { AnimatePresence, motion } from "motion/react";
 interface TextRevealProps {
   line: string;
   lineIndex: number;
+  direction: number;
 }
 
-export default function TextReveal({ line, lineIndex }: TextRevealProps) {
+const variants = {
+  enter: (dir: number) => ({ x: dir * 80, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir * -80, opacity: 0 }),
+};
+
+export default function TextReveal({
+  line,
+  lineIndex,
+  direction,
+}: TextRevealProps) {
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait" custom={direction}>
       <motion.div
         key={lineIndex}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
+        custom={direction}
+        variants={variants}
+        initial="enter"
+        animate="center"
+        exit="exit"
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="text-foreground text-center leading-relaxed px-2"
+        className="text-foreground text-center leading-relaxed px-2 w-full"
         style={{
           fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.6em",
