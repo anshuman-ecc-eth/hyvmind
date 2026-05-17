@@ -81,9 +81,9 @@ const ABOUT_LINES = [
   "",
   "If you're neither scared nor convinced, you're one of us.",
   "",
-  "Take the nearest exit from Grand Theft Intelligence Vice City.",
+  "Take the next exit from Grand Theft Intelligence Vice City.",
   "",
-  "And find a sanctuary.",
+  "We'll see you at the sanctuary.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
