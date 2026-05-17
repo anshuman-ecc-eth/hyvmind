@@ -8,7 +8,6 @@ import {
 import ChessPuzzleGame from "./ChessPuzzleGame";
 import FlyingBee from "./FlyingBee";
 import PixelTransition from "./TextAnimations/PixelTransition";
-import TextReveal from "./TextReveal";
 import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
@@ -804,139 +803,68 @@ function TypewriterDisplay({
 // ── About Screen ────────────────────────────────────────────────────────────────
 
 function AboutScreen({ onBack }: { onBack: () => void }) {
-  const [lineIdx, setLineIdx] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
   const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
   const total = lines.length;
-  const touchStartX = useRef(0);
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    setLineIdx((prev) => Math.min(prev + 1, total - 1));
-  }, [total]);
-
-  const goPrev = useCallback(() => {
-    setDirection(-1);
-    setLineIdx((prev) => Math.max(prev - 1, 0));
-  }, []);
+  const advance = useCallback(() => {
+    if (!done) return;
+    setDone(false);
+    if (step + 1 >= total) {
+      onBack();
+    } else {
+      setStep((prev) => prev + 1);
+    }
+  }, [done, step, total, onBack]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "Escape") {
-        onBack();
-      }
+      if (e.key === "Tab") return;
+      advance();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev, onBack]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      const diff = e.changedTouches[0].clientX - touchStartX.current;
-      if (Math.abs(diff) > 40) {
-        if (diff > 0) goPrev();
-        else goNext();
-      }
-    },
-    [goNext, goPrev],
-  );
+  }, [advance]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div
-        className="flex-1 flex items-center justify-center"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+    <div
+      className="flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer"
+      onClick={advance}
+      onKeyDown={
+        done
+          ? (e) => {
+              if (e.key !== "Tab") advance();
+            }
+          : undefined
+      }
+      // biome-ignore lint/a11y/useSemanticElements: intentional overlay
+      role="button"
+      tabIndex={0}
+    >
+      <p
+        className="text-foreground text-center leading-relaxed"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7em",
+          letterSpacing: "0.05em",
+          lineHeight: "2",
+          maxWidth: "80%",
+          fontWeight: "400",
+        }}
       >
-        <TextReveal
-          line={lines[lineIdx]}
-          lineIndex={lineIdx}
-          direction={direction}
+        <TextType
+          key={step}
+          text={lines[step]}
+          typingSpeed={25}
+          showCursor
+          hideCursorWhileTyping
+          cursorCharacter="█"
+          cursorBlinkDuration={0.4}
+          loop={false}
+          onSentenceComplete={() => setDone(true)}
         />
-      </div>
-      <div className="flex flex-col items-center gap-2 pb-3">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className={`transition-colors ${
-              lineIdx === 0
-                ? "opacity-30 cursor-default"
-                : "text-muted-foreground hover:text-foreground cursor-pointer"
-            }`}
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5em",
-              letterSpacing: "0.1em",
-              background: "none",
-              border: "none",
-              padding: "0",
-            }}
-            onClick={() => lineIdx > 0 && goPrev()}
-            disabled={lineIdx === 0}
-            aria-label="Previous line"
-          >
-            {"<"}
-          </button>
-          <span
-            className="text-muted-foreground"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.4em",
-              letterSpacing: "0.1em",
-            }}
-          >
-            {lineIdx + 1}/{total}
-          </span>
-          <button
-            type="button"
-            className={`transition-colors ${
-              lineIdx === total - 1
-                ? "opacity-30 cursor-default"
-                : "text-muted-foreground hover:text-foreground cursor-pointer"
-            }`}
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5em",
-              letterSpacing: "0.1em",
-              background: "none",
-              border: "none",
-              padding: "0",
-            }}
-            onClick={() => lineIdx < total - 1 && goNext()}
-            disabled={lineIdx === total - 1}
-            aria-label="Next line"
-          >
-            {">"}
-          </button>
-        </div>
-        <button
-          type="button"
-          className="text-muted-foreground transition-colors hover:text-foreground"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.4em",
-            letterSpacing: "0.1em",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0",
-          }}
-          onClick={onBack}
-          data-ocid="text_game.about.back_button"
-        >
-          ESC: Back
-        </button>
-      </div>
+      </p>
     </div>
   );
 }
