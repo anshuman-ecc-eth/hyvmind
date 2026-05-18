@@ -13,8 +13,8 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Signpost", "Games", "Leaderboard", "Exit"] as const;
-const GAME_MENU_ITEMS = ["Story", "Puzzles", "Settings", "Back"] as const;
+const MENU_ITEMS = ["Signpost", "Left", "Right", "Exit"] as const;
+const LEFT_MENU_ITEMS = ["Story", "Puzzles", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
   "Have you heard of LAI?",
@@ -67,7 +67,7 @@ const ABOUT_LINES = [
   "",
   'What they really mean is: "Human thinking reduces our total addressable market."',
   "",
-  "We've been in the game long enough to see through their corpslop.",
+  "We've been in the game long enough to see through the corpslop.",
   "",
   "We've also tested the key equation.",
   "",
@@ -75,7 +75,7 @@ const ABOUT_LINES = [
   "",
   "Each variable is measured in non-parrot hours. That's why they're freaking out.",
   "",
-  "In order for their 'business model' to work, they must sell with one hand what they steal with another.",
+  "In order for the 'business model' to work, they must sell with one hand what they steal with another.",
   "",
   "At this point, they have no other option but to test you.",
   "",
@@ -89,7 +89,9 @@ const ABOUT_LINES = [
   "",
   "Take the next exit from Grand Theft Intelligence Vice City.",
   "",
-  "We'll see you at the sanctuary.",
+  "The leaderboard will be to your right.",
+  "",
+  "Sanctuary on the left.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
@@ -463,9 +465,9 @@ function StartScreen({
 }: StartScreenProps) {
   const yRef = useRef<HTMLSpanElement>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [subMenu, setSubMenu] = useState<"main" | "games" | "puzzles">("main");
+  const [subMenu, setSubMenu] = useState<"main" | "left" | "puzzles">("main");
   const [puzzleSelectedIdx, setPuzzleSelectedIdx] = useState(0);
-  const [gamesSelectedIdx, setGamesSelectedIdx] = useState(0);
+  const [leftSelectedIdx, setLeftSelectedIdx] = useState(0);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -479,22 +481,22 @@ function StartScreen({
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Signpost") onAbout();
-          else if (chosen === "Games") {
-            setSubMenu("games");
-            setGamesSelectedIdx(0);
-          } else if (chosen === "Leaderboard") onHiScores();
+          else if (chosen === "Left") {
+            setSubMenu("left");
+            setLeftSelectedIdx(0);
+          } else if (chosen === "Right") onHiScores();
           else if (chosen === "Exit") onExit();
         }
-      } else if (subMenu === "games") {
+      } else if (subMenu === "left") {
         if (e.key === "ArrowUp") {
-          setGamesSelectedIdx(
+          setLeftSelectedIdx(
             (prev) =>
-              (prev - 1 + GAME_MENU_ITEMS.length) % GAME_MENU_ITEMS.length,
+              (prev - 1 + LEFT_MENU_ITEMS.length) % LEFT_MENU_ITEMS.length,
           );
         } else if (e.key === "ArrowDown") {
-          setGamesSelectedIdx((prev) => (prev + 1) % GAME_MENU_ITEMS.length);
+          setLeftSelectedIdx((prev) => (prev + 1) % LEFT_MENU_ITEMS.length);
         } else if (e.key === "Enter") {
-          const chosen = GAME_MENU_ITEMS[gamesSelectedIdx];
+          const chosen = LEFT_MENU_ITEMS[leftSelectedIdx];
           if (chosen === "Story") onStart();
           else if (chosen === "Puzzles") {
             setSubMenu("puzzles");
@@ -514,7 +516,7 @@ function StartScreen({
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
           if (chosen === "Chess") onChess();
           else if (chosen === "Wordle") onWordle();
-          else if (chosen === "Back") setSubMenu("games");
+          else if (chosen === "Back") setSubMenu("left");
         }
       }
     };
@@ -522,7 +524,7 @@ function StartScreen({
     return () => window.removeEventListener("keydown", handler);
   }, [
     selectedIdx,
-    gamesSelectedIdx,
+    leftSelectedIdx,
     puzzleSelectedIdx,
     subMenu,
     onStart,
@@ -609,7 +611,7 @@ function StartScreen({
               letterSpacing: "0.15em",
             }}
           >
-            {subMenu === "games" ? "Games" : "Puzzles"}
+            {subMenu === "left" ? "Sanctuary" : "Puzzles"}
           </div>
         )}
 
@@ -636,10 +638,10 @@ function StartScreen({
                     onClick={() => {
                       setSelectedIdx(activeIdx);
                       if (item === "Signpost") onAbout();
-                      else if (item === "Games") {
-                        setSubMenu("games");
-                        setGamesSelectedIdx(0);
-                      } else if (item === "Leaderboard") onHiScores();
+                      else if (item === "Left") {
+                        setSubMenu("left");
+                        setLeftSelectedIdx(0);
+                      } else if (item === "Right") onHiScores();
                       else if (item === "Exit") onExit();
                     }}
                   >
@@ -647,14 +649,14 @@ function StartScreen({
                   </button>
                 );
               })
-            : subMenu === "games"
-              ? GAME_MENU_ITEMS.map((item, activeIdx) => {
-                  const isSelected = activeIdx === gamesSelectedIdx;
+            : subMenu === "left"
+              ? LEFT_MENU_ITEMS.map((item, activeIdx) => {
+                  const isSelected = activeIdx === leftSelectedIdx;
                   return (
                     <button
                       key={item}
                       type="button"
-                      data-ocid={`text_game.start_screen.games_${item.toLowerCase().replace("-", "_")}`}
+                      data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
                       className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
                       style={{
                         fontFamily: '"Press Start 2P", monospace',
@@ -666,7 +668,7 @@ function StartScreen({
                         padding: "0",
                       }}
                       onClick={() => {
-                        setGamesSelectedIdx(activeIdx);
+                        setLeftSelectedIdx(activeIdx);
                         if (item === "Story") onStart();
                         else if (item === "Puzzles") {
                           setSubMenu("puzzles");
@@ -700,7 +702,7 @@ function StartScreen({
                         setPuzzleSelectedIdx(activeIdx);
                         if (item === "Chess") onChess();
                         else if (item === "Wordle") onWordle();
-                        else if (item === "Back") setSubMenu("games");
+                        else if (item === "Back") setSubMenu("left");
                       }}
                     >
                       {isSelected ? `> ${item}` : `  ${item}`}
