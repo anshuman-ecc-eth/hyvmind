@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HYVMIND</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a12; touch-action: none; }
+  body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
+
+  .layout { display: flex; align-items: center; gap: 24px; }
+  .dpad { position: relative; width: 216px; height: 216px; flex-shrink: 0; }
+  .dpad-btn { position: absolute; width: 72px; height: 72px; background: rgba(20,20,20,0.55); border: 2px solid rgba(255,255,255,0.12); border-radius: 10px; color: rgba(255,255,255,0.35); font-size: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; backdrop-filter: blur(2px); }
+  .dpad-btn:active, .dpad-btn.active { background: rgba(68,68,68,0.7); border-color: rgba(240,192,96,0.5); color: #f0c060; }
+  .dpad-up    { top: 0; left: 72px; }
+  .dpad-down  { bottom: 0; left: 72px; }
+  .dpad-left  { left: 0; top: 72px; }
+  .dpad-right { right: 0; top: 72px; }
+  .action-buttons { display: flex; flex-direction: row; gap: 24px; flex-shrink: 0; }
+  .action-btn { width: 88px; height: 88px; border-radius: 50%; background: rgba(20,20,20,0.55); border: 2px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.35); font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; backdrop-filter: blur(2px); }
+  .action-btn:active, .action-btn.active { background: rgba(68,68,68,0.7); border-color: rgba(240,192,96,0.5); color: #f0c060; }
+  .screen { width: 574px; height: 480px; border: 3px solid #555; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
+  .viewport { position: absolute; inset: 0; overflow: hidden; }
+  .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
+  .game-layer { position: absolute; inset: 0; z-index: 1; }
+  .sprite { position: absolute; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; }
+  @media (max-width: 900px) {
+    .layout { gap: 12px; }
+    .screen { width: 100%; height: auto; aspect-ratio: 574/480; border-width: 2px; }
+    .dpad { width: 162px; height: 162px; }
+    .dpad-btn { width: 54px; height: 54px; font-size: 22px; border-radius: 7px; }
+    .dpad-up    { left: 54px; }
+    .dpad-down  { left: 54px; }
+    .dpad-left  { top: 54px; }
+    .dpad-right { top: 54px; }
+    .action-btn { width: 66px; height: 66px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="dpad">
+    <button class="dpad-btn dpad-up"    data-dir="up">&#9650;</button>
+    <button class="dpad-btn dpad-down"  data-dir="down">&#9660;</button>
+    <button class="dpad-btn dpad-left"  data-dir="left">&#9664;</button>
+    <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+  </div>
+  <div class="screen">
+    <div class="viewport" id="viewport">
+      <img id="worldBg" class="world-layer" src="/assets/hyvmind/bottom.png">
+      <div id="gameLayer" class="game-layer"></div>
+    </div>
+  </div>
+  <div class="action-buttons">
+    <button class="action-btn" id="btnZ">Z</button>
+    <button class="action-btn" id="btnX">X</button>
+  </div>
+</div>
+
+<script>
+var ASSETS = '/assets/hyvmind';
+var WORLD_W = 574, WORLD_H = 2176;
+var SCREEN_W = 574, SCREEN_H = 480;
+var TILE = 8;
+var COLS = 72, ROWS = 272;
+function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+
+var dirMap = [2, 3, 1, 0];
+var collisionMap = [];
+for (var y = 0; y < ROWS; y++) { collisionMap[y] = []; for (var x = 0; x < COLS; x++) collisionMap[y][x] = 1; }
+
+function initCollision(callback) {
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = COLS; c.height = ROWS;
+      var cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      var data = cx.getImageData(0, 0, COLS, ROWS).data;
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++) {
+          var idx = (y * COLS + x) * 4;
+          var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+          if (a === 0) collisionMap[y][x] = 0;
+          else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
+          else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
+          else if (g > 150 && r < 150) collisionMap[y][x] = 1;
+          else if (r > 150 && g < 150 && b < 150) collisionMap[y][x] = 2;
+          else if (r > 150 && g > 150 && b < 150) collisionMap[y][x] = 3;
+          else collisionMap[y][x] = 0;
+        }
+    } catch(e) {}
+    callback();
+  };
+  img.onerror = function() { callback(); };
+  img.src = ASSETS + '/collision.png?' + Date.now();
+}
+
+var triggerMessages = {};
+var triggerPositions = [];
+var lastTriggerTile = null;
+
+function loadTriggers(callback) {
+  fetch(ASSETS + '/triggers.json?' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      triggerMessages = d || {};
+      triggerPositions = [];
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
+      callback();
+    })
+    .catch(function() { triggerMessages = {}; triggerPositions = []; callback(); });
+}
+
+function checkNearbyTriggers(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  nearTrigger = null;
+  var bestDist = 999;
+  for (var i = 0; i < triggerPositions.length; i++) {
+    var tp = triggerPositions[i];
+    if (triggerMessages[tp.key]) {
+      var dist = Math.abs(tp.tx - tx) + Math.abs(tp.ty - ty);
+      if (dist < bestDist) { bestDist = dist; nearTrigger = tp; }
+    }
+  }
+  if (bestDist > 3) nearTrigger = null;
+}
+
+var activePopup = null;
+function showPopup(msg) {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop.style.cssText = 'position:absolute;bottom:50%;left:50%;transform:translate(-50%,50%);z-index:20;pointer-events:auto;';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  document.querySelector('.screen').appendChild(pop);
+  activePopup = pop;
+}
+function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
+
+function isWalkable(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return false;
+  var v = collisionMap[ty][tx];
+  return v === 1 || v === 3 || v === 5;
+}
+
+function findNearestWalkable(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  for (var r = 0; r < 200; r++) {
+    for (var dy = -r; dy <= r; dy++) {
+      for (var dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        var nx = tx + dx, ny = ty + dy;
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        var v = collisionMap[ny][nx];
+        if (v === 1 || v === 3) {
+          return { x: nx * TILE + 4 - 16, y: ny * TILE + 4 - 14 };
+        }
+      }
+    }
+  }
+  return { x: gx, y: gy };
+}
+
+var worldBg = document.getElementById('worldBg');
+worldBg.style.width = WORLD_W + 'px';
+worldBg.style.height = WORLD_H + 'px';
+
+(function() {
+  for (var r = 0; r < 4; r++)
+    for (var c = 0; c < 3; c++)
+      (new Image()).src = ASSETS + '/sprites/cultist_' + c + '_' + r + '.png';
+})();
+
+var viewport = document.getElementById('viewport');
+var layer = document.getElementById('gameLayer');
+
+var elP = document.createElement('div');
+elP.className = 'sprite';
+elP.style.zIndex = '5';
+layer.appendChild(elP);
+
+var STEP = 5;
+var px = 280, py = 200, pDir = 0, pMoving = false, pWalk = 0;
+var nearTrigger = null;
+
+// Close handler for parent modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+    return;
+  }
+  K[e.key] = true;
+  if (e.key.startsWith('Arrow')) e.preventDefault();
+  if (e.key === 'Enter' || e.key === 'z' || e.key === 'Z') {
+    if (nearTrigger && triggerMessages[nearTrigger.key]) showPopup(triggerMessages[nearTrigger.key]);
+  }
+  if (e.key === 'x' || e.key === 'X') { closePopup(); }
+});
+
+function render() {
+  var viewW = SCREEN_W, viewH = SCREEN_H;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  worldBg.style.left = (-camX) + 'px';
+  worldBg.style.top = (-camY) + 'px';
+
+  var pc = pMoving ? (Math.floor(pWalk / 2) % 2) : 2;
+  var pTileX = Math.floor((px + 16) / TILE);
+  var pTileY = Math.floor((py + 14) / TILE);
+  var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
+  elP.style.cssText = 'position:absolute;left:' + (px - camX) + 'px;top:' + (py - camY) + 'px;width:32px;height:36px;background-image:' + frm(pc, dirMap[pDir]) + ';background-size:32px 36px;image-rendering:pixelated;z-index:5;opacity:' + (isUnderObject ? '0.4' : '1') + ';';
+
+  var cue = document.getElementById('interactCue');
+  if (nearTrigger && triggerMessages[nearTrigger.key]) {
+    if (!cue) {
+      cue = document.createElement('div');
+      cue.id = 'interactCue';
+      cue.style.cssText = 'position:absolute;z-index:6;pointer-events:none;font-family:monospace;font-size:8px;color:#e8d8b8;text-align:center;padding:8px 14px;background:linear-gradient(180deg,#1a1408,#0e0c06);border:2px solid;border-image:linear-gradient(135deg,#6a5a2a,#c8a860,#6a5a2a) 1;box-shadow:0 0 12px rgba(0,0,0,0.6),inset 0 0 20px rgba(0,0,0,0.4);white-space:nowrap;letter-spacing:1px;';
+      layer.appendChild(cue);
+      for (var s = 0; s < 3; s++) {
+        var dot = document.createElement('div');
+        dot.className = 'sparkle';
+        dot.style.cssText = 'position:absolute;width:3px;height:3px;border-radius:50%;background:#f0c060;opacity:0;';
+        layer.appendChild(dot);
+      }
+    }
+    cue.textContent = '! Press Z';
+    cue.style.left = (px - camX - 8) + 'px';
+    cue.style.top = (py - camY - 20) + 'px';
+    cue.style.display = 'block';
+    var sparkles = layer.querySelectorAll('.sparkle');
+    var t = Date.now() / 300;
+    for (var s = 0; s < sparkles.length; s++) {
+      var angle = t + s * 2.1;
+      sparkles[s].style.left = (px - camX + 16 + Math.cos(angle) * 14) + 'px';
+      sparkles[s].style.top = (py - camY + Math.sin(angle) * 14) + 'px';
+      sparkles[s].style.opacity = 0.5 + 0.5 * Math.sin(angle * 2);
+    }
+  } else {
+    if (cue) cue.style.display = 'none';
+    var sparkles = layer.querySelectorAll('.sparkle');
+    for (var s = 0; s < sparkles.length; s++) sparkles[s].style.opacity = 0;
+  }
+}
+
+var K = {};
+document.addEventListener('keyup', function(e) { K[e.key] = false; });
+
+var dpadState = {};
+document.querySelectorAll('.dpad-btn').forEach(function(btn) {
+  function start(e) { e.preventDefault(); btn.classList.add('active'); dpadState[btn.dataset.dir] = true; }
+  function end(e) { e.preventDefault(); btn.classList.remove('active'); dpadState[btn.dataset.dir] = false; }
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('mouseup', end);
+  btn.addEventListener('mouseleave', end);
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('touchend', end, { passive: false });
+  btn.addEventListener('touchcancel', end, { passive: false });
+});
+
+document.getElementById('btnZ').addEventListener('click', function() {
+  this.classList.add('active');
+  if (nearTrigger && triggerMessages[nearTrigger.key]) showPopup(triggerMessages[nearTrigger.key]);
+  setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
+});
+document.getElementById('btnX').addEventListener('click', function() {
+  this.classList.add('active');
+  closePopup();
+  setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
+});
+
+var tick = 0;
+function loop() {
+  tick++;
+  var dx = 0, dy = 0;
+  if (K['ArrowLeft'] || dpadState['left']) { dx = -STEP; pDir = 1; }
+  else if (K['ArrowRight'] || dpadState['right']) { dx = STEP; pDir = 2; }
+  else if (K['ArrowUp'] || dpadState['up']) { dy = -STEP; pDir = 3; }
+  else if (K['ArrowDown'] || dpadState['down']) { dy = STEP; pDir = 0; }
+
+  if (dx !== 0 || dy !== 0) {
+    var nx = px + dx, ny = py + dy;
+    if (dx !== 0 && isWalkable(nx, py)) px = nx;
+    if (dy !== 0 && isWalkable(px, ny)) py = ny;
+    pMoving = true;
+    if (tick % 2 === 0) pWalk++;
+  } else { pMoving = false; pWalk = 0; }
+  px = Math.max(0, Math.min(WORLD_W - 32, px));
+  py = Math.max(0, Math.min(WORLD_H - 32, py));
+  checkNearbyTriggers(px, py);
+  render();
+}
+
+initCollision(function() {
+  loadTriggers(function() {
+    if (!isWalkable(px, py)) {
+      var n = findNearestWalkable(px, py);
+      px = n.x; py = n.y;
+      if (!isWalkable(px, py)) {
+        for (var yy = -16; yy <= 16; yy += 8)
+          for (var xx = -16; xx <= 16; xx += 8)
+            if (isWalkable(280 + xx, 200 + yy)) { px = 280 + xx; py = 200 + yy; yy = 999; break; }
+      }
+    }
+    render();
+    setInterval(loop, 40);
+  });
+});
+</script>
+</body>
+</html>

@@ -13,7 +13,7 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Signpost", "Left", "Right", "Exit"] as const;
+const MENU_ITEMS = ["Signpost", "Left", "Right", "Enter", "Exit"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Puzzles", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -190,6 +190,7 @@ type Phase =
   | { type: "chess" }
   | { type: "chessGameOver"; score: number }
   | { type: "wordle" }
+  | { type: "hyvmind" }
   | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -444,6 +445,7 @@ interface StartScreenProps {
   onSettings: () => void;
   onHiScores: () => void;
   onExit: () => void;
+  onEnter: () => void;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -458,6 +460,7 @@ function StartScreen({
   onSettings,
   onHiScores,
   onExit,
+  onEnter,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -485,6 +488,7 @@ function StartScreen({
             setSubMenu("left");
             setLeftSelectedIdx(0);
           } else if (chosen === "Right") onHiScores();
+          else if (chosen === "Enter") onEnter();
           else if (chosen === "Exit") onExit();
         }
       } else if (subMenu === "left") {
@@ -642,6 +646,7 @@ function StartScreen({
                         setSubMenu("left");
                         setLeftSelectedIdx(0);
                       } else if (item === "Right") onHiScores();
+                      else if (item === "Enter") onEnter();
                       else if (item === "Exit") onExit();
                     }}
                   >
@@ -1068,6 +1073,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "wordle" });
   }, []);
 
+  const handleStartHyvmind = useCallback(() => {
+    setPhase({ type: "hyvmind" });
+  }, []);
+
   const handleWordleComplete = useCallback((score: number) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
@@ -1119,6 +1128,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setPhase({ type: "generating" });
           return { ...prev, game3: score3 };
         });
+      } else if (e.data?.type === "hyvmind-close") {
+        setPhase({ type: "idle" });
       }
     };
     window.addEventListener("message", handler);
@@ -1360,6 +1371,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onSettings={handleOpenSettings}
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
+            onEnter={handleStartHyvmind}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}
@@ -1616,6 +1628,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 onLoad={() =>
                   setGameLoaded((prev) => ({ ...prev, game3: true }))
                 }
+              />
+            </div>
+          </div>
+        );
+
+      case "hyvmind":
+        return (
+          <div className="flex-1 relative flex flex-col overflow-hidden">
+            <div className="flex-1 flex items-center justify-center bg-background p-0">
+              <iframe
+                src="/assets/hyvmind/index.html"
+                className="w-full h-full border-0"
+                title="HYVMIND"
+                data-ocid="text_game.hyvmind_iframe"
               />
             </div>
           </div>

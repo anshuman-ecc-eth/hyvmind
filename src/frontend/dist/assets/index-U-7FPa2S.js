@@ -36828,7 +36828,7 @@ function sanitizeToLocalName(name) {
   sanitized = sanitized.replace(/_+/g, "_");
   return sanitized;
 }
-function escapeTurtleLiteral(str) {
+function escapeTurtleLiteral$1(str) {
   return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
 }
 function generateOntologyTurtle(nodeId, graphData) {
@@ -36956,8 +36956,8 @@ function getXsdDatatype(type) {
 function generateOutgoingTriples(nodeInfo, _graphData, _localName) {
   var _a3, _b3;
   const triples = [];
-  triples.push(`hm:label "${escapeTurtleLiteral(nodeInfo.name)}"`);
-  triples.push(`hm:hasNodeId "${escapeTurtleLiteral(nodeInfo.id)}"`);
+  triples.push(`hm:label "${escapeTurtleLiteral$1(nodeInfo.name)}"`);
+  triples.push(`hm:hasNodeId "${escapeTurtleLiteral$1(nodeInfo.id)}"`);
   const creator2 = nodeInfo.data.creator;
   if (creator2) {
     triples.push(`hm:createdBy "${creator2.toString()}"`);
@@ -36973,7 +36973,7 @@ function generateOutgoingTriples(nodeInfo, _graphData, _localName) {
       for (const tag of swarm.tags) {
         const { value, type } = parseTagAnnotation(tag);
         const xsdType = getXsdDatatype(type);
-        triples.push(`hm:hasTag "${escapeTurtleLiteral(value)}"^^${xsdType}`);
+        triples.push(`hm:hasTag "${escapeTurtleLiteral$1(value)}"^^${xsdType}`);
       }
       break;
     }
@@ -36982,7 +36982,7 @@ function generateOutgoingTriples(nodeInfo, _graphData, _localName) {
       for (const attr of location2.customAttributes) {
         const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`
+          `hm:hasCustomAttribute "${escapeTurtleLiteral$1(attr.key)}:${escapeTurtleLiteral$1(values)}"`
         );
       }
       break;
@@ -36992,7 +36992,7 @@ function generateOutgoingTriples(nodeInfo, _graphData, _localName) {
       for (const attr of lawToken.customAttributes) {
         const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`
+          `hm:hasCustomAttribute "${escapeTurtleLiteral$1(attr.key)}:${escapeTurtleLiteral$1(values)}"`
         );
       }
       break;
@@ -37001,15 +37001,15 @@ function generateOutgoingTriples(nodeInfo, _graphData, _localName) {
       const interpretation = nodeInfo.data;
       const latestContent = (_b3 = (_a3 = interpretation.contentVersions) == null ? void 0 : _a3[0]) == null ? void 0 : _b3.content;
       if (latestContent) {
-        triples.push(`hm:hasContent "${escapeTurtleLiteral(latestContent)}"`);
+        triples.push(`hm:hasContent "${escapeTurtleLiteral$1(latestContent)}"`);
       }
       triples.push(
-        `hm:hasParentLawTokenId "${escapeTurtleLiteral(interpretation.parentLawTokenId)}"`
+        `hm:hasParentLawTokenId "${escapeTurtleLiteral$1(interpretation.parentLawTokenId)}"`
       );
       for (const attr of interpretation.customAttributes) {
         const values = attr.weightedValues.map((wv) => wv.value).join(", ");
         triples.push(
-          `hm:hasCustomAttribute "${escapeTurtleLiteral(attr.key)}:${escapeTurtleLiteral(values)}"`
+          `hm:hasCustomAttribute "${escapeTurtleLiteral$1(attr.key)}:${escapeTurtleLiteral$1(values)}"`
         );
       }
       break;
@@ -42104,7 +42104,8 @@ function FilterPanel({
   onReset,
   onFitToVisible,
   isCollapsed,
-  onToggleCollapsed
+  onToggleCollapsed,
+  onOntology
 }) {
   const searchInputRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
@@ -42233,6 +42234,17 @@ function FilterPanel({
                         "data-ocid": "filter_panel.reset_button",
                         "aria-label": "Reset all filters",
                         children: "reset filters"
+                      }
+                    ),
+                    onOntology && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: onOntology,
+                        className: "w-full text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors text-left",
+                        "data-ocid": "filter_panel.ontology_button",
+                        "aria-label": "Generate full turtle ontology",
+                        children: "ontology"
                       }
                     )
                   ] })
@@ -44653,6 +44665,91 @@ function ResultRow({
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "opacity-60", children: item.curationName })
         ] })
       ]
+    }
+  );
+}
+function OntologyModal({
+  turtle,
+  onClose,
+  onCopy,
+  copied,
+  graphName
+}) {
+  const overlayRef = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    el.focus();
+    const handleKeyDown = (e2) => {
+      if (e2.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+  const handleDownload = () => {
+    const blob = new Blob([turtle], { type: "text/turtle" });
+    const url = URL.createObjectURL(blob);
+    const a2 = document.createElement("a");
+    a2.href = url;
+    a2.download = `${graphName.replace(/[^a-zA-Z0-9_-]/g, "_")}.ttl`;
+    a2.click();
+    URL.revokeObjectURL(url);
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      ref: overlayRef,
+      tabIndex: -1,
+      className: "fixed inset-0 z-50 flex items-center justify-center bg-background/80 outline-none",
+      onClick: (e2) => {
+        if (e2.target === e2.currentTarget) onClose();
+      },
+      onKeyDown: (e2) => {
+        if (e2.key === "Escape") onClose();
+      },
+      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
+        {
+          className: "relative w-full max-w-2xl mx-4 bg-background border border-dashed border-border font-mono flex flex-col max-h-[90vh]",
+          onClick: (e2) => e2.stopPropagation(),
+          onKeyDown: (e2) => e2.stopPropagation(),
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-3 py-2 border-b border-dashed border-border shrink-0", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground uppercase tracking-widest", children: "ontology (turtle)" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: handleDownload,
+                    className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-0.5 transition-colors",
+                    children: "download .ttl"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: onCopy,
+                    className: "text-xs text-muted-foreground hover:text-foreground border border-dashed border-border px-2 py-0.5 transition-colors",
+                    children: copied ? "copied!" : "copy"
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "button",
+                  {
+                    type: "button",
+                    className: "text-xs text-muted-foreground hover:text-foreground transition-colors",
+                    onClick: onClose,
+                    children: "[x]"
+                  }
+                )
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto p-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "text-xs text-foreground/80 whitespace-pre-wrap break-all", children: turtle }) })
+          ]
+        }
+      )
     }
   );
 }
@@ -64544,6 +64641,70 @@ function SourceGraphDiagram({
     }
   );
 }
+function escapeTurtleLiteral(str) {
+  return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+}
+function generateFullSourceGraphTurtle(graph) {
+  const lines = [];
+  lines.push(CORE_ONTOLOGY_PREFIXES);
+  lines.push("");
+  lines.push(`# Full ontology for graph: ${graph.name}`);
+  lines.push(`# Nodes: ${graph.nodes.length}`);
+  lines.push("");
+  for (const node2 of graph.nodes) {
+    const localName = sanitizeToLocalName(node2.name);
+    const nodeType = node2.nodeType === "lawEntity" ? "LawToken" : node2.nodeType === "interpEntity" ? "InterpretationToken" : node2.nodeType.charAt(0).toUpperCase() + node2.nodeType.slice(1);
+    lines.push(`# ${nodeType}: ${node2.name}`);
+    lines.push("");
+    const props = [];
+    props.push(`hm:label "${escapeTurtleLiteral(node2.name)}"`);
+    if (node2.id) {
+      props.push(`hm:hasNodeId "${escapeTurtleLiteral(node2.id)}"`);
+    }
+    if (node2.content) {
+      props.push(`hm:hasContent "${escapeTurtleLiteral(node2.content)}"`);
+    }
+    if (node2.attributes) {
+      for (const [key2, value] of Object.entries(node2.attributes)) {
+        const valStr = typeof value === "string" ? value : JSON.stringify(value);
+        if (valStr) {
+          props.push(
+            `hm:hasCustomAttribute "${escapeTurtleLiteral(key2)}:${escapeTurtleLiteral(valStr)}"`
+          );
+        }
+      }
+    }
+    lines.push(`hm:${localName}`);
+    for (let i2 = 0; i2 < props.length; i2++) {
+      lines.push(`    ${props[i2]}${i2 < props.length - 1 ? " ;" : " ."}`);
+    }
+    if (props.length === 0) {
+      lines.push(`    rdf:type hm:${nodeType} .`);
+    }
+    lines.push("");
+    if (props.length > 0) {
+      lines.push(`hm:${localName} rdf:type hm:${nodeType} .`);
+      lines.push("");
+    }
+    if (node2.parentName) {
+      const parentLocalName = sanitizeToLocalName(node2.parentName);
+      lines.push(`hm:${localName} hm:hasParent hm:${parentLocalName} .`);
+      lines.push("");
+    }
+  }
+  for (const node2 of graph.nodes) {
+    if (node2.parentName) {
+      const localName = sanitizeToLocalName(node2.name);
+      const parentLocalName = sanitizeToLocalName(node2.parentName);
+      lines.push(`hm:${parentLocalName} hm:hasChild hm:${localName} .`);
+    }
+  }
+  if (graph.nodes.some((n2) => n2.parentName)) {
+    lines.push("");
+  }
+  return `${lines.join("\n")}
+`;
+}
 const ALL_NODE_TYPES$1 = /* @__PURE__ */ new Set([
   "curation",
   "swarm",
@@ -64709,6 +64870,20 @@ function GraphDetail({
   const meta = graphs.find((g2) => g2.id === selectedId);
   const graphName = (meta == null ? void 0 : meta.name) ?? "Graph";
   const [selectedNode, setSelectedNode] = reactExports.useState(null);
+  const [ontologyTurtle, setOntologyTurtle] = reactExports.useState(null);
+  const [copiedOntology, setCopiedOntology] = reactExports.useState(false);
+  const handleOntology = () => {
+    if (!convertedGraph) return;
+    const turtle = generateFullSourceGraphTurtle(convertedGraph);
+    setOntologyTurtle(turtle);
+    setCopiedOntology(false);
+  };
+  const handleCopyOntology = () => {
+    if (!ontologyTurtle) return;
+    navigator.clipboard.writeText(ontologyTurtle);
+    setCopiedOntology(true);
+    setTimeout(() => setCopiedOntology(false), 2e3);
+  };
   const convertedGraph = reactExports.useMemo(
     () => graphData ? graphDataToSourceGraph(graphData, graphName, selectedId) : null,
     // graphName changes when meta loads but selectedId is the real cache key
@@ -64792,7 +64967,8 @@ function GraphDetail({
           onToggleCollapsed: () => setFilterState((prev) => ({
             ...prev,
             isCollapsed: !prev.isCollapsed
-          }))
+          })),
+          onOntology: handleOntology
         }
       )
     ] }),
@@ -64809,6 +64985,16 @@ function GraphDetail({
       {
         node: selectedNode,
         onClose: () => setSelectedNode(null)
+      }
+    ),
+    ontologyTurtle && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      OntologyModal,
+      {
+        turtle: ontologyTurtle,
+        onClose: () => setOntologyTurtle(null),
+        onCopy: handleCopyOntology,
+        copied: copiedOntology,
+        graphName
       }
     )
   ] });
@@ -68152,14 +68338,16 @@ function Sidebar({
   activeTab,
   onTabChange,
   collapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  isAdmin
 }) {
+  const visibleTabs = TABS.filter((t2) => t2.id !== "terminal" || isAdmin);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
       className: `flex flex-col h-full border-r border-border bg-background transition-all duration-200 ${collapsed ? "w-10" : "w-32"}`,
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 pt-2", children: TABS.map((tab2) => {
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col flex-1 pt-2", children: visibleTabs.map((tab2) => {
           const isActive = activeTab === tab2.id;
           return /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
@@ -96080,12 +96268,84 @@ function WordlePuzzleGame({
     }
   );
 }
-const MENU_ITEMS = [
-  "Story",
-  "Puzzles",
-  "Settings",
-  "Leaderboard",
-  "Exit"
+const MENU_ITEMS = ["Signpost", "Left", "Right", "Enter", "Exit"];
+const LEFT_MENU_ITEMS = ["Story", "Puzzles", "Settings", "Back"];
+const ABOUT_LINES = [
+  "Have you heard of LAI?",
+  "",
+  "It's our word for Legal AI.",
+  "",
+  "Easy to remember. No double meaning.",
+  "",
+  "It steals your work, packs it into parrot suits and sells it for profit.",
+  "",
+  "Without attribution. Without compensation.",
+  "",
+  "It turns you into a passive consumer of your own intellect.",
+  "",
+  "To be honest, LAI is not a business.",
+  "",
+  "It's a bad magic trick.",
+  "",
+  "You pay to have your attention diverted so you don't notice the theft.",
+  "",
+  "Marketing teams say they're selling 'legal intelligence'.",
+  "",
+  "But they don't say how it is manufactured, or from where its ingredients are sourced.",
+  "",
+  "Subscribers to LAI premium get fancier parrots, of course.",
+  "",
+  "But *even they* must verify each line of the output.",
+  "",
+  "That's because legal language is adversarial.",
+  "",
+  "The end goal is to beat an opponent, not to reveal one's own weaknesses.",
+  "",
+  "(Hint: anything that can be automated is a weakness)",
+  "",
+  "Just to clarify, we're not anti-parrots.",
+  "",
+  "They're quite helpful with the tedious stuff, but they treat the law as math.",
+  "",
+  "Not as a form of reasoning that absorbs all other forms of reasoning without losing itself.",
+  "",
+  "No amount of compute can teach them the difference.",
+  "",
+  "And at any rate, parrots will never make rules for humans.",
+  "",
+  "That's why we don't trust them with the real stuff.",
+  "",
+  "And that's why the LAI folks hate us.",
+  "",
+  '"It sends the wrong message", they say.',
+  "",
+  'What they really mean is: "Human thinking reduces our total addressable market."',
+  "",
+  "We've been in the game long enough to see through the corpslop.",
+  "",
+  "We've also tested the key equation.",
+  "",
+  "Productivity Gain = Old Work Time - (New Work Time + Verification Time)",
+  "",
+  "Each variable is measured in non-parrot hours. That's why they're freaking out.",
+  "",
+  "In order for the 'business model' to work, they must sell with one hand what they steal with another.",
+  "",
+  "At this point, they have no other option but to test you.",
+  "",
+  "If you're scared, they'll throw you into a shadow factory.",
+  "",
+  "If you're convinced, they'll sell you a bigger parrot.",
+  "",
+  "If you're neither scared nor convinced..",
+  "",
+  "..then you're a threat.",
+  "",
+  "Take the next exit from Grand Theft Intelligence Vice City.",
+  "",
+  "The leaderboard will be to your right.",
+  "",
+  "Sanctuary on the left."
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"];
 const CONTENT = {
@@ -96362,11 +96622,13 @@ function LeaderboardScreen({
 }
 function StartScreen({
   onStart,
+  onAbout,
   onChess,
   onWordle,
   onSettings,
   onHiScores,
   onExit,
+  onEnter,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -96376,6 +96638,7 @@ function StartScreen({
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
   const [puzzleSelectedIdx, setPuzzleSelectedIdx] = reactExports.useState(0);
+  const [leftSelectedIdx, setLeftSelectedIdx] = reactExports.useState(0);
   reactExports.useEffect(() => {
     const handler = (e2) => {
       if (subMenu === "main") {
@@ -96387,13 +96650,29 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e2.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
+          if (chosen === "Signpost") onAbout();
+          else if (chosen === "Left") {
+            setSubMenu("left");
+            setLeftSelectedIdx(0);
+          } else if (chosen === "Right") onHiScores();
+          else if (chosen === "Enter") onEnter();
+          else if (chosen === "Exit") onExit();
+        }
+      } else if (subMenu === "left") {
+        if (e2.key === "ArrowUp") {
+          setLeftSelectedIdx(
+            (prev) => (prev - 1 + LEFT_MENU_ITEMS.length) % LEFT_MENU_ITEMS.length
+          );
+        } else if (e2.key === "ArrowDown") {
+          setLeftSelectedIdx((prev) => (prev + 1) % LEFT_MENU_ITEMS.length);
+        } else if (e2.key === "Enter") {
+          const chosen = LEFT_MENU_ITEMS[leftSelectedIdx];
           if (chosen === "Story") onStart();
           else if (chosen === "Puzzles") {
             setSubMenu("puzzles");
             setPuzzleSelectedIdx(0);
           } else if (chosen === "Settings") onSettings();
-          else if (chosen === "Leaderboard") onHiScores();
-          else if (chosen === "Exit") onExit();
+          else if (chosen === "Back") setSubMenu("main");
         }
       } else {
         if (e2.key === "ArrowUp") {
@@ -96406,7 +96685,7 @@ function StartScreen({
           const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
           if (chosen === "Chess") onChess();
           else if (chosen === "Wordle") onWordle();
-          else if (chosen === "Back") setSubMenu("main");
+          else if (chosen === "Back") setSubMenu("left");
         }
       }
     };
@@ -96414,9 +96693,11 @@ function StartScreen({
     return () => window.removeEventListener("keydown", handler);
   }, [
     selectedIdx,
+    leftSelectedIdx,
     puzzleSelectedIdx,
     subMenu,
     onStart,
+    onAbout,
     onChess,
     onWordle,
     onSettings,
@@ -96494,7 +96775,7 @@ function StartScreen({
             fontSize: "1em",
             letterSpacing: "0.15em"
           },
-          children: "Puzzles"
+          children: subMenu === "left" ? "Sanctuary" : "Puzzles"
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
@@ -96516,13 +96797,43 @@ function StartScreen({
             },
             onClick: () => {
               setSelectedIdx(activeIdx);
+              if (item === "Signpost") onAbout();
+              else if (item === "Left") {
+                setSubMenu("left");
+                setLeftSelectedIdx(0);
+              } else if (item === "Right") onHiScores();
+              else if (item === "Enter") onEnter();
+              else if (item === "Exit") onExit();
+            },
+            children: isSelected ? `> ${item}` : `  ${item}`
+          },
+          item
+        );
+      }) : subMenu === "left" ? LEFT_MENU_ITEMS.map((item, activeIdx) => {
+        const isSelected = activeIdx === leftSelectedIdx;
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "data-ocid": `text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`,
+            className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.65em",
+              letterSpacing: "0.2em",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0"
+            },
+            onClick: () => {
+              setLeftSelectedIdx(activeIdx);
               if (item === "Story") onStart();
               else if (item === "Puzzles") {
                 setSubMenu("puzzles");
                 setPuzzleSelectedIdx(0);
               } else if (item === "Settings") onSettings();
-              else if (item === "Leaderboard") onHiScores();
-              else if (item === "Exit") onExit();
+              else if (item === "Back") setSubMenu("main");
             },
             children: isSelected ? `> ${item}` : `  ${item}`
           },
@@ -96549,7 +96860,7 @@ function StartScreen({
               setPuzzleSelectedIdx(activeIdx);
               if (item === "Chess") onChess();
               else if (item === "Wordle") onWordle();
-              else if (item === "Back") setSubMenu("main");
+              else if (item === "Back") setSubMenu("left");
             },
             children: isSelected ? `> ${item}` : `  ${item}`
           },
@@ -96688,6 +96999,69 @@ function TypewriterDisplay({
     }
   );
 }
+function AboutScreen({ onBack }) {
+  const [step, setStep] = reactExports.useState(0);
+  const [done, setDone] = reactExports.useState(false);
+  const lines = ABOUT_LINES.filter((l2) => l2.trim() !== "");
+  const total = lines.length;
+  const advance = reactExports.useCallback(() => {
+    if (!done) return;
+    setDone(false);
+    if (step + 1 >= total) {
+      onBack();
+    } else {
+      setStep((prev) => prev + 1);
+    }
+  }, [done, step, total, onBack]);
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "Tab") return;
+      advance();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [advance]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      className: "flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer",
+      onClick: advance,
+      onKeyDown: done ? (e2) => {
+        if (e2.key !== "Tab") advance();
+      } : void 0,
+      role: "button",
+      tabIndex: 0,
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "p",
+        {
+          className: "text-foreground text-center leading-relaxed",
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.7em",
+            letterSpacing: "0.05em",
+            lineHeight: "2",
+            maxWidth: "80%",
+            fontWeight: "400"
+          },
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            TextType,
+            {
+              text: lines[step],
+              typingSpeed: 25,
+              showCursor: true,
+              hideCursorWhileTyping: true,
+              cursorCharacter: "█",
+              cursorBlinkDuration: 0.4,
+              loop: false,
+              onSentenceComplete: () => setDone(true)
+            },
+            step
+          )
+        }
+      )
+    }
+  );
+}
 function TextGameModal({ onComplete }) {
   const modalRef = reactExports.useRef(null);
   const onCompleteRef = reactExports.useRef(onComplete);
@@ -96756,6 +97130,9 @@ function TextGameModal({ onComplete }) {
   const handleOpenLeaderboard = reactExports.useCallback(() => {
     setPhase({ type: "leaderboard" });
   }, []);
+  const handleOpenAbout = reactExports.useCallback(() => {
+    setPhase({ type: "about" });
+  }, []);
   const handleStartChess = reactExports.useCallback(() => {
     setPhase({ type: "chess" });
   }, []);
@@ -96765,6 +97142,9 @@ function TextGameModal({ onComplete }) {
   }, []);
   const handleStartWordle = reactExports.useCallback(() => {
     setPhase({ type: "wordle" });
+  }, []);
+  const handleStartHyvmind = reactExports.useCallback(() => {
+    setPhase({ type: "hyvmind" });
   }, []);
   const handleWordleComplete = reactExports.useCallback((score) => {
     setGeneratingScore(score);
@@ -96784,7 +97164,7 @@ function TextGameModal({ onComplete }) {
   }, [settings.skipMessages]);
   reactExports.useEffect(() => {
     const handler = (e2) => {
-      var _a3, _b3, _c2;
+      var _a3, _b3, _c2, _d2;
       if (((_a3 = e2.data) == null ? void 0 : _a3.type) === "rebirth-game-over") {
         const score1 = e2.data.score || 0;
         setGameScores((prev) => ({ ...prev, game1: score1 }));
@@ -96811,6 +97191,8 @@ function TextGameModal({ onComplete }) {
           setPhase({ type: "generating" });
           return { ...prev, game3: score3 };
         });
+      } else if (((_d2 = e2.data) == null ? void 0 : _d2.type) === "hyvmind-close") {
+        setPhase({ type: "idle" });
       }
     };
     window.addEventListener("message", handler);
@@ -97025,16 +97407,20 @@ function TextGameModal({ onComplete }) {
           {
             modalRef,
             onStart: handleStart,
+            onAbout: handleOpenAbout,
             onChess: handleStartChess,
             onWordle: handleStartWordle,
             onSettings: handleOpenSettings,
             onHiScores: handleOpenLeaderboard,
             onExit: handleExit,
+            onEnter: handleStartHyvmind,
             showScoreConfirmation,
             setShowScoreConfirmation,
             setSecretCode
           }
         );
+      case "about":
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(AboutScreen, { onBack: handleCloseSubScreen });
       case "settings":
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           SettingsScreen,
@@ -97253,6 +97639,16 @@ function TextGameModal({ onComplete }) {
             ]
           }
         ) });
+      case "hyvmind":
+        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "iframe",
+          {
+            src: "/assets/hyvmind/index.html",
+            className: "w-full h-full border-0",
+            title: "HYVMIND",
+            "data-ocid": "text_game.hyvmind_iframe"
+          }
+        ) }) });
       case "chess":
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           ChessPuzzleGame,
@@ -116021,6 +116417,8 @@ function SourcesView() {
   const [previewGraph, setPreviewGraph] = reactExports.useState(null);
   const [commitError, setCommitError] = reactExports.useState(null);
   const [commitSuccessId, setCommitSuccessId] = reactExports.useState(null);
+  const [ontologyTurtle, setOntologyTurtle] = reactExports.useState(null);
+  const [copiedOntology, setCopiedOntology] = reactExports.useState(false);
   const fileInputRef = reactExports.useRef(null);
   const filterStatesRef = reactExports.useRef(/* @__PURE__ */ new Map());
   const [filterState, setFilterState] = reactExports.useState(
@@ -116122,6 +116520,18 @@ function SourcesView() {
   };
   const handleNodeClick = (node2) => {
     setSelectedNode(node2);
+  };
+  const handleOntology = () => {
+    if (!activeGraph) return;
+    const turtle = generateFullSourceGraphTurtle(activeGraph);
+    setOntologyTurtle(turtle);
+    setCopiedOntology(false);
+  };
+  const handleCopyOntology = () => {
+    if (!ontologyTurtle) return;
+    navigator.clipboard.writeText(ontologyTurtle);
+    setCopiedOntology(true);
+    setTimeout(() => setCopiedOntology(false), 2e3);
   };
   const handlePublish = async (graph) => {
     setPreviewGraph(graph);
@@ -116228,7 +116638,8 @@ function SourcesView() {
             onToggleCollapsed: () => setFilterState((prev) => ({
               ...prev,
               isCollapsed: !prev.isCollapsed
-            }))
+            })),
+            onOntology: handleOntology
           }
         )
       ] }),
@@ -116238,6 +116649,16 @@ function SourcesView() {
           node: selectedNode,
           graph: activeGraph,
           onClose: () => setSelectedNode(null)
+        }
+      ),
+      ontologyTurtle && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        OntologyModal,
+        {
+          turtle: ontologyTurtle,
+          onClose: () => setOntologyTurtle(null),
+          onCopy: handleCopyOntology,
+          copied: copiedOntology,
+          graphName: activeGraph.name
         }
       )
     ] });
@@ -118803,6 +119224,7 @@ function AppShell() {
   };
   const { data: archivedNodeIds } = useGetArchivedNodeIds();
   const { data: graphData } = useGetOwnedData();
+  const { data: isAdmin } = useIsCallerAdmin();
   const cleanupRanRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     if (!identity2 || !archivedNodeIds || !graphData) return;
@@ -118889,7 +119311,8 @@ function AppShell() {
         activeTab,
         onTabChange: setActiveTab,
         collapsed: sidebarCollapsed,
-        onToggleCollapse: () => setSidebarCollapsed(!sidebarCollapsed)
+        onToggleCollapse: () => setSidebarCollapsed(!sidebarCollapsed),
+        isAdmin: !!isAdmin
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col flex-1 overflow-hidden min-w-0", children: [
@@ -118945,7 +119368,7 @@ function AppShell() {
             children: /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsView, {})
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
+        isAdmin && /* @__PURE__ */ jsxRuntimeExports.jsx(
           "div",
           {
             style: {
