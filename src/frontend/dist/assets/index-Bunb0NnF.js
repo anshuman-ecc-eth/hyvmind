@@ -96702,6 +96702,7 @@ function StartScreen({
     onWordle,
     onSettings,
     onHiScores,
+    onEnter,
     onExit
   ]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: [

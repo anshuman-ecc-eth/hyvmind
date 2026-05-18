@@ -537,6 +537,7 @@ function StartScreen({
     onWordle,
     onSettings,
     onHiScores,
+    onEnter,
     onExit,
   ]);
 
