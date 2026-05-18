@@ -9,6 +9,7 @@
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a12; touch-action: none; }
   body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
 
+  /* ── Layout (desktop) ── */
   .layout { display: flex; align-items: center; gap: 24px; }
   .dpad { position: relative; width: 216px; height: 216px; flex-shrink: 0; }
   .dpad-btn { position: absolute; width: 72px; height: 72px; background: rgba(20,20,20,0.55); border: 2px solid rgba(255,255,255,0.12); border-radius: 10px; color: rgba(255,255,255,0.35); font-size: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; backdrop-filter: blur(2px); }
@@ -25,6 +26,8 @@
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; }
+
+  /* ── Tablet / small desktop ── */
   @media (max-width: 900px) {
     .layout { gap: 12px; }
     .screen { width: 100%; height: auto; aspect-ratio: 574/480; border-width: 2px; }
@@ -36,9 +39,108 @@
     .dpad-right { top: 54px; }
     .action-btn { width: 66px; height: 66px; font-size: 12px; }
   }
+
+  /* ── Narrow screens: overlay controls on top of screen ── */
+  @media (max-width: 768px) {
+    .layout {
+      display: block;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      width: 100%;
+      height: 100%;
+      min-width: 320px;
+      min-height: 267px;
+      border-width: 2px;
+      aspect-ratio: auto;
+    }
+    .dpad {
+      position: absolute;
+      bottom: 14px;
+      left: 10px;
+      width: 150px;
+      height: 150px;
+      z-index: 10;
+    }
+    .dpad-btn {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      border-radius: 8px;
+      border-width: 2px;
+    }
+    .dpad-up    { left: 50px; }
+    .dpad-down  { left: 50px; }
+    .dpad-left  { top: 50px; }
+    .dpad-right { top: 50px; }
+    .action-buttons {
+      position: absolute;
+      bottom: 22px;
+      right: 14px;
+      gap: 12px;
+      z-index: 10;
+    }
+    .action-btn {
+      width: 60px;
+      height: 60px;
+      font-size: 12px;
+      border-width: 2px;
+    }
+  }
+
+  /* ── Very narrow screens (e.g., small landscape phones) ── */
+  @media (max-width: 480px) {
+    .dpad { width: 120px; height: 120px; bottom: 10px; left: 6px; }
+    .dpad-btn { width: 40px; height: 40px; font-size: 16px; border-radius: 6px; }
+    .dpad-up    { left: 40px; }
+    .dpad-down  { left: 40px; }
+    .dpad-left  { top: 40px; }
+    .dpad-right { top: 40px; }
+    .action-buttons { bottom: 16px; right: 8px; gap: 8px; }
+    .action-btn { width: 48px; height: 48px; font-size: 10px; }
+  }
+
+  /* ── Rotate prompt (portrait + small screens) ── */
+  .rotate-prompt {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0a0a12;
+    color: #e0d0b0;
+    font-family: monospace;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    padding: 30px;
+  }
+  .rotate-prompt .icon { font-size: 48px; margin-bottom: 4px; }
+  .rotate-prompt .text { font-size: 13px; line-height: 1.6; letter-spacing: 1px; }
+  .rotate-prompt .sub { font-size: 9px; color: #666; margin-top: 8px; cursor: pointer; text-decoration: underline; }
+
+  @media (orientation: portrait) and (max-width: 700px) {
+    .rotate-prompt { display: flex; }
+    .layout { display: none; }
+  }
+  @media (orientation: portrait) and (max-width: 700px) and (min-width: 500px) {
+    /* Tablets in portrait: show prompt but keep game accessible */
+    .rotate-prompt { display: flex; }
+    .layout { display: none; }
+  }
 </style>
 </head>
 <body>
+
+<div class="rotate-prompt" id="rotatePrompt">
+  <div class="icon">↻</div>
+  <div class="text">Please rotate your device to landscape mode</div>
+  <div class="sub" onclick="dismissRotate()">Continue in portrait</div>
+</div>
+
 <div class="layout">
   <div class="dpad">
     <button class="dpad-btn dpad-up"    data-dir="up">&#9650;</button>
@@ -65,6 +167,18 @@ var SCREEN_W = 574, SCREEN_H = 480;
 var TILE = 8;
 var COLS = 72, ROWS = 272;
 function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+
+var gamePaused = false;
+function dismissRotate() {
+  document.getElementById('rotatePrompt').style.display = 'none';
+  gamePaused = false;
+}
+
+var mq = window.matchMedia('(orientation: portrait) and (max-width: 700px)');
+mq.addEventListener('change', function(e) {
+  gamePaused = e.matches;
+});
+gamePaused = mq.matches;
 
 var dirMap = [2, 3, 1, 0];
 var collisionMap = [];
@@ -191,7 +305,6 @@ var STEP = 5;
 var px = 280, py = 200, pDir = 0, pMoving = false, pWalk = 0;
 var nearTrigger = null;
 
-// Close handler for parent modal
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     window.parent.postMessage({ type: 'hyvmind-close' }, '*');
@@ -279,6 +392,7 @@ document.getElementById('btnX').addEventListener('click', function() {
 
 var tick = 0;
 function loop() {
+  if (gamePaused) { render(); return; }
   tick++;
   var dx = 0, dy = 0;
   if (K['ArrowLeft'] || dpadState['left']) { dx = -STEP; pDir = 1; }
