@@ -452,29 +452,93 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       </div>
       <div
         className="flex flex-col items-start gap-3"
-        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.45em", lineHeight: "1.8", letterSpacing: "0.05em", maxWidth: "320px" }}
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.45em",
+          lineHeight: "1.8",
+          letterSpacing: "0.05em",
+          maxWidth: "320px",
+        }}
       >
         <span>forest.mp3 — BGM</span>
-        <a href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>syncopika</a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY 3.0</span>
+        <a
+          href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground hover:text-muted-foreground underline"
+          style={{ fontSize: "0.9em" }}
+        >
+          syncopika
+        </a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
+          CC-BY 3.0
+        </span>
 
-        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+        <div
+          style={{
+            height: "2px",
+            width: "100%",
+            background: "var(--border)",
+            opacity: 0.3,
+            margin: "2px 0",
+          }}
+        />
 
         <span>bottom.png — world tiles</span>
-        <a href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>Ivan Voirol</a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY 4.0</span>
+        <a
+          href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground hover:text-muted-foreground underline"
+          style={{ fontSize: "0.9em" }}
+        >
+          Ivan Voirol
+        </a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
+          CC-BY 4.0
+        </span>
 
-        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+        <div
+          style={{
+            height: "2px",
+            width: "100%",
+            background: "var(--border)",
+            opacity: 0.3,
+            margin: "2px 0",
+          }}
+        />
 
         <span>sprites/cultist_*.png — player</span>
-        <span className="text-foreground" style={{ fontSize: "0.9em" }}>Antifarea</span>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY</span>
+        <span className="text-foreground" style={{ fontSize: "0.9em" }}>
+          Antifarea
+        </span>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
+          CC-BY
+        </span>
 
-        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+        <div
+          style={{
+            height: "2px",
+            width: "100%",
+            background: "var(--border)",
+            opacity: 0.3,
+            margin: "2px 0",
+          }}
+        />
 
         <span>crisp-game-lib — mini-game framework</span>
-        <a href="https://github.com/abagames/crisp-game-lib" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>abagames</a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>MIT</span>
+        <a
+          href="https://github.com/abagames/crisp-game-lib"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground hover:text-muted-foreground underline"
+          style={{ fontSize: "0.9em" }}
+        >
+          abagames
+        </a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
+          MIT
+        </span>
       </div>
       <button
         type="button"
@@ -501,11 +565,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
 interface StartScreenProps {
   onStart: () => void;
-  onAbout: () => void;
-  onChess: () => void;
-  onWordle: () => void;
   onSettings: () => void;
-  onHiScores: () => void;
   onExit: () => void;
   onEnter: () => void;
   onCredits: () => void;
@@ -517,11 +577,7 @@ interface StartScreenProps {
 
 function StartScreen({
   onStart,
-  onAbout,
-  onChess,
-  onWordle,
   onSettings,
-  onHiScores,
   onExit,
   onEnter,
   onCredits,
@@ -554,18 +610,7 @@ function StartScreen({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [
-    selectedIdx,
-    subMenu,
-    onStart,
-    onChess,
-    onWordle,
-    onSettings,
-    onHiScores,
-    onEnter,
-    onCredits,
-    onExit,
-  ]);
+  }, [selectedIdx, subMenu, onEnter, onCredits, onExit]);
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
@@ -649,62 +694,62 @@ function StartScreen({
         {/* Menu */}
         <div className="flex flex-col items-center gap-1.5 mt-6">
           {subMenu === "main"
-              ? MENU_ITEMS.map((item, activeIdx) => {
-                  const isSelected = activeIdx === selectedIdx;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                      className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
-                      style={{
-                        fontFamily: '"Press Start 2P", monospace',
-                        fontSize: "0.65em",
-                        letterSpacing: "0.2em",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "0",
-                      }}
-                      onClick={() => {
-                        setSelectedIdx(activeIdx);
-                        if (item === "Enter") onEnter();
-                        else if (item === "Credits") onCredits();
-                        else if (item === "Exit") onExit();
-                      }}
-                    >
-                      {isSelected ? `> ${item}` : `  ${item}`}
-                    </button>
-                  );
-                })
-              : LEFT_MENU_ITEMS.map((item, activeIdx) => {
-                  const isSelected = activeIdx === leftSelectedIdx;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
-                      className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
-                      style={{
-                        fontFamily: '"Press Start 2P", monospace',
-                        fontSize: "0.65em",
-                        letterSpacing: "0.2em",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "0",
-                      }}
-                      onClick={() => {
-                        setLeftSelectedIdx(activeIdx);
-                        if (item === "Story") onStart();
-                        else if (item === "Settings") onSettings();
-                        else if (item === "Back") setSubMenu("main");
-                      }}
-                    >
-                      {isSelected ? `> ${item}` : `  ${item}`}
-                    </button>
-                  );
-                })}
+            ? MENU_ITEMS.map((item, activeIdx) => {
+                const isSelected = activeIdx === selectedIdx;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.65em",
+                      letterSpacing: "0.2em",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                    }}
+                    onClick={() => {
+                      setSelectedIdx(activeIdx);
+                      if (item === "Enter") onEnter();
+                      else if (item === "Credits") onCredits();
+                      else if (item === "Exit") onExit();
+                    }}
+                  >
+                    {isSelected ? `> ${item}` : `  ${item}`}
+                  </button>
+                );
+              })
+            : LEFT_MENU_ITEMS.map((item, activeIdx) => {
+                const isSelected = activeIdx === leftSelectedIdx;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+                    style={{
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "0.65em",
+                      letterSpacing: "0.2em",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                    }}
+                    onClick={() => {
+                      setLeftSelectedIdx(activeIdx);
+                      if (item === "Story") onStart();
+                      else if (item === "Settings") onSettings();
+                      else if (item === "Back") setSubMenu("main");
+                    }}
+                  >
+                    {isSelected ? `> ${item}` : `  ${item}`}
+                  </button>
+                );
+              })}
         </div>
         {showScoreConfirmation && (
           <div
@@ -960,7 +1005,8 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   }, [advance]);
 
   return (
-    <div
+    <button
+      type="button"
       className="flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer"
       onClick={advance}
       onKeyDown={
@@ -970,7 +1016,6 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
             }
           : undefined
       }
-      role="button"
       tabIndex={0}
     >
       <p
@@ -999,7 +1044,10 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
       <div className="absolute bottom-4">
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onBack(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBack();
+          }}
           className="text-muted-foreground hover:text-foreground transition-colors"
           style={{
             fontFamily: '"Press Start 2P", monospace',
@@ -1015,7 +1063,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
           [ Back ]
         </button>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -1043,7 +1091,10 @@ function GamesOverlay({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
-        onSelect((prev: number) => (prev - 1 + GAMES_MENU_ITEMS.length) % GAMES_MENU_ITEMS.length);
+        onSelect(
+          (prev: number) =>
+            (prev - 1 + GAMES_MENU_ITEMS.length) % GAMES_MENU_ITEMS.length,
+        );
       } else if (e.key === "ArrowDown") {
         onSelect((prev: number) => (prev + 1) % GAMES_MENU_ITEMS.length);
       } else if (e.key === "Enter") {
@@ -1139,7 +1190,10 @@ function PuzzlesOverlay({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
-        onSelect((selectedIdx - 1 + PUZZLE_MENU_ITEMS.length) % PUZZLE_MENU_ITEMS.length);
+        onSelect(
+          (selectedIdx - 1 + PUZZLE_MENU_ITEMS.length) %
+            PUZZLE_MENU_ITEMS.length,
+        );
       } else if (e.key === "ArrowDown") {
         onSelect((selectedIdx + 1) % PUZZLE_MENU_ITEMS.length);
       } else if (e.key === "Enter") {
@@ -1326,14 +1380,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   unsubmittedScoreRef.current = unsubmittedScore;
 
   const handleHyvmindResume = useCallback(() => {
-    console.log('handleHyvmindResume called, ref=', hyvmindIframeRef.current);
+    console.log("handleHyvmindResume called, ref=", hyvmindIframeRef.current);
     setHyvmindOverlay(null);
     // Send score update to game
     const win = hyvmindIframeRef.current?.contentWindow;
-    win?.postMessage({ type: "hyvmind-score-update", score: unsubmittedScoreRef.current }, "*");
+    win?.postMessage(
+      { type: "hyvmind-score-update", score: unsubmittedScoreRef.current },
+      "*",
+    );
     const send = () => {
       const w = hyvmindIframeRef.current?.contentWindow;
-      console.log('sending hyvmind-resume, contentWindow=', w);
+      console.log("sending hyvmind-resume, contentWindow=", w);
       w?.postMessage({ type: "hyvmind-resume" }, "*");
     };
     send();
@@ -1358,29 +1415,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "settings" });
   }, []);
 
-  const handleOpenLeaderboard = useCallback(() => {
-    setPhase({ type: "leaderboard" });
-  }, []);
-
-  const handleOpenAbout = useCallback(() => {
-    setPhase({ type: "about" });
-  }, []);
-
   const handleOpenCredits = useCallback(() => {
     setPhase({ type: "credits" });
-  }, []);
-
-  const handleStartChess = useCallback(() => {
-    setPhase({ type: "chess" });
   }, []);
 
   const handleChessComplete = useCallback((score: number) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
-  }, []);
-
-  const handleStartWordle = useCallback(() => {
-    setPhase({ type: "wordle" });
   }, []);
 
   const handleStartHyvmind = useCallback(() => {
@@ -1454,8 +1495,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           });
         }
       } else if (e.data?.type === "hyvmind-nav") {
-        var target = e.data.target as string;
-        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about", "House of Games": "games", "Leaderboard": "leaderboard" };
+        const target = e.data.target as string;
+        const overlayMap: Record<string, string> = {
+          "House of Puzzles": "puzzles",
+          "House of Rant": "about",
+          "House of Games": "games",
+          Leaderboard: "leaderboard",
+        };
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
         setGameIdx(0);
@@ -1463,18 +1509,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       } else if (e.data?.type === "hyvmind-submit-score") {
         const score = unsubmittedScoreRef.current;
         setUnsubmittedScore(0);
-        generateBuzzSecret(BigInt(Math.round(score))).then((secret) => {
-          hyvmindIframeRef.current?.contentWindow?.postMessage(
-            { type: "hyvmind-buzz-secret", secret, score },
-            "*",
-          );
-        }).catch((err) => {
-          console.error("Failed to generate buzz secret:", err);
-          hyvmindIframeRef.current?.contentWindow?.postMessage(
-            { type: "hyvmind-buzz-secret", secret: null, score },
-            "*",
-          );
-        });
+        generateBuzzSecret(BigInt(Math.round(score)))
+          .then((secret) => {
+            hyvmindIframeRef.current?.contentWindow?.postMessage(
+              { type: "hyvmind-buzz-secret", secret, score },
+              "*",
+            );
+          })
+          .catch((err) => {
+            console.error("Failed to generate buzz secret:", err);
+            hyvmindIframeRef.current?.contentWindow?.postMessage(
+              { type: "hyvmind-buzz-secret", secret: null, score },
+              "*",
+            );
+          });
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
         setUnsubmittedScore(0);
@@ -1483,7 +1531,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings]);
+  }, [settings, generateBuzzSecret]);
 
   // ── Auto-generate buzz secret when generatingScore is set ─────────────────
 
@@ -1714,11 +1762,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <StartScreen
             modalRef={modalRef}
             onStart={handleStart}
-            onAbout={handleOpenAbout}
-            onChess={handleStartChess}
-            onWordle={handleStartWordle}
             onSettings={handleOpenSettings}
-            onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
             onEnter={handleStartHyvmind}
             onCredits={handleOpenCredits}
@@ -2019,19 +2063,45 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             {hyvmindOverlay === "games" && (
               <GamesOverlay
                 selectedIdx={gameIdx}
-                onSelect={(i) => setGameIdx(typeof i === 'function' ? i(gameIdx) : i)}
+                onSelect={(i) =>
+                  setGameIdx(typeof i === "function" ? i(gameIdx) : i)
+                }
                 onBack={handleHyvmindResume}
                 onRebirth={() => {
                   setHyvmindOverlay("games-rebirth");
-                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Rebirth"]')?.focus(), 200);
+                  setTimeout(
+                    () =>
+                      document
+                        .querySelector<HTMLIFrameElement>(
+                          'iframe[title="Rebirth"]',
+                        )
+                        ?.focus(),
+                    200,
+                  );
                 }}
                 onSquareBar={() => {
                   setHyvmindOverlay("games-squarebar");
-                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Square Bar"]')?.focus(), 200);
+                  setTimeout(
+                    () =>
+                      document
+                        .querySelector<HTMLIFrameElement>(
+                          'iframe[title="Square Bar"]',
+                        )
+                        ?.focus(),
+                    200,
+                  );
                 }}
                 onSlalom={() => {
                   setHyvmindOverlay("games-slalom");
-                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Slalom"]')?.focus(), 200);
+                  setTimeout(
+                    () =>
+                      document
+                        .querySelector<HTMLIFrameElement>(
+                          'iframe[title="Slalom"]',
+                        )
+                        ?.focus(),
+                    200,
+                  );
                 }}
                 score={unsubmittedScore}
               />
@@ -2043,7 +2113,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
                       <div className="flex gap-[2px]">
                         {Array.from({ length: 16 }).map((_, i) => (
-                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                          <span
+                            // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                            key={i}
+                            className="text-foreground"
+                            style={{
+                              fontSize: "0.55em",
+                              animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                            }}
+                          >
+                            █
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -2054,7 +2134,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     className="w-full h-full border-0"
                     title="Rebirth"
                     tabIndex={-1}
-                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, rebirth: true }))}
+                    onLoad={() =>
+                      setGamesLoaded((prev) => ({ ...prev, rebirth: true }))
+                    }
                   />
                 </div>
               </div>
@@ -2066,7 +2148,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
                       <div className="flex gap-[2px]">
                         {Array.from({ length: 16 }).map((_, i) => (
-                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                          <span
+                            // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                            key={i}
+                            className="text-foreground"
+                            style={{
+                              fontSize: "0.55em",
+                              animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                            }}
+                          >
+                            █
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -2077,7 +2169,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     className="w-full h-full border-0"
                     title="Square Bar"
                     tabIndex={-1}
-                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, squarebar: true }))}
+                    onLoad={() =>
+                      setGamesLoaded((prev) => ({ ...prev, squarebar: true }))
+                    }
                   />
                 </div>
               </div>
@@ -2089,7 +2183,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
                       <div className="flex gap-[2px]">
                         {Array.from({ length: 16 }).map((_, i) => (
-                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                          <span
+                            // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                            key={i}
+                            className="text-foreground"
+                            style={{
+                              fontSize: "0.55em",
+                              animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                            }}
+                          >
+                            █
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -2100,7 +2204,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     className="w-full h-full border-0"
                     title="Slalom"
                     tabIndex={-1}
-                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, slalom: true }))}
+                    onLoad={() =>
+                      setGamesLoaded((prev) => ({ ...prev, slalom: true }))
+                    }
                   />
                 </div>
               </div>
