@@ -1231,7 +1231,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           return { ...prev, game3: score3 };
         });
       } else if (e.data?.type === "hyvmind-nav") {
-        setHyvmindOverlay(e.data.target as string);
+        var target = e.data.target as string;
+        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles" };
+        setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
