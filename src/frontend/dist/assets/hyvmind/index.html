@@ -29,7 +29,7 @@
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
 
-  /* ── Tablet (601-1024px): flex layout ── */
+  /* ── Tablet/small desktop (601-1024px): flex layout ── */
   @media (max-width: 1024px) and (min-width: 601px) {
     .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 574/480; border-width: 2px; }
     .dpad-btn { border-radius: 7px; }
@@ -37,7 +37,7 @@
   @media (max-width: 1024px) and (min-width: 769px) {
     .layout { gap: 12px; }
     .dpad { width: 162px; height: 162px; }
-    .dpad-btn { width: 54px; height: 54px; font-size: 22px; }
+    .dpad-btn { width: 54px; height: 54px; font-size: 22px; border-radius: 7px; }
     .dpad-up    { left: 54px; }
     .dpad-down  { left: 54px; }
     .dpad-left  { top: 54px; }
@@ -53,30 +53,6 @@
     .dpad-left  { top: 50px; }
     .dpad-right { top: 50px; }
     .action-btn { width: 60px; height: 60px; font-size: 12px; }
-  }
-
-  /* ── Phone ≤600px: overlay controls on top of full-screen game ── */
-  @media (max-width: 600px) {
-    .layout { display: block; position: relative; width: 100%; height: 100%; }
-    .screen { width: 100%; height: 100%; min-width: 0; min-height: 0; border-width: 2px; aspect-ratio: auto; }
-    .dpad { position: absolute; bottom: 14px; left: 10px; width: 150px; height: 150px; z-index: 10; }
-    .dpad-btn { width: 50px; height: 50px; font-size: 20px; border-radius: 8px; border-width: 2px; }
-    .dpad-up    { left: 50px; }
-    .dpad-down  { left: 50px; }
-    .dpad-left  { top: 50px; }
-    .dpad-right { top: 50px; }
-    .action-buttons { position: absolute; bottom: 22px; right: 14px; gap: 12px; z-index: 10; }
-    .action-btn { width: 60px; height: 60px; font-size: 12px; border-width: 2px; }
-  }
-  @media (max-width: 480px) {
-    .dpad { width: 120px; height: 120px; bottom: 10px; left: 6px; }
-    .dpad-btn { width: 40px; height: 40px; font-size: 16px; border-radius: 6px; }
-    .dpad-up    { left: 40px; }
-    .dpad-down  { left: 40px; }
-    .dpad-left  { top: 40px; }
-    .dpad-right { top: 40px; }
-    .action-buttons { bottom: 16px; right: 8px; gap: 8px; }
-    .action-btn { width: 48px; height: 48px; font-size: 10px; }
   }
 
   /* ── Rotate prompt (portrait + small screens) ── */
@@ -646,6 +622,28 @@ function reloadCollisionData() {
   img.onerror = function() { console.error('reloadCollision img load failed'); };
   img.src = ASSETS + '/collision.png?' + Date.now();
 }
+
+// Auto-fit layout for phones: detect narrow viewport and apply overlay via JS
+function fitLayout() {
+  var w = window.innerWidth;
+  var layout = document.querySelector('.layout');
+  var screen = document.querySelector('.screen');
+  var dpad = document.querySelector('.dpad');
+  var actions = document.querySelector('.action-buttons');
+  if (w <= 600) {
+    layout.style.cssText = 'display:block;position:relative;width:100%;height:100%;';
+    screen.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;border-width:2px;aspect-ratio:auto;';
+    dpad.style.cssText = 'position:absolute;bottom:14px;left:10px;width:150px;height:150px;z-index:10;';
+    actions.style.cssText = 'display:flex;flex-direction:row;position:absolute;bottom:22px;right:14px;gap:12px;z-index:10;';
+  } else {
+    layout.style.cssText = '';
+    screen.style.cssText = '';
+    dpad.style.cssText = '';
+    actions.style.cssText = '';
+  }
+}
+window.addEventListener('resize', fitLayout);
+setTimeout(fitLayout, 100);
 
 // Auto-poll for map changes every 3 seconds
 var lastMapSize = 0;
