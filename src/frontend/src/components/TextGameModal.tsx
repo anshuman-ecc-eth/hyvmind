@@ -1410,21 +1410,18 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       } else if (e.data?.type === "hyvmind-submit-score") {
         const score = unsubmittedScoreRef.current;
         setUnsubmittedScore(0);
-        (async () => {
-          try {
-            const secret = await generateBuzzSecret(BigInt(Math.round(score)));
-            hyvmindIframeRef.current?.contentWindow?.postMessage(
-              { type: "hyvmind-buzz-secret", secret, score },
-              "*",
-            );
-          } catch (err) {
-            console.error("Failed to generate buzz secret:", err);
-            // Dev-only: local canister unavailable. Works in production.
-            hyvmindIframeRef.current?.contentWindow?.postMessage(
-              { type: "hyvmind-buzz-secret", secret: null, score },
-              "*",
-            );
-        })();
+        generateBuzzSecret(BigInt(Math.round(score))).then((secret) => {
+          hyvmindIframeRef.current?.contentWindow?.postMessage(
+            { type: "hyvmind-buzz-secret", secret, score },
+            "*",
+          );
+        }).catch((err) => {
+          console.error("Failed to generate buzz secret:", err);
+          hyvmindIframeRef.current?.contentWindow?.postMessage(
+            { type: "hyvmind-buzz-secret", secret: null, score },
+            "*",
+          );
+        });
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
         setUnsubmittedScore(0);
