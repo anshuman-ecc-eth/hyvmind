@@ -88,6 +88,7 @@ const ABOUT_LINES = [
   "..then you're a threat.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
+const GAMES_MENU_ITEMS = ["Rebirth", "Square Bar", "Slalom", "Back"] as const;
 
 const CONTENT = {
   intro: [
@@ -969,6 +970,104 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   );
 }
 
+// ── Games Overlay ────────────────────────────────────────────────────────────
+
+interface GamesOverlayProps {
+  selectedIdx: number;
+  onSelect: (i: number | ((prev: number) => number)) => void;
+  onBack: () => void;
+  onRebirth: () => void;
+  onSquareBar: () => void;
+  onSlalom: () => void;
+  score: number;
+}
+
+function GamesOverlay({
+  selectedIdx,
+  onSelect,
+  onBack,
+  onRebirth,
+  onSquareBar,
+  onSlalom,
+  score,
+}: GamesOverlayProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        onSelect((prev: number) => (prev - 1 + GAMES_MENU_ITEMS.length) % GAMES_MENU_ITEMS.length);
+      } else if (e.key === "ArrowDown") {
+        onSelect((prev: number) => (prev + 1) % GAMES_MENU_ITEMS.length);
+      } else if (e.key === "Enter") {
+        const chosen = GAMES_MENU_ITEMS[selectedIdx];
+        if (chosen === "Rebirth") onRebirth();
+        else if (chosen === "Square Bar") onSquareBar();
+        else if (chosen === "Slalom") onSlalom();
+        else if (chosen === "Back") onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, onSelect, onRebirth, onSquareBar, onSlalom, onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div
+        className="text-foreground tracking-widest"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1em",
+          letterSpacing: "0.15em",
+        }}
+      >
+        Games
+      </div>
+      <div className="flex flex-col items-center gap-1.5">
+        {GAMES_MENU_ITEMS.map((item, i) => {
+          const isSelected = i === selectedIdx;
+          return (
+            <button
+              key={item}
+              type="button"
+              className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65em",
+                letterSpacing: "0.2em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+              onClick={() => {
+                onSelect(i);
+                if (item === "Rebirth") onRebirth();
+                else if (item === "Square Bar") onSquareBar();
+                else if (item === "Slalom") onSlalom();
+                else if (item === "Back") onBack();
+              }}
+            >
+              {isSelected ? `> ${item}` : `  ${item}`}
+            </button>
+          );
+        })}
+      </div>
+      {score > 0 && (
+        <div
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.45em",
+            color: "#888",
+            letterSpacing: "0.1em",
+            marginTop: "8px",
+          }}
+        >
+          Score: {score}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Puzzles Overlay ───────────────────────────────────────────────────────────
 
 interface PuzzlesOverlayProps {
@@ -977,6 +1076,7 @@ interface PuzzlesOverlayProps {
   onBack: () => void;
   onChess: () => void;
   onWordle: () => void;
+  score?: number;
 }
 
 function PuzzlesOverlay({
@@ -985,6 +1085,7 @@ function PuzzlesOverlay({
   onBack,
   onChess,
   onWordle,
+  score,
 }: PuzzlesOverlayProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1044,6 +1145,19 @@ function PuzzlesOverlay({
           );
         })}
       </div>
+      {score !== undefined && score > 0 && (
+        <div
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.45em",
+            color: "#888",
+            letterSpacing: "0.1em",
+            marginTop: "8px",
+          }}
+        >
+          Score: {score}
+        </div>
+      )}
     </div>
   );
 }
@@ -1154,14 +1268,24 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const hyvmindIframeRef = useRef<HTMLIFrameElement>(null);
   const [hyvmindOverlay, setHyvmindOverlay] = useState<string | null>(null);
   const [puzzleIdx, setPuzzleIdx] = useState(0);
+  const [gameIdx, setGameIdx] = useState(0);
+  const [unsubmittedScore, setUnsubmittedScore] = useState(0);
+  const [gamesLoaded, setGamesLoaded] = useState<Record<string, boolean>>({});
+  const hyvmindOverlayRef = useRef<string | null>(null);
+  const unsubmittedScoreRef = useRef(0);
+  hyvmindOverlayRef.current = hyvmindOverlay;
+  unsubmittedScoreRef.current = unsubmittedScore;
 
   const handleHyvmindResume = useCallback(() => {
     console.log('handleHyvmindResume called, ref=', hyvmindIframeRef.current);
     setHyvmindOverlay(null);
+    // Send score update to game
+    const win = hyvmindIframeRef.current?.contentWindow;
+    win?.postMessage({ type: "hyvmind-score-update", score: unsubmittedScoreRef.current }, "*");
     const send = () => {
-      const win = hyvmindIframeRef.current?.contentWindow;
-      console.log('sending hyvmind-resume, contentWindow=', win);
-      win?.postMessage({ type: "hyvmind-resume" }, "*");
+      const w = hyvmindIframeRef.current?.contentWindow;
+      console.log('sending hyvmind-resume, contentWindow=', w);
+      w?.postMessage({ type: "hyvmind-resume" }, "*");
     };
     send();
     setTimeout(send, 200);
@@ -1237,37 +1361,69 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === "rebirth-game-over") {
         const score1 = (e.data.score as number) || 0;
-        setGameScores((prev) => ({ ...prev, game1: score1 }));
-        if (settings.skipMessages) {
-          setPhase({ type: "game2" });
+        if (hyvmindOverlayRef.current?.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score1);
+          setHyvmindOverlay("games");
         } else {
-          setPhase({ type: "postGame1", step: 0 });
-          setScrambleComplete(false);
+          setGameScores((prev) => ({ ...prev, game1: score1 }));
+          if (settings.skipMessages) {
+            setPhase({ type: "game2" });
+          } else {
+            setPhase({ type: "postGame1", step: 0 });
+            setScrambleComplete(false);
+          }
         }
       } else if (e.data?.type === "squarebar-game-over") {
         const score2 = (e.data.score as number) || 0;
-        setGameScores((prev) => ({ ...prev, game2: score2 }));
-        if (settings.skipMessages) {
-          setPhase({ type: "game3" });
+        if (hyvmindOverlayRef.current?.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score2);
+          setHyvmindOverlay("games");
         } else {
-          setPhase({ type: "postGame2", step: 0 });
-          setScrambleComplete(false);
+          setGameScores((prev) => ({ ...prev, game2: score2 }));
+          if (settings.skipMessages) {
+            setPhase({ type: "game3" });
+          } else {
+            setPhase({ type: "postGame2", step: 0 });
+            setScrambleComplete(false);
+          }
         }
       } else if (e.data?.type === "slalom-game-over") {
         const score3 = (e.data.score as number) || 0;
-        setGameScores((prev) => {
-          const totalScore = prev.game1 + prev.game2 + score3;
-          setGeneratingScore(totalScore);
-          setPhase({ type: "generating" });
-          return { ...prev, game3: score3 };
-        });
+        if (hyvmindOverlayRef.current?.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score3);
+          setHyvmindOverlay("games");
+        } else {
+          setGameScores((prev) => {
+            const totalScore = prev.game1 + prev.game2 + score3;
+            setGeneratingScore(totalScore);
+            setPhase({ type: "generating" });
+            return { ...prev, game3: score3 };
+          });
+        }
       } else if (e.data?.type === "hyvmind-nav") {
         var target = e.data.target as string;
-        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about" };
+        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about", "House of Games": "games" };
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
+        setGameIdx(0);
+        setGamesLoaded({});
+      } else if (e.data?.type === "hyvmind-submit-score") {
+        const score = unsubmittedScoreRef.current;
+        setUnsubmittedScore(0);
+        (async () => {
+          try {
+            const secret = await generateBuzzSecret(BigInt(Math.round(score)));
+            hyvmindIframeRef.current?.contentWindow?.postMessage(
+              { type: "hyvmind-buzz-secret", secret, score },
+              "*",
+            );
+          } catch (err) {
+            console.error("Failed to generate buzz secret:", err);
+          }
+        })();
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
+        setUnsubmittedScore(0);
         setPhase({ type: "idle" });
       }
     };
@@ -1790,21 +1946,105 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 onBack={handleHyvmindResume}
                 onChess={() => setHyvmindOverlay("chess")}
                 onWordle={() => setHyvmindOverlay("wordle")}
+                score={unsubmittedScore}
               />
             )}
             {hyvmindOverlay === "about" && (
               <AboutOverlay onBack={handleHyvmindResume} />
             )}
+            {hyvmindOverlay === "games" && (
+              <GamesOverlay
+                selectedIdx={gameIdx}
+                onSelect={(i) => setGameIdx(typeof i === 'function' ? i(gameIdx) : i)}
+                onBack={handleHyvmindResume}
+                onRebirth={() => setHyvmindOverlay("games-rebirth")}
+                onSquareBar={() => setHyvmindOverlay("games-squarebar")}
+                onSlalom={() => setHyvmindOverlay("games-slalom")}
+                score={unsubmittedScore}
+              />
+            )}
+            {hyvmindOverlay === "games-rebirth" && (
+              <div className="flex-1 relative flex flex-col overflow-hidden">
+                <div className="flex-1 flex items-center justify-center bg-background p-0">
+                  {!gamesLoaded.rebirth && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                      <div className="flex gap-[2px]">
+                        {Array.from({ length: 16 }).map((_, i) => (
+                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <iframe
+                    src={`/assets/rebirth.html${bgmParam}`}
+                    allow="autoplay"
+                    className="w-full h-full border-0"
+                    title="Rebirth"
+                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, rebirth: true }))}
+                  />
+                </div>
+              </div>
+            )}
+            {hyvmindOverlay === "games-squarebar" && (
+              <div className="flex-1 relative flex flex-col overflow-hidden">
+                <div className="flex-1 flex items-center justify-center bg-background p-0">
+                  {!gamesLoaded.squarebar && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                      <div className="flex gap-[2px]">
+                        {Array.from({ length: 16 }).map((_, i) => (
+                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <iframe
+                    src={`/assets/squarebar.html${bgmParam}`}
+                    allow="autoplay"
+                    className="w-full h-full border-0"
+                    title="Square Bar"
+                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, squarebar: true }))}
+                  />
+                </div>
+              </div>
+            )}
+            {hyvmindOverlay === "games-slalom" && (
+              <div className="flex-1 relative flex flex-col overflow-hidden">
+                <div className="flex-1 flex items-center justify-center bg-background p-0">
+                  {!gamesLoaded.slalom && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                      <div className="flex gap-[2px]">
+                        {Array.from({ length: 16 }).map((_, i) => (
+                          <span key={i} className="text-foreground" style={{ fontSize: "0.55em", animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite` }}>█</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <iframe
+                    src={`/assets/slalom.html${bgmParam}`}
+                    allow="autoplay"
+                    className="w-full h-full border-0"
+                    title="Slalom"
+                    onLoad={() => setGamesLoaded((prev) => ({ ...prev, slalom: true }))}
+                  />
+                </div>
+              </div>
+            )}
             {hyvmindOverlay === "chess" && (
               <ChessPuzzleGame
-                onComplete={() => setHyvmindOverlay("puzzles")}
+                onComplete={(score) => {
+                  setUnsubmittedScore((prev) => prev + score);
+                  setHyvmindOverlay("puzzles");
+                }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Chess"
               />
             )}
             {hyvmindOverlay === "wordle" && (
               <WordlePuzzleGame
-                onComplete={() => setHyvmindOverlay("puzzles")}
+                onComplete={(score) => {
+                  setUnsubmittedScore((prev) => prev + score);
+                  setHyvmindOverlay("puzzles");
+                }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Wordle"
               />
