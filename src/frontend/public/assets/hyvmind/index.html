@@ -182,7 +182,7 @@ mq.addEventListener('change', function(e) {
 });
 gamePaused = mq.matches;
 window.addEventListener('message', function(e) {
-  if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; }
+  if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; document.body.focus(); }
 });
 
 var dirMap = [2, 3, 1, 0];
@@ -288,7 +288,8 @@ function showDoorPopup(label) {
   pop._type = 'door';
   pop._label = label;
   pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ ' + label + ' ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">Enter?  [Z] yes  [X] no</div></div></div>';
+  var title = label ? '~ ' + label + ' ~' : '~ door ~';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">Enter?  [Z] yes  [X] no</div></div></div>';
   document.body.appendChild(pop);
   activePopup = pop;
 }
@@ -300,7 +301,7 @@ function isWalkable(gx, gy) {
   var ty = Math.floor((gy + 14) / TILE);
   if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return false;
   var v = collisionMap[ty][tx];
-  return v === 1 || v === 5 || v === 6;
+  return v === 1 || v === 5;
 }
 
 function findNearestWalkable(gx, gy) {
@@ -394,10 +395,15 @@ function activateZ() {
   if (activePopup && activePopup._type === 'door') {
     var label = activePopup._label;
     closePopup();
-    window.parent.postMessage({ type: 'hyvmind-nav', target: label }, '*');
-    navPaused = true;
-    navPauseTick = 0;
-    msg = 'nav:' + label;
+    if (label) {
+      window.parent.postMessage({ type: 'hyvmind-nav', target: label }, '*');
+      navPaused = true;
+      navPauseTick = 0;
+      msg = 'nav:' + label;
+    } else {
+      showPopup("who am I talking to?");
+      msg = 'unlabeled door';
+    }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
     showPopup(triggerMessages[nearTrigger.key]);
     msg = 'trigger:' + triggerMessages[nearTrigger.key];
@@ -443,7 +449,7 @@ function render() {
   } else {
     lastNearDoorKey = null;
   }
-  if (doorLabel && !doorDismissed) {
+  if (nearDoor && !doorDismissed) {
     showDoorPopup(doorLabel);
   } else {
     closeDoorPopup();

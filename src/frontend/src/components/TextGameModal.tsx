@@ -938,6 +938,85 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ── Puzzles Overlay ───────────────────────────────────────────────────────────
+
+interface PuzzlesOverlayProps {
+  selectedIdx: number;
+  onSelect: (i: number | ((prev: number) => number)) => void;
+  onBack: () => void;
+  onChess: () => void;
+  onWordle: () => void;
+}
+
+function PuzzlesOverlay({
+  selectedIdx,
+  onSelect,
+  onBack,
+  onChess,
+  onWordle,
+}: PuzzlesOverlayProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        onSelect((selectedIdx - 1 + PUZZLE_MENU_ITEMS.length) % PUZZLE_MENU_ITEMS.length);
+      } else if (e.key === "ArrowDown") {
+        onSelect((selectedIdx + 1) % PUZZLE_MENU_ITEMS.length);
+      } else if (e.key === "Enter") {
+        const chosen = PUZZLE_MENU_ITEMS[selectedIdx];
+        if (chosen === "Chess") onChess();
+        else if (chosen === "Wordle") onWordle();
+        else if (chosen === "Back") onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, onSelect, onChess, onWordle, onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div
+        className="text-foreground tracking-widest"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1em",
+          letterSpacing: "0.15em",
+        }}
+      >
+        Puzzles
+      </div>
+      <div className="flex flex-col items-center gap-1.5">
+        {PUZZLE_MENU_ITEMS.map((item, i) => {
+          const isSelected = i === selectedIdx;
+          return (
+            <button
+              key={item}
+              type="button"
+              className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.65em",
+                letterSpacing: "0.2em",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0",
+              }}
+              onClick={() => {
+                onSelect(i);
+                if (item === "Chess") onChess();
+                else if (item === "Wordle") onWordle();
+                else if (item === "Back") onBack();
+              }}
+            >
+              {isSelected ? `> ${item}` : `  ${item}`}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface TextGameModalProps {
@@ -1039,6 +1118,28 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
   }, [overrideAudio]);
 
+  // ── Hyvmind overlay state ──────────────────────────────────────────────────
+
+  const hyvmindIframeRef = useRef<HTMLIFrameElement>(null);
+  const [hyvmindOverlay, setHyvmindOverlay] = useState<string | null>(null);
+  const [puzzleIdx, setPuzzleIdx] = useState(0);
+
+  const handleHyvmindResume = useCallback(() => {
+    console.log('handleHyvmindResume called, ref=', hyvmindIframeRef.current);
+    setHyvmindOverlay(null);
+    const send = () => {
+      const win = hyvmindIframeRef.current?.contentWindow;
+      console.log('sending hyvmind-resume, contentWindow=', win);
+      win?.postMessage({ type: "hyvmind-resume" }, "*");
+    };
+    send();
+    setTimeout(send, 200);
+    setTimeout(send, 600);
+    setTimeout(() => {
+      hyvmindIframeRef.current?.focus();
+    }, 100);
+  }, []);
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleExit = useCallback(() => {
@@ -1129,7 +1230,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setPhase({ type: "generating" });
           return { ...prev, game3: score3 };
         });
+      } else if (e.data?.type === "hyvmind-nav") {
+        setHyvmindOverlay(e.data.target as string);
+        setPuzzleIdx(0);
       } else if (e.data?.type === "hyvmind-close") {
+        setHyvmindOverlay(null);
         setPhase({ type: "idle" });
       }
     };
@@ -1637,14 +1742,37 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "hyvmind":
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
-            <div className="flex-1 flex items-center justify-center bg-background p-0">
-              <iframe
-                src="/assets/hyvmind/index.html"
-                className="w-full h-full border-0"
-                title="HYVMIND"
-                data-ocid="text_game.hyvmind_iframe"
+            <iframe
+              ref={hyvmindIframeRef}
+              src="/assets/hyvmind/index.html"
+              tabIndex={-1}
+              className={`w-full h-full border-0 ${hyvmindOverlay ? "hidden" : ""}`}
+              title="HYVMIND"
+              data-ocid="text_game.hyvmind_iframe"
+            />
+            {hyvmindOverlay === "puzzles" && (
+              <PuzzlesOverlay
+                selectedIdx={puzzleIdx}
+                onSelect={setPuzzleIdx}
+                onBack={handleHyvmindResume}
+                onChess={() => setHyvmindOverlay("chess")}
+                onWordle={() => setHyvmindOverlay("wordle")}
               />
-            </div>
+            )}
+            {hyvmindOverlay === "chess" && (
+              <ChessPuzzleGame
+                onComplete={() => setHyvmindOverlay("puzzles")}
+                onExit={() => setHyvmindOverlay("puzzles")}
+                heading="Chess"
+              />
+            )}
+            {hyvmindOverlay === "wordle" && (
+              <WordlePuzzleGame
+                onComplete={() => setHyvmindOverlay("puzzles")}
+                onExit={() => setHyvmindOverlay("puzzles")}
+                heading="Wordle"
+              />
+            )}
           </div>
         );
 
