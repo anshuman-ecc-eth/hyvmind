@@ -27,10 +27,10 @@
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; }
 
-  /* ── Tablet / small desktop ── */
-  @media (max-width: 900px) {
+  /* ── Tablet / small desktop (769-1024px) ── */
+  @media (max-width: 1024px) and (min-width: 769px) {
     .layout { gap: 12px; }
-    .screen { width: 100%; height: auto; aspect-ratio: 574/480; border-width: 2px; }
+    .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 574/480; border-width: 2px; }
     .dpad { width: 162px; height: 162px; }
     .dpad-btn { width: 54px; height: 54px; font-size: 22px; border-radius: 7px; }
     .dpad-up    { left: 54px; }
