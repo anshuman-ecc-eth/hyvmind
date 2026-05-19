@@ -945,34 +945,80 @@ interface AboutOverlayProps {
 }
 
 function AboutOverlay({ onBack }: AboutOverlayProps) {
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
+  const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
+  const total = lines.length;
+
+  const advance = useCallback(() => {
+    if (!done) return;
+    setDone(false);
+    if (step + 1 >= total) {
+      onBack();
+    } else {
+      setStep((prev) => prev + 1);
+    }
+  }, [done, step, total, onBack]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Tab") return;
+      advance();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [advance]);
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <p
-          className="text-foreground text-center whitespace-pre-line"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.6em",
-            letterSpacing: "0.05em",
-            lineHeight: "2.2",
-          }}
-        >
-          {ABOUT_LINES.join("\n")}
-        </p>
-      </div>
-      <div className="flex-shrink-0 flex justify-center pb-4">
+    <div
+      className="flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer"
+      onClick={advance}
+      onKeyDown={
+        done
+          ? (e) => {
+              if (e.key !== "Tab") advance();
+            }
+          : undefined
+      }
+      role="button"
+      tabIndex={0}
+    >
+      <p
+        className="text-foreground text-center leading-relaxed"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7em",
+          letterSpacing: "0.05em",
+          lineHeight: "2",
+          maxWidth: "80%",
+          fontWeight: "400",
+        }}
+      >
+        <TextType
+          key={step}
+          text={lines[step]}
+          typingSpeed={25}
+          showCursor
+          hideCursorWhileTyping
+          cursorCharacter="█"
+          cursorBlinkDuration={0.4}
+          loop={false}
+          onSentenceComplete={() => setDone(true)}
+        />
+      </p>
+      <div className="absolute bottom-4">
         <button
           type="button"
-          onClick={onBack}
+          onClick={(e) => { e.stopPropagation(); onBack(); }}
           className="text-muted-foreground hover:text-foreground transition-colors"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55em",
+            fontSize: "0.5em",
             letterSpacing: "0.2em",
             background: "none",
             border: "1px solid",
             borderColor: "var(--border)",
-            padding: "6px 16px",
+            padding: "4px 12px",
             cursor: "pointer",
           }}
         >
