@@ -391,6 +391,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
   if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; closePopup(); setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
   if (e.key === 'd' || e.key === 'D') debugCollision();
+  if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
 });
 
 function debugCollision() {
@@ -552,6 +553,82 @@ initCollision(function() {
     console.log('HYVMIND DEBUG: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null'));
   });
 });
+
+// Reload collision data without page refresh
+function reloadCollisionData() {
+  var oldPx = px, oldPy = py;
+  fetch(ASSETS + '/collision.png?' + Date.now())
+    .then(function(r) { return r.arrayBuffer(); })
+    .then(function(buf) {
+      var view = new DataView(buf);
+      var pos = 8, chunks = [];
+      while (pos < buf.byteLength) {
+        var len = view.getUint32(pos);
+        var t = String.fromCharCode(view.getUint8(pos+4), view.getUint8(pos+5), view.getUint8(pos+6), view.getUint8(pos+7));
+        if (t === 'IDAT') chunks.push(new Uint8Array(buf, pos+8, len));
+        pos += 12 + len;
+      }
+      var total = chunks.reduce(function(s, c) { return s + c.length; }, 0);
+      var comp = new Uint8Array(total);
+      var off = 0;
+      chunks.forEach(function(c) { comp.set(c, off); off += c.length; });
+      return new Response(new Blob([comp.slice(2, -4)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    })
+    .then(function(rawBuf) {
+      var data = new Uint8Array(rawBuf);
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++) {
+          var idx = (y * COLS + x) * 4;
+          var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+          if (a === 0) collisionMap[y][x] = 0;
+          else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
+          else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
+          else if (g > 150 && r < 150) collisionMap[y][x] = 1;
+          else if (r > 150 && g < 150 && b < 150) collisionMap[y][x] = 2;
+          else if (r > 150 && g > 150 && b < 150) collisionMap[y][x] = 3;
+          else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
+          else collisionMap[y][x] = 0;
+        }
+      return fetch(ASSETS + '/triggers.json?' + Date.now());
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      triggerMessages = d || {};
+      triggerPositions = [];
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
+      return fetch(ASSETS + '/doors.json?' + Date.now());
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      doorLabels = d || {};
+      doorPositions = [];
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
+      px = oldPx; py = oldPy;
+      closePopup();
+      console.log('MAP RELOADED: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length);
+    })
+    .catch(function(e) { console.error('MAP RELOAD FAILED:', e); });
+}
+
+// Auto-poll for map changes every 3 seconds
+var lastMapSize = 0;
+function pollMapUpdate() {
+  fetch(ASSETS + '/collision.png?' + Date.now(), { method: 'HEAD' })
+    .then(function(r) {
+      var size = parseInt(r.headers.get('Content-Length')) || 0;
+      if (lastMapSize !== 0 && size !== 0 && size !== lastMapSize) {
+        console.log('MAP CHANGE DETECTED: size=' + size + ' (was ' + lastMapSize + '), reloading...');
+        reloadCollisionData();
+      }
+      if (size !== 0) lastMapSize = size;
+    })
+    .catch(function() {});
+}
+setInterval(pollMapUpdate, 3000);
 </script>
 </body>
 </html>
