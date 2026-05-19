@@ -13,7 +13,7 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Enter", "Exit"] as const;
+const MENU_ITEMS = ["Enter", "Credits", "Exit"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -186,6 +186,7 @@ type Phase =
   | { type: "chessGameOver"; score: number }
   | { type: "wordle" }
   | { type: "hyvmind" }
+  | { type: "credits" }
   | { type: "finalExit" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -430,6 +431,72 @@ function LeaderboardScreen({
   );
 }
 
+// ── Credits Screen ──────────────────────────────────────────────────────────────
+
+function CreditsScreen({ onBack }: { onBack: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter") onBack();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 select-none px-6">
+      <div
+        className="text-foreground tracking-widest"
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.7em" }}
+      >
+        Credits
+      </div>
+      <div
+        className="flex flex-col items-start gap-3"
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.45em", lineHeight: "1.8", letterSpacing: "0.05em", maxWidth: "320px" }}
+      >
+        <span>forest.mp3 — BGM</span>
+        <a href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>syncopika</a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY 3.0</span>
+
+        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+
+        <span>bottom.png — world tiles</span>
+        <a href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>Ivan Voirol</a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY 4.0</span>
+
+        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+
+        <span>sprites/cultist_*.png — player</span>
+        <span className="text-foreground" style={{ fontSize: "0.9em" }}>Antifarea</span>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>CC-BY</span>
+
+        <div style={{ height: "2px", width: "100%", background: "var(--border)", opacity: 0.3, margin: "2px 0" }} />
+
+        <span>crisp-game-lib — mini-game framework</span>
+        <a href="https://github.com/abagames/crisp-game-lib" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-muted-foreground underline" style={{ fontSize: "0.9em" }}>abagames</a>
+        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>MIT</span>
+      </div>
+      <button
+        type="button"
+        className="text-foreground transition-colors hover:text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          marginTop: "8px",
+        }}
+        onClick={onBack}
+      >
+        {"> Back"}
+      </button>
+    </div>
+  );
+}
+
 // ── Start Screen ───────────────────────────────────────────────────────────────
 
 interface StartScreenProps {
@@ -441,6 +508,7 @@ interface StartScreenProps {
   onHiScores: () => void;
   onExit: () => void;
   onEnter: () => void;
+  onCredits: () => void;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -456,6 +524,7 @@ function StartScreen({
   onHiScores,
   onExit,
   onEnter,
+  onCredits,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -478,6 +547,7 @@ function StartScreen({
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Enter") onEnter();
+          else if (chosen === "Credits") onCredits();
           else if (chosen === "Exit") onExit();
         }
       }
@@ -493,6 +563,7 @@ function StartScreen({
     onSettings,
     onHiScores,
     onEnter,
+    onCredits,
     onExit,
   ]);
 
@@ -598,6 +669,7 @@ function StartScreen({
                       onClick={() => {
                         setSelectedIdx(activeIdx);
                         if (item === "Enter") onEnter();
+                        else if (item === "Credits") onCredits();
                         else if (item === "Exit") onExit();
                       }}
                     >
@@ -1294,6 +1366,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "about" });
   }, []);
 
+  const handleOpenCredits = useCallback(() => {
+    setPhase({ type: "credits" });
+  }, []);
+
   const handleStartChess = useCallback(() => {
     setPhase({ type: "chess" });
   }, []);
@@ -1645,6 +1721,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onHiScores={handleOpenLeaderboard}
             onExit={handleExit}
             onEnter={handleStartHyvmind}
+            onCredits={handleOpenCredits}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}
@@ -1663,6 +1740,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             heading="Settings"
           />
         );
+
+      case "credits":
+        return <CreditsScreen onBack={handleCloseSubScreen} />;
 
       case "leaderboard":
         return (
