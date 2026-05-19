@@ -27,7 +27,7 @@
   .viewport { position: absolute; inset: 0; overflow: hidden; }
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
   .game-layer { position: absolute; inset: 0; z-index: 1; }
-  .sprite { position: absolute; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; }
+  .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
 
   /* ── Tablet / small desktop (769-1024px) ── */
   @media (max-width: 1024px) and (min-width: 769px) {
@@ -42,65 +42,28 @@
     .action-btn { width: 66px; height: 66px; font-size: 12px; }
   }
 
-  /* ── Narrow screens: overlay controls on top of screen ── */
+  /* ── Narrow screens: flex layout with smaller controls ── */
   @media (max-width: 768px) {
-    .layout {
-      display: block;
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-    .screen {
-      width: 100%;
-      height: 100%;
-      min-width: 320px;
-      min-height: 267px;
-      border-width: 2px;
-      aspect-ratio: auto;
-    }
-    .dpad {
-      position: absolute;
-      bottom: 14px;
-      left: 10px;
-      width: 150px;
-      height: 150px;
-      z-index: 10;
-    }
-    .dpad-btn {
-      width: 50px;
-      height: 50px;
-      font-size: 20px;
-      border-radius: 8px;
-      border-width: 2px;
-    }
+    .layout { gap: 8px; }
+    .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 574/480; border-width: 2px; }
+    .dpad { width: 150px; height: 150px; }
+    .dpad-btn { width: 50px; height: 50px; font-size: 20px; border-radius: 8px; border-width: 2px; }
     .dpad-up    { left: 50px; }
     .dpad-down  { left: 50px; }
     .dpad-left  { top: 50px; }
     .dpad-right { top: 50px; }
-    .action-buttons {
-      position: absolute;
-      bottom: 22px;
-      right: 14px;
-      gap: 12px;
-      z-index: 10;
-    }
-    .action-btn {
-      width: 60px;
-      height: 60px;
-      font-size: 12px;
-      border-width: 2px;
-    }
+    .action-btn { width: 60px; height: 60px; font-size: 12px; border-width: 2px; }
   }
 
   /* ── Very narrow screens (e.g., small landscape phones) ── */
   @media (max-width: 480px) {
-    .dpad { width: 120px; height: 120px; bottom: 10px; left: 6px; }
+    .layout { gap: 6px; }
+    .dpad { width: 120px; height: 120px; }
     .dpad-btn { width: 40px; height: 40px; font-size: 16px; border-radius: 6px; }
     .dpad-up    { left: 40px; }
     .dpad-down  { left: 40px; }
     .dpad-left  { top: 40px; }
     .dpad-right { top: 40px; }
-    .action-buttons { bottom: 16px; right: 8px; gap: 8px; }
     .action-btn { width: 48px; height: 48px; font-size: 10px; }
   }
 
@@ -494,8 +457,7 @@ function render() {
   var pTileX = Math.floor((px + 16) / TILE);
   var pTileY = Math.floor((py + 14) / TILE);
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
-  elP.style.left = (px - camX) + 'px';
-  elP.style.top = (py - camY) + 'px';
+  elP.style.transform = 'translate(' + (px - camX) + 'px, ' + (py - camY) + 'px)';
   elP.style.backgroundImage = frm(pc, dirMap[pDir]);
   elP.style.opacity = isUnderObject ? '0.4' : '1';
 
