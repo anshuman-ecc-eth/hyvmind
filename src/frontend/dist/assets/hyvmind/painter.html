@@ -19,6 +19,7 @@
    .tool-btn.trigger.active { background: #3a1a3a; border-color: #c4c; color: #c4c; }
    .tool-btn.over.active { background: #1a3a3a; border-color: #4cc; color: #4cc; }
    .tool-btn.erase.active { background: #5a1a1a; border-color: #f44; color: #f44; }
+   .tool-btn.door.active { background: #1a1a4a; border-color: #48f; color: #48f; }
   .brush { display: flex; gap: 4px; align-items: center; font-size: 10px; color: #888; }
   .brush button { padding: 2px 6px; font-size: 10px; border: 1px solid #555; background: #222; color: #888; cursor: pointer; border-radius: 2px; font-family: monospace; }
   .brush button.active { background: #333; color: #fff; border-color: #f0c060; }
@@ -44,6 +45,7 @@
     <button class="tool-btn trigger" data-mode="trigger">💬 Trigger</button>
     <button class="tool-btn over" data-mode="over">🔼 Over</button>
     <button class="tool-btn erase" data-mode="erase">✕ Erase</button>
+    <button class="tool-btn door" data-mode="door">🚪 Door</button>
   </div>
   <div class="brush">
     Brush: <button data-size="1">1</button><button data-size="2" class="active">2</button><button data-size="4">4</button><button data-size="8">8</button>
@@ -62,6 +64,7 @@
   <span><span class="swatch" style="background:#c4c"></span> Trigger</span>
   <span><span class="swatch" style="background:#4cc"></span> Over</span>
   <span><span class="swatch" style="background:transparent;border:1px solid #555"></span> None</span>
+  <span><span class="swatch" style="background:#48f"></span> Door</span>
 </div>
 <div class="canvas-wrap">
   <canvas id="canvas"></canvas>
@@ -70,6 +73,7 @@
 <script>
 var ASSETS = '/assets/hyvmind';
 var TILE = 8;
+var IMG_W = 574, IMG_H = 2176;
 var COLS = Math.ceil(IMG_W / TILE), ROWS = Math.ceil(IMG_H / TILE);
 
 var canvas = document.getElementById('canvas');
@@ -80,6 +84,8 @@ for (var y = 0; y < ROWS; y++) { map[y] = []; for (var x = 0; x < COLS; x++) map
 
 // Trigger messages: key = "tx,ty", value = message string
 var triggerMessages = {};
+// Door labels: key = "tx,ty", value = label string
+var doorLabels = {};
 
 var mode = 'walk', brushSize = 2, drawing = false;
 var hoverPos = null;
@@ -103,7 +109,7 @@ function toTile(wx, wy) {
 }
 
 function paintTile(tx, ty) {
-  var val = mode === 'walk' ? 1 : mode === 'block' ? 2 : mode === 'stairs' ? 3 : mode === 'trigger' ? 4 : mode === 'over' ? 5 : 0;
+  var val = mode === 'walk' ? 1 : mode === 'block' ? 2 : mode === 'stairs' ? 3 : mode === 'trigger' ? 4 : mode === 'over' ? 5 : mode === 'door' ? 6 : 0;
   var half = Math.floor(brushSize / 2);
   var changed = false;
   for (var dy = -half; dy <= half; dy++)
@@ -111,6 +117,14 @@ function paintTile(tx, ty) {
       var cx = tx + dx, cy = ty + dy;
       if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) continue;
       if (map[cy][cx] !== val) { map[cy][cx] = val; changed = true; }
+      // If painting door, prompt for label (first tile only)
+      if (val === 6 && dx === 0 && dy === 0) {
+        var key = cx + ',' + cy;
+        if (!doorLabels[key]) {
+          var lbl = prompt('Door label (e.g. "puzzles"):', '');
+          if (lbl && lbl.trim()) doorLabels[key] = lbl.trim();
+        }
+      }
       // If painting trigger, prompt for message (first tile only)
       if (val === 4 && dx === 0 && dy === 0) {
         var key = cx + ',' + cy;
@@ -123,6 +137,7 @@ function paintTile(tx, ty) {
       if (val === 0 && map[cy][cx] === 0) {
         var key2 = cx + ',' + cy;
         delete triggerMessages[key2];
+        delete doorLabels[key2];
       }
     }
   if (changed) { draw(); updateStats(); }
@@ -144,6 +159,7 @@ function overlayColor(val) {
   if (val === 3) return { fill: 'rgba(204,204,68,0.4)', stroke: 'rgba(204,204,68,0.7)' };
   if (val === 4) return { fill: 'rgba(204,68,204,0.35)', stroke: 'rgba(204,68,204,0.7)' };
   if (val === 5) return { fill: 'rgba(68,204,204,0.35)', stroke: 'rgba(68,204,204,0.7)' };
+  if (val === 6) return { fill: 'rgba(68,68,255,0.35)', stroke: 'rgba(68,68,255,0.7)' };
   return null;
 }
 
@@ -182,6 +198,15 @@ function draw() {
           ctx.fillText('!', sx + ts/2 - ts*0.15, sy + ts/2 + ts*0.2);
         }
       }
+      // Draw door label
+      if (val === 6) {
+        var dkey = x + ',' + y;
+        if (doorLabels[dkey]) {
+          ctx.fillStyle = 'rgba(68,136,255,0.8)';
+          ctx.font = 'bold ' + Math.max(6, ts * 0.35) + 'px monospace';
+          ctx.fillText('D', sx + ts/2 - ts*0.2, sy + ts/2 + ts*0.2);
+        }
+      }
     }
   }
 
@@ -202,8 +227,8 @@ function draw() {
     var hx = panX + hoverPos.tx * ts - (brushSize-1)/2 * ts;
     var hy = panY + hoverPos.ty * ts - (brushSize-1)/2 * ts;
     var hw = brushSize * ts, hh = brushSize * ts;
-    var col = mode === 'walk' ? 'rgba(68,204,68,0.3)' : mode === 'block' ? 'rgba(204,68,68,0.3)' : mode === 'stairs' ? 'rgba(204,204,68,0.3)' : mode === 'trigger' ? 'rgba(204,68,204,0.3)' : mode === 'over' ? 'rgba(68,204,204,0.3)' : 'rgba(204,68,68,0.25)';
-    var border = mode === 'erase' ? '#f44' : mode === 'walk' ? '#4c4' : mode === 'block' ? '#c44' : mode === 'stairs' ? '#cc4' : mode === 'trigger' ? '#c4c' : mode === 'over' ? '#4cc' : '#888';
+    var col = mode === 'walk' ? 'rgba(68,204,68,0.3)' : mode === 'block' ? 'rgba(204,68,68,0.3)' : mode === 'stairs' ? 'rgba(204,204,68,0.3)' : mode === 'trigger' ? 'rgba(204,68,204,0.3)' : mode === 'over' ? 'rgba(68,204,204,0.3)' : mode === 'door' ? 'rgba(68,68,255,0.3)' : 'rgba(204,68,68,0.25)';
+    var border = mode === 'erase' ? '#f44' : mode === 'walk' ? '#4c4' : mode === 'block' ? '#c44' : mode === 'stairs' ? '#cc4' : mode === 'trigger' ? '#c4c' : mode === 'over' ? '#4cc' : mode === 'door' ? '#48f' : '#888';
     ctx.fillStyle = col;
     ctx.fillRect(hx, hy, hw, hh);
     ctx.strokeStyle = border;
@@ -308,17 +333,19 @@ document.querySelectorAll('.brush button').forEach(function(btn) {
 });
 
 function updateStats() {
-  var counts = [0, 0, 0, 0, 0, 0];
+  var counts = [0, 0, 0, 0, 0, 0, 0];
   for (var y = 0; y < ROWS; y++)
     for (var x = 0; x < COLS; x++)
       counts[map[y][x]]++;
   var tCount = Object.keys(triggerMessages).length;
-  document.getElementById('stats').textContent = 'Walk:' + counts[1] + ' Block:' + counts[2] + ' Stairs:' + counts[3] + ' Trigger:' + counts[4] + ' Over:' + counts[5] + ' None:' + counts[0];
+  var dCount = Object.keys(doorLabels).length;
+  document.getElementById('stats').textContent = 'Walk:' + counts[1] + ' Block:' + counts[2] + ' Stairs:' + counts[3] + ' Trigger:' + counts[4] + ' Over:' + counts[5] + ' Door:' + counts[6] + ' None:' + counts[0];
 }
 
 document.getElementById('clearBtn').addEventListener('click', function() {
   for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) map[y][x] = 0;
   triggerMessages = {};
+  doorLabels = {};
   draw(); updateStats();
 });
 
@@ -335,18 +362,24 @@ document.getElementById('loadBtn').addEventListener('click', function() {
         var idx = (y * COLS + x) * 4;
         var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
         if (a === 0) map[y][x] = 0;
-        else if (g > 150 && r < 150) map[y][x] = 1;
-        else if (r > 150 && g < 150) map[y][x] = 2;
-        else if (r > 150 && g > 150 && b < 150) map[y][x] = 3;
         else if (r > 150 && b > 150 && g < 150) map[y][x] = 4;
         else if (g > 150 && b > 150 && r < 150) map[y][x] = 5;
+        else if (g > 150 && r < 150) map[y][x] = 1;
+        else if (r > 150 && g < 150 && b < 150) map[y][x] = 2;
+        else if (r > 150 && g > 150 && b < 150) map[y][x] = 3;
+        else if (b > 150 && r < 150 && g < 150) map[y][x] = 6;
         else map[y][x] = 0;
       }
     // Load trigger messages
-    fetch('/triggers.json?' + Date.now())
+    fetch('/assets/hyvmind/triggers.json?' + Date.now())
       .then(function(r) { return r.json(); })
-      .then(function(d) { triggerMessages = d || {}; draw(); updateStats(); })
-      .catch(function() { triggerMessages = {}; draw(); updateStats(); });
+      .then(function(d) { triggerMessages = d || {}; })
+      .catch(function() { triggerMessages = {}; });
+    // Load door labels
+    fetch('/assets/hyvmind/doors.json?' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) { doorLabels = d || {}; draw(); updateStats(); })
+      .catch(function() { doorLabels = {}; draw(); updateStats(); });
   };
   loader.src = '/assets/hyvmind/collision.png?' + Date.now();
 });
@@ -364,8 +397,9 @@ document.getElementById('saveBtn').addEventListener('click', function() {
       else if (val === 2) { id.data[idx]=204; id.data[idx+1]=68; id.data[idx+2]=68; id.data[idx+3]=255; }
       else if (val === 3) { id.data[idx]=204; id.data[idx+1]=204; id.data[idx+2]=68; id.data[idx+3]=255; }
       else if (val === 4) { id.data[idx]=204; id.data[idx+1]=68; id.data[idx+2]=204; id.data[idx+3]=255; }
-      else if (val === 5) { id.data[idx]=68; id.data[idx+1]=204; id.data[idx+2]=204; id.data[idx+3]=255; }
-      else { id.data[idx]=0; id.data[idx+1]=0; id.data[idx+2]=0; id.data[idx+3]=0; }
+       else if (val === 5) { id.data[idx]=68; id.data[idx+1]=204; id.data[idx+2]=204; id.data[idx+3]=255; }
+       else if (val === 6) { id.data[idx]=68; id.data[idx+1]=68; id.data[idx+2]=255; id.data[idx+3]=255; }
+       else { id.data[idx]=0; id.data[idx+1]=0; id.data[idx+2]=0; id.data[idx+3]=0; }
     }
   cx.putImageData(id, 0, 0);
   var pixelData = [];
@@ -393,6 +427,15 @@ document.getElementById('saveBtn').addEventListener('click', function() {
   })
   .then(function(r) { return r.json(); })
   .then(function() {
+    // Save doors
+    return fetch('/save-doors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doorLabels)
+    });
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
     btn.textContent = '✅ Saved!';
     setTimeout(function() { btn.textContent = '💾 Save'; btn.disabled = false; }, 2000);
   })
@@ -404,6 +447,8 @@ document.getElementById('saveBtn').addEventListener('click', function() {
 
 resize();
 updateStats();
+// Auto-load collision + triggers + doors on startup
+document.getElementById('loadBtn').click();
 </script>
 </body>
 </html>
