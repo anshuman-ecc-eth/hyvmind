@@ -182,7 +182,7 @@ mq.addEventListener('change', function(e) {
 });
 gamePaused = mq.matches;
 window.addEventListener('message', function(e) {
-  if (e.data?.type === 'hyvmind-resume') gamePaused = false;
+  if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; }
 });
 
 var dirMap = [2, 3, 1, 0];
@@ -190,14 +190,27 @@ var collisionMap = [];
 for (var y = 0; y < ROWS; y++) { collisionMap[y] = []; for (var x = 0; x < COLS; x++) collisionMap[y][x] = 1; }
 
 function initCollision(callback) {
-  var img = new Image();
-  img.onload = function() {
-    try {
-      var c = document.createElement('canvas');
-      c.width = COLS; c.height = ROWS;
-      var cx = c.getContext('2d');
-      cx.drawImage(img, 0, 0);
-      var data = cx.getImageData(0, 0, COLS, ROWS).data;
+  fetch(ASSETS + '/collision.png?' + Date.now())
+    .then(function(r) { return r.arrayBuffer(); })
+    .then(function(buf) {
+      var view = new DataView(buf);
+      var pos = 8;
+      var chunks = [];
+      while (pos < buf.byteLength) {
+        var len = view.getUint32(pos);
+        var t = String.fromCharCode(view.getUint8(pos+4), view.getUint8(pos+5), view.getUint8(pos+6), view.getUint8(pos+7));
+        if (t === 'IDAT') chunks.push(new Uint8Array(buf, pos+8, len));
+        pos += 12 + len;
+      }
+      var total = chunks.reduce(function(s, c) { return s + c.length; }, 0);
+      var comp = new Uint8Array(total);
+      var off = 0;
+      chunks.forEach(function(c) { comp.set(c, off); off += c.length; });
+      // Strip 2-byte zlib header and 4-byte adler32, decompress
+      return new Response(new Blob([comp.slice(2, -4)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    })
+    .then(function(rawBuf) {
+      var data = new Uint8Array(rawBuf);
       for (var y = 0; y < ROWS; y++)
         for (var x = 0; x < COLS; x++) {
           var idx = (y * COLS + x) * 4;
@@ -211,11 +224,9 @@ function initCollision(callback) {
           else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
           else collisionMap[y][x] = 0;
         }
-    } catch(e) { console.error('initCollision error:', e); }
-    callback();
-  };
-  img.onerror = function() { callback(); };
-  img.src = ASSETS + '/collision.png?' + Date.now();
+    })
+    .catch(function(e) { console.error('initCollision failed:', e); })
+    .then(function() { callback(); });
 }
 
 var triggerMessages = {};
@@ -278,9 +289,9 @@ var activePopup = null;
 function showPopup(msg) {
   if (activePopup) activePopup.remove();
   var pop = document.createElement('div');
-  pop.style.cssText = 'position:absolute;bottom:50%;left:50%;transform:translate(-50%,50%);z-index:20;pointer-events:auto;';
+  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
-  document.querySelector('.screen').appendChild(pop);
+  document.body.appendChild(pop);
   activePopup = pop;
 }
 function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
@@ -373,16 +384,25 @@ function debugCollision() {
 }
 
 function activateZ() {
+  var btnZ = document.getElementById('btnZ');
+  if (btnZ) btnZ.textContent = '!';
+  var msg = '';
   if (nearDoor && doorLabels[nearDoor.key]) {
     window.parent.postMessage({ type: 'hyvmind-nav', target: doorLabels[nearDoor.key] }, '*');
     gamePaused = true;
+    msg = 'nav:' + doorLabels[nearDoor.key];
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
     showPopup(triggerMessages[nearTrigger.key]);
+    msg = 'trigger:' + triggerMessages[nearTrigger.key];
   } else if (nearDoor) {
     showPopup("who am I talking to?");
+    msg = 'unlabeled door at ' + nearDoor.key;
   } else {
     showPopup("who am I talking to?");
+    msg = 'nothing';
   }
+  console.log('Z PRESSED: ' + msg);
+  if (btnZ) setTimeout(function() { btnZ.textContent = 'Z'; }, 500);
 }
 
 function render() {
