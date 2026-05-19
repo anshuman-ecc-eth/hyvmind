@@ -13,7 +13,7 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Left", "Right", "Enter", "Exit"] as const;
+const MENU_ITEMS = ["Enter", "Exit"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -477,26 +477,8 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Left") {
-            setSubMenu("left");
-            setLeftSelectedIdx(0);
-          } else if (chosen === "Right") onHiScores();
-          else if (chosen === "Enter") onEnter();
+          if (chosen === "Enter") onEnter();
           else if (chosen === "Exit") onExit();
-        }
-      } else if (subMenu === "left") {
-        if (e.key === "ArrowUp") {
-          setLeftSelectedIdx(
-            (prev) =>
-              (prev - 1 + LEFT_MENU_ITEMS.length) % LEFT_MENU_ITEMS.length,
-          );
-        } else if (e.key === "ArrowDown") {
-          setLeftSelectedIdx((prev) => (prev + 1) % LEFT_MENU_ITEMS.length);
-        } else if (e.key === "Enter") {
-          const chosen = LEFT_MENU_ITEMS[leftSelectedIdx];
-          if (chosen === "Story") onStart();
-          else if (chosen === "Settings") onSettings();
-          else if (chosen === "Back") setSubMenu("main");
         }
       }
     };
@@ -504,7 +486,6 @@ function StartScreen({
     return () => window.removeEventListener("keydown", handler);
   }, [
     selectedIdx,
-    leftSelectedIdx,
     subMenu,
     onStart,
     onChess,
@@ -616,11 +597,7 @@ function StartScreen({
                       }}
                       onClick={() => {
                         setSelectedIdx(activeIdx);
-                        if (item === "Left") {
-                          setSubMenu("left");
-                          setLeftSelectedIdx(0);
-                        } else if (item === "Right") onHiScores();
-                        else if (item === "Enter") onEnter();
+                        if (item === "Enter") onEnter();
                         else if (item === "Exit") onExit();
                       }}
                     >
