@@ -389,6 +389,7 @@ var px = 280, py = 200, pDir = 0, pMoving = false, pWalk = 0;
 var nearTrigger = null;
 var doorDismissed = false;
 var lastNearDoorKey = null;
+var lastSpriteBg = '';
 var navPaused = false;
 var navPauseTick = 0;
 
@@ -448,6 +449,8 @@ function activateZ() {
 
 function render() {
   var viewW = SCREEN_W, viewH = SCREEN_H;
+  var scrEl = document.querySelector('.screen');
+  if (scrEl && scrEl.clientWidth > 0 && scrEl.clientWidth < SCREEN_W) { viewW = scrEl.clientWidth; viewH = scrEl.clientHeight; }
   var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
   var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
   worldBg.style.left = (-camX) + 'px';
@@ -457,8 +460,9 @@ function render() {
   var pTileX = Math.floor((px + 16) / TILE);
   var pTileY = Math.floor((py + 14) / TILE);
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
-  elP.style.transform = 'translate(' + (px - camX) + 'px, ' + (py - camY) + 'px)';
-  elP.style.backgroundImage = frm(pc, dirMap[pDir]);
+  elP.style.transform = 'translate(' + Math.round(px - camX) + 'px, ' + Math.round(py - camY) + 'px)';
+  var newBg = frm(pc, dirMap[pDir]);
+  if (newBg !== lastSpriteBg) { elP.style.backgroundImage = newBg; lastSpriteBg = newBg; }
   elP.style.opacity = isUnderObject ? '0.4' : '1';
 
   var t = Date.now() / 300;
