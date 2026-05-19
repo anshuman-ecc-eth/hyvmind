@@ -938,6 +938,51 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ── About Overlay ────────────────────────────────────────────────────────────
+
+interface AboutOverlayProps {
+  onBack: () => void;
+}
+
+function AboutOverlay({ onBack }: AboutOverlayProps) {
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <p
+          className="text-foreground text-center whitespace-pre-line"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.6em",
+            letterSpacing: "0.05em",
+            lineHeight: "2.2",
+          }}
+        >
+          {ABOUT_LINES.join("\n")}
+        </p>
+      </div>
+      <div className="flex-shrink-0 flex justify-center pb-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55em",
+            letterSpacing: "0.2em",
+            background: "none",
+            border: "1px solid",
+            borderColor: "var(--border)",
+            padding: "6px 16px",
+            cursor: "pointer",
+          }}
+        >
+          [ Back ]
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Puzzles Overlay ───────────────────────────────────────────────────────────
 
 interface PuzzlesOverlayProps {
@@ -1232,7 +1277,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         });
       } else if (e.data?.type === "hyvmind-nav") {
         var target = e.data.target as string;
-        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles" };
+        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about" };
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
       } else if (e.data?.type === "hyvmind-close") {
@@ -1760,6 +1805,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 onChess={() => setHyvmindOverlay("chess")}
                 onWordle={() => setHyvmindOverlay("wordle")}
               />
+            )}
+            {hyvmindOverlay === "about" && (
+              <AboutOverlay onBack={handleHyvmindResume} />
             )}
             {hyvmindOverlay === "chess" && (
               <ChessPuzzleGame
