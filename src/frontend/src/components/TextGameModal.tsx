@@ -1402,7 +1402,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         }
       } else if (e.data?.type === "hyvmind-nav") {
         var target = e.data.target as string;
-        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about", "House of Games": "games" };
+        var overlayMap: Record<string, string> = { "House of Puzzles": "puzzles", "House of Rant": "about", "House of Games": "games", "Leaderboard": "leaderboard" };
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
         setGameIdx(0);
@@ -1952,6 +1952,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             )}
             {hyvmindOverlay === "about" && (
               <AboutOverlay onBack={handleHyvmindResume} />
+            )}
+            {hyvmindOverlay === "leaderboard" && (
+              <LeaderboardScreen
+                leaderboard={leaderboardEntries ?? []}
+                onBack={handleHyvmindResume}
+              />
             )}
             {hyvmindOverlay === "games" && (
               <GamesOverlay
