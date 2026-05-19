@@ -27,7 +27,7 @@
   .viewport { position: absolute; inset: 0; overflow: hidden; }
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
   .game-layer { position: absolute; inset: 0; z-index: 1; }
-  .sprite { position: absolute; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; }
+  .sprite { position: absolute; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; }
 
   /* ── Tablet / small desktop (769-1024px) ── */
   @media (max-width: 1024px) and (min-width: 769px) {
@@ -494,7 +494,10 @@ function render() {
   var pTileX = Math.floor((px + 16) / TILE);
   var pTileY = Math.floor((py + 14) / TILE);
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
-  elP.style.cssText = 'position:absolute;left:' + (px - camX) + 'px;top:' + (py - camY) + 'px;width:32px;height:36px;background-image:' + frm(pc, dirMap[pDir]) + ';background-size:32px 36px;image-rendering:pixelated;z-index:5;opacity:' + (isUnderObject ? '0.4' : '1') + ';';
+  elP.style.left = (px - camX) + 'px';
+  elP.style.top = (py - camY) + 'px';
+  elP.style.backgroundImage = frm(pc, dirMap[pDir]);
+  elP.style.opacity = isUnderObject ? '0.4' : '1';
 
   var t = Date.now() / 300;
   for (var s = 0; s < sparkles.length; s++) {
