@@ -57,6 +57,8 @@
   <div class="actions">
     <button id="saveBtn">💾 Save</button>
     <button id="downloadBtn">📥 Download</button>
+    <button id="importBtn">📤 Import</button>
+    <input id="importFile" type="file" accept=".json" style="display:none">
     <button id="clearBtn">✕ Clear</button>
     <button id="loadBtn">📂 Load</button>
   </div>
@@ -478,11 +480,15 @@ document.getElementById('saveBtn').addEventListener('click', function() {
 });
 
 document.getElementById('downloadBtn').addEventListener('click', function() {
+  var tiles = {};
+  for (var y = 0; y < ROWS; y++)
+    for (var x = 0; x < COLS; x++)
+      if (map[y][x] !== 0) tiles[y + ',' + x] = map[y][x];
   var data = {
-    version: 1,
+    version: 2,
     cols: COLS,
     rows: ROWS,
-    map: map,
+    tiles: tiles,
     triggers: triggerMessages,
     doors: doorLabels
   };
@@ -495,6 +501,50 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', function() {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      if (!data.version || !data.cols || !data.rows) throw new Error('Invalid format');
+      // Clear current state
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          map[y][x] = 0;
+      triggerMessages = {};
+      doorLabels = {};
+      // Restore tiles
+      if (data.version === 1 && data.map) {
+        for (var y = 0; y < ROWS && y < data.map.length; y++)
+          for (var x = 0; x < COLS && x < data.map[y].length; x++)
+            map[y][x] = data.map[y][x] || 0;
+      } else if (data.version === 2 && data.tiles) {
+        for (var key in data.tiles) {
+          var parts = key.split(',');
+          var yy = parseInt(parts[0]), xx = parseInt(parts[1]);
+          if (xx >= 0 && xx < COLS && yy >= 0 && yy < ROWS) map[yy][xx] = data.tiles[key];
+        }
+      }
+      if (data.triggers) triggerMessages = JSON.parse(JSON.stringify(data.triggers));
+      if (data.doors) doorLabels = JSON.parse(JSON.stringify(data.doors));
+      draw();
+      updateStats();
+      document.getElementById('saveBtn').textContent = '⚠️ Imported - Save to persist';
+      setTimeout(function() { document.getElementById('saveBtn').textContent = '💾 Save'; }, 4000);
+    } catch(err) {
+      alert('Import failed: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 });
 
 resize();
