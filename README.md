@@ -15,6 +15,17 @@ A knowledge management application built on the Internet Computer.
 - **ICP** — The canister runs on the Internet Computer blockchain, providing authentication via Internet Identity and data persistence through stable memory.
 - **Key dependencies** — `core` (standard library), `caffeineai-authorization` (access control for user-owned data), and `caffeineai-user-approval` (plugin binding approvals).
 
+## Assets & Attribution
+
+The hyvmind interactive game uses these external assets:
+
+| Asset | Author | License | Required credit |
+|---|---|---|---|
+| `forest.mp3` — background music | syncopika ([Bandcamp](https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5)) | [CC-BY 3.0](http://creativecommons.org/licenses/by/3.0/) | "syncopika" |
+| `bottom.png` — world tiles | Ivan Voirol ([OpenGameArt](https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol)) | [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) | "Ivan Voirol" |
+| `sprites/cultist_*.png` — player character | Antifarea | CC-BY | "Antifarea" |
+| `crisp-game-lib` — mini-game framework ([Rebirth](src/frontend/public/assets/rebirth.html), [Square Bar](src/frontend/public/assets/squarebar.html), [Slalom](src/frontend/public/assets/slalom.html)) | [abagames](https://github.com/abagames/crisp-game-lib) | MIT | "abagames / crisp-game-lib" |
+
 ## License
 
 GNU General Public License v3.0 — see [LICENSE](./LICENSE).
