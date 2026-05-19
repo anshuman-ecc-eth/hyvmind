@@ -1419,7 +1419,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             );
           } catch (err) {
             console.error("Failed to generate buzz secret:", err);
-          }
+            // Dev-only: local canister unavailable. Works in production.
+            hyvmindIframeRef.current?.contentWindow?.postMessage(
+              { type: "hyvmind-buzz-secret", secret: null, score },
+              "*",
+            );
         })();
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
