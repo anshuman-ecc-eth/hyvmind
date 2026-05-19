@@ -2,7 +2,7 @@ import http.server
 import os
 import json
 
-DIR = '/tmp/opencode'
+DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 PORT = 8080
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -27,7 +27,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     r, g, b, a = pixels[idx], pixels[idx+1], pixels[idx+2], pixels[idx+3]
                     raw.extend([r, g, b, a])
             compressed = zlib.compress(bytes(raw))
-            path = os.path.join(DIR, 'collision.png')
+            path = os.path.join(DIR, 'assets/hyvmind/collision.png')
             with open(path, 'wb') as f:
                 f.write(b'\x89PNG\r\n\x1a\n')
                 ihdr = struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0)
@@ -44,9 +44,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         elif self.path == '/save-triggers':
             messages = json.loads(body.decode('utf-8'))
-            path = os.path.join(DIR, 'triggers.json')
+            path = os.path.join(DIR, 'assets/hyvmind/triggers.json')
             with open(path, 'w') as f:
                 json.dump(messages, f)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'ok': True}).encode('utf-8'))
+
+        elif self.path == '/save-doors':
+            labels = json.loads(body.decode('utf-8'))
+            path = os.path.join(DIR, 'assets/hyvmind/doors.json')
+            with open(path, 'w') as f:
+                json.dump(labels, f)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -64,7 +74,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def end_headers(self):
-        if self.path in ('/save-collision', '/save-triggers'):
+        if self.path in ('/save-collision', '/save-triggers', '/save-doors'):
             self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
 
