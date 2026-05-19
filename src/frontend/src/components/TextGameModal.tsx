@@ -1958,9 +1958,18 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 selectedIdx={gameIdx}
                 onSelect={(i) => setGameIdx(typeof i === 'function' ? i(gameIdx) : i)}
                 onBack={handleHyvmindResume}
-                onRebirth={() => setHyvmindOverlay("games-rebirth")}
-                onSquareBar={() => setHyvmindOverlay("games-squarebar")}
-                onSlalom={() => setHyvmindOverlay("games-slalom")}
+                onRebirth={() => {
+                  setHyvmindOverlay("games-rebirth");
+                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Rebirth"]')?.focus(), 200);
+                }}
+                onSquareBar={() => {
+                  setHyvmindOverlay("games-squarebar");
+                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Square Bar"]')?.focus(), 200);
+                }}
+                onSlalom={() => {
+                  setHyvmindOverlay("games-slalom");
+                  setTimeout(() => document.querySelector<HTMLIFrameElement>('iframe[title="Slalom"]')?.focus(), 200);
+                }}
                 score={unsubmittedScore}
               />
             )}
@@ -1981,6 +1990,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     allow="autoplay"
                     className="w-full h-full border-0"
                     title="Rebirth"
+                    tabIndex={-1}
                     onLoad={() => setGamesLoaded((prev) => ({ ...prev, rebirth: true }))}
                   />
                 </div>
@@ -2003,6 +2013,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     allow="autoplay"
                     className="w-full h-full border-0"
                     title="Square Bar"
+                    tabIndex={-1}
                     onLoad={() => setGamesLoaded((prev) => ({ ...prev, squarebar: true }))}
                   />
                 </div>
@@ -2025,6 +2036,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     allow="autoplay"
                     className="w-full h-full border-0"
                     title="Slalom"
+                    tabIndex={-1}
                     onLoad={() => setGamesLoaded((prev) => ({ ...prev, slalom: true }))}
                   />
                 </div>
