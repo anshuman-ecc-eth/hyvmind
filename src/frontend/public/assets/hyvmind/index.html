@@ -190,27 +190,14 @@ var collisionMap = [];
 for (var y = 0; y < ROWS; y++) { collisionMap[y] = []; for (var x = 0; x < COLS; x++) collisionMap[y][x] = 1; }
 
 function initCollision(callback) {
-  fetch(ASSETS + '/collision.png?' + Date.now())
-    .then(function(r) { return r.arrayBuffer(); })
-    .then(function(buf) {
-      var view = new DataView(buf);
-      var pos = 8;
-      var chunks = [];
-      while (pos < buf.byteLength) {
-        var len = view.getUint32(pos);
-        var t = String.fromCharCode(view.getUint8(pos+4), view.getUint8(pos+5), view.getUint8(pos+6), view.getUint8(pos+7));
-        if (t === 'IDAT') chunks.push(new Uint8Array(buf, pos+8, len));
-        pos += 12 + len;
-      }
-      var total = chunks.reduce(function(s, c) { return s + c.length; }, 0);
-      var comp = new Uint8Array(total);
-      var off = 0;
-      chunks.forEach(function(c) { comp.set(c, off); off += c.length; });
-      // Strip 2-byte zlib header and 4-byte adler32, decompress
-      return new Response(new Blob([comp.slice(2, -4)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
-    })
-    .then(function(rawBuf) {
-      var data = new Uint8Array(rawBuf);
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = COLS; c.height = ROWS;
+      var cx = c.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      var data = cx.getImageData(0, 0, COLS, ROWS).data;
       for (var y = 0; y < ROWS; y++)
         for (var x = 0; x < COLS; x++) {
           var idx = (y * COLS + x) * 4;
@@ -219,14 +206,14 @@ function initCollision(callback) {
           else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
           else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
           else if (g > 150 && r < 150) collisionMap[y][x] = 1;
-          else if (r > 150 && g < 150 && b < 150) collisionMap[y][x] = 2;
-          else if (r > 150 && g > 150 && b < 150) collisionMap[y][x] = 3;
           else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
           else collisionMap[y][x] = 0;
         }
-    })
-    .catch(function(e) { console.error('initCollision failed:', e); })
-    .then(function() { callback(); });
+    } catch(e) { console.error('initCollision error:', e); }
+    callback();
+  };
+  img.onerror = function() { console.error('initCollision img load failed'); callback(); };
+  img.src = ASSETS + '/collision.png?' + Date.now();
 }
 
 var triggerMessages = {};
@@ -313,7 +300,7 @@ function isWalkable(gx, gy) {
   var ty = Math.floor((gy + 14) / TILE);
   if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return false;
   var v = collisionMap[ty][tx];
-  return v === 1 || v === 3 || v === 5 || v === 6;
+  return v === 1 || v === 5 || v === 6;
 }
 
 function findNearestWalkable(gx, gy) {
@@ -326,7 +313,7 @@ function findNearestWalkable(gx, gy) {
         var nx = tx + dx, ny = ty + dy;
         if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
         var v = collisionMap[ny][nx];
-        if (v === 1 || v === 3) {
+        if (v === 1) {
           return { x: nx * TILE + 4 - 16, y: ny * TILE + 4 - 14 };
         }
       }
@@ -557,25 +544,14 @@ initCollision(function() {
 // Reload collision data without page refresh
 function reloadCollisionData() {
   var oldPx = px, oldPy = py;
-  fetch(ASSETS + '/collision.png?' + Date.now())
-    .then(function(r) { return r.arrayBuffer(); })
-    .then(function(buf) {
-      var view = new DataView(buf);
-      var pos = 8, chunks = [];
-      while (pos < buf.byteLength) {
-        var len = view.getUint32(pos);
-        var t = String.fromCharCode(view.getUint8(pos+4), view.getUint8(pos+5), view.getUint8(pos+6), view.getUint8(pos+7));
-        if (t === 'IDAT') chunks.push(new Uint8Array(buf, pos+8, len));
-        pos += 12 + len;
-      }
-      var total = chunks.reduce(function(s, c) { return s + c.length; }, 0);
-      var comp = new Uint8Array(total);
-      var off = 0;
-      chunks.forEach(function(c) { comp.set(c, off); off += c.length; });
-      return new Response(new Blob([comp.slice(2, -4)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
-    })
-    .then(function(rawBuf) {
-      var data = new Uint8Array(rawBuf);
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = COLS; c.height = ROWS;
+      var cx = c.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      var data = cx.getImageData(0, 0, COLS, ROWS).data;
       for (var y = 0; y < ROWS; y++)
         for (var x = 0; x < COLS; x++) {
           var idx = (y * COLS + x) * 4;
@@ -584,34 +560,36 @@ function reloadCollisionData() {
           else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
           else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
           else if (g > 150 && r < 150) collisionMap[y][x] = 1;
-          else if (r > 150 && g < 150 && b < 150) collisionMap[y][x] = 2;
-          else if (r > 150 && g > 150 && b < 150) collisionMap[y][x] = 3;
           else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
           else collisionMap[y][x] = 0;
         }
-      return fetch(ASSETS + '/triggers.json?' + Date.now());
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      triggerMessages = d || {};
-      triggerPositions = [];
-      for (var y = 0; y < ROWS; y++)
-        for (var x = 0; x < COLS; x++)
-          if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
-      return fetch(ASSETS + '/doors.json?' + Date.now());
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      doorLabels = d || {};
-      doorPositions = [];
-      for (var y = 0; y < ROWS; y++)
-        for (var x = 0; x < COLS; x++)
-          if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
-      px = oldPx; py = oldPy;
-      closePopup();
-      console.log('MAP RELOADED: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length);
-    })
-    .catch(function(e) { console.error('MAP RELOAD FAILED:', e); });
+    } catch(e) { console.error('reloadCollision decode error:', e); }
+    // Build positions from refreshed collision map
+    triggerPositions = [];
+    doorPositions = [];
+    for (var y = 0; y < ROWS; y++)
+      for (var x = 0; x < COLS; x++) {
+        if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
+        if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
+      }
+    fetch(ASSETS + '/triggers.json?' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) { triggerMessages = d || {}; })
+      .catch(function() { triggerMessages = {}; })
+      .then(function() {
+        return fetch(ASSETS + '/doors.json?' + Date.now());
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        doorLabels = d || {};
+        px = oldPx; py = oldPy;
+        closePopup();
+        console.log('MAP RELOADED: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length);
+      })
+      .catch(function(e) { console.error('MAP RELOAD FAILED:', e); });
+  };
+  img.onerror = function() { console.error('reloadCollision img load failed'); };
+  img.src = ASSETS + '/collision.png?' + Date.now();
 }
 
 // Auto-poll for map changes every 3 seconds
