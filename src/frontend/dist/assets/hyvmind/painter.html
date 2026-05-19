@@ -113,29 +113,26 @@ function paintTile(tx, ty) {
   var val = mode === 'walk' ? 1 : mode === 'trigger' ? 4 : mode === 'over' ? 5 : mode === 'door' ? 6 : 0;
   var half = Math.floor(brushSize / 2);
   var changed = false;
+  // Prompt once before the loop
+  var newDoorLabel = null, newTriggerMsg = null;
+  if (val === 6) {
+    var centerKey = tx + ',' + ty;
+    var lbl = prompt('Door label (e.g. "puzzles"):', doorLabels[centerKey] || '');
+    if (lbl && lbl.trim()) newDoorLabel = lbl.trim();
+  }
+  if (val === 4) {
+    var centerKey = tx + ',' + ty;
+    var msg = prompt('Popup message for this trigger:', triggerMessages[centerKey] || '');
+    if (msg && msg.trim()) newTriggerMsg = msg.trim();
+  }
   for (var dy = -half; dy <= half; dy++)
     for (var dx = -half; dx <= half; dx++) {
       var cx = tx + dx, cy = ty + dy;
       if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) continue;
       if (map[cy][cx] !== val) { map[cy][cx] = val; changed = true; }
-      // If painting door, prompt for label (first tile only)
-      if (val === 6 && dx === 0 && dy === 0) {
-        var key = cx + ',' + cy;
-        if (!doorLabels[key]) {
-          var lbl = prompt('Door label (e.g. "puzzles"):', '');
-          if (lbl && lbl.trim()) doorLabels[key] = lbl.trim();
-        }
-      }
-      // If painting trigger, prompt for message (first tile only)
-      if (val === 4 && dx === 0 && dy === 0) {
-        var key = cx + ',' + cy;
-        if (!triggerMessages[key]) {
-          var msg = prompt('Popup message for this trigger:', '');
-          if (msg && msg.trim()) triggerMessages[key] = msg.trim();
-        }
-      }
-      // If erasing a trigger tile, remove its message
-      if (val === 0 && map[cy][cx] === 0) {
+      if (val === 6 && newDoorLabel) doorLabels[cx + ',' + cy] = newDoorLabel;
+      if (val === 4 && newTriggerMsg) triggerMessages[cx + ',' + cy] = newTriggerMsg;
+      if (val === 0) {
         var key2 = cx + ',' + cy;
         delete triggerMessages[key2];
         delete doorLabels[key2];
