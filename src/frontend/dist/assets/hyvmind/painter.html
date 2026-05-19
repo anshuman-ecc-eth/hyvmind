@@ -419,26 +419,18 @@ document.getElementById('loadBtn').addEventListener('click', function() {
 });
 
 document.getElementById('saveBtn').addEventListener('click', function() {
-  var c = document.createElement('canvas');
-  c.width = COLS; c.height = ROWS;
-  var cx = c.getContext('2d');
-  var id = cx.createImageData(COLS, ROWS);
+  var pixelData = [];
   for (var y = 0; y < ROWS; y++)
     for (var x = 0; x < COLS; x++) {
-      var idx = (y * COLS + x) * 4;
       var val = map[y][x];
-      if (val === 1) { id.data[idx]=68; id.data[idx+1]=204; id.data[idx+2]=68; id.data[idx+3]=255; }
-      else if (val === 2) { id.data[idx]=204; id.data[idx+1]=68; id.data[idx+2]=68; id.data[idx+3]=255; }
-      else if (val === 3) { id.data[idx]=204; id.data[idx+1]=204; id.data[idx+2]=68; id.data[idx+3]=255; }
-      else if (val === 4) { id.data[idx]=204; id.data[idx+1]=68; id.data[idx+2]=204; id.data[idx+3]=255; }
-       else if (val === 5) { id.data[idx]=68; id.data[idx+1]=204; id.data[idx+2]=204; id.data[idx+3]=255; }
-       else if (val === 6) { id.data[idx]=68; id.data[idx+1]=68; id.data[idx+2]=255; id.data[idx+3]=255; }
-       else { id.data[idx]=0; id.data[idx+1]=0; id.data[idx+2]=0; id.data[idx+3]=0; }
+      if (val === 1) { pixelData.push(68,204,68,255); }
+      else if (val === 2) { pixelData.push(204,68,68,255); }
+      else if (val === 3) { pixelData.push(204,204,68,255); }
+      else if (val === 4) { pixelData.push(204,68,204,255); }
+      else if (val === 5) { pixelData.push(68,204,204,255); }
+      else if (val === 6) { pixelData.push(68,68,255,255); }
+      else { pixelData.push(0,0,0,0); }
     }
-  cx.putImageData(id, 0, 0);
-  var pixelData = [];
-  var imgData2 = cx.getImageData(0, 0, COLS, ROWS).data;
-  for (var i = 0; i < imgData2.length; i++) pixelData.push(imgData2[i]);
 
   var btn = document.getElementById('saveBtn');
   btn.textContent = '⏳...';
