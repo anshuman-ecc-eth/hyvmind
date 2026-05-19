@@ -160,6 +160,7 @@
   </div>
 </div>
 
+<audio id="bgm" src="/assets/hyvmind/forest.mp3" loop preload="auto"></audio>
 <script>
 var ASSETS = '/assets/hyvmind';
 var WORLD_W = 574, WORLD_H = 2176;
@@ -412,6 +413,19 @@ function loop() {
   checkNearbyTriggers(px, py);
   render();
 }
+
+var bgm = document.getElementById('bgm');
+var bgmStarted = false;
+function startBGM() {
+  if (bgmStarted) return;
+  bgmStarted = true;
+  bgm.volume = 0.35;
+  bgm.play().catch(function(){});
+  document.removeEventListener('keydown', startBGM);
+  document.removeEventListener('click', startBGM);
+}
+document.addEventListener('keydown', startBGM);
+document.addEventListener('click', startBGM);
 
 initCollision(function() {
   loadTriggers(function() {
