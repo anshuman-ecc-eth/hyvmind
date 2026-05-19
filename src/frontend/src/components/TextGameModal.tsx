@@ -86,12 +86,6 @@ const ABOUT_LINES = [
   "If you're neither scared nor convinced..",
   "",
   "..then you're a threat.",
-  "",
-  "Take the next exit from Grand Theft Intelligence Vice City.",
-  "",
-  "The leaderboard will be to your right.",
-  "",
-  "Sanctuary on the left.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 
