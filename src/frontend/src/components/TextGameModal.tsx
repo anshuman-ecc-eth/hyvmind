@@ -2222,7 +2222,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               <ChessPuzzleGame
                 onComplete={(score) => {
                   setUnsubmittedScore((prev) => prev + score);
-                  setHyvmindOverlay("puzzles");
                 }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Chess"
@@ -2232,7 +2231,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               <WordlePuzzleGame
                 onComplete={(score) => {
                   setUnsubmittedScore((prev) => prev + score);
-                  setHyvmindOverlay("puzzles");
                 }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Wordle"

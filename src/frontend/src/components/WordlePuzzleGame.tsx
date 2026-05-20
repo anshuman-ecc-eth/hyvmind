@@ -83,6 +83,10 @@ export default function WordlePuzzleGame({
   const [solved, setSolved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  const scoreRef = useRef(score);
+  onCompleteRef.current = onComplete;
+  scoreRef.current = score;
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -92,6 +96,7 @@ export default function WordlePuzzleGame({
         if (t <= 1) {
           clearInterval(timerRef.current!);
           setGameOver(true);
+          onCompleteRef.current(scoreRef.current);
           setGameOverReason("time");
           return 0;
         }
@@ -145,6 +150,7 @@ export default function WordlePuzzleGame({
     } else if (newGuesses.length >= MAX_GUESSES) {
       if (timerRef.current) clearInterval(timerRef.current);
       setGameOver(true);
+      onCompleteRef.current(scoreRef.current);
       setGameOverReason("guesses");
       setFeedback(targetWord);
     }

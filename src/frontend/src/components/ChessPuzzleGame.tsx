@@ -75,6 +75,10 @@ export default function ChessPuzzleGame({
   // Ref to break circular dependency: applyMove → animateSolution
   const animateSolutionRef = useRef<() => void>(() => {});
   const applyMoveRef = useRef<(uci: string) => void>(() => {});
+  const onCompleteRef = useRef(onComplete);
+  const scoreRef = useRef(score);
+  onCompleteRef.current = onComplete;
+  scoreRef.current = score;
 
   // Load chessboard.js UMD script on mount
   useEffect(() => {
@@ -224,6 +228,7 @@ export default function ChessPuzzleGame({
       if (uci !== playerSolution[0]) {
         if (timerRef.current) clearInterval(timerRef.current);
         setGameOver(true);
+        onCompleteRef.current(scoreRef.current);
         setFeedback("Incorrect!");
         setTimeout(() => animateSolutionRef.current(), 500);
         return;
@@ -291,6 +296,7 @@ export default function ChessPuzzleGame({
         if (t <= 1) {
           clearInterval(timerRef.current!);
           setGameOver(true);
+          onCompleteRef.current(scoreRef.current);
           setFeedback("Time's up!");
           return 0;
         }
