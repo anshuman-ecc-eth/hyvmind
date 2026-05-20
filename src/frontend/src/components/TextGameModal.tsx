@@ -13,7 +13,7 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Enter", "Credits", "Exit"] as const;
+const MENU_ITEMS = ["Enter World", "Exit to App", "Credits"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -602,9 +602,9 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Enter") onEnter();
+          if (chosen === "Enter World") onEnter();
+          else if (chosen === "Exit to App") onExit();
           else if (chosen === "Credits") onCredits();
-          else if (chosen === "Exit") onExit();
         }
       }
     };
@@ -713,9 +713,9 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
-                      if (item === "Enter") onEnter();
+                      if (item === "Enter World") onEnter();
+                      else if (item === "Exit to App") onExit();
                       else if (item === "Credits") onCredits();
-                      else if (item === "Exit") onExit();
                     }}
                   >
                     {isSelected ? `> ${item}` : `  ${item}`}
