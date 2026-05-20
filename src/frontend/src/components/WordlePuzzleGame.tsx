@@ -352,15 +352,6 @@ export default function WordlePuzzleGame({
             </button>
             <button
               type="button"
-              data-ocid="wordle_puzzle.submit_button"
-              className="transition-colors hover:text-muted-foreground text-foreground"
-              style={BTN_STYLE}
-              onClick={() => onComplete(score)}
-            >
-              Submit score
-            </button>
-            <button
-              type="button"
               data-ocid="wordle_puzzle.back_button"
               className="transition-colors hover:text-muted-foreground text-foreground"
               style={BTN_STYLE}

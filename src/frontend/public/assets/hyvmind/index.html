@@ -137,6 +137,9 @@ var currentScore = 0;
 window.addEventListener('message', function(e) {
   if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; document.body.focus(); }
   if (e.data?.type === 'hyvmind-score-update') { currentScore = e.data.score || 0; }
+  if (e.data?.type === 'hyvmind-popup') {
+    if (e.data?.msg) showPopup(e.data.msg);
+  }
   if (e.data?.type === 'hyvmind-buzz-secret') {
     if (e.data.secret) showPopup('Buzz Secret: ' + e.data.secret);
   }

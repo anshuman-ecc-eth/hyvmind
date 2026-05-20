@@ -1509,6 +1509,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       } else if (e.data?.type === "hyvmind-submit-score") {
         const score = unsubmittedScoreRef.current;
         setUnsubmittedScore(0);
+        if (score === 0) {
+          hyvmindIframeRef.current?.contentWindow?.postMessage(
+            { type: "hyvmind-popup", msg: "No score to submit." },
+            "*",
+          );
+          return;
+        }
         generateBuzzSecret(BigInt(Math.round(score)))
           .then((secret) => {
             hyvmindIframeRef.current?.contentWindow?.postMessage(

@@ -534,25 +534,6 @@ export default function ChessPuzzleGame({
           >
             Try again
           </button>
-          {score > 0 && (
-            <button
-              type="button"
-              className="transition-colors hover:text-muted-foreground text-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
-                letterSpacing: "0.15em",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "0",
-              }}
-              data-ocid="chess_puzzle.submit_button"
-              onClick={() => onComplete(score)}
-            >
-              Submit score
-            </button>
-          )}
           <button
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
@@ -648,25 +629,6 @@ export default function ChessPuzzleGame({
           >
             Try again
           </button>
-          {score > 0 && (
-            <button
-              type="button"
-              className="transition-colors hover:text-muted-foreground text-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
-                letterSpacing: "0.15em",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "0",
-              }}
-              data-ocid="chess_puzzle.submit_button"
-              onClick={() => onComplete(score)}
-            >
-              Submit score
-            </button>
-          )}
           <button
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
