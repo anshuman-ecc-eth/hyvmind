@@ -1516,6 +1516,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           );
           return;
         }
+        hyvmindIframeRef.current?.contentWindow?.postMessage(
+          { type: "hyvmind-generating" },
+          "*",
+        );
         generateBuzzSecret(BigInt(Math.round(score)))
           .then((secret) => {
             hyvmindIframeRef.current?.contentWindow?.postMessage(
@@ -1530,6 +1534,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               "*",
             );
           });
+      } else if (e.data?.type === "hyvmind-copy-secrets") {
+        const secretsStr = (
+          e.data.secrets as Array<{ secret: string; score: number }>
+        )
+          .map((s) => `Buzz: ${s.secret} (Score: ${s.score})`)
+          .join("\n");
+        navigator.clipboard.writeText(secretsStr).catch(() => {});
       } else if (e.data?.type === "hyvmind-close") {
         setHyvmindOverlay(null);
         setUnsubmittedScore(0);
@@ -1539,6 +1550,18 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [settings, generateBuzzSecret]);
+
+  // ── Sync unsubmittedScore to hyvmind iframe ────────────────────────────────
+
+  useEffect(() => {
+    const win = hyvmindIframeRef.current?.contentWindow;
+    if (win) {
+      win.postMessage(
+        { type: "hyvmind-score-update", score: unsubmittedScore },
+        "*",
+      );
+    }
+  }, [unsubmittedScore]);
 
   // ── Auto-generate buzz secret when generatingScore is set ─────────────────
 

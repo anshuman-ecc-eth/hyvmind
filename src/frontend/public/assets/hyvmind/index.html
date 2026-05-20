@@ -134,14 +134,33 @@ mq.addEventListener('change', function(e) {
 });
 gamePaused = mq.matches;
 var currentScore = 0;
+var storedSecrets = [];
+var isGenerating = false;
+var activeMenu = null;
+var menuSelected = 0;
+var secretsScroll = 0;
 window.addEventListener('message', function(e) {
   if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; document.body.focus(); }
   if (e.data?.type === 'hyvmind-score-update') { currentScore = e.data.score || 0; }
   if (e.data?.type === 'hyvmind-popup') {
     if (e.data?.msg) showPopup(e.data.msg);
   }
+  if (e.data?.type === 'hyvmind-generating') {
+    isGenerating = true;
+    activeMenu = 'loading';
+    closePopup();
+    var pop = document.createElement('div');
+    pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+    pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+    document.body.appendChild(pop);
+    activePopup = pop;
+  }
   if (e.data?.type === 'hyvmind-buzz-secret') {
-    if (e.data.secret) showPopup('Buzz Secret: ' + e.data.secret);
+    isGenerating = false;
+    currentScore = e.data.score || 0;
+    if (e.data.secret) storedSecrets.push({ secret: e.data.secret, score: e.data.score || 0 });
+    closePopup();
+    showSecretsMenu();
   }
 });
 
@@ -248,7 +267,7 @@ function showDefaultPopup() {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   var pop = document.createElement('div');
   pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  var scoreHtml = '<div style="font-family:monospace;font-size:11px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + currentScore + '</div>';
+  var scoreHtml = '<div style="font-family:monospace;font-size:11px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + (storedSecrets.length > 0 ? 0 : currentScore) + '</div>';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:11px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
   document.body.appendChild(pop);
   activePopup = pop;
@@ -313,6 +332,71 @@ function showDoorPopup(label) {
 }
 function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
 function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
+
+function showSecretsMenu() {
+  var selected = menuSelected;
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  activeMenu = 'secrets';
+  var pop = document.createElement('div');
+  pop._type = 'secrets';
+  pop._selected = selected;
+  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  refreshSecretsMenuContent(pop, selected);
+  document.body.appendChild(pop);
+  activePopup = pop;
+}
+function refreshSecretsMenuContent(pop, selected) {
+  var secretsCount = storedSecrets.length;
+  var scoreLine = 'Score: ' + currentScore;
+  var opt0Arrow = selected === 0 ? '>' : '&nbsp;';
+  var opt0Class = selected === 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
+  var opt1Arrow = selected === 1 && currentScore > 0 ? '>' : '&nbsp;';
+  var opt1Class = selected === 1 && currentScore > 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
+  var opt1Disabled = currentScore === 0 ? 'color:#3a2e18;' : '';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">BUZZ SECRETS</div><div style="font-family:monospace;font-size:8px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="font-family:monospace;font-size:10px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:10px;' + opt0Class + 'text-align:left;padding:3px 8px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="font-family:monospace;font-size:10px;' + opt1Class + opt1Disabled + 'text-align:left;padding:3px 8px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> select <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop._selected = selected;
+  activePopup = pop;
+}
+function showSecretsList() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  activeMenu = 'view-secrets';
+  var pop = document.createElement('div');
+  pop._type = 'view-secrets';
+  pop._scroll = 0;
+  secretsScroll = 0;
+  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  refreshSecretsListContent(pop);
+  document.body.appendChild(pop);
+  activePopup = pop;
+}
+function refreshSecretsListContent(pop) {
+  if (!pop) return;
+  var scroll = pop._scroll || 0;
+  var visible = 6;
+  var html = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:300px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 20px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">YOUR SECRETS</div><div style="font-family:monospace;font-size:8px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #3a2e18;margin-bottom:6px;"></div>';
+  var start = scroll;
+  var end = Math.min(scroll + visible, storedSecrets.length);
+  for (var i = start; i < end; i++) {
+    var s = storedSecrets[i];
+    var secStr = s.secret.length > 16 ? s.secret.slice(0, 16) + '..' : s.secret;
+    html += '<div style="font-family:monospace;font-size:9px;color:#e0d0b0;text-align:left;padding:3px 4px;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
+  }
+  if (storedSecrets.length === 0) {
+    html += '<div style="font-family:monospace;font-size:9px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
+  }
+  var canUp = scroll > 0;
+  var canDown = end < storedSecrets.length;
+  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px">';
+  if (canUp || canDown) html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy all ';
+  html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
+  pop.innerHTML = html;
+  activePopup = pop;
+}
+function refreshSecretsList() {
+  if (activePopup && activePopup._type === 'view-secrets') {
+    refreshSecretsListContent(activePopup);
+  }
+}
 
 function isWalkable(gx, gy) {
   var tx = Math.floor((gx + 16) / TILE);
@@ -448,11 +532,35 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
     var dir = e.key.slice(5).toLowerCase();
     var btn = document.querySelector('.dpad-btn.dpad-' + dir);
-    if (btn) { btn.classList.add('active'); dpadState[dir] = true; }
+    if (btn) { btn.classList.add('active'); }
+    // Don't move player when menu is active
+    if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets')) {
+      if (activePopup._type === 'secrets') {
+        var newSel = activePopup._selected;
+        if (dir === 'up') newSel = 0;
+        else if (dir === 'down') newSel = (currentScore > 0) ? 1 : 0;
+        if (newSel !== activePopup._selected) {
+          refreshSecretsMenuContent(activePopup, newSel);
+        }
+      }
+      if (activePopup._type === 'view-secrets') {
+        if (dir === 'up' && activePopup._scroll > 0) {
+          activePopup._scroll--;
+          secretsScroll = activePopup._scroll;
+          refreshSecretsListContent(activePopup);
+        } else if (dir === 'down' && activePopup._scroll < storedSecrets.length - 6) {
+          activePopup._scroll++;
+          secretsScroll = activePopup._scroll;
+          refreshSecretsListContent(activePopup);
+        }
+      }
+    } else {
+      dpadState[dir] = true;
+    }
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
-  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; closePopup(); setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
+  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
   if (e.key === 'd' || e.key === 'D') debugCollision();
   if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
 });
@@ -467,7 +575,29 @@ function activateZ() {
   var btnZ = document.getElementById('btnZ');
   if (btnZ) btnZ.textContent = '!';
   var msg = '';
-  if (activePopup && activePopup._type === 'input') {
+  if (activePopup && activePopup._type === 'secrets') {
+    var sel = activePopup._selected;
+    if (sel === 0) { closePopup(); activeMenu = 'view-secrets'; showSecretsList(); }
+    else {
+      if (currentScore === 0) { showPopup('No new score to submit.'); }
+      else {
+        isGenerating = true; activeMenu = 'loading';
+        window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
+        closePopup();
+        var pop = document.createElement('div');
+        pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+        pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+        document.body.appendChild(pop);
+        activePopup = pop;
+      }
+    }
+    msg = 'menu action';
+  } else if (activePopup && activePopup._type === 'view-secrets') {
+    window.parent.postMessage({ type: 'hyvmind-copy-secrets', secrets: storedSecrets }, '*');
+    showPopup('Secrets copied!');
+    activeMenu = null;
+    msg = 'copy secrets';
+  } else if (activePopup && activePopup._type === 'input') {
     submitInput();
     msg = 'input submitted';
   } else if (activePopup && activePopup._type === 'door') {
@@ -483,7 +613,12 @@ function activateZ() {
       msg = 'unlabeled door';
     }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
-    showPopup(triggerMessages[nearTrigger.key]);
+    if (storedSecrets.length > 0 && triggerMessages[nearTrigger.key].indexOf('>>') === 0) {
+      showSecretsMenu();
+      activeMenu = 'secrets';
+    } else {
+      showPopup(triggerMessages[nearTrigger.key]);
+    }
     msg = 'trigger:' + triggerMessages[nearTrigger.key];
   } else {
     showDefaultPopup();
@@ -573,7 +708,9 @@ document.getElementById('btnZ').addEventListener('click', function() {
 });
 document.getElementById('btnX').addEventListener('click', function() {
   this.classList.add('active');
-  closePopup();
+  if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; }
+  else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); }
+  else { closePopup(); }
   setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
 });
 
