@@ -170,7 +170,7 @@ function initCollision(callback) {
     callback();
   };
   img.onerror = function() { console.error('initCollision img load failed'); callback(); };
-  img.src = ASSETS + '/collision.png?' + Date.now();
+  img.src = ASSETS + '/collision.png';
 }
 
 var triggerMessages = {};
@@ -181,7 +181,7 @@ var doorPositions = [];
 var nearDoor = null;
 
 function loadTriggers(callback) {
-  fetch(ASSETS + '/triggers.json?' + Date.now())
+  fetch(ASSETS + '/triggers.json')
     .then(function(r) { return r.json(); })
     .then(function(d) {
       triggerMessages = d || {};
@@ -192,7 +192,7 @@ function loadTriggers(callback) {
     })
     .catch(function() { triggerMessages = {}; triggerPositions = []; })
     .then(function() {
-      fetch(ASSETS + '/doors.json?' + Date.now())
+      fetch(ASSETS + '/doors.json')
         .then(function(r) { return r.json(); })
         .then(function(d) {
           doorLabels = d || {};
@@ -342,16 +342,20 @@ var worldBg = document.getElementById('worldBg');
 worldBg.style.width = WORLD_W + 'px';
 worldBg.style.height = WORLD_H + 'px';
 
-(function() {
-  for (var r = 0; r < 4; r++) {
-    for (var c = 0; c < 3; c++)
-      (new Image()).src = ASSETS + '/sprites/cultist_' + c + '_' + r + '.png';
-    for (var c = 0; c < 9; c++)
-      (new Image()).src = ASSETS + '/sprites/wizard_' + c + '_' + r + '.png';
-    for (var s = 0; s < 28; s++)
-      (new Image()).src = ASSETS + '/sprites/wizard_spell_' + s + '.png';
-  }
-})();
+var imgCache = {};
+function preload(name, url) {
+  var img = new Image();
+  img.src = url;
+  imgCache[name] = img;
+}
+for (var r = 0; r < 4; r++) {
+  for (var c = 0; c < 3; c++)
+    preload('cultist_' + c + '_' + r, ASSETS + '/sprites/cultist_' + c + '_' + r + '.png');
+  for (var c = 0; c < 9; c++)
+    preload('wizard_' + c + '_' + r, ASSETS + '/sprites/wizard_' + c + '_' + r + '.png');
+  for (var s = 0; s < 28; s++)
+    preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
+}
 
 var viewport = document.getElementById('viewport');
 var layer = document.getElementById('gameLayer');
@@ -398,7 +402,13 @@ function renderNPC() {
 
   var newBg = 'url(' + ASSETS + '/sprites/wizard_spell_' + npcSpellFrame + '.png)';
   npcEl.style.transform = 'translate(' + Math.round(npx - camX) + 'px, ' + Math.round(npy - camY) + 'px)';
-  if (newBg !== lastNpcSpriteBg) { npcEl.style.backgroundImage = newBg; lastNpcSpriteBg = newBg; }
+  if (newBg !== lastNpcSpriteBg) {
+    var img = imgCache['wizard_spell_' + npcSpellFrame];
+    if (img && img.complete && img.naturalWidth > 0) {
+      npcEl.style.backgroundImage = newBg;
+      lastNpcSpriteBg = newBg;
+    }
+  }
 }
 
 var sparkles = [];
@@ -495,7 +505,14 @@ function render() {
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
   elP.style.transform = 'translate(' + Math.round(px - camX) + 'px, ' + Math.round(py - camY) + 'px)';
   var newBg = frm(pc, dirMap[pDir]);
-  if (newBg !== lastSpriteBg) { elP.style.backgroundImage = newBg; lastSpriteBg = newBg; }
+  if (newBg !== lastSpriteBg) {
+    var spriteName = 'cultist_' + pc + '_' + dirMap[pDir];
+    var img = imgCache[spriteName];
+    if (img && img.complete && img.naturalWidth > 0) {
+      elP.style.backgroundImage = newBg;
+      lastSpriteBg = newBg;
+    }
+  }
   elP.style.opacity = isUnderObject ? '0.4' : '1';
 
   var t = Date.now() / 300;
@@ -657,12 +674,12 @@ function reloadCollisionData() {
         if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
         if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
       }
-    fetch(ASSETS + '/triggers.json?' + Date.now())
+    fetch(ASSETS + '/triggers.json')
       .then(function(r) { return r.json(); })
       .then(function(d) { triggerMessages = d || {}; })
       .catch(function() { triggerMessages = {}; })
       .then(function() {
-        return fetch(ASSETS + '/doors.json?' + Date.now());
+        return fetch(ASSETS + '/doors.json');
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
@@ -674,7 +691,7 @@ function reloadCollisionData() {
       .catch(function(e) { console.error('MAP RELOAD FAILED:', e); });
   };
   img.onerror = function() { console.error('reloadCollision img load failed'); };
-  img.src = ASSETS + '/collision.png?' + Date.now();
+  img.src = ASSETS + '/collision.png';
 }
 
 // Auto-fit layout for phones: detect narrow viewport and apply overlay via JS
