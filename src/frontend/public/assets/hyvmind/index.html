@@ -120,7 +120,7 @@ var WORLD_W = 574, WORLD_H = 2176;
 var SCREEN_W = 574, SCREEN_H = 480;
 var TILE = 8;
 var COLS = 72, ROWS = 272;
-function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+function frm(col, row, prefix) { return 'url(' + ASSETS + '/sprites/' + (prefix||'cultist') + '_' + col + '_' + row + '.png)'; }
 
 var gamePaused = false;
 function dismissRotate() {
@@ -343,9 +343,14 @@ worldBg.style.width = WORLD_W + 'px';
 worldBg.style.height = WORLD_H + 'px';
 
 (function() {
-  for (var r = 0; r < 4; r++)
+  for (var r = 0; r < 4; r++) {
     for (var c = 0; c < 3; c++)
       (new Image()).src = ASSETS + '/sprites/cultist_' + c + '_' + r + '.png';
+    for (var c = 0; c < 9; c++)
+      (new Image()).src = ASSETS + '/sprites/wizard_' + c + '_' + r + '.png';
+    for (var s = 0; s < 28; s++)
+      (new Image()).src = ASSETS + '/sprites/wizard_spell_' + s + '.png';
+  }
 })();
 
 var viewport = document.getElementById('viewport');
@@ -355,6 +360,46 @@ var elP = document.createElement('div');
 elP.className = 'sprite';
 elP.style.zIndex = '5';
 layer.appendChild(elP);
+
+// --- Bava NPC: stationary with random spell animations ---
+var npcEl = document.createElement('div');
+npcEl.className = 'sprite';
+npcEl.style.zIndex = '4';
+layer.appendChild(npcEl);
+
+var npx = 0, npy = 0;
+var npcTileX = 0, npcTileY = 0;
+var npcSpellFrame = 0;
+var npcSpellTimer = 0;
+var NPC_SPELL_FRAMES = 28;
+function npcInit() {
+  // Permanent spot: tile (16, 170)
+  npcTileX = 16; npcTileY = 170;
+  npx = npcTileX * 8 - 12;
+  npy = npcTileY * 8 - 10;
+}
+
+function updateNPC() {
+  if (gamePaused) return;
+  npcSpellTimer--;
+  if (npcSpellTimer <= 0) {
+    npcSpellFrame = Math.floor(Math.random() * NPC_SPELL_FRAMES);
+    npcSpellTimer = 12; // ~0.5 seconds at 40ms per tick
+  }
+}
+
+var lastNpcSpriteBg = '';
+function renderNPC() {
+  var viewW = SCREEN_W, viewH = SCREEN_H;
+  var scrEl = document.querySelector('.screen');
+  if (scrEl && scrEl.clientWidth > 0 && scrEl.clientWidth < SCREEN_W) { viewW = scrEl.clientWidth; viewH = scrEl.clientHeight; }
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+
+  var newBg = 'url(' + ASSETS + '/sprites/wizard_spell_' + npcSpellFrame + '.png)';
+  npcEl.style.transform = 'translate(' + Math.round(npx - camX) + 'px, ' + Math.round(npy - camY) + 'px)';
+  if (newBg !== lastNpcSpriteBg) { npcEl.style.backgroundImage = newBg; lastNpcSpriteBg = newBg; }
+}
 
 var sparkles = [];
 var sparkleSizes = [8,6,9,7,8,10,6,7];
@@ -516,11 +561,12 @@ var tick = 0;
 function loop() {
   if (navPaused) {
     render();
+    renderNPC();
     navPauseTick++;
     if (navPauseTick > 40) { navPaused = false; console.log('navPaused fallback timeout'); }
     return;
   }
-  if (gamePaused) { render(); return; }
+  if (gamePaused) { render(); renderNPC(); return; }
   tick++;
   var dx = 0, dy = 0;
   if (dpadState['left']) { dx = -STEP; pDir = 1; }
@@ -530,15 +576,22 @@ function loop() {
 
   if (dx !== 0 || dy !== 0) {
     var nx = px + dx, ny = py + dy;
-    if (dx !== 0 && isWalkable(nx, py)) px = nx;
-    if (dy !== 0 && isWalkable(px, ny)) py = ny;
+    var wizBlock = function(gx, gy) {
+      var tx = Math.floor((gx + 16) / TILE);
+      var ty = Math.floor((gy + 14) / TILE);
+      return (tx === npcTileX && ty === npcTileY);
+    };
+    if (dx !== 0 && isWalkable(nx, py) && !wizBlock(nx, py)) px = nx;
+    if (dy !== 0 && isWalkable(px, ny) && !wizBlock(px, ny)) py = ny;
     pMoving = true;
     if (tick % 2 === 0) pWalk++;
   } else { pMoving = false; pWalk = 0; }
   px = Math.max(0, Math.min(WORLD_W - 32, px));
   py = Math.max(0, Math.min(WORLD_H - 32, py));
   checkNearbyTriggers(px, py);
+  updateNPC();
   render();
+  renderNPC();
 }
 
 var bgm = document.getElementById('bgm');
@@ -565,6 +618,7 @@ initCollision(function() {
             if (isWalkable(280 + xx, 200 + yy)) { px = 280 + xx; py = 200 + yy; yy = 999; break; }
       }
     }
+    npcInit();
     render();
     setInterval(loop, 40);
     document.body.focus();
