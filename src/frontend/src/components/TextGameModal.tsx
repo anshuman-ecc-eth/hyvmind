@@ -13,7 +13,7 @@ import WordlePuzzleGame from "./WordlePuzzleGame";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Enter World", "Exit to App", "Credits"] as const;
+const MENU_ITEMS = ["Enter World", "Go to App", "Credits"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -603,7 +603,7 @@ function StartScreen({
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Enter World") onEnter();
-          else if (chosen === "Exit to App") onExit();
+          else if (chosen === "Go to App") onExit();
           else if (chosen === "Credits") onCredits();
         }
       }
@@ -624,7 +624,7 @@ function StartScreen({
               <PixelTransition
                 firstContent={
                   <div
-                    className="text-foreground tracking-widest"
+                    className="text-white tracking-widest"
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "2em",
@@ -655,7 +655,7 @@ function StartScreen({
                 }
                 secondContent={
                   <div
-                    className="text-muted-foreground"
+                    className="text-neutral-400"
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
@@ -672,7 +672,7 @@ function StartScreen({
                     </div>
                   </div>
                 }
-                pixelColor="var(--foreground)"
+                pixelColor="#ffffff"
                 pixelSize={6}
                 animationStepDuration={0.3}
               />
@@ -680,7 +680,7 @@ function StartScreen({
           </>
         ) : (
           <div
-            className="text-foreground tracking-widest"
+            className="text-white tracking-widest"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "1em",
@@ -701,7 +701,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
@@ -714,7 +714,7 @@ function StartScreen({
                     onClick={() => {
                       setSelectedIdx(activeIdx);
                       if (item === "Enter World") onEnter();
-                      else if (item === "Exit to App") onExit();
+                      else if (item === "Go to App") onExit();
                       else if (item === "Credits") onCredits();
                     }}
                   >
@@ -729,7 +729,7 @@ function StartScreen({
                     key={item}
                     type="button"
                     data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
+                    className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
@@ -753,7 +753,7 @@ function StartScreen({
         </div>
         {showScoreConfirmation && (
           <div
-            className="text-foreground text-center mt-4"
+            className="text-white text-center mt-4"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.5em",
@@ -764,7 +764,7 @@ function StartScreen({
             <div className="text-yellow-500 mb-2">BUZZ CODE GENERATED</div>
             <button
               type="button"
-              className="mt-3 text-muted-foreground hover:text-foreground text-xs"
+              className="mt-3 text-neutral-400 hover:text-white text-xs"
               onClick={() => {
                 setShowScoreConfirmation?.(false);
                 setSecretCode?.(null);
@@ -2063,14 +2063,23 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "hyvmind":
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
-            <iframe
-              ref={hyvmindIframeRef}
-              src="/assets/hyvmind/index.html"
-              tabIndex={-1}
-              className={`w-full h-full border-0 ${hyvmindOverlay ? "hidden" : ""}`}
-              title="HYVMIND"
-              data-ocid="text_game.hyvmind_iframe"
-            />
+            <div className="flex-1 flex items-center justify-center overflow-auto">
+              <iframe
+                ref={hyvmindIframeRef}
+                src="/assets/hyvmind/index.html"
+                tabIndex={-1}
+                className="border-0"
+                style={{
+                  background: "transparent",
+                  width: "1200px",
+                  height: "800px",
+                  flexShrink: 0,
+                }}
+                title="HYVMIND"
+                allow="autoplay"
+                data-ocid="text_game.hyvmind_iframe"
+              />
+            </div>
             {hyvmindOverlay === "puzzles" && (
               <PuzzlesOverlay
                 selectedIdx={puzzleIdx}
@@ -2331,66 +2340,90 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </button>
         </div>
 
-        {renderContent()}
+        <div
+          className="relative flex-1 flex flex-col min-h-0"
+          style={
+            {
+              "--foreground": "#ffffff",
+              "--muted-foreground": "#9e9e9e",
+              "--background": "#0a0a0a",
+              "--border": "#222222",
+              "--muted": "#1a1a1a",
+              "--card": "#111111",
+              "--card-foreground": "#ffffff",
+            } as React.CSSProperties
+          }
+        >
+          <img
+            src="/assets/forest background.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            style={{ opacity: 1 }}
+          />
+          <div className="relative z-10 flex-1 flex flex-col min-h-0">
+            {renderContent()}
 
-        {/* Buzz Secret Banner — persists until dismissed */}
-        {secretCode && (
-          <div
-            className="border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0"
-            data-ocid="text_game.buzz_secret_panel"
-          >
-            <div className="flex items-center gap-2">
-              <code
-                className="flex-1 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-xs tracking-wide text-foreground select-all break-all min-w-0"
-                data-ocid="text_game.buzz_secret_code"
+            {/* Buzz Secret Banner — persists until dismissed */}
+            {secretCode && (
+              <div
+                className="border-t border-dashed border-border bg-muted/20 px-4 py-3 flex flex-col gap-2 flex-shrink-0"
+                data-ocid="text_game.buzz_secret_panel"
               >
-                {secretCode}
-              </code>
-              <button
-                type="button"
-                className={`transition-colors px-2 py-1 border border-border text-xs shrink-0 ${
-                  copiedCode
-                    ? "opacity-50 pointer-events-none text-muted-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                style={{ fontFamily: '"Press Start 2P", monospace' }}
-                data-ocid="text_game.buzz_secret_copy_button"
-                aria-label={copiedCode ? "Copied" : "Copy secret code"}
-                disabled={copiedCode}
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(secretCode);
-                    setCopiedCode(true);
-                    setTimeout(() => setCopiedCode(false), 2000);
-                  } catch {
-                    // clipboard unavailable — silently ignore
-                  }
-                }}
-              >
-                {copiedCode ? "Copied" : "Copy"}
-              </button>
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0"
-                data-ocid="text_game.buzz_secret_dismiss_button"
-                aria-label="Dismiss secret code"
-                onClick={() => setSecretCode(null)}
-              >
-                [×]
-              </button>
-            </div>
-            <div
-              className="text-muted-foreground"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.35em",
-                letterSpacing: "0.1em",
-              }}
-            >
-              SAVE THIS CODE! VALID FOR 24 HOURS. REDEEM IN SETTINGS → WALLET.
-            </div>
+                <div className="flex items-center gap-2">
+                  <code
+                    className="flex-1 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-xs tracking-wide text-foreground select-all break-all min-w-0"
+                    data-ocid="text_game.buzz_secret_code"
+                  >
+                    {secretCode}
+                  </code>
+                  <button
+                    type="button"
+                    className={`transition-colors px-2 py-1 border border-border text-xs shrink-0 ${
+                      copiedCode
+                        ? "opacity-50 pointer-events-none text-muted-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
+                    data-ocid="text_game.buzz_secret_copy_button"
+                    aria-label={copiedCode ? "Copied" : "Copy secret code"}
+                    disabled={copiedCode}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(secretCode);
+                        setCopiedCode(true);
+                        setTimeout(() => setCopiedCode(false), 2000);
+                      } catch {
+                        // clipboard unavailable — silently ignore
+                      }
+                    }}
+                  >
+                    {copiedCode ? "Copied" : "Copy"}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border text-xs shrink-0"
+                    data-ocid="text_game.buzz_secret_dismiss_button"
+                    aria-label="Dismiss secret code"
+                    onClick={() => setSecretCode(null)}
+                  >
+                    [×]
+                  </button>
+                </div>
+                <div
+                  className="text-muted-foreground"
+                  style={{
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "0.35em",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  SAVE THIS CODE! VALID FOR 24 HOURS. REDEEM IN SETTINGS →
+                  WALLET.
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </>
   );

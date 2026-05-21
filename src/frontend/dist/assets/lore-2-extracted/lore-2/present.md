@@ -1,1 +1,0 @@
-- (M) after [[the third disagreement]], the [[calculus of voices]] was discontinued

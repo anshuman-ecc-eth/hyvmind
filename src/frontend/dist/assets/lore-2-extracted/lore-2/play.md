@@ -1,4 +1,0 @@
-- (M) the social contract is expiring
-- (M) we must rewrite the terms...
-	- (P) [[state]] 
-	- (P) [[citizen]]
