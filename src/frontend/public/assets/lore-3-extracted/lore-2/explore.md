@@ -1,4 +1,0 @@
-- (M) there's a lore in explore...
-	- (P) [[past]] 
-	- (P) [[present]]
-	- (P) [[future]]

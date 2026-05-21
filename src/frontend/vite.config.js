@@ -35,6 +35,18 @@ export default defineConfig({
         target: "http://127.0.0.1:4943",
         changeOrigin: true,
       },
+      "/save-collision": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
+      "/save-triggers": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
+      "/save-doors": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
     },
   },
   plugins: [
