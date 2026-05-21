@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Antifarea Mage</title>
+<style>
+  body { background: #111; color: #ddd; font-family: monospace; padding: 20px; text-align: center; }
+  h1 { color: #c8a860; font-size: 16px; letter-spacing: 2px; }
+  .grid { display: inline-flex; flex-direction: column; gap: 6px; margin-top: 20px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .lbl { color: #8a7a4a; width: 50px; text-align: right; font-size: 11px; letter-spacing: 2px; }
+  .frames { display: flex; gap: 4px; }
+  .frames img { image-rendering: pixelated; width: 64px; height: 72px; border: 1px solid #444; background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 16px 16px; }
+  .flbl { font-size: 8px; color: #555; text-align: center; }
+  .anim { margin-top: 30px; }
+  .anim > div { display: inline-flex; flex-direction: column; align-items: center; margin: 0 10px; }
+  .anim canvas { image-rendering: pixelated; border: 2px solid #333; background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 16px 16px; }
+  .albl { font-size: 10px; color: #8a7a4a; margin-top: 4px; letter-spacing: 2px; }
+</style></head><body>
+<h1>✦ ANTIFAREA MAGE (16x18) ✦</h1>
+<div class="grid" id="grid"></div>
+<div class="anim" id="anim"></div>
+<script>
+const D=['DOWN','LEFT','RIGHT','UP'];
+const I=[];const g=document.getElementById('grid');
+for(let d=0;d<4;d++){const r=document.createElement('div');r.className='row';
+const l=document.createElement('div');l.className='lbl';l.textContent=D[d];r.appendChild(l);
+const f=document.createElement('div');f.className='frames';const di=[];
+for(let i=0;i<3;i++){const w=document.createElement('div');
+const img=document.createElement('img');img.src='wizard_'+i+'_'+d+'.png';
+w.appendChild(img);const lb=document.createElement('div');lb.className='flbl';lb.textContent=['w0','w1','idle'][i];
+w.appendChild(lb);f.appendChild(w);di.push(img);}
+I.push(di);r.appendChild(f);g.appendChild(r);}
+const a=document.getElementById('anim');
+for(let d=0;d<4;d++){const div=document.createElement('div');
+const c=document.createElement('canvas');c.width=16;c.height=18;
+c.dataset.d=d;c.dataset.f=0;c.dataset.t=0;
+div.appendChild(c);const lb=document.createElement('div');lb.className='albl';lb.textContent=D[d];
+div.appendChild(lb);a.appendChild(div);}
+let n=0;
+for(let d=0;d<4;d++)for(let i=0;i<3;i++)I[d][i].onload=()=>{n++;if(n>=12)animate();};
+function animate(){a.querySelectorAll('canvas').forEach(c=>{const d=parseInt(c.dataset.d);
+let f=parseInt(c.dataset.f);let t=parseInt(c.dataset.t);t++;if(t>=8){t=0;f=(f+1)%2;}
+c.dataset.f=f;c.dataset.t=t;const ctx=c.getContext('2d');
+ctx.clearRect(0,0,16,18);ctx.drawImage(I[d][f],0,0,16,18);});
+requestAnimationFrame(animate);}
+</script></body></html>

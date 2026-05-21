@@ -78412,6 +78412,10 @@ function ChessPuzzleGame({
   });
   const applyMoveRef = reactExports.useRef(() => {
   });
+  const onCompleteRef = reactExports.useRef(onComplete);
+  const scoreRef = reactExports.useRef(score);
+  onCompleteRef.current = onComplete;
+  scoreRef.current = score;
   reactExports.useEffect(() => {
     loadChessboardScript().then(() => setBoardReady(true)).catch((err) => console.error(err));
   }, []);
@@ -78522,6 +78526,7 @@ function ChessPuzzleGame({
       if (uci !== playerSolution[0]) {
         if (timerRef.current) clearInterval(timerRef.current);
         setGameOver(true);
+        onCompleteRef.current(scoreRef.current);
         setFeedback("Incorrect!");
         setTimeout(() => animateSolutionRef.current(), 500);
         return;
@@ -78576,6 +78581,7 @@ function ChessPuzzleGame({
         if (t2 <= 1) {
           clearInterval(timerRef.current);
           setGameOver(true);
+          onCompleteRef.current(scoreRef.current);
           setFeedback("Time's up!");
           return 0;
         }
@@ -78855,25 +78861,6 @@ function ChessPuzzleGame({
                 children: "Try again"
               }
             ),
-            score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                className: "transition-colors hover:text-muted-foreground text-foreground",
-                style: {
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.15em",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0"
-                },
-                "data-ocid": "chess_puzzle.submit_button",
-                onClick: () => onComplete(score),
-                children: "Submit score"
-              }
-            ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "button",
               {
@@ -78986,25 +78973,6 @@ function ChessPuzzleGame({
                   void fetchNext();
                 },
                 children: "Try again"
-              }
-            ),
-            score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "button",
-              {
-                type: "button",
-                className: "transition-colors hover:text-muted-foreground text-foreground",
-                style: {
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.15em",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0"
-                },
-                "data-ocid": "chess_puzzle.submit_button",
-                onClick: () => onComplete(score),
-                children: "Submit score"
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -95976,6 +95944,10 @@ function WordlePuzzleGame({
   const [solved, setSolved] = reactExports.useState(false);
   const inputRef = reactExports.useRef(null);
   const timerRef = reactExports.useRef(null);
+  const onCompleteRef = reactExports.useRef(onComplete);
+  const scoreRef = reactExports.useRef(score);
+  onCompleteRef.current = onComplete;
+  scoreRef.current = score;
   reactExports.useEffect(() => {
     if (gameOver || solved) return;
     timerRef.current = setInterval(() => {
@@ -95983,6 +95955,7 @@ function WordlePuzzleGame({
         if (t2 <= 1) {
           clearInterval(timerRef.current);
           setGameOver(true);
+          onCompleteRef.current(scoreRef.current);
           setGameOverReason("time");
           return 0;
         }
@@ -96030,6 +96003,7 @@ function WordlePuzzleGame({
     } else if (newGuesses.length >= MAX_GUESSES) {
       if (timerRef.current) clearInterval(timerRef.current);
       setGameOver(true);
+      onCompleteRef.current(scoreRef.current);
       setGameOverReason("guesses");
       setFeedback(targetWord);
     }
@@ -96242,17 +96216,6 @@ function WordlePuzzleGame({
                   "button",
                   {
                     type: "button",
-                    "data-ocid": "wordle_puzzle.submit_button",
-                    className: "transition-colors hover:text-muted-foreground text-foreground",
-                    style: BTN_STYLE,
-                    onClick: () => onComplete(score),
-                    children: "Submit score"
-                  }
-                ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    type: "button",
                     "data-ocid": "wordle_puzzle.back_button",
                     className: "transition-colors hover:text-muted-foreground text-foreground",
                     style: BTN_STYLE,
@@ -96268,8 +96231,8 @@ function WordlePuzzleGame({
     }
   );
 }
-const MENU_ITEMS = ["Signpost", "Left", "Right", "Enter", "Exit"];
-const LEFT_MENU_ITEMS = ["Story", "Puzzles", "Settings", "Back"];
+const MENU_ITEMS = ["Enter World", "Exit to App", "Credits"];
+const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"];
 const ABOUT_LINES = [
   "Have you heard of LAI?",
   "",
@@ -96339,15 +96302,10 @@ const ABOUT_LINES = [
   "",
   "If you're neither scared nor convinced..",
   "",
-  "..then you're a threat.",
-  "",
-  "Take the next exit from Grand Theft Intelligence Vice City.",
-  "",
-  "The leaderboard will be to your right.",
-  "",
-  "Sanctuary on the left."
+  "..then you're a threat."
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"];
+const GAMES_MENU_ITEMS = ["Rebirth", "Square Bar", "Slalom", "Back"];
 const CONTENT = {
   intro: [
     "welcome, fellow researcher",
@@ -96620,15 +96578,143 @@ function LeaderboardScreen({
     )
   ] });
 }
+function CreditsScreen({ onBack }) {
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "Enter") onBack();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onBack]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6 select-none px-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "text-foreground tracking-widest",
+        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "0.7em" },
+        children: "Credits"
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "flex flex-col items-start gap-3",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.45em",
+          lineHeight: "1.8",
+          letterSpacing: "0.05em",
+          maxWidth: "320px"
+        },
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "forest.mp3 — BGM" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "a",
+            {
+              href: "https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5",
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-foreground hover:text-muted-foreground underline",
+              style: { fontSize: "0.9em" },
+              children: "syncopika"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY 3.0" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              style: {
+                height: "2px",
+                width: "100%",
+                background: "var(--border)",
+                opacity: 0.3,
+                margin: "2px 0"
+              }
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "bottom.png — world tiles" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "a",
+            {
+              href: "https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol",
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-foreground hover:text-muted-foreground underline",
+              style: { fontSize: "0.9em" },
+              children: "Ivan Voirol"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY 4.0" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              style: {
+                height: "2px",
+                width: "100%",
+                background: "var(--border)",
+                opacity: 0.3,
+                margin: "2px 0"
+              }
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "sprites/cultist_*.png — player" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.9em" }, children: "Antifarea" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              style: {
+                height: "2px",
+                width: "100%",
+                background: "var(--border)",
+                opacity: 0.3,
+                margin: "2px 0"
+              }
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "crisp-game-lib — mini-game framework" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "a",
+            {
+              href: "https://github.com/abagames/crisp-game-lib",
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-foreground hover:text-muted-foreground underline",
+              style: { fontSize: "0.9em" },
+              children: "abagames"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "MIT" })
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        className: "text-foreground transition-colors hover:text-muted-foreground",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          marginTop: "8px"
+        },
+        onClick: onBack,
+        children: "> Back"
+      }
+    )
+  ] });
+}
 function StartScreen({
   onStart,
-  onAbout,
-  onChess,
-  onWordle,
   onSettings,
-  onHiScores,
   onExit,
   onEnter,
+  onCredits,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -96637,7 +96723,6 @@ function StartScreen({
   const yRef = reactExports.useRef(null);
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
-  const [puzzleSelectedIdx, setPuzzleSelectedIdx] = reactExports.useState(0);
   const [leftSelectedIdx, setLeftSelectedIdx] = reactExports.useState(0);
   reactExports.useEffect(() => {
     const handler = (e2) => {
@@ -96650,61 +96735,15 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e2.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Signpost") onAbout();
-          else if (chosen === "Left") {
-            setSubMenu("left");
-            setLeftSelectedIdx(0);
-          } else if (chosen === "Right") onHiScores();
-          else if (chosen === "Enter") onEnter();
-          else if (chosen === "Exit") onExit();
-        }
-      } else if (subMenu === "left") {
-        if (e2.key === "ArrowUp") {
-          setLeftSelectedIdx(
-            (prev) => (prev - 1 + LEFT_MENU_ITEMS.length) % LEFT_MENU_ITEMS.length
-          );
-        } else if (e2.key === "ArrowDown") {
-          setLeftSelectedIdx((prev) => (prev + 1) % LEFT_MENU_ITEMS.length);
-        } else if (e2.key === "Enter") {
-          const chosen = LEFT_MENU_ITEMS[leftSelectedIdx];
-          if (chosen === "Story") onStart();
-          else if (chosen === "Puzzles") {
-            setSubMenu("puzzles");
-            setPuzzleSelectedIdx(0);
-          } else if (chosen === "Settings") onSettings();
-          else if (chosen === "Back") setSubMenu("main");
-        }
-      } else {
-        if (e2.key === "ArrowUp") {
-          setPuzzleSelectedIdx(
-            (prev) => (prev - 1 + PUZZLE_MENU_ITEMS.length) % PUZZLE_MENU_ITEMS.length
-          );
-        } else if (e2.key === "ArrowDown") {
-          setPuzzleSelectedIdx((prev) => (prev + 1) % PUZZLE_MENU_ITEMS.length);
-        } else if (e2.key === "Enter") {
-          const chosen = PUZZLE_MENU_ITEMS[puzzleSelectedIdx];
-          if (chosen === "Chess") onChess();
-          else if (chosen === "Wordle") onWordle();
-          else if (chosen === "Back") setSubMenu("left");
+          if (chosen === "Enter World") onEnter();
+          else if (chosen === "Exit to App") onExit();
+          else if (chosen === "Credits") onCredits();
         }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [
-    selectedIdx,
-    leftSelectedIdx,
-    puzzleSelectedIdx,
-    subMenu,
-    onStart,
-    onAbout,
-    onChess,
-    onWordle,
-    onSettings,
-    onHiScores,
-    onEnter,
-    onExit
-  ]);
+  }, [selectedIdx, subMenu, onEnter, onCredits, onExit]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: [
     subMenu === "main" && /* @__PURE__ */ jsxRuntimeExports.jsx(FlyingBee, { modalRef, yRef }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", "data-zone": "content", children: [
@@ -96776,7 +96815,7 @@ function StartScreen({
             fontSize: "1em",
             letterSpacing: "0.15em"
           },
-          children: subMenu === "left" ? "Sanctuary" : "Puzzles"
+          children: '"Sanctuary"'
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5 mt-6", children: subMenu === "main" ? MENU_ITEMS.map((item, activeIdx) => {
@@ -96798,19 +96837,15 @@ function StartScreen({
             },
             onClick: () => {
               setSelectedIdx(activeIdx);
-              if (item === "Signpost") onAbout();
-              else if (item === "Left") {
-                setSubMenu("left");
-                setLeftSelectedIdx(0);
-              } else if (item === "Right") onHiScores();
-              else if (item === "Enter") onEnter();
-              else if (item === "Exit") onExit();
+              if (item === "Enter World") onEnter();
+              else if (item === "Exit to App") onExit();
+              else if (item === "Credits") onCredits();
             },
             children: isSelected ? `> ${item}` : `  ${item}`
           },
           item
         );
-      }) : subMenu === "left" ? LEFT_MENU_ITEMS.map((item, activeIdx) => {
+      }) : LEFT_MENU_ITEMS.map((item, activeIdx) => {
         const isSelected = activeIdx === leftSelectedIdx;
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           "button",
@@ -96830,38 +96865,8 @@ function StartScreen({
             onClick: () => {
               setLeftSelectedIdx(activeIdx);
               if (item === "Story") onStart();
-              else if (item === "Puzzles") {
-                setSubMenu("puzzles");
-                setPuzzleSelectedIdx(0);
-              } else if (item === "Settings") onSettings();
+              else if (item === "Settings") onSettings();
               else if (item === "Back") setSubMenu("main");
-            },
-            children: isSelected ? `> ${item}` : `  ${item}`
-          },
-          item
-        );
-      }) : PUZZLE_MENU_ITEMS.map((item, activeIdx) => {
-        const isSelected = activeIdx === puzzleSelectedIdx;
-        return /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            "data-ocid": `text_game.start_screen.puzzle_${item.toLowerCase()}`,
-            className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
-            style: {
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.65em",
-              letterSpacing: "0.2em",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "0"
-            },
-            onClick: () => {
-              setPuzzleSelectedIdx(activeIdx);
-              if (item === "Chess") onChess();
-              else if (item === "Wordle") onWordle();
-              else if (item === "Back") setSubMenu("left");
             },
             children: isSelected ? `> ${item}` : `  ${item}`
           },
@@ -97063,6 +97068,264 @@ function AboutScreen({ onBack }) {
     }
   );
 }
+function AboutOverlay({ onBack }) {
+  const [step, setStep] = reactExports.useState(0);
+  const [done, setDone] = reactExports.useState(false);
+  const lines = ABOUT_LINES.filter((l2) => l2.trim() !== "");
+  const total = lines.length;
+  const advance = reactExports.useCallback(() => {
+    if (!done) return;
+    setDone(false);
+    if (step + 1 >= total) {
+      onBack();
+    } else {
+      setStep((prev) => prev + 1);
+    }
+  }, [done, step, total, onBack]);
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "Tab") return;
+      advance();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [advance]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "button",
+    {
+      type: "button",
+      className: "flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer",
+      onClick: advance,
+      onKeyDown: done ? (e2) => {
+        if (e2.key !== "Tab") advance();
+      } : void 0,
+      tabIndex: 0,
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "p",
+          {
+            className: "text-foreground text-center leading-relaxed",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.7em",
+              letterSpacing: "0.05em",
+              lineHeight: "2",
+              maxWidth: "80%",
+              fontWeight: "400"
+            },
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              TextType,
+              {
+                text: lines[step],
+                typingSpeed: 25,
+                showCursor: true,
+                hideCursorWhileTyping: true,
+                cursorCharacter: "█",
+                cursorBlinkDuration: 0.4,
+                loop: false,
+                onSentenceComplete: () => setDone(true)
+              },
+              step
+            )
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute bottom-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: (e2) => {
+              e2.stopPropagation();
+              onBack();
+            },
+            className: "text-muted-foreground hover:text-foreground transition-colors",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.5em",
+              letterSpacing: "0.2em",
+              background: "none",
+              border: "1px solid",
+              borderColor: "var(--border)",
+              padding: "4px 12px",
+              cursor: "pointer"
+            },
+            children: "[ Back ]"
+          }
+        ) })
+      ]
+    }
+  );
+}
+function GamesOverlay({
+  selectedIdx,
+  onSelect,
+  onBack,
+  onRebirth,
+  onSquareBar,
+  onSlalom,
+  score
+}) {
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "ArrowUp") {
+        onSelect(
+          (prev) => (prev - 1 + GAMES_MENU_ITEMS.length) % GAMES_MENU_ITEMS.length
+        );
+      } else if (e2.key === "ArrowDown") {
+        onSelect((prev) => (prev + 1) % GAMES_MENU_ITEMS.length);
+      } else if (e2.key === "Enter") {
+        const chosen = GAMES_MENU_ITEMS[selectedIdx];
+        if (chosen === "Rebirth") onRebirth();
+        else if (chosen === "Square Bar") onSquareBar();
+        else if (chosen === "Slalom") onSlalom();
+        else if (chosen === "Back") onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, onSelect, onRebirth, onSquareBar, onSlalom, onBack]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "text-foreground tracking-widest",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1em",
+          letterSpacing: "0.15em"
+        },
+        children: "Games"
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5", children: GAMES_MENU_ITEMS.map((item, i2) => {
+      const isSelected = i2 === selectedIdx;
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.65em",
+            letterSpacing: "0.2em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0"
+          },
+          onClick: () => {
+            onSelect(i2);
+            if (item === "Rebirth") onRebirth();
+            else if (item === "Square Bar") onSquareBar();
+            else if (item === "Slalom") onSlalom();
+            else if (item === "Back") onBack();
+          },
+          children: isSelected ? `> ${item}` : `  ${item}`
+        },
+        item
+      );
+    }) }),
+    score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.45em",
+          color: "#888",
+          letterSpacing: "0.1em",
+          marginTop: "8px"
+        },
+        children: [
+          "Score: ",
+          score
+        ]
+      }
+    )
+  ] });
+}
+function PuzzlesOverlay({
+  selectedIdx,
+  onSelect,
+  onBack,
+  onChess,
+  onWordle,
+  score
+}) {
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "ArrowUp") {
+        onSelect(
+          (selectedIdx - 1 + PUZZLE_MENU_ITEMS.length) % PUZZLE_MENU_ITEMS.length
+        );
+      } else if (e2.key === "ArrowDown") {
+        onSelect((selectedIdx + 1) % PUZZLE_MENU_ITEMS.length);
+      } else if (e2.key === "Enter") {
+        const chosen = PUZZLE_MENU_ITEMS[selectedIdx];
+        if (chosen === "Chess") onChess();
+        else if (chosen === "Wordle") onWordle();
+        else if (chosen === "Back") onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedIdx, onSelect, onChess, onWordle, onBack]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "text-foreground tracking-widest",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1em",
+          letterSpacing: "0.15em"
+        },
+        children: "Puzzles"
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-1.5", children: PUZZLE_MENU_ITEMS.map((item, i2) => {
+      const isSelected = i2 === selectedIdx;
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          className: `transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`,
+          style: {
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.65em",
+            letterSpacing: "0.2em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0"
+          },
+          onClick: () => {
+            onSelect(i2);
+            if (item === "Chess") onChess();
+            else if (item === "Wordle") onWordle();
+            else if (item === "Back") onBack();
+          },
+          children: isSelected ? `> ${item}` : `  ${item}`
+        },
+        item
+      );
+    }) }),
+    score !== void 0 && score > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.45em",
+          color: "#888",
+          letterSpacing: "0.1em",
+          marginTop: "8px"
+        },
+        children: [
+          "Score: ",
+          score
+        ]
+      }
+    )
+  ] });
+}
 function TextGameModal({ onComplete }) {
   const modalRef = reactExports.useRef(null);
   const onCompleteRef = reactExports.useRef(onComplete);
@@ -97118,6 +97381,39 @@ function TextGameModal({ onComplete }) {
       }
     };
   }, [overrideAudio]);
+  const hyvmindIframeRef = reactExports.useRef(null);
+  const [hyvmindOverlay, setHyvmindOverlay] = reactExports.useState(null);
+  const [puzzleIdx, setPuzzleIdx] = reactExports.useState(0);
+  const [gameIdx, setGameIdx] = reactExports.useState(0);
+  const [unsubmittedScore, setUnsubmittedScore] = reactExports.useState(0);
+  const [gamesLoaded, setGamesLoaded] = reactExports.useState({});
+  const hyvmindOverlayRef = reactExports.useRef(null);
+  const unsubmittedScoreRef = reactExports.useRef(0);
+  hyvmindOverlayRef.current = hyvmindOverlay;
+  unsubmittedScoreRef.current = unsubmittedScore;
+  const handleHyvmindResume = reactExports.useCallback(() => {
+    var _a3;
+    console.log("handleHyvmindResume called, ref=", hyvmindIframeRef.current);
+    setHyvmindOverlay(null);
+    const win = (_a3 = hyvmindIframeRef.current) == null ? void 0 : _a3.contentWindow;
+    win == null ? void 0 : win.postMessage(
+      { type: "hyvmind-score-update", score: unsubmittedScoreRef.current },
+      "*"
+    );
+    const send = () => {
+      var _a4;
+      const w3 = (_a4 = hyvmindIframeRef.current) == null ? void 0 : _a4.contentWindow;
+      console.log("sending hyvmind-resume, contentWindow=", w3);
+      w3 == null ? void 0 : w3.postMessage({ type: "hyvmind-resume" }, "*");
+    };
+    send();
+    setTimeout(send, 200);
+    setTimeout(send, 600);
+    setTimeout(() => {
+      var _a4;
+      (_a4 = hyvmindIframeRef.current) == null ? void 0 : _a4.focus();
+    }, 100);
+  }, []);
   const handleExit = reactExports.useCallback(() => {
     if (overrideAudio) {
       overrideAudio.pause();
@@ -97128,21 +97424,12 @@ function TextGameModal({ onComplete }) {
   const handleOpenSettings = reactExports.useCallback(() => {
     setPhase({ type: "settings" });
   }, []);
-  const handleOpenLeaderboard = reactExports.useCallback(() => {
-    setPhase({ type: "leaderboard" });
-  }, []);
-  const handleOpenAbout = reactExports.useCallback(() => {
-    setPhase({ type: "about" });
-  }, []);
-  const handleStartChess = reactExports.useCallback(() => {
-    setPhase({ type: "chess" });
+  const handleOpenCredits = reactExports.useCallback(() => {
+    setPhase({ type: "credits" });
   }, []);
   const handleChessComplete = reactExports.useCallback((score) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
-  }, []);
-  const handleStartWordle = reactExports.useCallback(() => {
-    setPhase({ type: "wordle" });
   }, []);
   const handleStartHyvmind = reactExports.useCallback(() => {
     setPhase({ type: "hyvmind" });
@@ -97165,40 +97452,111 @@ function TextGameModal({ onComplete }) {
   }, [settings.skipMessages]);
   reactExports.useEffect(() => {
     const handler = (e2) => {
-      var _a3, _b3, _c2, _d2;
+      var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2, _i2, _j2, _k2, _l2, _m2, _n;
       if (((_a3 = e2.data) == null ? void 0 : _a3.type) === "rebirth-game-over") {
         const score1 = e2.data.score || 0;
-        setGameScores((prev) => ({ ...prev, game1: score1 }));
-        if (settings.skipMessages) {
-          setPhase({ type: "game2" });
+        if ((_b3 = hyvmindOverlayRef.current) == null ? void 0 : _b3.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score1);
+          setHyvmindOverlay("games");
         } else {
-          setPhase({ type: "postGame1", step: 0 });
-          setScrambleComplete(false);
+          setGameScores((prev) => ({ ...prev, game1: score1 }));
+          if (settings.skipMessages) {
+            setPhase({ type: "game2" });
+          } else {
+            setPhase({ type: "postGame1", step: 0 });
+            setScrambleComplete(false);
+          }
         }
-      } else if (((_b3 = e2.data) == null ? void 0 : _b3.type) === "squarebar-game-over") {
+      } else if (((_c2 = e2.data) == null ? void 0 : _c2.type) === "squarebar-game-over") {
         const score2 = e2.data.score || 0;
-        setGameScores((prev) => ({ ...prev, game2: score2 }));
-        if (settings.skipMessages) {
-          setPhase({ type: "game3" });
+        if ((_d2 = hyvmindOverlayRef.current) == null ? void 0 : _d2.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score2);
+          setHyvmindOverlay("games");
         } else {
-          setPhase({ type: "postGame2", step: 0 });
-          setScrambleComplete(false);
+          setGameScores((prev) => ({ ...prev, game2: score2 }));
+          if (settings.skipMessages) {
+            setPhase({ type: "game3" });
+          } else {
+            setPhase({ type: "postGame2", step: 0 });
+            setScrambleComplete(false);
+          }
         }
-      } else if (((_c2 = e2.data) == null ? void 0 : _c2.type) === "slalom-game-over") {
+      } else if (((_e3 = e2.data) == null ? void 0 : _e3.type) === "slalom-game-over") {
         const score3 = e2.data.score || 0;
-        setGameScores((prev) => {
-          const totalScore = prev.game1 + prev.game2 + score3;
-          setGeneratingScore(totalScore);
-          setPhase({ type: "generating" });
-          return { ...prev, game3: score3 };
+        if ((_f2 = hyvmindOverlayRef.current) == null ? void 0 : _f2.startsWith("games")) {
+          setUnsubmittedScore((prev) => prev + score3);
+          setHyvmindOverlay("games");
+        } else {
+          setGameScores((prev) => {
+            const totalScore = prev.game1 + prev.game2 + score3;
+            setGeneratingScore(totalScore);
+            setPhase({ type: "generating" });
+            return { ...prev, game3: score3 };
+          });
+        }
+      } else if (((_g2 = e2.data) == null ? void 0 : _g2.type) === "hyvmind-nav") {
+        const target = e2.data.target;
+        const overlayMap = {
+          "House of Puzzles": "puzzles",
+          "House of Rant": "about",
+          "House of Games": "games",
+          Leaderboard: "leaderboard"
+        };
+        setHyvmindOverlay(overlayMap[target] || target);
+        setPuzzleIdx(0);
+        setGameIdx(0);
+        setGamesLoaded({});
+      } else if (((_h2 = e2.data) == null ? void 0 : _h2.type) === "hyvmind-submit-score") {
+        const score = unsubmittedScoreRef.current;
+        setUnsubmittedScore(0);
+        if (score === 0) {
+          (_j2 = (_i2 = hyvmindIframeRef.current) == null ? void 0 : _i2.contentWindow) == null ? void 0 : _j2.postMessage(
+            { type: "hyvmind-popup", msg: "No score to submit." },
+            "*"
+          );
+          return;
+        }
+        (_l2 = (_k2 = hyvmindIframeRef.current) == null ? void 0 : _k2.contentWindow) == null ? void 0 : _l2.postMessage(
+          { type: "hyvmind-generating" },
+          "*"
+        );
+        generateBuzzSecret(BigInt(Math.round(score))).then((secret) => {
+          var _a4, _b4;
+          (_b4 = (_a4 = hyvmindIframeRef.current) == null ? void 0 : _a4.contentWindow) == null ? void 0 : _b4.postMessage(
+            { type: "hyvmind-buzz-secret", secret, score },
+            "*"
+          );
+        }).catch((err) => {
+          var _a4, _b4;
+          console.error("Failed to generate buzz secret:", err);
+          (_b4 = (_a4 = hyvmindIframeRef.current) == null ? void 0 : _a4.contentWindow) == null ? void 0 : _b4.postMessage(
+            { type: "hyvmind-buzz-secret", secret: null, score },
+            "*"
+          );
         });
-      } else if (((_d2 = e2.data) == null ? void 0 : _d2.type) === "hyvmind-close") {
+      } else if (((_m2 = e2.data) == null ? void 0 : _m2.type) === "hyvmind-copy-secrets") {
+        const secretsStr = e2.data.secrets.map((s2) => `Buzz: ${s2.secret} (Score: ${s2.score})`).join("\n");
+        navigator.clipboard.writeText(secretsStr).catch(() => {
+        });
+      } else if (((_n = e2.data) == null ? void 0 : _n.type) === "hyvmind-close") {
+        setHyvmindOverlay(null);
+        setUnsubmittedScore(0);
         setPhase({ type: "idle" });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings]);
+  }, [settings, generateBuzzSecret]);
+  reactExports.useEffect(() => {
+    var _a3;
+    const win = (_a3 = hyvmindIframeRef.current) == null ? void 0 : _a3.contentWindow;
+    if (win) {
+      win.postMessage(
+        { type: "hyvmind-score-update", score: unsubmittedScore },
+        "*"
+      );
+    }
+  }, [unsubmittedScore]);
   reactExports.useEffect(() => {
     if (generatingScore === null) return;
     let cancelled = false;
@@ -97408,13 +97766,10 @@ function TextGameModal({ onComplete }) {
           {
             modalRef,
             onStart: handleStart,
-            onAbout: handleOpenAbout,
-            onChess: handleStartChess,
-            onWordle: handleStartWordle,
             onSettings: handleOpenSettings,
-            onHiScores: handleOpenLeaderboard,
             onExit: handleExit,
             onEnter: handleStartHyvmind,
+            onCredits: handleOpenCredits,
             showScoreConfirmation,
             setShowScoreConfirmation,
             setSecretCode
@@ -97432,6 +97787,8 @@ function TextGameModal({ onComplete }) {
             heading: "Settings"
           }
         );
+      case "credits":
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(CreditsScreen, { onBack: handleCloseSubScreen });
       case "leaderboard":
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           LeaderboardScreen,
@@ -97641,15 +97998,178 @@ function TextGameModal({ onComplete }) {
           }
         ) });
       case "hyvmind":
-        return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "iframe",
-          {
-            src: "/assets/hyvmind/index.html",
-            className: "w-full h-full border-0",
-            title: "HYVMIND",
-            "data-ocid": "text_game.hyvmind_iframe"
-          }
-        ) }) });
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "iframe",
+            {
+              ref: hyvmindIframeRef,
+              src: "/assets/hyvmind/index.html",
+              tabIndex: -1,
+              className: `w-full h-full border-0 ${hyvmindOverlay ? "hidden" : ""}`,
+              title: "HYVMIND",
+              "data-ocid": "text_game.hyvmind_iframe"
+            }
+          ),
+          hyvmindOverlay === "puzzles" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            PuzzlesOverlay,
+            {
+              selectedIdx: puzzleIdx,
+              onSelect: setPuzzleIdx,
+              onBack: handleHyvmindResume,
+              onChess: () => setHyvmindOverlay("chess"),
+              onWordle: () => setHyvmindOverlay("wordle"),
+              score: unsubmittedScore
+            }
+          ),
+          hyvmindOverlay === "about" && /* @__PURE__ */ jsxRuntimeExports.jsx(AboutOverlay, { onBack: handleHyvmindResume }),
+          hyvmindOverlay === "leaderboard" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            LeaderboardScreen,
+            {
+              leaderboard: leaderboardEntries ?? [],
+              onBack: handleHyvmindResume
+            }
+          ),
+          hyvmindOverlay === "games" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            GamesOverlay,
+            {
+              selectedIdx: gameIdx,
+              onSelect: (i2) => setGameIdx(typeof i2 === "function" ? i2(gameIdx) : i2),
+              onBack: handleHyvmindResume,
+              onRebirth: () => {
+                setHyvmindOverlay("games-rebirth");
+                setTimeout(
+                  () => {
+                    var _a3;
+                    return (_a3 = document.querySelector(
+                      'iframe[title="Rebirth"]'
+                    )) == null ? void 0 : _a3.focus();
+                  },
+                  200
+                );
+              },
+              onSquareBar: () => {
+                setHyvmindOverlay("games-squarebar");
+                setTimeout(
+                  () => {
+                    var _a3;
+                    return (_a3 = document.querySelector(
+                      'iframe[title="Square Bar"]'
+                    )) == null ? void 0 : _a3.focus();
+                  },
+                  200
+                );
+              },
+              onSlalom: () => {
+                setHyvmindOverlay("games-slalom");
+                setTimeout(
+                  () => {
+                    var _a3;
+                    return (_a3 = document.querySelector(
+                      'iframe[title="Slalom"]'
+                    )) == null ? void 0 : _a3.focus();
+                  },
+                  200
+                );
+              },
+              score: unsubmittedScore
+            }
+          ),
+          hyvmindOverlay === "games-rebirth" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
+            !gamesLoaded.rebirth && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-foreground",
+                style: {
+                  fontSize: "0.55em",
+                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                },
+                children: "█"
+              },
+              i2
+            )) }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "iframe",
+              {
+                src: `/assets/rebirth.html${bgmParam}`,
+                allow: "autoplay",
+                className: "w-full h-full border-0",
+                title: "Rebirth",
+                tabIndex: -1,
+                onLoad: () => setGamesLoaded((prev) => ({ ...prev, rebirth: true }))
+              }
+            )
+          ] }) }),
+          hyvmindOverlay === "games-squarebar" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
+            !gamesLoaded.squarebar && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-foreground",
+                style: {
+                  fontSize: "0.55em",
+                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                },
+                children: "█"
+              },
+              i2
+            )) }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "iframe",
+              {
+                src: `/assets/squarebar.html${bgmParam}`,
+                allow: "autoplay",
+                className: "w-full h-full border-0",
+                title: "Square Bar",
+                tabIndex: -1,
+                onLoad: () => setGamesLoaded((prev) => ({ ...prev, squarebar: true }))
+              }
+            )
+          ] }) }),
+          hyvmindOverlay === "games-slalom" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
+            !gamesLoaded.slalom && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-foreground",
+                style: {
+                  fontSize: "0.55em",
+                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                },
+                children: "█"
+              },
+              i2
+            )) }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "iframe",
+              {
+                src: `/assets/slalom.html${bgmParam}`,
+                allow: "autoplay",
+                className: "w-full h-full border-0",
+                title: "Slalom",
+                tabIndex: -1,
+                onLoad: () => setGamesLoaded((prev) => ({ ...prev, slalom: true }))
+              }
+            )
+          ] }) }),
+          hyvmindOverlay === "chess" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            ChessPuzzleGame,
+            {
+              onComplete: (score) => {
+                setUnsubmittedScore((prev) => prev + score);
+              },
+              onExit: () => setHyvmindOverlay("puzzles"),
+              heading: "Chess"
+            }
+          ),
+          hyvmindOverlay === "wordle" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            WordlePuzzleGame,
+            {
+              onComplete: (score) => {
+                setUnsubmittedScore((prev) => prev + score);
+              },
+              onExit: () => setHyvmindOverlay("puzzles"),
+              heading: "Wordle"
+            }
+          )
+        ] });
       case "chess":
         return /* @__PURE__ */ jsxRuntimeExports.jsx(
           ChessPuzzleGame,
