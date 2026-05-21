@@ -4,7 +4,7 @@ Hyvmind is a shared note-taking space for legal researchers. It (1) incentivises
 
 ## Project Architecture
 
-A knowledge graph application on the Internet Computer (ICP), with a Motoko backend and React/TypeScript frontend. Hyvmind's 'World' is an RPG style exploration game that acts as a gateway/onboarding experience before users access the main app. Public graphs generate unique Perlin Noise Terrains which expand the World. 
+A knowledge graph application on the Internet Computer (ICP), with a Motoko backend and React/TypeScript frontend. Hyvmind's 'World' is an RPG style exploration game that acts as a gateway/onboarding experience before users access the main app.  
 
 - **Backend** (`src/backend/`) — Motoko canisters on ICP, compiled with `moc`. Handles data persistence, user authentication (Internet Identity), graph storage, chat, and buzz token economy.
 - **Frontend** (`src/frontend/`) — React 18 + TypeScript + Vite + Tailwind CSS. The app shell has a sidebar with five tabs (Notes, Graphs, Chat, Public, Settings) plus an admin-only Terminal.
