@@ -1,21 +1,21 @@
 # Hyvmind
 
-Hyvmind is a shared note-taking space for legal researchers. It (a) incentivises collaboration through a dual in-app economy (Buzz and Trust), and (b) turns notes into compounding artifacts (legal knowledge graphs).
+Hyvmind is a shared note-taking space for legal researchers. It (1) incentivises collaboration through a dual in-app economy (Buzz and Trust), and (2) turns notes into compounding artifacts (legal knowledge graphs).
 
 ## Project Architecture
 
-Hyvmind is a collaborative legal knowledge graph platform on the Internet Computer (ICP), with a Motoko backend and React/TypeScript frontend. The "Hyvmind World" is an interactive NES-inspired pixel art game that acts as a gateway/onboarding experience before users access the main app.
+A knowledge graph application on the Internet Computer (ICP), with a Motoko backend and React/TypeScript frontend. Hyvmind's 'World' is an RPG style exploration game that acts as a gateway/onboarding experience before users access the main app. Public graphs generate unique Perlin Noise Terrains which expand the World. 
 
 - **Backend** (`src/backend/`) — Motoko canisters on ICP, compiled with `moc`. Handles data persistence, user authentication (Internet Identity), graph storage, chat, and buzz token economy.
 - **Frontend** (`src/frontend/`) — React 18 + TypeScript + Vite + Tailwind CSS. The app shell has a sidebar with five tabs (Notes, Graphs, Chat, Public, Settings) plus an admin-only Terminal.
 
 New users first encounter the **Hyvmind World** game. Completing the game reveals the landing graph, and users can authenticate to access the full platform.
 
-## Hyvmind World
+## Game World
 
-The game is an NES-inspired pixel-art adventure that blends a top-down 2D RPG world with a branching narrative text game, puzzle minigames, and on-chain buzz secret rewards.
+The game is an NES-inspired pixel-art adventure that blends a top-down 2D RPG world with branching narratives, puzzles and minigames. Public graphs generate unique Perlin Noise Terrains which expand the World.
 
-### Pixel World
+### Aesthetic
 
 A vanilla JS/HTML game (no framework, no canvas — CSS-positioned sprites over a tilemap):
 
@@ -26,7 +26,7 @@ A vanilla JS/HTML game (no framework, no canvas — CSS-positioned sprites over 
 - **Triggers**: Proximity-based text popups + a password challenge system (`>>` prefix in `triggers.json`) with pattern-matching rules (e.g., `lai/` → "Correct!")
 - **Audio**: `forest.mp3` background loop
 
-### Text Game Overlay
+### Structure
 
 A React component (`TextGameModal.tsx`) rendered over the unauthenticated landing page:
 
