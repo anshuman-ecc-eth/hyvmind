@@ -14,15 +14,15 @@
   /* ── Layout (desktop) ── */
   .layout { display: flex; align-items: center; gap: 24px; }
   .dpad { position: relative; width: 110px; height: 138px; flex-shrink: 0; }
-  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: 2px solid #888; border-radius: 10px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; }
-  .dpad-btn:active, .dpad-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; }
+  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: 2px solid #888; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; }
+  .dpad-btn:active, .dpad-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; transform: scale(0.95); }
   .dpad-up    { top: 0; left: 32px; }
   .dpad-down  { bottom: 0; left: 32px; }
   .dpad-left  { left: 0; top: 46px; }
   .dpad-right { right: 0; top: 46px; }
   .action-buttons { display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
-  .action-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.5); border: 2px solid #888; color: #000; font-family: 'Press Start 2P', monospace; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; }
-  .action-btn:active, .action-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; }
+  .action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.5); border: 2px solid #888; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; }
+  .action-btn:active, .action-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; transform: scale(0.95); }
 
   .game-container { display: flex; justify-content: center; width: 100%; height: 100%; }
   .layout { display: flex; align-items: center; gap: 24px; height: 100%; flex-shrink: 0; }
@@ -36,7 +36,7 @@
   /* ── Tablet/small desktop (601-1024px): flex layout ── */
   @media (max-width: 1024px) and (min-width: 601px) {
     .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 550/480; border-width: 2px; }
-    .dpad-btn { border-radius: 7px; }
+    .dpad-btn { border-radius: 4px; }
   }
   @media (max-width: 1024px) and (min-width: 769px) {
     .layout { gap: 12px; }
@@ -170,6 +170,7 @@ var boatBlockedTiles = {};
 
 window.addEventListener('message', function(e) {
   if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; document.body.focus(); }
+  if (e.data?.type === 'hyvmind-focus') { requestAnimationFrame(function() { document.body.focus(); }); }
   if (e.data?.type === 'hyvmind-score-update') { currentScore = e.data.score || 0; }
   if (e.data?.type === 'hyvmind-popup') {
     if (e.data?.msg) showPopup(e.data.msg);
@@ -409,7 +410,8 @@ var STARTUP_SENTENCES = [
 
 function renderStartupPopup(pop, step) {
   var sentence = step < STARTUP_SENTENCES.length ? STARTUP_SENTENCES[step] : '';
-  var footer = '[Z] continue &nbsp; [X] close';
+  var isLast = step >= STARTUP_SENTENCES.length - 1;
+  var footer = isLast ? '[X] close' : '[Z] continue &nbsp; [X] close';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
 }
 
@@ -743,13 +745,13 @@ function activateZ() {
   } else if (activePopup && activePopup._type === 'startup') {
     var nextStep = activePopup._step + 1;
     if (nextStep >= STARTUP_SENTENCES.length) {
-      closePopup();
-      gamePaused = false;
+      // last sentence — Z does nothing, only X closes
+      msg = 'startup-end';
     } else {
       activePopup._step = nextStep;
       renderStartupPopup(activePopup, nextStep);
+      msg = 'startup-' + nextStep;
     }
-    msg = 'startup-' + nextStep;
   } else if (activePopup && activePopup._type === 'door') {
     var label = activePopup._label;
     closePopup();
@@ -1007,8 +1009,11 @@ initCollision(function() {
     initBoat();
     render();
     showStartupPopup();
+    setTimeout(function() {
+      window.parent.postMessage({ type: 'hyvmind-loaded' }, '*');
+    }, 300);
     setInterval(loop, 40);
-    document.body.focus();
+    requestAnimationFrame(function() { document.body.focus(); });
     console.log('HYVMIND DEBUG: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length + ' boatTerminalCenter=' + (boatTerminalCenter ? boatTerminalCenter.tx+','+boatTerminalCenter.ty : 'none') + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null'));
   });
 });

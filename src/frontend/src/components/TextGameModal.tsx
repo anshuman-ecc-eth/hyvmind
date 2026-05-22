@@ -984,6 +984,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   const [done, setDone] = useState(false);
   const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
   const total = lines.length;
+  const isLast = step >= total - 1;
 
   const advance = useCallback(() => {
     if (!done) return;
@@ -997,12 +998,15 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Tab") return;
-      advance();
+      if (e.key === "z" || e.key === "Z") {
+        if (!isLast) advance();
+      } else if (e.key === "x" || e.key === "X") {
+        onBack();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [advance]);
+  }, [advance, isLast, onBack]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-6">
@@ -1030,25 +1034,73 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
           />
         </p>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onBack();
-        }}
-        className="text-muted-foreground opacity-50 hover:text-foreground hover:scale-105 transition-all duration-150"
-        style={{
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.65em",
-          letterSpacing: "0.2em",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: "0",
-        }}
-      >
-        {"> Back"}
-      </button>
+      <div className="flex flex-col items-center gap-3">
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: "#7ab0c0",
+            letterSpacing: "0.5px",
+            background: "#000",
+            padding: "6px 14px",
+            borderRadius: "2px",
+          }}
+        >
+          {isLast ? "[X] close" : "[Z] continue  [X] close"}
+        </div>
+        <div className="flex gap-4">
+          {!isLast && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!done) return;
+                const next = step + 1;
+                if (next >= total) return;
+                setStep(next);
+                setDone(false);
+              }}
+              className="active:scale-95 transition-transform"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.5)",
+                border: "2px solid #888",
+                color: "#000",
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "16px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Z
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onBack}
+            className="active:scale-95 transition-transform"
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            X
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1251,6 +1303,102 @@ function PuzzlesOverlay({
   );
 }
 
+// ── Lab Diagrams Overlay ─────────────────────────────────────────────────────────
+
+const LAB_DIAGRAMS = [
+  "from attention to trust.svg",
+  "the legal intelligence market.svg",
+];
+
+function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
+  const [step, setStep] = useState(0);
+  const isLast = step >= LAB_DIAGRAMS.length - 1;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "z" || e.key === "Z") {
+        if (!isLast) setStep((prev) => prev + 1);
+      } else if (e.key === "x" || e.key === "X") {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isLast, onBack]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center select-none">
+      <img
+        src={`/assets/hyvmind/lab diagrams/${LAB_DIAGRAMS[step]}`}
+        alt={`Diagram ${step + 1}`}
+        className="max-w-full max-h-full object-contain"
+        style={{ imageRendering: "pixelated" }}
+      />
+      <div className="absolute bottom-6 flex flex-col items-center gap-3">
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: "#7ab0c0",
+            letterSpacing: "0.5px",
+            background: "#000",
+            padding: "6px 14px",
+            borderRadius: "2px",
+          }}
+        >
+          {isLast ? "[X] close" : "[Z] continue  [X] close"}
+        </div>
+        <div className="flex gap-4">
+          {!isLast && (
+            <button
+              type="button"
+              onClick={() => setStep((prev) => prev + 1)}
+              className="active:scale-95 transition-transform"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.5)",
+                border: "2px solid #888",
+                color: "#000",
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "16px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Z
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onBack}
+            className="active:scale-95 transition-transform"
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            X
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface TextGameModalProps {
@@ -1299,6 +1447,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   // Whether each iframe game has finished loading
   const [gameLoaded, setGameLoaded] = useState<Record<string, boolean>>({});
+
+  // Whether the hyvmind game is still loading its assets
+  const [hyvmindLoading, setHyvmindLoading] = useState(true);
+  const hyvmindLoadingStartRef = useRef(0);
 
   // Reset loaded state when entering a new game
   useEffect(() => {
@@ -1412,7 +1564,20 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
   const handleStartHyvmind = useCallback(() => {
     setPhase({ type: "hyvmind" });
+    setHyvmindLoading(true);
+    hyvmindLoadingStartRef.current = Date.now();
   }, []);
+
+  // Focus the hyvmind iframe once it becomes visible after loading
+  useEffect(() => {
+    if (!hyvmindLoading && phase.type === "hyvmind") {
+      const el = hyvmindIframeRef.current;
+      if (el) {
+        el.focus();
+        el.contentWindow?.postMessage({ type: "hyvmind-focus" }, "*");
+      }
+    }
+  }, [hyvmindLoading, phase.type]);
 
   const handleWordleComplete = useCallback((score: number) => {
     setGeneratingScore(score);
@@ -1480,6 +1645,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             return { ...prev, game3: score3 };
           });
         }
+      } else if (e.data?.type === "hyvmind-loaded") {
+        const elapsed = Date.now() - hyvmindLoadingStartRef.current;
+        const minTime = 800;
+        if (elapsed >= minTime) {
+          setHyvmindLoading(false);
+        } else {
+          setTimeout(() => setHyvmindLoading(false), minTime - elapsed);
+        }
       } else if (e.data?.type === "hyvmind-nav") {
         const target = e.data.target as string;
         const overlayMap: Record<string, string> = {
@@ -1487,6 +1660,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           "House of Rant": "about",
           "House of Games": "games",
           "The Ranting Well": "about",
+          Laboratory: "lab-diagrams",
           Leaderboard: "leaderboard",
         };
         setHyvmindOverlay(overlayMap[target] || target);
@@ -2050,9 +2224,44 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "hyvmind":
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
+            {hyvmindLoading && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none">
+                <div
+                  className="text-foreground"
+                  style={{
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "0.65em",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  Loading...
+                </div>
+                <div className="flex gap-[2px]">
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                      key={i}
+                      className="text-foreground"
+                      style={{
+                        fontSize: "0.55em",
+                        animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                      }}
+                    >
+                      █
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div
               className="flex-1 flex items-center justify-center overflow-auto"
-              style={{ display: hyvmindOverlay === null ? undefined : "none" }}
+              style={{
+                display: hyvmindLoading
+                  ? "none"
+                  : hyvmindOverlay === null
+                    ? undefined
+                    : "none",
+              }}
             >
               <iframe
                 ref={hyvmindIframeRef}
@@ -2088,6 +2297,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 leaderboard={leaderboardEntries ?? []}
                 onBack={handleHyvmindResume}
               />
+            )}
+            {hyvmindOverlay === "lab-diagrams" && (
+              <LabDiagramsOverlay onBack={handleHyvmindResume} />
             )}
             {hyvmindOverlay === "games" && (
               <GamesOverlay
@@ -2199,7 +2411,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     title="Square Bar"
                     tabIndex={-1}
                     onLoad={() =>
-                      setGamesLoaded((prev) => ({ ...prev, squarebar: true }))
+                      setGamesLoaded((prev) => ({
+                        ...prev,
+                        squarebar: true,
+                      }))
                     }
                   />
                 </div>
