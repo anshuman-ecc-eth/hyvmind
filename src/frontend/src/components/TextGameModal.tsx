@@ -17,9 +17,9 @@ const MENU_ITEMS = ["Enter World", "Go to App", "Credits"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
-  "Have you heard of LAI?",
+  "This is a long rant about LAI.",
   "",
-  "It's our word for Legal AI.",
+  "That's our word for Legal AI.",
   "",
   "Easy to remember. No double meaning.",
   "",
@@ -1005,65 +1005,51 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   }, [advance]);
 
   return (
-    <button
-      type="button"
-      className="flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer"
-      onClick={advance}
-      onKeyDown={
-        done
-          ? (e) => {
-              if (e.key !== "Tab") advance();
-            }
-          : undefined
-      }
-      tabIndex={0}
-    >
-      <p
-        className="text-foreground text-center leading-relaxed"
-        style={{
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.7em",
-          letterSpacing: "0.05em",
-          lineHeight: "2",
-          maxWidth: "80%",
-          fontWeight: "400",
-        }}
-      >
-        <TextType
-          key={step}
-          text={lines[step]}
-          typingSpeed={25}
-          showCursor
-          hideCursorWhileTyping
-          cursorCharacter="█"
-          cursorBlinkDuration={0.4}
-          loop={false}
-          onSentenceComplete={() => setDone(true)}
-        />
-      </p>
-      <div className="absolute bottom-4">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onBack();
-          }}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div className="px-6 py-4 rounded" style={{ background: "#000" }}>
+        <p
+          className="text-foreground text-center leading-relaxed"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.5em",
-            letterSpacing: "0.2em",
-            background: "none",
-            border: "1px solid",
-            borderColor: "var(--border)",
-            padding: "4px 12px",
-            cursor: "pointer",
+            fontSize: "0.7em",
+            letterSpacing: "0.05em",
+            lineHeight: "2",
+            fontWeight: "400",
           }}
         >
-          [ Back ]
-        </button>
+          <TextType
+            key={step}
+            text={lines[step]}
+            typingSpeed={25}
+            showCursor
+            hideCursorWhileTyping
+            cursorCharacter="█"
+            cursorBlinkDuration={0.4}
+            loop={false}
+            onSentenceComplete={() => setDone(true)}
+          />
+        </p>
       </div>
-    </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onBack();
+        }}
+        className="text-muted-foreground opacity-50 hover:text-foreground hover:scale-105 transition-all duration-150"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.65em",
+          letterSpacing: "0.2em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+        }}
+      >
+        {"> Back"}
+      </button>
+    </div>
   );
 }
 
@@ -1500,6 +1486,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           "House of Puzzles": "puzzles",
           "House of Rant": "about",
           "House of Games": "games",
+          "The Ranting Well": "about",
           Leaderboard: "leaderboard",
         };
         setHyvmindOverlay(overlayMap[target] || target);
@@ -2063,7 +2050,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       case "hyvmind":
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
-            <div className="flex-1 flex items-center justify-center overflow-auto">
+            <div
+              className="flex-1 flex items-center justify-center overflow-auto"
+              style={{ display: hyvmindOverlay === null ? undefined : "none" }}
+            >
               <iframe
                 ref={hyvmindIframeRef}
                 src="/assets/hyvmind/index.html"

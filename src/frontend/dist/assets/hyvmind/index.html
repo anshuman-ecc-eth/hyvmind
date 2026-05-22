@@ -179,9 +179,9 @@ window.addEventListener('message', function(e) {
     activeMenu = 'loading';
     closePopup();
     var pop = document.createElement('div');
-    pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+    pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
     pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
-    document.body.appendChild(pop);
+    (document.querySelector('.screen') || document.body).appendChild(pop);
     activePopup = pop;
   }
   if (e.data?.type === 'hyvmind-buzz-secret') {
@@ -323,18 +323,18 @@ function showPopup(msg) {
   // If message starts with >>, show input popup instead
   if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
   var pop = document.createElement('div');
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:11px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
-  document.body.appendChild(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function showDefaultPopup() {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   var pop = document.createElement('div');
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   var scoreHtml = '<div style="font-family:monospace;font-size:11px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + (storedSecrets.length > 0 ? 0 : currentScore) + '</div>';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:11px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
-  document.body.appendChild(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function showInputPopup(raw) {
@@ -358,9 +358,9 @@ function showInputPopup(raw) {
   pop._type = 'input';
   pop._rules = rules;
   pop._triggerKey = triggerKey;
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:30px;">' + question + '</div><input id="inputField" type="text" style="display:block;margin:10px auto 0;width:80%;background:#0a0a12;border:1px solid #5a4a2a;color:#e0d0b0;font-family:monospace;font-size:11px;padding:6px 8px;outline:none;text-align:center;"><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Enter</span> submit  <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div></div></div>';
-  document.body.appendChild(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
   // Focus the input field after a delay for Firefox
   setTimeout(function() { var f = document.getElementById('inputField'); if (f) f.focus(); }, 50);
@@ -389,14 +389,41 @@ function showDoorPopup(label) {
   var pop = document.createElement('div');
   pop._type = 'door';
   pop._label = label;
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">Enter?  [Z] yes  [X] no</div></div></div>';
-  document.body.appendChild(pop);
+  var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + verb + '?  [Z] yes  [X] no</div></div></div>';
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
 function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
+
+var STARTUP_SENTENCES = [
+  'Welcome.',
+  'You have found a way out of the Walled Gardens.',
+  'Near you, sits the Ranting Well.',
+  'It collects the anger of trapped researchers.',
+  'And turns it into water for the Sanctuary.'
+];
+
+function renderStartupPopup(pop, step) {
+  var sentence = step < STARTUP_SENTENCES.length ? STARTUP_SENTENCES[step] : '';
+  var footer = '[Z] continue &nbsp; [X] close';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+}
+
+function showStartupPopup() {
+  if (activePopup) activePopup.remove();
+  gamePaused = true;
+  var pop = document.createElement('div');
+  pop._type = 'startup';
+  pop._step = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderStartupPopup(pop, 0);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
 
 function showSecretsMenu() {
   var selected = menuSelected;
@@ -405,9 +432,9 @@ function showSecretsMenu() {
   var pop = document.createElement('div');
   pop._type = 'secrets';
   pop._selected = selected;
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   refreshSecretsMenuContent(pop, selected);
-  document.body.appendChild(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function refreshSecretsMenuContent(pop, selected) {
@@ -429,9 +456,9 @@ function showSecretsList() {
   pop._type = 'view-secrets';
   pop._scroll = 0;
   secretsScroll = 0;
-  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   refreshSecretsListContent(pop);
-  document.body.appendChild(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function refreshSecretsListContent(pop) {
@@ -673,7 +700,7 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
-  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
+  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
   if (e.key === 'd' || e.key === 'D') debugCollision();
   if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
 });
@@ -698,9 +725,9 @@ function activateZ() {
         window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
         closePopup();
         var pop = document.createElement('div');
-        pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+        pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
         pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
-        document.body.appendChild(pop);
+        (document.querySelector('.screen') || document.body).appendChild(pop);
         activePopup = pop;
       }
     }
@@ -713,6 +740,16 @@ function activateZ() {
   } else if (activePopup && activePopup._type === 'input') {
     submitInput();
     msg = 'input submitted';
+  } else if (activePopup && activePopup._type === 'startup') {
+    var nextStep = activePopup._step + 1;
+    if (nextStep >= STARTUP_SENTENCES.length) {
+      closePopup();
+      gamePaused = false;
+    } else {
+      activePopup._step = nextStep;
+      renderStartupPopup(activePopup, nextStep);
+    }
+    msg = 'startup-' + nextStep;
   } else if (activePopup && activePopup._type === 'door') {
     var label = activePopup._label;
     closePopup();
@@ -739,9 +776,9 @@ function activateZ() {
       if (activePopup) activePopup.remove();
       var pop = document.createElement('div');
       pop._type = 'boat-disembark';
-      pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
       pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Disembark? ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
-      document.body.appendChild(pop);
+      (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'disembark-prompt';
     } else if (!isRiding && activePopup && activePopup._type === 'boat-board') {
@@ -756,9 +793,9 @@ function activateZ() {
       if (activePopup) activePopup.remove();
       var pop = document.createElement('div');
       pop._type = 'boat-board';
-      pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
       pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Board the ferry? ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
-      document.body.appendChild(pop);
+      (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'boat-board-prompt';
     }
@@ -825,7 +862,9 @@ function render() {
   } else {
     lastNearDoorKey = null;
   }
-  if (nearDoor && !doorDismissed) {
+  if (activePopup && activePopup._type === 'startup') {
+    // keep startup popup visible
+  } else if (nearDoor && !doorDismissed) {
     showDoorPopup(doorLabel);
   } else {
     closeDoorPopup();
@@ -861,6 +900,7 @@ document.getElementById('btnX').addEventListener('click', function() {
   this.classList.add('active');
   if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; }
   else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); }
+  else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; }
   else { closePopup(); }
   setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
 });
@@ -966,6 +1006,7 @@ initCollision(function() {
     npcInit();
     initBoat();
     render();
+    showStartupPopup();
     setInterval(loop, 40);
     document.body.focus();
     console.log('HYVMIND DEBUG: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length + ' boatTerminalCenter=' + (boatTerminalCenter ? boatTerminalCenter.tx+','+boatTerminalCenter.ty : 'none') + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null'));
