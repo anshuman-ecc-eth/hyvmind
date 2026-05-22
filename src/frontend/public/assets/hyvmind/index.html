@@ -183,17 +183,57 @@ window.addEventListener('message', function(e) {
     pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
     pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
-    activePopup = pop;
+  activePopup = pop;
+}
+
+function showBavaDialog() {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'bava';
+  pop._step = 0; // 0 = menu, 1+ = showing response to that index
+  pop._selected = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderBavaPopup(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function renderBavaPopup(pop) {
+  if (pop._step === 0) {
+    renderBavaMenu(pop);
+  } else {
+    renderBavaResponse(pop);
   }
+}
+
+function renderBavaMenu(pop) {
+  var sel = pop._selected;
+  var items = '';
+  for (var i = 0; i < BAVA_DIALOGS.length; i++) {
+    var arrow = i === sel ? '>' : '&nbsp;';
+    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
+    items += '<div style="font-family:monospace;font-size:10px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + BAVA_DIALOGS[i].question + '</div>';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:8px;">~ Bava ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Ask me anything:</div>' + items + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+}
+
+function renderBavaResponse(pop) {
+  var idx = pop._step - 1;
+  var response = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].response : '';
+  var question = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].question : '';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:9px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + question + ' ~</div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + response + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> back <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+}
   if (e.data?.type === 'hyvmind-buzz-secret') {
     isGenerating = false;
     currentScore = e.data.score || 0;
     if (e.data.secret) storedSecrets.push({ secret: e.data.secret, score: e.data.score || 0 });
-    closePopup();
+  closePopup();
     showSecretsMenu();
   }
 });
 
+var dirMap = [2, 3, 1, 0];
+var dirMap = [2, 3, 1, 0];
 var dirMap = [2, 3, 1, 0];
 var collisionMap = [];
 for (var y = 0; y < ROWS; y++) { collisionMap[y] = []; for (var x = 0; x < COLS; x++) collisionMap[y][x] = 1; }
@@ -407,6 +447,81 @@ var STARTUP_SENTENCES = [
   'It collects the anger of trapped researchers.',
   'And turns it into water for the Sanctuary.'
 ];
+
+var BAVA_TREE = [
+  { q: "Who are you?", r: "I'm Bava, destroyer of LAIs.", children: [
+    { q: "What's LAI?", r: "Hmm.. good question." },
+    { q: "Why are you trying to destroy it?", r: "Well well.. that's a long story." }
+  ]},
+  { q: "What are you doing?", r: "Summoning fresh perspectives, ha!" },
+  { q: "What is this place?", r: "It's Hyvmind, an organically-expanding world.", children: [
+    { q: "What can I do here?", r: "Explore maps, collect points, create Buzz.", children: [
+      { q: "What's Buzz?", r: "Something between points and currency. You'll need some to get around." },
+      { q: "Ah, so I need Buzz to create Graphs which creates new maps. Is that it?", r: "You're getting it." }
+    ]},
+    { q: "How does the whole thing work?", r: "Very simple. I've added a signboard next to the dry well." }
+  ]}
+];
+
+function getBavaNode(path) {
+  var node = { children: BAVA_TREE };
+  for (var i = 0; i < path.length; i++) {
+    if (!node.children || path[i] >= node.children.length) return null;
+    node = node.children[path[i]];
+  }
+  return node;
+}
+
+function getBavaItems(path) {
+  var node = getBavaNode(path);
+  return node ? (node.children || []) : [];
+}
+
+function showBavaDialog() {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'bava';
+  pop._path = [];
+  pop._showing = 'menu';
+  pop._selected = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderBavaPopup(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function renderBavaPopup(pop) {
+  if (pop._showing === 'menu') {
+    renderBavaMenu(pop);
+  } else {
+    renderBavaResponse(pop);
+  }
+}
+
+function renderBavaMenu(pop) {
+  var items = getBavaItems(pop._path);
+  var sel = pop._selected;
+  var menuItems = '';
+  for (var i = 0; i < items.length; i++) {
+    var arrow = i === sel ? '>' : '&nbsp;';
+    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
+    menuItems += '<div style="font-family:monospace;font-size:10px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + items[i].q + '</div>';
+  }
+  var parentInfo = '';
+  if (pop._path.length > 0) {
+    var parentNode = getBavaNode(pop._path.slice(0, -1));
+    if (parentNode && parentNode.q) parentInfo = '<div style="font-family:monospace;font-size:8px;color:#4a7a8a;text-align:center;letter-spacing:0.5px;margin-bottom:4px;">' + parentNode.q + '</div>';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Bava ~</div>' + parentInfo + menuItems + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back</div></div></div>';
+}
+
+function renderBavaResponse(pop) {
+  var node = getBavaNode(pop._path);
+  if (!node) return;
+  var hasChildren = node.children && node.children.length > 0;
+  var footer = hasChildren ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> ask more <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:9px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + node.q + ' ~</div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + node.r + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px">' + footer + '</div></div></div>';
+}
 
 function renderStartupPopup(pop, step) {
   var sentence = step < STARTUP_SENTENCES.length ? STARTUP_SENTENCES[step] : '';
@@ -676,7 +791,7 @@ document.addEventListener('keydown', function(e) {
     var btn = document.querySelector('.dpad-btn.dpad-' + dir);
     if (btn) { btn.classList.add('active'); }
     // Don't move player when menu is active
-    if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets')) {
+    if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'bava')) {
       if (activePopup._type === 'secrets') {
         var newSel = activePopup._selected;
         if (dir === 'up') newSel = 0;
@@ -696,13 +811,23 @@ document.addEventListener('keydown', function(e) {
           refreshSecretsListContent(activePopup);
         }
       }
+      if (activePopup._type === 'bava' && activePopup._showing === 'menu') {
+        var items = getBavaItems(activePopup._path);
+        var newIdx = activePopup._selected;
+        if (dir === 'up') newIdx = (newIdx - 1 + items.length) % items.length;
+        else if (dir === 'down') newIdx = (newIdx + 1) % items.length;
+        if (newIdx !== activePopup._selected) {
+          activePopup._selected = newIdx;
+          renderBavaPopup(activePopup);
+        }
+      }
     } else {
       dpadState[dir] = true;
     }
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
-  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
+  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; } else if (activePopup && activePopup._type === 'bava') { if (activePopup._path.length === 0) { closePopup(); } else { activePopup._path.pop(); activePopup._showing = 'menu'; activePopup._selected = 0; renderBavaPopup(activePopup); } } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
   if (e.key === 'd' || e.key === 'D') debugCollision();
   if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
 });
@@ -801,8 +926,39 @@ function activateZ() {
       activePopup = pop;
       msg = 'boat-board-prompt';
     }
+  } else if (activePopup && activePopup._type === 'bava') {
+    if (activePopup._showing === 'menu') {
+      var items = getBavaItems(activePopup._path);
+      var sel = activePopup._selected;
+      if (sel >= 0 && sel < items.length) {
+        activePopup._path.push(sel);
+        activePopup._showing = 'response';
+        renderBavaPopup(activePopup);
+        msg = 'bava-select';
+      }
+    } else {
+      var node = getBavaNode(activePopup._path);
+      if (node && node.children && node.children.length > 0) {
+        activePopup._showing = 'menu';
+        activePopup._selected = 0;
+        renderBavaPopup(activePopup);
+        msg = 'bava-children';
+      } else {
+        // no children — Z does nothing, only X goes back
+        msg = 'bava-end';
+      }
+    }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
-    if (storedSecrets.length > 0 && triggerMessages[nearTrigger.key].indexOf('>>') === 0) {
+    if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
+      showBavaDialog();
+      msg = 'bava-dialog';
+    } else if (triggerMessages[nearTrigger.key] === 'maps') {
+      closePopup();
+      window.parent.postMessage({ type: 'hyvmind-nav', target: 'maps' }, '*');
+      navPaused = true;
+      navPauseTick = 0;
+      msg = 'nav:maps';
+    } else if (storedSecrets.length > 0 && triggerMessages[nearTrigger.key].indexOf('>>') === 0) {
       showSecretsMenu();
       activeMenu = 'secrets';
     } else {

@@ -1,5 +1,5 @@
 /**
- * Isometric Perlin terrain artwork generator using native Canvas API.
+ * Isometric / top-down Perlin terrain artwork generator using native Canvas API.
  * Deterministically seeded by curation name via FNV-1a hash + LCG PRNG.
  * Outputs JPEG data URL and the TerrainParams used to produce it.
  */
@@ -21,6 +21,7 @@ export interface TerrainParams {
   lightPosition: number;
   lightHeight: number;
   light: number;
+  projection: "isometric" | "topdown";
 }
 
 // ---------------------------------------------------------------------------
@@ -445,9 +446,24 @@ function drawBorder(
 export async function generateTerrainArtwork(
   curationName: string,
   size: "thumbnail" | "full",
+  projection: "isometric" | "topdown" = "topdown",
 ): Promise<{ dataUrl: string; params: TerrainParams }> {
-  const canvasWidth = size === "full" ? 865 : 433;
-  const canvasHeight = size === "full" ? 690 : 345;
+  const canvasWidth =
+    size === "full"
+      ? projection === "topdown"
+        ? 500
+        : 865
+      : projection === "topdown"
+        ? 250
+        : 433;
+  const canvasHeight =
+    size === "full"
+      ? projection === "topdown"
+        ? 500
+        : 690
+      : projection === "topdown"
+        ? 250
+        : 345;
   const gridWidth = 100;
   const gridHeight = 100;
 
@@ -485,6 +501,7 @@ export async function generateTerrainArtwork(
         lightPosition,
         lightHeight,
         light,
+        projection,
       },
     };
   }
@@ -508,21 +525,14 @@ export async function generateTerrainArtwork(
         lightPosition,
         lightHeight,
         light,
+        projection,
       },
     };
   }
 
-  // Background fill (transparent)
-  ctx.fillStyle = "rgba(0,0,0,0)";
+  // Background fill
+  ctx.fillStyle = projection === "topdown" ? "#2a4a6a" : "rgba(0,0,0,0)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-  // Scale canvas for thumbnail
-  if (size === "thumbnail") {
-    ctx.scale(0.5, 0.5);
-  }
-
-  // Translate origin as specified
-  ctx.translate(382, 50);
 
   // Generate noise map — use a fresh PRNG seeded from params for reproducibility
   const noisePrng = new SeedablePRNG(seed ^ 0xdeadbeef);
@@ -572,298 +582,367 @@ export async function generateTerrainArtwork(
     lightPosition,
     lightHeight,
     light,
+    projection,
   };
 
-  const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
+  if (projection === "topdown") {
+    // Top-down rendering: simple colored rectangles for each tile
+    const tileSize = canvasWidth / gridWidth;
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        const h = elevationMap[y][x];
+        const isWater = h < waterLevel;
+        if (isWater) {
+          const depth = waterLevel - h;
+          const b = Math.min(255, Math.round(180 + depth * 0.4));
+          ctx.fillStyle = `rgb(40, 80, ${b})`;
+        } else {
+          // Elevation-based green/brown coloring
+          const elevationRatio = (h - waterLevel) / (255 - waterLevel);
+          const r = Math.min(255, Math.round(80 + elevationRatio * 120));
+          const g = Math.min(255, Math.round(160 - elevationRatio * 60));
+          const b = Math.min(255, Math.round(40 + elevationRatio * 40));
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        }
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+      }
+    }
+    // Simple water edge outline
+    ctx.strokeStyle = "rgba(30,60,100,0.3)";
+    ctx.lineWidth = 0.5;
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        if (elevationMap[y][x] < waterLevel) continue;
+        const neighbors = [
+          [x - 1, y],
+          [x + 1, y],
+          [x, y - 1],
+          [x, y + 1],
+        ];
+        for (const [nx, ny] of neighbors) {
+          if (
+            nx < 0 ||
+            nx >= gridWidth ||
+            ny < 0 ||
+            ny >= gridHeight ||
+            elevationMap[ny][nx] < waterLevel
+          ) {
+            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
 
-  // Render tiles — back to front (painter's algorithm)
-  for (let y = 0; y < gridHeight; y++) {
-    for (let x = 0; x < gridWidth; x++) {
-      const mapvalue0 = elevationMap[y][x];
-      const mapvalue1 = elevationMap[y][x + 1];
-      const mapvalue2 = elevationMap[y + 1][x];
-      const mapvalue3 = elevationMap[y + 1][x + 1];
+    // Scale canvas for thumbnail
+    if (size === "thumbnail") {
+      ctx.scale(0.5, 0.5);
+    }
 
-      // Convert to normalized perlin range for height in coordToPixel
-      const p0 = toPerlin(mapvalue0);
-      const p1 = toPerlin(mapvalue1);
-      const p2 = toPerlin(mapvalue2);
-      const p3 = toPerlin(mapvalue3);
+    // Translate origin as specified
+    ctx.translate(382, 50);
 
-      const terrainAverageHeight =
-        (mapvalue0 + mapvalue1 + mapvalue2 + mapvalue3) / 4;
-      const terrainHighestHeight = Math.max(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3,
-      );
-      const terrainLowestHeight = Math.min(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3,
-      );
+    // Render tiles — back to front (painter's algorithm)
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        const mapvalue0 = elevationMap[y][x];
+        const mapvalue1 = elevationMap[y][x + 1];
+        const mapvalue2 = elevationMap[y + 1][x];
+        const mapvalue3 = elevationMap[y + 1][x + 1];
 
-      const slopeValues = calculateSlopeDirection(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3,
-      );
+        // Convert to normalized perlin range for height in coordToPixel
+        const p0 = toPerlin(mapvalue0);
+        const p1 = toPerlin(mapvalue1);
+        const p2 = toPerlin(mapvalue2);
+        const p3 = toPerlin(mapvalue3);
 
-      if (terrainHighestHeight < waterLevel) {
-        // Fully underwater
-        drawTile(
-          ctx,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          true,
-          x,
-          y,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light,
+        const terrainAverageHeight =
+          (mapvalue0 + mapvalue1 + mapvalue2 + mapvalue3) / 4;
+        const terrainHighestHeight = Math.max(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3,
         );
-      } else if (terrainLowestHeight >= waterLevel) {
-        // Fully above water
-        drawTile(
-          ctx,
-          p0,
-          p1,
-          p2,
-          p3,
-          false,
-          x,
-          y,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light,
+        const terrainLowestHeight = Math.min(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3,
         );
-      } else {
-        // Mixed cell: dynamic coastline implementation
-        const slope1 = mapvalue1 - mapvalue0;
-        const slope2 = mapvalue2 - mapvalue0;
-        const slope3 = mapvalue3 - mapvalue1;
-        const slope4 = mapvalue3 - mapvalue2;
 
-        const b1 = mapvalue0 - slope1 * x;
-        const b2 = mapvalue0 - slope2 * y;
-        const b3 = mapvalue1 - slope3 * y;
-        const b4 = mapvalue2 - slope4 * x;
+        const slopeValues = calculateSlopeDirection(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3,
+        );
 
-        const x1 =
-          slope1 !== 0 ? (waterLevel - b1) / slope1 : Number.NEGATIVE_INFINITY;
-        const y1 =
-          slope2 !== 0 ? (waterLevel - b2) / slope2 : Number.NEGATIVE_INFINITY;
-        const y2 =
-          slope3 !== 0 ? (waterLevel - b3) / slope3 : Number.NEGATIVE_INFINITY;
-        const x2 =
-          slope4 !== 0 ? (waterLevel - b4) / slope4 : Number.NEGATIVE_INFINITY;
-
-        type Vertex = [number, number, number];
-        const vertexList: Vertex[] = [];
-        const tileList: Vertex[] = [];
-        const tileList2: Vertex[] = [];
-
-        // Corner 0: (x, y)
-        if (mapvalue0 >= waterLevel) {
-          tileList2.push([x, y, toPerlin(mapvalue0)]);
+        if (terrainHighestHeight < waterLevel) {
+          // Fully underwater
+          drawTile(
+            ctx,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            true,
+            x,
+            y,
+            terrainAverageHeight,
+            terrainHighestHeight,
+            slopeValues,
+            waterLevel,
+            beachSize,
+            lightPosition,
+            lightHeight,
+            light,
+          );
+        } else if (terrainLowestHeight >= waterLevel) {
+          // Fully above water
+          drawTile(
+            ctx,
+            p0,
+            p1,
+            p2,
+            p3,
+            false,
+            x,
+            y,
+            terrainAverageHeight,
+            terrainHighestHeight,
+            slopeValues,
+            waterLevel,
+            beachSize,
+            lightPosition,
+            lightHeight,
+            light,
+          );
         } else {
-          tileList.push([x, y, toPerlin(mapvalue0)]);
-          vertexList.push([x, y, perlinWaterLevel]);
-        }
-        // Edge 0->1 (top edge)
-        if (mapvalue0 >= waterLevel !== mapvalue1 >= waterLevel) {
-          vertexList.push([x1, y, perlinWaterLevel]);
-          tileList.push([x1, y, perlinWaterLevel]);
-          tileList2.push([x1, y, perlinWaterLevel]);
-        }
-        // Corner 1: (x+1, y)
-        if (mapvalue1 >= waterLevel) {
-          tileList2.push([x + 1, y, toPerlin(mapvalue1)]);
-        } else {
-          tileList.push([x + 1, y, toPerlin(mapvalue1)]);
-          vertexList.push([x + 1, y, perlinWaterLevel]);
-        }
-        // Edge 1->3 (right edge)
-        if (mapvalue1 >= waterLevel !== mapvalue3 >= waterLevel) {
-          vertexList.push([x + 1, y2, perlinWaterLevel]);
-          tileList.push([x + 1, y2, perlinWaterLevel]);
-          tileList2.push([x + 1, y2, perlinWaterLevel]);
-        }
-        // Corner 3: (x+1, y+1)
-        if (mapvalue3 >= waterLevel) {
-          tileList2.push([x + 1, y + 1, toPerlin(mapvalue3)]);
-        } else {
-          tileList.push([x + 1, y + 1, toPerlin(mapvalue3)]);
-          vertexList.push([x + 1, y + 1, perlinWaterLevel]);
-        }
-        // Edge 3->2 (bottom edge)
-        if (mapvalue3 >= waterLevel !== mapvalue2 >= waterLevel) {
-          vertexList.push([x2, y + 1, perlinWaterLevel]);
-          tileList.push([x2, y + 1, perlinWaterLevel]);
-          tileList2.push([x2, y + 1, perlinWaterLevel]);
-        }
-        // Corner 2: (x, y+1)
-        if (mapvalue2 >= waterLevel) {
-          tileList2.push([x, y + 1, toPerlin(mapvalue2)]);
-        } else {
-          tileList.push([x, y + 1, toPerlin(mapvalue2)]);
-          vertexList.push([x, y + 1, perlinWaterLevel]);
-        }
-        // Edge 2->0 (left edge)
-        if (mapvalue2 >= waterLevel !== mapvalue0 >= waterLevel) {
-          vertexList.push([x, y1, perlinWaterLevel]);
-          tileList.push([x, y1, perlinWaterLevel]);
-          tileList2.push([x, y1, perlinWaterLevel]);
-        }
+          // Mixed cell: dynamic coastline implementation
+          const slope1 = mapvalue1 - mapvalue0;
+          const slope2 = mapvalue2 - mapvalue0;
+          const slope3 = mapvalue3 - mapvalue1;
+          const slope4 = mapvalue3 - mapvalue2;
 
-        function drawPolygon(
-          verts: Vertex[],
-          isWater: boolean,
-          avgHeight: number,
-        ): void {
-          if (verts.length < 3) return;
-          const pixels = verts.map(([cx, cy, ch]) => coordToPixel(cx, cy, ch));
-          let color: [number, number, number, number];
-          if (isWater) {
-            color = waterColorLookup(
-              waterLevel - avgHeight,
-              waterLevel,
-              lightHeight,
-            );
+          const b1 = mapvalue0 - slope1 * x;
+          const b2 = mapvalue0 - slope2 * y;
+          const b3 = mapvalue1 - slope3 * y;
+          const b4 = mapvalue2 - slope4 * x;
+
+          const x1 =
+            slope1 !== 0
+              ? (waterLevel - b1) / slope1
+              : Number.NEGATIVE_INFINITY;
+          const y1 =
+            slope2 !== 0
+              ? (waterLevel - b2) / slope2
+              : Number.NEGATIVE_INFINITY;
+          const y2 =
+            slope3 !== 0
+              ? (waterLevel - b3) / slope3
+              : Number.NEGATIVE_INFINITY;
+          const x2 =
+            slope4 !== 0
+              ? (waterLevel - b4) / slope4
+              : Number.NEGATIVE_INFINITY;
+
+          type Vertex = [number, number, number];
+          const vertexList: Vertex[] = [];
+          const tileList: Vertex[] = [];
+          const tileList2: Vertex[] = [];
+
+          // Corner 0: (x, y)
+          if (mapvalue0 >= waterLevel) {
+            tileList2.push([x, y, toPerlin(mapvalue0)]);
           } else {
-            color = terrainColorLookup(
-              terrainAverageHeight,
-              slopeValues[0],
-              slopeValues[1],
-              slopeValues[2],
+            tileList.push([x, y, toPerlin(mapvalue0)]);
+            vertexList.push([x, y, perlinWaterLevel]);
+          }
+          // Edge 0->1 (top edge)
+          if (mapvalue0 >= waterLevel !== mapvalue1 >= waterLevel) {
+            vertexList.push([x1, y, perlinWaterLevel]);
+            tileList.push([x1, y, perlinWaterLevel]);
+            tileList2.push([x1, y, perlinWaterLevel]);
+          }
+          // Corner 1: (x+1, y)
+          if (mapvalue1 >= waterLevel) {
+            tileList2.push([x + 1, y, toPerlin(mapvalue1)]);
+          } else {
+            tileList.push([x + 1, y, toPerlin(mapvalue1)]);
+            vertexList.push([x + 1, y, perlinWaterLevel]);
+          }
+          // Edge 1->3 (right edge)
+          if (mapvalue1 >= waterLevel !== mapvalue3 >= waterLevel) {
+            vertexList.push([x + 1, y2, perlinWaterLevel]);
+            tileList.push([x + 1, y2, perlinWaterLevel]);
+            tileList2.push([x + 1, y2, perlinWaterLevel]);
+          }
+          // Corner 3: (x+1, y+1)
+          if (mapvalue3 >= waterLevel) {
+            tileList2.push([x + 1, y + 1, toPerlin(mapvalue3)]);
+          } else {
+            tileList.push([x + 1, y + 1, toPerlin(mapvalue3)]);
+            vertexList.push([x + 1, y + 1, perlinWaterLevel]);
+          }
+          // Edge 3->2 (bottom edge)
+          if (mapvalue3 >= waterLevel !== mapvalue2 >= waterLevel) {
+            vertexList.push([x2, y + 1, perlinWaterLevel]);
+            tileList.push([x2, y + 1, perlinWaterLevel]);
+            tileList2.push([x2, y + 1, perlinWaterLevel]);
+          }
+          // Corner 2: (x, y+1)
+          if (mapvalue2 >= waterLevel) {
+            tileList2.push([x, y + 1, toPerlin(mapvalue2)]);
+          } else {
+            tileList.push([x, y + 1, toPerlin(mapvalue2)]);
+            vertexList.push([x, y + 1, perlinWaterLevel]);
+          }
+          // Edge 2->0 (left edge)
+          if (mapvalue2 >= waterLevel !== mapvalue0 >= waterLevel) {
+            vertexList.push([x, y1, perlinWaterLevel]);
+            tileList.push([x, y1, perlinWaterLevel]);
+            tileList2.push([x, y1, perlinWaterLevel]);
+          }
+
+          function drawPolygon(
+            verts: Vertex[],
+            isWater: boolean,
+            avgHeight: number,
+          ): void {
+            if (verts.length < 3) return;
+            const pixels = verts.map(([cx, cy, ch]) =>
+              coordToPixel(cx, cy, ch),
+            );
+            let color: [number, number, number, number];
+            if (isWater) {
+              color = waterColorLookup(
+                waterLevel - avgHeight,
+                waterLevel,
+                lightHeight,
+              );
+            } else {
+              color = terrainColorLookup(
+                terrainAverageHeight,
+                slopeValues[0],
+                slopeValues[1],
+                slopeValues[2],
+                waterLevel,
+                beachSize,
+                lightPosition,
+                lightHeight,
+                light,
+              );
+            }
+            ctx!.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${color[3] / 255})`;
+            ctx!.beginPath();
+            ctx!.moveTo(pixels[0][0], pixels[0][1]);
+            for (let i = 1; i < pixels.length; i++) {
+              ctx!.lineTo(pixels[i][0], pixels[i][1]);
+            }
+            ctx!.closePath();
+            ctx!.fill();
+            if (!isWater) {
+              ctx!.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},0.5)`;
+              ctx!.lineWidth = 1;
+              ctx!.stroke();
+            }
+          }
+
+          // Draw above-water terrain
+          drawPolygon(tileList2, false, terrainAverageHeight);
+          // Draw below-water terrain
+          drawPolygon(tileList, false, terrainAverageHeight);
+          // Draw water surface
+          drawPolygon(vertexList, true, terrainAverageHeight);
+
+          // Water borders for mixed cells at grid edges
+          if (
+            y === gridHeight - 2 &&
+            (mapvalue2 < waterLevel || mapvalue3 < waterLevel)
+          ) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue2),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+              x,
+              y + 1,
+              x + 1,
+              y + 1,
+              true,
               waterLevel,
-              beachSize,
-              lightPosition,
               lightHeight,
               light,
             );
           }
-          ctx!.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${color[3] / 255})`;
-          ctx!.beginPath();
-          ctx!.moveTo(pixels[0][0], pixels[0][1]);
-          for (let i = 1; i < pixels.length; i++) {
-            ctx!.lineTo(pixels[i][0], pixels[i][1]);
+          if (
+            x === gridWidth - 2 &&
+            (mapvalue1 < waterLevel || mapvalue3 < waterLevel)
+          ) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue1),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+              x + 1,
+              y,
+              x + 1,
+              y + 1,
+              false,
+              waterLevel,
+              lightHeight,
+              light,
+            );
           }
-          ctx!.closePath();
-          ctx!.fill();
-          if (!isWater) {
-            ctx!.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},0.5)`;
-            ctx!.lineWidth = 1;
-            ctx!.stroke();
+        }
+
+        // Side borders on last rows/cols
+        if (y === gridHeight - 2) {
+          if (mapvalue2 > 0 || mapvalue3 > 0) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue2),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+              x,
+              y + 1,
+              x + 1,
+              y + 1,
+              true,
+              waterLevel,
+              lightHeight,
+              light,
+            );
           }
         }
-
-        // Draw above-water terrain
-        drawPolygon(tileList2, false, terrainAverageHeight);
-        // Draw below-water terrain
-        drawPolygon(tileList, false, terrainAverageHeight);
-        // Draw water surface
-        drawPolygon(vertexList, true, terrainAverageHeight);
-
-        // Water borders for mixed cells at grid edges
-        if (
-          y === gridHeight - 2 &&
-          (mapvalue2 < waterLevel || mapvalue3 < waterLevel)
-        ) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue2),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
-            x,
-            y + 1,
-            x + 1,
-            y + 1,
-            true,
-            waterLevel,
-            lightHeight,
-            light,
-          );
-        }
-        if (
-          x === gridWidth - 2 &&
-          (mapvalue1 < waterLevel || mapvalue3 < waterLevel)
-        ) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue1),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
-            x + 1,
-            y,
-            x + 1,
-            y + 1,
-            false,
-            waterLevel,
-            lightHeight,
-            light,
-          );
-        }
-      }
-
-      // Side borders on last rows/cols
-      if (y === gridHeight - 2) {
-        if (mapvalue2 > 0 || mapvalue3 > 0) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue2),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
-            x,
-            y + 1,
-            x + 1,
-            y + 1,
-            true,
-            waterLevel,
-            lightHeight,
-            light,
-          );
-        }
-      }
-      if (x === gridWidth - 2) {
-        if (mapvalue1 > 0 || mapvalue3 > 0) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue1),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
-            x + 1,
-            y,
-            x + 1,
-            y + 1,
-            false,
-            waterLevel,
-            lightHeight,
-            light,
-          );
+        if (x === gridWidth - 2) {
+          if (mapvalue1 > 0 || mapvalue3 > 0) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue1),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+              x + 1,
+              y,
+              x + 1,
+              y + 1,
+              false,
+              waterLevel,
+              lightHeight,
+              light,
+            );
+          }
         }
       }
     }

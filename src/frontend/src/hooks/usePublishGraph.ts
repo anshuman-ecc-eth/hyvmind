@@ -223,6 +223,7 @@ export function usePublishGraph() {
               const { dataUrl, params } = await generateTerrainArtwork(
                 graphName,
                 "full",
+                "topdown",
               );
               if (dataUrl && actorRef) {
                 await (actorRef as backendInterface).updateSourceGraphArtwork(
