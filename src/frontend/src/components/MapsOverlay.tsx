@@ -53,11 +53,11 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
   }, []);
 
   const publishedTerrains: TerrainItem[] = (metas ?? [])
-    .filter((m) => m.artworkDataUrl?.[0] && m.artworkDataUrl[0].length > 0)
+    .filter((m) => m.artworkDataUrl && m.artworkDataUrl.length > 0)
     .map((m) => ({
       id: m.id,
       name: m.name,
-      artworkUrl: m.artworkDataUrl![0],
+      artworkUrl: m.artworkDataUrl!,
     }));
 
   const allTerrains = [...testMaps, ...publishedTerrains];
