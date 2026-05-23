@@ -447,14 +447,6 @@ var STARTUP_SENTENCES = [
   'And turns it into water for the Sanctuary.'
 ];
 
-var WELCOME_SENTENCES = [
-  'Welcome.',
-  'You have found a way out of the Walled Gardens.',
-  "Don't mind the Well.",
-  'It collects the anger of trapped researchers.',
-  'And turns it into water for the Sanctuary.'
-];
-
 var BAVA_TREE = [
   { q: "Who are you?", r: "I'm Bava, keeper of Hyvmind." },
   { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
@@ -956,9 +948,6 @@ function activateZ() {
     if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
       showBavaDialog();
       msg = 'bava-dialog';
-    } else if (triggerMessages[nearTrigger.key] === '@welcome-narrative') {
-      showSequentialPopup(WELCOME_SENTENCES, 'welcome');
-      msg = 'welcome-narrative';
     } else if (triggerMessages[nearTrigger.key] === 'maps') {
       closePopup();
       window.parent.postMessage({ type: 'hyvmind-nav', target: 'maps' }, '*');
@@ -969,7 +958,19 @@ function activateZ() {
       showSecretsMenu();
       activeMenu = 'secrets';
     } else {
-      showPopup(triggerMessages[nearTrigger.key]);
+      var parts = triggerMessages[nearTrigger.key].split('\n');
+      if (parts.length < 2) {
+        parts = triggerMessages[nearTrigger.key].split(/\. +/);
+        if (parts.length > 1) {
+          for (var pi = 0; pi < parts.length - 1; pi++) parts[pi] = parts[pi].trim() + '.';
+          parts[parts.length - 1] = parts[parts.length - 1].trim();
+        }
+      }
+      if (parts.length > 1) {
+        showSequentialPopup(parts, 'welcome');
+      } else {
+        showPopup(triggerMessages[nearTrigger.key]);
+      }
     }
     msg = 'trigger:' + triggerMessages[nearTrigger.key];
   } else {
