@@ -179,8 +179,9 @@ window.addEventListener('message', function(e) {
     isGenerating = true;
     activeMenu = 'loading';
     closePopup();
-    var pop = document.createElement('div');
-    pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  var pop = document.createElement('div');
+  if (nearTrigger) pop._dismissKey = 'trigger:' + nearTrigger.key;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
     pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -430,6 +431,7 @@ function showDoorPopup(label) {
   var pop = document.createElement('div');
   pop._type = 'door';
   pop._label = label;
+  if (nearDoor) pop._dismissKey = 'door:' + nearDoor.key;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
   var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
@@ -437,8 +439,8 @@ function showDoorPopup(label) {
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
-var popupDismissedAt = 0;
-function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; popupDismissedAt = Date.now(); } }
+var popupDismissedAt = {};
+function closePopup() { if (activePopup) { var k = activePopup._dismissKey; activePopup.remove(); activePopup = null; if (k) popupDismissedAt[k] = Date.now(); } }
 function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
 
 var STARTUP_SENTENCES = [
@@ -978,7 +980,7 @@ function activateZ() {
       }
     }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
-    if (Date.now() - popupDismissedAt < 5000) { showDefaultPopup(); msg = 'cooldown'; }
+    if (Date.now() - (popupDismissedAt['trigger:' + nearTrigger.key] || 0) < 5000) { showDefaultPopup(); msg = 'cooldown'; }
     else if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
       showBavaDialog();
       msg = 'bava-dialog';
@@ -1076,7 +1078,7 @@ function render() {
   }
   if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
     // keep popup visible
-  } else if (nearDoor && !doorDismissed && Date.now() - popupDismissedAt > 5000) {
+  } else if (nearDoor && !doorDismissed && Date.now() - (popupDismissedAt['door:' + nearDoor.key] || 0) > 5000) {
     showDoorPopup(doorLabel);
   } else {
     closeDoorPopup();
