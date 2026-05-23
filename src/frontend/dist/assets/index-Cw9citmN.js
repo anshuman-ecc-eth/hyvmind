@@ -98423,33 +98423,40 @@ function AboutOverlay({ onBack }) {
     return () => window.removeEventListener("keydown", handler);
   }, [advance, isLast, onBack]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-6 py-4 rounded", style: { background: "#000" }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "p",
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
       {
-        className: "text-foreground text-center leading-relaxed",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.7em",
-          letterSpacing: "0.05em",
-          lineHeight: "2",
-          fontWeight: "400"
-        },
+        className: "px-6 py-4 rounded",
+        style: { background: "rgba(0,0,0,0.7)" },
         children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-          TextType,
+          "p",
           {
-            text: lines[step],
-            typingSpeed: 25,
-            showCursor: true,
-            hideCursorWhileTyping: true,
-            cursorCharacter: "█",
-            cursorBlinkDuration: 0.4,
-            loop: false,
-            onSentenceComplete: () => setDone(true)
-          },
-          step
+            className: "text-foreground text-center leading-relaxed",
+            style: {
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.7em",
+              letterSpacing: "0.05em",
+              lineHeight: "2",
+              fontWeight: "400"
+            },
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+              TextType,
+              {
+                text: lines[step],
+                typingSpeed: 25,
+                showCursor: true,
+                hideCursorWhileTyping: true,
+                cursorCharacter: "█",
+                cursorBlinkDuration: 0.4,
+                loop: false,
+                onSentenceComplete: () => setDone(true)
+              },
+              step
+            )
+          }
         )
       }
-    ) }),
+    ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "div",
@@ -98459,7 +98466,7 @@ function AboutOverlay({ onBack }) {
             fontSize: "11px",
             color: "#7ab0c0",
             letterSpacing: "0.5px",
-            background: "#000",
+            background: "rgba(0,0,0,0.7)",
             padding: "6px 14px",
             borderRadius: "2px"
           },
