@@ -33,8 +33,9 @@
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
 
-  /* ── Tablet/small desktop (601-1024px): overridden by fitLayout JS — kept for reference ── */
+  /* ── Tablet/small desktop (601-1024px): flex layout ── */
   @media (max-width: 1024px) and (min-width: 601px) {
+    .layout { width: auto; }
     .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 550/480; }
     .dpad-btn { border-radius: 4px; }
   }
@@ -1293,7 +1294,7 @@ function fitLayout() {
   var screen = document.querySelector('.screen');
   var dpad = document.querySelector('.dpad');
   var actions = document.querySelector('.action-buttons');
-  if (w <= 1024) {
+  if (w <= 600) {
     layout.style.cssText = 'display:block;position:relative;width:100%;height:100%;background:rgba(0,0,0,0.7);';
     screen.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;aspect-ratio:auto;';
     dpad.style.cssText = 'position:absolute;bottom:14px;left:10px;width:150px;height:150px;z-index:10;';
