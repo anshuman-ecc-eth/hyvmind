@@ -893,8 +893,8 @@ function StartScreen({
           onReady={() => setBeeReady(true)}
         />
       )}
-      {!beeReady && subMenu === "main" && (
-        <div className="absolute inset-0 flex items-center justify-center z-20">
+      {subMenu === "main" && !beeReady && (
+        <div className="flex items-center justify-center min-h-0">
           <div className="flex gap-[2px]">
             {Array.from({ length: 16 }).map((_, i) => {
               const id = `bee-loading-${i}`;
@@ -914,166 +914,166 @@ function StartScreen({
           </div>
         </div>
       )}
-      {/* Content box — flat, no card */}
-      <div className="flex flex-col items-center" data-zone="content">
-        {/* Title / Puzzles heading */}
-        {subMenu === "main" ? (
-          <>
-            <div className="flex flex-col items-center gap-3">
-              <PixelTransition
-                firstContent={
-                  <div
-                    className="text-white tracking-widest"
-                    style={{
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "2em",
-                      lineHeight: 1,
-                      letterSpacing: "0.05em",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    aria-label="HYVMIND"
-                  >
-                    <span>H</span>
-                    <span
-                      ref={yRef}
+      {(subMenu !== "main" || beeReady) && (
+        <div className="flex flex-col items-center" data-zone="content">
+          {subMenu === "main" ? (
+            <>
+              <div className="flex flex-col items-center gap-3">
+                <PixelTransition
+                  firstContent={
+                    <div
+                      className="text-white tracking-widest"
                       style={{
-                        fontSize: "1.25em",
-                        verticalAlign: "middle",
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "2em",
                         lineHeight: 1,
+                        letterSpacing: "0.05em",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                      aria-label="HYVMIND"
+                    >
+                      <span>H</span>
+                      <span
+                        ref={yRef}
+                        style={{
+                          fontSize: "1.25em",
+                          verticalAlign: "middle",
+                          lineHeight: 1,
+                        }}
+                      >
+                        Y
+                      </span>
+                      <span>V</span>
+                      <span>M</span>
+                      <span>I</span>
+                      <span>N</span>
+                      <span>D</span>
+                    </div>
+                  }
+                  secondContent={
+                    <div
+                      className="text-neutral-400"
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.65em",
+                        letterSpacing: "0.05em",
+                        textAlign: "center",
+                        lineHeight: 1.6,
                       }}
                     >
-                      Y
-                    </span>
-                    <span>V</span>
-                    <span>M</span>
-                    <span>I</span>
-                    <span>N</span>
-                    <span>D</span>
-                  </div>
-                }
-                secondContent={
-                  <div
-                    className="text-neutral-400"
-                    style={{
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
-                      letterSpacing: "0.05em",
-                      textAlign: "center",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    <div style={{ whiteSpace: "nowrap" }}>
-                      a digital sanctuary
+                      <div style={{ whiteSpace: "nowrap" }}>
+                        a digital sanctuary
+                      </div>
+                      <div style={{ whiteSpace: "nowrap" }}>
+                        for legal researchers
+                      </div>
                     </div>
-                    <div style={{ whiteSpace: "nowrap" }}>
-                      for legal researchers
-                    </div>
-                  </div>
-                }
-                pixelColor="#ffffff"
-                pixelSize={6}
-                animationStepDuration={0.3}
-              />
-            </div>
-          </>
-        ) : (
-          <div
-            className="text-white tracking-widest"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "1em",
-              letterSpacing: "0.15em",
-            }}
-          >
-            "Sanctuary"
-          </div>
-        )}
-
-        {/* Menu */}
-        <div className="flex flex-col items-center gap-1.5 mt-6">
-          {subMenu === "main"
-            ? MENU_ITEMS.map((item, activeIdx) => {
-                const isSelected = activeIdx === selectedIdx;
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
-                    style={{
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
-                      letterSpacing: "0.2em",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "0",
-                    }}
-                    onClick={() => {
-                      setSelectedIdx(activeIdx);
-                      if (item === "Enter World") onEnter();
-                      else if (item === "Go to App") onExit();
-                      else if (item === "Credits") onCredits();
-                    }}
-                  >
-                    {isSelected ? `> ${item}` : `  ${item}`}
-                  </button>
-                );
-              })
-            : LEFT_MENU_ITEMS.map((item, activeIdx) => {
-                const isSelected = activeIdx === leftSelectedIdx;
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
-                    className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
-                    style={{
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
-                      letterSpacing: "0.2em",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "0",
-                    }}
-                    onClick={() => {
-                      setLeftSelectedIdx(activeIdx);
-                      if (item === "Story") onStart();
-                      else if (item === "Settings") onSettings();
-                      else if (item === "Back") setSubMenu("main");
-                    }}
-                  >
-                    {isSelected ? `> ${item}` : `  ${item}`}
-                  </button>
-                );
-              })}
-        </div>
-        {showScoreConfirmation && (
-          <div
-            className="text-white text-center mt-4"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5em",
-              letterSpacing: "0.1em",
-            }}
-          >
-            <div className="mb-2">SCORE SAVED!</div>
-            <div className="text-yellow-500 mb-2">BUZZ CODE GENERATED</div>
-            <button
-              type="button"
-              className="mt-3 text-neutral-400 hover:text-white text-xs"
-              onClick={() => {
-                setShowScoreConfirmation?.(false);
-                setSecretCode?.(null);
+                  }
+                  pixelColor="#ffffff"
+                  pixelSize={6}
+                  animationStepDuration={0.3}
+                />
+              </div>
+            </>
+          ) : (
+            <div
+              className="text-white tracking-widest"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1em",
+                letterSpacing: "0.15em",
               }}
             >
-              [DISMISS]
-            </button>
+              "Sanctuary"
+            </div>
+          )}
+
+          {/* Menu */}
+          <div className="flex flex-col items-center gap-1.5 mt-6">
+            {subMenu === "main"
+              ? MENU_ITEMS.map((item, activeIdx) => {
+                  const isSelected = activeIdx === selectedIdx;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
+                      className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.65em",
+                        letterSpacing: "0.2em",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0",
+                      }}
+                      onClick={() => {
+                        setSelectedIdx(activeIdx);
+                        if (item === "Enter World") onEnter();
+                        else if (item === "Go to App") onExit();
+                        else if (item === "Credits") onCredits();
+                      }}
+                    >
+                      {isSelected ? `> ${item}` : `  ${item}`}
+                    </button>
+                  );
+                })
+              : LEFT_MENU_ITEMS.map((item, activeIdx) => {
+                  const isSelected = activeIdx === leftSelectedIdx;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
+                      className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.65em",
+                        letterSpacing: "0.2em",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0",
+                      }}
+                      onClick={() => {
+                        setLeftSelectedIdx(activeIdx);
+                        if (item === "Story") onStart();
+                        else if (item === "Settings") onSettings();
+                        else if (item === "Back") setSubMenu("main");
+                      }}
+                    >
+                      {isSelected ? `> ${item}` : `  ${item}`}
+                    </button>
+                  );
+                })}
           </div>
-        )}
-      </div>
+          {showScoreConfirmation && (
+            <div
+              className="text-white text-center mt-4"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.5em",
+                letterSpacing: "0.1em",
+              }}
+            >
+              <div className="mb-2">SCORE SAVED!</div>
+              <div className="text-yellow-500 mb-2">BUZZ CODE GENERATED</div>
+              <button
+                type="button"
+                className="mt-3 text-neutral-400 hover:text-white text-xs"
+                onClick={() => {
+                  setShowScoreConfirmation?.(false);
+                  setSecretCode?.(null);
+                }}
+              >
+                [DISMISS]
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
