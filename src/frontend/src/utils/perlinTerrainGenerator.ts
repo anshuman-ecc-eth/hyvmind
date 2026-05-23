@@ -586,33 +586,60 @@ export async function generateTerrainArtwork(
   };
 
   if (projection === "topdown") {
-    // Top-down rendering: simple colored rectangles for each tile
+    // Top-down rendering with height interpolation, slope-based shading, and rich palette
     const tileSize = canvasWidth / gridWidth;
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
-        const h = elevationMap[y][x];
-        const isWater = h < waterLevel;
+        const h0 = elevationMap[y][x];
+        const h1 = elevationMap[y][x + 1];
+        const h2 = elevationMap[y + 1][x];
+        const h3 = elevationMap[y + 1][x + 1];
+
+        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
+        const terrainHighestHeight = Math.max(h0, h1, h2, h3);
+
+        const isWater = terrainAverageHeight < waterLevel;
+        const [slopeDirection, slopeX, slopeZ] = calculateSlopeDirection(
+          h0,
+          h1,
+          h2,
+          h3,
+        );
+
+        let color: [number, number, number, number];
         if (isWater) {
-          const depth = waterLevel - h;
-          const b = Math.min(255, Math.round(180 + depth * 0.4));
-          ctx.fillStyle = `rgb(40, 80, ${b})`;
+          const depth = waterLevel - terrainAverageHeight;
+          color = waterColorLookup(depth, waterLevel, lightHeight);
         } else {
-          // Elevation-based green/brown coloring
-          const elevationRatio = (h - waterLevel) / (255 - waterLevel);
-          const r = Math.min(255, Math.round(80 + elevationRatio * 120));
-          const g = Math.min(255, Math.round(160 - elevationRatio * 60));
-          const b = Math.min(255, Math.round(40 + elevationRatio * 40));
-          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          color = terrainColorLookup(
+            terrainHighestHeight,
+            slopeDirection,
+            slopeX,
+            slopeZ,
+            waterLevel,
+            beachSize,
+            lightPosition,
+            lightHeight,
+            light,
+          );
         }
+
+        const [r, g, b, a] = color;
+        ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
       }
     }
-    // Simple water edge outline
-    ctx.strokeStyle = "rgba(30,60,100,0.3)";
-    ctx.lineWidth = 0.5;
+    // Water edge outline
+    ctx.strokeStyle = "rgba(30,60,100,0.4)";
+    ctx.lineWidth = 1;
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
-        if (elevationMap[y][x] < waterLevel) continue;
+        const h0 = elevationMap[y][x];
+        const h1 = elevationMap[y][x + 1];
+        const h2 = elevationMap[y + 1][x];
+        const h3 = elevationMap[y + 1][x + 1];
+        const avg = (h0 + h1 + h2 + h3) / 4;
+        if (avg < waterLevel) continue;
         const neighbors = [
           [x - 1, y],
           [x + 1, y],
@@ -620,13 +647,16 @@ export async function generateTerrainArtwork(
           [x, y + 1],
         ];
         for (const [nx, ny] of neighbors) {
-          if (
-            nx < 0 ||
-            nx >= gridWidth ||
-            ny < 0 ||
-            ny >= gridHeight ||
-            elevationMap[ny][nx] < waterLevel
-          ) {
+          if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            break;
+          }
+          const nh0 = elevationMap[ny][nx];
+          const nh1 = elevationMap[ny][nx + 1];
+          const nh2 = elevationMap[ny + 1][nx];
+          const nh3 = elevationMap[ny + 1][nx + 1];
+          const navg = (nh0 + nh1 + nh2 + nh3) / 4;
+          if (navg < waterLevel) {
             ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
             break;
           }
