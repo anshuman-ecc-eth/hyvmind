@@ -450,102 +450,81 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
   }, [onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 select-none px-6">
+    <div className="flex-1 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto select-none">
       <div
         className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.7em" }}
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.9em" }}
       >
         Credits
       </div>
       <div
-        className="flex flex-col items-start gap-3"
+        className="text-muted-foreground text-center"
         style={{
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.45em",
+          fontSize: "0.5em",
           lineHeight: "1.8",
           letterSpacing: "0.05em",
-          maxWidth: "320px",
         }}
       >
-        <span>forest.mp3 — BGM</span>
-        <a
-          href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground hover:text-muted-foreground underline"
-          style={{ fontSize: "0.9em" }}
-        >
-          syncopika
-        </a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
-          CC-BY 3.0
-        </span>
+        Thanks to the following artists for making this project possible:
+      </div>
+      <div
+        className="flex flex-col items-start gap-4 w-full max-w-md"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7em",
+          lineHeight: "1.8",
+          letterSpacing: "0.05em",
+        }}
+      >
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">forest.mp3 — BGM</span>
+          <a
+            href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+          >
+            syncopika
+          </a>
+          <span className="text-muted-foreground">CC-BY 3.0</span>
+        </div>
 
-        <div
-          style={{
-            height: "2px",
-            width: "100%",
-            background: "var(--border)",
-            opacity: 0.3,
-            margin: "2px 0",
-          }}
-        />
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">bottom.png — world tiles</span>
+          <a
+            href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+          >
+            Ivan Voirol
+          </a>
+          <span className="text-muted-foreground">CC-BY 4.0</span>
+        </div>
 
-        <span>bottom.png — world tiles</span>
-        <a
-          href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground hover:text-muted-foreground underline"
-          style={{ fontSize: "0.9em" }}
-        >
-          Ivan Voirol
-        </a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
-          CC-BY 4.0
-        </span>
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">
+            sprites/cultist_*.png — player
+          </span>
+          <span className="text-foreground">Antifarea</span>
+          <span className="text-muted-foreground">CC-BY</span>
+        </div>
 
-        <div
-          style={{
-            height: "2px",
-            width: "100%",
-            background: "var(--border)",
-            opacity: 0.3,
-            margin: "2px 0",
-          }}
-        />
-
-        <span>sprites/cultist_*.png — player</span>
-        <span className="text-foreground" style={{ fontSize: "0.9em" }}>
-          Antifarea
-        </span>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
-          CC-BY
-        </span>
-
-        <div
-          style={{
-            height: "2px",
-            width: "100%",
-            background: "var(--border)",
-            opacity: 0.3,
-            margin: "2px 0",
-          }}
-        />
-
-        <span>crisp-game-lib — mini-game framework</span>
-        <a
-          href="https://github.com/abagames/crisp-game-lib"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground hover:text-muted-foreground underline"
-          style={{ fontSize: "0.9em" }}
-        >
-          abagames
-        </a>
-        <span className="text-muted-foreground" style={{ fontSize: "0.8em" }}>
-          MIT
-        </span>
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">
+            crisp-game-lib — mini-game framework
+          </span>
+          <a
+            href="https://github.com/abagames/crisp-game-lib"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+          >
+            abagames
+          </a>
+          <span className="text-muted-foreground">MIT</span>
+        </div>
       </div>
       <button
         type="button"
@@ -558,7 +537,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           border: "none",
           cursor: "pointer",
           padding: "0",
-          marginTop: "8px",
+          marginTop: "4px",
         }}
         onClick={onBack}
       >
