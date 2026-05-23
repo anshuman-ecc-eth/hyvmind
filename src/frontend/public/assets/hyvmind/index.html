@@ -437,7 +437,8 @@ function showDoorPopup(label) {
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
-function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
+var popupDismissedAt = 0;
+function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; popupDismissedAt = Date.now(); } }
 function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
 
 var STARTUP_SENTENCES = [
@@ -977,7 +978,8 @@ function activateZ() {
       }
     }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
-    if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
+    if (Date.now() - popupDismissedAt < 5000) { showDefaultPopup(); msg = 'cooldown'; }
+    else if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
       showBavaDialog();
       msg = 'bava-dialog';
     } else if (triggerMessages[nearTrigger.key] === 'maps') {
@@ -1074,7 +1076,7 @@ function render() {
   }
   if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
     // keep popup visible
-  } else if (nearDoor && !doorDismissed) {
+  } else if (nearDoor && !doorDismissed && Date.now() - popupDismissedAt > 5000) {
     showDoorPopup(doorLabel);
   } else {
     closeDoorPopup();
