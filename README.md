@@ -31,7 +31,7 @@ A vanilla JS/HTML game (no framework, no canvas — CSS-positioned sprites over 
 A React component (`TextGameModal.tsx`) rendered over the unauthenticated landing page:
 
 - **Narrative**: Branching story about LAI (Legal AI) with player choices across multiple phases
-- **Minigames**: Chess, Wordle, Rebirth, Square Bar, Slalom (via crisp-game-lib)
+- **Minigames**: Chess, Wordle, Up 1 Way, Thunder, Box Snake, Pillars 3D (via crisp-game-lib)
 - **Score tracking**: Puzzle scores auto-accumulate; correct password answers trigger backend canister calls to generate on-chain buzz secrets viewable from the in-game Z popup
 
 ### Assets
@@ -41,7 +41,7 @@ A React component (`TextGameModal.tsx`) rendered over the unauthenticated landin
 | `forest.mp3` — background music | syncopika ([Bandcamp](https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5)) | [CC-BY 3.0](http://creativecommons.org/licenses/by/3.0/) | "syncopika" |
 | `bottom.png` — world tiles | Ivan Voirol ([OpenGameArt](https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol)) | [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) | "Ivan Voirol" |
 | `sprites/cultist_*.png` — player character | Antifarea | CC-BY | "Antifarea" |
-| `crisp-game-lib` — mini-game framework ([Rebirth](src/frontend/public/assets/rebirth.html), [Square Bar](src/frontend/public/assets/squarebar.html), [Slalom](src/frontend/public/assets/slalom.html)) | [abagames](https://github.com/abagames/crisp-game-lib) | MIT | "abagames / crisp-game-lib" |
+| `crisp-game-lib` — mini-game framework ([Up 1 Way](src/frontend/public/assets/games/up1way.html), [Thunder](src/frontend/public/assets/games/thunder.html), [Box Snake](src/frontend/public/assets/games/boxsnake.html), [Pillars 3D](src/frontend/public/assets/games/pillars3d.html)) | [abagames](https://github.com/abagames/crisp-game-lib) | MIT | "abagames / crisp-game-lib" |
 
 ## Collaborative Annotations
 
