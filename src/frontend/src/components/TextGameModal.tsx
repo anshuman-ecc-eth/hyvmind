@@ -2559,8 +2559,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 className="border-0"
                 style={{
                   background: "transparent",
-                  width: "1200px",
-                  height: "800px",
+                  width: "100%",
+                  maxWidth: "1200px",
+                  height: "100%",
+                  maxHeight: "800px",
+                  minHeight: "500px",
                   flexShrink: 0,
                 }}
                 title="HYVMIND"
