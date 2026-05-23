@@ -901,7 +901,10 @@ function StartScreen({
 
       {/* Loading overlay — covers content until bee is perched */}
       {subMenu === "main" && !beeReady && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background">
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-background"
+          style={{ zIndex: 10000 }}
+        >
           <div className="flex gap-[2px]">
             {Array.from({ length: 16 }).map((_, i) => {
               const id = `bee-loading-${i}`;
