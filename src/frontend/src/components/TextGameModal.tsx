@@ -487,7 +487,16 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           >
             syncopika
           </a>
-          <span className="text-muted-foreground">CC-BY 3.0</span>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY 3.0
+          </span>
         </div>
 
         <div className="flex flex-col items-start gap-1 w-full">
@@ -500,7 +509,16 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           >
             Ivan Voirol
           </a>
-          <span className="text-muted-foreground">CC-BY 4.0</span>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY 4.0
+          </span>
         </div>
 
         <div className="flex flex-col items-start gap-1 w-full">
@@ -508,7 +526,16 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
             sprites/cultist_*.png — player
           </span>
           <span className="text-foreground">Antifarea</span>
-          <span className="text-muted-foreground">CC-BY</span>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY
+          </span>
         </div>
 
         <div className="flex flex-col items-start gap-1 w-full">
@@ -523,7 +550,265 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           >
             abagames
           </a>
-          <span className="text-muted-foreground">MIT</span>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              alignSelf: "flex-start",
+            }}
+          >
+            MIT
+          </span>
+        </div>
+
+        <div className="w-full" style={{ height: "4px" }} />
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — body</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert,
+            Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani,
+            Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+          </span>
+          <a
+            href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — head</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener
+            (Redshrike)
+          </span>
+          <a
+            href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — face</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+          </span>
+          <a
+            href="https://github.com/ElizaWy/LPC/tree/main/Characters/Head"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            GitHub (ElizaWy)
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            OGA-BY 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — hat</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames), Tracy
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-celestial-wizard-hats"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — boots</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            JaidynReiman, bluecarrot16, Nila122
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-clothes-and-hair"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — hair</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            Yamilian, bluecarrot16
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-heroine-2"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY-SA 3.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — mustache</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            JaidynReiman, Thane Brimhall (pennomi), laetissima
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-base-character-expressions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY-SA 3.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — vest</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen
+            Challener (Redshrike), Johannes Sjölund (wulax)
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-2-characters"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY-SA 3.0 / GPL 3.0
+          </span>
+        </div>
+
+        <div className="flex flex-col items-start gap-1 w-full">
+          <span className="text-foreground">sprites/bava/ — jacket</span>
+          <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+            bluecarrot16
+          </span>
+          <a
+            href="https://opengameart.org/content/lpc-gentleman"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground underline"
+            style={{ fontSize: "0.85em" }}
+          >
+            OpenGameArt
+          </a>
+          <span
+            className="text-muted-foreground"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "1px 6px",
+              fontSize: "0.7em",
+              alignSelf: "flex-start",
+            }}
+          >
+            CC-BY-SA 3.0 / GPL 3.0
+          </span>
         </div>
       </div>
       <button
