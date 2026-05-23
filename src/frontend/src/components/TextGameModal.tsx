@@ -905,22 +905,34 @@ function StartScreen({
           className="absolute inset-0 flex items-center justify-center bg-background"
           style={{ zIndex: 10000 }}
         >
-          <div className="flex gap-[2px]">
-            {Array.from({ length: 16 }).map((_, i) => {
-              const id = `bee-loading-${i}`;
-              return (
-                <span
-                  key={id}
-                  className="text-foreground"
-                  style={{
-                    fontSize: "0.55em",
-                    animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
-                  }}
-                >
-                  █
-                </span>
-              );
-            })}
+          <div className="flex flex-col items-center justify-center gap-4">
+            <span
+              className="text-foreground/70"
+              style={{
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.2em",
+              }}
+            >
+              LOADING
+            </span>
+            <div className="flex gap-[2px]">
+              {Array.from({ length: 16 }).map((_, i) => {
+                const id = `bee-loading-${i}`;
+                return (
+                  <span
+                    key={id}
+                    className="text-foreground"
+                    style={{
+                      fontSize: "0.55em",
+                      animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                    }}
+                  >
+                    █
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
