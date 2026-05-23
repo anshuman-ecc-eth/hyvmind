@@ -576,6 +576,7 @@ function StartScreen({
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [subMenu, setSubMenu] = useState<"main" | "left">("main");
   const [leftSelectedIdx, setLeftSelectedIdx] = useState(0);
+  const [beeReady, setBeeReady] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -600,7 +601,34 @@ function StartScreen({
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
-      {subMenu === "main" && <FlyingBee modalRef={modalRef} yRef={yRef} />}
+      {subMenu === "main" && (
+        <FlyingBee
+          modalRef={modalRef}
+          yRef={yRef}
+          onReady={() => setBeeReady(true)}
+        />
+      )}
+      {!beeReady && subMenu === "main" && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="flex gap-[2px]">
+            {Array.from({ length: 16 }).map((_, i) => {
+              const id = `bee-loading-${i}`;
+              return (
+                <span
+                  key={id}
+                  className="text-foreground"
+                  style={{
+                    fontSize: "0.55em",
+                    animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                  }}
+                >
+                  █
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* Content box — flat, no card */}
       <div className="flex flex-col items-center" data-zone="content">
         {/* Title / Puzzles heading */}

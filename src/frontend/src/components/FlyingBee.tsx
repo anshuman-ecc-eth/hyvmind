@@ -4,15 +4,17 @@ import { useEffect, useRef } from "react";
 interface FlyingBeeProps {
   modalRef: React.RefObject<HTMLDivElement | null>;
   yRef: React.RefObject<HTMLSpanElement | null>;
+  onReady?: () => void;
 }
 
-export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
+export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
   const beeRef = useRef<SVGSVGElement>(null);
   const statusRef = useRef<
     "idle" | "entering" | "perched" | "fleeing" | "returning"
   >("idle");
   const mouseRef = useRef({ x: 0, y: 0 });
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readyFiredRef = useRef(false);
 
   const getPerch = () => {
     if (!yRef.current) return null;
@@ -85,6 +87,10 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
     if (!beeRef.current) return;
     statusRef.current = "perched";
     gsap.set(beeRef.current, { rotation: 0 });
+    if (!readyFiredRef.current) {
+      readyFiredRef.current = true;
+      onReady?.();
+    }
   };
 
   const doFlee = () => {
