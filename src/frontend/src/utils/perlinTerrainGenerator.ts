@@ -586,8 +586,9 @@ export async function generateTerrainArtwork(
   };
 
   if (projection === "topdown") {
-    // Top-down rendering with height interpolation, slope-based shading, and rich palette
+    // Top-down rendering: draw terrain for all tiles, then overlay semi-transparent water
     const tileSize = canvasWidth / gridWidth;
+    // Pass 1 — terrain for all tiles
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
         const h0 = elevationMap[y][x];
@@ -596,9 +597,6 @@ export async function generateTerrainArtwork(
         const h3 = elevationMap[y + 1][x + 1];
 
         const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
-        const terrainHighestHeight = Math.max(h0, h1, h2, h3);
-
-        const isWater = terrainAverageHeight < waterLevel;
         const [slopeDirection, slopeX, slopeZ] = calculateSlopeDirection(
           h0,
           h1,
@@ -606,24 +604,36 @@ export async function generateTerrainArtwork(
           h3,
         );
 
-        let color: [number, number, number, number];
-        if (isWater) {
-          const depth = waterLevel - terrainAverageHeight;
-          color = waterColorLookup(depth, waterLevel, lightHeight);
-        } else {
-          color = terrainColorLookup(
-            terrainHighestHeight,
-            slopeDirection,
-            slopeX,
-            slopeZ,
-            waterLevel,
-            beachSize,
-            lightPosition,
-            lightHeight,
-            light,
-          );
-        }
+        const color = terrainColorLookup(
+          terrainAverageHeight,
+          slopeDirection,
+          slopeX,
+          slopeZ,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light,
+        );
 
+        const [r, g, b, a] = color;
+        ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+      }
+    }
+    // Pass 2 — water overlay on submerged tiles
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        const h0 = elevationMap[y][x];
+        const h1 = elevationMap[y][x + 1];
+        const h2 = elevationMap[y + 1][x];
+        const h3 = elevationMap[y + 1][x + 1];
+
+        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
+        if (terrainAverageHeight >= waterLevel) continue;
+
+        const depth = waterLevel - terrainAverageHeight;
+        const color = waterColorLookup(depth, waterLevel, lightHeight);
         const [r, g, b, a] = color;
         ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
