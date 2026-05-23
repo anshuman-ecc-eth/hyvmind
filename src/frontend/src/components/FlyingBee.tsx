@@ -130,35 +130,19 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
     if (!el) return;
     const onMove = (e: PointerEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
+      if (statusRef.current === "perched" && beeRef.current) {
+        const gx = gsap.getProperty(beeRef.current, "x") as number;
+        const gy = gsap.getProperty(beeRef.current, "y") as number;
+        const dx = e.clientX - gx - 14;
+        const dy = e.clientY - gy - 8;
+        if (dx * dx + dy * dy < 14400) {
+          fleeRef.current();
+        }
+      }
     };
     el.addEventListener("pointermove", onMove);
     return () => el.removeEventListener("pointermove", onMove);
   }, [modalRef]);
-
-  useEffect(() => {
-    let raf: number;
-    const loop = () => {
-      if (statusRef.current === "perched" || statusRef.current === "entering") {
-        if (!beeRef.current) {
-          raf = requestAnimationFrame(loop);
-          return;
-        }
-        const br = beeRef.current.getBoundingClientRect();
-        const bx = br.left + br.width / 2;
-        const by = br.top + br.height / 2;
-        if (
-          Math.sqrt(
-            (mouseRef.current.x - bx) ** 2 + (mouseRef.current.y - by) ** 2,
-          ) < 120
-        ) {
-          fleeRef.current();
-        }
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   return (
     <div
@@ -184,6 +168,7 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
           height: "auto",
           imageRendering: "pixelated",
           opacity: 0,
+          willChange: "transform",
         }}
       >
         <ellipse cx="8" cy="4" rx="5" ry="3" fill="#c8e6f5" opacity="0.8" />
