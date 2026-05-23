@@ -24,9 +24,9 @@
   .action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.5); border: 2px solid #888; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; }
   .action-btn:active, .action-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; transform: scale(0.95); }
 
-  .game-container { display: flex; justify-content: center; width: 100%; height: 100%; }
-  .layout { display: flex; align-items: center; gap: 24px; height: 100%; flex-shrink: 0; }
-  .screen { width: 500px; height: 500px; border: 3px solid #555; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
+  .game-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+  .layout { display: flex; align-items: center; gap: 24px; width: fit-content; flex-shrink: 0; background: rgba(0,0,0,0.7); padding: 16px; border-radius: 4px; }
+  .screen { width: 500px; height: 500px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
   .viewport { position: absolute; inset: 0; overflow: hidden; }
   .viewport { position: absolute; inset: 0; overflow: hidden; }
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
@@ -35,7 +35,7 @@
 
   /* ── Tablet/small desktop (601-1024px): flex layout ── */
   @media (max-width: 1024px) and (min-width: 601px) {
-    .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 550/480; border-width: 2px; }
+    .screen { flex: 1; min-width: 0; height: auto; aspect-ratio: 550/480; }
     .dpad-btn { border-radius: 4px; }
   }
   @media (max-width: 1024px) and (min-width: 769px) {
@@ -181,7 +181,7 @@ window.addEventListener('message', function(e) {
     closePopup();
     var pop = document.createElement('div');
     pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-    pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+    pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -212,16 +212,16 @@ function renderBavaMenu(pop) {
   for (var i = 0; i < BAVA_DIALOGS.length; i++) {
     var arrow = i === sel ? '>' : '&nbsp;';
     var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
-    items += '<div style="font-family:monospace;font-size:10px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + BAVA_DIALOGS[i].question + '</div>';
+    items += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + BAVA_DIALOGS[i].question + '</div>';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:8px;">~ Bava ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Ask me anything:</div>' + items + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:8px;">~ Bava ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Ask me anything:</div>' + items + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
 }
 
 function renderBavaResponse(pop) {
   var idx = pop._step - 1;
   var response = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].response : '';
   var question = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].question : '';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:9px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + question + ' ~</div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + response + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> back <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + question + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + response + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> back <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
 }
   if (e.data?.type === 'hyvmind-buzz-secret') {
     isGenerating = false;
@@ -365,7 +365,7 @@ function showPopup(msg) {
   if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
   var pop = document.createElement('div');
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:11px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -373,8 +373,8 @@ function showDefaultPopup() {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   var pop = document.createElement('div');
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  var scoreHtml = '<div style="font-family:monospace;font-size:11px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + (storedSecrets.length > 0 ? 0 : currentScore) + '</div>';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:11px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  var scoreHtml = '<div style="font-family:monospace;font-size:14px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + (storedSecrets.length > 0 ? 0 : currentScore) + '</div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -400,7 +400,7 @@ function showInputPopup(raw) {
   pop._rules = rules;
   pop._triggerKey = triggerKey;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:30px;">' + question + '</div><input id="inputField" type="text" style="display:block;margin:10px auto 0;width:80%;background:#0a0a12;border:1px solid #5a4a2a;color:#e0d0b0;font-family:monospace;font-size:11px;padding:6px 8px;outline:none;text-align:center;"><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Enter</span> submit  <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:30px;">' + question + '</div><input id="inputField" type="text" style="display:block;margin:10px auto 0;width:80%;background:#0a0a12;border:1px solid #5a4a2a;color:#e0d0b0;font-family:monospace;font-size:14px;padding:6px 8px;outline:none;text-align:center;"><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Enter</span> submit  <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div></div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
   // Focus the input field after a delay for Firefox
@@ -433,7 +433,7 @@ function showDoorPopup(label) {
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
   var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + verb + '?  [Z] yes  [X] no</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + verb + '?  [Z] yes  [X] no</div></div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -441,9 +441,16 @@ function closePopup() { if (activePopup) { activePopup.remove(); activePopup = n
 function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
 
 var STARTUP_SENTENCES = [
-  'Welcome.',
   'You have found a way out of the Walled Gardens.',
   'Near you, sits the Ranting Well.',
+  'It collects the anger of trapped researchers.',
+  'And turns it into water for the Sanctuary.'
+];
+
+var WELCOME_SENTENCES = [
+  'Welcome.',
+  'You have found a way out of the Walled Gardens.',
+  "Don't mind the Well.",
   'It collects the anger of trapped researchers.',
   'And turns it into water for the Sanctuary.'
 ];
@@ -498,14 +505,14 @@ function renderBavaMenu(pop) {
   for (var i = 0; i < items.length; i++) {
     var arrow = i === sel ? '>' : '&nbsp;';
     var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
-    menuItems += '<div style="font-family:monospace;font-size:10px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + items[i].q + '</div>';
+    menuItems += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + items[i].q + '</div>';
   }
   var parentInfo = '';
   if (pop._path.length > 0) {
     var parentNode = getBavaNode(pop._path.slice(0, -1));
-    if (parentNode && parentNode.q) parentInfo = '<div style="font-family:monospace;font-size:8px;color:#4a7a8a;text-align:center;letter-spacing:0.5px;margin-bottom:4px;">' + parentNode.q + '</div>';
+    if (parentNode && parentNode.q) parentInfo = '<div style="font-family:monospace;font-size:10px;color:#4a7a8a;text-align:center;letter-spacing:0.5px;margin-bottom:4px;">' + parentNode.q + '</div>';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Bava ~</div>' + parentInfo + menuItems + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Bava ~</div>' + parentInfo + menuItems + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back</div></div></div>';
 }
 
 function renderBavaResponse(pop) {
@@ -513,26 +520,31 @@ function renderBavaResponse(pop) {
   if (!node) return;
   var hasChildren = node.children && node.children.length > 0;
   var footer = hasChildren ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> ask more <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:9px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + node.q + ' ~</div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + node.r + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:8px;color:#5a8a9a;letter-spacing:1px">' + footer + '</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + node.q + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + node.r + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px">' + footer + '</div></div></div>';
 }
 
-function renderStartupPopup(pop, step) {
-  var sentence = step < STARTUP_SENTENCES.length ? STARTUP_SENTENCES[step] : '';
-  var isLast = step >= STARTUP_SENTENCES.length - 1;
+function renderSequentialPopup(pop, step, sentences) {
+  var sentence = step < sentences.length ? sentences[step] : '';
+  var isLast = step >= sentences.length - 1;
   var footer = isLast ? '[X] close' : '[Z] continue &nbsp; [X] close';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+}
+
+function showSequentialPopup(sentences, type) {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = type || 'sequential';
+  pop._step = 0;
+  pop._sentences = sentences;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderSequentialPopup(pop, 0, sentences);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
 }
 
 function showStartupPopup() {
-  if (activePopup) activePopup.remove();
   gamePaused = true;
-  var pop = document.createElement('div');
-  pop._type = 'startup';
-  pop._step = 0;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  renderStartupPopup(pop, 0);
-  (document.querySelector('.screen') || document.body).appendChild(pop);
-  activePopup = pop;
+  showSequentialPopup(STARTUP_SENTENCES, 'startup');
 }
 
 function showSecretsMenu() {
@@ -555,7 +567,7 @@ function refreshSecretsMenuContent(pop, selected) {
   var opt1Arrow = selected === 1 && currentScore > 0 ? '>' : '&nbsp;';
   var opt1Class = selected === 1 && currentScore > 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
   var opt1Disabled = currentScore === 0 ? 'color:#3a2e18;' : '';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">BUZZ SECRETS</div><div style="font-family:monospace;font-size:8px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="font-family:monospace;font-size:10px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:10px;' + opt0Class + 'text-align:left;padding:3px 8px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="font-family:monospace;font-size:10px;' + opt1Class + opt1Disabled + 'text-align:left;padding:3px 8px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> select <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">BUZZ SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:13px;' + opt0Class + 'text-align:left;padding:3px 8px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="font-family:monospace;font-size:13px;' + opt1Class + opt1Disabled + 'text-align:left;padding:3px 8px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> select <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
   pop._selected = selected;
   activePopup = pop;
 }
@@ -575,20 +587,20 @@ function refreshSecretsListContent(pop) {
   if (!pop) return;
   var scroll = pop._scroll || 0;
   var visible = 6;
-  var html = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:300px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 20px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">YOUR SECRETS</div><div style="font-family:monospace;font-size:8px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #3a2e18;margin-bottom:6px;"></div>';
+  var html = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:300px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 20px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">YOUR SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #3a2e18;margin-bottom:6px;"></div>';
   var start = scroll;
   var end = Math.min(scroll + visible, storedSecrets.length);
   for (var i = start; i < end; i++) {
     var s = storedSecrets[i];
     var secStr = s.secret.length > 16 ? s.secret.slice(0, 16) + '..' : s.secret;
-    html += '<div style="font-family:monospace;font-size:9px;color:#e0d0b0;text-align:left;padding:3px 4px;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
+    html += '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:left;padding:3px 4px;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
   }
   if (storedSecrets.length === 0) {
-    html += '<div style="font-family:monospace;font-size:9px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
+    html += '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
   }
   var canUp = scroll > 0;
   var canDown = end < storedSecrets.length;
-  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:8px;color:#7a6a4a;letter-spacing:1px">';
+  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px">';
   if (canUp || canDown) html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy all ';
   html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
   pop.innerHTML = html;
@@ -820,7 +832,7 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
-  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; } else if (activePopup && activePopup._type === 'bava') { if (activePopup._path.length === 0) { closePopup(); } else { activePopup._path.pop(); activePopup._showing = 'menu'; activePopup._selected = 0; renderBavaPopup(activePopup); } } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
+  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; } else if (activePopup && activePopup._type === 'bava') { if (activePopup._path.length === 0) { closePopup(); } else { activePopup._path.pop(); activePopup._showing = 'menu'; activePopup._selected = 0; renderBavaPopup(activePopup); } } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
   if (e.key === 'd' || e.key === 'D') debugCollision();
   if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
 });
@@ -846,7 +858,7 @@ function activateZ() {
         closePopup();
         var pop = document.createElement('div');
         pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-        pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:12px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+        pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
         (document.querySelector('.screen') || document.body).appendChild(pop);
         activePopup = pop;
       }
@@ -860,15 +872,14 @@ function activateZ() {
   } else if (activePopup && activePopup._type === 'input') {
     submitInput();
     msg = 'input submitted';
-  } else if (activePopup && activePopup._type === 'startup') {
+  } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
     var nextStep = activePopup._step + 1;
-    if (nextStep >= STARTUP_SENTENCES.length) {
-      // last sentence — Z does nothing, only X closes
-      msg = 'startup-end';
+    if (nextStep >= activePopup._sentences.length) {
+      msg = activePopup._type + '-end';
     } else {
       activePopup._step = nextStep;
-      renderStartupPopup(activePopup, nextStep);
-      msg = 'startup-' + nextStep;
+      renderSequentialPopup(activePopup, nextStep, activePopup._sentences);
+      msg = activePopup._type + '-' + nextStep;
     }
   } else if (activePopup && activePopup._type === 'door') {
     var label = activePopup._label;
@@ -897,7 +908,7 @@ function activateZ() {
       var pop = document.createElement('div');
       pop._type = 'boat-disembark';
       pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Disembark? ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Disembark? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'disembark-prompt';
@@ -914,7 +925,7 @@ function activateZ() {
       var pop = document.createElement('div');
       pop._type = 'boat-board';
       pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Board the ferry? ~</div><div style="font-family:monospace;font-size:9px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Board the ferry? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'boat-board-prompt';
@@ -945,6 +956,9 @@ function activateZ() {
     if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
       showBavaDialog();
       msg = 'bava-dialog';
+    } else if (triggerMessages[nearTrigger.key] === '@welcome-narrative') {
+      showSequentialPopup(WELCOME_SENTENCES, 'welcome');
+      msg = 'welcome-narrative';
     } else if (triggerMessages[nearTrigger.key] === 'maps') {
       closePopup();
       window.parent.postMessage({ type: 'hyvmind-nav', target: 'maps' }, '*');
@@ -1013,8 +1027,8 @@ function render() {
   } else {
     lastNearDoorKey = null;
   }
-  if (activePopup && activePopup._type === 'startup') {
-    // keep startup popup visible
+  if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
+    // keep popup visible
   } else if (nearDoor && !doorDismissed) {
     showDoorPopup(doorLabel);
   } else {
@@ -1049,9 +1063,10 @@ document.getElementById('btnZ').addEventListener('click', function() {
 });
 document.getElementById('btnX').addEventListener('click', function() {
   this.classList.add('active');
+  if (activePopup && activePopup._type === 'door') doorDismissed = true;
   if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; }
   else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); }
-  else if (activePopup && activePopup._type === 'startup') { closePopup(); gamePaused = false; }
+  else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; }
   else { closePopup(); }
   setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
 });
@@ -1157,7 +1172,6 @@ initCollision(function() {
     npcInit();
     initBoat();
     render();
-    showStartupPopup();
     setTimeout(function() {
       window.parent.postMessage({ type: 'hyvmind-loaded' }, '*');
     }, 300);
@@ -1229,8 +1243,8 @@ function fitLayout() {
   var dpad = document.querySelector('.dpad');
   var actions = document.querySelector('.action-buttons');
   if (w <= 600) {
-    layout.style.cssText = 'display:block;position:relative;width:100%;height:100%;';
-    screen.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;border-width:2px;aspect-ratio:auto;';
+    layout.style.cssText = 'display:block;position:relative;width:100%;height:100%;background:rgba(0,0,0,0.7);';
+    screen.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;aspect-ratio:auto;';
     dpad.style.cssText = 'position:absolute;bottom:14px;left:10px;width:150px;height:150px;z-index:10;';
     actions.style.cssText = 'display:flex;flex-direction:row;position:absolute;bottom:22px;right:14px;gap:12px;z-index:10;';
   } else {

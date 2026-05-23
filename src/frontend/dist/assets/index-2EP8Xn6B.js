@@ -83119,11 +83119,12 @@ _forEachName("x,y,z,top,right,bottom,left,width,height,fontSize,padding,margin,p
 gsap.registerPlugin(CSSPlugin);
 var gsapWithCSS = gsap.registerPlugin(CSSPlugin) || gsap;
 gsapWithCSS.core.Tween;
-function FlyingBee({ modalRef, yRef }) {
+function FlyingBee({ modalRef, yRef, onReady }) {
   const beeRef = reactExports.useRef(null);
   const statusRef = reactExports.useRef("idle");
   const mouseRef = reactExports.useRef({ x: 0, y: 0 });
   const returnTimer = reactExports.useRef(null);
+  const readyFiredRef = reactExports.useRef(false);
   const getPerch = () => {
     if (!yRef.current) return null;
     const yr = yRef.current.getBoundingClientRect();
@@ -83190,6 +83191,10 @@ function FlyingBee({ modalRef, yRef }) {
     if (!beeRef.current) return;
     statusRef.current = "perched";
     gsapWithCSS.set(beeRef.current, { rotation: 0 });
+    if (!readyFiredRef.current) {
+      readyFiredRef.current = true;
+      onReady == null ? void 0 : onReady();
+    }
   };
   const doFlee = () => {
     statusRef.current = "fleeing";
@@ -83229,32 +83234,19 @@ function FlyingBee({ modalRef, yRef }) {
     if (!el) return;
     const onMove = (e2) => {
       mouseRef.current = { x: e2.clientX, y: e2.clientY };
+      if (statusRef.current === "perched" && beeRef.current) {
+        const gx = gsapWithCSS.getProperty(beeRef.current, "x");
+        const gy = gsapWithCSS.getProperty(beeRef.current, "y");
+        const dx = e2.clientX - gx - 14;
+        const dy = e2.clientY - gy - 8;
+        if (dx * dx + dy * dy < 14400) {
+          fleeRef.current();
+        }
+      }
     };
     el.addEventListener("pointermove", onMove);
     return () => el.removeEventListener("pointermove", onMove);
   }, [modalRef]);
-  reactExports.useEffect(() => {
-    let raf;
-    const loop = () => {
-      if (statusRef.current === "perched" || statusRef.current === "entering") {
-        if (!beeRef.current) {
-          raf = requestAnimationFrame(loop);
-          return;
-        }
-        const br = beeRef.current.getBoundingClientRect();
-        const bx = br.left + br.width / 2;
-        const by = br.top + br.height / 2;
-        if (Math.sqrt(
-          (mouseRef.current.x - bx) ** 2 + (mouseRef.current.y - by) ** 2
-        ) < 120) {
-          fleeRef.current();
-        }
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",
     {
@@ -83264,12 +83256,15 @@ function FlyingBee({ modalRef, yRef }) {
         zIndex: 9999,
         inset: 0
       },
-      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "img",
+      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "svg",
         {
           ref: beeRef,
-          src: "/assets/generated/pixel-bee.svg",
-          alt: "",
+          xmlns: "http://www.w3.org/2000/svg",
+          viewBox: "0 0 24 16",
+          width: "24",
+          height: "16",
+          "aria-hidden": true,
           style: {
             position: "absolute",
             left: 0,
@@ -83277,12 +83272,999 @@ function FlyingBee({ modalRef, yRef }) {
             width: "28px",
             height: "auto",
             imageRendering: "pixelated",
-            opacity: 0
-          }
+            opacity: 0,
+            willChange: "transform"
+          },
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "8", cy: "4", rx: "5", ry: "3", fill: "#c8e6f5", opacity: "0.8" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "18", cy: "5", rx: "5", ry: "2.5", fill: "#c8e6f5", opacity: "0.7" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("ellipse", { cx: "12", cy: "10", rx: "7", ry: "5", fill: "#f5c91e" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "7", y: "6", width: "2", height: "8", rx: "1", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "11", y: "5", width: "2", height: "9", rx: "1", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "15", y: "6", width: "2", height: "8", rx: "1", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "14", cy: "8", r: "1.2", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "10", cy: "8", r: "1.2", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "14.4", cy: "7.6", r: "0.5", fill: "#fff" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "10.4", cy: "7.6", r: "0.5", fill: "#fff" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("polygon", { points: "19,10 22,10 20,13", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "line",
+              {
+                x1: "13",
+                y1: "4",
+                x2: "15",
+                y2: "1",
+                stroke: "#1a1515",
+                strokeWidth: "0.8",
+                strokeLinecap: "round"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "line",
+              {
+                x1: "11",
+                y1: "4",
+                x2: "9",
+                y2: "1",
+                stroke: "#1a1515",
+                strokeWidth: "0.8",
+                strokeLinecap: "round"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "15", cy: "1", r: "0.8", fill: "#1a1515" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("circle", { cx: "9", cy: "1", r: "0.8", fill: "#1a1515" })
+          ]
         }
       )
     }
   );
+}
+function fnv1a(str) {
+  let hash = 2166136261;
+  for (let i2 = 0; i2 < str.length; i2++) {
+    hash ^= str.charCodeAt(i2);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash >>> 0;
+}
+class SeedablePRNG {
+  constructor(seed) {
+    __publicField(this, "seed");
+    this.seed = seed;
+  }
+  next() {
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
+  }
+}
+function toPerlin(elevation) {
+  return elevation / 255 * 2 - 1;
+}
+function easeInOutQuad(t2) {
+  return t2 < 0.5 ? 2 * t2 * t2 : -1 + (4 - 2 * t2) * t2;
+}
+function perlinNoise(width, height, persistence, octaves, wavelength, prng) {
+  const gradX = [];
+  const gradY = [];
+  for (let o2 = 0; o2 < octaves; o2++) {
+    const gw = width + 1;
+    const gh = height + 1;
+    const gxLayer = [];
+    const gyLayer = [];
+    for (let gy = 0; gy < gh; gy++) {
+      const gxRow = [];
+      const gyRow = [];
+      for (let gx = 0; gx < gw; gx++) {
+        const angle = prng.next() * Math.PI * 2;
+        gxRow.push(Math.cos(angle));
+        gyRow.push(Math.sin(angle));
+      }
+      gxLayer.push(gxRow);
+      gyLayer.push(gyRow);
+    }
+    gradX.push(gxLayer);
+    gradY.push(gyLayer);
+  }
+  const result = [];
+  for (let y2 = 0; y2 < height; y2++) {
+    const row = [];
+    for (let x3 = 0; x3 < width; x3++) {
+      let noise = 0;
+      let amplitude = 1;
+      let freq = 1 / wavelength;
+      let maxAmp = 0;
+      for (let o2 = 0; o2 < octaves; o2++) {
+        const px = x3 * freq;
+        const py = y2 * freq;
+        const ix = Math.floor(px);
+        const iy = Math.floor(py);
+        const fx = px - ix;
+        const fy = py - iy;
+        const gx0 = gradX[o2];
+        const gy0 = gradY[o2];
+        const wx = easeInOutQuad(fx);
+        const wy = easeInOutQuad(fy);
+        const gw = width + 1;
+        const gh = height + 1;
+        const ix0 = (ix % gw + gw) % gw;
+        const ix1 = ((ix + 1) % gw + gw) % gw;
+        const iy0 = (iy % gh + gh) % gh;
+        const iy1 = ((iy + 1) % gh + gh) % gh;
+        const d00 = gx0[iy0][ix0] * fx + gy0[iy0][ix0] * fy;
+        const d10 = gx0[iy0][ix1] * (fx - 1) + gy0[iy0][ix1] * fy;
+        const d01 = gx0[iy1][ix0] * fx + gy0[iy1][ix0] * (fy - 1);
+        const d11 = gx0[iy1][ix1] * (fx - 1) + gy0[iy1][ix1] * (fy - 1);
+        const lerpX0 = d00 + wx * (d10 - d00);
+        const lerpX1 = d01 + wx * (d11 - d01);
+        noise += (lerpX0 + wy * (lerpX1 - lerpX0)) * amplitude;
+        maxAmp += amplitude;
+        amplitude *= persistence;
+        freq *= 2;
+      }
+      row.push(noise / maxAmp);
+    }
+    result.push(row);
+  }
+  return result;
+}
+function calculateSlopeDirection(y0, y1, y2, y3) {
+  const avgSlopeX = (y1 - y0 + (y3 - y2)) / 2;
+  const avgSlopeZ = (y2 - y0 + (y3 - y1)) / 2;
+  const slopeDirection = Math.atan2(avgSlopeZ, avgSlopeX) * 180 / Math.PI;
+  return [slopeDirection, avgSlopeX, avgSlopeZ];
+}
+function addShading(colors2, slopeDirection, slopeX, slopeZ, lightPosition, lightHeight, light) {
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = 3 * (lightHeight + 90) / 180 + 1;
+  const light2 = 5 - light1;
+  colors2[0] = Math.max(
+    0,
+    colors2[0] - lightHeightChange / light1 + Math.min(0, lightHeight)
+  );
+  colors2[1] = Math.max(
+    0,
+    colors2[1] - lightHeightChange / 2 + Math.min(0, lightHeight)
+  );
+  colors2[2] = Math.max(
+    0,
+    colors2[2] - lightHeightChange / light2 + Math.min(0, lightHeight)
+  );
+  let diff = Math.abs(lightPosition - slopeDirection);
+  diff = diff > 180 ? 360 - diff : diff;
+  if (slopeX === 0 && slopeZ === 0) {
+    diff = 30;
+  }
+  const darkening = diff * Math.abs((lightHeight - 90) / 90);
+  colors2[0] = Math.max(0, Math.min(255, colors2[0] - darkening + light));
+  colors2[1] = Math.max(0, Math.min(255, colors2[1] - darkening + light));
+  colors2[2] = Math.max(0, Math.min(255, colors2[2] - darkening + light));
+}
+function terrainColorLookup(elevation, slopeDirection, slopeX, slopeZ, waterLevel, beachSize, lightPosition, lightHeight, light) {
+  let r2;
+  let g2;
+  let b2;
+  if (elevation < waterLevel + beachSize) {
+    r2 = elevation / 3 + 150 * 1.3;
+    g2 = elevation / 3 + 110 * 1.3;
+    b2 = elevation / 3 * 1.3;
+  } else if (elevation < 100) {
+    r2 = elevation;
+    g2 = elevation + 88;
+    b2 = elevation;
+  } else if (elevation < 130) {
+    r2 = elevation;
+    g2 = elevation + 58;
+    b2 = elevation;
+  } else if (elevation < 160) {
+    r2 = elevation;
+    g2 = Math.min(elevation + 29, 255);
+    b2 = elevation;
+  } else if (elevation < 190) {
+    r2 = elevation - 10;
+    g2 = elevation - 10;
+    b2 = elevation;
+  } else if (elevation < 220) {
+    r2 = elevation - 40;
+    g2 = elevation - 40;
+    b2 = elevation - 30;
+  } else {
+    r2 = Math.min(255, elevation + 10);
+    g2 = Math.min(255, elevation + 10);
+    b2 = Math.min(255, elevation + 20);
+  }
+  const colors2 = [r2, g2, b2];
+  addShading(
+    colors2,
+    slopeDirection,
+    slopeX,
+    slopeZ,
+    lightPosition,
+    lightHeight,
+    light
+  );
+  return [colors2[0], colors2[1], colors2[2], 255];
+}
+function waterColorLookup(depth, _waterLevel, lightHeight) {
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const light1 = 3 * (lightHeight + 90) / 180 + 1;
+  const light2 = 5 - light1;
+  const baseR = 0;
+  const baseG = 180 - depth / 2;
+  const baseB = 255 - depth / 4;
+  const r2 = Math.max(
+    0,
+    baseR - lightHeightChange / light1 + Math.min(0, lightHeight)
+  );
+  const g2 = Math.max(
+    0,
+    baseG - lightHeightChange / 2 + Math.min(0, lightHeight)
+  );
+  const b2 = Math.max(
+    0,
+    baseB - lightHeightChange / light2 + Math.min(0, lightHeight)
+  );
+  return [Math.round(r2), Math.round(g2), Math.round(b2), 178];
+}
+const cos30 = Math.cos(Math.PI / 6);
+const sin30 = Math.sin(Math.PI / 6);
+const isoHeight = 20;
+const isoWidth = 1;
+const isoLength = 1;
+const scale = 5;
+function coordToPixel(coordX, coordY, coordHeight) {
+  return [
+    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 50),
+    Math.floor(
+      scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 50
+    )
+  ];
+}
+function drawTile(ctx, h0, h1, h2, h3, isWater, x3, y2, terrainAverageHeight, terrainHighestHeight, slopeValues, waterLevel, beachSize, lightPosition, lightHeight, light) {
+  const [px0, py0] = coordToPixel(x3, y2, h0);
+  const [px1, py1] = coordToPixel(x3 + 1, y2, h1);
+  const [px2, py2] = coordToPixel(x3, y2 + 1, h2);
+  const [px3, py3] = coordToPixel(x3 + 1, y2 + 1, h3);
+  let color2;
+  if (isWater) {
+    const depth = waterLevel - terrainAverageHeight;
+    color2 = waterColorLookup(depth, waterLevel, lightHeight);
+  } else {
+    color2 = terrainColorLookup(
+      terrainHighestHeight,
+      slopeValues[0],
+      slopeValues[1],
+      slopeValues[2],
+      waterLevel,
+      beachSize,
+      lightPosition,
+      lightHeight,
+      light
+    );
+  }
+  const [r2, g2, b2, a2] = color2;
+  ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+  ctx.beginPath();
+  ctx.moveTo(px0, py0);
+  ctx.lineTo(px1, py1);
+  ctx.lineTo(px3, py3);
+  ctx.lineTo(px2, py2);
+  ctx.closePath();
+  ctx.fill();
+  if (!isWater) {
+    ctx.strokeStyle = `rgba(${Math.max(0, r2 - 20)},${Math.max(0, g2 - 20)},${Math.max(0, b2 - 20)},0.4)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+function drawBorder(ctx, h0, h1, _h2, _h3, isWater, x1, y1, x22, y2, isLeftBorder, waterLevel, lightHeight, light) {
+  const [px0, py0] = coordToPixel(x1, y1, h0);
+  const [px1, py1] = coordToPixel(x22, y2, h1);
+  const [px0b, py0b] = coordToPixel(x1, y1, 0);
+  const [px1b, py1b] = coordToPixel(x22, y2, 0);
+  if (isWater) {
+    const depthAdj = isLeftBorder ? 25 : 15;
+    const [r2, g2, b2, a2] = waterColorLookup(depthAdj, waterLevel, lightHeight);
+    ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+    ctx.beginPath();
+    ctx.moveTo(px0, py0);
+    ctx.lineTo(px1, py1);
+    ctx.lineTo(px1b, py1b);
+    ctx.lineTo(px0b, py0b);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r2},${g2},${b2},0.5)`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    return;
+  }
+  const maxH = Math.max(h0, h1);
+  if (maxH <= 0) return;
+  const gradient = ctx.createLinearGradient(px0b, py0b, px0, py0);
+  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
+  const bottomR = Math.min(255, 150 + light);
+  const bottomG = Math.min(255, 110 + light);
+  const bottomB = Math.min(255, 0 + light);
+  const topR = Math.min(255, 255 + light - lightHeightChange);
+  const topG = Math.min(255, 215 + light - lightHeightChange);
+  const topB = Math.min(255, 105 + light - lightHeightChange);
+  gradient.addColorStop(0, `rgb(${bottomR},${bottomG},${bottomB})`);
+  gradient.addColorStop(1, `rgb(${topR},${topG},${topB})`);
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(px0, py0);
+  ctx.lineTo(px1, py1);
+  ctx.lineTo(px1b, py1b);
+  ctx.lineTo(px0b, py0b);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(80,60,0,0.4)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+async function generateTerrainArtwork(curationName, size2, projection = "topdown") {
+  var _a3;
+  const canvasWidth = size2 === "full" ? projection === "topdown" ? 500 : 865 : projection === "topdown" ? 250 : 433;
+  const canvasHeight = size2 === "full" ? projection === "topdown" ? 500 : 690 : projection === "topdown" ? 250 : 345;
+  const gridWidth = 100;
+  const gridHeight = 100;
+  const seed = fnv1a(curationName);
+  const persistence = 0.5;
+  const octaves = 5;
+  const wavelength = 133;
+  const amplitude = 1;
+  const exponent = 3.3;
+  const peaks = 0.25;
+  const beachSize = 12;
+  const lightPosition = 180;
+  const lightHeight = 60;
+  const light = 0;
+  let canvas;
+  try {
+    canvas = document.createElement("canvas");
+  } catch {
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light,
+        projection
+      }
+    };
+  }
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return {
+      dataUrl: "",
+      params: {
+        seed,
+        persistence,
+        octaves,
+        wavelength,
+        amplitude,
+        exponent,
+        peaks,
+        waterLevel: 132,
+        beachSize,
+        lightPosition,
+        lightHeight,
+        light,
+        projection
+      }
+    };
+  }
+  ctx.fillStyle = projection === "topdown" ? "#2a4a6a" : "rgba(0,0,0,0)";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  const noisePrng = new SeedablePRNG(seed ^ 3735928559);
+  const rawMap = perlinNoise(
+    gridWidth + 1,
+    gridHeight + 1,
+    persistence,
+    octaves,
+    wavelength,
+    noisePrng
+  );
+  const elevationMap = [];
+  for (let y2 = 0; y2 <= gridHeight; y2++) {
+    const row = [];
+    for (let x3 = 0; x3 <= gridWidth; x3++) {
+      const raw2 = ((_a3 = rawMap[y2]) == null ? void 0 : _a3[x3]) ?? 0;
+      const normalized = (raw2 + 1) / 2 + peaks;
+      const elevated = Math.max(0, normalized) ** exponent * 255;
+      row.push(Math.max(0, Math.min(255, elevated)));
+    }
+    elevationMap.push(row);
+  }
+  const allElevations = [];
+  for (let y2 = 0; y2 <= gridHeight; y2++) {
+    for (let x3 = 0; x3 <= gridWidth; x3++) {
+      allElevations.push(elevationMap[y2][x3]);
+    }
+  }
+  allElevations.sort((a2, b2) => a2 - b2);
+  const percentileIndex = Math.floor(allElevations.length * 0.2);
+  const waterLevel = allElevations[percentileIndex];
+  const params = {
+    seed,
+    persistence,
+    octaves,
+    wavelength,
+    amplitude,
+    exponent,
+    peaks,
+    waterLevel,
+    beachSize,
+    lightPosition,
+    lightHeight,
+    light,
+    projection
+  };
+  if (projection === "topdown") {
+    const tileSize = canvasWidth / gridWidth;
+    for (let y2 = 0; y2 < gridHeight; y2++) {
+      for (let x3 = 0; x3 < gridWidth; x3++) {
+        const h0 = elevationMap[y2][x3];
+        const h1 = elevationMap[y2][x3 + 1];
+        const h2 = elevationMap[y2 + 1][x3];
+        const h3 = elevationMap[y2 + 1][x3 + 1];
+        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
+        const [slopeDirection, slopeX, slopeZ] = calculateSlopeDirection(
+          h0,
+          h1,
+          h2,
+          h3
+        );
+        const color2 = terrainColorLookup(
+          terrainAverageHeight,
+          slopeDirection,
+          slopeX,
+          slopeZ,
+          waterLevel,
+          beachSize,
+          lightPosition,
+          lightHeight,
+          light
+        );
+        const [r2, g2, b2, a2] = color2;
+        ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+        ctx.fillRect(x3 * tileSize, y2 * tileSize, tileSize, tileSize);
+      }
+    }
+    for (let y2 = 0; y2 < gridHeight; y2++) {
+      for (let x3 = 0; x3 < gridWidth; x3++) {
+        const h0 = elevationMap[y2][x3];
+        const h1 = elevationMap[y2][x3 + 1];
+        const h2 = elevationMap[y2 + 1][x3];
+        const h3 = elevationMap[y2 + 1][x3 + 1];
+        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
+        if (terrainAverageHeight >= waterLevel) continue;
+        const depth = waterLevel - terrainAverageHeight;
+        const color2 = waterColorLookup(depth, waterLevel, lightHeight);
+        const [r2, g2, b2, a2] = color2;
+        ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
+        ctx.fillRect(x3 * tileSize, y2 * tileSize, tileSize, tileSize);
+      }
+    }
+    ctx.strokeStyle = "rgba(30,60,100,0.4)";
+    ctx.lineWidth = 1;
+    for (let y2 = 0; y2 < gridHeight; y2++) {
+      for (let x3 = 0; x3 < gridWidth; x3++) {
+        const h0 = elevationMap[y2][x3];
+        const h1 = elevationMap[y2][x3 + 1];
+        const h2 = elevationMap[y2 + 1][x3];
+        const h3 = elevationMap[y2 + 1][x3 + 1];
+        const avg = (h0 + h1 + h2 + h3) / 4;
+        if (avg < waterLevel) continue;
+        const neighbors = [
+          [x3 - 1, y2],
+          [x3 + 1, y2],
+          [x3, y2 - 1],
+          [x3, y2 + 1]
+        ];
+        for (const [nx, ny] of neighbors) {
+          if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+            ctx.strokeRect(x3 * tileSize, y2 * tileSize, tileSize, tileSize);
+            break;
+          }
+          const nh0 = elevationMap[ny][nx];
+          const nh1 = elevationMap[ny][nx + 1];
+          const nh2 = elevationMap[ny + 1][nx];
+          const nh3 = elevationMap[ny + 1][nx + 1];
+          const navg = (nh0 + nh1 + nh2 + nh3) / 4;
+          if (navg < waterLevel) {
+            ctx.strokeRect(x3 * tileSize, y2 * tileSize, tileSize, tileSize);
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
+    if (size2 === "thumbnail") {
+      ctx.scale(0.5, 0.5);
+    }
+    ctx.translate(382, 50);
+    for (let y2 = 0; y2 < gridHeight; y2++) {
+      for (let x3 = 0; x3 < gridWidth; x3++) {
+        const mapvalue0 = elevationMap[y2][x3];
+        const mapvalue1 = elevationMap[y2][x3 + 1];
+        const mapvalue2 = elevationMap[y2 + 1][x3];
+        const mapvalue3 = elevationMap[y2 + 1][x3 + 1];
+        const p0 = toPerlin(mapvalue0);
+        const p1 = toPerlin(mapvalue1);
+        const p2 = toPerlin(mapvalue2);
+        const p3 = toPerlin(mapvalue3);
+        const terrainAverageHeight = (mapvalue0 + mapvalue1 + mapvalue2 + mapvalue3) / 4;
+        const terrainHighestHeight = Math.max(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3
+        );
+        const terrainLowestHeight = Math.min(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3
+        );
+        const slopeValues = calculateSlopeDirection(
+          mapvalue0,
+          mapvalue1,
+          mapvalue2,
+          mapvalue3
+        );
+        if (terrainHighestHeight < waterLevel) {
+          drawTile(
+            ctx,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            perlinWaterLevel,
+            true,
+            x3,
+            y2,
+            terrainAverageHeight,
+            terrainHighestHeight,
+            slopeValues,
+            waterLevel,
+            beachSize,
+            lightPosition,
+            lightHeight,
+            light
+          );
+        } else if (terrainLowestHeight >= waterLevel) {
+          drawTile(
+            ctx,
+            p0,
+            p1,
+            p2,
+            p3,
+            false,
+            x3,
+            y2,
+            terrainAverageHeight,
+            terrainHighestHeight,
+            slopeValues,
+            waterLevel,
+            beachSize,
+            lightPosition,
+            lightHeight,
+            light
+          );
+        } else {
+          let drawPolygon = function(verts, isWater, avgHeight) {
+            if (verts.length < 3) return;
+            const pixels = verts.map(
+              ([cx2, cy, ch]) => coordToPixel(cx2, cy, ch)
+            );
+            let color2;
+            if (isWater) {
+              color2 = waterColorLookup(
+                waterLevel - avgHeight,
+                waterLevel,
+                lightHeight
+              );
+            } else {
+              color2 = terrainColorLookup(
+                terrainAverageHeight,
+                slopeValues[0],
+                slopeValues[1],
+                slopeValues[2],
+                waterLevel,
+                beachSize,
+                lightPosition,
+                lightHeight,
+                light
+              );
+            }
+            ctx.fillStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},${color2[3] / 255})`;
+            ctx.beginPath();
+            ctx.moveTo(pixels[0][0], pixels[0][1]);
+            for (let i2 = 1; i2 < pixels.length; i2++) {
+              ctx.lineTo(pixels[i2][0], pixels[i2][1]);
+            }
+            ctx.closePath();
+            ctx.fill();
+            if (!isWater) {
+              ctx.strokeStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},0.5)`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          };
+          const slope1 = mapvalue1 - mapvalue0;
+          const slope2 = mapvalue2 - mapvalue0;
+          const slope3 = mapvalue3 - mapvalue1;
+          const slope4 = mapvalue3 - mapvalue2;
+          const b1 = mapvalue0 - slope1 * x3;
+          const b2 = mapvalue0 - slope2 * y2;
+          const b3 = mapvalue1 - slope3 * y2;
+          const b4 = mapvalue2 - slope4 * x3;
+          const x1 = slope1 !== 0 ? (waterLevel - b1) / slope1 : Number.NEGATIVE_INFINITY;
+          const y1 = slope2 !== 0 ? (waterLevel - b2) / slope2 : Number.NEGATIVE_INFINITY;
+          const y22 = slope3 !== 0 ? (waterLevel - b3) / slope3 : Number.NEGATIVE_INFINITY;
+          const x22 = slope4 !== 0 ? (waterLevel - b4) / slope4 : Number.NEGATIVE_INFINITY;
+          const vertexList = [];
+          const tileList = [];
+          const tileList2 = [];
+          if (mapvalue0 >= waterLevel) {
+            tileList2.push([x3, y2, toPerlin(mapvalue0)]);
+          } else {
+            tileList.push([x3, y2, toPerlin(mapvalue0)]);
+            vertexList.push([x3, y2, perlinWaterLevel]);
+          }
+          if (mapvalue0 >= waterLevel !== mapvalue1 >= waterLevel) {
+            vertexList.push([x1, y2, perlinWaterLevel]);
+            tileList.push([x1, y2, perlinWaterLevel]);
+            tileList2.push([x1, y2, perlinWaterLevel]);
+          }
+          if (mapvalue1 >= waterLevel) {
+            tileList2.push([x3 + 1, y2, toPerlin(mapvalue1)]);
+          } else {
+            tileList.push([x3 + 1, y2, toPerlin(mapvalue1)]);
+            vertexList.push([x3 + 1, y2, perlinWaterLevel]);
+          }
+          if (mapvalue1 >= waterLevel !== mapvalue3 >= waterLevel) {
+            vertexList.push([x3 + 1, y22, perlinWaterLevel]);
+            tileList.push([x3 + 1, y22, perlinWaterLevel]);
+            tileList2.push([x3 + 1, y22, perlinWaterLevel]);
+          }
+          if (mapvalue3 >= waterLevel) {
+            tileList2.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
+          } else {
+            tileList.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
+            vertexList.push([x3 + 1, y2 + 1, perlinWaterLevel]);
+          }
+          if (mapvalue3 >= waterLevel !== mapvalue2 >= waterLevel) {
+            vertexList.push([x22, y2 + 1, perlinWaterLevel]);
+            tileList.push([x22, y2 + 1, perlinWaterLevel]);
+            tileList2.push([x22, y2 + 1, perlinWaterLevel]);
+          }
+          if (mapvalue2 >= waterLevel) {
+            tileList2.push([x3, y2 + 1, toPerlin(mapvalue2)]);
+          } else {
+            tileList.push([x3, y2 + 1, toPerlin(mapvalue2)]);
+            vertexList.push([x3, y2 + 1, perlinWaterLevel]);
+          }
+          if (mapvalue2 >= waterLevel !== mapvalue0 >= waterLevel) {
+            vertexList.push([x3, y1, perlinWaterLevel]);
+            tileList.push([x3, y1, perlinWaterLevel]);
+            tileList2.push([x3, y1, perlinWaterLevel]);
+          }
+          drawPolygon(tileList2, false, terrainAverageHeight);
+          drawPolygon(tileList, false, terrainAverageHeight);
+          drawPolygon(vertexList, true, terrainAverageHeight);
+          if (y2 === gridHeight - 2 && (mapvalue2 < waterLevel || mapvalue3 < waterLevel)) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue2),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+              x3,
+              y2 + 1,
+              x3 + 1,
+              y2 + 1,
+              true,
+              waterLevel,
+              lightHeight,
+              light
+            );
+          }
+          if (x3 === gridWidth - 2 && (mapvalue1 < waterLevel || mapvalue3 < waterLevel)) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue1),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+              x3 + 1,
+              y2,
+              x3 + 1,
+              y2 + 1,
+              false,
+              waterLevel,
+              lightHeight,
+              light
+            );
+          }
+        }
+        if (y2 === gridHeight - 2) {
+          if (mapvalue2 > 0 || mapvalue3 > 0) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue2),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue2 < waterLevel && mapvalue3 < waterLevel,
+              x3,
+              y2 + 1,
+              x3 + 1,
+              y2 + 1,
+              true,
+              waterLevel,
+              lightHeight,
+              light
+            );
+          }
+        }
+        if (x3 === gridWidth - 2) {
+          if (mapvalue1 > 0 || mapvalue3 > 0) {
+            drawBorder(
+              ctx,
+              toPerlin(mapvalue1),
+              toPerlin(mapvalue3),
+              0,
+              0,
+              mapvalue1 < waterLevel && mapvalue3 < waterLevel,
+              x3 + 1,
+              y2,
+              x3 + 1,
+              y2 + 1,
+              false,
+              waterLevel,
+              lightHeight,
+              light
+            );
+          }
+        }
+      }
+    }
+  }
+  const dataUrl = canvas.toDataURL("image/png");
+  return { dataUrl, params };
+}
+const TEST_SEEDS = [
+  "Indian Constitutional Law",
+  "Singapore Company Law",
+  "American Contract Law",
+  "Chinese Administrative Law"
+];
+function MapsOverlay({ onBack }) {
+  const { data: metas, isLoading } = usePublishedGraphMetas();
+  const [testMaps, setTestMaps] = reactExports.useState([]);
+  const [testMapsLoading, setTestMapsLoading] = reactExports.useState(true);
+  const [selectedMeta, setSelectedMeta] = reactExports.useState(null);
+  const [terrainIdx, setTerrainIdx] = reactExports.useState(0);
+  reactExports.useEffect(() => {
+    let cancelled = false;
+    async function generate() {
+      const results = [];
+      for (const name of TEST_SEEDS) {
+        const { dataUrl } = await generateTerrainArtwork(name, "thumbnail");
+        if (cancelled) return;
+        if (dataUrl)
+          results.push({ id: `test-${name}`, name, artworkUrl: dataUrl });
+      }
+      if (!cancelled) {
+        setTestMaps(results);
+        setTestMapsLoading(false);
+      }
+    }
+    generate();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const publishedTerrains = (metas ?? []).filter((m2) => m2.artworkDataUrl && m2.artworkDataUrl.length > 0).map((m2) => ({
+    id: m2.id,
+    name: m2.name,
+    artworkUrl: m2.artworkDataUrl
+  }));
+  const allTerrains = [...testMaps, ...publishedTerrains];
+  const cols = 2;
+  const openTerrain = reactExports.useCallback(
+    (idx) => {
+      const testLen = testMaps.length;
+      const t2 = idx < testLen ? testMaps[idx] : publishedTerrains[idx - testLen];
+      if (!t2) return;
+      setSelectedMeta({ artworkUrl: t2.artworkUrl, name: t2.name });
+    },
+    [testMaps, publishedTerrains]
+  );
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (selectedMeta) return;
+      if (e2.key === "ArrowUp") {
+        setTerrainIdx((prev) => Math.max(0, prev - cols));
+      } else if (e2.key === "ArrowDown") {
+        setTerrainIdx((prev) => Math.min(allTerrains.length - 1, prev + cols));
+      } else if (e2.key === "ArrowLeft") {
+        setTerrainIdx((prev) => Math.max(0, prev - 1));
+      } else if (e2.key === "ArrowRight") {
+        setTerrainIdx((prev) => Math.min(allTerrains.length - 1, prev + 1));
+      } else if (e2.key === "z" || e2.key === "Z") {
+        openTerrain(terrainIdx);
+      } else if (e2.key === "x" || e2.key === "X") {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedMeta, allTerrains.length, terrainIdx, openTerrain, onBack]);
+  const loading = isLoading || testMapsLoading;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-start gap-4 p-4 overflow-y-auto", children: [
+    selectedMeta && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      ArtworkModal,
+      {
+        artworkUrl: selectedMeta.artworkUrl,
+        graphName: selectedMeta.name,
+        onClose: () => setSelectedMeta(null)
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "text-foreground tracking-widest",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "1em",
+          letterSpacing: "0.15em"
+        },
+        children: "Maps"
+      }
+    ),
+    loading && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "text-muted-foreground",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em"
+        },
+        children: "Loading.."
+      }
+    ),
+    !loading && allTerrains.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "text-muted-foreground text-center px-4",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.5em",
+          lineHeight: 1.8
+        },
+        children: [
+          "No maps available yet.",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+          "Publish a graph to generate one."
+        ]
+      }
+    ),
+    allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-3 w-full max-w-md", children: allTerrains.map((t2, i2) => {
+      const isSelected = i2 === terrainIdx;
+      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          type: "button",
+          className: `flex flex-col items-center gap-1 p-2 border transition-colors rounded cursor-pointer ${isSelected ? "border-foreground bg-card scale-105" : "border-border bg-card/50 hover:bg-card"}`,
+          style: { imageRendering: "pixelated" },
+          onClick: () => openTerrain(i2),
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "img",
+              {
+                src: t2.artworkUrl,
+                alt: t2.name,
+                className: "w-full aspect-square object-contain"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-muted-foreground truncate w-full text-center",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.4em",
+                  letterSpacing: "0.05em"
+                },
+                children: isSelected ? `> ${t2.name}` : `  ${t2.name}`
+              }
+            )
+          ]
+        },
+        t2.id
+      );
+    }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3 mt-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          style: {
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: "#7ab0c0",
+            letterSpacing: "0.5px",
+            background: "#000",
+            padding: "6px 14px",
+            borderRadius: "2px"
+          },
+          children: "[Z] select [X] back"
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
+        allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => openTerrain(terrainIdx),
+            className: "active:scale-95 transition-transform",
+            style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: "Z"
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: onBack,
+            className: "active:scale-95 transition-transform",
+            style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: "X"
+          }
+        )
+      ] })
+    ] })
+  ] });
 }
 function PixelTransition({
   firstContent,
@@ -96234,9 +97216,9 @@ function WordlePuzzleGame({
 const MENU_ITEMS = ["Enter World", "Go to App", "Credits"];
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"];
 const ABOUT_LINES = [
-  "Have you heard of LAI?",
+  "This is a long rant about LAI.",
   "",
-  "It's our word for Legal AI.",
+  "That's our word for Legal AI.",
   "",
   "Easy to remember. No double meaning.",
   "",
@@ -96305,7 +97287,13 @@ const ABOUT_LINES = [
   "..then you're a threat."
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"];
-const GAMES_MENU_ITEMS = ["Rebirth", "Square Bar", "Slalom", "Back"];
+const GAMES_MENU_ITEMS = [
+  "Up 1 Way",
+  "Thunder",
+  "Box Snake",
+  "Pillars 3D",
+  "Back"
+];
 const CONTENT = {
   intro: [
     "welcome, fellow researcher",
@@ -96586,105 +97574,392 @@ function CreditsScreen({ onBack }) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onBack]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6 select-none px-6", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto select-none", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
       {
         className: "text-foreground tracking-widest",
-        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "0.7em" },
+        style: { fontFamily: '"Press Start 2P", monospace', fontSize: "0.9em" },
         children: "Credits"
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "flex flex-col items-start gap-3",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.45em",
-          lineHeight: "1.8",
-          letterSpacing: "0.05em",
-          maxWidth: "320px"
-        },
+        className: "w-full max-w-md flex flex-col items-center gap-4 p-4",
+        style: { background: "rgba(0,0,0,0.7)" },
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "forest.mp3 — BGM" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "a",
-            {
-              href: "https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5",
-              target: "_blank",
-              rel: "noopener noreferrer",
-              className: "text-foreground hover:text-muted-foreground underline",
-              style: { fontSize: "0.9em" },
-              children: "syncopika"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY 3.0" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
+              className: "text-foreground text-center",
               style: {
-                height: "2px",
-                width: "100%",
-                background: "var(--border)",
-                opacity: 0.3,
-                margin: "2px 0"
-              }
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.7em",
+                lineHeight: "1.8",
+                letterSpacing: "0.05em"
+              },
+              children: "Thanks to the following artists for making this project possible:"
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "bottom.png — world tiles" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "a",
-            {
-              href: "https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol",
-              target: "_blank",
-              rel: "noopener noreferrer",
-              className: "text-foreground hover:text-muted-foreground underline",
-              style: { fontSize: "0.9em" },
-              children: "Ivan Voirol"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY 4.0" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "div",
             {
+              className: "flex flex-col items-start gap-4 w-full",
               style: {
-                height: "2px",
-                width: "100%",
-                background: "var(--border)",
-                opacity: 0.3,
-                margin: "2px 0"
-              }
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.7em",
+                lineHeight: "1.8",
+                letterSpacing: "0.05em"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "forest.mp3 — BGM" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      children: "syncopika"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "bottom.png — world tiles" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      children: "Ivan Voirol"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY 4.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/cultist_*.png — player" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "Antifarea" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "crisp-game-lib — mini-game framework" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://github.com/abagames/crisp-game-lib",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      children: "abagames"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        alignSelf: "flex-start"
+                      },
+                      children: "MIT"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-full", style: { height: "4px" } }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — body" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — head" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike)" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — face" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "JaidynReiman, ElizaWy, Stephen Challener (Redshrike)" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://github.com/ElizaWy/LPC/tree/main/Characters/Head",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "GitHub (ElizaWy)"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "OGA-BY 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — hat" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames), Tracy" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-celestial-wizard-hats",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — boots" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "JaidynReiman, bluecarrot16, Nila122" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-clothes-and-hair",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — hair" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "Yamilian, bluecarrot16" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-heroine-2",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — mustache" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "JaidynReiman, Thane Brimhall (pennomi), laetissima" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-base-character-expressions",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — vest" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike), Johannes Sjölund (wulax)" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-2-characters",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-start gap-1 w-full", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", children: "sprites/bava/ — jacket" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.85em" }, children: "bluecarrot16" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "a",
+                    {
+                      href: "https://opengameart.org/content/lpc-gentleman",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "text-foreground hover:text-muted-foreground underline",
+                      style: { fontSize: "0.85em" },
+                      children: "OpenGameArt"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground",
+                      style: {
+                        background: "rgba(0,0,0,0.7)",
+                        padding: "1px 6px",
+                        fontSize: "0.7em",
+                        alignSelf: "flex-start"
+                      },
+                      children: "CC-BY-SA 3.0 / GPL 3.0"
+                    }
+                  )
+                ] })
+              ]
             }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "sprites/cultist_*.png — player" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground", style: { fontSize: "0.9em" }, children: "Antifarea" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "CC-BY" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "div",
-            {
-              style: {
-                height: "2px",
-                width: "100%",
-                background: "var(--border)",
-                opacity: 0.3,
-                margin: "2px 0"
-              }
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "crisp-game-lib — mini-game framework" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "a",
-            {
-              href: "https://github.com/abagames/crisp-game-lib",
-              target: "_blank",
-              rel: "noopener noreferrer",
-              className: "text-foreground hover:text-muted-foreground underline",
-              style: { fontSize: "0.9em" },
-              children: "abagames"
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-muted-foreground", style: { fontSize: "0.8em" }, children: "MIT" })
+          )
         ]
       }
     ),
@@ -96701,7 +97976,7 @@ function CreditsScreen({ onBack }) {
           border: "none",
           cursor: "pointer",
           padding: "0",
-          marginTop: "8px"
+          marginTop: "4px"
         },
         onClick: onBack,
         children: "> Back"
@@ -96724,6 +97999,7 @@ function StartScreen({
   const [selectedIdx, setSelectedIdx] = reactExports.useState(0);
   const [subMenu, setSubMenu] = reactExports.useState("main");
   const [leftSelectedIdx, setLeftSelectedIdx] = reactExports.useState(0);
+  const [beeReady, setBeeReady] = reactExports.useState(false);
   reactExports.useEffect(() => {
     const handler = (e2) => {
       if (subMenu === "main") {
@@ -96745,7 +98021,50 @@ function StartScreen({
     return () => window.removeEventListener("keydown", handler);
   }, [selectedIdx, subMenu, onEnter, onCredits, onExit]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col items-center justify-center gap-8 select-none", children: [
-    subMenu === "main" && /* @__PURE__ */ jsxRuntimeExports.jsx(FlyingBee, { modalRef, yRef }),
+    subMenu === "main" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      FlyingBee,
+      {
+        modalRef,
+        yRef,
+        onReady: () => setBeeReady(true)
+      }
+    ),
+    subMenu === "main" && !beeReady && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "fixed inset-0 flex items-center justify-center bg-background",
+        style: { zIndex: 1e4 },
+        children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center justify-center gap-4", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "span",
+            {
+              className: "text-foreground/70",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.6rem",
+                letterSpacing: "0.2em"
+              },
+              children: "LOADING"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => {
+            const id2 = `bee-loading-${i2}`;
+            return /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-foreground",
+                style: {
+                  fontSize: "0.55rem",
+                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                },
+                children: "█"
+              },
+              id2
+            );
+          }) })
+        ] })
+      }
+    ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center", "data-zone": "content", children: [
       subMenu === "main" ? /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         PixelTransition,
@@ -97073,6 +98392,7 @@ function AboutOverlay({ onBack }) {
   const [done, setDone] = reactExports.useState(false);
   const lines = ABOUT_LINES.filter((l2) => l2.trim() !== "");
   const total = lines.length;
+  const isLast = step >= total - 1;
   const advance = reactExports.useCallback(() => {
     if (!done) return;
     setDone(false);
@@ -97084,84 +98404,124 @@ function AboutOverlay({ onBack }) {
   }, [done, step, total, onBack]);
   reactExports.useEffect(() => {
     const handler = (e2) => {
-      if (e2.key === "Tab") return;
-      advance();
+      if (e2.key === "z" || e2.key === "Z") {
+        if (!isLast) advance();
+      } else if (e2.key === "x" || e2.key === "X") {
+        onBack();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [advance]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "button",
-    {
-      type: "button",
-      className: "flex-1 flex flex-col items-center justify-center px-8 select-none cursor-pointer",
-      onClick: advance,
-      onKeyDown: done ? (e2) => {
-        if (e2.key !== "Tab") advance();
-      } : void 0,
-      tabIndex: 0,
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "p",
+  }, [advance, isLast, onBack]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-6 py-4 rounded", style: { background: "#000" }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "p",
+      {
+        className: "text-foreground text-center leading-relaxed",
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7em",
+          letterSpacing: "0.05em",
+          lineHeight: "2",
+          fontWeight: "400"
+        },
+        children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          TextType,
           {
-            className: "text-foreground text-center leading-relaxed",
-            style: {
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.7em",
-              letterSpacing: "0.05em",
-              lineHeight: "2",
-              maxWidth: "80%",
-              fontWeight: "400"
-            },
-            children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-              TextType,
-              {
-                text: lines[step],
-                typingSpeed: 25,
-                showCursor: true,
-                hideCursorWhileTyping: true,
-                cursorCharacter: "█",
-                cursorBlinkDuration: 0.4,
-                loop: false,
-                onSentenceComplete: () => setDone(true)
-              },
-              step
-            )
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute bottom-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+            text: lines[step],
+            typingSpeed: 25,
+            showCursor: true,
+            hideCursorWhileTyping: true,
+            cursorCharacter: "█",
+            cursorBlinkDuration: 0.4,
+            loop: false,
+            onSentenceComplete: () => setDone(true)
+          },
+          step
+        )
+      }
+    ) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          style: {
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: "#7ab0c0",
+            letterSpacing: "0.5px",
+            background: "#000",
+            padding: "6px 14px",
+            borderRadius: "2px"
+          },
+          children: isLast ? "[X] close" : "[Z] continue  [X] close"
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
+        !isLast && /* @__PURE__ */ jsxRuntimeExports.jsx(
           "button",
           {
             type: "button",
-            onClick: (e2) => {
-              e2.stopPropagation();
-              onBack();
+            onClick: () => {
+              if (!done) return;
+              const next = step + 1;
+              if (next >= total) return;
+              setStep(next);
+              setDone(false);
             },
-            className: "text-muted-foreground hover:text-foreground transition-colors",
+            className: "active:scale-95 transition-transform",
             style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.5em",
-              letterSpacing: "0.2em",
-              background: "none",
-              border: "1px solid",
-              borderColor: "var(--border)",
-              padding: "4px 12px",
-              cursor: "pointer"
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
             },
-            children: "[ Back ]"
+            children: "Z"
           }
-        ) })
-      ]
-    }
-  );
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: onBack,
+            className: "active:scale-95 transition-transform",
+            style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: "X"
+          }
+        )
+      ] })
+    ] })
+  ] });
 }
 function GamesOverlay({
   selectedIdx,
   onSelect,
   onBack,
-  onRebirth,
-  onSquareBar,
-  onSlalom,
+  onUp1Way,
+  onThunder,
+  onBoxSnake,
+  onPillars3d,
   score
 }) {
   reactExports.useEffect(() => {
@@ -97174,15 +98534,24 @@ function GamesOverlay({
         onSelect((prev) => (prev + 1) % GAMES_MENU_ITEMS.length);
       } else if (e2.key === "Enter") {
         const chosen = GAMES_MENU_ITEMS[selectedIdx];
-        if (chosen === "Rebirth") onRebirth();
-        else if (chosen === "Square Bar") onSquareBar();
-        else if (chosen === "Slalom") onSlalom();
+        if (chosen === "Up 1 Way") onUp1Way();
+        else if (chosen === "Thunder") onThunder();
+        else if (chosen === "Box Snake") onBoxSnake();
+        else if (chosen === "Pillars 3D") onPillars3d();
         else if (chosen === "Back") onBack();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedIdx, onSelect, onRebirth, onSquareBar, onSlalom, onBack]);
+  }, [
+    selectedIdx,
+    onSelect,
+    onUp1Way,
+    onThunder,
+    onBoxSnake,
+    onPillars3d,
+    onBack
+  ]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-6", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
@@ -97214,9 +98583,10 @@ function GamesOverlay({
           },
           onClick: () => {
             onSelect(i2);
-            if (item === "Rebirth") onRebirth();
-            else if (item === "Square Bar") onSquareBar();
-            else if (item === "Slalom") onSlalom();
+            if (item === "Up 1 Way") onUp1Way();
+            else if (item === "Thunder") onThunder();
+            else if (item === "Box Snake") onBoxSnake();
+            else if (item === "Pillars 3D") onPillars3d();
             else if (item === "Back") onBack();
           },
           children: isSelected ? `> ${item}` : `  ${item}`
@@ -97326,6 +98696,101 @@ function PuzzlesOverlay({
     )
   ] });
 }
+const LAB_DIAGRAMS = [
+  "from attention to trust.svg",
+  "the legal intelligence market.svg"
+];
+function LabDiagramsOverlay({ onBack }) {
+  const [step, setStep] = reactExports.useState(0);
+  const isLast = step >= LAB_DIAGRAMS.length - 1;
+  reactExports.useEffect(() => {
+    const handler = (e2) => {
+      if (e2.key === "z" || e2.key === "Z") {
+        if (!isLast) setStep((prev) => prev + 1);
+      } else if (e2.key === "x" || e2.key === "X") {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isLast, onBack]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center select-none", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "img",
+      {
+        src: `/assets/hyvmind/lab diagrams/${LAB_DIAGRAMS[step]}`,
+        alt: `Diagram ${step + 1}`,
+        className: "max-w-full max-h-full object-contain",
+        style: { imageRendering: "pixelated" }
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "absolute bottom-6 flex flex-col items-center gap-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          style: {
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: "#7ab0c0",
+            letterSpacing: "0.5px",
+            background: "#000",
+            padding: "6px 14px",
+            borderRadius: "2px"
+          },
+          children: isLast ? "[X] close" : "[Z] continue  [X] close"
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
+        !isLast && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => setStep((prev) => prev + 1),
+            className: "active:scale-95 transition-transform",
+            style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: "Z"
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: onBack,
+            className: "active:scale-95 transition-transform",
+            style: {
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.5)",
+              border: "2px solid #888",
+              color: "#000",
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            },
+            children: "X"
+          }
+        )
+      ] })
+    ] })
+  ] });
+}
 function TextGameModal({ onComplete }) {
   const modalRef = reactExports.useRef(null);
   const onCompleteRef = reactExports.useRef(onComplete);
@@ -97349,38 +98814,17 @@ function TextGameModal({ onComplete }) {
     game3: 0
   });
   const [gameLoaded, setGameLoaded] = reactExports.useState({});
+  const [hyvmindLoading, setHyvmindLoading] = reactExports.useState(true);
+  const hyvmindLoadingStartRef = reactExports.useRef(0);
   reactExports.useEffect(() => {
     if (phase.type === "game1" || phase.type === "game2" || phase.type === "game3") {
       setGameLoaded({ [phase.type]: false });
     }
   }, [phase.type]);
-  const [overrideAudio] = reactExports.useState(() => {
-    const audio = new Audio("/assets/island-puzzle-mystery.ogg");
-    audio.loop = true;
-    return audio;
-  });
   const [generatingScore, setGeneratingScore] = reactExports.useState(null);
   reactExports.useEffect(() => {
     localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
   }, [settings]);
-  reactExports.useEffect(() => {
-    if (!overrideAudio) return;
-    if (settings.music === "on") {
-      overrideAudio.play().catch(() => {
-      });
-    } else {
-      overrideAudio.pause();
-      overrideAudio.currentTime = 0;
-    }
-  }, [settings.music, overrideAudio]);
-  reactExports.useEffect(() => {
-    return () => {
-      if (overrideAudio) {
-        overrideAudio.pause();
-        overrideAudio.currentTime = 0;
-      }
-    };
-  }, [overrideAudio]);
   const hyvmindIframeRef = reactExports.useRef(null);
   const [hyvmindOverlay, setHyvmindOverlay] = reactExports.useState(null);
   const [puzzleIdx, setPuzzleIdx] = reactExports.useState(0);
@@ -97415,12 +98859,8 @@ function TextGameModal({ onComplete }) {
     }, 100);
   }, []);
   const handleExit = reactExports.useCallback(() => {
-    if (overrideAudio) {
-      overrideAudio.pause();
-      overrideAudio.currentTime = 0;
-    }
     onCompleteRef.current();
-  }, [overrideAudio]);
+  }, []);
   const handleOpenSettings = reactExports.useCallback(() => {
     setPhase({ type: "settings" });
   }, []);
@@ -97433,7 +98873,19 @@ function TextGameModal({ onComplete }) {
   }, []);
   const handleStartHyvmind = reactExports.useCallback(() => {
     setPhase({ type: "hyvmind" });
+    setHyvmindLoading(true);
+    hyvmindLoadingStartRef.current = Date.now();
   }, []);
+  reactExports.useEffect(() => {
+    var _a3;
+    if (!hyvmindLoading && phase.type === "hyvmind") {
+      const el = hyvmindIframeRef.current;
+      if (el) {
+        el.focus();
+        (_a3 = el.contentWindow) == null ? void 0 : _a3.postMessage({ type: "hyvmind-focus" }, "*");
+      }
+    }
+  }, [hyvmindLoading, phase.type]);
   const handleWordleComplete = reactExports.useCallback((score) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
@@ -97452,71 +98904,70 @@ function TextGameModal({ onComplete }) {
   }, [settings.skipMessages]);
   reactExports.useEffect(() => {
     const handler = (e2) => {
-      var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2, _i2, _j2, _k2, _l2, _m2, _n;
-      if (((_a3 = e2.data) == null ? void 0 : _a3.type) === "rebirth-game-over") {
-        const score1 = e2.data.score || 0;
+      var _a3, _b3, _c2, _d2, _e3, _f2, _g2, _h2, _i2, _j2, _k2;
+      if (((_a3 = e2.data) == null ? void 0 : _a3.type) === "crisp-game-over") {
+        const receivedScore = e2.data.score || 0;
         if ((_b3 = hyvmindOverlayRef.current) == null ? void 0 : _b3.startsWith("games")) {
-          setUnsubmittedScore((prev) => prev + score1);
+          setUnsubmittedScore((prev) => prev + receivedScore);
           setHyvmindOverlay("games");
-        } else {
-          setGameScores((prev) => ({ ...prev, game1: score1 }));
+        } else if (phase.type === "game1") {
+          setGameScores((prev) => ({ ...prev, game1: receivedScore }));
           if (settings.skipMessages) {
             setPhase({ type: "game2" });
           } else {
             setPhase({ type: "postGame1", step: 0 });
             setScrambleComplete(false);
           }
-        }
-      } else if (((_c2 = e2.data) == null ? void 0 : _c2.type) === "squarebar-game-over") {
-        const score2 = e2.data.score || 0;
-        if ((_d2 = hyvmindOverlayRef.current) == null ? void 0 : _d2.startsWith("games")) {
-          setUnsubmittedScore((prev) => prev + score2);
-          setHyvmindOverlay("games");
-        } else {
-          setGameScores((prev) => ({ ...prev, game2: score2 }));
+        } else if (phase.type === "game2") {
+          setGameScores((prev) => ({ ...prev, game2: receivedScore }));
           if (settings.skipMessages) {
             setPhase({ type: "game3" });
           } else {
             setPhase({ type: "postGame2", step: 0 });
             setScrambleComplete(false);
           }
-        }
-      } else if (((_e3 = e2.data) == null ? void 0 : _e3.type) === "slalom-game-over") {
-        const score3 = e2.data.score || 0;
-        if ((_f2 = hyvmindOverlayRef.current) == null ? void 0 : _f2.startsWith("games")) {
-          setUnsubmittedScore((prev) => prev + score3);
-          setHyvmindOverlay("games");
-        } else {
+        } else if (phase.type === "game3") {
           setGameScores((prev) => {
-            const totalScore = prev.game1 + prev.game2 + score3;
-            setGeneratingScore(totalScore);
+            const total = prev.game1 + prev.game2 + receivedScore;
+            setGeneratingScore(total);
             setPhase({ type: "generating" });
-            return { ...prev, game3: score3 };
+            return { ...prev, game3: receivedScore };
           });
         }
-      } else if (((_g2 = e2.data) == null ? void 0 : _g2.type) === "hyvmind-nav") {
+      } else if (((_c2 = e2.data) == null ? void 0 : _c2.type) === "hyvmind-loaded") {
+        const elapsed = Date.now() - hyvmindLoadingStartRef.current;
+        const minTime = 800;
+        if (elapsed >= minTime) {
+          setHyvmindLoading(false);
+        } else {
+          setTimeout(() => setHyvmindLoading(false), minTime - elapsed);
+        }
+      } else if (((_d2 = e2.data) == null ? void 0 : _d2.type) === "hyvmind-nav") {
         const target = e2.data.target;
         const overlayMap = {
           "House of Puzzles": "puzzles",
           "House of Rant": "about",
           "House of Games": "games",
-          Leaderboard: "leaderboard"
+          "The Ranting Well": "about",
+          Laboratory: "lab-diagrams",
+          Leaderboard: "leaderboard",
+          maps: "maps"
         };
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
         setGameIdx(0);
         setGamesLoaded({});
-      } else if (((_h2 = e2.data) == null ? void 0 : _h2.type) === "hyvmind-submit-score") {
+      } else if (((_e3 = e2.data) == null ? void 0 : _e3.type) === "hyvmind-submit-score") {
         const score = unsubmittedScoreRef.current;
         setUnsubmittedScore(0);
         if (score === 0) {
-          (_j2 = (_i2 = hyvmindIframeRef.current) == null ? void 0 : _i2.contentWindow) == null ? void 0 : _j2.postMessage(
+          (_g2 = (_f2 = hyvmindIframeRef.current) == null ? void 0 : _f2.contentWindow) == null ? void 0 : _g2.postMessage(
             { type: "hyvmind-popup", msg: "No score to submit." },
             "*"
           );
           return;
         }
-        (_l2 = (_k2 = hyvmindIframeRef.current) == null ? void 0 : _k2.contentWindow) == null ? void 0 : _l2.postMessage(
+        (_i2 = (_h2 = hyvmindIframeRef.current) == null ? void 0 : _h2.contentWindow) == null ? void 0 : _i2.postMessage(
           { type: "hyvmind-generating" },
           "*"
         );
@@ -97534,11 +98985,11 @@ function TextGameModal({ onComplete }) {
             "*"
           );
         });
-      } else if (((_m2 = e2.data) == null ? void 0 : _m2.type) === "hyvmind-copy-secrets") {
+      } else if (((_j2 = e2.data) == null ? void 0 : _j2.type) === "hyvmind-copy-secrets") {
         const secretsStr = e2.data.secrets.map((s2) => `Buzz: ${s2.secret} (Score: ${s2.score})`).join("\n");
         navigator.clipboard.writeText(secretsStr).catch(() => {
         });
-      } else if (((_n = e2.data) == null ? void 0 : _n.type) === "hyvmind-close") {
+      } else if (((_k2 = e2.data) == null ? void 0 : _k2.type) === "hyvmind-close") {
         setHyvmindOverlay(null);
         setUnsubmittedScore(0);
         setPhase({ type: "idle" });
@@ -97546,7 +98997,7 @@ function TextGameModal({ onComplete }) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, generateBuzzSecret]);
+  }, [settings, generateBuzzSecret, phase.type]);
   reactExports.useEffect(() => {
     var _a3;
     const win = (_a3 = hyvmindIframeRef.current) == null ? void 0 : _a3.contentWindow;
@@ -97922,10 +99373,10 @@ function TextGameModal({ onComplete }) {
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 "iframe",
                 {
-                  src: `/assets/rebirth.html${bgmParam}`,
+                  src: `/assets/games/up1way.html${bgmParam}`,
                   allow: "autoplay",
                   className: "w-full h-full border-0",
-                  title: "Rebirth",
+                  title: "Up 1 Way",
                   "data-ocid": "text_game.game1_iframe",
                   onLoad: () => setGameLoaded((prev) => ({ ...prev, game1: true }))
                 }
@@ -97954,10 +99405,10 @@ function TextGameModal({ onComplete }) {
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 "iframe",
                 {
-                  src: `/assets/squarebar.html${bgmParam}`,
+                  src: `/assets/games/thunder.html${bgmParam}`,
                   allow: "autoplay",
                   className: "w-full h-full border-0",
-                  title: "Square Bar",
+                  title: "Thunder",
                   "data-ocid": "text_game.game2_iframe",
                   onLoad: () => setGameLoaded((prev) => ({ ...prev, game2: true }))
                 }
@@ -97986,10 +99437,10 @@ function TextGameModal({ onComplete }) {
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 "iframe",
                 {
-                  src: `/assets/slalom.html${bgmParam}`,
+                  src: `/assets/games/boxsnake.html${bgmParam}`,
                   allow: "autoplay",
                   className: "w-full h-full border-0",
-                  title: "Slalom",
+                  title: "Box Snake",
                   "data-ocid": "text_game.game3_iframe",
                   onLoad: () => setGameLoaded((prev) => ({ ...prev, game3: true }))
                 }
@@ -97999,24 +99450,59 @@ function TextGameModal({ onComplete }) {
         ) });
       case "hyvmind":
         return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 flex items-center justify-center overflow-auto", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "iframe",
-            {
-              ref: hyvmindIframeRef,
-              src: "/assets/hyvmind/index.html",
-              tabIndex: -1,
-              className: "border-0",
-              style: {
-                background: "transparent",
-                width: "1200px",
-                height: "800px",
-                flexShrink: 0
+          hyvmindLoading && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center gap-4 select-none", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                className: "text-foreground",
+                style: {
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.65em",
+                  letterSpacing: "0.1em"
+                },
+                children: "Loading..."
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: "text-foreground",
+                style: {
+                  fontSize: "0.55em",
+                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                },
+                children: "█"
               },
-              title: "HYVMIND",
-              allow: "autoplay",
-              "data-ocid": "text_game.hyvmind_iframe"
+              i2
+            )) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "flex-1 flex items-center justify-center overflow-auto",
+              style: {
+                display: hyvmindLoading ? "none" : hyvmindOverlay === null ? void 0 : "none"
+              },
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "iframe",
+                {
+                  ref: hyvmindIframeRef,
+                  src: "/assets/hyvmind/index.html",
+                  tabIndex: -1,
+                  className: "border-0",
+                  style: {
+                    background: "transparent",
+                    width: "1200px",
+                    height: "800px",
+                    flexShrink: 0
+                  },
+                  title: "HYVMIND",
+                  allow: "autoplay",
+                  "data-ocid": "text_game.hyvmind_iframe"
+                }
+              )
             }
-          ) }),
+          ),
           hyvmindOverlay === "puzzles" && /* @__PURE__ */ jsxRuntimeExports.jsx(
             PuzzlesOverlay,
             {
@@ -98036,43 +99522,57 @@ function TextGameModal({ onComplete }) {
               onBack: handleHyvmindResume
             }
           ),
+          hyvmindOverlay === "lab-diagrams" && /* @__PURE__ */ jsxRuntimeExports.jsx(LabDiagramsOverlay, { onBack: handleHyvmindResume }),
+          hyvmindOverlay === "maps" && /* @__PURE__ */ jsxRuntimeExports.jsx(MapsOverlay, { onBack: handleHyvmindResume }),
           hyvmindOverlay === "games" && /* @__PURE__ */ jsxRuntimeExports.jsx(
             GamesOverlay,
             {
               selectedIdx: gameIdx,
               onSelect: (i2) => setGameIdx(typeof i2 === "function" ? i2(gameIdx) : i2),
               onBack: handleHyvmindResume,
-              onRebirth: () => {
-                setHyvmindOverlay("games-rebirth");
+              onUp1Way: () => {
+                setHyvmindOverlay("games-up1way");
                 setTimeout(
                   () => {
                     var _a3;
                     return (_a3 = document.querySelector(
-                      'iframe[title="Rebirth"]'
+                      'iframe[title="Up 1 Way"]'
                     )) == null ? void 0 : _a3.focus();
                   },
                   200
                 );
               },
-              onSquareBar: () => {
-                setHyvmindOverlay("games-squarebar");
+              onThunder: () => {
+                setHyvmindOverlay("games-thunder");
                 setTimeout(
                   () => {
                     var _a3;
                     return (_a3 = document.querySelector(
-                      'iframe[title="Square Bar"]'
+                      'iframe[title="Thunder"]'
                     )) == null ? void 0 : _a3.focus();
                   },
                   200
                 );
               },
-              onSlalom: () => {
-                setHyvmindOverlay("games-slalom");
+              onBoxSnake: () => {
+                setHyvmindOverlay("games-boxsnake");
                 setTimeout(
                   () => {
                     var _a3;
                     return (_a3 = document.querySelector(
-                      'iframe[title="Slalom"]'
+                      'iframe[title="Box Snake"]'
+                    )) == null ? void 0 : _a3.focus();
+                  },
+                  200
+                );
+              },
+              onPillars3d: () => {
+                setHyvmindOverlay("games-pillars3d");
+                setTimeout(
+                  () => {
+                    var _a3;
+                    return (_a3 = document.querySelector(
+                      'iframe[title="Pillars 3D"]'
                     )) == null ? void 0 : _a3.focus();
                   },
                   200
@@ -98081,81 +99581,50 @@ function TextGameModal({ onComplete }) {
               score: unsubmittedScore
             }
           ),
-          hyvmindOverlay === "games-rebirth" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
-            !gamesLoaded.rebirth && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
+          ["up1way", "thunder", "boxsnake", "pillars3d"].map((game) => {
+            const overlayKey = `games-${game}`;
+            const titles = {
+              up1way: "Up 1 Way",
+              thunder: "Thunder",
+              boxsnake: "Box Snake",
+              pillars3d: "Pillars 3D"
+            };
+            return hyvmindOverlay === overlayKey && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
               {
-                className: "text-foreground",
-                style: {
-                  fontSize: "0.55em",
-                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
-                },
-                children: "█"
+                className: "flex-1 relative flex flex-col overflow-hidden",
+                children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
+                  !gamesLoaded[game] && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-foreground",
+                      style: {
+                        fontSize: "0.55em",
+                        animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
+                      },
+                      children: "█"
+                    },
+                    i2
+                  )) }) }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "iframe",
+                    {
+                      src: `/assets/games/${game}.html${bgmParam}`,
+                      allow: "autoplay",
+                      className: "w-full h-full border-0",
+                      title: titles[game],
+                      tabIndex: -1,
+                      onLoad: () => setGamesLoaded((prev) => ({
+                        ...prev,
+                        [game]: true
+                      }))
+                    }
+                  )
+                ] })
               },
-              i2
-            )) }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/rebirth.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Rebirth",
-                tabIndex: -1,
-                onLoad: () => setGamesLoaded((prev) => ({ ...prev, rebirth: true }))
-              }
-            )
-          ] }) }),
-          hyvmindOverlay === "games-squarebar" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
-            !gamesLoaded.squarebar && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                className: "text-foreground",
-                style: {
-                  fontSize: "0.55em",
-                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
-                },
-                children: "█"
-              },
-              i2
-            )) }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/squarebar.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Square Bar",
-                tabIndex: -1,
-                onLoad: () => setGamesLoaded((prev) => ({ ...prev, squarebar: true }))
-              }
-            )
-          ] }) }),
-          hyvmindOverlay === "games-slalom" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 relative flex flex-col overflow-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex items-center justify-center bg-background p-0", children: [
-            !gamesLoaded.slalom && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-background z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-[2px]", children: Array.from({ length: 16 }).map((_2, i2) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                className: "text-foreground",
-                style: {
-                  fontSize: "0.55em",
-                  animation: `terminal-blink 0.8s step-end ${i2 * 0.05}s infinite`
-                },
-                children: "█"
-              },
-              i2
-            )) }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "iframe",
-              {
-                src: `/assets/slalom.html${bgmParam}`,
-                allow: "autoplay",
-                className: "w-full h-full border-0",
-                title: "Slalom",
-                tabIndex: -1,
-                onLoad: () => setGamesLoaded((prev) => ({ ...prev, slalom: true }))
-              }
-            )
-          ] }) }),
+              game
+            );
+          }),
           hyvmindOverlay === "chess" && /* @__PURE__ */ jsxRuntimeExports.jsx(
             ChessPuzzleGame,
             {
@@ -98234,10 +99703,6 @@ function TextGameModal({ onComplete }) {
                   letterSpacing: "0.3em"
                 },
                 onClick: () => {
-                  if (overrideAudio) {
-                    overrideAudio.pause();
-                    overrideAudio.currentTime = 0;
-                  }
                   onComplete();
                 },
                 "aria-label": "Close text game",
@@ -98264,6 +99729,7 @@ function TextGameModal({ onComplete }) {
                   {
                     src: "/assets/forest background.png",
                     alt: "",
+                    fetchPriority: "high",
                     className: "absolute inset-0 w-full h-full object-cover pointer-events-none",
                     style: { opacity: 1 }
                   }
@@ -98340,645 +99806,6 @@ function TextGameModal({ onComplete }) {
       }
     )
   ] });
-}
-function fnv1a(str) {
-  let hash = 2166136261;
-  for (let i2 = 0; i2 < str.length; i2++) {
-    hash ^= str.charCodeAt(i2);
-    hash = Math.imul(hash, 16777619) >>> 0;
-  }
-  return hash >>> 0;
-}
-class SeedablePRNG {
-  constructor(seed) {
-    __publicField(this, "seed");
-    this.seed = seed;
-  }
-  next() {
-    this.seed = (this.seed * 9301 + 49297) % 233280;
-    return this.seed / 233280;
-  }
-}
-function toPerlin(elevation) {
-  return elevation / 255 * 2 - 1;
-}
-function easeInOutQuad(t2) {
-  return t2 < 0.5 ? 2 * t2 * t2 : -1 + (4 - 2 * t2) * t2;
-}
-function perlinNoise(width, height, persistence, octaves, wavelength, prng) {
-  const gradX = [];
-  const gradY = [];
-  for (let o2 = 0; o2 < octaves; o2++) {
-    const gw = width + 1;
-    const gh = height + 1;
-    const gxLayer = [];
-    const gyLayer = [];
-    for (let gy = 0; gy < gh; gy++) {
-      const gxRow = [];
-      const gyRow = [];
-      for (let gx = 0; gx < gw; gx++) {
-        const angle = prng.next() * Math.PI * 2;
-        gxRow.push(Math.cos(angle));
-        gyRow.push(Math.sin(angle));
-      }
-      gxLayer.push(gxRow);
-      gyLayer.push(gyRow);
-    }
-    gradX.push(gxLayer);
-    gradY.push(gyLayer);
-  }
-  const result = [];
-  for (let y2 = 0; y2 < height; y2++) {
-    const row = [];
-    for (let x3 = 0; x3 < width; x3++) {
-      let noise = 0;
-      let amplitude = 1;
-      let freq = 1 / wavelength;
-      let maxAmp = 0;
-      for (let o2 = 0; o2 < octaves; o2++) {
-        const px = x3 * freq;
-        const py = y2 * freq;
-        const ix = Math.floor(px);
-        const iy = Math.floor(py);
-        const fx = px - ix;
-        const fy = py - iy;
-        const gx0 = gradX[o2];
-        const gy0 = gradY[o2];
-        const wx = easeInOutQuad(fx);
-        const wy = easeInOutQuad(fy);
-        const gw = width + 1;
-        const gh = height + 1;
-        const ix0 = (ix % gw + gw) % gw;
-        const ix1 = ((ix + 1) % gw + gw) % gw;
-        const iy0 = (iy % gh + gh) % gh;
-        const iy1 = ((iy + 1) % gh + gh) % gh;
-        const d00 = gx0[iy0][ix0] * fx + gy0[iy0][ix0] * fy;
-        const d10 = gx0[iy0][ix1] * (fx - 1) + gy0[iy0][ix1] * fy;
-        const d01 = gx0[iy1][ix0] * fx + gy0[iy1][ix0] * (fy - 1);
-        const d11 = gx0[iy1][ix1] * (fx - 1) + gy0[iy1][ix1] * (fy - 1);
-        const lerpX0 = d00 + wx * (d10 - d00);
-        const lerpX1 = d01 + wx * (d11 - d01);
-        noise += (lerpX0 + wy * (lerpX1 - lerpX0)) * amplitude;
-        maxAmp += amplitude;
-        amplitude *= persistence;
-        freq *= 2;
-      }
-      row.push(noise / maxAmp);
-    }
-    result.push(row);
-  }
-  return result;
-}
-function calculateSlopeDirection(y0, y1, y2, y3) {
-  const avgSlopeX = (y1 - y0 + (y3 - y2)) / 2;
-  const avgSlopeZ = (y2 - y0 + (y3 - y1)) / 2;
-  const slopeDirection = Math.atan2(avgSlopeZ, avgSlopeX) * 180 / Math.PI;
-  return [slopeDirection, avgSlopeX, avgSlopeZ];
-}
-function addShading(colors2, slopeDirection, slopeX, slopeZ, lightPosition, lightHeight, light) {
-  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
-  const light1 = 3 * (lightHeight + 90) / 180 + 1;
-  const light2 = 5 - light1;
-  colors2[0] = Math.max(
-    0,
-    colors2[0] - lightHeightChange / light1 + Math.min(0, lightHeight)
-  );
-  colors2[1] = Math.max(
-    0,
-    colors2[1] - lightHeightChange / 2 + Math.min(0, lightHeight)
-  );
-  colors2[2] = Math.max(
-    0,
-    colors2[2] - lightHeightChange / light2 + Math.min(0, lightHeight)
-  );
-  let diff = Math.abs(lightPosition - slopeDirection);
-  diff = diff > 180 ? 360 - diff : diff;
-  if (slopeX === 0 && slopeZ === 0) {
-    diff = 30;
-  }
-  const darkening = diff * Math.abs((lightHeight - 90) / 90);
-  colors2[0] = Math.max(0, Math.min(255, colors2[0] - darkening + light));
-  colors2[1] = Math.max(0, Math.min(255, colors2[1] - darkening + light));
-  colors2[2] = Math.max(0, Math.min(255, colors2[2] - darkening + light));
-}
-function terrainColorLookup(elevation, slopeDirection, slopeX, slopeZ, waterLevel, beachSize, lightPosition, lightHeight, light) {
-  let r2;
-  let g2;
-  let b2;
-  if (elevation < waterLevel + beachSize) {
-    r2 = elevation / 3 + 150 * 1.3;
-    g2 = elevation / 3 + 110 * 1.3;
-    b2 = elevation / 3 * 1.3;
-  } else if (elevation < 100) {
-    r2 = elevation;
-    g2 = elevation + 88;
-    b2 = elevation;
-  } else if (elevation < 130) {
-    r2 = elevation;
-    g2 = elevation + 58;
-    b2 = elevation;
-  } else if (elevation < 160) {
-    r2 = elevation;
-    g2 = Math.min(elevation + 29, 255);
-    b2 = elevation;
-  } else if (elevation < 190) {
-    r2 = elevation - 10;
-    g2 = elevation - 10;
-    b2 = elevation;
-  } else if (elevation < 220) {
-    r2 = elevation - 40;
-    g2 = elevation - 40;
-    b2 = elevation - 30;
-  } else {
-    r2 = Math.min(255, elevation + 10);
-    g2 = Math.min(255, elevation + 10);
-    b2 = Math.min(255, elevation + 20);
-  }
-  const colors2 = [r2, g2, b2];
-  addShading(
-    colors2,
-    slopeDirection,
-    slopeX,
-    slopeZ,
-    lightPosition,
-    lightHeight,
-    light
-  );
-  return [colors2[0], colors2[1], colors2[2], 255];
-}
-function waterColorLookup(depth, _waterLevel, lightHeight) {
-  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
-  const light1 = 3 * (lightHeight + 90) / 180 + 1;
-  const light2 = 5 - light1;
-  const baseR = 0;
-  const baseG = 180 - depth / 2;
-  const baseB = 255 - depth / 4;
-  const r2 = Math.max(
-    0,
-    baseR - lightHeightChange / light1 + Math.min(0, lightHeight)
-  );
-  const g2 = Math.max(
-    0,
-    baseG - lightHeightChange / 2 + Math.min(0, lightHeight)
-  );
-  const b2 = Math.max(
-    0,
-    baseB - lightHeightChange / light2 + Math.min(0, lightHeight)
-  );
-  return [Math.round(r2), Math.round(g2), Math.round(b2), 178];
-}
-const cos30 = Math.cos(Math.PI / 6);
-const sin30 = Math.sin(Math.PI / 6);
-const isoHeight = 20;
-const isoWidth = 1;
-const isoLength = 1;
-const scale = 5;
-function coordToPixel(coordX, coordY, coordHeight) {
-  return [
-    Math.floor(scale * ((coordX - coordY) * cos30 / isoWidth) + 50),
-    Math.floor(
-      scale * ((coordX + coordY) * sin30 / isoLength - coordHeight * isoHeight) + 50
-    )
-  ];
-}
-function drawTile(ctx, h0, h1, h2, h3, isWater, x3, y2, terrainAverageHeight, terrainHighestHeight, slopeValues, waterLevel, beachSize, lightPosition, lightHeight, light) {
-  const [px0, py0] = coordToPixel(x3, y2, h0);
-  const [px1, py1] = coordToPixel(x3 + 1, y2, h1);
-  const [px2, py2] = coordToPixel(x3, y2 + 1, h2);
-  const [px3, py3] = coordToPixel(x3 + 1, y2 + 1, h3);
-  let color2;
-  if (isWater) {
-    const depth = waterLevel - terrainAverageHeight;
-    color2 = waterColorLookup(depth, waterLevel, lightHeight);
-  } else {
-    color2 = terrainColorLookup(
-      terrainHighestHeight,
-      slopeValues[0],
-      slopeValues[1],
-      slopeValues[2],
-      waterLevel,
-      beachSize,
-      lightPosition,
-      lightHeight,
-      light
-    );
-  }
-  const [r2, g2, b2, a2] = color2;
-  ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
-  ctx.beginPath();
-  ctx.moveTo(px0, py0);
-  ctx.lineTo(px1, py1);
-  ctx.lineTo(px3, py3);
-  ctx.lineTo(px2, py2);
-  ctx.closePath();
-  ctx.fill();
-  if (!isWater) {
-    ctx.strokeStyle = `rgba(${Math.max(0, r2 - 20)},${Math.max(0, g2 - 20)},${Math.max(0, b2 - 20)},0.4)`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-}
-function drawBorder(ctx, h0, h1, _h2, _h3, isWater, x1, y1, x22, y2, isLeftBorder, waterLevel, lightHeight, light) {
-  const [px0, py0] = coordToPixel(x1, y1, h0);
-  const [px1, py1] = coordToPixel(x22, y2, h1);
-  const [px0b, py0b] = coordToPixel(x1, y1, 0);
-  const [px1b, py1b] = coordToPixel(x22, y2, 0);
-  if (isWater) {
-    const depthAdj = isLeftBorder ? 25 : 15;
-    const [r2, g2, b2, a2] = waterColorLookup(depthAdj, waterLevel, lightHeight);
-    ctx.fillStyle = `rgba(${r2},${g2},${b2},${a2 / 255})`;
-    ctx.beginPath();
-    ctx.moveTo(px0, py0);
-    ctx.lineTo(px1, py1);
-    ctx.lineTo(px1b, py1b);
-    ctx.lineTo(px0b, py0b);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = `rgba(${r2},${g2},${b2},0.5)`;
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-    return;
-  }
-  const maxH = Math.max(h0, h1);
-  if (maxH <= 0) return;
-  const gradient = ctx.createLinearGradient(px0b, py0b, px0, py0);
-  const lightHeightChange = (90 - lightHeight) / (3 - (lightHeight + 90) / 90);
-  const bottomR = Math.min(255, 150 + light);
-  const bottomG = Math.min(255, 110 + light);
-  const bottomB = Math.min(255, 0 + light);
-  const topR = Math.min(255, 255 + light - lightHeightChange);
-  const topG = Math.min(255, 215 + light - lightHeightChange);
-  const topB = Math.min(255, 105 + light - lightHeightChange);
-  gradient.addColorStop(0, `rgb(${bottomR},${bottomG},${bottomB})`);
-  gradient.addColorStop(1, `rgb(${topR},${topG},${topB})`);
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.moveTo(px0, py0);
-  ctx.lineTo(px1, py1);
-  ctx.lineTo(px1b, py1b);
-  ctx.lineTo(px0b, py0b);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = "rgba(80,60,0,0.4)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-}
-async function generateTerrainArtwork(curationName, size2) {
-  var _a3;
-  const canvasWidth = 865;
-  const canvasHeight = 690;
-  const gridWidth = 100;
-  const gridHeight = 100;
-  const seed = fnv1a(curationName);
-  const persistence = 0.5;
-  const octaves = 5;
-  const wavelength = 133;
-  const amplitude = 1;
-  const exponent = 3.3;
-  const peaks = 0.25;
-  const beachSize = 12;
-  const lightPosition = 180;
-  const lightHeight = 60;
-  const light = 0;
-  let canvas;
-  try {
-    canvas = document.createElement("canvas");
-  } catch {
-    return {
-      dataUrl: "",
-      params: {
-        seed,
-        persistence,
-        octaves,
-        wavelength,
-        amplitude,
-        exponent,
-        peaks,
-        waterLevel: 132,
-        beachSize,
-        lightPosition,
-        lightHeight,
-        light
-      }
-    };
-  }
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return {
-      dataUrl: "",
-      params: {
-        seed,
-        persistence,
-        octaves,
-        wavelength,
-        amplitude,
-        exponent,
-        peaks,
-        waterLevel: 132,
-        beachSize,
-        lightPosition,
-        lightHeight,
-        light
-      }
-    };
-  }
-  ctx.fillStyle = "rgba(0,0,0,0)";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  ctx.translate(382, 50);
-  const noisePrng = new SeedablePRNG(seed ^ 3735928559);
-  const rawMap = perlinNoise(
-    gridWidth + 1,
-    gridHeight + 1,
-    persistence,
-    octaves,
-    wavelength,
-    noisePrng
-  );
-  const elevationMap = [];
-  for (let y2 = 0; y2 <= gridHeight; y2++) {
-    const row = [];
-    for (let x3 = 0; x3 <= gridWidth; x3++) {
-      const raw2 = ((_a3 = rawMap[y2]) == null ? void 0 : _a3[x3]) ?? 0;
-      const normalized = (raw2 + 1) / 2 + peaks;
-      const elevated = Math.max(0, normalized) ** exponent * 255;
-      row.push(Math.max(0, Math.min(255, elevated)));
-    }
-    elevationMap.push(row);
-  }
-  const allElevations = [];
-  for (let y2 = 0; y2 <= gridHeight; y2++) {
-    for (let x3 = 0; x3 <= gridWidth; x3++) {
-      allElevations.push(elevationMap[y2][x3]);
-    }
-  }
-  allElevations.sort((a2, b2) => a2 - b2);
-  const percentileIndex = Math.floor(allElevations.length * 0.2);
-  const waterLevel = allElevations[percentileIndex];
-  const params = {
-    seed,
-    persistence,
-    octaves,
-    wavelength,
-    amplitude,
-    exponent,
-    peaks,
-    waterLevel,
-    beachSize,
-    lightPosition,
-    lightHeight,
-    light
-  };
-  const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
-  for (let y2 = 0; y2 < gridHeight; y2++) {
-    for (let x3 = 0; x3 < gridWidth; x3++) {
-      const mapvalue0 = elevationMap[y2][x3];
-      const mapvalue1 = elevationMap[y2][x3 + 1];
-      const mapvalue2 = elevationMap[y2 + 1][x3];
-      const mapvalue3 = elevationMap[y2 + 1][x3 + 1];
-      const p0 = toPerlin(mapvalue0);
-      const p1 = toPerlin(mapvalue1);
-      const p2 = toPerlin(mapvalue2);
-      const p3 = toPerlin(mapvalue3);
-      const terrainAverageHeight = (mapvalue0 + mapvalue1 + mapvalue2 + mapvalue3) / 4;
-      const terrainHighestHeight = Math.max(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3
-      );
-      const terrainLowestHeight = Math.min(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3
-      );
-      const slopeValues = calculateSlopeDirection(
-        mapvalue0,
-        mapvalue1,
-        mapvalue2,
-        mapvalue3
-      );
-      if (terrainHighestHeight < waterLevel) {
-        drawTile(
-          ctx,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          perlinWaterLevel,
-          true,
-          x3,
-          y2,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light
-        );
-      } else if (terrainLowestHeight >= waterLevel) {
-        drawTile(
-          ctx,
-          p0,
-          p1,
-          p2,
-          p3,
-          false,
-          x3,
-          y2,
-          terrainAverageHeight,
-          terrainHighestHeight,
-          slopeValues,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light
-        );
-      } else {
-        let drawPolygon = function(verts, isWater, avgHeight) {
-          if (verts.length < 3) return;
-          const pixels = verts.map(([cx2, cy, ch]) => coordToPixel(cx2, cy, ch));
-          let color2;
-          if (isWater) {
-            color2 = waterColorLookup(
-              waterLevel - avgHeight,
-              waterLevel,
-              lightHeight
-            );
-          } else {
-            color2 = terrainColorLookup(
-              terrainAverageHeight,
-              slopeValues[0],
-              slopeValues[1],
-              slopeValues[2],
-              waterLevel,
-              beachSize,
-              lightPosition,
-              lightHeight,
-              light
-            );
-          }
-          ctx.fillStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},${color2[3] / 255})`;
-          ctx.beginPath();
-          ctx.moveTo(pixels[0][0], pixels[0][1]);
-          for (let i2 = 1; i2 < pixels.length; i2++) {
-            ctx.lineTo(pixels[i2][0], pixels[i2][1]);
-          }
-          ctx.closePath();
-          ctx.fill();
-          if (!isWater) {
-            ctx.strokeStyle = `rgba(${color2[0]},${color2[1]},${color2[2]},0.5)`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-        };
-        const slope1 = mapvalue1 - mapvalue0;
-        const slope2 = mapvalue2 - mapvalue0;
-        const slope3 = mapvalue3 - mapvalue1;
-        const slope4 = mapvalue3 - mapvalue2;
-        const b1 = mapvalue0 - slope1 * x3;
-        const b2 = mapvalue0 - slope2 * y2;
-        const b3 = mapvalue1 - slope3 * y2;
-        const b4 = mapvalue2 - slope4 * x3;
-        const x1 = slope1 !== 0 ? (waterLevel - b1) / slope1 : Number.NEGATIVE_INFINITY;
-        const y1 = slope2 !== 0 ? (waterLevel - b2) / slope2 : Number.NEGATIVE_INFINITY;
-        const y22 = slope3 !== 0 ? (waterLevel - b3) / slope3 : Number.NEGATIVE_INFINITY;
-        const x22 = slope4 !== 0 ? (waterLevel - b4) / slope4 : Number.NEGATIVE_INFINITY;
-        const vertexList = [];
-        const tileList = [];
-        const tileList2 = [];
-        if (mapvalue0 >= waterLevel) {
-          tileList2.push([x3, y2, toPerlin(mapvalue0)]);
-        } else {
-          tileList.push([x3, y2, toPerlin(mapvalue0)]);
-          vertexList.push([x3, y2, perlinWaterLevel]);
-        }
-        if (mapvalue0 >= waterLevel !== mapvalue1 >= waterLevel) {
-          vertexList.push([x1, y2, perlinWaterLevel]);
-          tileList.push([x1, y2, perlinWaterLevel]);
-          tileList2.push([x1, y2, perlinWaterLevel]);
-        }
-        if (mapvalue1 >= waterLevel) {
-          tileList2.push([x3 + 1, y2, toPerlin(mapvalue1)]);
-        } else {
-          tileList.push([x3 + 1, y2, toPerlin(mapvalue1)]);
-          vertexList.push([x3 + 1, y2, perlinWaterLevel]);
-        }
-        if (mapvalue1 >= waterLevel !== mapvalue3 >= waterLevel) {
-          vertexList.push([x3 + 1, y22, perlinWaterLevel]);
-          tileList.push([x3 + 1, y22, perlinWaterLevel]);
-          tileList2.push([x3 + 1, y22, perlinWaterLevel]);
-        }
-        if (mapvalue3 >= waterLevel) {
-          tileList2.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
-        } else {
-          tileList.push([x3 + 1, y2 + 1, toPerlin(mapvalue3)]);
-          vertexList.push([x3 + 1, y2 + 1, perlinWaterLevel]);
-        }
-        if (mapvalue3 >= waterLevel !== mapvalue2 >= waterLevel) {
-          vertexList.push([x22, y2 + 1, perlinWaterLevel]);
-          tileList.push([x22, y2 + 1, perlinWaterLevel]);
-          tileList2.push([x22, y2 + 1, perlinWaterLevel]);
-        }
-        if (mapvalue2 >= waterLevel) {
-          tileList2.push([x3, y2 + 1, toPerlin(mapvalue2)]);
-        } else {
-          tileList.push([x3, y2 + 1, toPerlin(mapvalue2)]);
-          vertexList.push([x3, y2 + 1, perlinWaterLevel]);
-        }
-        if (mapvalue2 >= waterLevel !== mapvalue0 >= waterLevel) {
-          vertexList.push([x3, y1, perlinWaterLevel]);
-          tileList.push([x3, y1, perlinWaterLevel]);
-          tileList2.push([x3, y1, perlinWaterLevel]);
-        }
-        drawPolygon(tileList2, false, terrainAverageHeight);
-        drawPolygon(tileList, false, terrainAverageHeight);
-        drawPolygon(vertexList, true, terrainAverageHeight);
-        if (y2 === gridHeight - 2 && (mapvalue2 < waterLevel || mapvalue3 < waterLevel)) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue2),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
-            x3,
-            y2 + 1,
-            x3 + 1,
-            y2 + 1,
-            true,
-            waterLevel,
-            lightHeight,
-            light
-          );
-        }
-        if (x3 === gridWidth - 2 && (mapvalue1 < waterLevel || mapvalue3 < waterLevel)) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue1),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
-            x3 + 1,
-            y2,
-            x3 + 1,
-            y2 + 1,
-            false,
-            waterLevel,
-            lightHeight,
-            light
-          );
-        }
-      }
-      if (y2 === gridHeight - 2) {
-        if (mapvalue2 > 0 || mapvalue3 > 0) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue2),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue2 < waterLevel && mapvalue3 < waterLevel,
-            x3,
-            y2 + 1,
-            x3 + 1,
-            y2 + 1,
-            true,
-            waterLevel,
-            lightHeight,
-            light
-          );
-        }
-      }
-      if (x3 === gridWidth - 2) {
-        if (mapvalue1 > 0 || mapvalue3 > 0) {
-          drawBorder(
-            ctx,
-            toPerlin(mapvalue1),
-            toPerlin(mapvalue3),
-            0,
-            0,
-            mapvalue1 < waterLevel && mapvalue3 < waterLevel,
-            x3 + 1,
-            y2,
-            x3 + 1,
-            y2 + 1,
-            false,
-            waterLevel,
-            lightHeight,
-            light
-          );
-        }
-      }
-    }
-  }
-  const dataUrl = canvas.toDataURL("image/png");
-  return { dataUrl, params };
 }
 const MAPPINGS_KEY_PREFIX = "caffeine_published_mappings_";
 function usePublishMappings() {
@@ -99169,7 +99996,8 @@ function usePublishGraph() {
             try {
               const { dataUrl, params } = await generateTerrainArtwork(
                 graphName,
-                "full"
+                "full",
+                "topdown"
               );
               if (dataUrl && actorRef) {
                 await actorRef.updateSourceGraphArtwork(
