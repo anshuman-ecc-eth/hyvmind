@@ -180,7 +180,6 @@ window.addEventListener('message', function(e) {
     activeMenu = 'loading';
     closePopup();
   var pop = document.createElement('div');
-  if (nearTrigger) pop._dismissKey = 'trigger:' + nearTrigger.key;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
     pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
@@ -365,6 +364,7 @@ function showPopup(msg) {
   // If message starts with >>, show input popup instead
   if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
   var pop = document.createElement('div');
+  pop._dismissKey = 'msg:' + msg;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
@@ -398,6 +398,7 @@ function showInputPopup(raw) {
   if (activePopup) activePopup.remove();
   var pop = document.createElement('div');
   pop._type = 'input';
+  pop._dismissKey = 'msg:' + raw;
   pop._rules = rules;
   pop._triggerKey = triggerKey;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
@@ -431,7 +432,7 @@ function showDoorPopup(label) {
   var pop = document.createElement('div');
   pop._type = 'door';
   pop._label = label;
-  if (nearDoor) pop._dismissKey = 'door:' + nearDoor.key;
+  if (nearDoor) pop._dismissKey = 'door:' + (label || 'unlabeled');
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
   var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
@@ -550,12 +551,13 @@ function renderSequentialPopup(pop, step, sentences) {
   pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
 }
 
-function showSequentialPopup(sentences, type) {
+function showSequentialPopup(sentences, type, dismissKey) {
   if (activePopup) activePopup.remove();
   var pop = document.createElement('div');
   pop._type = type || 'sequential';
   pop._step = 0;
   pop._sentences = sentences;
+  pop._dismissKey = dismissKey || null;
   pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
   renderSequentialPopup(pop, 0, sentences);
   (document.querySelector('.screen') || document.body).appendChild(pop);
@@ -980,7 +982,7 @@ function activateZ() {
       }
     }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
-    if (Date.now() - (popupDismissedAt['trigger:' + nearTrigger.key] || 0) < 5000) { showDefaultPopup(); msg = 'cooldown'; }
+    if (Date.now() - (popupDismissedAt['msg:' + triggerMessages[nearTrigger.key]] || 0) < 5000) { showDefaultPopup(); msg = 'cooldown'; }
     else if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
       showBavaDialog();
       msg = 'bava-dialog';
@@ -1003,7 +1005,7 @@ function activateZ() {
         }
       }
       if (seqSentences) {
-        showSequentialPopup(seqSentences, 'welcome');
+        showSequentialPopup(seqSentences, 'welcome', 'msg:' + triggerMessages[nearTrigger.key]);
       } else {
         var parts = triggerMessages[nearTrigger.key].split('\n');
         if (parts.length < 2) {
@@ -1014,7 +1016,7 @@ function activateZ() {
           }
         }
         if (parts.length > 1) {
-          showSequentialPopup(parts, 'welcome');
+          showSequentialPopup(parts, 'welcome', 'msg:' + triggerMessages[nearTrigger.key]);
         } else {
           showPopup(triggerMessages[nearTrigger.key]);
         }
@@ -1078,7 +1080,7 @@ function render() {
   }
   if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
     // keep popup visible
-  } else if (nearDoor && !doorDismissed && Date.now() - (popupDismissedAt['door:' + nearDoor.key] || 0) > 5000) {
+  } else if (nearDoor && !doorDismissed && Date.now() - (popupDismissedAt['door:' + (doorLabel || 'unlabeled')] || 0) > 5000) {
     showDoorPopup(doorLabel);
   } else {
     closeDoorPopup();
