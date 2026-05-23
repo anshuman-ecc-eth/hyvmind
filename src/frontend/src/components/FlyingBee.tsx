@@ -7,7 +7,7 @@ interface FlyingBeeProps {
 }
 
 export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
-  const beeRef = useRef<HTMLImageElement>(null);
+  const beeRef = useRef<SVGSVGElement>(null);
   const statusRef = useRef<
     "idle" | "entering" | "perched" | "fleeing" | "returning"
   >("idle");
@@ -169,10 +169,13 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
         inset: 0,
       }}
     >
-      <img
+      <svg
         ref={beeRef}
-        src="/assets/generated/pixel-bee.svg"
-        alt=""
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 16"
+        width="24"
+        height="16"
+        aria-hidden={true}
         style={{
           position: "absolute",
           left: 0,
@@ -182,7 +185,39 @@ export default function FlyingBee({ modalRef, yRef }: FlyingBeeProps) {
           imageRendering: "pixelated",
           opacity: 0,
         }}
-      />
+      >
+        <ellipse cx="8" cy="4" rx="5" ry="3" fill="#c8e6f5" opacity="0.8" />
+        <ellipse cx="18" cy="5" rx="5" ry="2.5" fill="#c8e6f5" opacity="0.7" />
+        <ellipse cx="12" cy="10" rx="7" ry="5" fill="#f5c91e" />
+        <rect x="7" y="6" width="2" height="8" rx="1" fill="#1a1515" />
+        <rect x="11" y="5" width="2" height="9" rx="1" fill="#1a1515" />
+        <rect x="15" y="6" width="2" height="8" rx="1" fill="#1a1515" />
+        <circle cx="14" cy="8" r="1.2" fill="#1a1515" />
+        <circle cx="10" cy="8" r="1.2" fill="#1a1515" />
+        <circle cx="14.4" cy="7.6" r="0.5" fill="#fff" />
+        <circle cx="10.4" cy="7.6" r="0.5" fill="#fff" />
+        <polygon points="19,10 22,10 20,13" fill="#1a1515" />
+        <line
+          x1="13"
+          y1="4"
+          x2="15"
+          y2="1"
+          stroke="#1a1515"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+        />
+        <line
+          x1="11"
+          y1="4"
+          x2="9"
+          y2="1"
+          stroke="#1a1515"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+        />
+        <circle cx="15" cy="1" r="0.8" fill="#1a1515" />
+        <circle cx="9" cy="1" r="0.8" fill="#1a1515" />
+      </svg>
     </div>
   );
 }

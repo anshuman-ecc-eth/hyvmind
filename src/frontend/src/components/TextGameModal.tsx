@@ -1482,13 +1482,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     }
   }, [phase.type]);
 
-  // Override audio (island-puzzle-mystery.ogg)
-  const [overrideAudio] = useState<HTMLAudioElement | null>(() => {
-    const audio = new Audio("/assets/island-puzzle-mystery.ogg");
-    audio.loop = true;
-    return audio;
-  });
-
   // Score awaiting auto-generation of buzz secret
   const [generatingScore, setGeneratingScore] = useState<number | null>(null);
 
@@ -1497,31 +1490,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   useEffect(() => {
     localStorage.setItem("hyvmind_textgame_settings", JSON.stringify(settings));
   }, [settings]);
-
-  // ── Audio: play/pause based on sound setting ──────────────────────────────
-
-  useEffect(() => {
-    if (!overrideAudio) return;
-    if (settings.music === "on") {
-      overrideAudio.play().catch(() => {
-        // Autoplay may be blocked; silently ignore
-      });
-    } else {
-      overrideAudio.pause();
-      overrideAudio.currentTime = 0;
-    }
-  }, [settings.music, overrideAudio]);
-
-  // ── Audio cleanup on unmount ───────────────────────────────────────────────
-
-  useEffect(() => {
-    return () => {
-      if (overrideAudio) {
-        overrideAudio.pause();
-        overrideAudio.currentTime = 0;
-      }
-    };
-  }, [overrideAudio]);
 
   // ── Hyvmind overlay state ──────────────────────────────────────────────────
 
@@ -1561,12 +1529,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleExit = useCallback(() => {
-    if (overrideAudio) {
-      overrideAudio.pause();
-      overrideAudio.currentTime = 0;
-    }
     onCompleteRef.current();
-  }, [overrideAudio]);
+  }, []);
 
   const handleOpenSettings = useCallback(() => {
     setPhase({ type: "settings" });
@@ -2500,10 +2464,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               letterSpacing: "0.3em",
             }}
             onClick={() => {
-              if (overrideAudio) {
-                overrideAudio.pause();
-                overrideAudio.currentTime = 0;
-              }
               onComplete();
             }}
             aria-label="Close text game"
@@ -2529,6 +2489,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <img
             src="/assets/forest background.png"
             alt=""
+            fetchPriority="high"
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             style={{ opacity: 1 }}
           />
