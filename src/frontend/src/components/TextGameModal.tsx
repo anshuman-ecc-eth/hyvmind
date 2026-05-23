@@ -902,7 +902,7 @@ function StartScreen({
       {/* Loading overlay — covers content until bee is perched */}
       {subMenu === "main" && !beeReady && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-background"
+          className="fixed inset-0 flex items-center justify-center bg-background"
           style={{ zIndex: 10000 }}
         >
           <div className="flex flex-col items-center justify-center gap-4">
@@ -924,7 +924,7 @@ function StartScreen({
                     key={id}
                     className="text-foreground"
                     style={{
-                      fontSize: "0.55em",
+                      fontSize: "0.55rem",
                       animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
                     }}
                   >
