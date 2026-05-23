@@ -84116,7 +84116,7 @@ function MapsOverlay({ onBack }) {
     return () => window.removeEventListener("keydown", handler);
   }, [selectedMeta, allTerrains.length, terrainIdx, openTerrain, onBack]);
   const loading = isLoading || testMapsLoading;
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-start gap-4 p-4 overflow-y-auto", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-start overflow-y-auto", children: [
     selectedMeta && /* @__PURE__ */ jsxRuntimeExports.jsx(
       ArtworkModal,
       {
@@ -84125,145 +84125,154 @@ function MapsOverlay({ onBack }) {
         onClose: () => setSelectedMeta(null)
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "text-foreground tracking-widest",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "1em",
-          letterSpacing: "0.15em"
-        },
-        children: "Maps"
-      }
-    ),
-    loading && /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "text-muted-foreground",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.55em"
-        },
-        children: "Loading.."
-      }
-    ),
-    !loading && allTerrains.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "div",
-      {
-        className: "text-muted-foreground text-center px-4",
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: "0.5em",
-          lineHeight: 1.8
-        },
+        className: "w-full max-w-md flex flex-col items-center gap-4 p-4",
+        style: { background: "rgba(0,0,0,0.7)" },
         children: [
-          "No maps available yet.",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
-          "Publish a graph to generate one."
-        ]
-      }
-    ),
-    allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-3 w-full max-w-md", children: allTerrains.map((t2, i2) => {
-      const isSelected = i2 === terrainIdx;
-      return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "button",
-        {
-          type: "button",
-          className: `flex flex-col items-center gap-1 p-2 border transition-colors rounded cursor-pointer ${isSelected ? "border-foreground bg-card scale-105" : "border-border bg-card/50 hover:bg-card"}`,
-          style: { imageRendering: "pixelated" },
-          onClick: () => openTerrain(i2),
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "img",
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-foreground tracking-widest",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "1em",
+                letterSpacing: "0.15em"
+              },
+              children: "Maps"
+            }
+          ),
+          loading && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "text-muted-foreground",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.55em"
+              },
+              children: "Loading.."
+            }
+          ),
+          !loading && allTerrains.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "text-muted-foreground text-center px-4",
+              style: {
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "0.5em",
+                lineHeight: 1.8
+              },
+              children: [
+                "No maps available yet.",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+                "Publish a graph to generate one."
+              ]
+            }
+          ),
+          allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-3 w-full max-w-md", children: allTerrains.map((t2, i2) => {
+            const isSelected = i2 === terrainIdx;
+            return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
               {
-                src: t2.artworkUrl,
-                alt: t2.name,
-                className: "w-full aspect-square object-contain"
+                type: "button",
+                className: `flex flex-col items-center gap-1 p-2 border transition-colors rounded cursor-pointer ${isSelected ? "border-foreground bg-card scale-105" : "border-border bg-card/50 hover:bg-card"}`,
+                style: { imageRendering: "pixelated" },
+                onClick: () => openTerrain(i2),
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "img",
+                    {
+                      src: t2.artworkUrl,
+                      alt: t2.name,
+                      className: "w-full aspect-square object-contain"
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    "span",
+                    {
+                      className: "text-muted-foreground truncate w-full text-center",
+                      style: {
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.4em",
+                        letterSpacing: "0.05em"
+                      },
+                      children: isSelected ? `> ${t2.name}` : `  ${t2.name}`
+                    }
+                  )
+                ]
+              },
+              t2.id
+            );
+          }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3 mt-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                style: {
+                  fontFamily: "monospace",
+                  fontSize: "11px",
+                  color: "#7ab0c0",
+                  letterSpacing: "0.5px",
+                  background: "#000",
+                  padding: "6px 14px",
+                  borderRadius: "2px"
+                },
+                children: "[Z] select [X] back"
               }
             ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "span",
-              {
-                className: "text-muted-foreground truncate w-full text-center",
-                style: {
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "0.4em",
-                  letterSpacing: "0.05em"
-                },
-                children: isSelected ? `> ${t2.name}` : `  ${t2.name}`
-              }
-            )
-          ]
-        },
-        t2.id
-      );
-    }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-3 mt-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          style: {
-            fontFamily: "monospace",
-            fontSize: "11px",
-            color: "#7ab0c0",
-            letterSpacing: "0.5px",
-            background: "#000",
-            padding: "6px 14px",
-            borderRadius: "2px"
-          },
-          children: "[Z] select [X] back"
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
-        allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            onClick: () => openTerrain(terrainIdx),
-            className: "active:scale-95 transition-transform",
-            style: {
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.5)",
-              border: "2px solid #888",
-              color: "#000",
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "16px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            },
-            children: "Z"
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            onClick: onBack,
-            className: "active:scale-95 transition-transform",
-            style: {
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.5)",
-              border: "2px solid #888",
-              color: "#000",
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "16px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            },
-            children: "X"
-          }
-        )
-      ] })
-    ] })
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-4", children: [
+              allTerrains.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => openTerrain(terrainIdx),
+                  className: "active:scale-95 transition-transform",
+                  style: {
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.5)",
+                    border: "2px solid #888",
+                    color: "#000",
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  },
+                  children: "Z"
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  onClick: onBack,
+                  className: "active:scale-95 transition-transform",
+                  style: {
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.5)",
+                    border: "2px solid #888",
+                    color: "#000",
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  },
+                  children: "X"
+                }
+              )
+            ] })
+          ] })
+        ]
+      }
+    )
   ] });
 }
 function PixelTransition({
