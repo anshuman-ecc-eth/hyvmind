@@ -1310,13 +1310,7 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (
-        e.key === "z" ||
-        e.key === "Z" ||
-        e.key === "x" ||
-        e.key === "X" ||
-        e.key === "Enter"
-      ) {
+      if (e.key === "Enter") {
         handleDismiss();
       }
     };
@@ -1353,65 +1347,23 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
         </p>
       </div>
       {done && (
-        <div className="flex flex-col items-center gap-3">
-          <div
-            style={{
-              fontFamily: "monospace",
-              fontSize: "11px",
-              color: "#7ab0c0",
-              letterSpacing: "0.5px",
-              background: "rgba(0,0,0,0.7)",
-              padding: "6px 14px",
-              borderRadius: "2px",
-            }}
-          >
-            [Z] continue  [X] back
-          </div>
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="active:scale-95 transition-transform"
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.5)",
-                border: "2px solid #888",
-                color: "#000",
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "16px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              Z
-            </button>
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="active:scale-95 transition-transform"
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.5)",
-                border: "2px solid #888",
-                color: "#000",
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "16px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              X
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="text-foreground transition-colors hover:text-muted-foreground"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55em",
+            letterSpacing: "0.15em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0",
+            marginTop: "4px",
+          }}
+          onClick={handleDismiss}
+        >
+          {"> Back"}
+        </button>
       )}
     </div>
   );
