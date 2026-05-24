@@ -744,6 +744,42 @@ var lastSpriteBg = '';
 var navPaused = false;
 var navPauseTick = 0;
 
+function navigatePopup(dir, fromDpad) {
+  if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'bava')) {
+    if (activePopup._type === 'secrets') {
+      var newSel = activePopup._selected;
+      if (dir === 'up') newSel = 0;
+      else if (dir === 'down') newSel = (currentScore > 0) ? 1 : 0;
+      if (newSel !== activePopup._selected) {
+        refreshSecretsMenuContent(activePopup, newSel);
+      }
+    }
+    if (activePopup._type === 'view-secrets') {
+      if (dir === 'up' && activePopup._scroll > 0) {
+        activePopup._scroll--;
+        secretsScroll = activePopup._scroll;
+        refreshSecretsListContent(activePopup);
+      } else if (dir === 'down' && activePopup._scroll < storedSecrets.length - 6) {
+        activePopup._scroll++;
+        secretsScroll = activePopup._scroll;
+        refreshSecretsListContent(activePopup);
+      }
+    }
+    if (activePopup._type === 'bava' && activePopup._showing === 'menu') {
+      var items = getBavaItems(activePopup._path);
+      var newIdx = activePopup._selected;
+      if (dir === 'up') newIdx = (newIdx - 1 + items.length) % items.length;
+      else if (dir === 'down') newIdx = (newIdx + 1) % items.length;
+      if (newIdx !== activePopup._selected) {
+        activePopup._selected = newIdx;
+        renderBavaPopup(activePopup);
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     window.parent.postMessage({ type: 'hyvmind-close' }, '*');
@@ -754,40 +790,7 @@ document.addEventListener('keydown', function(e) {
     var dir = e.key.slice(5).toLowerCase();
     var btn = document.querySelector('.dpad-btn.dpad-' + dir);
     if (btn) { btn.classList.add('active'); }
-    // Don't move player when menu is active
-    if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'bava')) {
-      if (activePopup._type === 'secrets') {
-        var newSel = activePopup._selected;
-        if (dir === 'up') newSel = 0;
-        else if (dir === 'down') newSel = (currentScore > 0) ? 1 : 0;
-        if (newSel !== activePopup._selected) {
-          refreshSecretsMenuContent(activePopup, newSel);
-        }
-      }
-      if (activePopup._type === 'view-secrets') {
-        if (dir === 'up' && activePopup._scroll > 0) {
-          activePopup._scroll--;
-          secretsScroll = activePopup._scroll;
-          refreshSecretsListContent(activePopup);
-        } else if (dir === 'down' && activePopup._scroll < storedSecrets.length - 6) {
-          activePopup._scroll++;
-          secretsScroll = activePopup._scroll;
-          refreshSecretsListContent(activePopup);
-        }
-      }
-      if (activePopup._type === 'bava' && activePopup._showing === 'menu') {
-        var items = getBavaItems(activePopup._path);
-        var newIdx = activePopup._selected;
-        if (dir === 'up') newIdx = (newIdx - 1 + items.length) % items.length;
-        else if (dir === 'down') newIdx = (newIdx + 1) % items.length;
-        if (newIdx !== activePopup._selected) {
-          activePopup._selected = newIdx;
-          renderBavaPopup(activePopup);
-        }
-      }
-    } else {
-      dpadState[dir] = true;
-    }
+    navigatePopup(dir, false);
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
@@ -1034,7 +1037,7 @@ document.addEventListener('keyup', function(e) {
 
 var dpadState = {};
 document.querySelectorAll('.dpad-btn').forEach(function(btn) {
-  function start(e) { e.preventDefault(); btn.classList.add('active'); dpadState[btn.dataset.dir] = true; }
+  function start(e) { e.preventDefault(); btn.classList.add('active'); if (!navigatePopup(btn.dataset.dir, true)) dpadState[btn.dataset.dir] = true; }
   function end(e) { e.preventDefault(); btn.classList.remove('active'); dpadState[btn.dataset.dir] = false; }
   btn.addEventListener('mousedown', start);
   btn.addEventListener('mouseup', end);
