@@ -1335,7 +1335,7 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
           }}
         >
           <TextType
-            text="Sorry, we're not yet optimised for phones and tablets. Please use your 'puter."
+            text="Sorry, we're not yet optimised for phone screens. Please use your 'puter."
             typingSpeed={25}
             showCursor
             hideCursorWhileTyping
