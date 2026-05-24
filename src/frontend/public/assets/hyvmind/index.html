@@ -790,7 +790,7 @@ document.addEventListener('keydown', function(e) {
     var dir = e.key.slice(5).toLowerCase();
     var btn = document.querySelector('.dpad-btn.dpad-' + dir);
     if (btn) { btn.classList.add('active'); }
-    navigatePopup(dir, false);
+    if (!navigatePopup(dir, false)) dpadState[dir] = true;
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
