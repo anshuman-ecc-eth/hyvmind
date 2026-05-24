@@ -12,6 +12,10 @@ import PixelTransition from "./TextAnimations/PixelTransition";
 import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
 
+function isComputerScreen(): boolean {
+  return window.innerWidth >= 870 && window.innerHeight >= 540;
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const MENU_ITEMS = ["Enter World", "Go to App", "Credits"] as const;
@@ -1294,6 +1298,125 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ── Mobile Denied Overlay ───────────────────────────────────────────────────
+
+function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
+  const [done, setDone] = useState(false);
+
+  const handleDismiss = useCallback(() => {
+    if (!done) return;
+    onBack();
+  }, [done, onBack]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (
+        e.key === "z" ||
+        e.key === "Z" ||
+        e.key === "x" ||
+        e.key === "X" ||
+        e.key === "Enter"
+      ) {
+        handleDismiss();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleDismiss]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div
+        className="px-6 py-4 rounded"
+        style={{ background: "rgba(0,0,0,0.7)" }}
+      >
+        <p
+          className="text-foreground text-center leading-relaxed"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.7em",
+            letterSpacing: "0.05em",
+            lineHeight: "2",
+            fontWeight: "400",
+          }}
+        >
+          <TextType
+            text="Sorry, we're not yet optimised for phones and tablets. Please use your 'puter."
+            typingSpeed={25}
+            showCursor
+            hideCursorWhileTyping
+            cursorCharacter="█"
+            cursorBlinkDuration={0.4}
+            loop={false}
+            onSentenceComplete={() => setDone(true)}
+          />
+        </p>
+      </div>
+      {done && (
+        <div className="flex flex-col items-center gap-3">
+          <div
+            style={{
+              fontFamily: "monospace",
+              fontSize: "11px",
+              color: "#7ab0c0",
+              letterSpacing: "0.5px",
+              background: "rgba(0,0,0,0.7)",
+              padding: "6px 14px",
+              borderRadius: "2px",
+            }}
+          >
+            [Z] continue  [X] back
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="active:scale-95 transition-transform"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.5)",
+                border: "2px solid #888",
+                color: "#000",
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "16px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Z
+            </button>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="active:scale-95 transition-transform"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.5)",
+                border: "2px solid #888",
+                color: "#000",
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: "16px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              X
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── About Overlay ────────────────────────────────────────────────────────────
 
 interface AboutOverlayProps {
@@ -1788,6 +1911,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [hyvmindLoading, setHyvmindLoading] = useState(true);
   const hyvmindLoadingStartRef = useRef(0);
 
+  // Block hyvmind on non-computer screens
+  const [mobileDenied, setMobileDenied] = useState(false);
+
   // Reset loaded state when entering a new game
   useEffect(() => {
     if (
@@ -1863,6 +1989,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   }, []);
 
   const handleStartHyvmind = useCallback(() => {
+    if (!isComputerScreen()) {
+      setMobileDenied(true);
+      return;
+    }
     setPhase({ type: "hyvmind" });
     setHyvmindLoading(true);
     hyvmindLoadingStartRef.current = Date.now();
@@ -2238,6 +2368,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const renderContent = () => {
     switch (phase.type) {
       case "idle":
+        if (mobileDenied) {
+          return <MobileDeniedOverlay onBack={() => setMobileDenied(false)} />;
+        }
         return (
           <StartScreen
             modalRef={modalRef}

@@ -13,100 +13,32 @@
 
   /* ── Layout (desktop) ── */
   .layout { display: flex; align-items: center; gap: 24px; }
-  .dpad { position: relative; width: 110px; height: 138px; flex-shrink: 0; }
-  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: 2px solid #888; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; }
-  .dpad-btn:active, .dpad-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; transform: scale(0.95); }
-  .dpad-up    { top: 0; left: 32px; }
-  .dpad-down  { bottom: 0; left: 32px; }
-  .dpad-left  { left: 0; top: 46px; }
-  .dpad-right { right: 0; top: 46px; }
-  .action-buttons { display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
-  .action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.5); border: 2px solid #888; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; }
-  .action-btn:active, .action-btn.active { background: #fff3d4; border-color: #f0c060; color: #c89420; transform: scale(0.95); }
+  .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
+  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; }
+  .dpad-btn:active, .dpad-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .dpad-up    { top: 0; left: 49px; }
+  .dpad-down  { bottom: 0; left: 49px; }
+  .dpad-left  { left: 0; top: 52px; }
+  .dpad-right { right: 0; top: 52px; }
+  .action-buttons { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 144px; height: 150px; padding-top: 24px; }
+  .action-row { display: flex; flex-direction: row; gap: 16px; }
+  .action-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .action-btn:active, .action-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .zoom-row { display: flex; flex-direction: row; gap: 6px; width: 100%; margin-top: 25px; }
+  .screen-size-btn { display: flex; align-items: center; justify-content: center; padding: 6px 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; color: #000; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; white-space: nowrap; width: 100%; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .screen-size-btn:active, .screen-size-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .dpad-btn::after, .action-btn::after, .screen-size-btn::after { content: ""; position: absolute; bottom: 0; right: 0; width: 100%; height: 100%; pointer-events: none; border-right: 3px solid rgba(0,0,0,0.15); border-bottom: 3px solid rgba(0,0,0,0.15); border-radius: inherit; }
 
   .game-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
   .layout { display: flex; align-items: center; gap: 24px; width: fit-content; flex-shrink: 0; background: rgba(0,0,0,0.7); padding: 16px; border-radius: 4px; }
   .screen { width: 500px; height: 500px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
   .viewport { position: absolute; inset: 0; overflow: hidden; }
-  .viewport { position: absolute; inset: 0; overflow: hidden; }
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
-
-  /* ── Tablet/small desktop (601-1024px): flex layout ── */
-  @media (max-width: 1024px) and (min-width: 601px) {
-    .layout { width: auto; justify-content: center; }
-    .screen { flex: 0 1 500px; min-width: 100px; height: auto; aspect-ratio: 550/480; }
-    .dpad-btn { border-radius: 4px; }
-  }
-  @media (max-width: 1024px) and (min-width: 769px) {
-    .layout { gap: 12px; }
-    .dpad { width: 82px; height: 104px; }
-    .dpad-btn { width: 34px; height: 34px; font-size: 14px; border-radius: 7px; }
-    .dpad-up    { left: 24px; }
-    .dpad-down  { left: 24px; }
-    .dpad-left  { top: 34px; }
-    .dpad-right { top: 34px; }
-    .action-btn { width: 42px; height: 42px; font-size: 14px; }
-  }
-  @media (max-width: 768px) and (min-width: 601px) {
-    .layout { gap: 8px; }
-    .dpad { width: 76px; height: 96px; }
-    .dpad-btn { width: 32px; height: 32px; font-size: 13px; }
-    .dpad-up    { left: 22px; }
-    .dpad-down  { left: 22px; }
-    .dpad-left  { top: 32px; }
-    .dpad-right { top: 32px; }
-    .action-btn { width: 38px; height: 38px; font-size: 14px; }
-  }
-
-  @media (max-width: 600px) {
-    .dpad-btn { width: 52px; height: 52px; font-size: 20px; }
-    .dpad-up { top: 3px; left: 48px; }
-    .dpad-down { bottom: 3px; left: 48px; }
-    .dpad-left { left: 3px; top: 48px; }
-    .dpad-right { right: 3px; top: 48px; }
-    .action-btn { width: 56px; height: 56px; font-size: 18px; }
-  }
-
-  /* ── Rotate prompt (portrait + small screens) ── */
-  .rotate-prompt {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #0a0a12;
-    color: #e0d0b0;
-    font-family: monospace;
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    padding: 30px;
-  }
-  .rotate-prompt .icon { font-size: 48px; margin-bottom: 4px; }
-  .rotate-prompt .text { font-size: 13px; line-height: 1.6; letter-spacing: 1px; }
-  .rotate-prompt .sub { font-size: 9px; color: #666; margin-top: 8px; cursor: pointer; text-decoration: underline; }
-
-  @media (orientation: portrait) and (max-width: 700px) {
-    .rotate-prompt { display: flex; }
-    .layout { display: none; }
-  }
-  @media (orientation: portrait) and (max-width: 700px) and (min-width: 500px) {
-    /* Tablets in portrait: show prompt but keep game accessible */
-    .rotate-prompt { display: flex; }
-    .layout { display: none; }
-  }
 </style>
 </head>
 <body tabindex="-1">
-
-<div class="rotate-prompt" id="rotatePrompt">
-  <div class="icon">↻</div>
-  <div class="text">Please rotate your device to landscape mode</div>
-  <div class="sub" onclick="dismissRotate()">Continue in portrait</div>
-</div>
 
 <div id="gameContainer" class="game-container">
   <div class="layout" id="gameLayout">
@@ -123,8 +55,13 @@
       </div>
     </div>
     <div class="action-buttons">
-      <button class="action-btn" id="btnZ">Z</button>
-      <button class="action-btn" id="btnX">X</button>
+      <div class="action-row">
+        <button class="action-btn" id="btnZ">Z</button>
+        <button class="action-btn" id="btnX">X</button>
+      </div>
+      <div class="zoom-row">
+        <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+      </div>
     </div>
 
     </div>
@@ -142,16 +79,6 @@ function frm(col, row, prefix) { return 'url(' + ASSETS + '/sprites/' + (prefix|
 
 var gamePaused = false;
 
-function dismissRotate() {
-  document.getElementById('rotatePrompt').style.display = 'none';
-  gamePaused = false;
-}
-
-var mq = window.matchMedia('(orientation: portrait) and (max-width: 700px)');
-mq.addEventListener('change', function(e) {
-  gamePaused = e.matches;
-});
-gamePaused = mq.matches;
 var currentScore = 0;
 var storedSecrets = [];
 var isGenerating = false;
@@ -464,9 +391,9 @@ var STARTUP_SENTENCES = [
 var BAVA_TREE = [
   { q: "Who are you?", r: "I'm Bava, keeper of Hyvmind." },
   { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
-  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer -- not a consumer -- of legal intelligence. For details, check out the laboratory and the in-app tutorial." },
+  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. That's a very important distinction in our view. For details, check out the laboratory and the in-app tutorial." },
   { q: "What can I do here?", r: "Here, you can explore maps and collect points. That'll help you gain Buzz, which you can use in the app to publish notes." },
-  { q: "What's the app for?", r: "It converts your notes into knowledge graphs. This makes it easy for others to use and extend them. Each graph shows up here as a map, so there's always something to explore on the open seas!" },
+  { q: "What's the app for?", r: "It converts your notes into knowledge graphs. This makes it easy for others to use and extend your knowledge. Each graph shows up here as a map, so there's always something to explore on the open seas!" },
 ];
 
 var SEQUENTIAL_AREAS = [
@@ -1132,6 +1059,17 @@ document.getElementById('btnX').addEventListener('click', function() {
   setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
 });
 
+// Screen size toggle
+var zoomValues = [1, 1.25, 1.5];
+var zoomLabels = ['100%', '125%', '150%'];
+var zoomIdx = 0;
+var layoutEl = document.querySelector('.layout');
+document.getElementById('screenSizeBtn').addEventListener('click', function() {
+  zoomIdx = (zoomIdx + 1) % zoomValues.length;
+  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
+  layoutEl.style.transform = 'scale(' + zoomValues[zoomIdx] + ')';
+});
+
 var tick = 0;
 function loop() {
   if (navPaused) {
@@ -1295,28 +1233,6 @@ function reloadCollisionData() {
   img.onerror = function() { console.error('reloadCollision img load failed'); };
   img.src = ASSETS + '/collision.png';
 }
-
-// Auto-fit layout for phones and tablets: detect narrow viewport and apply overlay via JS
-function fitLayout() {
-  var w = window.innerWidth;
-  var layout = document.querySelector('.layout');
-  var screen = document.querySelector('.screen');
-  var dpad = document.querySelector('.dpad');
-  var actions = document.querySelector('.action-buttons');
-  if (w <= 600) {
-    layout.style.cssText = 'display:block;position:relative;width:100%;height:100%;background:rgba(0,0,0,0.7);';
-    screen.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;aspect-ratio:auto;';
-    dpad.style.cssText = 'position:absolute;bottom:14px;left:10px;width:150px;height:150px;z-index:10;';
-    actions.style.cssText = 'display:flex;flex-direction:row;position:absolute;bottom:22px;right:14px;gap:12px;z-index:10;';
-  } else {
-    layout.style.cssText = '';
-    screen.style.cssText = '';
-    dpad.style.cssText = '';
-    actions.style.cssText = '';
-  }
-}
-window.addEventListener('resize', fitLayout);
-setTimeout(fitLayout, 100);
 
 // Auto-poll for map changes every 3 seconds
 var lastMapSize = 0;
