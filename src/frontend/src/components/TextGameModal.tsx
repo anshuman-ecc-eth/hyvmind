@@ -454,17 +454,17 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
   }, [onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto select-none">
+    <div
+      className="flex-1 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto select-none"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       <div
         className="text-foreground tracking-widest"
         style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.9em" }}
       >
         Credits
       </div>
-      <div
-        className="w-full max-w-md flex flex-col items-center gap-4 p-4"
-        style={{ background: "rgba(0,0,0,0.7)" }}
-      >
+      <div className="w-full max-w-md flex flex-col items-center gap-4 p-4">
         <div
           className="text-foreground text-center"
           style={{
@@ -2650,13 +2650,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 tabIndex={-1}
                 className="border-0"
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0.7)",
                   width: "100%",
-                  maxWidth: "1200px",
                   height: "100%",
-                  maxHeight: "800px",
                   minHeight: "500px",
-                  flexShrink: 0,
                 }}
                 title="HYVMIND"
                 allow="autoplay"
