@@ -98,7 +98,10 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
   const loading = isLoading || testMapsLoading;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start overflow-y-auto">
+    <div
+      className="flex-1 flex flex-col items-center justify-start overflow-y-auto"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       {selectedMeta && (
         <ArtworkModal
           artworkUrl={selectedMeta.artworkUrl}
@@ -106,10 +109,7 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
           onClose={() => setSelectedMeta(null)}
         />
       )}
-      <div
-        className="w-full max-w-md flex flex-col items-center gap-4 p-4"
-        style={{ background: "rgba(0,0,0,0.7)" }}
-      >
+      <div className="w-full max-w-md flex flex-col items-center gap-4 p-4">
         <div
           className="text-foreground tracking-widest"
           style={{

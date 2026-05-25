@@ -1738,7 +1738,10 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
   }, [isLast, onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center select-none">
+    <div
+      className="flex-1 flex flex-col items-center justify-center select-none"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       <img
         src={`/assets/hyvmind/lab diagrams/${LAB_DIAGRAMS[step]}`}
         alt={`Diagram ${step + 1}`}

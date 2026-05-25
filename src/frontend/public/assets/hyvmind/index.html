@@ -66,6 +66,9 @@
 
     </div>
   </div>
+  <div style="text-align:center;margin-top:12px;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:1px">
+    <span id="backBtn" tabindex="0" style="cursor:pointer;color:#8a7a5a;transition:color 0.15s" onmouseenter="this.style.color='#c8a860'" onmouseleave="this.style.color='#8a7a5a'" onfocus="this.style.color='#c8a860'" onblur="this.style.color='#8a7a5a'">&gt; Back</span>
+  </div>
 </div>
 
 <audio id="bgm" src="/assets/hyvmind/forest.mp3" loop preload="auto"></audio>
@@ -805,7 +808,7 @@ function navigatePopup(dir, fromDpad) {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
+  if (e.key === 'Escape' || e.key === 'Enter' && document.activeElement && document.activeElement.id === 'backBtn') {
     window.parent.postMessage({ type: 'hyvmind-close' }, '*');
     return;
   }
@@ -1106,6 +1109,10 @@ document.getElementById('btnX').addEventListener('click', function() {
   else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; }
   else { closePopup(); }
   setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
+});
+
+document.getElementById('backBtn').addEventListener('click', function() {
+  window.parent.postMessage({ type: 'hyvmind-close' }, '*');
 });
 
 // Screen size toggle
