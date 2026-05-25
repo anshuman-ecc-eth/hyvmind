@@ -1451,18 +1451,6 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
         </p>
       </div>
       <div className="flex flex-col items-center gap-3">
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: "11px",
-            color: "#7ab0c0",
-            letterSpacing: "0.5px",
-            padding: "6px 14px",
-            borderRadius: "2px",
-          }}
-        >
-          {isLast ? "[X] close" : "[Z] continue  [X] close"}
-        </div>
         <div className="flex gap-4">
           {!isLast && (
             <button
