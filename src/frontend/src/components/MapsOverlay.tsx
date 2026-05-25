@@ -89,6 +89,8 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
         openTerrain(terrainIdx);
       } else if (e.key === "x" || e.key === "X") {
         onBack();
+      } else if (e.key === "Escape") {
+        onBack();
       }
     };
     window.addEventListener("keydown", handler);

@@ -447,7 +447,8 @@ function LeaderboardScreen({
 function CreditsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter") onBack();
+      if (e.key === "Escape") onBack();
+      else if (e.key === "Enter") onBack();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -1412,6 +1413,8 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
         if (!isLast) advance();
       } else if (e.key === "x" || e.key === "X") {
         onBack();
+      } else if (e.key === "Escape") {
+        onBack();
       }
     };
     window.addEventListener("keydown", handler);
@@ -1557,6 +1560,8 @@ function GamesOverlay({
         else if (chosen === "Box Snake") onBoxSnake();
         else if (chosen === "Pillars 3D") onPillars3d();
         else if (chosen === "Back") onBack();
+      } else if (e.key === "Escape") {
+        onBack();
       }
     };
     window.addEventListener("keydown", handler);
@@ -1667,6 +1672,8 @@ function PuzzlesOverlay({
         if (chosen === "Chess") onChess();
         else if (chosen === "Wordle") onWordle();
         else if (chosen === "Back") onBack();
+      } else if (e.key === "Escape") {
+        onBack();
       }
     };
     window.addEventListener("keydown", handler);
@@ -1750,6 +1757,8 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
       if (e.key === "z" || e.key === "Z") {
         if (!isLast) setStep((prev) => prev + 1);
       } else if (e.key === "x" || e.key === "X") {
+        onBack();
+      } else if (e.key === "Escape") {
         onBack();
       }
     };
