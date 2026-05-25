@@ -179,7 +179,6 @@ export default function WordlePuzzleGame({
 
   const activeRow = guesses.length;
   const activeCol = currentGuess.length;
-  const blinkOn = !gameOver && timeLeft % 2 === 0;
 
   // ── Grid rows to render ───────────────────────────────────────────────────
   const rows: { letters: string[]; rowColors: LetterColor[] }[] = [];
@@ -299,12 +298,12 @@ export default function WordlePuzzleGame({
                     color: isEmpty ? "var(--foreground)" : "#ffffff",
                     fontWeight: "bold",
                     transition: "background-color 0.15s",
+                    ...(ri === activeRow && ci === activeCol
+                      ? { animation: "terminal-blink 1s step-end infinite" }
+                      : {}),
                   }}
                 >
-                  {letter ||
-                    (ri === activeRow && ci === activeCol && blinkOn
-                      ? "_"
-                      : "")}
+                  {letter || (ri === activeRow && ci === activeCol ? "█" : "")}
                 </div>
               );
             })}
