@@ -2650,10 +2650,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 tabIndex={-1}
                 className="border-0"
                 style={{
-                  background: "rgba(0,0,0,0.7)",
+                  background: "transparent",
                   width: "100%",
                   height: "100%",
-                  minHeight: "500px",
                 }}
                 title="HYVMIND"
                 allow="autoplay"
