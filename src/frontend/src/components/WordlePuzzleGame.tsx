@@ -4,7 +4,7 @@ import { VALID_GUESSES } from "./wordLists/validGuesses";
 
 const MAX_GUESSES = 6;
 const WORD_LENGTH = 5;
-const TIMER_START = 60;
+const TIMER_START = 120;
 
 // Stable key arrays for the fixed-size grid (avoids noArrayIndexKey lint rule)
 const ROW_KEYS = ["r0", "r1", "r2", "r3", "r4", "r5"] as const;
@@ -177,6 +177,9 @@ export default function WordlePuzzleGame({
 
   const cellSize = "min(13vw, 48px)";
 
+  const activeRow = guesses.length;
+  const activeCol = currentGuess.length;
+
   // ── Grid rows to render ───────────────────────────────────────────────────
   const rows: { letters: string[]; rowColors: LetterColor[] }[] = [];
   for (let r = 0; r < MAX_GUESSES; r++) {
@@ -202,172 +205,189 @@ export default function WordlePuzzleGame({
   }
 
   return (
-    <div
-      className="flex-1 flex flex-col items-center justify-start gap-3 pt-4 pb-4 px-2 select-none overflow-auto"
-      data-ocid="wordle_puzzle.game"
-      onClick={() => inputRef.current?.focus()}
-      onKeyDown={() => inputRef.current?.focus()}
-    >
-      {/* Hidden input for mobile keyboard */}
-      <input
-        ref={inputRef}
-        type="text"
-        className="opacity-0 absolute"
-        style={{ width: 1, height: 1 }}
-        value={currentGuess}
-        onChange={(e) => {
-          const val = e.target.value.toUpperCase().slice(0, WORD_LENGTH);
-          setCurrentGuess(val);
-        }}
-        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-          if (e.key === "Enter") {
-            submitGuess();
-          } else if (e.key === "Backspace") {
-            e.preventDefault();
-            setCurrentGuess((prev) => prev.slice(0, -1));
-          }
-        }}
-      />
-
-      {/* Heading */}
+    <>
+      <style>
+        {
+          ".wordle-cursor { animation: wordle-blink 0.6s step-end infinite; } @keyframes wordle-blink { 0%, 100% { border-color: var(--foreground); } 50% { border-color: transparent; } }"
+        }
+      </style>
       <div
-        className="text-foreground"
-        style={{ ...pxStyle, fontSize: "1rem", letterSpacing: "0.15em" }}
+        className="flex-1 flex flex-col items-center justify-start gap-3 pt-4 pb-4 px-2 select-none overflow-auto"
+        data-ocid="wordle_puzzle.game"
+        onClick={() => inputRef.current?.focus()}
+        onKeyDown={() => inputRef.current?.focus()}
       >
-        {heading}
-      </div>
+        {/* Hidden input for mobile keyboard */}
+        <input
+          ref={inputRef}
+          type="text"
+          className="opacity-0 absolute"
+          style={{ width: 1, height: 1 }}
+          value={currentGuess}
+          onChange={(e) => {
+            const val = e.target.value.toUpperCase().slice(0, WORD_LENGTH);
+            setCurrentGuess(val);
+          }}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+              submitGuess();
+            } else if (e.key === "Backspace") {
+              e.preventDefault();
+              setCurrentGuess((prev) => prev.slice(0, -1));
+            }
+          }}
+        />
 
-      {/* Stats row */}
-      <div
-        className="flex gap-5 text-muted-foreground"
-        style={{ ...pxStyle, fontSize: "0.55rem", letterSpacing: "0.1em" }}
-      >
-        <span data-ocid="wordle_puzzle.puzzle_number">#{puzzleNumber}</span>
-        <span data-ocid="wordle_puzzle.score">Score: {score}</span>
-        <span
-          data-ocid="wordle_puzzle.timer"
-          style={{ color: timeLeft <= 10 ? "var(--destructive)" : undefined }}
-        >
-          {timeLeft}s
-        </span>
-      </div>
-
-      {/* Feedback */}
-      <div
-        style={{
-          ...pxStyle,
-          fontSize: "0.55rem",
-          letterSpacing: "0.1em",
-          minHeight: "1.4em",
-          color: feedback.startsWith("+")
-            ? "var(--primary)"
-            : feedback === ""
-              ? "transparent"
-              : "var(--destructive)",
-        }}
-        data-ocid="wordle_puzzle.feedback"
-      >
-        {feedback || "."}
-      </div>
-
-      {/* Grid */}
-      <div className="flex flex-col gap-1" data-ocid="wordle_puzzle.grid">
-        {rows.map((row, ri) => (
-          <div key={ROW_KEYS[ri]} className="flex gap-1">
-            {row.letters.map((letter, ci) => {
-              const col = row.rowColors[ci];
-              const isEmpty = col === "empty";
-              return (
-                <div
-                  key={`${ROW_KEYS[ri]}-${CELL_KEYS[ci]}`}
-                  style={{
-                    width: cellSize,
-                    height: cellSize,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: isEmpty ? "transparent" : CELL_COLOR[col],
-                    border: isEmpty
-                      ? "2px solid var(--border)"
-                      : `2px solid ${CELL_COLOR[col]}`,
-                    ...pxStyle,
-                    fontSize: "calc(min(13vw, 48px) * 0.35)",
-                    color: isEmpty ? "var(--foreground)" : "#ffffff",
-                    fontWeight: "bold",
-                    transition: "background-color 0.15s",
-                  }}
-                >
-                  {letter}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Back button during active game */}
-      {!gameOver && (
-        <button
-          type="button"
-          data-ocid="wordle_puzzle.cancel_button"
-          className="transition-colors hover:text-muted-foreground text-foreground mt-1"
-          style={BTN_STYLE}
-          onClick={onExit}
-        >
-          Back
-        </button>
-      )}
-
-      {/* Game over */}
-      {gameOver && (
+        {/* Heading */}
         <div
-          className="flex flex-col items-center gap-4 mt-2"
-          data-ocid="wordle_puzzle.game_over"
+          className="text-foreground"
+          style={{ ...pxStyle, fontSize: "1rem", letterSpacing: "0.15em" }}
         >
-          <div
-            style={{
-              ...pxStyle,
-              fontSize: "0.65rem",
-              letterSpacing: "0.15em",
-              color: "var(--destructive)",
-            }}
+          {heading}
+        </div>
+
+        {/* Stats row */}
+        <div
+          className="flex gap-5 text-muted-foreground"
+          style={{ ...pxStyle, fontSize: "0.55rem", letterSpacing: "0.1em" }}
+        >
+          <span data-ocid="wordle_puzzle.puzzle_number">#{puzzleNumber}</span>
+          <span data-ocid="wordle_puzzle.score">Score: {score}</span>
+          <span
+            data-ocid="wordle_puzzle.timer"
+            style={{ color: timeLeft <= 10 ? "var(--destructive)" : undefined }}
           >
-            {gameOverReason === "time" ? "Time's up!" : "No more guesses!"}
-          </div>
-          {gameOverReason === "guesses" && feedback && (
+            {timeLeft}s
+          </span>
+        </div>
+
+        {/* Feedback */}
+        <div
+          style={{
+            ...pxStyle,
+            fontSize: "0.55rem",
+            letterSpacing: "0.1em",
+            minHeight: "1.4em",
+            color: feedback.startsWith("+")
+              ? "var(--primary)"
+              : feedback === ""
+                ? "transparent"
+                : "var(--destructive)",
+          }}
+          data-ocid="wordle_puzzle.feedback"
+        >
+          {feedback || "."}
+        </div>
+
+        {/* Grid */}
+        <div className="flex flex-col gap-1" data-ocid="wordle_puzzle.grid">
+          {rows.map((row, ri) => (
+            <div key={ROW_KEYS[ri]} className="flex gap-1">
+              {row.letters.map((letter, ci) => {
+                const col = row.rowColors[ci];
+                const isEmpty = col === "empty";
+                return (
+                  <div
+                    key={`${ROW_KEYS[ri]}-${CELL_KEYS[ci]}`}
+                    className={
+                      !gameOver && ri === activeRow && ci === activeCol
+                        ? "wordle-cursor"
+                        : ""
+                    }
+                    style={{
+                      width: cellSize,
+                      height: cellSize,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: isEmpty
+                        ? "transparent"
+                        : CELL_COLOR[col],
+                      border: isEmpty
+                        ? "2px solid var(--border)"
+                        : `2px solid ${CELL_COLOR[col]}`,
+                      ...pxStyle,
+                      fontSize: "calc(min(13vw, 48px) * 0.35)",
+                      color: isEmpty ? "var(--foreground)" : "#ffffff",
+                      fontWeight: "bold",
+                      transition: "background-color 0.15s",
+                    }}
+                  >
+                    {letter ||
+                      (ri === activeRow && ci === activeCol && !gameOver
+                        ? "_"
+                        : "")}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Back button during active game */}
+        {!gameOver && (
+          <button
+            type="button"
+            data-ocid="wordle_puzzle.cancel_button"
+            className="transition-colors hover:text-muted-foreground text-foreground mt-1"
+            style={BTN_STYLE}
+            onClick={onExit}
+          >
+            Back
+          </button>
+        )}
+
+        {/* Game over */}
+        {gameOver && (
+          <div
+            className="flex flex-col items-center gap-4 mt-2"
+            data-ocid="wordle_puzzle.game_over"
+          >
             <div
               style={{
                 ...pxStyle,
-                fontSize: "0.55rem",
-                letterSpacing: "0.1em",
-                color: "var(--muted-foreground)",
+                fontSize: "0.65rem",
+                letterSpacing: "0.15em",
+                color: "var(--destructive)",
               }}
             >
-              Word: {feedback}
+              {gameOverReason === "time" ? "Time's up!" : "No more guesses!"}
             </div>
-          )}
-          <div className="flex gap-6">
-            <button
-              type="button"
-              data-ocid="wordle_puzzle.try_again_button"
-              className="transition-colors hover:text-muted-foreground text-foreground"
-              style={BTN_STYLE}
-              onClick={handleTryAgain}
-            >
-              Try again
-            </button>
-            <button
-              type="button"
-              data-ocid="wordle_puzzle.back_button"
-              className="transition-colors hover:text-muted-foreground text-foreground"
-              style={BTN_STYLE}
-              onClick={onExit}
-            >
-              Back
-            </button>
+            {gameOverReason === "guesses" && feedback && (
+              <div
+                style={{
+                  ...pxStyle,
+                  fontSize: "0.55rem",
+                  letterSpacing: "0.1em",
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                Word: {feedback}
+              </div>
+            )}
+            <div className="flex gap-6">
+              <button
+                type="button"
+                data-ocid="wordle_puzzle.try_again_button"
+                className="transition-colors hover:text-muted-foreground text-foreground"
+                style={BTN_STYLE}
+                onClick={handleTryAgain}
+              >
+                Try again
+              </button>
+              <button
+                type="button"
+                data-ocid="wordle_puzzle.back_button"
+                className="transition-colors hover:text-muted-foreground text-foreground"
+                style={BTN_STYLE}
+                onClick={onExit}
+              >
+                Back
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
