@@ -292,7 +292,7 @@ export default function WordlePuzzleGame({
                     justifyContent: "center",
                     backgroundColor: isEmpty ? "transparent" : CELL_COLOR[col],
                     border: isEmpty
-                      ? "2px solid var(--border)"
+                      ? "2px solid #565758"
                       : `2px solid ${CELL_COLOR[col]}`,
                     ...pxStyle,
                     fontSize: "calc(min(13vw, 48px) * 0.35)",
