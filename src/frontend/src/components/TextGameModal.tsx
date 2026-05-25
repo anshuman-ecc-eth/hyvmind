@@ -1422,11 +1422,11 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   }, [advance, isLast, onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6">
-      <div
-        className="px-6 py-4 rounded"
-        style={{ background: "rgba(0,0,0,0.7)" }}
-      >
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-6"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
+      <div className="px-6 py-4 rounded">
         <p
           className="text-foreground text-center leading-relaxed"
           style={{
@@ -1457,7 +1457,6 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
             fontSize: "11px",
             color: "#7ab0c0",
             letterSpacing: "0.5px",
-            background: "rgba(0,0,0,0.7)",
             padding: "6px 14px",
             borderRadius: "2px",
           }}
