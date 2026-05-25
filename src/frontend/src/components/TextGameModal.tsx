@@ -1396,6 +1396,14 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   const lines = ABOUT_LINES.filter((l) => l.trim() !== "");
   const total = lines.length;
   const isLast = step >= total - 1;
+  const zBtnRef = useRef<HTMLButtonElement>(null);
+  const xBtnRef = useRef<HTMLButtonElement>(null);
+
+  const flashActive = useCallback((el: HTMLButtonElement | null) => {
+    if (!el) return;
+    el.classList.add("active");
+    setTimeout(() => el.classList.remove("active"), 150);
+  }, []);
 
   const advance = useCallback(() => {
     if (!done) return;
@@ -1410,8 +1418,10 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "z" || e.key === "Z") {
+        flashActive(zBtnRef.current);
         if (!isLast) advance();
       } else if (e.key === "x" || e.key === "X") {
+        flashActive(xBtnRef.current);
         onBack();
       } else if (e.key === "Escape") {
         onBack();
@@ -1419,7 +1429,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [advance, isLast, onBack]);
+  }, [advance, isLast, onBack, flashActive]);
 
   return (
     <div
@@ -1451,53 +1461,55 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
         </p>
       </div>
       <div className="flex flex-col items-center gap-3">
+        <style>{`
+          .about-zx-btn {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255,255,255,0.5); border: none;
+            color: #000;
+            font-family: 'Press Start 2P', monospace; font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666;
+            transition: transform 0.15s;
+          }
+          .about-zx-btn::after {
+            content: ""; position: absolute; bottom: 0; right: 0;
+            width: 100%; height: 100%; pointer-events: none;
+            border-right: 3px solid rgba(0,0,0,0.15);
+            border-bottom: 3px solid rgba(0,0,0,0.15);
+            border-radius: inherit;
+          }
+          .about-zx-btn:active, .about-zx-btn.active {
+            background: #fff3d4; color: #c89420; transform: translateY(3px);
+            box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420;
+          }
+        `}</style>
         <div className="flex gap-4">
           {!isLast && (
             <button
+              ref={zBtnRef}
               type="button"
+              className="about-zx-btn"
               onClick={() => {
+                flashActive(zBtnRef.current);
                 if (!done) return;
                 const next = step + 1;
                 if (next >= total) return;
                 setStep(next);
                 setDone(false);
               }}
-              className="active:scale-95 transition-transform"
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.5)",
-                border: "2px solid #888",
-                color: "#000",
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "16px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
             >
               Z
             </button>
           )}
           <button
+            ref={xBtnRef}
             type="button"
-            onClick={onBack}
-            className="active:scale-95 transition-transform"
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.5)",
-              border: "2px solid #888",
-              color: "#000",
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "16px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+            className="about-zx-btn"
+            onClick={() => {
+              flashActive(xBtnRef.current);
+              onBack();
             }}
           >
             X
