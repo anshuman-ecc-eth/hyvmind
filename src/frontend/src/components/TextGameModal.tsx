@@ -2794,7 +2794,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             {hyvmindOverlay === "chess" && (
               <ChessPuzzleGame
                 onComplete={(score) => {
-                  setUnsubmittedScore((prev) => prev + score);
+                  setUnsubmittedScore((prev) => {
+                    const newScore = prev + score;
+                    hyvmindIframeRef.current?.contentWindow?.postMessage(
+                      { type: "hyvmind-score-update", score: newScore },
+                      "*",
+                    );
+                    return newScore;
+                  });
                 }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Chess"
@@ -2803,7 +2810,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             {hyvmindOverlay === "wordle" && (
               <WordlePuzzleGame
                 onComplete={(score) => {
-                  setUnsubmittedScore((prev) => prev + score);
+                  setUnsubmittedScore((prev) => {
+                    const newScore = prev + score;
+                    hyvmindIframeRef.current?.contentWindow?.postMessage(
+                      { type: "hyvmind-score-update", score: newScore },
+                      "*",
+                    );
+                    return newScore;
+                  });
                 }}
                 onExit={() => setHyvmindOverlay("puzzles")}
                 heading="Wordle"

@@ -162,7 +162,6 @@ function renderBavaResponse(pop) {
 }
   if (e.data?.type === 'hyvmind-buzz-secret') {
     isGenerating = false;
-    currentScore = e.data.score || 0;
     if (e.data.secret) storedSecrets.push({ secret: e.data.secret, score: e.data.score || 0 });
   closePopup();
     showSecretsMenu();
@@ -552,8 +551,8 @@ function refreshSecretsListContent(pop) {
   var end = Math.min(scroll + visible, storedSecrets.length);
   for (var i = start; i < end; i++) {
     var s = storedSecrets[i];
-    var secStr = s.secret.length > 16 ? s.secret.slice(0, 16) + '..' : s.secret;
-    html += '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:left;padding:3px 4px;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
+    var secStr = s.secret;
+    html += '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:left;padding:3px 4px;word-break:break-all;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
   }
   if (storedSecrets.length === 0) {
     html += '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
