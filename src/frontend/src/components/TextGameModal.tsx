@@ -906,12 +906,12 @@ function StartScreen({
       {/* Loading overlay — covers content until bee is perched */}
       {subMenu === "main" && !beeReady && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-background"
+          className="fixed inset-0 flex items-center justify-center bg-black"
           style={{ zIndex: 10000 }}
         >
           <div className="flex flex-col items-center justify-center gap-4">
             <span
-              className="text-foreground/70"
+              className="text-white/70"
               style={{
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6rem",
@@ -926,7 +926,7 @@ function StartScreen({
                 return (
                   <span
                     key={id}
-                    className="text-foreground"
+                    className="text-white"
                     style={{
                       fontSize: "0.55rem",
                       animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
