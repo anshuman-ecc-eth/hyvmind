@@ -2358,14 +2358,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         );
 
       case "credits":
-        return (
-          <div
-            className="flex-1 flex items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.7)" }}
-          >
-            <CreditsScreen onBack={handleCloseSubScreen} />
-          </div>
-        );
+        return <CreditsScreen onBack={handleCloseSubScreen} />;
 
       case "leaderboard":
         return (
@@ -2611,10 +2604,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
       case "hyvmind":
         return (
-          <div
-            className="flex-1 relative flex flex-col overflow-hidden"
-            style={{ background: "rgba(0,0,0,0.7)" }}
-          >
+          <div className="flex-1 relative flex flex-col overflow-hidden">
             {hyvmindLoading && (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none">
                 <div
