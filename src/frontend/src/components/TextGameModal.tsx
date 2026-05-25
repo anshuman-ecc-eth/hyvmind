@@ -2650,7 +2650,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 tabIndex={-1}
                 className="border-0"
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0.7)",
                   width: "100%",
                   height: "100%",
                 }}
