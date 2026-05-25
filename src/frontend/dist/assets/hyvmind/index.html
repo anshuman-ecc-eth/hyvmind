@@ -299,6 +299,7 @@ var triggerMemory = {};
 function showPopup(msg) {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   // If message starts with >>, show input popup instead
+  if (msg === 'trunk' || msg === '>>trunk') { showTrunkPopup(); return; }
   if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
   var pop = document.createElement('div');
   pop._dismissKey = 'msg:' + msg;
@@ -391,13 +392,13 @@ var STARTUP_SENTENCES = [
 var BAVA_TREE = [
   { q: "Who are you?", r: "I'm Bava, keeper of Hyvmind." },
   { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
-  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. That's a very important distinction in our view. For details, check out the laboratory and the in-app tutorial." },
+  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. Meditating on that distinction will unlock this world for you. Check the diagrams in the lab if you're wondering where to start. Happy exploring!" },
   { q: "What can I do here?", r: "Here, you can explore maps and collect points. That'll help you gain Buzz, which you can use in the app to publish notes." },
   { q: "What's the app for?", r: "It converts your notes into knowledge graphs. This makes it easy for others to use and extend your knowledge. Each graph shows up here as a map, so there's always something to explore on the open seas!" },
 ];
 
 var SEQUENTIAL_AREAS = [
-  { x1: 43, y1: 39, x2: 47, y2: 43, sentences: ['Welcome.', 'You have found a way out of the Walled Gardens.', "Don't mind the Well.", 'It collects the anger of trapped researchers.', 'And turns it into water for the Sanctuary.'] },
+  { x1: 43, y1: 39, x2: 47, y2: 43, sentences: ['Welcome to Hyvmind, your sanctuary beyond the Walled Gardens.', "Don't mind the Well.", 'It collects the anger of trapped researchers.', 'And turns it into water for the Sanctuary.'] },
   { x1: 51, y1: 71, x2: 55, y2: 75, sentences: ['For Puzzles, go right.', 'For Games, go to the Inn.', 'Your scores will add up.'] },
   { x1: 52, y1: 144, x2: 56, y2: 148, sentences: ['Games give you Scores.', 'Scores can be converted to Buzz.', 'Buzz lets you publish Graphs.', 'Graphs help you earn Trust.', 'Trust puts you on the Leaderboard.'] }
 ];
@@ -569,6 +570,34 @@ function refreshSecretsList() {
   if (activePopup && activePopup._type === 'view-secrets') {
     refreshSecretsListContent(activePopup);
   }
+}
+
+function showTrunkPopup() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  var pop = document.createElement('div');
+  pop._type = 'trunk';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  showTrunkPopupContent(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function showTrunkPopupContent(pop) {
+  var scoreLine = 'Score: ' + currentScore;
+  var hasScore = currentScore > 0;
+  var hasSecrets = storedSecrets.length > 0;
+  var body;
+  if (hasScore) {
+    body = '<div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">Submit this score for a Buzz secret?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> submit <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div>';
+    pop._action = 'submit';
+  } else if (hasSecrets) {
+    body = '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">Secrets in trunk: ' + storedSecrets.length + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">View your saved Buzz secrets?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> view <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    pop._action = 'view-secrets';
+  } else {
+    body = '<div style="font-family:monospace;font-size:13px;color:#7a6a4a;text-align:center;padding:8px 0;">No score to submit. Play games first!</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    pop._action = 'none';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">~ Trunk ~</div>' + body + '</div></div>';
+  pop._type = 'trunk';
 }
 
 function isWalkable(gx, gy) {
@@ -892,6 +921,25 @@ function activateZ() {
       activePopup = pop;
       msg = 'boat-board-prompt';
     }
+  } else if (activePopup && activePopup._type === 'trunk') {
+    if (activePopup._action === 'submit') {
+      isGenerating = true;
+      window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
+      closePopup();
+      var pop = document.createElement('div');
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+      (document.querySelector('.screen') || document.body).appendChild(pop);
+      activePopup = pop;
+      msg = 'trunk-submit';
+    } else if (activePopup._action === 'view-secrets') {
+      closePopup();
+      activeMenu = 'view-secrets';
+      showSecretsList();
+      msg = 'trunk-view-secrets';
+    } else {
+      msg = 'trunk-noop';
+    }
   } else if (activePopup && activePopup._type === 'bava') {
     if (activePopup._showing === 'menu') {
       var items = getBavaItems(activePopup._path);
@@ -932,6 +980,9 @@ function activateZ() {
       navPaused = true;
       navPauseTick = 0;
       msg = 'nav:maps';
+    } else if (triggerMessages[nearTrigger.key] === 'trunk' || triggerMessages[nearTrigger.key] === '>>trunk') {
+      showTrunkPopup();
+      msg = 'trunk-dialog';
     } else if (storedSecrets.length > 0 && triggerMessages[nearTrigger.key].indexOf('>>') === 0) {
       showSecretsMenu();
       activeMenu = 'secrets';
