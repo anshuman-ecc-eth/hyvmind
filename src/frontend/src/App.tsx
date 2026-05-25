@@ -205,10 +205,14 @@ function AppShell() {
   if (isInitializing) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-game-font flex flex-col items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-4">
           <span
             className="text-foreground/70"
-            style={{ fontSize: "0.6rem", letterSpacing: "0.2em" }}
+            style={{
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: "0.6rem",
+              letterSpacing: "0.2em",
+            }}
           >
             LOADING
           </span>
