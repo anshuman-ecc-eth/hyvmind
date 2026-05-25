@@ -92,7 +92,8 @@ export function SettingsView() {
   const [approvingKey, setApprovingKey] = useState<string | null>(null);
   const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null);
   const [revokingKey, setRevokingKey] = useState<string | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] =
+    useState<string>("settings-profile");
 
   // Load plugin binding data on mount
   useEffect(() => {
