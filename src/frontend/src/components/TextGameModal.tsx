@@ -2799,56 +2799,76 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               );
             })}
             {hyvmindOverlay === "chess" && (
-              <ChessPuzzleGame
-                onComplete={(score) => {
-                  setUnsubmittedScore((prev) => {
-                    const newScore = prev + score;
-                    hyvmindIframeRef.current?.contentWindow?.postMessage(
-                      { type: "hyvmind-score-update", score: newScore },
-                      "*",
-                    );
-                    return newScore;
-                  });
-                }}
-                onExit={() => setHyvmindOverlay("puzzles")}
-                heading="Chess"
-              />
+              <div
+                className="flex-1 flex items-center justify-center"
+                style={{ background: "rgba(0,0,0,0.7)" }}
+              >
+                <ChessPuzzleGame
+                  onComplete={(score) => {
+                    setUnsubmittedScore((prev) => {
+                      const newScore = prev + score;
+                      hyvmindIframeRef.current?.contentWindow?.postMessage(
+                        { type: "hyvmind-score-update", score: newScore },
+                        "*",
+                      );
+                      return newScore;
+                    });
+                  }}
+                  onExit={() => setHyvmindOverlay("puzzles")}
+                  heading="Chess"
+                />
+              </div>
             )}
             {hyvmindOverlay === "wordle" && (
-              <WordlePuzzleGame
-                onComplete={(score) => {
-                  setUnsubmittedScore((prev) => {
-                    const newScore = prev + score;
-                    hyvmindIframeRef.current?.contentWindow?.postMessage(
-                      { type: "hyvmind-score-update", score: newScore },
-                      "*",
-                    );
-                    return newScore;
-                  });
-                }}
-                onExit={() => setHyvmindOverlay("puzzles")}
-                heading="Wordle"
-              />
+              <div
+                className="flex-1 flex items-center justify-center"
+                style={{ background: "rgba(0,0,0,0.7)" }}
+              >
+                <WordlePuzzleGame
+                  onComplete={(score) => {
+                    setUnsubmittedScore((prev) => {
+                      const newScore = prev + score;
+                      hyvmindIframeRef.current?.contentWindow?.postMessage(
+                        { type: "hyvmind-score-update", score: newScore },
+                        "*",
+                      );
+                      return newScore;
+                    });
+                  }}
+                  onExit={() => setHyvmindOverlay("puzzles")}
+                  heading="Wordle"
+                />
+              </div>
             )}
           </div>
         );
 
       case "chess":
         return (
-          <ChessPuzzleGame
-            onComplete={handleChessComplete}
-            onExit={() => setPhase({ type: "idle" })}
-            heading="Chess"
-          />
+          <div
+            className="flex-1 flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.7)" }}
+          >
+            <ChessPuzzleGame
+              onComplete={handleChessComplete}
+              onExit={() => setPhase({ type: "idle" })}
+              heading="Chess"
+            />
+          </div>
         );
 
       case "wordle":
         return (
-          <WordlePuzzleGame
-            onComplete={handleWordleComplete}
-            onExit={() => setPhase({ type: "idle" })}
-            heading="Wordle"
-          />
+          <div
+            className="flex-1 flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.7)" }}
+          >
+            <WordlePuzzleGame
+              onComplete={handleWordleComplete}
+              onExit={() => setPhase({ type: "idle" })}
+              heading="Wordle"
+            />
+          </div>
         );
 
       default:
