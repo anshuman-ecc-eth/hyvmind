@@ -1572,7 +1572,10 @@ function GamesOverlay({
   ]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-6"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       <div
         className="text-foreground tracking-widest"
         style={{
@@ -1671,7 +1674,10 @@ function PuzzlesOverlay({
   }, [selectedIdx, onSelect, onChess, onWordle, onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-6"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       <div
         className="text-foreground tracking-widest"
         style={{
