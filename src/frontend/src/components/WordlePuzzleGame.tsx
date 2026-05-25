@@ -298,12 +298,9 @@ export default function WordlePuzzleGame({
                     color: isEmpty ? "var(--foreground)" : "#ffffff",
                     fontWeight: "bold",
                     transition: "background-color 0.15s",
-                    ...(ri === activeRow && ci === activeCol
-                      ? { animation: "terminal-blink 1s step-end infinite" }
-                      : {}),
                   }}
                 >
-                  {letter || (ri === activeRow && ci === activeCol ? "█" : "")}
+                  {letter || (ri === activeRow && ci === activeCol ? <span style={{ animation: "terminal-blink 1s step-end infinite" }}>█</span> : "")}
                 </div>
               );
             })}
