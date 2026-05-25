@@ -508,6 +508,20 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              forest and moon — background image
+            </span>
+            <a
+              href="https://forest-elfs.itch.io/forestmoon"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              forest-elfs
+            </a>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">bottom.png — world tiles</span>
             <a
               href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
