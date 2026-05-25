@@ -1989,7 +1989,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       if (e.data?.type === "crisp-game-over") {
         const receivedScore = (e.data.score as number) || 0;
         if (hyvmindOverlayRef.current?.startsWith("games")) {
-          setUnsubmittedScore((prev) => prev + receivedScore);
+          setUnsubmittedScore((prev) => {
+            const newScore = prev + receivedScore;
+            hyvmindIframeRef.current?.contentWindow?.postMessage(
+              { type: "hyvmind-score-update", score: newScore },
+              "*",
+            );
+            return newScore;
+          });
           setHyvmindOverlay("games");
         } else if (phase.type === "game1") {
           setGameScores((prev) => ({ ...prev, game1: receivedScore }));

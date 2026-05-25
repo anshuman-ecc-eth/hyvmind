@@ -557,11 +557,7 @@ function refreshSecretsListContent(pop) {
   if (storedSecrets.length === 0) {
     html += '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
   }
-  var canUp = scroll > 0;
-  var canDown = end < storedSecrets.length;
-  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px">';
-  if (canUp || canDown) html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy all ';
-  html += '<span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
+  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
   pop.innerHTML = html;
   activePopup = pop;
 }
