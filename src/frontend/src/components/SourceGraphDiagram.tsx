@@ -23,6 +23,7 @@ interface FGNode extends NodeObject {
 
 interface FGLink extends LinkObject<FGNode> {
   label?: string;
+  edgeType?: string;
 }
 
 // Use the class constructor signature directly — no unsafe cast needed
@@ -174,6 +175,7 @@ export function SourceGraphDiagram({
         source: e.source,
         target: e.target,
         label: e.label,
+        edgeType: e.edgeType,
       }));
 
     if (nodes.length === 0) {
@@ -212,6 +214,9 @@ export function SourceGraphDiagram({
       .linkLabel("label")
       .linkDirectionalArrowLength(6)
       .linkDirectionalArrowRelPos(1)
+      .linkLineDash((link) =>
+        (link as unknown as FGLink).edgeType === "cross-ref" ? [5, 4] : null,
+      )
       .linkColor((link) => {
         const neighborIds = neighborIdsRef.current;
         if (neighborIds.size === 0) return "#888888";

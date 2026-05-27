@@ -234,7 +234,11 @@ export function editorToSourceGraph(
       const parentPath = nodeFullPaths.get(node.parentId);
       const childPath = nodeFullPaths.get(node.id);
       if (parentPath && childPath) {
-        edges.push({ source: parentPath, target: childPath });
+        edges.push({
+          source: parentPath,
+          target: childPath,
+          edgeType: "hierarchy",
+        });
       }
     }
   }
@@ -260,7 +264,11 @@ export function editorToSourceGraph(
             (e) => e.source === nodePath && e.target === refPath,
           );
           if (!alreadyExists) {
-            edges.push({ source: nodePath, target: refPath });
+            edges.push({
+              source: nodePath,
+              target: refPath,
+              edgeType: "cross-ref",
+            });
           }
         }
       }

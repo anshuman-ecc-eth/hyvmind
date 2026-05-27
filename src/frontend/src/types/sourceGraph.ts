@@ -25,6 +25,7 @@ export interface Edge {
   target: string;
   label?: string;
   bidirectional?: boolean;
+  edgeType?: "hierarchy" | "cross-ref";
 }
 
 export interface SourceGraph {

@@ -186,6 +186,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
       edges.push({
         source: curationName,
         target: `${curationName}@${swarmName}`,
+        edgeType: "hierarchy",
       });
 
       // ---------------------------------------------------------------------
@@ -271,6 +272,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
         edges.push({
           source: `${curationName}@${swarmName}`,
           target: `${curationName}@${swarmName}@${locationName}`,
+          edgeType: "hierarchy",
         });
 
         // -------------------------------------------------------------------
@@ -315,6 +317,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
           edges.push({
             source: `${curationName}@${swarmName}@${locationName}`,
             target: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
+            edgeType: "hierarchy",
           });
 
           // -----------------------------------------------------------------
@@ -387,6 +390,7 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
               source: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
               target: fullInterpPath,
               bidirectional: hasSelfReference,
+              edgeType: "hierarchy",
             });
 
             console.log("🟡 [PARSER] Processing refs:", uniqueRefs);
@@ -408,7 +412,11 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
                 (e) => e.source === fullInterpPath && e.target === refPath,
               );
               if (!alreadyExists) {
-                edges.push({ source: fullInterpPath, target: refPath });
+                edges.push({
+                  source: fullInterpPath,
+                  target: refPath,
+                  edgeType: "cross-ref",
+                });
               }
             }
           }

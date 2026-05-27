@@ -81,6 +81,7 @@ function generateHierarchyEdges(data: GraphData): Edge[] {
       target: swarm.id,
       label: undefined,
       bidirectional: false,
+      edgeType: "hierarchy",
     });
   }
 
@@ -90,6 +91,7 @@ function generateHierarchyEdges(data: GraphData): Edge[] {
       target: location.id,
       label: undefined,
       bidirectional: false,
+      edgeType: "hierarchy",
     });
   }
 
@@ -99,6 +101,7 @@ function generateHierarchyEdges(data: GraphData): Edge[] {
       target: lawToken.id,
       label: undefined,
       bidirectional: false,
+      edgeType: "hierarchy",
     });
   }
 
@@ -108,6 +111,7 @@ function generateHierarchyEdges(data: GraphData): Edge[] {
       target: interpToken.id,
       label: undefined,
       bidirectional: false,
+      edgeType: "hierarchy",
     });
   }
 
@@ -212,6 +216,7 @@ export function graphDataToSourceGraph(
       target: e.target,
       label: e.edgeLabel || undefined,
       bidirectional: isBidirectional(e.directionality),
+      edgeType: "cross-ref" as const,
     })),
   ];
 
