@@ -1762,6 +1762,7 @@ function PuzzlesOverlay({
 // ── Lab Diagrams Overlay ─────────────────────────────────────────────────────────
 
 const LAB_DIAGRAMS = [
+  "productivity gain.svg",
   "from attention to trust.svg",
   "the legal intelligence market.svg",
 ];

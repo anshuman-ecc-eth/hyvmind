@@ -300,7 +300,18 @@ export default function WordlePuzzleGame({
                     transition: "background-color 0.15s",
                   }}
                 >
-                  {letter || (ri === activeRow && ci === activeCol ? <span style={{ animation: "terminal-blink 1s step-end infinite" }}>█</span> : "")}
+                  {letter ||
+                    (ri === activeRow && ci === activeCol ? (
+                      <span
+                        style={{
+                          animation: "terminal-blink 1s step-end infinite",
+                        }}
+                      >
+                        █
+                      </span>
+                    ) : (
+                      ""
+                    ))}
                 </div>
               );
             })}
