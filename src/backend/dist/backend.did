@@ -319,8 +319,7 @@ service : {
    customAttributes: vec WeightedAttribute) -> (NodeId);
   generateApiKey: () -> (text);
   generateBuzzSecret: (score: int) -> (text);
-  generateInviteCodes: (count: nat, validDays: nat, buzzValue: opt nat) ->
-   (vec text);
+  generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
   getArchivedNodeIds: () -> (vec NodeId) query;
   getBoundPluginKeys: () -> (vec principal) query;

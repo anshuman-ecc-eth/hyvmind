@@ -1242,16 +1242,15 @@ export default function TerminalPage() {
         return;
       }
       const buzzArg = (argument || "").trim();
-      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)(?:\s*,?\s*(\d+))?$/);
+      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)$/);
       if (!buzzMatch) {
-        addMessage("error", "Usage: /buzz <count>,<days>,<buzzValue>\nExample: /buzz 5,7,500");
+        addMessage("error", "Usage: /buzz <count>,<days>\nExample: /buzz 5,7");
         return;
       }
       const buzzCount = Number.parseInt(buzzMatch[1], 10);
       const buzzDays = Number.parseInt(buzzMatch[2], 10);
-      const buzzValue = buzzMatch[3] ? Number.parseInt(buzzMatch[3], 10) : null;
-      if (buzzCount <= 0 || buzzDays <= 0 || (buzzValue !== null && buzzValue <= 0)) {
-        addMessage("error", "Count, days, and buzzValue must be positive integers.");
+      if (buzzCount <= 0 || buzzDays <= 0) {
+        addMessage("error", "Count and days must be positive integers.");
         return;
       }
       try {
@@ -1259,17 +1258,14 @@ export default function TerminalPage() {
           generateInviteCodes: (
             count: bigint,
             validDays: bigint,
-            buzzValue: [] | [bigint],
           ) => Promise<string[]>;
         };
-        const buzzParam: [] | [bigint] = buzzValue !== null ? [BigInt(buzzValue)] : [];
         const codes = await (
           actor as unknown as BuzzAdminActor
-        ).generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays), buzzParam);
-        const details = buzzValue !== null ? ` (${buzzValue} Buzz each)` : "";
+        ).generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays));
         addMessage(
           "success",
-          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"}${details} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):\n${codes.map((c) => `  ${c}`).join("\n")}`,
+          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):\n${codes.map((c) => `  ${c}`).join("\n")}`,
         );
       } catch (e) {
         addMessage(
