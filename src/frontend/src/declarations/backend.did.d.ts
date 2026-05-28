@@ -10,9 +10,6 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export type ApprovalStatus = { 'pending' : null } |
-  { 'approved' : null } |
-  { 'rejected' : null };
 export interface AttributeChange {
   'key' : string,
   'newValues' : Array<string>,
@@ -37,14 +34,6 @@ export interface ChatMessage {
   'sender' : Principal,
   'timestamp' : bigint,
   'senderName' : string,
-}
-export interface CollectibleEdition {
-  'tokenId' : NodeId,
-  'editionNumber' : bigint,
-  'owner' : Principal,
-  'mintedAt' : Time,
-  'tokenType' : { 'lawToken' : null } |
-    { 'interpretationToken' : null },
 }
 export interface ContentVersion {
   'content' : string,
@@ -108,7 +97,6 @@ export interface GraphNode {
   'tokenLabel' : string,
   'nodeType' : string,
 }
-export interface HttpHeader { 'value' : string, 'name' : string }
 export interface HttpRequest {
   'url' : string,
   'method' : string,
@@ -119,11 +107,6 @@ export interface HttpResponse {
   'body' : Uint8Array,
   'headers' : Array<[string, string]>,
   'status_code' : number,
-}
-export interface IcHttpRequestResult {
-  'status' : bigint,
-  'body' : Uint8Array,
-  'headers' : Array<HttpHeader>,
 }
 export interface InterpretationToken {
   'id' : NodeId,
@@ -153,17 +136,6 @@ export interface Location {
   'parentSwarmId' : NodeId,
   'sources' : Array<SourceRef>,
 }
-export interface MintCollectibleRequest {
-  'tokenId' : NodeId,
-  'tokenType' : { 'lawToken' : null } |
-    { 'interpretationToken' : null },
-}
-export type MintCollectibleResult = { 'editionLimitReached' : null } |
-  { 'alreadyOwned' : null } |
-  { 'insufficientFunds' : null } |
-  { 'success' : CollectibleEdition } |
-  { 'tokenNotFound' : null };
-export interface MintSettings { 'numCopies' : bigint }
 export type NodeId = string;
 export interface NodeOperation {
   'localName' : string,
@@ -263,15 +235,10 @@ export interface TrustTransaction {
   'savedAt' : bigint,
   'saveNumber' : bigint,
 }
-export interface UserApprovalInfo {
-  'status' : ApprovalStatus,
-  'principal' : Principal,
-}
 export interface UserProfile { 'name' : string, 'socialUrl' : [] | [string] }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
-export interface VoteData { 'upvotes' : bigint, 'downvotes' : bigint }
 export interface WeightedAttribute {
   'key' : string,
   'weightedValues' : Array<WeightedValue>,
@@ -299,13 +266,6 @@ export interface _SERVICE {
     [string, Array<Tag>, NodeId, Array<WeightedAttribute>],
     NodeId
   >,
-  'createSwarmFork' : ActorMethod<[NodeId], NodeId>,
-  'downvoteNode' : ActorMethod<[NodeId], undefined>,
-  'fetchURL' : ActorMethod<
-    [string],
-    { 'ok' : { 'title' : string, 'html' : string } } |
-      { 'err' : string }
-  >,
   'generateApiKey' : ActorMethod<[], string>,
   'generateBuzzSecret' : ActorMethod<[bigint], string>,
   'generateInviteCodes' : ActorMethod<[bigint, bigint], Array<string>>,
@@ -319,13 +279,11 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getChannels' : ActorMethod<[], Array<ChatChannelSummary>>,
-  'getCollectibleEditions' : ActorMethod<[NodeId], Array<CollectibleEdition>>,
   'getMessages' : ActorMethod<
     [string],
     { 'ok' : Array<ChatMessage> } |
       { 'err' : string }
   >,
-  'getMintSettings' : ActorMethod<[], MintSettings>,
   'getMyApiKey' : ActorMethod<[], [] | [string]>,
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getMyPrincipal' : ActorMethod<[], Principal>,
@@ -334,20 +292,7 @@ export interface _SERVICE {
   'getNotesData' : ActorMethod<[], [] | [string]>,
   'getPendingPluginBindings' : ActorMethod<[], Array<Principal>>,
   'getPluginBindingStatus' : ActorMethod<[], boolean>,
-  'getPublishedPaths' : ActorMethod<
-    [],
-    Array<
-      {
-        'graphId' : string,
-        'swarm' : string,
-        'curation' : string,
-        'location' : string,
-      }
-    >
-  >,
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
-  'getSwarmForks' : ActorMethod<[NodeId], Array<Swarm>>,
-  'getSwarmMembers' : ActorMethod<[NodeId], Array<Principal>>,
   'getTelegramConfig' : ActorMethod<
     [],
     [] | [{ 'chatId' : string, 'botToken' : string }]
@@ -362,35 +307,22 @@ export interface _SERVICE {
     }
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'getVoteData' : ActorMethod<[NodeId], VoteData>,
   'hasTelegramConfig' : ActorMethod<[], boolean>,
-  'hasUserFork' : ActorMethod<[NodeId], boolean>,
   'hasUserSavedGraph' : ActorMethod<[string], boolean>,
   'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
   'icChallengeNonce' : ActorMethod<[], string>,
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'isCallerApproved' : ActorMethod<[], boolean>,
   'isNodeArchived' : ActorMethod<[NodeId], boolean>,
-  'joinSwarm' : ActorMethod<[NodeId], undefined>,
-  'leaveSwarm' : ActorMethod<[NodeId], undefined>,
-  'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
-  'mintCollectible' : ActorMethod<
-    [MintCollectibleRequest],
-    MintCollectibleResult
-  >,
   'previewPublishSourceGraph' : ActorMethod<
     [PublishSourceGraphInput, Array<[string, NodeId]>],
     PublishPreviewResult
   >,
-  'pullFromSwarm' : ActorMethod<[NodeId], NodeId>,
   'redeemBuzzSecret' : ActorMethod<
     [string],
     { 'ok' : string } |
       { 'err' : string }
   >,
-  'requestApproval' : ActorMethod<[], undefined>,
-  'requestPluginBinding' : ActorMethod<[Principal, Principal], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,
   'revokePluginBinding' : ActorMethod<[Principal], undefined>,
@@ -405,8 +337,6 @@ export interface _SERVICE {
     { 'ok' : null } |
       { 'err' : string }
   >,
-  'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
-  'setMintSettings' : ActorMethod<[MintSettings], undefined>,
   'setTelegramConfig' : ActorMethod<
     [string, string],
     { 'ok' : null } |
@@ -414,13 +344,8 @@ export interface _SERVICE {
   >,
   'storeNotesData' : ActorMethod<[string], undefined>,
   'track_api_request' : ActorMethod<[string], undefined>,
-  'transform' : ActorMethod<
-    [{ 'context' : Uint8Array, 'response' : IcHttpRequestResult }],
-    IcHttpRequestResult
-  >,
   'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,
   'updateSourceGraphTerrainParams' : ActorMethod<[string, string], boolean>,
-  'upvoteNode' : ActorMethod<[NodeId], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -371,55 +371,6 @@ mark {
   background: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
-/* Theme-independent Voronoi diagram styles */
-.voronoi-diagram-container {
-  background: #ffffff !important;
-}
-
-.voronoi-canvas {
-  background: #ffffff !important;
-}
-
-.voronoi-loading,
-.voronoi-error,
-.voronoi-empty {
-  background: #ffffff !important;
-}
-
-/* Theme-independent tooltip styling for Voronoi */
-.voronoi-tooltip-content {
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #cccccc;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px
-    rgba(0, 0, 0, 0.06);
-}
-
-.voronoi-tooltip-type {
-  color: #666666;
-}
-
-/* Voronoi container is always white regardless of theme */
-html[class*="-dark"] .voronoi-diagram-container,
-html[class*="-dark"] .voronoi-canvas,
-html[class*="-dark"] .voronoi-loading,
-html[class*="-dark"] .voronoi-error,
-html[class*="-dark"] .voronoi-empty {
-  background: #ffffff !important;
-}
-
-html[class*="-dark"] .voronoi-tooltip-content {
-  background: #ffffff !important;
-  color: #000000 !important;
-  border-color: #cccccc !important;
-}
-
-html[class*="-dark"] .voronoi-tooltip-type {
-  color: #666666 !important;
-}
-
 /* ────────────────────────────────────────────────────────── */
 /* Annotation Editor Utilities (NES Pixel Art + Token Highlights) */
 /* ────────────────────────────────────────────────────────── */

@@ -4,7 +4,6 @@ import { ThemeProvider } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { createActor } from "./backend";
 import type { backendInterface } from "./backend";
-import CommandPalette from "./components/CommandPalette";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
@@ -13,12 +12,7 @@ import { SettingsView } from "./components/SettingsView";
 import { Sidebar } from "./components/Sidebar";
 import TextGameModal from "./components/TextGameModal";
 import { useDebugTools } from "./hooks/useDebugHooks";
-import {
-  useGetArchivedNodeIds,
-  useGetCallerUserProfile,
-  useGetOwnedData,
-  useIsCallerAdmin,
-} from "./hooks/useQueries";
+import { useGetCallerUserProfile, useIsCallerAdmin } from "./hooks/useQueries";
 import { useSettings } from "./hooks/useSettings";
 import {
   applyFontPairing,
@@ -35,7 +29,6 @@ import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import SwarmsView from "./pages/SwarmsView";
 import TerminalPage from "./pages/TerminalPage";
-import { setHiddenCollectibleIds } from "./utils/archivedCollectiblesStore";
 
 // Standalone public page — no auth, no layout
 function ApiDocsRoute() {
@@ -93,7 +86,6 @@ function ObsidianTokenRoute() {
 function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
   const [gameComplete, setGameComplete] = useState(false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isAuthenticated = !!identity;
 
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
@@ -108,19 +100,7 @@ function AppShell() {
     applyFontSize(savedSize);
   }, []);
 
-  // Keyboard shortcut: Ctrl+P / Cmd+P to open command palette
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
-        e.preventDefault();
-        if (isAuthenticated) {
-          setCommandPaletteOpen((prev) => !prev);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAuthenticated]);
+  // Keyboard shortcut removed with CommandPalette deletion
 
   const {
     data: userProfile,
@@ -157,50 +137,7 @@ function AppShell() {
     return { pass: false };
   };
 
-  // Silent cleanup: fetch archived node IDs once per login and persist hidden collectibles
-  const { data: archivedNodeIds } = useGetArchivedNodeIds();
-  const { data: graphData } = useGetOwnedData();
   const { data: isAdmin } = useIsCallerAdmin();
-  const cleanupRanRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!identity || !archivedNodeIds || !graphData) return;
-
-    const principal = identity.getPrincipal().toString();
-
-    // Run cleanup only once per principal per login session
-    if (cleanupRanRef.current === principal) return;
-    cleanupRanRef.current = principal;
-
-    try {
-      const archivedSet = new Set(archivedNodeIds);
-
-      const hiddenIds = new Set<string>();
-
-      for (const lt of graphData.lawTokens) {
-        if (archivedSet.has(lt.id) || archivedSet.has(lt.parentLocationId)) {
-          hiddenIds.add(lt.id);
-        }
-      }
-
-      for (const it of graphData.interpretationTokens) {
-        if (archivedSet.has(it.id) || archivedSet.has(it.parentLawTokenId)) {
-          hiddenIds.add(it.id);
-        }
-      }
-
-      setHiddenCollectibleIds(principal, hiddenIds);
-    } catch {
-      // silent — no user-facing feedback
-    }
-  }, [identity, archivedNodeIds, graphData]);
-
-  // Reset cleanup ref on logout so it runs again on next login
-  useEffect(() => {
-    if (!identity) {
-      cleanupRanRef.current = null;
-    }
-  }, [identity]);
 
   if (isInitializing) {
     return (
@@ -336,21 +273,7 @@ function AppShell() {
       {showProfileSetup && <ProfileSetupModal />}
       <Toaster />
 
-      <CommandPalette
-        open={commandPaletteOpen}
-        onOpenChange={setCommandPaletteOpen}
-        onViewChange={(view) => {
-          // Map legacy view names to new tab IDs
-          const tabMap: Record<string, string> = {
-            sources: "graphs",
-            graphs: "graphs",
-            chat: "chat",
-            "public-graphs": "public",
-            terminal: "terminal",
-          };
-          setActiveTab(tabMap[view] ?? view);
-        }}
-      />
+      {/* CommandPalette removed */}
     </div>
   );
 }

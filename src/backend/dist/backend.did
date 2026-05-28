@@ -8,11 +8,6 @@ type WeightedAttribute =
    key: text;
    weightedValues: vec WeightedValue;
  };
-type VoteData = 
- record {
-   downvotes: nat;
-   upvotes: nat;
- };
 type UserRole = 
  variant {
    admin;
@@ -23,11 +18,6 @@ type UserProfile =
  record {
    name: text;
    socialUrl: opt text;
- };
-type UserApprovalInfo = 
- record {
-   "principal": principal;
-   status: ApprovalStatus;
  };
 type TrustTransaction = 
  record {
@@ -156,23 +146,6 @@ type NodeOperation =
    sourceChanges: vec SourceRef;
  };
 type NodeId = text;
-type MintSettings = record {numCopies: nat;};
-type MintCollectibleResult = 
- variant {
-   alreadyOwned;
-   editionLimitReached;
-   insufficientFunds;
-   success: CollectibleEdition;
-   tokenNotFound;
- };
-type MintCollectibleRequest = 
- record {
-   tokenId: NodeId;
-   tokenType: variant {
-                interpretationToken;
-                lawToken;
-              };
- };
 type Location = 
  record {
    creator: principal;
@@ -204,12 +177,6 @@ type InterpretationToken =
    timestamps: Timestamps;
    title: text;
  };
-type IcHttpRequestResult = 
- record {
-   body: blob;
-   headers: vec HttpHeader;
-   status: nat;
- };
 type HttpResponse = 
  record {
    body: blob;
@@ -228,11 +195,6 @@ type HttpRequest =
                 };
    method: text;
    url: text;
- };
-type HttpHeader = 
- record {
-   name: text;
-   value: text;
  };
 type GraphNode = 
  record {
@@ -308,17 +270,6 @@ type ContentVersion =
    contributor: principal;
    timestamp: Time;
  };
-type CollectibleEdition = 
- record {
-   editionNumber: nat;
-   mintedAt: Time;
-   owner: principal;
-   tokenId: NodeId;
-   tokenType: variant {
-                interpretationToken;
-                lawToken;
-              };
- };
 type ChatMessage = 
  record {
    sender: principal;
@@ -348,12 +299,6 @@ type AttributeChange =
    newWeightedValues: vec WeightedValue;
    oldValues: vec WeightedValue;
  };
-type ApprovalStatus = 
- variant {
-   approved;
-   pending;
-   rejected;
- };
 service : {
   _initializeAccessControl: () -> ();
   approvePluginBinding: (pluginPubKey: principal) -> ();
@@ -372,16 +317,6 @@ service : {
    parentSwarmId: NodeId) -> (NodeId);
   createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId,
    customAttributes: vec WeightedAttribute) -> (NodeId);
-  createSwarmFork: (swarmId: NodeId) -> (NodeId);
-  downvoteNode: (nodeId: NodeId) -> ();
-  fetchURL: (url: text) ->
-   (variant {
-      err: text;
-      ok: record {
-            html: text;
-            title: text;
-          };
-    });
   generateApiKey: () -> (text);
   generateBuzzSecret: (score: int) -> (text);
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
@@ -392,13 +327,11 @@ service : {
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
   getChannels: () -> (vec ChatChannelSummary) query;
-  getCollectibleEditions: (tokenId: NodeId) -> (vec CollectibleEdition) query;
   getMessages: (channelId: text) ->
    (variant {
       err: text;
       ok: vec ChatMessage;
     });
-  getMintSettings: () -> (MintSettings) query;
   getMyApiKey: () -> (opt text) query;
   getMyBuzzBalance: () -> (BuzzScore) query;
   getMyPrincipal: () -> (principal) query;
@@ -407,16 +340,7 @@ service : {
   getNotesData: () -> (opt text) query;
   getPendingPluginBindings: () -> (vec principal) query;
   getPluginBindingStatus: () -> (bool) query;
-  getPublishedPaths: () ->
-   (vec record {
-          curation: text;
-          graphId: text;
-          location: text;
-          swarm: text;
-        }) query;
   getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
-  getSwarmForks: (swarmId: NodeId) -> (vec Swarm) query;
-  getSwarmMembers: (swarmId: NodeId) -> (vec principal) query;
   getTelegramConfig: () -> (opt record {
                                   botToken: text;
                                   chatId: text;
@@ -429,34 +353,22 @@ service : {
       updatedBy: opt text;
     }) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;
-  getVoteData: (nodeId: NodeId) -> (VoteData) query;
   hasTelegramConfig: () -> (bool) query;
-  hasUserFork: (swarmId: NodeId) -> (bool) query;
   hasUserSavedGraph: (publishedGraphId: text) -> (bool) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
   icChallengeNonce: () -> (text) query;
   initializeAccessControl: () -> ();
   isCallerAdmin: () -> (bool) query;
-  isCallerApproved: () -> (bool) query;
   isNodeArchived: (nodeId: NodeId) -> (bool) query;
-  joinSwarm: (swarmId: NodeId) -> ();
-  leaveSwarm: (swarmId: NodeId) -> ();
-  listApprovals: () -> (vec UserApprovalInfo) query;
-  mintCollectible: (request: MintCollectibleRequest) ->
-   (MintCollectibleResult);
   previewPublishSourceGraph: (input: PublishSourceGraphInput,
    existingMappings: vec record {
                            text;
                            NodeId;
                          }) -> (PublishPreviewResult);
-  pullFromSwarm: (sourceSwarmId: NodeId) -> (NodeId);
   redeemBuzzSecret: (secret: text) -> (variant {
                                          err: text;
                                          ok: text;
                                        });
-  requestApproval: () -> ();
-  requestPluginBinding: (pluginPubKey: principal, forPrincipal: principal) ->
-   ();
   resetAllData: () -> ();
   revokeApiKey: () -> ();
   revokePluginBinding: (pluginKey: principal) -> ();
@@ -470,8 +382,6 @@ service : {
                                                      err: text;
                                                      ok;
                                                    });
-  setApproval: (user: principal, status: ApprovalStatus) -> ();
-  setMintSettings: (settings: MintSettings) -> ();
   setTelegramConfig: (botToken: text, chatId: text) ->
    (variant {
       err: text;
@@ -479,11 +389,6 @@ service : {
     });
   storeNotesData: (json: text) -> ();
   track_api_request: (apiKey: text) -> ();
-  transform: (record {
-                context: blob;
-                response: IcHttpRequestResult;
-              }) -> (IcHttpRequestResult) query;
   updateSourceGraphArtwork: (id: text, dataUrl: text) -> (bool);
   updateSourceGraphTerrainParams: (id: text, paramsJson: text) -> (bool);
-  upvoteNode: (nodeId: NodeId) -> ();
 }

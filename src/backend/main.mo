@@ -18,13 +18,10 @@ import Nat8 "mo:core/Nat8";
 
 import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
-import UserApproval "mo:caffeineai-user-approval/approval";
 import Runtime "mo:core/Runtime";
-
-import AnnotationHttpTypes "types/annotation-http";
-import AnnotationHttpApi "mixins/annotation-http-api";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "migration";
 
 
 
@@ -43,6 +40,7 @@ import Float "mo:core/Float";
 
 
 
+(with migration = Migration.run)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -156,7 +154,7 @@ actor {
     timestamps : Timestamps;
   };
 
-  // User and Voting Types
+  // User Types
   type UserProfile = {
     name : Text;
     socialUrl : ?Text;
@@ -169,74 +167,11 @@ actor {
     parentContext : ?Text;
   };
 
-  type MembershipStatus = { #pending; #approved };
-  type MembershipInfo = {
-    principal : Principal;
-    profileName : ?Text;
-    status : MembershipStatus;
-  };
-
-  type SwarmMembership = {
-    swarmId : NodeId;
-    member : Principal;
-    status : MembershipStatus;
-  };
-
-  type VoteData = {
-    upvotes : Nat;
-    downvotes : Nat;
-  };
-
-  type UserVoteTracking = { votedNodes : Map.Map<Text, Bool> };
-
   type BuzzLeaderboardEntry = {
     principal : Principal;
     profileName : ?Text;
     score : BuzzScore;
   };
-
-  type SwarmUpdateStatus = { #unread; #acted };
-
-  type SwarmUpdate = {
-    swarmId : NodeId;
-    tokenId : NodeId;
-    tokenTitle : Text;
-    creatorPrincipal : Principal;
-    timestamp : Time.Time;
-    status : SwarmUpdateStatus;
-    userId : Principal;
-  };
-
-  type TokenType = {
-    #lawToken : LawToken;
-    #interpretationToken : InterpretationToken;
-  };
-
-  type ForkedSwarm = {
-    id : NodeId;
-    name : Text;
-    tags : [Tag];
-    parentCurationId : NodeId;
-    timestamps : Timestamps;
-    forkSource : ?NodeId;
-    forkPrincipal : ?Principal;
-  };
-
-  // Mint Settings
-  type MintSettings = { numCopies : Nat };
-  let mintSettingsMap = Map.empty<Principal, MintSettings>();
-
-  // Collectibles
-  type CollectibleEdition = {
-    tokenId : NodeId;
-    tokenType : { #lawToken; #interpretationToken };
-    editionNumber : Nat;
-    owner : Principal;
-    mintedAt : Time.Time;
-  };
-
-  let collectibleEditionsMap = Map.empty<NodeId, List.List<CollectibleEdition>>();
-  let collectibleSupplyMap = Map.empty<NodeId, Nat>();
 
   // Graph Types for visualization
   type GraphNode = {
@@ -437,31 +372,18 @@ actor {
   };
 
   // Backend State
-  let voteData = Map.empty<Text, VoteData>();
-  let userVoteTracking = Map.empty<Principal, UserVoteTracking>();
-
   var curationMap = Map.empty<NodeId, Curation>();
   var swarmMap = Map.empty<NodeId, Swarm>();
-  var forkedSwarmMap = Map.empty<NodeId, ForkedSwarm>();
   var locationMap = Map.empty<NodeId, Location>();
   var lawTokenMap = Map.empty<NodeId, LawToken>();
   var interpretationTokenMap = Map.empty<NodeId, InterpretationToken>();
-  var membershipRequests = Map.empty<NodeId, List.List<SwarmMembership>>();
-  var swarmMembers = Map.empty<NodeId, List.List<Principal>>();
   var userProfiles = Map.empty<Principal, UserProfile>();
-  var swarmUpdates = Map.empty<Principal, List.List<SwarmUpdate>>();
-  var voteDataMap = Map.empty<Text, VoteData>();
   var buzzScores = Map.empty<Principal, BuzzScore>();
   var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
   let accessControlState = AccessControl.initState();
-  let approvalState = UserApproval.initState(accessControlState);
   include MixinAuthorization(accessControlState);
   var existingAdmins : [Principal] = [];
   var archivedNodes = Map.empty<NodeId, ()>();
-  var forkPulledSourceNodes = Map.empty<NodeId, List.List<NodeId>>();
-
-  // Store SwarmType (including which swarms are "question-of-law")
-  var swarmTypeMap = Map.empty<NodeId, SwarmType>();
 
   // New explicit edge storage for source graph edges (weighted labels)
   var sourceEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
@@ -484,27 +406,6 @@ actor {
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
 
-  // ── IC HTTP Outcall transform (required for consensus) ───────────────────────
-  // The IC management canister calls back this function to strip response headers
-  // before consensus. Must be declared on the actor directly (not in a mixin).
-  // Declared here (before include) to satisfy forward-reference rules.
-  public query func transform({
-    context : Blob;
-    response : AnnotationHttpTypes.IcHttpRequestResult;
-  }) : async AnnotationHttpTypes.IcHttpRequestResult {
-    ignore context;
-    { response with headers = [] };
-  };
-
-  // ── Annotation HTTP mixin (fetchURL + getPublishedPaths) ────────────────────
-  include AnnotationHttpApi(
-    curationToPublishedGraphId,
-    curationMap,
-    swarmMap,
-    locationMap,
-    transform,
-  );
-
   // ── HTTP API State ───────────────────────────────────────────────────────────
 
   // Per-user API keys: principal → key and reverse lookup key → principal
@@ -526,11 +427,6 @@ actor {
   var notesImports = Map.empty<Principal, Text>();
 
 
-  type SwarmType = {
-    #regular;
-    #questionOfLaw;
-  };
-
   module LawToken {
     public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
       Text.compare(t1.tokenLabel, t2.tokenLabel);
@@ -549,29 +445,9 @@ actor {
     };
   };
 
-  module ForkedSwarm {
-    public func compareByName(s1 : ForkedSwarm, s2 : ForkedSwarm) : Order.Order {
-      Text.compare(s1.name, s2.name);
-    };
-  };
-
   module Location {
     public func compareByTitle(a1 : Location, a2 : Location) : Order.Order {
       Text.compare(a1.title, a2.title);
-    };
-  };
-
-  module SwarmMembership {
-    public func compareByMember(a : SwarmMembership, b : SwarmMembership) : Order.Order {
-      Principal.compare(a.member, b.member);
-    };
-  };
-
-  module SwarmUpdate {
-    public func compareByTimestamp(a : SwarmUpdate, b : SwarmUpdate) : Order.Order {
-      if (a.timestamp < b.timestamp) { #less }
-      else if (a.timestamp > b.timestamp) { #greater }
-      else { #equal };
     };
   };
 
@@ -591,131 +467,6 @@ actor {
 
   public query ({ caller }) func isNodeArchived(nodeId : NodeId) : async Bool {
     archivedNodes.containsKey(nodeId);
-  };
-
-  // MINT SETTINGS FUNCTIONS
-  // Only authenticated users (not guests) may read or write their own mint settings.
-  public query ({ caller }) func getMintSettings() : async MintSettings {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only users can access mint settings");
-    };
-    switch (mintSettingsMap.get(caller)) {
-      case (null) { { numCopies = 1 } };
-      case (?settings) { settings };
-    };
-  };
-
-  public shared ({ caller }) func setMintSettings(settings : MintSettings) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only users can update mint settings");
-    };
-    if (settings.numCopies < 1) {
-      Runtime.trap("Number of copies must be 1 or more");
-    };
-    mintSettingsMap.add(caller, settings);
-  };
-
-  // COLLECTIBLES FUNCTIONALITY
-  func calculatePrice(tokenType : { #lawToken; #interpretationToken }, numCopies : Nat) : Int {
-    let basePrice = switch (tokenType) {
-      case (#lawToken) { 300_000_000 };
-      case (#interpretationToken) { 500_000_000 };
-    };
-    if (numCopies == 0) { return basePrice };
-    basePrice / numCopies;
-  };
-
-  type MintCollectibleResult = {
-    #success : CollectibleEdition;
-    #alreadyOwned;
-    #tokenNotFound;
-    #editionLimitReached;
-    #insufficientFunds;
-  };
-
-  public type MintCollectibleRequest = {
-    tokenId : NodeId;
-    tokenType : { #lawToken; #interpretationToken };
-  };
-
-  public shared ({ caller }) func mintCollectible(request : MintCollectibleRequest) : async MintCollectibleResult {
-    // Only authenticated users (not guests) can mint collectibles
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only users can mint collectibles");
-    };
-
-    let mintSettings = switch (mintSettingsMap.get(caller)) {
-      case (null) { { numCopies = 1 } };
-      case (?settings) { settings };
-    };
-
-    let editions = switch (collectibleEditionsMap.get(request.tokenId)) {
-      case (null) { List.empty<CollectibleEdition>() };
-      case (?existing) { existing };
-    };
-
-    // Double mint check: prevent minting if caller already owns an edition
-    let currentlyOwned = editions.any(
-      func(edition : CollectibleEdition) : Bool { edition.owner == caller }
-    );
-
-    if (currentlyOwned) { return #alreadyOwned };
-
-    switch (getToken(request.tokenId, request.tokenType)) {
-      case (null) { return #tokenNotFound };
-      case (?_token) {
-        let _price = calculatePrice(request.tokenType, mintSettings.numCopies);
-        // Price deduction from BUZZ wallet
-        let callerBalance = switch (buzzScores.get(caller)) {
-          case (null) { 0 };
-          case (?balance) { balance };
-        };
-
-        if (callerBalance < _price) {
-          return #insufficientFunds;
-        };
-
-        let editionNumber = editions.size() + 1;
-        if (editionNumber > mintSettings.numCopies) {
-          return #editionLimitReached;
-        };
-
-        // Deduct price after all checks pass
-        updateBuzzScore(caller, -_price);
-
-        let newEdition : CollectibleEdition = {
-          tokenId = request.tokenId;
-          tokenType = request.tokenType;
-          editionNumber;
-          owner = caller;
-          mintedAt = Time.now();
-        };
-
-        editions.add(newEdition);
-        collectibleEditionsMap.add(request.tokenId, editions);
-        collectibleSupplyMap.add(request.tokenId, editionNumber);
-
-        return #success(newEdition);
-      };
-    };
-  };
-
-  public query ({ }) func getCollectibleEditions(tokenId : NodeId) : async [CollectibleEdition] {
-    switch (collectibleEditionsMap.get(tokenId)) {
-      case (null) { [] };
-      case (?editions) { editions.toArray() };
-    };
-  };
-
-  func getToken(tokenId : NodeId, tokenType : { #lawToken; #interpretationToken }) : ?{ #lawToken; #interpretationToken } {
-    switch (tokenType) {
-      case (#lawToken) {
-        if (lawTokenMap.containsKey(tokenId)) { ?tokenType } else { null };
-      };
-      case (#interpretationToken) {
-        if (interpretationTokenMap.containsKey(tokenId)) { ?tokenType } else { null };
-      };
-    };
   };
 
   public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async { #ok : Text; #err : Text } {
@@ -869,15 +620,6 @@ actor {
     caller;
   };
 
-  public shared ({ caller }) func requestPluginBinding(pluginPubKey : Principal, forPrincipal : Principal) : async () {
-    let existing = switch (pendingPluginBindings.get(forPrincipal)) {
-      case (?list) { list };
-      case (null) { List.empty<Principal>() };
-    };
-    existing.add(pluginPubKey);
-    pendingPluginBindings.add(forPrincipal, existing);
-  };
-
   public query ({ caller }) func getPendingPluginBindings() : async [Principal] {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can view pending bindings");
@@ -952,32 +694,6 @@ actor {
     };
   };
 
-  // APPROVAL SYSTEM
-  public query ({ caller }) func isCallerApproved() : async Bool {
-    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
-  };
-
-  public shared ({ caller }) func requestApproval() : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can request approval");
-    };
-    UserApproval.requestApproval(approvalState, caller);
-  };
-
-  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    UserApproval.setApproval(approvalState, user, status);
-  };
-
-  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can perform this action");
-    };
-    UserApproval.listApprovals(approvalState);
-  };
-
   // USER PROFILES
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -1004,123 +720,6 @@ actor {
   };
 
   // CREATION & UPDATE OPERATIONS
-  func autoUpvoteNode(nodeId : Text, creator : Principal) {
-    voteDataMap.add(nodeId, { upvotes = 1; downvotes = 0 });
-
-    let userVoteData = switch (userVoteTracking.get(creator)) {
-      case (null) {
-        let newTracking : UserVoteTracking = { votedNodes = Map.empty<Text, Bool>() };
-        userVoteTracking.add(creator, newTracking);
-        newTracking;
-      };
-      case (?tracking) { tracking };
-    };
-
-    userVoteData.votedNodes.add(nodeId, true);
-  };
-
-  func ensureMyForksCuration(caller : Principal) : NodeId {
-    // Search for existing "My Forks" curation owned by caller
-    for ((id, curation) in curationMap.entries()) {
-      if (curation.creator == caller and curation.name == "My Forks") {
-        return id;
-      };
-    };
-    // Not found — create it
-    let id = generateId("curation", "My Forks", caller);
-    let newCuration = {
-      id;
-      name = "My Forks";
-      creator = caller;
-      customAttributes = [];
-      sources = [];
-      timestamps = { createdAt = Time.now(); };
-    };
-    curationMap.add(id, newCuration);
-    id;
-  };
-
-  // Deep copy helper function for swarm forking/duplicating.
-  // Copies all locations, law tokens, and interpretation tokens.
-  func deepCopySwarmContent(sourceSwarmId : NodeId, targetSwarmId : NodeId, caller : Principal) {
-    // Step 1: Copy locations and build old->new location ID mapping
-    var locationIdMap = Map.empty<NodeId, NodeId>();
-    for ((locId, loc) in locationMap.entries()) {
-      if (loc.parentSwarmId == sourceSwarmId) {
-        let newLocId = generateId("location", loc.title, caller);
-        let newLoc = {
-          id = newLocId;
-          title = loc.title;
-          customAttributes = loc.customAttributes;
-          sources = loc.sources;
-          parentSwarmId = targetSwarmId;
-          creator = caller;
-          timestamps = { createdAt = Time.now(); };
-        };
-        locationMap.add(newLocId, newLoc);
-        locationIdMap.add(locId, newLocId);
-      };
-    };
-
-    // Step 2: Copy law tokens — for each copied location, copy its law tokens
-    var lawTokenIdMap = Map.empty<NodeId, NodeId>();
-    for ((_lawTokenId, token) in lawTokenMap.entries()) {
-      switch (locationIdMap.get(token.parentLocationId)) {
-        case (null) {};
-        case (?newLocId) {
-          let newTokenId = generateId("lawToken", token.tokenLabel, caller);
-          let newToken = {
-            id = newTokenId;
-            tokenLabel = token.tokenLabel;
-            parentLocationId = newLocId;
-            creator = caller;
-            customAttributes = token.customAttributes;
-            sources = token.sources;
-            timestamps = { createdAt = Time.now(); };
-          };
-          lawTokenMap.add(newTokenId, newToken);
-          lawTokenIdMap.add(token.id, newTokenId);
-        };
-      };
-    };
-
-    // Step 3: Copy interpretation tokens that reference copied law tokens
-    for ((_itId, it) in interpretationTokenMap.entries()) {
-      switch (lawTokenIdMap.get(it.parentLawTokenId)) {
-        case (null) {};
-        case (?newParentLawTokenId) {
-          let newItId = generateId("interpretationToken", it.title, caller);
-          let newIt = {
-            id = newItId;
-            title = it.title;
-            contentVersions = it.contentVersions;
-            parentLawTokenId = newParentLawTokenId;
-            customAttributes = it.customAttributes;
-            sources = it.sources;
-            creator = caller;
-            timestamps = { createdAt = Time.now(); };
-          };
-          interpretationTokenMap.add(newItId, newIt);
-          // Copy any sourceEdges that referenced the old IT's parent
-          switch (sourceEdges.get(it.id)) {
-            case (null) {};
-            case (?edges) {
-              let newEdges = List.empty<SourceGraphEdge>();
-              for (edge in edges.values()) {
-                let newTarget = switch (lawTokenIdMap.get(edge.target)) {
-                  case (?nid) { nid };
-                  case (null) { edge.target };
-                };
-                newEdges.add({ source = newItId; target = newTarget; weightedLabels = edge.weightedLabels; directionality = edge.directionality });
-              };
-              sourceEdges.add(newItId, newEdges);
-            };
-          };
-        };
-      };
-    };
-  };
-
   public shared ({ caller }) func createCuration(name : Text, customAttributes : [WeightedAttribute]) : async NodeId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only authenticated users can create curations");
@@ -1154,9 +753,6 @@ actor {
       case (_) {};
     };
 
-    // Determine if this swarm is "question-of-law"
-    let isQuestionOfLaw = tags.any(func(tag : Text) : Bool { tag == "question-of-law" });
-
     let id = generateId("swarm", name, caller);
     let newSwarm : Swarm = {
       id;
@@ -1173,12 +769,6 @@ actor {
       forkPrincipal = null;
     };
     swarmMap.add(id, newSwarm);
-
-    // Save the swarm type
-    let swarmType = if (isQuestionOfLaw) { #questionOfLaw } else { #regular };
-    swarmTypeMap.add(id, swarmType);
-
-    autoUpvoteNode(id, caller);
 
     id;
   };
@@ -1197,10 +787,6 @@ actor {
       case (_) {};
     };
 
-    if (not isSwarmCreatorOrMember(caller, parentSwarmId)) {
-      Runtime.trap("Unauthorized: Only swarm creator or approved members can create locations");
-    };
-
     let finalTitle = title.trim(#char ' ');
 
     let id = generateId("location", finalTitle, caller);
@@ -1217,21 +803,6 @@ actor {
       };
     };
     locationMap.add(id, newLocation);
-
-    autoUpvoteNode(id, caller);
-
-    createSwarmTokenUpdate(?parentSwarmId, id, finalTitle, caller);
-
-    let locationUpdate : SwarmUpdate = {
-      swarmId = parentSwarmId;
-      tokenId = id;
-      tokenTitle = finalTitle;
-      creatorPrincipal = caller;
-      timestamp = Time.now();
-      status = #unread;
-      userId = caller;
-    };
-    addSwarmUpdateForContributors(locationUpdate, ?parentSwarmId);
 
     id;
   };
@@ -1265,622 +836,10 @@ actor {
     };
     interpretationTokenMap.add(id, newInterpretationToken);
 
-    autoUpvoteNode(id, caller);
-
-    let swarmId = getNodeSwarmId(parentLawTokenId);
-    switch (swarmId) {
-      case (?sid) {
-        createSwarmTokenUpdate(?sid, id, title, caller);
-        let interpretationTokenUpdate : SwarmUpdate = {
-          swarmId = sid;
-          tokenId = id;
-          tokenTitle = title;
-          creatorPrincipal = caller;
-          timestamp = Time.now();
-          status = #unread;
-          userId = caller;
-        };
-        addSwarmUpdateForContributors(interpretationTokenUpdate, ?sid);
-      };
-      case (null) {};
-    };
-
     id;
   };
 
-  // Check access for Location, LawToken and InterpretationToken nodes
-  func hasNodeAccess(caller : Principal, nodeId : NodeId) : Bool {
-    let swarmId = getNodeSwarmId(nodeId);
-    switch (swarmId) {
-      case (?swarm) { isSwarmCreatorOrMember(caller, swarm) };
-      case (null) { false };
-    };
-  };
-
-  func getNodeSwarmId(nodeId : NodeId) : ?NodeId {
-    switch (swarmMap.get(nodeId)) {
-      case (?swarm) { return ?swarm.id };
-      case (null) {};
-    };
-
-    switch (locationMap.get(nodeId)) {
-      case (?location) { return ?location.parentSwarmId };
-      case (null) {};
-    };
-
-    switch (lawTokenMap.get(nodeId)) {
-      case (?lawToken) {
-        switch (locationMap.get(lawToken.parentLocationId)) {
-          case (?location) { return ?location.parentSwarmId };
-          case (null) { return null };
-        };
-      };
-      case (null) {};
-    };
-
-    switch (interpretationTokenMap.get(nodeId)) {
-      case (?interpretationToken) {
-        return getNodeSwarmId(interpretationToken.parentLawTokenId);
-      };
-      case (null) {};
-    };
-
-    null;
-  };
-
-  // VOTING OPERATIONS
-  public shared ({ caller }) func upvoteNode(nodeId : NodeId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can vote");
-    };
-
-    // Curations cannot be voted on
-    if (curationMap.containsKey(nodeId)) {
-      Runtime.trap("Curations cannot be voted on");
-    };
-
-    // Check if node exists
-    if (not nodeExists(nodeId)) {
-      Runtime.trap("Node not found");
-    };
-
-    // Check if user has already voted on this node
-    if (hasUserVoted(caller, nodeId)) {
-      Runtime.trap("You have already voted on this node");
-    };
-
-    // For non-swarm nodes, check swarm membership
-    if (not swarmMap.containsKey(nodeId)) {
-      let swarmId = getNodeSwarmId(nodeId);
-      switch (swarmId) {
-        case (null) { Runtime.trap("Cannot determine swarm for node") };
-        case (?sid) {
-          if (not isSwarmCreatorOrMember(caller, sid)) {
-            Runtime.trap("Unauthorized: Only swarm creator or approved members can vote on this node");
-          };
-        };
-      };
-    };
-
-    // Update vote data
-    let currentVotes = switch (voteDataMap.get(nodeId)) {
-      case (null) { { upvotes = 0; downvotes = 0 } };
-      case (?votes) { votes };
-    };
-
-    voteDataMap.add(nodeId, {
-      upvotes = currentVotes.upvotes + 1;
-      downvotes = currentVotes.downvotes;
-    });
-
-    // Track user vote
-    markUserVoted(caller, nodeId);
-
-    // Update BUZZ score for node creator
-    switch (getNodeCreator(nodeId)) {
-      case (?creator) { updateBuzzScoreOnUpvote(creator, nodeId) };
-      case (null) {};
-    };
-  };
-
-  public shared ({ caller }) func downvoteNode(nodeId : NodeId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can vote");
-    };
-
-    // Curations cannot be voted on
-    if (curationMap.containsKey(nodeId)) {
-      Runtime.trap("Curations cannot be voted on");
-    };
-
-    // Check if node exists
-    if (not nodeExists(nodeId)) {
-      Runtime.trap("Node not found");
-    };
-
-    // Check if user has already voted on this node
-    if (hasUserVoted(caller, nodeId)) {
-      Runtime.trap("You have already voted on this node");
-    };
-
-    // For non-swarm nodes, check swarm membership
-    if (not swarmMap.containsKey(nodeId)) {
-      let swarmId = getNodeSwarmId(nodeId);
-      switch (swarmId) {
-        case (null) { Runtime.trap("Cannot determine swarm for node") };
-        case (?sid) {
-          if (not isSwarmCreatorOrMember(caller, sid)) {
-            Runtime.trap("Unauthorized: Only swarm creator or approved members can vote on this node");
-          };
-        };
-      };
-    };
-
-    // Update vote data
-    let currentVotes = switch (voteDataMap.get(nodeId)) {
-      case (null) { { upvotes = 0; downvotes = 0 } };
-      case (?votes) { votes };
-    };
-
-    voteDataMap.add(nodeId, {
-      upvotes = currentVotes.upvotes;
-      downvotes = currentVotes.downvotes + 1;
-    });
-
-    // Track user vote
-    markUserVoted(caller, nodeId);
-
-    // Update BUZZ score for node creator
-    switch (getNodeCreator(nodeId)) {
-      case (?creator) { updateBuzzScoreOnDownvote(creator, nodeId) };
-      case (null) {};
-    };
-  };
-
-  public query ({ caller }) func getVoteData(nodeId : NodeId) : async VoteData {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can view vote data");
-    };
-
-    switch (voteDataMap.get(nodeId)) {
-      case (null) { { upvotes = 0; downvotes = 0 } };
-      case (?votes) { votes };
-    };
-  };
-
-  func nodeExists(nodeId : NodeId) : Bool {
-    curationMap.containsKey(nodeId) or
-    swarmMap.containsKey(nodeId) or
-    locationMap.containsKey(nodeId) or
-    lawTokenMap.containsKey(nodeId) or
-    interpretationTokenMap.containsKey(nodeId)
-  };
-
-  func hasUserVoted(user : Principal, nodeId : NodeId) : Bool {
-    switch (userVoteTracking.get(user)) {
-      case (null) { false };
-      case (?tracking) {
-        switch (tracking.votedNodes.get(nodeId)) {
-          case (null) { false };
-          case (?_) { true };
-        };
-      };
-    };
-  };
-
-  func markUserVoted(user : Principal, nodeId : NodeId) {
-    let tracking = switch (userVoteTracking.get(user)) {
-      case (null) {
-        let newTracking : UserVoteTracking = { votedNodes = Map.empty<Text, Bool>() };
-        userVoteTracking.add(user, newTracking);
-        newTracking;
-      };
-      case (?existing) { existing };
-    };
-
-    tracking.votedNodes.add(nodeId, true);
-  };
-
   // MEMBERSHIP OPERATIONS
-  func isQuestionOfLawSwarm(swarmId : NodeId) : Bool {
-    switch (swarmTypeMap.get(swarmId)) {
-      case (null) { false };
-      case (?t) { t == #questionOfLaw };
-    };
-  };
-
-  func isSwarmMember(caller : Principal, swarmId : NodeId) : Bool {
-    switch (swarmMembers.get(swarmId)) {
-      case (null) { false };
-      case (?members) { members.any(func(m : Principal) : Bool { m == caller }) };
-    };
-  };
-
-  // Traces forkSource chain to find the root QoL swarm ID (returns null if not QoL-related)
-  func getRootQolSwarmId(swarmId : NodeId) : ?NodeId {
-    switch (swarmMap.get(swarmId)) {
-      case (null) { null };
-      case (?s) {
-        switch (s.forkSource) {
-          case (null) {
-            if (isQuestionOfLawSwarm(swarmId)) { ?swarmId } else { null };
-          };
-          case (?src) {
-            getRootQolSwarmId(src);
-          };
-        };
-      };
-    };
-  };
-
-  public query func getSwarmMembers(swarmId : NodeId) : async [Principal] {
-    switch (swarmMembers.get(swarmId)) {
-      case (null) { [] };
-      case (?members) { members.toArray() };
-    };
-  };
-
-  public shared ({ caller }) func joinSwarm(swarmId : NodeId) : async () {
-    if (not isQuestionOfLawSwarm(swarmId)) {
-      Runtime.trap("Only question-of-law swarms support membership");
-    };
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can join swarms");
-    };
-    let swarm = switch (swarmMap.get(swarmId)) {
-      case (null) { Runtime.trap("Swarm not found") };
-      case (?s) { s };
-    };
-    if (swarm.creator == caller) {
-      Runtime.trap("Swarm creator cannot join their own swarm");
-    };
-    if (isSwarmMember(caller, swarmId)) {
-      Runtime.trap("Already a member");
-    };
-    // Add caller to swarmMembers
-    let existing = switch (swarmMembers.get(swarmId)) {
-      case (null) { List.empty<Principal>() };
-      case (?l) { l };
-    };
-    existing.add(caller);
-    swarmMembers.add(swarmId, existing);
-  };
-
-  public shared ({ caller }) func createSwarmFork(swarmId : NodeId) : async NodeId {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can fork swarms");
-    };
-    // Allow forking any QoL swarm or fork of a QoL swarm; trace back to root for membership check
-    let rootQolId = switch (getRootQolSwarmId(swarmId)) {
-      case (null) { Runtime.trap("Only question-of-law swarms can be forked") };
-      case (?id) { id };
-    };
-    let rootSwarm = switch (swarmMap.get(rootQolId)) {
-      case (null) { Runtime.trap("Root swarm not found") };
-      case (?s) { s };
-    };
-    // Must be creator of root OR member of root to fork any swarm in the lineage
-    if (rootSwarm.creator != caller and not isSwarmMember(caller, rootQolId)) {
-      Runtime.trap("You must be a member of the swarm to fork it");
-    };
-    // Check for existing active fork of this specific swarm
-    for ((_sid, s) in swarmMap.entries()) {
-      switch (s.forkSource) {
-        case (?src) {
-          if (src == swarmId and s.creator == caller and not archivedNodes.containsKey(s.id)) {
-            Runtime.trap("You already have an active fork of this swarm");
-          };
-        };
-        case (null) {};
-      };
-    };
-    let swarm = switch (swarmMap.get(swarmId)) {
-      case (null) { Runtime.trap("Swarm not found") };
-      case (?s) { s };
-    };
-    let myForksCurationId = ensureMyForksCuration(caller);
-    let forkId = generateId("swarm", swarm.name, caller);
-    let forkSwarm = {
-      id = forkId;
-      name = swarm.name;
-      tags = swarm.tags;
-      parentCurationId = myForksCurationId;
-      creator = caller;
-      customAttributes = swarm.customAttributes;
-      sources = swarm.sources;
-      timestamps = { createdAt = Time.now(); };
-      forkSource = ?swarmId;
-      forkPrincipal = ?caller;
-    };
-    swarmMap.add(forkId, forkSwarm);
-    swarmTypeMap.add(forkId, #questionOfLaw);
-    deepCopySwarmContent(swarmId, forkId, caller);
-
-    // Record all source node IDs that were copied so pull knows what is new
-    let pulledIds = List.empty<NodeId>();
-    for ((_locId, loc) in locationMap.entries()) {
-      if (loc.parentSwarmId == swarmId) {
-        pulledIds.add(loc.id);
-        for ((_ltId, lt) in lawTokenMap.entries()) {
-          if (lt.parentLocationId == loc.id) {
-            pulledIds.add(lt.id);
-          };
-        };
-      };
-    };
-    // Track interpretation tokens from source swarm
-    for ((_itId, it) in interpretationTokenMap.entries()) {
-      switch (lawTokenMap.get(it.parentLawTokenId)) {
-        case (null) {};
-        case (?lt) {
-          switch (locationMap.get(lt.parentLocationId)) {
-            case (null) {};
-            case (?loc) {
-              if (loc.parentSwarmId == swarmId) {
-                pulledIds.add(it.id);
-              };
-            };
-          };
-        };
-      };
-    };
-    forkPulledSourceNodes.add(forkId, pulledIds);
-
-    forkId;
-  };
-
-  public shared ({ caller }) func leaveSwarm(swarmId : NodeId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can leave swarms");
-    };
-    if (not isSwarmMember(caller, swarmId)) {
-      Runtime.trap("You are not a member of this swarm");
-    };
-    switch (swarmMembers.get(swarmId)) {
-      case (null) {};
-      case (?members) {
-        let newMembers = List.empty<Principal>();
-        for (m in members.values()) {
-          if (m != caller) {
-            newMembers.add(m);
-          };
-        };
-        swarmMembers.add(swarmId, newMembers);
-      };
-    };
-  };
-
-  public query ({ caller }) func hasUserFork(swarmId : NodeId) : async Bool {
-    for ((_sid, s) in swarmMap.entries()) {
-      switch (s.forkSource) {
-        case (?src) {
-          if (src == swarmId and s.creator == caller and not archivedNodes.containsKey(s.id)) {
-            return true;
-          };
-        };
-        case (null) {};
-      };
-    };
-    false;
-  };
-
-  func countAdmins() : Nat {
-    var count : Nat = 0;
-    for (principal in existingAdmins.values()) {
-      if (AccessControl.isAdmin(accessControlState, principal)) {
-        count += 1;
-      };
-    };
-    count;
-  };
-
-  func isSwarmCreatorOrMember(caller : Principal, swarmId : NodeId) : Bool {
-    switch (swarmMap.get(swarmId)) {
-      case (null) { false };
-      case (?swarm) {
-        // For forks: only the fork's creator has write access
-        switch (swarm.forkSource) {
-          case (?_) {
-            return swarm.creator == caller;
-          };
-          case (null) {};
-        };
-        // For original swarms: creator or QoL member
-        swarm.creator == caller;
-      };
-    };
-  };
-
-  public shared ({ caller }) func pullFromSwarm(sourceSwarmId : NodeId) : async NodeId {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can pull from swarms");
-    };
-    // Find existing active fork by caller where forkSource == sourceSwarmId
-    var maybeForkId : ?NodeId = null;
-    for ((sid, s) in swarmMap.entries()) {
-      switch (s.forkSource) {
-        case (?src) {
-          if (src == sourceSwarmId and s.creator == caller and not archivedNodes.containsKey(sid)) {
-            maybeForkId := ?sid;
-          };
-        };
-        case (null) {};
-      };
-    };
-    let activeForkId = switch (maybeForkId) {
-      case (null) { Runtime.trap("No active fork found. Create a fork first.") };
-      case (?id) { id };
-    };
-
-    // Build set of already-pulled source node IDs
-    let alreadyPulled = switch (forkPulledSourceNodes.get(activeForkId)) {
-      case (null) { List.empty<NodeId>() };
-      case (?l) { l };
-    };
-    let pulledSet = Map.empty<NodeId, ()>();
-    for (nodeId in alreadyPulled.values()) {
-      pulledSet.add(nodeId, ());
-    };
-
-    // Copy new locations from source not yet pulled
-    var newLawTokenIdMap = Map.empty<NodeId, NodeId>();
-    var newLocationIdMap = Map.empty<NodeId, NodeId>();
-    for ((_lid, loc) in locationMap.entries()) {
-      if (loc.parentSwarmId == sourceSwarmId and not pulledSet.containsKey(loc.id)) {
-        let newLocId = generateId("location", loc.title, caller);
-        let newLoc = {
-          id = newLocId;
-          title = loc.title;
-          customAttributes = loc.customAttributes;
-          sources = loc.sources;
-          parentSwarmId = activeForkId;
-          creator = caller;
-          timestamps = { createdAt = Time.now(); };
-        };
-        locationMap.add(newLocId, newLoc);
-        newLocationIdMap.add(loc.id, newLocId);
-        alreadyPulled.add(loc.id);
-      };
-    };
-
-    // Copy law tokens for newly copied locations
-    for ((_ltId, token) in lawTokenMap.entries()) {
-      switch (newLocationIdMap.get(token.parentLocationId)) {
-        case (null) {};
-        case (?newLocId) {
-          if (not pulledSet.containsKey(token.id)) {
-            let newTokenId = generateId("lawToken", token.tokenLabel, caller);
-            let newToken = {
-              id = newTokenId;
-              tokenLabel = token.tokenLabel;
-              parentLocationId = newLocId;
-              creator = caller;
-              customAttributes = token.customAttributes;
-              sources = token.sources;
-              timestamps = { createdAt = Time.now(); };
-            };
-            lawTokenMap.add(newTokenId, newToken);
-            newLawTokenIdMap.add(token.id, newTokenId);
-            alreadyPulled.add(token.id);
-          };
-        };
-      };
-    };
-
-    // Copy interpretation tokens referencing newly copied law tokens
-    for ((_itId, it) in interpretationTokenMap.entries()) {
-      if (not pulledSet.containsKey(it.id)) {
-        switch (newLawTokenIdMap.get(it.parentLawTokenId)) {
-          case (null) {};
-          case (?newParentLawTokenId) {
-            let newItId = generateId("interpretationToken", it.title, caller);
-            let newIt = {
-              id = newItId;
-              title = it.title;
-              contentVersions = it.contentVersions;
-              parentLawTokenId = newParentLawTokenId;
-              customAttributes = it.customAttributes;
-              sources = it.sources;
-              creator = caller;
-              timestamps = { createdAt = Time.now(); };
-            };
-            interpretationTokenMap.add(newItId, newIt);
-            alreadyPulled.add(it.id);
-            // Copy sourceEdges referencing old IT, remapping targets
-            switch (sourceEdges.get(it.id)) {
-              case (null) {};
-              case (?edges) {
-                let newEdges = List.empty<SourceGraphEdge>();
-                for (edge in edges.values()) {
-                  let newTarget = switch (newLawTokenIdMap.get(edge.target)) {
-                    case (?nid) { nid };
-                    case (null) { edge.target };
-                  };
-                  newEdges.add({ source = newItId; target = newTarget; weightedLabels = edge.weightedLabels; directionality = edge.directionality });
-                };
-                sourceEdges.add(newItId, newEdges);
-              };
-            };
-          };
-        };
-      };
-    };
-
-    // Update tracking map
-    forkPulledSourceNodes.add(activeForkId, alreadyPulled);
-    activeForkId;
-  };
-
-  public query ({ caller }) func getSwarmForks(swarmId : NodeId) : async [Swarm] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can view swarm forks");
-    };
-    var result = List.empty<Swarm>();
-    for ((_sid, s) in swarmMap.entries()) {
-      switch (s.forkSource) {
-        case (?src) {
-          if (src == swarmId) {
-            result.add(s);
-          };
-        };
-        case (null) {};
-      };
-    };
-    result.toArray();
-  };
-
-  func addSwarmUpdateForContributors(update : SwarmUpdate, swarmId : ?NodeId) {
-    switch (swarmId) {
-      case (null) {};
-      case (?sid) {
-        switch (swarmMap.get(sid)) {
-          case (null) {};
-          case (?swarm) {
-            switch (swarmMembers.get(sid)) {
-              case (null) {};
-              case (?members) {
-                for (member in members.values()) {
-                  if (member != update.creatorPrincipal) {
-                    let memberUpdates = switch (swarmUpdates.get(member)) {
-                      case (null) { List.empty<SwarmUpdate>() };
-                      case (?existing) { existing };
-                    };
-                    memberUpdates.add(update);
-                    swarmUpdates.add(member, memberUpdates);
-                  };
-                };
-              };
-            };
-            if (swarm.creator != update.creatorPrincipal) {
-              let creatorUpdates = switch (swarmUpdates.get(swarm.creator)) {
-                case (null) { List.empty<SwarmUpdate>() };
-                case (?existing) { existing };
-              };
-              creatorUpdates.add(update);
-              swarmUpdates.add(swarm.creator, creatorUpdates);
-            };
-          };
-        };
-      };
-    };
-  };
-
-  func createSwarmTokenUpdate(swarmId : ?NodeId, tokenId : NodeId, title : Text, creator : Principal) {
-    // Implementation needed
-  };
-
-  func getNodeCreator(nodeId : NodeId) : ?Principal {
-    // Implementation needed
-    null
-  };
-
-  func updateBuzzScoreOnUpvote(creator : Principal, nodeId : NodeId) {
-    // Implementation needed
-  };
-
-  func updateBuzzScoreOnDownvote(creator : Principal, nodeId : NodeId) {
-    // Implementation needed
-  };
 
   func updateBuzzScore(user : Principal, delta : Int) {
     let currentBalance = switch (buzzScores.get(user)) {
@@ -4281,11 +3240,6 @@ actor {
     };
     for ((id, swarm) in stagingSwarms.entries()) {
       swarmMap.add(id, swarm);
-      // Update swarm type for new swarms
-      if (not swarmMap.containsKey(id)) {
-        let isQoL = swarm.tags.any(func(tag : Text) : Bool { tag == "question-of-law" });
-        swarmTypeMap.add(id, if (isQoL) { #questionOfLaw } else { #regular });
-      };
     };
     for ((id, location) in stagingLocations.entries()) {
       locationMap.add(id, location);
@@ -4321,9 +3275,6 @@ actor {
         };
       };
       publishedNodeContributions.add(thePublishedId, existingMap);
-    };    // Auto-upvote new nodes (all new swarms in staging not in original map)
-    for ((id, swarm) in stagingSwarms.entries()) {
-      autoUpvoteNode(id, caller);
     };
 
     #success({
@@ -5459,11 +4410,7 @@ actor {
     locationMap := Map.empty<NodeId, Location>();
     lawTokenMap := Map.empty<NodeId, LawToken>();
     interpretationTokenMap := Map.empty<NodeId, InterpretationToken>();
-    membershipRequests := Map.empty<NodeId, List.List<SwarmMembership>>();
-    swarmMembers := Map.empty<NodeId, List.List<Principal>>();
-    swarmTypeMap := Map.empty<NodeId, SwarmType>();
     archivedNodes := Map.empty<NodeId, ()>();
-    forkPulledSourceNodes := Map.empty<NodeId, List.List<NodeId>>();
     sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();

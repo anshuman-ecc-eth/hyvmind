@@ -1,10 +1,9 @@
 {
   "version": 3,
-  "mopsTomlDepsHash": "a03cfdf7cca400661dafd71dd2eac1584ce9775b25db56c499c6ae37f6b2b9b2",
+  "mopsTomlDepsHash": "90da03a29dd2a483f37b5c7b10191f5b83ef81162c110698ace32e65ec09c976",
   "deps": {
     "core": "2.2.0",
-    "caffeineai-authorization": "0.1.0",
-    "caffeineai-user-approval": "0.1.0"
+    "caffeineai-authorization": "0.1.0"
   },
   "hashes": {
     "core@2.2.0": {
@@ -73,11 +72,6 @@
       "caffeineai-authorization@0.1.0/rules/no-redeclare-initialize-access-control.toml": "1ecedde0d8fe2b3d71fa46a20fa721754fcb0591bdb8b6b668b69f2593e120a4",
       "caffeineai-authorization@0.1.0/rules/no-redeclare-assign-caller-user-role.toml": "e8669dfe4931aaa4268682877388255342ce2cb2cdafd21a121ddf22ef42b500",
       "caffeineai-authorization@0.1.0/src/access-control.mo": "e517d2a028b510d804a633631a15981160def610ea9410dd5a122f92af3c04d8"
-    },
-    "caffeineai-user-approval@0.1.0": {
-      "caffeineai-user-approval@0.1.0/src/approval.mo": "feb5d0093b4510a5c46c24be6262482cf2e3f10a3346c603e6973d9f2568d87d",
-      "caffeineai-user-approval@0.1.0/mops.toml": "e19eb0afac9bdc420c6a58dd62ce8ce2564019ce11701274c625d4a577562358",
-      "caffeineai-user-approval@0.1.0/README.md": "cfb4f4beb4372bf531aa72a6f7fae9cc61c54ca92f2dee2abdb23256ef70235b"
     }
   }
 }

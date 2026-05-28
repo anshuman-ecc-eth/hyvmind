@@ -16,22 +16,6 @@ export interface Location {
     parentSwarmId: NodeId;
     sources: Array<SourceRef>;
 }
-export type MintCollectibleResult = {
-    __kind__: "editionLimitReached";
-    editionLimitReached: null;
-} | {
-    __kind__: "alreadyOwned";
-    alreadyOwned: null;
-} | {
-    __kind__: "insufficientFunds";
-    insufficientFunds: null;
-} | {
-    __kind__: "success";
-    success: CollectibleEdition;
-} | {
-    __kind__: "tokenNotFound";
-    tokenNotFound: null;
-};
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -111,10 +95,6 @@ export interface PublishPreviewResult {
     edgeOperations: Array<EdgeOperation>;
     nodeOperations: Array<NodeOperation>;
 }
-export interface MintCollectibleRequest {
-    tokenId: NodeId;
-    tokenType: Variant_lawToken_interpretationToken;
-}
 export interface GraphNode {
     id: NodeId;
     customAttributes: Array<WeightedAttribute>;
@@ -124,6 +104,16 @@ export interface GraphNode {
     parentId?: NodeId;
     tokenLabel: string;
     nodeType: string;
+}
+export interface ExtensionEntry {
+    addedNodes: bigint;
+    extendedByName: string;
+    addedSources?: bigint;
+    addedAttributes: bigint;
+    extendedAt: Time;
+    extendedBy: Principal;
+    addedHierarchyEdges: bigint;
+    addedEdges: bigint;
 }
 export type PublishCommitResult = {
     __kind__: "error";
@@ -143,23 +133,6 @@ export type PublishCommitResult = {
         nodeMappings: Array<[string, NodeId]>;
     };
 };
-export interface ExtensionEntry {
-    addedNodes: bigint;
-    extendedByName: string;
-    addedSources?: bigint;
-    addedAttributes: bigint;
-    extendedAt: Time;
-    extendedBy: Principal;
-    addedHierarchyEdges: bigint;
-    addedEdges: bigint;
-}
-export interface CollectibleEdition {
-    tokenId: NodeId;
-    editionNumber: bigint;
-    owner: Principal;
-    mintedAt: Time;
-    tokenType: Variant_lawToken_interpretationToken;
-}
 export interface ChatMessage {
     text: string;
     sender: Principal;
@@ -207,18 +180,11 @@ export interface SourceGraphNodeInput {
     parentName?: string;
     nodeType: string;
 }
-export interface VoteData {
-    upvotes: bigint;
-    downvotes: bigint;
-}
-export type TrustScore = bigint;
 export interface Timestamps {
     createdAt: Time;
 }
+export type TrustScore = bigint;
 export type NodeId = string;
-export interface MintSettings {
-    numCopies: bigint;
-}
 export interface GraphEdge {
     source: NodeId;
     directionality: Directionality;
@@ -229,14 +195,6 @@ export interface ContentVersion {
     content: string;
     timestamp: Time;
     contributor: Principal;
-}
-export interface HttpHeader {
-    value: string;
-    name: string;
-}
-export interface UserApprovalInfo {
-    status: ApprovalStatus;
-    principal: Principal;
 }
 export interface TrustTransaction {
     totalBuzzCost: bigint;
@@ -254,11 +212,6 @@ export interface GraphData {
     swarms: Array<Swarm>;
     lawTokens: Array<LawToken>;
     interpretationTokens: Array<InterpretationToken>;
-}
-export interface IcHttpRequestResult {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<HttpHeader>;
 }
 export interface HttpResponse {
     body: Uint8Array;
@@ -309,11 +262,6 @@ export interface HttpRequest {
     body: Uint8Array;
     headers: Array<[string, string]>;
 }
-export enum ApprovalStatus {
-    pending = "pending",
-    approved = "approved",
-    rejected = "rejected"
-}
 export enum Directionality {
     none = "none",
     bidirectional = "bidirectional",
@@ -324,10 +272,6 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
-export enum Variant_lawToken_interpretationToken {
-    lawToken = "lawToken",
-    interpretationToken = "interpretationToken"
-}
 export interface backendInterface {
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
@@ -337,18 +281,6 @@ export interface backendInterface {
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
-    createSwarmFork(swarmId: NodeId): Promise<NodeId>;
-    downvoteNode(nodeId: NodeId): Promise<void>;
-    fetchURL(url: string): Promise<{
-        __kind__: "ok";
-        ok: {
-            title: string;
-            html: string;
-        };
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
@@ -359,7 +291,6 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
-    getCollectibleEditions(tokenId: NodeId): Promise<Array<CollectibleEdition>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -367,7 +298,6 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
-    getMintSettings(): Promise<MintSettings>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
     getMyPrincipal(): Promise<Principal>;
@@ -376,15 +306,7 @@ export interface backendInterface {
     getNotesData(): Promise<string | null>;
     getPendingPluginBindings(): Promise<Array<Principal>>;
     getPluginBindingStatus(): Promise<boolean>;
-    getPublishedPaths(): Promise<Array<{
-        graphId: string;
-        swarm: string;
-        curation: string;
-        location: string;
-    }>>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
-    getSwarmForks(swarmId: NodeId): Promise<Array<Swarm>>;
-    getSwarmMembers(swarmId: NodeId): Promise<Array<Principal>>;
     getTelegramConfig(): Promise<{
         chatId: string;
         botToken: string;
@@ -396,22 +318,14 @@ export interface backendInterface {
         hasChatId: boolean;
     }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    getVoteData(nodeId: NodeId): Promise<VoteData>;
     hasTelegramConfig(): Promise<boolean>;
-    hasUserFork(swarmId: NodeId): Promise<boolean>;
     hasUserSavedGraph(publishedGraphId: string): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
     icChallengeNonce(): Promise<string>;
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
-    isCallerApproved(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
-    joinSwarm(swarmId: NodeId): Promise<void>;
-    leaveSwarm(swarmId: NodeId): Promise<void>;
-    listApprovals(): Promise<Array<UserApprovalInfo>>;
-    mintCollectible(request: MintCollectibleRequest): Promise<MintCollectibleResult>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
-    pullFromSwarm(sourceSwarmId: NodeId): Promise<NodeId>;
     redeemBuzzSecret(secret: string): Promise<{
         __kind__: "ok";
         ok: string;
@@ -419,8 +333,6 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
-    requestApproval(): Promise<void>;
-    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
@@ -439,8 +351,6 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
-    setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
-    setMintSettings(settings: MintSettings): Promise<void>;
     setTelegramConfig(botToken: string, chatId: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -450,11 +360,6 @@ export interface backendInterface {
     }>;
     storeNotesData(json: string): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
-    transform(arg0: {
-        context: Uint8Array;
-        response: IcHttpRequestResult;
-    }): Promise<IcHttpRequestResult>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
-    upvoteNode(nodeId: NodeId): Promise<void>;
 }

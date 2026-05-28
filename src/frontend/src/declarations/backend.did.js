@@ -103,23 +103,12 @@ export const ChatChannelSummary = IDL.Record({
   'unreadCount' : IDL.Nat,
   'parentCuration' : IDL.Opt(IDL.Text),
 });
-export const CollectibleEdition = IDL.Record({
-  'tokenId' : NodeId,
-  'editionNumber' : IDL.Nat,
-  'owner' : IDL.Principal,
-  'mintedAt' : Time,
-  'tokenType' : IDL.Variant({
-    'lawToken' : IDL.Null,
-    'interpretationToken' : IDL.Null,
-  }),
-});
 export const ChatMessage = IDL.Record({
   'text' : IDL.Text,
   'sender' : IDL.Principal,
   'timestamp' : IDL.Int,
   'senderName' : IDL.Text,
 });
-export const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
 export const TrustScore = IDL.Int;
 export const TrustTransaction = IDL.Record({
   'totalBuzzCost' : IDL.Int,
@@ -215,10 +204,6 @@ export const GraphData = IDL.Record({
   'lawTokens' : IDL.Vec(LawToken),
   'interpretationTokens' : IDL.Vec(InterpretationToken),
 });
-export const VoteData = IDL.Record({
-  'upvotes' : IDL.Nat,
-  'downvotes' : IDL.Nat,
-});
 export const HttpRequest = IDL.Record({
   'url' : IDL.Text,
   'method' : IDL.Text,
@@ -229,29 +214,6 @@ export const HttpResponse = IDL.Record({
   'body' : IDL.Vec(IDL.Nat8),
   'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
   'status_code' : IDL.Nat16,
-});
-export const ApprovalStatus = IDL.Variant({
-  'pending' : IDL.Null,
-  'approved' : IDL.Null,
-  'rejected' : IDL.Null,
-});
-export const UserApprovalInfo = IDL.Record({
-  'status' : ApprovalStatus,
-  'principal' : IDL.Principal,
-});
-export const MintCollectibleRequest = IDL.Record({
-  'tokenId' : NodeId,
-  'tokenType' : IDL.Variant({
-    'lawToken' : IDL.Null,
-    'interpretationToken' : IDL.Null,
-  }),
-});
-export const MintCollectibleResult = IDL.Variant({
-  'editionLimitReached' : IDL.Null,
-  'alreadyOwned' : IDL.Null,
-  'insufficientFunds' : IDL.Null,
-  'success' : CollectibleEdition,
-  'tokenNotFound' : IDL.Null,
 });
 export const EdgeOperation = IDL.Record({
   'action' : IDL.Variant({
@@ -297,12 +259,6 @@ export const PublishPreviewResult = IDL.Record({
   'edgeOperations' : IDL.Vec(EdgeOperation),
   'nodeOperations' : IDL.Vec(NodeOperation),
 });
-export const HttpHeader = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
-export const IcHttpRequestResult = IDL.Record({
-  'status' : IDL.Nat,
-  'body' : IDL.Vec(IDL.Nat8),
-  'headers' : IDL.Vec(HttpHeader),
-});
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
@@ -334,18 +290,6 @@ export const idlService = IDL.Service({
       [NodeId],
       [],
     ),
-  'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
-  'downvoteNode' : IDL.Func([NodeId], [], []),
-  'fetchURL' : IDL.Func(
-      [IDL.Text],
-      [
-        IDL.Variant({
-          'ok' : IDL.Record({ 'title' : IDL.Text, 'html' : IDL.Text }),
-          'err' : IDL.Text,
-        }),
-      ],
-      [],
-    ),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
   'generateInviteCodes' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Vec(IDL.Text)], []),
@@ -364,17 +308,11 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
-  'getCollectibleEditions' : IDL.Func(
-      [NodeId],
-      [IDL.Vec(CollectibleEdition)],
-      ['query'],
-    ),
   'getMessages' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
       [],
     ),
-  'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
   'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
   'getMyPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
@@ -391,27 +329,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getPluginBindingStatus' : IDL.Func([], [IDL.Bool], ['query']),
-  'getPublishedPaths' : IDL.Func(
-      [],
-      [
-        IDL.Vec(
-          IDL.Record({
-            'graphId' : IDL.Text,
-            'swarm' : IDL.Text,
-            'curation' : IDL.Text,
-            'location' : IDL.Text,
-          })
-        ),
-      ],
-      ['query'],
-    ),
   'getPublishedSourceGraph' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(GraphData)],
       ['query'],
     ),
-  'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
-  'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
   'getTelegramConfig' : IDL.Func(
       [],
       [IDL.Opt(IDL.Record({ 'chatId' : IDL.Text, 'botToken' : IDL.Text }))],
@@ -434,37 +356,23 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
   'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
-  'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
   'hasUserSavedGraph' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
   'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
   'initializeAccessControl' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
   'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
-  'joinSwarm' : IDL.Func([NodeId], [], []),
-  'leaveSwarm' : IDL.Func([NodeId], [], []),
-  'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
-  'mintCollectible' : IDL.Func(
-      [MintCollectibleRequest],
-      [MintCollectibleResult],
-      [],
-    ),
   'previewPublishSourceGraph' : IDL.Func(
       [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
       [PublishPreviewResult],
       [],
     ),
-  'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
   'redeemBuzzSecret' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
       [],
     ),
-  'requestApproval' : IDL.Func([], [], []),
-  'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'revokeApiKey' : IDL.Func([], [], []),
   'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
@@ -479,8 +387,6 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
       [],
     ),
-  'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-  'setMintSettings' : IDL.Func([MintSettings], [], []),
   'setTelegramConfig' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
@@ -488,23 +394,12 @@ export const idlService = IDL.Service({
     ),
   'storeNotesData' : IDL.Func([IDL.Text], [], []),
   'track_api_request' : IDL.Func([IDL.Text], [], []),
-  'transform' : IDL.Func(
-      [
-        IDL.Record({
-          'context' : IDL.Vec(IDL.Nat8),
-          'response' : IcHttpRequestResult,
-        }),
-      ],
-      [IcHttpRequestResult],
-      ['query'],
-    ),
   'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   'updateSourceGraphTerrainParams' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Bool],
       [],
     ),
-  'upvoteNode' : IDL.Func([NodeId], [], []),
 });
 
 export const idlInitArgs = [];
@@ -602,23 +497,12 @@ export const idlFactory = ({ IDL }) => {
     'unreadCount' : IDL.Nat,
     'parentCuration' : IDL.Opt(IDL.Text),
   });
-  const CollectibleEdition = IDL.Record({
-    'tokenId' : NodeId,
-    'editionNumber' : IDL.Nat,
-    'owner' : IDL.Principal,
-    'mintedAt' : Time,
-    'tokenType' : IDL.Variant({
-      'lawToken' : IDL.Null,
-      'interpretationToken' : IDL.Null,
-    }),
-  });
   const ChatMessage = IDL.Record({
     'text' : IDL.Text,
     'sender' : IDL.Principal,
     'timestamp' : IDL.Int,
     'senderName' : IDL.Text,
   });
-  const MintSettings = IDL.Record({ 'numCopies' : IDL.Nat });
   const TrustScore = IDL.Int;
   const TrustTransaction = IDL.Record({
     'totalBuzzCost' : IDL.Int,
@@ -714,7 +598,6 @@ export const idlFactory = ({ IDL }) => {
     'lawTokens' : IDL.Vec(LawToken),
     'interpretationTokens' : IDL.Vec(InterpretationToken),
   });
-  const VoteData = IDL.Record({ 'upvotes' : IDL.Nat, 'downvotes' : IDL.Nat });
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
     'method' : IDL.Text,
@@ -725,29 +608,6 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
     'status_code' : IDL.Nat16,
-  });
-  const ApprovalStatus = IDL.Variant({
-    'pending' : IDL.Null,
-    'approved' : IDL.Null,
-    'rejected' : IDL.Null,
-  });
-  const UserApprovalInfo = IDL.Record({
-    'status' : ApprovalStatus,
-    'principal' : IDL.Principal,
-  });
-  const MintCollectibleRequest = IDL.Record({
-    'tokenId' : NodeId,
-    'tokenType' : IDL.Variant({
-      'lawToken' : IDL.Null,
-      'interpretationToken' : IDL.Null,
-    }),
-  });
-  const MintCollectibleResult = IDL.Variant({
-    'editionLimitReached' : IDL.Null,
-    'alreadyOwned' : IDL.Null,
-    'insufficientFunds' : IDL.Null,
-    'success' : CollectibleEdition,
-    'tokenNotFound' : IDL.Null,
   });
   const EdgeOperation = IDL.Record({
     'action' : IDL.Variant({
@@ -793,12 +653,6 @@ export const idlFactory = ({ IDL }) => {
     'edgeOperations' : IDL.Vec(EdgeOperation),
     'nodeOperations' : IDL.Vec(NodeOperation),
   });
-  const HttpHeader = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
-  const IcHttpRequestResult = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(HttpHeader),
-  });
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
@@ -830,18 +684,6 @@ export const idlFactory = ({ IDL }) => {
         [NodeId],
         [],
       ),
-    'createSwarmFork' : IDL.Func([NodeId], [NodeId], []),
-    'downvoteNode' : IDL.Func([NodeId], [], []),
-    'fetchURL' : IDL.Func(
-        [IDL.Text],
-        [
-          IDL.Variant({
-            'ok' : IDL.Record({ 'title' : IDL.Text, 'html' : IDL.Text }),
-            'err' : IDL.Text,
-          }),
-        ],
-        [],
-      ),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
     'generateInviteCodes' : IDL.Func(
@@ -864,17 +706,11 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
-    'getCollectibleEditions' : IDL.Func(
-        [NodeId],
-        [IDL.Vec(CollectibleEdition)],
-        ['query'],
-      ),
     'getMessages' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
         [],
       ),
-    'getMintSettings' : IDL.Func([], [MintSettings], ['query']),
     'getMyApiKey' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMyBuzzBalance' : IDL.Func([], [BuzzScore], ['query']),
     'getMyPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
@@ -891,27 +727,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getPluginBindingStatus' : IDL.Func([], [IDL.Bool], ['query']),
-    'getPublishedPaths' : IDL.Func(
-        [],
-        [
-          IDL.Vec(
-            IDL.Record({
-              'graphId' : IDL.Text,
-              'swarm' : IDL.Text,
-              'curation' : IDL.Text,
-              'location' : IDL.Text,
-            })
-          ),
-        ],
-        ['query'],
-      ),
     'getPublishedSourceGraph' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(GraphData)],
         ['query'],
       ),
-    'getSwarmForks' : IDL.Func([NodeId], [IDL.Vec(Swarm)], ['query']),
-    'getSwarmMembers' : IDL.Func([NodeId], [IDL.Vec(IDL.Principal)], ['query']),
     'getTelegramConfig' : IDL.Func(
         [],
         [IDL.Opt(IDL.Record({ 'chatId' : IDL.Text, 'botToken' : IDL.Text }))],
@@ -934,37 +754,23 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
-    'getVoteData' : IDL.Func([NodeId], [VoteData], ['query']),
     'hasTelegramConfig' : IDL.Func([], [IDL.Bool], ['query']),
-    'hasUserFork' : IDL.Func([NodeId], [IDL.Bool], ['query']),
     'hasUserSavedGraph' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'icChallengeNonce' : IDL.Func([], [IDL.Text], ['query']),
     'initializeAccessControl' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
     'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
-    'joinSwarm' : IDL.Func([NodeId], [], []),
-    'leaveSwarm' : IDL.Func([NodeId], [], []),
-    'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
-    'mintCollectible' : IDL.Func(
-        [MintCollectibleRequest],
-        [MintCollectibleResult],
-        [],
-      ),
     'previewPublishSourceGraph' : IDL.Func(
         [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
         [PublishPreviewResult],
         [],
       ),
-    'pullFromSwarm' : IDL.Func([NodeId], [NodeId], []),
     'redeemBuzzSecret' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
         [],
       ),
-    'requestApproval' : IDL.Func([], [], []),
-    'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'revokeApiKey' : IDL.Func([], [], []),
     'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
@@ -979,8 +785,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
         [],
       ),
-    'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-    'setMintSettings' : IDL.Func([MintSettings], [], []),
     'setTelegramConfig' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
@@ -988,23 +792,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'storeNotesData' : IDL.Func([IDL.Text], [], []),
     'track_api_request' : IDL.Func([IDL.Text], [], []),
-    'transform' : IDL.Func(
-        [
-          IDL.Record({
-            'context' : IDL.Vec(IDL.Nat8),
-            'response' : IcHttpRequestResult,
-          }),
-        ],
-        [IcHttpRequestResult],
-        ['query'],
-      ),
     'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'updateSourceGraphTerrainParams' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Bool],
         [],
       ),
-    'upvoteNode' : IDL.Func([NodeId], [], []),
   });
 };
 
