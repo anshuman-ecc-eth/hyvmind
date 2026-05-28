@@ -877,7 +877,7 @@ actor {
     secretId;
   };
 
-  public shared (msg) func generateInviteCodes(count : Nat, validDays : Nat) : async [Text] {
+  public shared (msg) func generateInviteCodes(count : Nat, validDays : Nat, buzzValue : ?Nat) : async [Text] {
     if (not AccessControl.isAdmin(accessControlState, msg.caller)) {
       Runtime.trap("Unauthorized: Only admins can generate invite codes");
     };
@@ -886,7 +886,8 @@ actor {
     let expiryTime = now + validDays * 86_400_000_000_000;
     let randomBlob = await Random.blob();
     let baseBytes = randomBlob.toArray();
-    let points = 100 * BUZZ_DECIMALS;
+    let buzz = switch (buzzValue) { case (?v) { v }; case (null) { 100 }; };
+    let points = buzz * BUZZ_DECIMALS;
     var i = 0;
     while (i < count) {
       let offset = (i * 4) % 28;

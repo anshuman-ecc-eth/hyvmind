@@ -16036,7 +16036,7 @@ function mergeLoginOptions(loginOptions, otherLoginOptions) {
   };
 }
 const ONE_HOUR_IN_NANOSECONDS = BigInt(36e11);
-const DEFAULT_IDENTITY_PROVIDER = "https://id.ai";
+const DEFAULT_IDENTITY_PROVIDER = "https://identity.internetcomputer.org/";
 const InternetIdentityReactContext = reactExports.createContext(void 0);
 async function createAuthClient(createOptions) {
   const config3 = await loadConfig$1();
@@ -118779,22 +118779,25 @@ ${formatDebugHelpText()}${formatTelegramConfigHelp()}`
         return;
       }
       const buzzArg = (argument || "").trim();
-      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)$/);
+      const buzzMatch = buzzArg.match(/^(\d+)\s*,?\s*(\d+)(?:\s*,?\s*(\d+))?$/);
       if (!buzzMatch) {
-        addMessage("error", "Usage: /buzz <count>,<days>\nExample: /buzz 5,7");
+        addMessage("error", "Usage: /buzz <count>,<days>,<buzzValue>\nExample: /buzz 5,7,500");
         return;
       }
       const buzzCount = Number.parseInt(buzzMatch[1], 10);
       const buzzDays = Number.parseInt(buzzMatch[2], 10);
-      if (buzzCount <= 0 || buzzDays <= 0) {
-        addMessage("error", "Count and days must be positive integers.");
+      const buzzValue = buzzMatch[3] ? Number.parseInt(buzzMatch[3], 10) : null;
+      if (buzzCount <= 0 || buzzDays <= 0 || buzzValue !== null && buzzValue <= 0) {
+        addMessage("error", "Count, days, and buzzValue must be positive integers.");
         return;
       }
       try {
-        const codes = await actor.generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays));
+        const buzzParam = buzzValue !== null ? [BigInt(buzzValue)] : [];
+        const codes = await actor.generateInviteCodes(BigInt(buzzCount), BigInt(buzzDays), buzzParam);
+        const details = buzzValue !== null ? ` (${buzzValue} Buzz each)` : "";
         addMessage(
           "success",
-          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):
+          `Generated ${codes.length} invite code${codes.length === 1 ? "" : "s"}${details} (valid for ${buzzDays} day${buzzDays === 1 ? "" : "s"}):
 ${codes.map((c2) => `  ${c2}`).join("\n")}`
         );
       } catch (e22) {
