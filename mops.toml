@@ -9,9 +9,6 @@ args = [ "--release" ]
 [canisters.backend]
 main = "src/backend/main.mo"
 
-  [canisters.backend.check-stable]
-  path = ".old/src/backend/dist/backend.most"
-
 [toolchain]
 moc = "1.3.0"
 lintoko = "0.7.0"
