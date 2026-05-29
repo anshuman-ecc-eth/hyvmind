@@ -25,4 +25,8 @@
 
 ## Learnings
 
-[No learnings yet]
+- Terrain world vegetation uses **Hyptosis trees_plants_rocks.png** (CC-BY 3.0, single artist = coherent style)
+  - Source: https://opengameart.org/content/lots-of-hyptosis-tiles-organized
+  - Path: `/assets/lpc/hyptosis/trees_plants_rocks.png`
+  - 512x512 px, 16x16 tiles of 32x32 px
+  - All vegetation (trees, bushes, flowers, rocks, mushrooms) comes from this single sheet
