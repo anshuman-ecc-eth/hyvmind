@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TERRAIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; }
+  body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
+  body:focus { outline: none; }
+  .layout { display: flex; align-items: center; gap: 24px; }
+  .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
+  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666; }
+  .dpad-btn:active,.dpad-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+  .dpad-up { top:0; left:49px; } .dpad-down { bottom:0; left:49px; }
+  .dpad-left { left:0; top:52px; } .dpad-right { right:0; top:52px; }
+  .action-buttons { display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:144px;height:150px;padding-top:24px; }
+  .action-row { display:flex;flex-direction:row;gap:16px; }
+  .action-btn { width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.5);border:none;color:#000;font-family:'Press Start 2P',monospace;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+  .action-btn:active,.action-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+  .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
+  .viewport { position:absolute;inset:0;overflow:hidden; }
+  .world-layer { display:block;image-rendering:pixelated;position:absolute;top:0;left:0; }
+  .game-layer { position:absolute;inset:0;z-index:1; }
+  .sprite { position:absolute;left:0;top:0;width:32px;height:36px;background-size:32px 36px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat;z-index:5;will-change:transform; }
+</style>
+</head>
+<body tabindex="-1">
+<div id="gameContainer" style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%">
+  <div class="layout" id="gameLayout">
+    <div class="dpad">
+      <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
+      <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
+      <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
+      <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+    </div>
+    <div class="screen">
+      <div class="viewport" id="viewport">
+        <img id="worldBg" class="world-layer" src="">
+        <div id="gameLayer" class="game-layer"></div>
+      </div>
+    </div>
+    <div class="action-buttons">
+      <div class="action-row">
+        <button class="action-btn" id="btnZ">Z</button>
+        <button class="action-btn" id="btnX">X</button>
+      </div>
+    </div>
+  </div>
+  <button id="backBtn" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#fff">&gt; Back</button>
+</div>
+<script>
+var ASSETS = '/assets/hyvmind';
+var LPC_PATH = '/assets/lpc/terrain-map-v7.png';
+var LPC_TSX_PATH = '/assets/lpc/terrain-map-v7.tsx';
+var TILE = 32;
+var GRID_W = 100;
+var GRID_H = 100;
+var COLS = GRID_W;
+var ROWS = GRID_H;
+var WORLD_W = COLS * TILE;
+var WORLD_H = ROWS * TILE;
+var SCREEN_W = 550;
+var SCREEN_H = 480;
+
+// ── Terrain type IDs from LPC terrain-map-v7 ──
+var T = {
+  DIRT_BROWN: 0, DIRT_DARK: 1, DIRT_ROOTS: 2, DIRT_TAN: 3,
+  EARTH_CRACKED: 4, GRASS: 5, GRASS_DARK: 6, GRASS_DEAD: 7,
+  GRASS_LIGHT: 8, GRAVEL: 9, HOLE_BLACK: 10, HOLE_BROWN: 11,
+  ICE: 12, ICE_MELTING: 13, LAVA: 14, MUD_BROWN: 15,
+  MUDSTONE_BROWN: 16, MUDSTONE_GRAY: 17, ROCK_BLACK: 18,
+  ROCK_DARK: 19, ROCK_GRAY: 20, ROCK_WHITE: 21, SAND: 22,
+  SNOW_1: 23, SNOW_2: 24, SOIL: 25, STONE_TAN: 26,
+  STONE_WHITE: 27, WATER: 28, WATER_DEEP: 29,
+  WATER_GREEN: 30, WATER_PURPLE: 31,
+  WATER_SHALLOWS_DIRT: 32, WATER_SHALLOWS_SAND: 33
+};
+
+// Elevation to terrain type mapping
+function elevToTerrain(elev, waterLevel) {
+  if (elev < waterLevel) return T.WATER;
+  if (elev < waterLevel + 12) return T.SAND;
+  if (elev < 100) return T.GRASS;
+  if (elev < 160) return T.GRASS_DARK;
+  if (elev < 190) return T.DIRT_BROWN;
+  if (elev < 220) return T.ROCK_DARK;
+  return T.SNOW_1;
+}
+
+// ── Perlin noise ──
+function fnv1a(str) {
+  var h = 2166136261;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function PRNG(seed) { this.seed = seed; }
+PRNG.prototype.next = function() { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; };
+function ease(t) { return t < 0.5 ? 2*t*t : -1 + (4-2*t)*t; }
+function perlinNoise(w, h, persistence, octaves, wavelength, prng) {
+  var gx=[], gy=[];
+  for (var o = 0; o < octaves; o++) {
+    var gw = w+1, gh = h+1, gxL=[], gyL=[];
+    for (var y = 0; y < gh; y++) { var gxR=[], gyR=[]; for (var x = 0; x < gw; x++) { var a = prng.next() * Math.PI * 2; gxR.push(Math.cos(a)); gyR.push(Math.sin(a)); } gxL.push(gxR); gyL.push(gyR); }
+    gx.push(gxL); gy.push(gyL);
+  }
+  var res = [];
+  for (var y = 0; y < h; y++) { var row = []; for (var x = 0; x < w; x++) { var n=0, amp=1, f=1/wavelength, maxA=0; for (var o = 0; o < octaves; o++) { var px=x*f, py=y*f, ix=Math.floor(px), iy=Math.floor(py), fx=px-ix, fy=py-iy, wx=ease(fx), wy=ease(fy); var gw=w+1, gh=h+1, ix0=((ix%gw)+gw)%gw, ix1=(((ix+1)%gw)+gw)%gw, iy0=((iy%gh)+gh)%gh, iy1=(((iy+1)%gh)+gh)%gh; var d00=gx[o][iy0][ix0]*fx+gy[o][iy0][ix0]*fy, d10=gx[o][iy0][ix1]*(fx-1)+gy[o][iy0][ix1]*fy, d01=gx[o][iy1][ix0]*fx+gy[o][iy1][ix0]*(fy-1), d11=gx[o][iy1][ix1]*(fx-1)+gy[o][iy1][ix1]*(fy-1); n += ((d00+wx*(d10-d00)) + wy*((d01+wx*(d11-d01)) - (d00+wx*(d10-d00)))) * amp; maxA += amp; amp *= persistence; f *= 2; } row.push(n/maxA); } res.push(row); }
+  return res;
+}
+
+// ── LPC TSX parser ──
+function parseLpcTsx(xmlText) {
+  var lookup = {};
+  var re = /<tile\s+id="(\d+)"\s+terrain="([\d,]+)"/g;
+  var match;
+  while ((match = re.exec(xmlText)) !== null) {
+    lookup[match[2]] = parseInt(match[1]);
+  }
+  return lookup;
+}
+
+function buildTileGrid(cornerElev, waterLevel, gridW, gridH, lookup) {
+  var result = [];
+  for (var y = 0; y < gridH; y++) {
+    result[y] = [];
+    for (var x = 0; x < gridW; x++) {
+      var tl = elevToTerrain(cornerElev[y][x], waterLevel);
+      var tr = elevToTerrain(cornerElev[y][x+1], waterLevel);
+      var bl = elevToTerrain(cornerElev[y+1][x], waterLevel);
+      var br = elevToTerrain(cornerElev[y+1][x+1], waterLevel);
+      var key = tl + ',' + tr + ',' + bl + ',' + br;
+      var tid = lookup[key];
+      if (tid === undefined) {
+        // Fallback: use the majority terrain type
+        var counts = {};
+        counts[tl] = (counts[tl]||0)+1; counts[tr] = (counts[tr]||0)+1;
+        counts[bl] = (counts[bl]||0)+1; counts[br] = (counts[br]||0)+1;
+        var majority = tl, maxC = 0;
+        for (var c in counts) { if (counts[c] > maxC) { maxC = counts[c]; majority = parseInt(c); } }
+        // Look for pure fill tile of majority type
+        var fillKey = majority+','+majority+','+majority+','+majority;
+        tid = lookup[fillKey];
+        if (tid === undefined) tid = lookup['5,5,5,5'] || 0;
+      }
+      result[y][x] = tid;
+    }
+  }
+  return result;
+}
+
+function renderWorld(lpcImg, tileGrid, gridW, gridH) {
+  var w = gridW * TILE, h = gridH * TILE;
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var ctx = c.getContext('2d');
+  for (var y = 0; y < gridH; y++) {
+    for (var x = 0; x < gridW; x++) {
+      var tid = tileGrid[y][x];
+      var sx = (tid % 16) * TILE;
+      var sy = Math.floor(tid / 16) * TILE;
+      ctx.drawImage(lpcImg, sx, sy, TILE, TILE, x * TILE, y * TILE, TILE, TILE);
+    }
+  }
+  return c;
+}
+
+function buildCollision(cornerElev, waterLevel, gridW, gridH) {
+  var cmap = [];
+  for (var y = 0; y < gridH; y++) {
+    cmap[y] = [];
+    for (var x = 0; x < gridW; x++) {
+      var avg = (cornerElev[y][x] + cornerElev[y][x+1] + cornerElev[y+1][x] + cornerElev[y+1][x+1]) / 4;
+      cmap[y][x] = avg < waterLevel ? 0 : 1;
+    }
+  }
+  return cmap;
+}
+
+function findSpawn(cmap, gw, gh) {
+  var cx = Math.floor(gw/2), cy = Math.floor(gh/2);
+  for (var r = 0; r < 100; r++) {
+    for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+      if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+      var nx = cx+dx, ny = cy+dy;
+      if (nx < 0 || nx >= gw || ny < 0 || ny >= gh) continue;
+      if (cmap[ny][nx] === 1) return {px: nx*TILE+16, py: ny*TILE+16};
+    }
+  }
+  return {px:16, py:16};
+}
+
+// ── Game state ──
+var collisionMap = [];
+var px = 0, py = 0, pDir = 0, pMoving = false, pWalk = 0;
+var STEP = 10; // ~32/3
+var gamePaused = false;
+var activePopup = null;
+var navPaused = false;
+function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+var dirMap = [2,3,1,0];
+var imgCache = {};
+function preload(n,u){var i=new Image();i.src=u;imgCache[n]=i;}
+for(var r=0;r<4;r++)for(var c=0;c<3;c++)preload('cultist_'+c+'_'+r,ASSETS+'/sprites/cultist_'+c+'_'+r+'.png');
+
+var viewport = document.getElementById('viewport');
+var layer = document.getElementById('gameLayer');
+var worldBg = document.getElementById('worldBg');
+var elP = document.createElement('div');
+elP.className = 'sprite';
+elP.style.zIndex = '5';
+layer.appendChild(elP);
+var lastSpriteBg = '';
+
+function showPopup(m) {
+  if(activePopup)activePopup.remove();
+  var p=document.createElement('div');p.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  p.innerHTML='<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9);min-width:260px;padding:20px 24px 16px"><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;min-height:50px">'+m+'</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div>';
+  (document.querySelector('.screen')||document.body).appendChild(p);activePopup=p;
+}
+function closePopup(){if(activePopup){activePopup.remove();activePopup=null;}}
+function isWalkable(gx,gy){var tx=Math.floor(gx/TILE),ty=Math.floor(gy/TILE);if(tx<0||tx>=COLS||ty<0||ty>=ROWS)return false;return collisionMap[ty]&&collisionMap[ty][tx]===1;}
+
+function render() {
+  var scrEl = document.querySelector('.screen');
+  var vw = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var vh = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 16 - vw/2));
+  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 16 - vh/2));
+  worldBg.style.left = (-cx) + 'px'; worldBg.style.top = (-cy) + 'px';
+  var pc = pMoving ? (Math.floor(pWalk/2)%2) : 2;
+  elP.style.transform = 'translate(' + Math.round(px-cx) + 'px,' + Math.round(py-cy) + 'px)';
+  var nb = frm(pc, dirMap[pDir]);
+  if (nb !== lastSpriteBg) {
+    var sn = 'cultist_' + pc + '_' + dirMap[pDir];
+    var im = imgCache[sn];
+    if (im && im.complete && im.naturalWidth > 0) { elP.style.backgroundImage = nb; lastSpriteBg = nb; }
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { window.parent.postMessage({type:'hyvmind-close'},'*'); return; }
+  if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; }
+  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(activePopup)closePopup();else showPopup('Explore the terrain!');setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
+  if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);}
+});
+document.addEventListener('keyup', function(e) {
+  if (e.key.startsWith('Arrow')) { var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.remove('active'); dpadState[d]=false; }
+});
+var dpadState = {};
+document.querySelectorAll('.dpad-btn').forEach(function(b){
+  function s(e){e.preventDefault();b.classList.add('active');dpadState[b.dataset.dir]=true;}
+  function en(e){e.preventDefault();b.classList.remove('active');dpadState[b.dataset.dir]=false;}
+  b.addEventListener('mousedown',s);b.addEventListener('mouseup',en);b.addEventListener('mouseleave',en);
+  b.addEventListener('touchstart',s,{passive:false});b.addEventListener('touchend',en,{passive:false});b.addEventListener('touchcancel',en,{passive:false});
+});
+document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(activePopup)closePopup();else showPopup('Explore the terrain!');setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('btnX').addEventListener('click',function(){this.classList.add('active');closePopup();setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('backBtn').addEventListener('click',function(){window.parent.postMessage({type:'hyvmind-close'},'*');});
+
+function loop() {
+  if (navPaused) { render(); return; }
+  if (gamePaused) { render(); return; }
+  var dx=0,dy=0;
+  if(dpadState['left']){dx=-STEP;pDir=1;}else if(dpadState['right']){dx=STEP;pDir=2;}else if(dpadState['up']){dy=-STEP;pDir=3;}else if(dpadState['down']){dy=STEP;pDir=0;}
+  if(dx!==0||dy!==0){var nx=px+dx,ny=py+dy;if(dx!==0&&isWalkable(nx,py))px=nx;if(dy!==0&&isWalkable(px,ny))py=ny;pMoving=true;pWalk++;}else{pMoving=false;pWalk=0;}
+  px=Math.max(0,Math.min(WORLD_W-32,px));py=Math.max(0,Math.min(WORLD_H-32,py));
+  render();
+}
+
+// ── Bootstrap ──
+function boot() {
+  var seed = new URLSearchParams(window.location.search).get('seed') || 'Indian Constitutional Law';
+  var seedHash = fnv1a(seed);
+  var prng = new PRNG(seedHash ^ 0xdeadbeef);
+  var rawMap = perlinNoise(GRID_W+1, GRID_H+1, 0.5, 5, 133, prng);
+
+  // Build 101x101 corner elevation map
+  var cornerElev = [];
+  for (var y = 0; y <= GRID_H; y++) {
+    var row = [];
+    for (var x = 0; x <= GRID_W; x++) {
+      var raw = (rawMap[y] && rawMap[y][x] != null) ? rawMap[y][x] : 0;
+      var norm = (raw + 1) / 2 + 0.25;
+      var elev = Math.pow(Math.max(0, norm), 3.3) * 255;
+      row.push(Math.max(0, Math.min(255, elev)));
+    }
+    cornerElev.push(row);
+  }
+
+  // Water level (20th percentile of all elevations)
+  var allE = [];
+  for (var y = 0; y <= GRID_H; y++) for (var x = 0; x <= GRID_W; x++) allE.push(cornerElev[y][x]);
+  allE.sort(function(a,b){return a-b;});
+  var waterLevel = allE[Math.floor(allE.length * 0.2)];
+
+  // Collision
+  collisionMap = buildCollision(cornerElev, waterLevel, GRID_W, GRID_H);
+
+  // World sizing
+  worldBg.style.width = WORLD_W + 'px';
+  worldBg.style.height = WORLD_H + 'px';
+
+  // Spawn
+  var spawn = findSpawn(collisionMap, GRID_W, GRID_H);
+  px = spawn.px; py = spawn.py;
+
+  // Fetch LPC TSX, load image, generate terrain
+  fetch(LPC_TSX_PATH)
+    .then(function(r) { return r.text(); })
+    .then(function(xml) {
+      var lookup = parseLpcTsx(xml);
+      var tileGrid = buildTileGrid(cornerElev, waterLevel, GRID_W, GRID_H, lookup);
+      var img = new Image();
+      img.onload = function() {
+        var canvas = renderWorld(img, tileGrid, GRID_W, GRID_H);
+        worldBg.src = canvas.toDataURL('image/png');
+        render();
+        setInterval(loop, 40);
+        requestAnimationFrame(function() { document.body.focus(); });
+      };
+      img.crossOrigin = 'anonymous';
+      img.src = LPC_PATH;
+    })
+    .catch(function(err) {
+      console.error('Failed to load LPC data:', err);
+      // Fallback: colored rectangles
+      var w=GRID_W*TILE,h=GRID_H*TILE,canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;var ctx=canvas.getContext('2d');
+      for(var y=0;y<GRID_H;y++)for(var x=0;x<GRID_W;x++){
+        var e=(cornerElev[y][x]+cornerElev[y][x+1]+cornerElev[y+1][x]+cornerElev[y+1][x+1])/4;
+        var r,g,b;if(e<waterLevel){r=30;g=60;b=100;}else if(e<waterLevel+12){r=210;g=180;b=100;}else if(e<100){r=100;g=188;b=100;}else if(e<160){r=140;g=160;b=100;}else if(e<190){r=160;g=150;b=100;}else{r=180;g=170;b=150;}
+        ctx.fillStyle='rgb('+r+','+g+','+b+')';ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+      }
+      worldBg.src=canvas.toDataURL('image/png');
+      render();
+      setInterval(loop,40);
+      requestAnimationFrame(function(){document.body.focus();});
+    });
+}
+
+boot();
+</script>
+</body>
+</html>

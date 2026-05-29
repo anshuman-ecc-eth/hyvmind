@@ -1981,6 +1981,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [gamesLoaded, setGamesLoaded] = useState<Record<string, boolean>>({});
   const hyvmindOverlayRef = useRef<string | null>(null);
   const unsubmittedScoreRef = useRef(0);
+  const [terrainSeed, setTerrainSeed] = useState<string | null>(null);
+
   hyvmindOverlayRef.current = hyvmindOverlay;
   unsubmittedScoreRef.current = unsubmittedScore;
 
@@ -2166,9 +2168,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           .join("\n");
         navigator.clipboard.writeText(secretsStr).catch(() => {});
       } else if (e.data?.type === "hyvmind-close") {
-        setHyvmindOverlay(null);
-        setUnsubmittedScore(0);
-        setPhase({ type: "idle" });
+        if (hyvmindOverlayRef.current === "terrain-world") {
+          setHyvmindOverlay("maps");
+          setTerrainSeed(null);
+        } else {
+          setHyvmindOverlay(null);
+          setUnsubmittedScore(0);
+          setPhase({ type: "idle" });
+        }
       }
     };
     window.addEventListener("message", handler);
@@ -2767,7 +2774,26 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               <LabDiagramsOverlay onBack={handleHyvmindResume} />
             )}
             {hyvmindOverlay === "maps" && (
-              <MapsOverlay onBack={handleHyvmindResume} />
+              <MapsOverlay
+                onBack={handleHyvmindResume}
+                onPlay={(name) => {
+                  setTerrainSeed(name);
+                  setHyvmindOverlay("terrain-world");
+                }}
+              />
+            )}
+            {hyvmindOverlay === "terrain-world" && (
+              <div className="flex-1 relative flex flex-col overflow-hidden">
+                <div className="flex-1 flex items-center justify-center bg-background p-0">
+                  <iframe
+                    src={`/assets/hyvmind/terrain-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
+                    allow="autoplay"
+                    className="w-full h-full border-0"
+                    title="Terrain World"
+                    tabIndex={-1}
+                  />
+                </div>
+              </div>
             )}
             {hyvmindOverlay === "games" && (
               <GamesOverlay

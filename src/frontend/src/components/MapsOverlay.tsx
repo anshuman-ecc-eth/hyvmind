@@ -13,6 +13,7 @@ const TEST_SEEDS = [
 
 interface MapsOverlayProps {
   onBack: () => void;
+  onPlay?: (name: string) => void;
 }
 
 interface TerrainItem {
@@ -21,7 +22,7 @@ interface TerrainItem {
   artworkUrl: string;
 }
 
-export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
+export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): ReactNode {
   const { data: metas, isLoading } = usePublishedGraphMetas();
   const [testMaps, setTestMaps] = useState<TerrainItem[]>([]);
   const [testMapsLoading, setTestMapsLoading] = useState(true);
@@ -74,6 +75,17 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
     [testMaps, publishedTerrains],
   );
 
+  const playTerrain = useCallback(
+    (idx: number) => {
+      const testLen = testMaps.length;
+      const t =
+        idx < testLen ? testMaps[idx] : publishedTerrains[idx - testLen];
+      if (!t || !onPlay) return;
+      onPlay(t.name);
+    },
+    [testMaps, publishedTerrains, onPlay],
+  );
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (selectedMeta) return;
@@ -87,6 +99,8 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
         setTerrainIdx((prev) => Math.min(allTerrains.length - 1, prev + 1));
       } else if (e.key === "z" || e.key === "Z") {
         openTerrain(terrainIdx);
+      } else if (e.key === "Enter") {
+        playTerrain(terrainIdx);
       } else if (e.key === "x" || e.key === "X") {
         onBack();
       } else if (e.key === "Escape") {
@@ -95,7 +109,7 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedMeta, allTerrains.length, terrainIdx, openTerrain, onBack]);
+  }, [selectedMeta, allTerrains.length, terrainIdx, openTerrain, playTerrain, onBack]);
 
   const loading = isLoading || testMapsLoading;
 
@@ -199,31 +213,56 @@ export default function MapsOverlay({ onBack }: MapsOverlayProps): ReactNode {
               borderRadius: "2px",
             }}
           >
-            [Z] select [X] back
+            [Z] view [Enter] play [X] back
           </div>
           <div className="flex gap-4">
             {allTerrains.length > 0 && (
-              <button
-                type="button"
-                onClick={() => openTerrain(terrainIdx)}
-                className="active:scale-95 transition-transform"
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.5)",
-                  border: "2px solid #888",
-                  color: "#000",
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: "16px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                Z
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => openTerrain(terrainIdx)}
+                  className="active:scale-95 transition-transform"
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.5)",
+                    border: "2px solid #888",
+                    color: "#000",
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  Z
+                </button>
+                {onPlay && (
+                  <button
+                    type="button"
+                    onClick={() => playTerrain(terrainIdx)}
+                    className="active:scale-95 transition-transform"
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.5)",
+                      border: "2px solid #888",
+                      color: "#000",
+                      fontFamily: '"Press Start 2P", monospace',
+                      fontSize: "10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Play
+                  </button>
+                )}
+              </>
             )}
             <button
               type="button"
