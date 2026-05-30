@@ -533,7 +533,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
             <div className="flex flex-col items-start gap-1 w-full">
               <span className="text-foreground">
-                whichbrandofmustartshallibuy.ogg — terrain world BGM
+                which_brand_of_mustard_shall_i_buy.mp3 — terrain world BGM
               </span>
               <span className="text-foreground" style={{ fontSize: "0.85em" }}>
                 congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by
