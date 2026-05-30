@@ -573,7 +573,7 @@ document.getElementById('screenSizeBtn').addEventListener('click', function() {
 function startBgMusic() {
   var bgm = document.getElementById('bgm');
   if (!bgm) return;
-  bgm.volume = 0.35;
+  bgm.volume = 0.2;
   bgm.play().catch(function() {
     function onInteraction() {
       bgm.play().catch(function(){});
