@@ -1125,10 +1125,35 @@ var zoomValues = [1, 1.25, 1.5];
 var zoomLabels = ['100%', '125%', '150%'];
 var zoomIdx = 0;
 var layoutEl = document.querySelector('.layout');
+// Restore persisted zoom
+var savedZoom = localStorage.getItem('hyvmind-zoom');
+if (savedZoom !== null) {
+  var idx = zoomValues.indexOf(parseFloat(savedZoom));
+  if (idx >= 0) {
+    zoomIdx = idx;
+    layoutEl.style.transform = 'scale(' + savedZoom + ')';
+    document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+  }
+}
 document.getElementById('screenSizeBtn').addEventListener('click', function() {
   zoomIdx = (zoomIdx + 1) % zoomValues.length;
   this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
-  layoutEl.style.transform = 'scale(' + zoomValues[zoomIdx] + ')';
+  var val = zoomValues[zoomIdx];
+  layoutEl.style.transform = 'scale(' + val + ')';
+  localStorage.setItem('hyvmind-zoom', val);
+  window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
+});
+// Listen for zoom changes from terrain world
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'hyvmind-set-zoom') {
+    var val = e.data.zoom;
+    var idx = zoomValues.indexOf(parseFloat(val));
+    if (idx >= 0) {
+      zoomIdx = idx;
+      layoutEl.style.transform = 'scale(' + val + ')';
+      document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+    }
+  }
 });
 
 var tick = 0;

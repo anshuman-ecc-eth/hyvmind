@@ -2255,6 +2255,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Hyvmind overlay state ──────────────────────────────────────────────────
 
   const hyvmindIframeRef = useRef<HTMLIFrameElement>(null);
+  const terrainIframeRef = useRef<HTMLIFrameElement>(null);
   const [hyvmindOverlay, setHyvmindOverlay] = useState<string | null>(null);
   const [puzzleIdx, setPuzzleIdx] = useState(0);
   const [gameIdx, setGameIdx] = useState(0);
@@ -2477,6 +2478,18 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         const win = hyvmindIframeRef.current?.contentWindow;
         if (win) {
           win.postMessage({ type: "hyvmind-resume-bgm" }, "*");
+        }
+      } else if (e.data?.type === "hyvmind-zoom-sync") {
+        // Forward zoom to the other game (whichever isn't the sender)
+        const target =
+          hyvmindOverlayRef.current === "terrain-world"
+            ? hyvmindIframeRef.current?.contentWindow
+            : terrainIframeRef.current?.contentWindow;
+        if (target) {
+          target.postMessage(
+            { type: "hyvmind-set-zoom", zoom: e.data.zoom },
+            "*",
+          );
         }
       }
     };
@@ -3155,6 +3168,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   style={{ display: terrainLoading ? "none" : undefined }}
                 >
                   <iframe
+                    ref={terrainIframeRef}
                     src={`/assets/hyvmind/terrain-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
                     allow="autoplay"
                     className="w-full h-full border-0"
