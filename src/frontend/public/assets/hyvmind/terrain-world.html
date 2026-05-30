@@ -30,9 +30,6 @@
   .game-layer { position:absolute;inset:0;z-index:1; }
   .sprite { position:absolute;left:0;top:0;width:32px;height:36px;background-size:32px 36px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat;z-index:5;will-change:transform; }
     #minimap { position:absolute;top:4px;left:4px;z-index:10;pointer-events:none;image-rendering:pixelated;border:1px solid rgba(255,255,255,0.15);border-radius:2px; }
-    #transitionOverlay { position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000; }
-    #transitionOverlay.show { display:flex; }
-    @keyframes terminal-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 </head>
 <body tabindex="-1">
@@ -50,27 +47,6 @@
         <div id="gameLayer" class="game-layer"></div>
       </div>
       <canvas id="minimap" width="80" height="80"></canvas>
-      <div id="transitionOverlay">
-        <div style="font-family:'Press Start 2P',monospace;font-size:0.65rem;letter-spacing:0.1em;color:#fff">Travelling..</div>
-        <div style="display:flex;gap:2px">
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.00s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.05s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.10s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.15s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.20s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.25s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.30s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.35s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.40s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.45s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.50s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.55s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.60s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.65s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.70s infinite">█</span>
-          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.75s infinite">█</span>
-        </div>
-      </div>
     </div>
     <div class="action-buttons">
       <div class="action-row">
@@ -597,7 +573,7 @@ document.getElementById('screenSizeBtn').addEventListener('click', function() {
 function startBgMusic() {
   var bgm = document.getElementById('bgm');
   if (!bgm) return;
-  bgm.volume = 0.1;
+  bgm.volume = 0.35;
   bgm.play().catch(function() {
     function onInteraction() {
       bgm.play().catch(function(){});
@@ -616,7 +592,7 @@ function stopBgMusic() {
 
 function closeTerrain() {
   stopBgMusic();
-  document.getElementById('transitionOverlay').classList.add('show');
+  window.parent.postMessage({type:'hyvmind-transition-start'},'*');
   setTimeout(function() {
     window.parent.postMessage({type:'hyvmind-resume-bgm'},'*');
     window.parent.postMessage({type:'hyvmind-close'},'*');

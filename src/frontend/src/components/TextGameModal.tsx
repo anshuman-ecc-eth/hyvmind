@@ -2244,6 +2244,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [generatingScore, setGeneratingScore] = useState<number | null>(null);
   const [terrainLoading, setTerrainLoading] = useState(false);
   const terrainLoadingStartRef = useRef(0);
+  const [terrainTransition, setTerrainTransition] = useState(false);
 
   // ── Persist settings & leaderboard ────────────────────────────────────────
 
@@ -2451,6 +2452,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         if (hyvmindOverlayRef.current === "terrain-world") {
           setHyvmindOverlay("maps");
           setTerrainSeed(null);
+          setTerrainTransition(false);
         } else {
           setHyvmindOverlay(null);
           setUnsubmittedScore(0);
@@ -2464,6 +2466,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         } else {
           setTimeout(() => setTerrainLoading(false), minTime - elapsed);
         }
+      } else if (e.data?.type === "hyvmind-transition-start") {
+        setTerrainTransition(true);
       } else if (e.data?.type === "hyvmind-stop-bgm") {
         const win = hyvmindIframeRef.current?.contentWindow;
         if (win) {
@@ -3090,6 +3094,35 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               <div className="flex-1 relative flex flex-col overflow-hidden">
                 {terrainLoading && (
                   <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
+                    <div
+                      className="text-foreground"
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.65em",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Travelling..
+                    </div>
+                    <div className="flex gap-[2px]">
+                      {Array.from({ length: 16 }).map((_, i) => (
+                        <span
+                          // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                          key={i}
+                          className="text-foreground"
+                          style={{
+                            fontSize: "0.55em",
+                            animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                          }}
+                        >
+                          █
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {terrainTransition && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 select-none bg-black z-50">
                     <div
                       className="text-foreground"
                       style={{
