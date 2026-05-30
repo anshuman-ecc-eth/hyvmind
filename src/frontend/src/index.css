@@ -1,0 +1,517 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quattrocento+Sans:wght@400;700&family=Muli:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;700&family=Cardo:wght@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Barlow:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=Krub:wght@300;400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Assistant:wght@300;400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Six+Caps&family=Open+Sans+Condensed:wght@300;400;700&display=swap");
+/* tweakcn themes imported before minimalist overrides so minimalist wins when active */
+@import "./themes/tweakcn-themes.css";
+@import "./themes/custom-themes.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Minimalist dark palette — default (full CSS values for var() compatibility) */
+    --background: oklch(0% 0 0);
+    --foreground: oklch(100% 0 0);
+    --card: oklch(0% 0 0);
+    --card-foreground: oklch(100% 0 0);
+    --popover: oklch(5% 0 0);
+    --popover-foreground: oklch(100% 0 0);
+    --primary: oklch(100% 0 0);
+    --primary-foreground: oklch(0% 0 0);
+    --secondary: oklch(15% 0 0);
+    --secondary-foreground: oklch(100% 0 0);
+    --muted: oklch(15% 0 0);
+    --muted-foreground: oklch(65% 0 0);
+    --accent: oklch(15% 0 0);
+    --accent-foreground: oklch(100% 0 0);
+    --destructive: oklch(50% 0.2 25);
+    --destructive-foreground: oklch(100% 0 0);
+    --border: oklch(20% 0 0);
+    --input: oklch(20% 0 0);
+    --ring: oklch(100% 0 0);
+    --chart-1: oklch(60% 0.15 150);
+    --chart-2: oklch(65% 0.15 200);
+    --chart-3: oklch(55% 0.15 100);
+    --chart-4: oklch(70% 0.15 250);
+    --chart-5: oklch(50% 0.15 50);
+    --radius: 0px;
+    --sidebar: oklch(5% 0 0);
+    --sidebar-foreground: oklch(100% 0 0);
+    --sidebar-primary: oklch(100% 0 0);
+    --sidebar-primary-foreground: oklch(0% 0 0);
+    --sidebar-accent: oklch(15% 0 0);
+    --sidebar-accent-foreground: oklch(100% 0 0);
+    --sidebar-border: oklch(20% 0 0);
+    --sidebar-ring: oklch(100% 0 0);
+    /* Terminal border variables */
+    --terminal-border: oklch(30% 0 0);
+    --terminal-border-muted: oklch(20% 0 0);
+    /* Annotation tokens — law entity (crimson) and interpretation entity (orchid) */
+    --token-law: #dc143c;
+    --token-law-rgb: 220 20 60;
+    --token-interp: #da70d6;
+    --token-interp-rgb: 218 112 214;
+    --token-law-highlight: rgba(220, 20, 60, 0.15);
+    --token-interp-highlight: rgba(218, 112, 214, 0.15);
+    /* Annotation UI zones */
+    --panel-sidebar: oklch(8% 0 0);
+    --panel-main: oklch(2% 0 0);
+    --panel-details: oklch(8% 0 0);
+    --font-heading: "JetBrains Mono", monospace;
+    --font-body: "JetBrains Mono", monospace;
+  }
+}
+
+/* ── Minimalist theme class selectors (for next-themes multi-theme support) ── */
+/* Use html.minimalist-* for higher specificity (0,1,1) so these win over
+   tweakcn theme classes. tweakcn-themes.css also uses html.* prefix selectors
+   (0,1,1) so all themes correctly override :root (0,1,0). */
+
+html.minimalist-dark {
+  --background: oklch(0% 0 0);
+  --foreground: oklch(100% 0 0);
+  --card: oklch(0% 0 0);
+  --card-foreground: oklch(100% 0 0);
+  --popover: oklch(5% 0 0);
+  --popover-foreground: oklch(100% 0 0);
+  --primary: oklch(100% 0 0);
+  --primary-foreground: oklch(0% 0 0);
+  --secondary: oklch(15% 0 0);
+  --secondary-foreground: oklch(100% 0 0);
+  --muted: oklch(15% 0 0);
+  --muted-foreground: oklch(65% 0 0);
+  --accent: oklch(15% 0 0);
+  --accent-foreground: oklch(100% 0 0);
+  --destructive: oklch(50% 0.2 25);
+  --destructive-foreground: oklch(100% 0 0);
+  --border: oklch(20% 0 0);
+  --input: oklch(20% 0 0);
+  --ring: oklch(100% 0 0);
+  --chart-1: oklch(60% 0.15 150);
+  --chart-2: oklch(65% 0.15 200);
+  --chart-3: oklch(55% 0.15 100);
+  --chart-4: oklch(70% 0.15 250);
+  --chart-5: oklch(50% 0.15 50);
+  --radius: 0px;
+  --sidebar: oklch(5% 0 0);
+  --sidebar-foreground: oklch(100% 0 0);
+  --sidebar-primary: oklch(100% 0 0);
+  --sidebar-primary-foreground: oklch(0% 0 0);
+  --sidebar-accent: oklch(15% 0 0);
+  --sidebar-accent-foreground: oklch(100% 0 0);
+  --sidebar-border: oklch(20% 0 0);
+  --sidebar-ring: oklch(100% 0 0);
+  --terminal-border: oklch(30% 0 0);
+  --terminal-border-muted: oklch(20% 0 0);
+  --panel-sidebar: oklch(8% 0 0);
+  --panel-main: oklch(2% 0 0);
+  --panel-details: oklch(8% 0 0);
+}
+
+html.minimalist-light {
+  --background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --card: oklch(98% 0 0);
+  --card-foreground: oklch(0% 0 0);
+  --popover: oklch(96% 0 0);
+  --popover-foreground: oklch(0% 0 0);
+  --primary: oklch(0% 0 0);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(92% 0 0);
+  --secondary-foreground: oklch(0% 0 0);
+  --muted: oklch(92% 0 0);
+  --muted-foreground: oklch(40% 0 0);
+  --accent: oklch(92% 0 0);
+  --accent-foreground: oklch(0% 0 0);
+  --destructive: oklch(50% 0.2 25);
+  --destructive-foreground: oklch(100% 0 0);
+  --border: oklch(80% 0 0);
+  --input: oklch(80% 0 0);
+  --ring: oklch(0% 0 0);
+  --chart-1: oklch(60% 0.15 150);
+  --chart-2: oklch(65% 0.15 200);
+  --chart-3: oklch(55% 0.15 100);
+  --chart-4: oklch(70% 0.15 250);
+  --chart-5: oklch(50% 0.15 50);
+  --radius: 0px;
+  --sidebar: oklch(96% 0 0);
+  --sidebar-foreground: oklch(0% 0 0);
+  --sidebar-primary: oklch(0% 0 0);
+  --sidebar-primary-foreground: oklch(100% 0 0);
+  --sidebar-accent: oklch(92% 0 0);
+  --sidebar-accent-foreground: oklch(0% 0 0);
+  --sidebar-border: oklch(80% 0 0);
+  --sidebar-ring: oklch(0% 0 0);
+  --terminal-border: oklch(75% 0 0);
+  --terminal-border-muted: oklch(85% 0 0);
+  --panel-sidebar: oklch(94% 0 0);
+  --panel-main: oklch(98% 0 0);
+  --panel-details: oklch(94% 0 0);
+}
+
+html {
+  font-family: var(--font-body);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-mono;
+    font-family: var(--font-body);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  .cursor-pointer:hover {
+    cursor: pointer;
+  }
+}
+
+/* Mobile Tetris controls — hidden on desktop (fine pointer devices) */
+.mobile-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+@media (hover: hover) {
+  .mobile-controls {
+    display: none;
+  }
+}
+
+/* Terminal blink animation */
+@keyframes terminal-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.terminal-blink {
+  animation: terminal-blink 1s step-end infinite;
+}
+.press-start-blink {
+  animation: terminal-blink 1s step-end infinite;
+}
+
+/* Press Start 2P font for text game modal */
+.text-game-font {
+  font-family: "Press Start 2P", monospace !important;
+  letter-spacing: 0.02em;
+  line-height: 1.8 !important;
+  font-size: 0.7rem !important;
+}
+
+/* Fix chessboard.js draggable pieces appearing behind modals */
+body > img[data-piece] {
+  z-index: 10000 !important;
+}
+
+/* Theme-adaptive scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+}
+
+/* Kill focus ring on cmdk command input */
+[cmdk-input],
+[cmdk-input]:focus,
+[cmdk-input]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ===========================================================================
+   Obsidian Markdown feature styles
+   =========================================================================== */
+
+/* Callout blocks */
+.callout {
+  border-left: 4px solid var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.callout-icon {
+  font-style: normal;
+}
+.callout.note {
+  border-left-color: oklch(0.6 0.15 250);
+}
+.callout.warning {
+  border-left-color: oklch(0.7 0.18 80);
+  background: color-mix(in oklch, oklch(0.7 0.18 80) 10%, transparent);
+}
+.callout.tip {
+  border-left-color: oklch(0.65 0.15 150);
+  background: color-mix(in oklch, oklch(0.65 0.15 150) 10%, transparent);
+}
+.callout.danger {
+  border-left-color: oklch(0.6 0.2 25);
+  background: color-mix(in oklch, oklch(0.6 0.2 25) 10%, transparent);
+}
+.callout.info {
+  border-left-color: oklch(0.65 0.15 220);
+  background: color-mix(in oklch, oklch(0.65 0.15 220) 10%, transparent);
+}
+.callout.success {
+  border-left-color: oklch(0.65 0.15 145);
+  background: color-mix(in oklch, oklch(0.65 0.15 145) 10%, transparent);
+}
+.callout.quote {
+  border-left-color: oklch(0.55 0.0 0);
+  font-style: italic;
+}
+
+/* Highlight ==text== */
+mark {
+  background: oklch(0.9 0.15 90 / 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Tag styles #tag */
+.tag {
+  display: inline-block;
+  background: color-mix(in oklch, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 0.85em;
+  font-family: monospace;
+  text-decoration: none;
+}
+
+/* Wikilink styles */
+.wikilink {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: pointer;
+}
+.wikilink.not-found {
+  color: oklch(0.55 0.12 25);
+  text-decoration-color: oklch(0.55 0.12 25);
+}
+
+/* Reference highlight in editor backdrop */
+.ref-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Pending {@ reference while typing */
+.ref-pending {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent-foreground);
+  border-radius: 2px;
+  padding: 0 2px;
+  opacity: 0.7;
+}
+
+/* Reference link in preview mode */
+.ref-link {
+  color: var(--accent-foreground);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2px;
+  padding: 0 2px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.ref-link:hover {
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Annotation Editor Utilities (NES Pixel Art + Token Highlights) */
+/* ────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Three-column annotation layout */
+  .annotation-container {
+    @apply flex h-full gap-1 bg-background;
+  }
+
+  .annotation-sidebar {
+    @apply w-72 flex-shrink-0 border-r-2 border-border bg-card overflow-y-auto;
+  }
+
+  .annotation-main {
+    @apply flex-1 border-r-2 border-border bg-card overflow-y-auto;
+  }
+
+  .annotation-details {
+    @apply w-80 flex-shrink-0 bg-card border-l-2 border-border overflow-y-auto;
+  }
+
+  /* Pixel art dashed borders for panels */
+  .annotation-panel {
+    @apply border-2 border-dashed border-border p-4;
+  }
+
+  .annotation-panel-title {
+    @apply text-sm font-bold text-foreground uppercase mb-3 tracking-wide;
+  }
+
+  .annotation-panel-divider {
+    @apply border-t-2 border-dashed border-border my-4;
+  }
+
+  /* Token highlight colors — persistent after creation */
+  .token-law {
+    background-color: var(--token-law-highlight) !important;
+    color: var(--token-law) !important;
+    border-bottom: 2px solid var(--token-law);
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .token-law:hover {
+    background-color: rgba(220, 20, 60, 0.25) !important;
+  }
+
+  .token-interp {
+    background-color: var(--token-interp-highlight) !important;
+    color: var(--token-interp) !important;
+    border-bottom: 2px solid var(--token-interp);
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .token-interp:hover {
+    background-color: rgba(218, 112, 214, 0.25) !important;
+  }
+
+  /* Token tree hierarchy styling */
+  .token-tree-node {
+    @apply pl-4 py-2 border-l-2 border-muted;
+  }
+
+  .token-tree-node-law {
+    @apply border-l-2 border-[var(--token-law)];
+  }
+
+  .token-tree-node-interp {
+    @apply border-l-2 border-[var(--token-interp)];
+  }
+
+  .token-tree-branch {
+    @apply text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors;
+  }
+
+  /* Token badge styling */
+  .token-badge-law {
+    @apply bg-[var(--token-law)] text-white px-2 py-1 text-xs font-bold uppercase;
+  }
+
+  .token-badge-interp {
+    @apply bg-[var(--token-interp)] text-white px-2 py-1 text-xs font-bold uppercase;
+  }
+
+  /* Attribute list styling */
+  .attribute-item {
+    @apply flex justify-between items-center py-1 px-2 text-xs border-b border-border;
+  }
+
+  .attribute-key {
+    @apply text-muted-foreground font-mono;
+  }
+
+  .attribute-value {
+    @apply text-foreground font-mono font-bold;
+  }
+
+  .attribute-inherited {
+    @apply opacity-60 italic;
+  }
+
+  .attribute-owned {
+    @apply opacity-100 font-semibold;
+  }
+
+  /* Undo/Redo toolbar */
+  .toolbar-button-inactive {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  /* Pixel art input fields */
+  .annotation-input {
+    @apply bg-input border-2 border-border text-foreground px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+
+  /* Dropdowns for path selection */
+  .annotation-dropdown {
+    @apply bg-card border-2 border-border text-foreground px-2 py-1 text-xs font-mono cursor-pointer hover:border-foreground transition-colors;
+  }
+
+  /* Cross-reference list */
+  .crossref-item {
+    @apply flex items-center justify-between py-1 px-2 text-xs bg-muted rounded-none border border-border;
+  }
+
+  .crossref-badge {
+    @apply text-muted-foreground font-mono;
+  }
+
+  /* Drafts list styling */
+  .draft-item {
+    @apply p-3 border-2 border-dashed border-border mb-2 cursor-pointer hover:bg-muted transition-colors;
+  }
+
+  .draft-title {
+    @apply font-bold text-sm text-foreground;
+  }
+
+  .draft-url {
+    @apply text-xs text-muted-foreground font-mono truncate;
+  }
+}

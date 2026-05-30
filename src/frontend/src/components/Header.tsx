@@ -1,0 +1,173 @@
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { useQueryClient } from "@tanstack/react-query";
+import { Menu, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { clearTreeCache } from "../hooks/useQueries";
+import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
+declare const Supademo: { open: (id: string) => void };
+
+export default function Header() {
+  const { login, clear, loginStatus, identity } = useInternetIdentity();
+  const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
+
+  const isAuthenticated = !!identity;
+
+  const handleLogout = async () => {
+    await clear();
+    clearTreeCache();
+    queryClient.clear();
+  };
+
+  const handleLogin = async () => {
+    try {
+      await login();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "";
+      console.error("Login error:", error);
+      if (msg === "User is already authenticated") {
+        await clear();
+        setTimeout(() => login(), 300);
+      }
+    }
+  };
+
+  const currentTheme = theme || DEFAULT_THEME;
+  const isDark = getVariant(currentTheme) === "dark";
+  const logoSrc = isDark
+    ? "/assets/hyvmind_logo_dark.png"
+    : "/assets/hyvmind_logo_light.png";
+
+  const handleThemeToggle = () => {
+    setTheme(toggleVariant(currentTheme));
+  };
+
+  return (
+    <header className="border-b border-dashed border-border bg-background font-mono flex-shrink-0">
+      <div className="container mx-auto px-6 py-3">
+        <div className="flex items-center justify-between">
+          {/* Image Logo */}
+          <div className="flex items-center">
+            <img
+              src={logoSrc}
+              alt="hyvmind"
+              className="h-5 object-contain"
+              style={!isDark ? { mixBlendMode: "multiply" } : undefined}
+            />
+          </div>
+
+          {/* Right Side Controls */}
+          <div className="flex items-center gap-2">
+            {/* Theme toggle button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleThemeToggle}
+              className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+              aria-label="Toggle theme"
+              data-ocid="header.toggle"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+
+            {/* Hamburger Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
+                  data-ocid="header.open_modal_button"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="bg-popover text-popover-foreground border border-dashed border-border font-mono min-w-[180px] rounded-none"
+                data-ocid="header.dropdown_menu"
+              >
+                {!isAuthenticated ? (
+                  <DropdownMenuItem
+                    onClick={handleLogin}
+                    disabled={loginStatus === "logging-in"}
+                    className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    data-ocid="header.login.button"
+                  >
+                    {loginStatus === "logging-in" ? "Logging in..." : "Login"}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                    data-ocid="header.logout.button"
+                  >
+                    Logout
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (typeof Supademo !== "undefined") {
+                      Supademo.open("cmoxxf92q04az4qulear09806");
+                    } else {
+                      const script = document.createElement("script");
+                      script.src = "https://script.supademo.com/supademo.js";
+                      script.onload = () =>
+                        (Supademo as { open: (id: string) => void }).open(
+                          "cmoxxf92q04az4qulear09806",
+                        );
+                      script.onerror = () =>
+                        console.warn("Failed to load tutorial");
+                      document.head.appendChild(script);
+                    }
+                  }}
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Tutorial
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open("https://telegram.me/hyvmind_tg", "_blank")
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Telegram
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open("https://nodes.desci.com/dpid/969", "_blank")
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Whitepaper
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      "https://github.com/anshuman-ecc-eth/hyvmind",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  GitHub
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

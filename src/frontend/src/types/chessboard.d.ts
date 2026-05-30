@@ -1,0 +1,29 @@
+// Type declarations for @chrisoakman/chessboardjs (UMD, window global)
+interface ChessboardConfig {
+  position?: string;
+  orientation?: "white" | "black";
+  draggable?: boolean;
+  dropOffBoard?: "snapback" | "trash";
+  onDrop?: (
+    source: string,
+    target: string,
+    piece: string,
+    newPos: Record<string, string>,
+    oldPos: Record<string, string>,
+    orientation: string,
+  ) => "snapback" | "trash" | undefined;
+  onSnapEnd?: () => void;
+  pieceTheme?: string;
+}
+
+interface ChessboardInstance {
+  position(fen?: string, useAnimation?: boolean): string | undefined;
+  orientation(side?: "white" | "black"): string | undefined;
+  destroy(): void;
+}
+
+// The library attaches itself to window.Chessboard after loading
+declare const Chessboard: (
+  id: string | HTMLElement,
+  config: string | ChessboardConfig,
+) => ChessboardInstance;

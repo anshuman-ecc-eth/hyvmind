@@ -1,0 +1,573 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import FilterPanel from "../components/FilterPanel";
+import NodeDetailsModal from "../components/NodeDetailsModal";
+import OntologyModal from "../components/OntologyModal";
+import PublishConfirmDialog from "../components/PublishConfirmDialog";
+import SourceGraphDiagram from "../components/SourceGraphDiagram";
+import { usePublishGraph } from "../hooks/usePublishGraph";
+import { usePublishMappings } from "../hooks/usePublishMappings";
+import { usePublishPreview } from "../hooks/usePublishPreview";
+import useSourceGraphs from "../hooks/useSourceGraphs";
+import type { SourceGraph, SourceNode } from "../types/sourceGraph";
+import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
+import { parseSourceGraphZip } from "../utils/sourceGraphParser";
+
+// ---------------------------------------------------------------------------
+// Filter state shape
+// ---------------------------------------------------------------------------
+
+const ALL_NODE_TYPES = new Set([
+  "curation",
+  "swarm",
+  "location",
+  "lawEntity",
+  "interpEntity",
+]);
+
+interface FilterState {
+  searchText: string;
+  visibleNodeTypes: Set<string>;
+  isCollapsed: boolean;
+}
+
+const defaultFilterState = (): FilterState => ({
+  searchText: "",
+  visibleNodeTypes: new Set(ALL_NODE_TYPES),
+  isCollapsed: false,
+});
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function SourcesView() {
+  const { graphs, activeGraphId, saveGraph, deleteGraph, setActiveGraph } =
+    useSourceGraphs();
+
+  const { commit, isPublishing } = usePublishGraph();
+  const {
+    preview,
+    previewResult,
+    isLoading: isPreviewLoading,
+    error: previewError,
+    invalidateCache,
+  } = usePublishPreview();
+  const { isPublished, getMappings } = usePublishMappings();
+
+  const [view, setView] = useState<"list" | "graph">("list");
+  const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<SourceNode | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [previewGraph, setPreviewGraph] = useState<SourceGraph | null>(null);
+  const [commitError, setCommitError] = useState<string | null>(null);
+  const [commitSuccessId, setCommitSuccessId] = useState<string | null>(null);
+  const [ontologyTurtle, setOntologyTurtle] = useState<string | null>(null);
+  const [copiedOntology, setCopiedOntology] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ---------------------------------------------------------------------------
+  // Filter state — per-graph persistence via ref
+  // ---------------------------------------------------------------------------
+  const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
+  const [filterState, setFilterState] = useState<FilterState>(
+    defaultFilterState(),
+  );
+
+  // Keep a ref that always reflects the latest filter state so we can save it
+  // on graph change without adding filterState to the effect deps
+  const filterStateRef = useRef(filterState);
+  useEffect(() => {
+    filterStateRef.current = filterState;
+  }, [filterState]);
+
+  // Persist/restore filter state when active graph changes
+  const prevGraphIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prevId = prevGraphIdRef.current;
+    const nextId = activeGraphId ?? null;
+
+    // Save current filter state for the graph we're leaving
+    if (prevId !== null) {
+      filterStatesRef.current.set(prevId, filterStateRef.current);
+    }
+
+    // Load saved state for the new graph (or defaults)
+    if (nextId !== null) {
+      const saved = filterStatesRef.current.get(nextId);
+      setFilterState(saved ?? defaultFilterState());
+    } else {
+      setFilterState(defaultFilterState());
+    }
+
+    prevGraphIdRef.current = nextId;
+  }, [activeGraphId]);
+
+  // ---------------------------------------------------------------------------
+  // Fit-to-visible — expose via callback that SourceGraphDiagram populates
+  // ---------------------------------------------------------------------------
+  const fitFnRef = useRef<(() => void) | null>(null);
+
+  const handleFitToVisible = () => {
+    fitFnRef.current?.();
+  };
+
+  const handleFitRegister = (fn: () => void) => {
+    fitFnRef.current = fn;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Memoize activeGraph to stabilize object reference
+  // ---------------------------------------------------------------------------
+  const activeGraph = useMemo(
+    () => graphs.find((g) => g.id === activeGraphId) ?? null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [graphs, activeGraphId],
+  );
+
+  // Auto-dismiss import error after 5 seconds
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 5000);
+    return () => clearTimeout(t);
+  }, [error]);
+
+  // Auto-dismiss success after 4 seconds
+  useEffect(() => {
+    if (!commitSuccessId) return;
+    const t = setTimeout(() => setCommitSuccessId(null), 4000);
+    return () => clearTimeout(t);
+  }, [commitSuccessId]);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setImporting(true);
+    setError(null);
+
+    try {
+      const graph = await parseSourceGraphZip(file);
+
+      const nameExists = graphs.some((g) => g.name === graph.name);
+      if (nameExists) {
+        graph.name = `${graph.name} (${Date.now()})`;
+      }
+
+      saveGraph(graph);
+      setActiveGraph(graph.id);
+      setView("graph");
+    } catch (err) {
+      const msg =
+        err instanceof DOMException && err.name === "QuotaExceededError"
+          ? "Storage full. Delete an existing graph to free up space."
+          : err instanceof Error
+            ? err.message
+            : "Failed to import ZIP file.";
+      setError(msg);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleView = (graph: SourceGraph) => {
+    setActiveGraph(graph.id);
+    setView("graph");
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmDeleteId) return;
+    if (confirmDeleteId === activeGraphId) {
+      setActiveGraph(null);
+      setView("list");
+    }
+    deleteGraph(confirmDeleteId);
+    setConfirmDeleteId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setConfirmDeleteId(null);
+  };
+
+  const handleBackToList = () => {
+    // Save filter state before leaving graph view
+    if (activeGraphId) {
+      filterStatesRef.current.set(activeGraphId, filterStateRef.current);
+    }
+    setView("list");
+  };
+
+  const handleNodeClick = (node: SourceNode) => {
+    setSelectedNode(node);
+  };
+
+  const handleOntology = () => {
+    if (!activeGraph) return;
+    const turtle = generateFullSourceGraphTurtle(activeGraph);
+    setOntologyTurtle(turtle);
+    setCopiedOntology(false);
+  };
+
+  const handleCopyOntology = () => {
+    if (!ontologyTurtle) return;
+    navigator.clipboard.writeText(ontologyTurtle);
+    setCopiedOntology(true);
+    setTimeout(() => setCopiedOntology(false), 2000);
+  };
+
+  const handlePublish = async (graph: SourceGraph) => {
+    setPreviewGraph(graph);
+    setCommitError(null);
+    invalidateCache();
+    try {
+      await preview(graph);
+      setIsDialogOpen(true);
+    } catch {
+      // error is visible via previewError state in the banner
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!previewGraph) return;
+    const isUpdate = isPublished(previewGraph.id);
+    setCommitError(null);
+    try {
+      const result = await commit(previewGraph, isUpdate);
+      if (result.type === "success") {
+        setIsDialogOpen(false);
+        setCommitSuccessId(previewGraph.id);
+        setPreviewGraph(null);
+        toast.success(
+          `Graph ${isUpdate ? "updated" : "published"} successfully. ` +
+            `${(result.buzzCost / 10).toFixed(1)} Buzz deducted.`,
+        );
+      } else {
+        setCommitError(result.message);
+      }
+    } catch (e) {
+      setCommitError(e instanceof Error ? e.message : "Publish failed.");
+    }
+  };
+
+  const formatDate = (ts: number) => {
+    return new Date(ts).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const getPublishedDate = (graphId: string): string | null => {
+    const mappings = getMappings(graphId);
+    if (mappings.length === 0) return null;
+    const latest = mappings.reduce((a, b) =>
+      a.publishedAt > b.publishedAt ? a : b,
+    );
+    return formatDate(latest.publishedAt);
+  };
+
+  // Compute visible node count for FilterPanel
+  const visibleNodeCount = useMemo(() => {
+    if (!activeGraph) return 0;
+    const search = filterState.searchText.trim().toLowerCase();
+    const types = filterState.visibleNodeTypes;
+    const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
+    const noSearch = search.length === 0;
+    if (allTypesVisible && noSearch) return activeGraph.nodes.length;
+    return activeGraph.nodes.filter((n) => {
+      const typeOk = allTypesVisible || types.has(n.nodeType);
+      const searchOk = noSearch || n.name.toLowerCase().includes(search);
+      return typeOk && searchOk;
+    }).length;
+  }, [activeGraph, filterState.searchText, filterState.visibleNodeTypes]);
+
+  // ---------------------------------------------------------------------------
+  // Graph view
+  // ---------------------------------------------------------------------------
+  if (view === "graph" && activeGraph) {
+    return (
+      <div className="flex flex-col h-full bg-background font-mono">
+        {/* Graph header */}
+        <div className="flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0">
+          <button
+            type="button"
+            onClick={handleBackToList}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            data-ocid="sources.back_to_list"
+          >
+            ← back
+          </button>
+          <span className="text-xs text-border">|</span>
+          <span className="text-sm font-semibold text-foreground mr-auto">
+            {activeGraph.name}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {activeGraph.nodes.length} nodes
+          </span>
+        </div>
+
+        {/* Graph canvas + filter panel */}
+        <div className="flex flex-1 min-h-0 h-full">
+          <div className="flex-1 min-w-0 min-h-0">
+            <SourceGraphDiagram
+              graph={activeGraph}
+              graphId={activeGraph.id}
+              onNodeClick={handleNodeClick}
+              searchText={filterState.searchText}
+              visibleNodeTypes={filterState.visibleNodeTypes}
+              onFitToVisible={handleFitRegister}
+            />
+          </div>
+          <FilterPanel
+            searchText={filterState.searchText}
+            onSearchChange={(text) =>
+              setFilterState((prev) => ({ ...prev, searchText: text }))
+            }
+            visibleNodeTypes={filterState.visibleNodeTypes}
+            onNodeTypesChange={(types) =>
+              setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
+            }
+            totalNodes={activeGraph.nodes.length}
+            visibleNodes={visibleNodeCount}
+            onReset={() => setFilterState(defaultFilterState())}
+            onFitToVisible={handleFitToVisible}
+            isCollapsed={filterState.isCollapsed}
+            onToggleCollapsed={() =>
+              setFilterState((prev) => ({
+                ...prev,
+                isCollapsed: !prev.isCollapsed,
+              }))
+            }
+            onOntology={handleOntology}
+          />
+        </div>
+
+        {/* Node details modal */}
+        {selectedNode && (
+          <NodeDetailsModal
+            node={selectedNode}
+            graph={activeGraph}
+            onClose={() => setSelectedNode(null)}
+          />
+        )}
+
+        {/* Ontology modal */}
+        {ontologyTurtle && (
+          <OntologyModal
+            turtle={ontologyTurtle}
+            onClose={() => setOntologyTurtle(null)}
+            onCopy={handleCopyOntology}
+            copied={copiedOntology}
+            graphName={activeGraph.name}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // List view
+  // ---------------------------------------------------------------------------
+  return (
+    <div className="flex flex-col h-full bg-background font-mono">
+      {/* Display bar */}
+      <div className="flex items-center gap-2 px-4 py-2 h-11 border-b border-dashed border-border bg-card shrink-0">
+        <span className="text-sm font-semibold text-foreground mr-auto">
+          Graphs
+        </span>
+        <button
+          type="button"
+          onClick={handleImportClick}
+          disabled={importing}
+          className="text-xs border border-dashed border-border px-3 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-ocid="sources.import_button"
+        >
+          {importing ? "parsing..." : "import graph"}
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-auto p-6">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".zip"
+          className="hidden"
+          onChange={handleFileChange}
+          data-ocid="sources.file_input"
+          aria-label="Import ZIP file"
+        />
+
+        {/* Import error banner */}
+        {error && (
+          <div
+            className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+            data-ocid="sources.error_message"
+            role="alert"
+          >
+            [ERROR] {error}
+          </div>
+        )}
+
+        {/* Preview/commit error banner */}
+        {(commitError || previewError) && (
+          <div
+            className="mb-4 px-3 py-2 border border-dashed border-destructive text-destructive text-xs"
+            data-ocid="sources.publish_error_state"
+            role="alert"
+          >
+            [PUBLISH ERROR] {commitError ?? previewError}
+          </div>
+        )}
+
+        {/* Graph list */}
+        {graphs.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {graphs.map((graph) => {
+              const published = isPublished(graph.id);
+              const publishedDate = published
+                ? getPublishedDate(graph.id)
+                : null;
+              return (
+                <div
+                  key={graph.id}
+                  className="flex items-center gap-3 border border-dashed border-border px-4 py-3 hover:border-foreground transition-colors"
+                  data-ocid={`sources.graph_row.${graph.id}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">
+                      {graph.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatDate(graph.createdAt)} · {graph.nodes.length} nodes
+                      · {(() => {
+                        const hierarchyCount = graph.nodes.length - 1;
+                        const crossRefCount =
+                          graph.edges.length - hierarchyCount;
+                        return `${crossRefCount} cross-ref, ${hierarchyCount} hierarchy`;
+                      })()}
+                    </p>
+                    {published && publishedDate && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        published {publishedDate}
+                      </p>
+                    )}
+                    {commitSuccessId === graph.id && (
+                      <p
+                        className="text-xs text-green-500 mt-0.5"
+                        data-ocid={`sources.publish_success_state.${graph.id}`}
+                      >
+                        ✓ {published ? "updated" : "published"} to backend
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleView(graph)}
+                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                      data-ocid={`sources.view_button.${graph.id}`}
+                    >
+                      view
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePublish(graph)}
+                      disabled={isPublishing || isPreviewLoading}
+                      className="text-xs border border-dashed border-border px-2 py-1 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-ocid={`sources.publish_button.${graph.id}`}
+                    >
+                      {isPreviewLoading && previewGraph?.id === graph.id
+                        ? "previewing..."
+                        : published
+                          ? "update"
+                          : "publish"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRequest(graph.id)}
+                      className="text-xs border border-dashed border-destructive px-2 py-1 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      data-ocid={`sources.delete_button.${graph.id}`}
+                    >
+                      delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Delete confirmation dialog */}
+        {confirmDeleteId && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+              aria-hidden="true"
+              onClick={handleDeleteCancel}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") handleDeleteCancel();
+              }}
+            />
+            <div
+              className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-dashed border-border bg-background p-6 max-w-sm w-full mx-4 font-mono"
+              data-ocid="sources.confirm_delete_dialog"
+            >
+              <p className="text-sm text-foreground mb-2">delete graph?</p>
+              <p className="text-xs text-muted-foreground mb-6">
+                {graphs.find((g) => g.id === confirmDeleteId)?.name ?? ""}
+                <br />
+                this action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 text-xs border border-dashed border-destructive px-3 py-2 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  data-ocid="sources.confirm_delete_yes"
+                >
+                  delete
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteCancel}
+                  className="flex-1 text-xs border border-dashed border-border px-3 py-2 text-foreground hover:text-accent-foreground hover:border-foreground hover:bg-accent transition-colors"
+                  data-ocid="sources.confirm_delete_cancel"
+                >
+                  cancel
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Publish confirm dialog */}
+        {previewResult && (
+          <PublishConfirmDialog
+            isOpen={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false);
+              setPreviewGraph(null);
+            }}
+            onConfirm={handleConfirm}
+            previewResult={previewResult}
+            graphName={previewGraph?.name ?? ""}
+            isPublished={previewGraph ? isPublished(previewGraph.id) : false}
+            isLoading={isPublishing || isPreviewLoading}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

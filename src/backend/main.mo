@@ -1,0 +1,4413 @@
+import Text "mo:core/Text";
+import List "mo:core/List";
+import Array "mo:core/Array";
+import Map "mo:core/Map";
+import Nat "mo:core/Nat";
+import Nat32 "mo:core/Nat32";
+import Nat64 "mo:core/Nat64";
+import Int "mo:core/Int";
+import Time "mo:core/Time";
+import Principal "mo:core/Principal";
+import Iter "mo:core/Iter";
+import Order "mo:core/Order";
+import Set "mo:core/Set";
+import Blob "mo:core/Blob";
+import Random "mo:core/Random";
+import Nat8 "mo:core/Nat8";
+
+
+import AccessControl "mo:caffeineai-authorization/access-control";
+import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
+import Runtime "mo:core/Runtime";
+import Debug "mo:core/Debug";
+import Float "mo:core/Float";
+
+actor {
+  // Type Aliases
+  type NodeId = Text;
+  type Directionality = { #none; #unidirectional; #bidirectional };
+  type Tag = Text;
+  type BuzzScore = Int;
+  let BUZZ_DECIMALS : Int = 10;
+  type TrustScore = Int;
+  let TRUST_DECIMALS : Int = 10_000_000;
+  type BuzzTransaction = {
+    amount : Int;
+    timestamp : Int;
+    publishedGraphId : Text;
+  };
+  type NodeContribution = {
+    payers : List.List<(Principal, Int)>;
+  };
+  type TrustTransaction = {
+    saver : Principal;
+    savedAt : Int;
+    saveNumber : Nat;
+    totalBuzzCost : Int;
+    earned : Int;
+  };
+  let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+
+  type BuzzSecretRecord = {
+    points : Int;
+    createdAt : Int;
+    expiresAt : Int;
+    isUsed : Bool;
+  };
+
+  // Weighted types for deduplication
+  type WeightedValue = {
+    value : Text;
+    weight : Nat;
+  };
+
+  type WeightedAttribute = {
+    key : Text;
+    weightedValues : [WeightedValue];
+  };
+
+  type SourceRef = {
+    name : Text;
+    url : Text;
+  };
+
+  type ContentVersion = {
+    content : Text;
+    contributor : Principal;
+    timestamp : Time.Time;
+  };
+
+  // Node Types
+  type Timestamps = {
+    createdAt : Time.Time;
+  };
+
+  type Curation = {
+    id : NodeId;
+    name : Text;
+    creator : Principal;
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+    timestamps : Timestamps;
+  };
+
+  type Swarm = {
+    id : NodeId;
+    name : Text;
+    tags : [Tag];
+    parentCurationId : NodeId;
+    creator : Principal;
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+    timestamps : Timestamps;
+    forkSource : ?NodeId;
+    forkPrincipal : ?Principal;
+  };
+
+  type Location = {
+    id : NodeId;
+    title : Text;
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+    parentSwarmId : NodeId;
+    creator : Principal;
+    timestamps : Timestamps;
+  };
+
+  type LawToken = {
+    id : NodeId;
+    tokenLabel : Text;
+    parentLocationId : NodeId;
+    creator : Principal;
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+    timestamps : Timestamps;
+  };
+
+  type InterpretationToken = {
+    id : NodeId;
+    title : Text;
+    contentVersions : [ContentVersion];
+    parentLawTokenId : NodeId;
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+    creator : Principal;
+    timestamps : Timestamps;
+  };
+
+  // User Types
+  type UserProfile = {
+    name : Text;
+    socialUrl : ?Text;
+  };
+
+  type SearchResult = {
+    id : NodeId;
+    nodeType : Text;
+    name : Text;
+    parentContext : ?Text;
+  };
+
+  type BuzzLeaderboardEntry = {
+    principal : Principal;
+    profileName : ?Text;
+    score : BuzzScore;
+  };
+
+  // Graph Types for visualization
+  type GraphNode = {
+    id : NodeId;
+    nodeType : Text;
+    tokenLabel : Text;
+    jurisdiction : ?Text;
+    parentId : ?NodeId;
+    children : [GraphNode];
+    customAttributes : [WeightedAttribute];
+    sources : [SourceRef];
+  };
+
+  type GraphEdge = {
+    source : NodeId;
+    target : NodeId;
+    edgeLabel : Text;
+    directionality : Directionality;
+  };
+
+  type GraphData = {
+    curations : [Curation];
+    swarms : [Swarm];
+    locations : [Location];
+    lawTokens : [LawToken];
+    interpretationTokens : [InterpretationToken];
+    rootNodes : [GraphNode];
+    edges : [GraphEdge];
+    sources : [SourceRef];
+  };
+
+  // OwnedGraphData type for only caller-owned nodes
+  type OwnedGraphData = {
+    curations : [Curation];
+    swarms : [Swarm];
+    locations : [Location];
+    lawTokens : [LawToken];
+    interpretationTokens : [InterpretationToken];
+    edges : [GraphEdge];
+  };
+
+  type ExtensionEntry = {
+    extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
+  };
+
+  type PublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [ExtensionEntry];
+    artworkDataUrl : ?Text;
+    terrainParams : ?Text;
+  };
+
+  // Source graph edge with weighted labels
+  type SourceGraphEdge = {
+    source : NodeId;
+    target : NodeId;
+    weightedLabels : [WeightedValue];
+    directionality : Directionality;
+  };
+
+  // Input types for publishing
+  type SourceGraphNodeInput = {
+    id : ?Text;
+    name : Text;
+    nodeType : Text;
+    jurisdiction : ?Text;
+    tags : [Text];
+    content : ?Text;
+    parentName : ?Text;
+    attributes : [(Text, [Text])];
+    sources : [SourceRef];
+  };
+
+  type SourceGraphEdgeInput = {
+    sourceName : Text;
+    targetName : Text;
+    edgeLabel : Text;
+    bidirectional : Bool;
+  };
+
+  type PublishSourceGraphInput = {
+    nodes : [SourceGraphNodeInput];
+    edges : [SourceGraphEdgeInput];
+  };
+
+  type PublishResult = {
+    #success : { message : Text };
+    #noChanges;
+    #error : Text;
+  };
+
+  // Preview and commit types
+  type AttributeChange = {
+    key : Text;
+    oldValues : [WeightedValue];
+    newValues : [Text];
+    newWeightedValues : [WeightedValue];
+  };
+
+  type NodeOperation = {
+    nodeType : Text;
+    localName : Text;
+    backendId : ?NodeId;
+    parentName : ?Text;
+    action : { #create; #update : [AttributeChange] };
+    attributes : [(Text, [Text])];
+    sourceChanges : [SourceRef];
+  };
+
+  type EdgeOperation = {
+    sourceName : Text;
+    targetName : Text;
+    sourceId : ?NodeId;
+    targetId : ?NodeId;
+    action : { #create; #update : { newLabels : [Text] } };
+    labels : [Text];
+    bidirectional : Bool;
+  };
+
+  type PublishPreviewResult = {
+    nodeOperations : [NodeOperation];
+    edgeOperations : [EdgeOperation];
+    summary : {
+      nodesToCreate : Nat;
+      nodesToUpdate : Nat;
+      edgesToCreate : Nat;
+      edgesToUpdate : Nat;
+      hierarchyEdgesToCreate : Nat;
+      attributesAdded : Nat;
+      sourcesAdded : Nat;
+    };
+    buzzCost : Int;
+  };
+
+  type PublishCommitResult = {
+    #success : {
+      nodeMappings : [(Text, NodeId)];
+      message : Text;
+      publishedSourceGraphId : ?Text;
+      buzzCost : Int;
+    };
+    #error : {
+      message : Text;
+      failedAt : ?{ nodeType : Text; name : Text };
+    };
+  };
+
+  // ── Chat Types ──────────────────────────────────────────────────────────────
+
+  type ChatMessage = {
+    sender : Principal;
+    senderName : Text;
+    timestamp : Int;
+    text : Text;
+  };
+
+  type ChatChannel = {
+    id : Text;
+    name : Text;
+    isSubchannel : Bool;
+    parentCuration : ?Text;
+    members : List.List<Principal>;
+    messages : List.List<ChatMessage>;
+    unreadCounts : Map.Map<Principal, Nat>;
+  };
+
+  type ChatChannelSummary = {
+    id : Text;
+    name : Text;
+    isSubchannel : Bool;
+    parentCuration : ?Text;
+    unreadCount : Nat;
+  };
+
+  // ── Telegram Bridge Types ────────────────────────────────────────────────────
+
+  type TelegramConfig = {
+    encryptedBotToken : Blob;
+    encryptedChatId : Blob;
+    updatedAt : Nat64;
+    updatedBy : Principal;
+  };
+
+  // Backend State
+  var curationMap = Map.empty<NodeId, Curation>();
+  var swarmMap = Map.empty<NodeId, Swarm>();
+  var locationMap = Map.empty<NodeId, Location>();
+  var lawTokenMap = Map.empty<NodeId, LawToken>();
+  var interpretationTokenMap = Map.empty<NodeId, InterpretationToken>();
+  var userProfiles = Map.empty<Principal, UserProfile>();
+  var buzzScores = Map.empty<Principal, BuzzScore>();
+  var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+  var existingAdmins : [Principal] = [];
+  var archivedNodes = Map.empty<NodeId, ()>();
+
+  // New explicit edge storage for source graph edges (weighted labels)
+  var sourceEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
+
+  // Published source graph metadata
+  var publishedSourceGraphs = Map.empty<Text, PublishedSourceGraphMeta>();
+  var publishedGraphBuzzMetrics = Map.empty<Text, { cumulativeBuzzSpent : Int; extensionCount : Nat }>();
+  var trustScores = Map.empty<Principal, TrustScore>();
+  var buzzTransactions = Map.empty<Principal, List.List<BuzzTransaction>>();
+  var graphSavers = Map.empty<Text, List.List<Principal>>();
+  var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
+  var trustTransactions = Map.empty<Principal, List.List<TrustTransaction>>();
+
+  // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
+  var curationToPublishedGraphId = Map.empty<NodeId, Text>();
+
+  // Chat channels — keyed by curation name (top-level) or "curationName@swarmName" (sub-channel)
+  var chatChannels = Map.empty<Text, ChatChannel>();
+
+  // Telegram bridge config (encrypted)
+  var telegramConfig : ?TelegramConfig = null;
+
+  // ── HTTP API State ───────────────────────────────────────────────────────────
+
+  // Per-user API keys: principal → key and reverse lookup key → principal
+  var apiKeysByPrincipal = Map.empty<Principal, Text>();
+  var principalByApiKey = Map.empty<Text, Principal>();
+
+  // Per-key rate limiting counters
+  var apiRateLimitCounts = Map.empty<Text, Nat>();
+  var apiRateLimitWindowStarts = Map.empty<Text, Int>();
+  // ── Plugin Binding State ─────────────────────────────────────────────────────
+
+  // Pending plugin bindings: userPrincipal → [pluginPubKey] awaiting approval
+  var pendingPluginBindings = Map.empty<Principal, List.List<Principal>>();
+
+  // Active plugin bindings: pluginPubKey → userPrincipal (bound)
+  var pluginBindings = Map.empty<Principal, Principal>();
+
+  // Notes import data: userPrincipal → json blob from Obsidian plugin
+  var notesImports = Map.empty<Principal, Text>();
+
+
+  module LawToken {
+    public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
+      Text.compare(t1.tokenLabel, t2.tokenLabel);
+    };
+  };
+
+  module Curation {
+    public func compareByName(c1 : Curation, c2 : Curation) : Order.Order {
+      Text.compare(c1.name, c2.name);
+    };
+  };
+
+  module Swarm {
+    public func compareByName(s1 : Swarm, s2 : Swarm) : Order.Order {
+      Text.compare(s1.name, s2.name);
+    };
+  };
+
+  module Location {
+    public func compareByTitle(a1 : Location, a2 : Location) : Order.Order {
+      Text.compare(a1.title, a2.title);
+    };
+  };
+
+  // Addition: Get archived node IDs
+  public query ({ caller }) func getArchivedNodeIds() : async [NodeId] {
+    archivedNodes.keys().toArray();
+  };
+
+  // Allow any authenticated user to archive their own nodes.
+  public shared ({ caller }) func archiveNode(nodeId : NodeId) : async () {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Only authenticated users can archive nodes");
+    };
+
+    archivedNodes.add(nodeId, ());
+  };
+
+  public query ({ caller }) func isNodeArchived(nodeId : NodeId) : async Bool {
+    archivedNodes.containsKey(nodeId);
+  };
+
+  public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async { #ok : Text; #err : Text } {
+    Debug.print("[savePublishedGraph] publishedGraphId = " # publishedGraphId);
+    Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
+    switch (publishedSourceGraphs.get(publishedGraphId)) {
+      case (null) { return #err("Graph not found") };
+      case (?_) {};
+    };
+    if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
+    let savers = switch (graphSavers.get(publishedGraphId)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+    let alreadySaved = savers.any(func(p : Principal) : Bool { Principal.equal(p, msg.caller) });
+    if (alreadySaved) { return #err("Already saved") };
+    savers.add(msg.caller);
+    graphSavers.add(publishedGraphId, savers);
+    let saveNumber = savers.size();
+    Debug.print("[savePublishedGraph] saveNumber = " # debug_show (saveNumber));
+    var bucket = Map.empty<Principal, Int>();
+    let contribMap = switch (publishedNodeContributions.get(publishedGraphId)) {
+      case (null) {
+        Debug.print("[savePublishedGraph] NO contributions found for this graph");
+        Map.empty<NodeId, NodeContribution>()
+      };
+      case (?m) {
+        var count = 0;
+        for ((_, _) in m.entries()) { count += 1; };
+        Debug.print("[savePublishedGraph] contribMap entries = " # debug_show (count));
+        m
+      };
+    };
+    var matchedCount = 0;
+    var skippedSelfCount = 0;
+    for (nodeId in selectedNodeIds.vals()) {
+      switch (contribMap.get(nodeId)) {
+        case (null) {};
+        case (?contrib) {
+          matchedCount += 1;
+          for ((paidBy, buzzCost) in contrib.payers.values()) {
+            if (Principal.equal(paidBy, msg.caller)) {
+              skippedSelfCount += 1;
+            } else {
+              let existing = switch (bucket.get(paidBy)) { case (null) { 0 }; case (?v) { v }; };
+              bucket.add(paidBy, existing + buzzCost);
+            };
+          };
+        };
+      };
+    };
+    Debug.print("[savePublishedGraph] matchedCount = " # debug_show (matchedCount) # ", skippedSelfCount = " # debug_show (skippedSelfCount));
+    var bucketEntryCount = 0;
+    for ((_, _) in bucket.entries()) { bucketEntryCount += 1; };
+    Debug.print("[savePublishedGraph] bucket entries = " # debug_show (bucketEntryCount));
+    for ((creator, totalBuzzCost) in bucket.entries()) {
+      let earned : Int = (Float.sqrt(saveNumber.toFloat()) * ((totalBuzzCost * TRUST_DECIMALS) / BUZZ_DECIMALS).toFloat()).toInt();
+      Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ")");
+      updateTrustScore(creator, earned);
+      let trustTx : TrustTransaction = {
+        saver = msg.caller;
+        savedAt = Time.now();
+        saveNumber;
+        totalBuzzCost;
+        earned;
+      };
+      let existingTrustTxs = switch (trustTransactions.get(creator)) {
+        case (null) { List.empty<TrustTransaction>() };
+        case (?list) { list };
+      };
+      existingTrustTxs.add(trustTx);
+      trustTransactions.add(creator, existingTrustTxs);
+    };
+    #ok("Graph saved")
+  };
+
+  public query ({ caller }) func hasUserSavedGraph(publishedGraphId : Text) : async Bool {
+    switch (graphSavers.get(publishedGraphId)) {
+      case (null) { false };
+      case (?list) { list.contains(caller) };
+    };
+  };
+
+  public query ({ caller }) func getMyTrustTransactions() : async [TrustTransaction] {
+    switch (trustTransactions.get(caller)) {
+      case (null) { [] };
+      case (?list) { list.toArray() };
+    };
+  };
+
+  func updateTrustScore(user : Principal, delta : Int) {
+    let balance = switch (trustScores.get(user)) { case (null) { 0 }; case (?b) { b }; };
+    trustScores.add(user, balance + delta);
+  };
+
+  public shared (msg) func getMyTrustBalance() : async TrustScore {
+    switch (trustScores.get(msg.caller)) { case (null) { 0 }; case (?b) { b }; };
+  };
+
+  public query func getBuzzLeaderboard(topN : Nat) : async [BuzzLeaderboardEntry] {
+    let entries = trustScores.entries().toArray();
+    let sorted = entries.sort(func (a : (Principal, TrustScore), b : (Principal, TrustScore)) : Order.Order {
+        if (a.1 > b.1) { #less } else if (a.1 < b.1) { #greater } else { #equal };
+    });
+    let len = if (sorted.size() < topN) { sorted.size() } else { topN };
+    Array.tabulate<BuzzLeaderboardEntry>(
+        len,
+        func (i : Nat) : BuzzLeaderboardEntry {
+            let (principal, score) = sorted[i];
+            let profileName = switch (userProfiles.get(principal)) {
+                case (null) { null };
+                case (?profile) { ?profile.name };
+            };
+            { principal = principal; profileName = profileName; score = score };
+        }
+    );
+  };
+
+  public query ({ caller }) func getMyBuzzBalance() : async BuzzScore {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view their BUZZ balance");
+    };
+    switch (buzzScores.get(caller)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
+  };
+
+  // AUTHENTICATION AND AUTHORIZATION
+  public shared ({ caller }) func initializeAccessControl() : async () {
+    AccessControl.initialize(accessControlState, caller);
+
+    if (existingAdmins.size() < 2) {
+      let callerExists = existingAdmins.find(func(p : Principal) : Bool { Principal.equal(p, caller) });
+      if (callerExists == null and AccessControl.isAdmin(accessControlState, caller)) {
+        existingAdmins := existingAdmins.concat([caller]);
+      };
+    };
+  };
+
+  // ── Plugin Binding Helpers & Methods ────────────────────────────────────────
+
+  func getEffectiveUser(caller : Principal) : Principal {
+    switch (pluginBindings.get(caller)) {
+      case (?user) { user };
+      case (null) { caller };
+    };
+  };
+
+  public query ({ caller }) func getMyPrincipal() : async Principal {
+    caller;
+  };
+
+  public query ({ caller }) func getPendingPluginBindings() : async [Principal] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can view pending bindings");
+    };
+    switch (pendingPluginBindings.get(caller)) {
+      case (?list) { list.toArray() };
+      case (null) { [] };
+    };
+  };
+
+  public shared ({ caller }) func approvePluginBinding(pluginPubKey : Principal) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can approve bindings");
+    };
+    let pending = switch (pendingPluginBindings.get(caller)) {
+      case (?list) { list };
+      case (null) { Runtime.trap("No pending bindings found") };
+    };
+    let found = pending.find(func(p : Principal) : Bool { p == pluginPubKey });
+    switch (found) {
+      case (null) { Runtime.trap("Plugin key not found in pending bindings") };
+      case (?_) {};
+    };
+    // Remove pluginPubKey from the pending list
+    let filtered = List.empty<Principal>();
+    for (p in pending.values()) {
+      if (p != pluginPubKey) { filtered.add(p) };
+    };
+    pendingPluginBindings.add(caller, filtered);
+    // Add to active bindings
+    pluginBindings.add(pluginPubKey, caller);
+  };
+
+  public shared ({ caller }) func storeNotesData(json : Text) : async () {
+    let effectiveUser = getEffectiveUser(caller);
+    notesImports.add(effectiveUser, json);
+  };
+
+  public query ({ caller }) func getNotesData() : async ?Text {
+    notesImports.get(caller);
+  };
+
+  public query ({ caller }) func getPluginBindingStatus() : async Bool {
+    var found = false;
+    for ((_, user) in pluginBindings.entries()) {
+      if (user == caller) { found := true };
+    };
+    found;
+  };
+
+  public query ({ caller }) func getBoundPluginKeys() : async [Principal] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can view bound keys");
+    };
+    let keys = List.empty<Principal>();
+    for ((pluginKey, user) in pluginBindings.entries()) {
+      if (user == caller) { keys.add(pluginKey) };
+    };
+    keys.toArray();
+  };
+
+  public shared ({ caller }) func revokePluginBinding(pluginKey : Principal) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can revoke bindings");
+    };
+    switch (pluginBindings.get(pluginKey)) {
+      case (?user) {
+        if (user != caller) { Runtime.trap("Cannot revoke a binding that belongs to another user") };
+        pluginBindings.remove(pluginKey);
+      };
+      case (null) { Runtime.trap("Plugin key not found in active bindings") };
+    };
+  };
+
+  // USER PROFILES
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can access profiles");
+    };
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile unless you are an admin");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
+  };
+
+  // CREATION & UPDATE OPERATIONS
+  public shared ({ caller }) func createCuration(name : Text, customAttributes : [WeightedAttribute]) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can create curations");
+    };
+
+    let id = generateId("curation", name, caller);
+    let newCuration = {
+      id;
+      name;
+      creator = caller;
+      customAttributes;
+      sources = [];
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+    curationMap.add(id, newCuration);
+
+    id;
+  };
+
+  public shared ({ caller }) func createSwarm(name : Text, tags : [Tag], parentCurationId : NodeId, customAttributes : [WeightedAttribute]) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can create swarms");
+    };
+
+    switch (curationMap.get(parentCurationId)) {
+      case (null) {
+        Runtime.trap("Parent curation does not exist");
+      };
+      case (_) {};
+    };
+
+    let id = generateId("swarm", name, caller);
+    let newSwarm : Swarm = {
+      id;
+      name;
+      tags;
+      parentCurationId;
+      creator = caller;
+      customAttributes;
+      sources = [];
+      timestamps = {
+        createdAt = Time.now();
+      };
+      forkSource = null;
+      forkPrincipal = null;
+    };
+    swarmMap.add(id, newSwarm);
+
+    id;
+  };
+
+  public shared ({ caller }) func createLocation(
+    title : Text,
+    customAttributes : [WeightedAttribute],
+    parentSwarmId : NodeId
+  ) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can create locations");
+    };
+
+    switch (swarmMap.get(parentSwarmId)) {
+      case (null) { Runtime.trap("Parent swarm does not exist") };
+      case (_) {};
+    };
+
+    let finalTitle = title.trim(#char ' ');
+
+    let id = generateId("location", finalTitle, caller);
+
+    let newLocation = {
+      id;
+      title = finalTitle;
+      customAttributes;
+      sources = [];
+      parentSwarmId;
+      creator = caller;
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+    locationMap.add(id, newLocation);
+
+    id;
+  };
+
+  public shared ({ caller }) func createInterpretationToken(
+    title : Text,
+    content : Text,
+    parentLawTokenId : NodeId,
+    customAttributes : [WeightedAttribute]
+  ) : async NodeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only authenticated users can create interpretation tokens");
+    };
+
+    if (not lawTokenMap.containsKey(parentLawTokenId)) {
+      Runtime.trap("Parent law token does not exist");
+    };
+
+    let id = generateId("interpretationToken", title, caller);
+    let newInterpretationToken = {
+      id;
+      title;
+      contentVersions = [{ content; contributor = caller; timestamp = Time.now() }];
+      parentLawTokenId;
+      customAttributes;
+      sources = [];
+      creator = caller;
+      timestamps = {
+        createdAt = Time.now();
+      };
+    };
+    interpretationTokenMap.add(id, newInterpretationToken);
+
+    id;
+  };
+
+  // MEMBERSHIP OPERATIONS
+
+  func updateBuzzScore(user : Principal, delta : Int) {
+    let currentBalance = switch (buzzScores.get(user)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
+    buzzScores.add(user, currentBalance + delta);
+  };
+
+  func blobToHex(b : Blob, start : Nat, len : Nat) : Text {
+    let bytes = b.toArray();
+    var result = "";
+    var i = start;
+    let end = if (start + len > bytes.size()) bytes.size() else start + len;
+    while (i < end) {
+      let byte = bytes[i];
+      result #= HEX_CHARS[(byte >> 4).toNat()] # HEX_CHARS[(byte & 0x0f).toNat()];
+      i += 1;
+    };
+    result
+  };
+
+  public shared (msg) func generateBuzzSecret(score : Int) : async Text {
+    let hex = blobToHex(await Random.blob(), 0, 8);
+    let secretId = "buzz-" # msg.caller.toText() # "-" # Time.now().toText() # "-" # hex;
+    let now = Time.now();
+    let expiryTime = now + 86_400_000_000_000;
+    let record : BuzzSecretRecord = {
+      points = score * BUZZ_DECIMALS;
+      createdAt = now;
+      expiresAt = expiryTime;
+      isUsed = false;
+    };
+    buzzSecrets.add(secretId, record);
+    secretId;
+  };
+
+  public shared (msg) func generateInviteCodes(count : Nat, validDays : Nat) : async [Text] {
+    if (not AccessControl.isAdmin(accessControlState, msg.caller)) {
+      Runtime.trap("Unauthorized: Only admins can generate invite codes");
+    };
+    let codesBuffer = List.empty<Text>();
+    let now = Time.now();
+    let expiryTime = now + validDays * 86_400_000_000_000;
+    let randomBlob = await Random.blob();
+    let baseBytes = randomBlob.toArray();
+    let points = 500 * BUZZ_DECIMALS;
+    var i = 0;
+    while (i < count) {
+      let offset = (i * 4) % 28;
+      let b0 = baseBytes[offset] ^ Nat8.fromNat(i % 256);
+      let b1 = baseBytes[offset + 1] ^ Nat8.fromNat((i / 256) % 256);
+      let hex = HEX_CHARS[(b0 >> 4).toNat()] # HEX_CHARS[(b0 & 0x0f).toNat()]
+             # HEX_CHARS[(b1 >> 4).toNat()] # HEX_CHARS[(b1 & 0x0f).toNat()];
+      let secretId = "invite-" # msg.caller.toText() # "-" # now.toText() # "-" # i.toText() # "-" # hex;
+      let rec : BuzzSecretRecord = {
+        points;
+        createdAt = now;
+        expiresAt = expiryTime;
+        isUsed = false;
+      };
+      buzzSecrets.add(secretId, rec);
+      codesBuffer.add(secretId);
+      i += 1;
+    };
+    codesBuffer.toArray();
+  };
+
+  public shared (msg) func redeemBuzzSecret(secret : Text) : async { #ok : Text; #err : Text } {
+    if (msg.caller.isAnonymous()) {
+      return #err("Authentication required");
+    };
+    switch (buzzSecrets.get(secret)) {
+      case (null) { #err("Invalid secret code") };
+      case (?record) {
+        if (record.isUsed) {
+          return #err("Secret code already used");
+        };
+        if (Time.now() >= record.expiresAt) {
+          return #err("Secret code has expired");
+        };
+        updateBuzzScore(msg.caller, record.points);
+        buzzSecrets.add(secret, { record with isUsed = true });
+        #ok("Added " # (record.points / 10).toText() # " Buzz to your wallet");
+      };
+    };
+  };
+
+
+
+  func generateId(nodeType : Text, name : Text, creator : Principal) : NodeId {
+    nodeType # "-" # name # "-" # creator.toText() # "-" # Time.now().toText()
+  };
+
+  // ─── Helper: aggregate weightedLabels into single edgeLabel for display ───────
+  func aggregateWeightedLabels(weightedLabels : [WeightedValue]) : Text {
+    if (weightedLabels.size() == 0) { return "" };
+    // Return the label with the highest weight; on tie return first
+    var bestLabel = weightedLabels[0].value;
+    var bestWeight = weightedLabels[0].weight;
+    for (wv in weightedLabels.values()) {
+      if (wv.weight > bestWeight) {
+        bestLabel := wv.value;
+        bestWeight := wv.weight;
+      };
+    };
+    bestLabel;
+  };
+
+  // ─── Helper: mergeWeightedAttributes ─────────────────────────────────────────
+  func mergeWeightedAttributes(existing : [WeightedAttribute], newAttributes : [(Text, [Text])]) : [WeightedAttribute] {
+    // Build mutable map: key -> (value -> weight)
+    let keyMap = Map.empty<Text, Map.Map<Text, Nat>>();
+    for (wa in existing.values()) {
+      let valueMap = Map.empty<Text, Nat>();
+      for (wv in wa.weightedValues.values()) {
+        valueMap.add(wv.value, wv.weight);
+      };
+      keyMap.add(wa.key, valueMap);
+    };
+
+    for ((key, values) in newAttributes.values()) {
+      switch (keyMap.get(key)) {
+        case (?valueMap) {
+          // Key exists — add only genuinely new values (do not increment existing weights)
+          for (v in values.values()) {
+            switch (valueMap.get(v)) {
+              case (?_) { /* already exists — keep existing weight unchanged */ };
+              case (null) { valueMap.add(v, 1) };
+            };
+          };
+        };
+        case (null) {
+          // New key
+          let valueMap = Map.empty<Text, Nat>();
+          for (v in values.values()) {
+            valueMap.add(v, 1);
+          };
+          keyMap.add(key, valueMap);
+        };
+      };
+    };
+
+    // Convert back to [WeightedAttribute]
+    let result = List.empty<WeightedAttribute>();
+    for ((key, valueMap) in keyMap.entries()) {
+      let wvList = List.empty<WeightedValue>();
+      for ((v, w) in valueMap.entries()) {
+        wvList.add({ value = v; weight = w });
+      };
+      result.add({ key; weightedValues = wvList.toArray() });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: mergeSources ────────────────────────────────────────────────
+  func mergeSources(existing : [SourceRef], newSrcs : [SourceRef]) : [SourceRef] {
+    let keyMap = Map.empty<Text, Bool>();
+    let result = List.empty<SourceRef>();
+    for (src in existing.values()) {
+      let key = src.name # "|" # src.url;
+      keyMap.add(key, true);
+      result.add(src);
+    };
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          keyMap.add(key, true);
+          result.add(src);
+        };
+        case (?_) {};
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: countNewSources ───────────────────────────────────────────────
+  func countNewSources(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : Nat {
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    var count = 0;
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          keyMap.add(key, true);
+          count += 1;
+        };
+        case (?_) {};
+      };
+    };
+    count
+  };
+
+  // ─── Helper: computeNewSources ──────────────────────────────────────────────
+  func computeNewSources(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : [SourceRef] {
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    let result = List.empty<SourceRef>();
+    for (src in newSrcs.values()) {
+      let key = src.name # "|" # src.url;
+      switch (keyMap.get(key)) {
+        case (null) {
+          result.add(src);
+        };
+        case (?_) {};
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: mergeEdgeLabels ──────────────────────────────────────────────────
+  func mergeEdgeLabels(existing : [WeightedValue], newLabels : [Text]) : [WeightedValue] {
+    let labelMap = Map.empty<Text, Nat>();
+    for (wv in existing.values()) {
+      labelMap.add(wv.value, wv.weight);
+    };
+    for (lbl in newLabels.values()) {
+      switch (labelMap.get(lbl)) {
+        case (?w) { labelMap.add(lbl, w + 1) };
+        case (null) { labelMap.add(lbl, 1) };
+      };
+    };
+    let result = List.empty<WeightedValue>();
+    for ((v, w) in labelMap.entries()) {
+      result.add({ value = v; weight = w });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: appendContentVersion ────────────────────────────────────────────
+  func appendContentVersion(existing : [ContentVersion], newContent : Text, contributor : Principal) : [ContentVersion] {
+    let newVersion : ContentVersion = {
+      content = newContent;
+      contributor;
+      timestamp = Time.now();
+    };
+    existing.concat([newVersion]);
+  };
+
+  // ─── Helper: convert [(Text,[Text])] attributes to [WeightedAttribute] at weight=1
+  func attributesToWeighted(attributes : [(Text, [Text])]) : [WeightedAttribute] {
+    let result = List.empty<WeightedAttribute>();
+    for ((key, values) in attributes.values()) {
+      let wvList = List.empty<WeightedValue>();
+      for (v in values.values()) {
+        wvList.add({ value = v; weight = 1 });
+      };
+      result.add({ key; weightedValues = wvList.toArray() });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: compute final weighted values for a single key after merge ──────
+  func computeNewWeightedValuesForKey(existing : [WeightedAttribute], key : Text, newValues : [Text]) : [WeightedValue] {
+    // Find existing weighted values for this key
+    var existingWvs : [WeightedValue] = [];
+    for (wa in existing.values()) {
+      if (wa.key == key) { existingWvs := wa.weightedValues };
+    };
+    // Simulate the merge for this key
+    let resultMap = Map.empty<Text, Nat>();
+    for (wv in existingWvs.values()) {
+      resultMap.add(wv.value, wv.weight);
+    };
+    for (v in newValues.values()) {
+      let currentWeight = switch (resultMap.get(v)) {
+        case (?w) { w };
+        case (null) { 0 };
+      };
+      resultMap.add(v, if (currentWeight == 0) { 1 } else { currentWeight });
+    };
+    let result = List.empty<WeightedValue>();
+    for ((value, weight) in resultMap.entries()) {
+      result.add({ value; weight });
+    };
+    result.toArray();
+  };
+
+  // ─── Helper: compute attribute changes for preview ───────────────────────────
+  func computeAttributeChanges(existing : [WeightedAttribute], newAttributes : [(Text, [Text])]) : [AttributeChange] {
+    let changes = List.empty<AttributeChange>();
+    let existingKeyMap = Map.empty<Text, [WeightedValue]>();
+    for (wa in existing.values()) {
+      existingKeyMap.add(wa.key, wa.weightedValues);
+    };
+    for ((key, values) in newAttributes.values()) {
+      let oldValues = switch (existingKeyMap.get(key)) {
+        case (?wvs) { wvs };
+        case (null) { [] };
+      };
+      let hasDiff = switch (existingKeyMap.get(key)) {
+        case (null) { true };
+        case (?wvs) {
+          var found = false;
+          label diffCheck for (v in values.values()) {
+            var valueExists = false;
+            for (wv in wvs.values()) {
+              if (wv.value == v) { valueExists := true };
+            };
+            if (not valueExists) { found := true; break diffCheck };
+          };
+          found
+        };
+      };
+      if (hasDiff) {
+        let newWeightedValues = computeNewWeightedValuesForKey(existing, key, values);
+        changes.add({ key; oldValues; newValues = values; newWeightedValues });
+      };
+    };
+    changes.toArray();
+  };
+
+  // ─── Helper: check if attributes have actual value changes ──────────────────
+  func hasActualChanges(existingAttrs : [WeightedAttribute], newAttrs : [(Text, [Text])]) : Bool {
+    for ((key, values) in newAttrs.values()) {
+      // Find matching WeightedAttribute in existing
+      var foundExisting : ?WeightedAttribute = null;
+      for (wa in existingAttrs.values()) {
+        if (wa.key == key) { foundExisting := ?wa };
+      };
+      switch (foundExisting) {
+        case (null) {
+          // Key doesn't exist in existing → that's a change
+          return true;
+        };
+        case (?wa) {
+          // Key exists: check if any new value is missing from existing weightedValues
+          for (newVal in values.values()) {
+            var found = false;
+            for (wv in wa.weightedValues.values()) {
+              if (wv.value == newVal) { found := true };
+            };
+            if (not found) { return true };
+          };
+        };
+      };
+    };
+    false
+  };
+
+  // ─── Helper: build full hierarchical path ────────────────────────────────────
+  func buildFullPath(parentPath : ?Text, name : Text) : Text {
+    switch (parentPath) {
+      case (null) { name };
+      case (?p) { p # "@" # name };
+    };
+  };
+
+  // ─── Helper: check if a node belongs to a specific published graph ────────────
+  // Traces the node's root curation ID and checks curationToPublishedGraphId.
+  func belongsToPublishedGraph(nodeId : NodeId, publishedId : Text) : Bool {
+    // Step 1: check if nodeId itself is a curation
+    switch (curationToPublishedGraphId.get(nodeId)) {
+      case (?pid) { return pid == publishedId };
+      case (null) {};
+    };
+    // Step 2: try swarm -> parentCurationId
+    switch (swarmMap.get(nodeId)) {
+      case (?swarm) {
+        switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+          case (?pid) { return pid == publishedId };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 3: try location -> parentSwarmId -> parentCurationId
+    switch (locationMap.get(nodeId)) {
+      case (?location) {
+        switch (swarmMap.get(location.parentSwarmId)) {
+          case (?swarm) {
+            switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+              case (?pid) { return pid == publishedId };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 4: try lawToken -> parentLocationId -> parentSwarmId -> parentCurationId
+    switch (lawTokenMap.get(nodeId)) {
+      case (?lt) {
+        switch (locationMap.get(lt.parentLocationId)) {
+          case (?location) {
+            switch (swarmMap.get(location.parentSwarmId)) {
+              case (?swarm) {
+                switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+                  case (?pid) { return pid == publishedId };
+                  case (null) { return false };
+                };
+              };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    // Step 5: try interpToken -> parentLawTokenId -> ... -> parentCurationId
+    switch (interpretationTokenMap.get(nodeId)) {
+      case (?it) {
+        switch (lawTokenMap.get(it.parentLawTokenId)) {
+          case (?lt) {
+            switch (locationMap.get(lt.parentLocationId)) {
+              case (?location) {
+                switch (swarmMap.get(location.parentSwarmId)) {
+                  case (?swarm) {
+                    switch (curationToPublishedGraphId.get(swarm.parentCurationId)) {
+                      case (?pid) { return pid == publishedId };
+                      case (null) { return false };
+                    };
+                  };
+                  case (null) { return false };
+                };
+              };
+              case (null) { return false };
+            };
+          };
+          case (null) { return false };
+        };
+      };
+      case (null) {};
+    };
+    false
+  };
+
+  // ─── Helper: detect changes between two SourceRef arrays (set-based) ──────────
+  func hasSourceChanges(existingSrcs : [SourceRef], newSrcs : [SourceRef]) : Bool {
+    if (existingSrcs.size() != newSrcs.size()) { return true };
+    let keyMap = Map.empty<Text, Bool>();
+    for (src in existingSrcs.values()) {
+      keyMap.add(src.name # "|" # src.url, true);
+    };
+    for (src in newSrcs.values()) {
+      switch (keyMap.get(src.name # "|" # src.url)) {
+        case (null) { return true };
+        case (?_) {};
+      };
+    };
+    false
+  };
+
+  // Derives parent full path by stripping the last @-segment from node.id.
+  // Primary lookup — avoids bare-name map collisions when siblings share names.
+  func parentPathFromId(nodeId : ?Text) : ?Text {
+    switch (nodeId) {
+      case (null) { null };
+      case (?id) {
+        let segIter = id.split(#char '@');
+        let segments = List.empty<Text>();
+        for (seg in segIter) { segments.add(seg) };
+        let allSegs = segments.toArray();
+        if (allSegs.size() <= 1) { return null };
+        var path = allSegs[0];
+        var i = 1;
+        while (i < allSegs.size() - 1) {
+          path := path # "@" # allSegs[i];
+          i += 1;
+        };
+        ?path
+      };
+    };
+  };
+
+  // ─── Helper: scope-aware edge target resolution ───────────────────────────────
+  // Tries: hierarchical scope walk first → simple name fallback
+  func resolveEdgeTarget(targetName : Text, sourceFullPath : Text, nameToId : Map.Map<Text, NodeId>) : ?NodeId {
+    // 1. Split source path into segments and walk up hierarchy first
+    let segIter = sourceFullPath.split(#char '@');
+    let segments = List.empty<Text>();
+    for (seg in segIter) {
+      segments.add(seg);
+    };
+    let allSegs = segments.toArray();
+    // Try from parent (n-1 segments) up to root (1 segment)
+    var level = allSegs.size();
+    // level represents how many leading segments to join as the scope prefix
+    // We want to try from the direct parent scope down to the root
+    while (level > 0) {
+      level -= 1;
+      var path = allSegs[0];
+      var i = 1;
+      while (i < level) {
+        path := path # "@" # allSegs[i];
+        i += 1;
+      };
+      let candidateKey = if (level == 0) { targetName } else { path # "@" # targetName };
+      if (candidateKey != targetName) {
+        switch (nameToId.get(candidateKey)) {
+          case (?id) { return ?id };
+          case (null) {};
+        };
+      };
+    };
+    // 2. Simple name fallback
+    switch (nameToId.get(targetName)) {
+      case (?id) { return ?id };
+      case (null) {};
+    };
+    null
+  };
+  // ─── Helper: detect if input is extending an existing published graph ──────
+  func detectExtension(
+    input : PublishSourceGraphInput,
+    curations : Map.Map<NodeId, Curation>,
+    curationToPublished : Map.Map<NodeId, Text>,
+    publishedGraphs : Map.Map<Text, PublishedSourceGraphMeta>
+  ) : (Bool, ?Text) {
+    // Find first curation node in input
+    var curationNode : ?SourceGraphNodeInput = null;
+    for (node in input.nodes.values()) {
+      if (node.nodeType == "curation" and curationNode == null) {
+        curationNode := ?node;
+      };
+    };
+    switch (curationNode) {
+      case (null) { return (false, null) };
+      case (?cn) {
+        // Iterate through curationMap looking for name match
+        var result : (Bool, ?Text) = (false, null);
+        for ((cid, existingCuration) in curations.entries()) {
+          if (existingCuration.name == cn.name and result.0 == false) {
+            switch (curationToPublished.get(cid)) {
+              case (?pid) {
+                // Validate the published graph still exists
+                switch (publishedGraphs.get(pid)) {
+                  case (?_meta) { result := (true, ?pid) };
+                  case (null) {};
+                };
+              };
+              case (null) {};
+            };
+          };
+        };
+        result
+      };
+    };
+  };
+
+
+  // ── Top-level attribute/source counting helpers (shared by previewLogic and commitPublish) ──
+  func countNewAttributes(existingAttrs : [WeightedAttribute], inputAttrs : [(Text, [Text])]) : Nat {
+    var count = 0;
+    for ((key, values) in inputAttrs.values()) {
+      let found = existingAttrs.find(func(wa : WeightedAttribute) : Bool { wa.key == key });
+      switch (found) {
+        case (null) { count += values.size() };
+        case (?wa) {
+          for (v in values.values()) {
+            let exists = wa.weightedValues.find(func(wv : WeightedValue) : Bool { wv.value == v });
+            switch (exists) {
+              case (null) { count += 1 };
+              case (?_) {};
+            };
+          };
+        };
+      };
+    };
+    count
+  };
+
+  func countRawAttributes(attrs : [(Text, [Text])]) : Nat {
+    var count = 0;
+    for ((_, values) in attrs.values()) { count += values.size() };
+    count
+  };
+
+  func previewLogic(
+    caller : Principal,
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : PublishPreviewResult {
+    let nodeOps = List.empty<NodeOperation>();
+    let edgeOps = List.empty<EdgeOperation>();
+    var nodesToCreate : Nat = 0;
+    var nodesToUpdate : Nat = 0;
+    var edgesToCreate : Nat = 0;
+    var edgesToUpdate : Nat = 0;
+    var hierarchyEdgesToCreate : Nat = 0;
+    var curationsToCreate : Nat = 0;
+    var swarmsToCreate : Nat = 0;
+    var locationsToCreate : Nat = 0;
+    var lawEntitiesToCreate : Nat = 0;
+    var interpEntitiesToCreate : Nat = 0;
+    var attributesAdded : Nat = 0;
+    var sourcesAdded : Nat = 0;
+
+    // ── Extension detection ──────────────────────────────────────────────────
+    let (isExtension, publishedGraphId) = detectExtension(
+      input, curationMap, curationToPublishedGraphId, publishedSourceGraphs
+    );
+    switch (publishedGraphId) {
+      case (?pid) {
+        Debug.print("Preview: Extension detected - publishedGraphId = " # pid);
+      };
+      case (null) {
+        Debug.print("Preview: No extension detected (first publish)");
+      };
+    };
+
+    // Build name -> NodeId from existingMappings
+    let nameToId = Map.empty<Text, NodeId>();
+    for ((name, id) in existingMappings.values()) {
+      nameToId.add(name, id);
+    };
+
+    // Track simple name -> full path for scope-aware edge resolution
+    let simpleToFullPath = Map.empty<Text, Text>();
+
+    // Build node input lookup for hierarchy checks
+    let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
+    for (node in input.nodes.values()) {
+      let mapKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+      nodeInputMap.add(mapKey, node);
+      nodeInputMap.add(node.name, node);
+    };
+
+    // Separate nodes by type
+    let curationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" });
+    let swarmNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "swarm" });
+    let locationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "location" });
+    let lawEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "lawEntity" });
+    let interpEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "interpEntity" });
+
+    // ── Process curations ────────────────────────────────────────────────────
+    for (node in curationNodes.values()) {
+      let fullPath = buildFullPath(null, node.name);
+      var foundId : ?NodeId = null;
+      var foundCuration : ?Curation = null;
+      for ((id, curation) in curationMap.entries()) {
+        if (curation.name == node.name) {
+          foundId := ?id;
+          foundCuration := ?curation;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          let changes = switch (foundCuration) {
+            case (?c) { computeAttributeChanges(c.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          switch (publishedGraphId) {
+            case (?pid) {
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (curation) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let existingSrcs = switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
+                let hasChanges = hasActualChanges(
+                  switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } },
+                  node.attributes
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "curation";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = null;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                    sourceChanges = srcChanges;
+                  });
+                  nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
+                };
+                // If no changes: skip entirely (no op, no count)
+              } else {
+                // Belongs to a different published graph → treat as create (fork)
+                nodeOps.add({
+                  nodeType = "curation";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = null;
+                  action = #create;
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
+                });
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
+              };
+            };
+            case (null) {
+              // No published graph match → first publish, treat as create
+              nodeOps.add({
+                nodeType = "curation";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = null;
+                action = #create;
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
+              });
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
+            };
+          };
+        };
+        case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, placeholderId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeOps.add({
+            nodeType = "curation";
+            localName = node.name;
+            backendId = null;
+            parentName = null;
+            action = #create;
+             attributes = node.attributes;
+             sourceChanges = node.sources;
+          });
+          nodesToCreate += 1;
+          curationsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
+        };
+      };
+    };
+
+    // ── Process swarms ───────────────────────────────────────────────────────
+    for (node in swarmNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentId = switch (nameToId.get(parentFullPath)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundSwarm : ?Swarm = null;
+      for ((id, swarm) in swarmMap.entries()) {
+        if (swarm.name == node.name and swarm.parentCurationId == parentId) {
+          foundId := ?id;
+          foundSwarm := ?swarm;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let changes = switch (foundSwarm) {
+            case (?s) { computeAttributeChanges(s.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          switch (publishedGraphId) {
+            case (?pid) {
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (swarm) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let existingSrcs = switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
+                let hasChanges = hasActualChanges(
+                  switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } },
+                  node.attributes
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "swarm";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                    sourceChanges = srcChanges;
+                  });
+                  nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
+                };
+              } else {
+                nodeOps.add({
+                  nodeType = "swarm";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
+                });
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "swarm";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #create;
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
+              });
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
+            };
+          };
+        };
+        case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, placeholderId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          nodeOps.add({
+            nodeType = "swarm";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+             attributes = node.attributes;
+             sourceChanges = node.sources;
+          });
+          nodesToCreate += 1;
+          swarmsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
+        };
+      };
+    };
+
+    // ── Process locations ────────────────────────────────────────────────────
+    for (node in locationNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentId = switch (nameToId.get(parentFullPath)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundLocation : ?Location = null;
+      for ((id, location) in locationMap.entries()) {
+        if (location.title == node.name and location.parentSwarmId == parentId) {
+          foundId := ?id;
+          foundLocation := ?location;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let changes = switch (foundLocation) {
+            case (?l) { computeAttributeChanges(l.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          switch (publishedGraphId) {
+            case (?pid) {
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (location) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let existingSrcs = switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
+                let hasChanges = hasActualChanges(
+                  switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } },
+                  node.attributes
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "location";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                    sourceChanges = srcChanges;
+                  });
+                  nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
+                };
+              } else {
+                nodeOps.add({
+                  nodeType = "location";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
+                });
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "location";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #create;
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
+              });
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
+            };
+          };
+        };
+        case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, placeholderId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          nodeOps.add({
+            nodeType = "location";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+             attributes = node.attributes;
+             sourceChanges = node.sources;
+          });
+          nodesToCreate += 1;
+          locationsToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
+        };
+      };
+    };
+
+    // ── Process law entities ─────────────────────────────────────────────────
+    for (node in lawEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentId = switch (nameToId.get(parentFullPath)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundLawToken : ?LawToken = null;
+      for ((id, lt) in lawTokenMap.entries()) {
+        if (lt.tokenLabel == node.name and lt.parentLocationId == parentId) {
+          foundId := ?id;
+          foundLawToken := ?lt;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let changes = switch (foundLawToken) {
+            case (?lt) { computeAttributeChanges(lt.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          switch (publishedGraphId) {
+            case (?pid) {
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (lawEntity) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let existingSrcs = switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
+                let hasChanges = hasActualChanges(
+                  switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } },
+                  node.attributes
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "lawEntity";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                    sourceChanges = srcChanges;
+                  });
+                  nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
+                };
+              } else {
+                nodeOps.add({
+                  nodeType = "lawEntity";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
+                });
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "lawEntity";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #create;
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
+              });
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
+            };
+          };
+        };
+        case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, placeholderId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          nodeOps.add({
+            nodeType = "lawEntity";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+             attributes = node.attributes;
+             sourceChanges = node.sources;
+          });
+          nodesToCreate += 1;
+          lawEntitiesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
+        };
+      };
+    };
+
+    // ── Process interpretation entities ──────────────────────────────────────
+    for (node in interpEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) { "" };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (simpleToFullPath.get(parentName)) {
+        case (?fp) { fp };
+        case (null) { parentName };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentId = switch (nameToId.get(parentFullPath)) {
+        case (null) { "" };
+        case (?pid) { pid };
+      };
+      var foundId : ?NodeId = null;
+      var foundIt : ?InterpretationToken = null;
+      for ((id, it) in interpretationTokenMap.entries()) {
+        if (it.title == node.name and it.parentLawTokenId == parentId) {
+          foundId := ?id;
+          foundIt := ?it;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let changes = switch (foundIt) {
+            case (?it) { computeAttributeChanges(it.customAttributes, node.attributes) };
+            case (null) { [] };
+          };
+          switch (publishedGraphId) {
+            case (?pid) {
+              let belongs = belongsToPublishedGraph(existingId, pid);
+              Debug.print("Preview: Node " # node.name # " (interpEntity) belongsToPublishedGraph = " # belongs.toText());
+              if (belongs) {
+                let existingSrcs = switch (foundIt) { case (?it) { it.sources }; case (null) { [] } };
+                let hasSrcChanges = hasSourceChanges(existingSrcs, node.sources);
+                let hasChanges = hasActualChanges(
+                  switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } },
+                  node.attributes
+                ) or hasSrcChanges;
+                let srcChanges = if (hasSrcChanges) { computeNewSources(existingSrcs, node.sources) } else { [] };
+                Debug.print("Preview: Node " # node.name # " hasActualChanges = " # hasChanges.toText());
+                if (hasChanges) {
+                  nodeOps.add({
+                    nodeType = "interpEntity";
+                    localName = node.name;
+                    backendId = ?existingId;
+                    parentName = node.parentName;
+                    action = #update(changes);
+                    attributes = node.attributes;
+                    sourceChanges = srcChanges;
+                  });
+                  nodesToUpdate += 1;
+                  attributesAdded += countNewAttributes(switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } }, node.attributes);
+                  sourcesAdded += countNewSources(existingSrcs, node.sources);
+                };
+              } else {
+                nodeOps.add({
+                  nodeType = "interpEntity";
+                  localName = node.name;
+                  backendId = null;
+                  parentName = node.parentName;
+                  action = #create;
+                   attributes = node.attributes;
+                   sourceChanges = node.sources;
+                });
+                nodesToCreate += 1;
+                attributesAdded += countRawAttributes(node.attributes);
+                sourcesAdded += node.sources.size();
+              };
+            };
+            case (null) {
+              nodeOps.add({
+                nodeType = "interpEntity";
+                localName = node.name;
+                backendId = ?existingId;
+                parentName = node.parentName;
+                action = #create;
+                 attributes = node.attributes;
+                 sourceChanges = node.sources;
+              });
+              nodesToCreate += 1;
+              attributesAdded += countRawAttributes(node.attributes);
+              sourcesAdded += node.sources.size();
+            };
+          };
+        };
+        case (null) {
+          let placeholderId = "preview-" # node.name;
+          nameToId.add(node.name, placeholderId);
+          nameToId.add(fullPath, placeholderId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, placeholderId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          nodeOps.add({
+            nodeType = "interpEntity";
+            localName = node.name;
+            backendId = null;
+            parentName = node.parentName;
+            action = #create;
+             attributes = node.attributes;
+             sourceChanges = node.sources;
+          });
+          nodesToCreate += 1;
+          interpEntitiesToCreate += 1;
+          attributesAdded += countRawAttributes(node.attributes);
+          sourcesAdded += node.sources.size();
+        };
+      };
+    };
+
+    // ── Process edges with scope-aware target resolution ─────────────────────
+    for (edge in input.edges.values()) {
+      let sourceId = switch (nameToId.get(edge.sourceName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      let sourceFullPath = switch (simpleToFullPath.get(edge.sourceName)) {
+        case (?fp) { fp };
+        case (null) { edge.sourceName };
+      };
+      let targetId = switch (resolveEdgeTarget(edge.targetName, sourceFullPath, nameToId)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      if (sourceId != "" and targetId != "") {
+        let isHierarchyEdge = switch (nodeInputMap.get(edge.targetName)) {
+          case (null) { false };
+          case (?targetNode) {
+            switch (targetNode.parentName) {
+              case (null) { false };
+              case (?pn) {
+                let parentFullPath = switch (simpleToFullPath.get(pn)) {
+                  case (?fp) { fp };
+                  case (null) { pn };
+                };
+                parentFullPath == edge.sourceName
+              };
+            };
+          };
+        };
+        if (not isHierarchyEdge) {
+          var existingEdge : ?SourceGraphEdge = null;
+          switch (sourceEdges.get(sourceId)) {
+            case (null) {};
+            case (?edgeList) {
+              existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
+            };
+          };
+          switch (existingEdge) {
+            case (?_existing) {
+              switch (publishedGraphId) {
+                case (?pid) {
+                  let srcBelongs = belongsToPublishedGraph(sourceId, pid);
+                  let tgtBelongs = belongsToPublishedGraph(targetId, pid);
+                  let bothBelong = srcBelongs and tgtBelongs;
+                  Debug.print("Preview: Edge " # edge.sourceName # " -> " # edge.targetName # " belongsToPublishedGraph = " # bothBelong.toText());
+                  if (srcBelongs and tgtBelongs) {
+                    // Edge already exists in the published graph with same source+target
+                    // and edges have no meaningful labels — nothing to update, skip
+                  } else {
+                    edgeOps.add({
+                      sourceName = edge.sourceName;
+                      targetName = edge.targetName;
+                      sourceId = ?sourceId;
+                      targetId = ?targetId;
+                      action = #create;
+                      labels = [edge.edgeLabel];
+                      bidirectional = edge.bidirectional;
+                    });
+                    edgesToCreate += 1;
+                  };
+                };
+                case (null) {
+                  // No published graph → first publish, treat as create
+                  edgeOps.add({
+                    sourceName = edge.sourceName;
+                    targetName = edge.targetName;
+                    sourceId = ?sourceId;
+                    targetId = ?targetId;
+                    action = #create;
+                    labels = [edge.edgeLabel];
+                    bidirectional = edge.bidirectional;
+                  });
+                  edgesToCreate += 1;
+                };
+              };
+            };
+            case (null) {
+              edgeOps.add({
+                sourceName = edge.sourceName;
+                targetName = edge.targetName;
+                sourceId = ?sourceId;
+                targetId = ?targetId;
+                action = #create;
+                labels = [edge.edgeLabel];
+                bidirectional = edge.bidirectional;
+              });
+              edgesToCreate += 1;
+            };
+          };
+        };
+      };
+    };
+
+    // ── Compute hierarchy edges ──────────────────────────────────────────────
+    hierarchyEdgesToCreate := nodesToCreate - curationsToCreate;
+
+    // ── Early exit check ─────────────────────────────────────────────────────
+    if (nodesToCreate == 0 and nodesToUpdate == 0 and edgesToCreate == 0 and edgesToUpdate == 0) {
+      Debug.print("Preview: Nothing to update - all counts are zero");
+    };
+
+    // ── Final debug log ──────────────────────────────────────────────────────
+    Debug.print("Preview: Final counts - nodesToCreate: " # nodesToCreate.toText() # ", nodesToUpdate: " # nodesToUpdate.toText() # ", edgesToCreate: " # edgesToCreate.toText() # ", edgesToUpdate: " # edgesToUpdate.toText());
+
+    // ── Compute Buzz cost ────────────────────────────────────────────────────
+    let buzzCost : Int = curationsToCreate * 10
+      + swarmsToCreate * 20
+      + locationsToCreate * 30
+      + lawEntitiesToCreate * 40
+      + interpEntitiesToCreate * 50
+      + attributesAdded * 1
+      + edgesToCreate * 1
+      + sourcesAdded * 1;
+
+    {
+      nodeOperations = nodeOps.toArray();
+      edgeOperations = edgeOps.toArray();
+      summary = {
+        nodesToCreate;
+        nodesToUpdate;
+        edgesToCreate;
+        edgesToUpdate;
+        hierarchyEdgesToCreate;
+        attributesAdded;
+        sourcesAdded;
+      };
+      buzzCost;
+    };
+  };
+
+  // ─── previewPublishSourceGraph: Read-only preview ────────────────────────────
+
+  public shared ({ caller }) func previewPublishSourceGraph(
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : async PublishPreviewResult {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can preview publish");
+    };
+    previewLogic(caller, input, existingMappings);
+  };
+
+  // ─── commitPublishSourceGraph: Atomic commit with rollback ───────────────────
+
+  public shared ({ caller }) func commitPublishSourceGraph(
+    input : PublishSourceGraphInput,
+    existingMappings : [(Text, NodeId)]
+  ) : async PublishCommitResult {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      return #error({ message = "Not authorized"; failedAt = null });
+    };
+    if (input.nodes.size() == 0) {
+      return #error({ message = "Empty graph"; failedAt = null });
+    };
+
+    // Validate node types
+    for (node in input.nodes.values()) {
+      if (node.nodeType != "curation" and node.nodeType != "swarm" and
+          node.nodeType != "location" and node.nodeType != "lawEntity" and
+          node.nodeType != "interpEntity") {
+        return #error({ message = "Invalid node type: " # node.nodeType; failedAt = null });
+      };
+    };
+
+    // Staging buffers
+    let stagingCurations = Map.empty<NodeId, Curation>();
+    let stagingSwarms = Map.empty<NodeId, Swarm>();
+    let stagingLocations = Map.empty<NodeId, Location>();
+    let stagingLawTokens = Map.empty<NodeId, LawToken>();
+    let stagingInterpTokens = Map.empty<NodeId, InterpretationToken>();
+    let stagingEdges = Map.empty<NodeId, List.List<SourceGraphEdge>>();
+
+    // Track node mappings for result
+    let nodeMappings = List.empty<(Text, NodeId)>();
+
+    // Build name -> NodeId from existingMappings + build as we go
+    let nameToId = Map.empty<Text, NodeId>();
+    for ((name, id) in existingMappings.values()) {
+      nameToId.add(name, id);
+    };
+
+    // Track simple name -> full path for scope-aware edge resolution
+    let simpleToFullPath = Map.empty<Text, Text>();
+
+    // ── Early extension detection (before node processing) ──────────────────────
+    var earlyPublishedId : ?Text = null;
+    label extDetect for (node in input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" }).values()) {
+      for ((cid, existingCuration) in curationMap.entries()) {
+        if (existingCuration.name == node.name) {
+          switch (curationToPublishedGraphId.get(cid)) {
+            case (?pid) {
+              earlyPublishedId := ?pid;
+              break extDetect;
+            };
+            case (null) {};
+          };
+        };
+      };
+    };
+
+    // Tracking counters for accurate delta counting
+    var nodesToCreate : Nat = 0;
+    var nodesToUpdate : Nat = 0;
+    var edgesToCreate : Nat = 0;
+    var edgesToUpdate : Nat = 0;
+    var attributesAdded : Nat = 0;
+    var sourcesAdded : Nat = 0;
+    var hierarchyEdgesCreated : Nat = 0;
+    var curationsToCreate : Nat = 0;
+    var swarmsToCreate : Nat = 0;
+    var locationsToCreate : Nat = 0;
+    var lawEntitiesToCreate : Nat = 0;
+      var interpEntitiesToCreate : Nat = 0;
+      let tempContribs = Map.empty<NodeId, NodeContribution>();
+      func recordContrib(nodeId : NodeId, buzzCost : Int) {
+    tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
+      };
+
+
+    // Build node input lookup
+    let nodeInputMap = Map.empty<Text, SourceGraphNodeInput>();
+    for (node in input.nodes.values()) {
+      let mapKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+      nodeInputMap.add(mapKey, node);
+      nodeInputMap.add(node.name, node);
+    };
+
+    let curationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" });
+    let swarmNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "swarm" });
+    let locationNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "location" });
+    let lawEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "lawEntity" });
+    let interpEntityNodes = input.nodes.filter(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "interpEntity" });
+
+    // Process curations
+    for (node in curationNodes.values()) {
+      let fullPath = buildFullPath(null, node.name);
+      var foundId : ?NodeId = null;
+      var foundCuration : ?Curation = null;
+      for ((id, curation) in curationMap.entries()) {
+        if (curation.name == node.name) {
+          foundId := ?id;
+          foundCuration := ?curation;
+        };
+      };
+      switch (foundId) {
+        case (?existingId) {
+          // Update existing: merge attributes
+          let curationExistingAttrs = switch (foundCuration) { case (?c) { c.customAttributes }; case (null) { [] } };
+          let mergedAttrs = switch (foundCuration) {
+            case (?c) { mergeWeightedAttributes(c.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let curationExistingSources = switch (foundCuration) { case (?c) { c.sources }; case (null) { [] } };
+          let updatedCuration = switch (foundCuration) {
+            case (?c) { { c with customAttributes = mergedAttrs; sources = mergeSources(c.sources, node.sources) } };
+            case (null) {
+              return #error({ message = "Curation disappeared during staging"; failedAt = ?{ nodeType = "curation"; name = node.name } });
+            };
+          };
+          stagingCurations.add(existingId, updatedCuration);
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                let newCurationAttrs = countNewAttributes(curationExistingAttrs, node.attributes);
+                let newCurationSrcs = countNewSources(curationExistingSources, node.sources);
+                let curationExtCost = newCurationAttrs * 1 + newCurationSrcs * 1;
+                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost) };
+                attributesAdded += newCurationAttrs;
+                sourcesAdded += newCurationSrcs;
+              } else {
+                nodesToCreate += 1;
+                let curationAttrCount = countRawAttributes(node.attributes);
+                let curationSrcCount = node.sources.size();
+                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1);
+                attributesAdded += curationAttrCount;
+                sourcesAdded += curationSrcCount;
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              let curationAttrCount2 = countRawAttributes(node.attributes);
+              let curationSrcCount2 = node.sources.size();
+              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1);
+              attributesAdded += curationAttrCount2;
+              sourcesAdded += curationSrcCount2;
+            };
+          };
+        };
+        case (null) {
+          // Create new
+          let newId = generateId("curation", node.name, caller);
+          let newCuration : Curation = {
+            id = newId;
+            name = node.name;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingCurations.add(newId, newCuration);
+          nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          curationsToCreate += 1;
+          let newCurationAttrCount = countRawAttributes(node.attributes);
+          let newCurationSrcCount = node.sources.size();
+          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1);
+          attributesAdded += newCurationAttrCount;
+          sourcesAdded += newCurationSrcCount;
+        };
+      };
+    };
+
+    // Process swarms
+    for (node in swarmNodes.values()) {
+       let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentCurationId = switch (nameToId.get(parentFullPath)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for swarm: " # node.name; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      // Look in both real map and staging
+      var foundId : ?NodeId = null;
+      var foundSwarm : ?Swarm = null;
+      for ((id, swarm) in swarmMap.entries()) {
+        if (swarm.name == node.name and swarm.parentCurationId == parentCurationId) {
+          foundId := ?id;
+          foundSwarm := ?swarm;
+        };
+      };
+      if (foundId == null) {
+        for ((id, swarm) in stagingSwarms.entries()) {
+          if (swarm.name == node.name and swarm.parentCurationId == parentCurationId) {
+            foundId := ?id;
+            foundSwarm := ?swarm;
+          };
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundSwarm) {
+            case (?s) { mergeWeightedAttributes(s.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedSwarm = switch (foundSwarm) {
+            case (?s) { { s with customAttributes = mergedAttrs; sources = mergeSources(s.sources, node.sources) } };
+            case (null) {
+              return #error({ message = "Swarm disappeared during staging"; failedAt = ?{ nodeType = "swarm"; name = node.name } });
+            };
+          };
+          stagingSwarms.add(existingId, updatedSwarm);
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
+          let swarmExistingAttrs = switch (foundSwarm) { case (?s) { s.customAttributes }; case (null) { [] } };
+          let swarmExistingSources = switch (foundSwarm) { case (?s) { s.sources }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                let newSwarmAttrs = countNewAttributes(swarmExistingAttrs, node.attributes);
+                let newSwarmSrcs = countNewSources(swarmExistingSources, node.sources);
+                let swarmExtCost = newSwarmAttrs * 1 + newSwarmSrcs * 1;
+                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost) };
+                attributesAdded += newSwarmAttrs;
+                sourcesAdded += newSwarmSrcs;
+              } else {
+                nodesToCreate += 1;
+                let swarmAttrCount = countRawAttributes(node.attributes);
+                let swarmSrcCount = node.sources.size();
+                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1);
+                attributesAdded += swarmAttrCount;
+                sourcesAdded += swarmSrcCount;
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              let swarmAttrCount2 = countRawAttributes(node.attributes);
+              let swarmSrcCount2 = node.sources.size();
+              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1);
+              attributesAdded += swarmAttrCount2;
+              sourcesAdded += swarmSrcCount2;
+            };
+          };
+        };
+        case (null) {
+          let newId = fullPath;
+          let newSwarm : Swarm = {
+
+            id = newId;
+            name = node.name;
+            tags = node.tags;
+            parentCurationId;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = Time.now(); };
+            forkSource = null;
+            forkPrincipal = null;
+          };
+          stagingSwarms.add(newId, newSwarm);
+          nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          swarmsToCreate += 1;
+          let newSwarmAttrCount = countRawAttributes(node.attributes);
+          let newSwarmSrcCount = node.sources.size();
+          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1);
+          attributesAdded += newSwarmAttrCount;
+          sourcesAdded += newSwarmSrcCount;
+        };
+      };
+    };
+
+    // Process locations
+    for (node in locationNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentSwarmId = switch (nameToId.get(parentFullPath)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for location: " # node.name; failedAt = ?{ nodeType = "location"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      var foundId : ?NodeId = null;
+      var foundLocation : ?Location = null;
+      for ((id, location) in locationMap.entries()) {
+        if (location.title == node.name and location.parentSwarmId == parentSwarmId) {
+          foundId := ?id;
+          foundLocation := ?location;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundLocation) {
+            case (?l) { mergeWeightedAttributes(l.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedLocation = switch (foundLocation) {
+            case (?l) { { l with customAttributes = mergedAttrs; sources = mergeSources(l.sources, node.sources) } };
+            case (null) {
+              return #error({ message = "Location disappeared during staging"; failedAt = ?{ nodeType = "location"; name = node.name } });
+            };
+          };
+          stagingLocations.add(existingId, updatedLocation);
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
+          let locExistingAttrs = switch (foundLocation) { case (?l) { l.customAttributes }; case (null) { [] } };
+          let locExistingSources = switch (foundLocation) { case (?l) { l.sources }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                let newLocAttrs = countNewAttributes(locExistingAttrs, node.attributes);
+                let newLocSrcs = countNewSources(locExistingSources, node.sources);
+                let locExtCost = newLocAttrs * 1 + newLocSrcs * 1;
+                if (locExtCost > 0) { recordContrib(existingId, locExtCost) };
+                attributesAdded += newLocAttrs;
+                sourcesAdded += newLocSrcs;
+              } else {
+                nodesToCreate += 1;
+                let locAttrCount = countRawAttributes(node.attributes);
+                let locSrcCount = node.sources.size();
+                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1);
+                attributesAdded += locAttrCount;
+                sourcesAdded += locSrcCount;
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              let locAttrCount2 = countRawAttributes(node.attributes);
+              let locSrcCount2 = node.sources.size();
+              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1);
+              attributesAdded += locAttrCount2;
+              sourcesAdded += locSrcCount2;
+            };
+          };
+        };
+        case (null) {
+          let newId = fullPath;
+          let newLocation : Location = {
+            id = newId;
+            title = node.name;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            parentSwarmId;
+            creator = caller;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingLocations.add(newId, newLocation);
+          nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          locationsToCreate += 1;
+          let newLocAttrCount = countRawAttributes(node.attributes);
+          let newLocSrcCount = node.sources.size();
+          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1);
+          attributesAdded += newLocAttrCount;
+          sourcesAdded += newLocSrcCount;
+        };
+      };
+    };
+
+    // Process law entities
+    for (node in lawEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentLocationId = switch (nameToId.get(parentFullPath)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for lawEntity: " # node.name; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+
+      var foundId : ?NodeId = null;
+      var foundLawToken : ?LawToken = null;
+      for ((id, lt) in lawTokenMap.entries()) {
+        if (lt.tokenLabel == node.name and lt.parentLocationId == parentLocationId) {
+          foundId := ?id;
+          foundLawToken := ?lt;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundLawToken) {
+            case (?lt) { mergeWeightedAttributes(lt.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let updatedLt = switch (foundLawToken) {
+            case (?lt) { { lt with customAttributes = mergedAttrs; sources = mergeSources(lt.sources, node.sources) } };
+            case (null) {
+              return #error({ message = "LawToken disappeared during staging"; failedAt = ?{ nodeType = "lawEntity"; name = node.name } });
+            };
+          };
+          stagingLawTokens.add(existingId, updatedLt);
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
+          let ltExistingAttrs = switch (foundLawToken) { case (?lt) { lt.customAttributes }; case (null) { [] } };
+          let ltExistingSources = switch (foundLawToken) { case (?lt) { lt.sources }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                let newLtAttrs = countNewAttributes(ltExistingAttrs, node.attributes);
+                let newLtSrcs = countNewSources(ltExistingSources, node.sources);
+                let ltExtCost = newLtAttrs * 1 + newLtSrcs * 1;
+                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost) };
+                attributesAdded += newLtAttrs;
+                sourcesAdded += newLtSrcs;
+              } else {
+                nodesToCreate += 1;
+                let ltAttrCount = countRawAttributes(node.attributes);
+                let ltSrcCount = node.sources.size();
+                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1);
+                attributesAdded += ltAttrCount;
+                sourcesAdded += ltSrcCount;
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              let ltAttrCount2 = countRawAttributes(node.attributes);
+              let ltSrcCount2 = node.sources.size();
+              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1);
+              attributesAdded += ltAttrCount2;
+              sourcesAdded += ltSrcCount2;
+            };
+          };
+        };
+        case (null) {
+          let newId = fullPath;
+          let newLawToken : LawToken = {
+            id = newId;
+            tokenLabel = node.name;
+            parentLocationId;
+            creator = caller;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingLawTokens.add(newId, newLawToken);
+          nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          lawEntitiesToCreate += 1;
+          let newLtAttrCount = countRawAttributes(node.attributes);
+          let newLtSrcCount = node.sources.size();
+          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1);
+          attributesAdded += newLtAttrCount;
+          sourcesAdded += newLtSrcCount;
+        };
+      };
+    };
+
+    // Process interpretation entities
+    for (node in interpEntityNodes.values()) {
+      let parentName = switch (node.parentName) {
+        case (null) {
+          return #error({ message = "Missing parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+        };
+        case (?pn) { pn };
+      };
+      let parentFullPath = switch (parentPathFromId(node.id)) {
+        case (?pp) { pp };
+        case (null) {
+          switch (simpleToFullPath.get(parentName)) {
+            case (?fp) { fp };
+            case (null) { parentName };
+          };
+        };
+      };
+      let fullPath = buildFullPath(?parentFullPath, node.name);
+      let parentLawTokenId = switch (nameToId.get(parentFullPath)) {
+        case (null) {
+          return #error({ message = "Cannot resolve parent for interpEntity: " # node.name; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+        };
+        case (?pid) { pid };
+      };
+      let newContent = switch (node.content) { case (?c) { c }; case (null) { "" } };
+
+      var foundId : ?NodeId = null;
+      var foundIt : ?InterpretationToken = null;
+      for ((id, it) in interpretationTokenMap.entries()) {
+        if (it.title == node.name and it.parentLawTokenId == parentLawTokenId) {
+          foundId := ?id;
+          foundIt := ?it;
+        };
+      };
+
+      switch (foundId) {
+        case (?existingId) {
+          let mergedAttrs = switch (foundIt) {
+            case (?it) { mergeWeightedAttributes(it.customAttributes, node.attributes) };
+            case (null) { attributesToWeighted(node.attributes) };
+          };
+          let newVersions = switch (foundIt) {
+            case (?it) { appendContentVersion(it.contentVersions, newContent, caller) };
+            case (null) { [{ content = newContent; contributor = caller; timestamp = Time.now() }] };
+          };
+          let updatedIt = switch (foundIt) {
+            case (?it) { { it with customAttributes = mergedAttrs; contentVersions = newVersions; sources = mergeSources(it.sources, node.sources) } };
+            case (null) {
+              return #error({ message = "InterpToken disappeared during staging"; failedAt = ?{ nodeType = "interpEntity"; name = node.name } });
+            };
+          };
+          stagingInterpTokens.add(existingId, updatedIt);
+          nameToId.add(node.name, existingId);
+          nameToId.add(fullPath, existingId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, existingId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, existingId));
+          let itExistingAttrs = switch (foundIt) { case (?it) { it.customAttributes }; case (null) { [] } };
+          let itExistingSources = switch (foundIt) { case (?it) { it.sources }; case (null) { [] } };
+          switch (earlyPublishedId) {
+            case (?pid) {
+              if (belongsToPublishedGraph(existingId, pid)) {
+                nodesToUpdate += 1;
+                let newItAttrs = countNewAttributes(itExistingAttrs, node.attributes);
+                let newItSrcs = countNewSources(itExistingSources, node.sources);
+                let itExtCost = newItAttrs * 1 + newItSrcs * 1;
+                if (itExtCost > 0) { recordContrib(existingId, itExtCost) };
+                attributesAdded += newItAttrs;
+                sourcesAdded += newItSrcs;
+              } else {
+                nodesToCreate += 1;
+                let itAttrCount = countRawAttributes(node.attributes);
+                let itSrcCount = node.sources.size();
+                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1);
+                attributesAdded += itAttrCount;
+                sourcesAdded += itSrcCount;
+              };
+            };
+            case (null) {
+              nodesToCreate += 1;
+              let itAttrCount2 = countRawAttributes(node.attributes);
+              let itSrcCount2 = node.sources.size();
+              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1);
+              attributesAdded += itAttrCount2;
+              sourcesAdded += itSrcCount2;
+            };
+          };
+        };
+        case (null) {
+          let newId = fullPath;
+          let newIt : InterpretationToken = {
+            id = newId;
+            title = node.name;
+            contentVersions = [{ content = newContent; contributor = caller; timestamp = Time.now() }];
+            parentLawTokenId;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            creator = caller;
+            timestamps = { createdAt = Time.now(); };
+          };
+          stagingInterpTokens.add(newId, newIt);
+          nameToId.add(node.name, newId);
+          nameToId.add(fullPath, newId);
+          simpleToFullPath.add(node.name, fullPath);
+          switch (node.id) {
+            case (?id) {
+              nameToId.add(id, newId);
+              simpleToFullPath.add(id, fullPath);
+            };
+            case (null) {};
+          };
+          nodeInputMap.add(fullPath, node);
+          let mappingKey = switch (node.id) { case (?id) { id }; case (null) { node.name } };
+          nodeMappings.add((mappingKey, newId));
+          nodesToCreate += 1;
+          interpEntitiesToCreate += 1;
+          let newItAttrCount = countRawAttributes(node.attributes);
+          let newItSrcCount = node.sources.size();
+          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1);
+          attributesAdded += newItAttrCount;
+          sourcesAdded += newItSrcCount;
+        };
+      };
+    };
+
+    // Process source graph edges with scope-aware target resolution
+    let tempEdgeCosts = Map.empty<NodeId, Int>();
+    for (edge in input.edges.values()) {
+      let sourceId = switch (nameToId.get(edge.sourceName)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      // Scope-aware target resolution
+      let sourceFullPath = switch (simpleToFullPath.get(edge.sourceName)) {
+        case (?fp) { fp };
+        case (null) { edge.sourceName };
+      };
+      let targetId = switch (resolveEdgeTarget(edge.targetName, sourceFullPath, nameToId)) {
+        case (null) { "" };
+        case (?id) { id };
+      };
+      if (sourceId != "" and targetId != "") {
+        let isHierarchyEdge = switch (nodeInputMap.get(edge.targetName)) {
+          case (null) { false };
+          case (?targetNode) {
+            switch (targetNode.parentName) {
+              case (null) { false };
+              case (?pn) {
+                let parentFullPath = switch (parentPathFromId(targetNode.id)) {
+                  case (?pp) { pp };
+                  case (null) { pn };
+                };
+                parentFullPath == edge.sourceName
+              };
+            };
+          };
+        };
+        if (not isHierarchyEdge) {
+          let directionality : Directionality = if (edge.bidirectional) { #bidirectional } else { #unidirectional };
+          // Check if edge already exists
+          var existingEdge : ?SourceGraphEdge = null;
+          switch (sourceEdges.get(sourceId)) {
+            case (null) {};
+            case (?edgeList) {
+              existingEdge := edgeList.find(func(e : SourceGraphEdge) : Bool { e.target == targetId });
+            };
+          };
+          switch (existingEdge) {
+            case (?existing) {
+              // Merge labels
+              let mergedLabels = mergeEdgeLabels(existing.weightedLabels, [edge.edgeLabel]);
+              let updatedEdge : SourceGraphEdge = { existing with weightedLabels = mergedLabels };
+              // Remove old, add updated to staging
+              let edgeList = switch (stagingEdges.get(sourceId)) {
+                case (null) {
+                  // Copy from real map
+                  switch (sourceEdges.get(sourceId)) {
+                    case (null) { List.empty<SourceGraphEdge>() };
+                    case (?l) { l.clone() };
+                  };
+                };
+                case (?l) { l };
+              };
+              // Update the matching edge in place
+              edgeList.mapInPlace(func(e : SourceGraphEdge) : SourceGraphEdge {
+                if (e.target == targetId) { updatedEdge } else { e }
+              });
+              stagingEdges.add(sourceId, edgeList);
+              // Track: existing edge belonging to published graph = update, else create
+              switch (earlyPublishedId) {
+                case (?pid) {
+                  if (belongsToPublishedGraph(sourceId, pid) and belongsToPublishedGraph(targetId, pid)) {
+                    edgesToUpdate += 1;
+                  } else {
+                    edgesToCreate += 1;
+                    let existingEdgeCost0 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+                    tempEdgeCosts.add(sourceId, existingEdgeCost0 + 1);
+                  };
+                };
+                case (null) {
+                  edgesToCreate += 1;
+                  let existingEdgeCost1 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+                  tempEdgeCosts.add(sourceId, existingEdgeCost1 + 1);
+                };
+              };
+            };
+            case (null) {
+              // New edge
+              let newEdge : SourceGraphEdge = {
+                source = sourceId;
+                target = targetId;
+                weightedLabels = [{ value = edge.edgeLabel; weight = 1 }];
+                directionality;
+              };
+              let edgeList = switch (stagingEdges.get(sourceId)) {
+                case (null) {
+                  switch (sourceEdges.get(sourceId)) {
+                    case (null) { List.empty<SourceGraphEdge>() };
+                    case (?l) { l.clone() };
+                  };
+                };
+                case (?l) { l };
+              };
+              edgeList.add(newEdge);
+              stagingEdges.add(sourceId, edgeList);
+              edgesToCreate += 1;
+              let existingEdgeCost2 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
+              tempEdgeCosts.add(sourceId, existingEdgeCost2 + 1);
+            };
+          };
+        };
+      };
+    };
+
+    // Merge edge costs into tempContribs
+    for ((edgeNodeId, edgeCost) in tempEdgeCosts.entries()) {
+      switch (tempContribs.get(edgeNodeId)) {
+        case (null) {
+          tempContribs.add(edgeNodeId, { payers = List.singleton<(Principal, Int)>((caller, edgeCost)) });
+        };
+        case (?existing) {
+          existing.payers.add((caller, edgeCost));
+          tempContribs.add(edgeNodeId, { payers = existing.payers });
+        };
+      };
+    };
+
+    if (nodesToCreate == 0 and edgesToCreate == 0 and attributesAdded == 0) {
+      return #error({ message = "nothing to update"; failedAt = null });
+    };
+
+    // ── Compute hierarchy edges ───────────────────────────────────────────
+    hierarchyEdgesCreated := nodesToCreate - curationsToCreate;
+
+    // ── Compute and check Buzz cost ───────────────────────────────────────
+    let publishCost : Int = curationsToCreate * 10
+      + swarmsToCreate * 20
+      + locationsToCreate * 30
+      + lawEntitiesToCreate * 40
+      + interpEntitiesToCreate * 50
+      + attributesAdded * 1
+      + edgesToCreate * 1
+      + sourcesAdded * 1;
+    let callerBuzzBalance = switch (buzzScores.get(caller)) {
+      case (null) { 0 };
+      case (?b) { b };
+    };
+    if (callerBuzzBalance < publishCost) {
+      let deficit = publishCost - callerBuzzBalance;
+      return #error({
+        message = "Insufficient Buzz: need " # (publishCost / 10).toText() # "." # (Int.abs(publishCost % 10)).toText() # " Buzz, have " # (callerBuzzBalance / 10).toText() # "." # (Int.abs(callerBuzzBalance % 10)).toText() # " Buzz (need " # (deficit / 10).toText() # "." # (Int.abs(deficit % 10)).toText() # " more)";
+        failedAt = null;
+      });
+    };
+    updateBuzzScore(caller, -publishCost);
+
+    // ── Compute PublishedSourceGraphMeta before committing ──────────────────────
+    let buzzTx : BuzzTransaction = {
+      amount = publishCost;
+      timestamp = Time.now();
+      publishedGraphId = "";
+    };
+    let existingTxs = switch (buzzTransactions.get(caller)) {
+      case (null) { List.empty<BuzzTransaction>() };
+      case (?list) { list };
+    };
+    existingTxs.add(buzzTx);
+    buzzTransactions.add(caller, existingTxs);
+
+    // Find root curation name (first curation in input)
+    let rootCurationName = switch (input.nodes.find(func(n : SourceGraphNodeInput) : Bool { n.nodeType == "curation" })) {
+      case (?n) { n.name };
+      case (null) { "Unknown" };
+    };
+
+    let thePublishedId = switch (earlyPublishedId) {
+      case (?pid) {
+        // Extension: update existing metadata using accurate delta counts from tracking vars
+        switch (publishedSourceGraphs.get(pid)) {
+          case (?existingMeta) {
+            let extendedByName = switch (userProfiles.get(caller)) {
+              case (?profile) { profile.name };
+              case (null) { caller.toText() };
+            };
+            let newEntry : ExtensionEntry = {
+              extendedAt = Time.now();
+              extendedBy = caller;
+              extendedByName;
+              addedNodes = nodesToCreate;
+              addedEdges = edgesToCreate;
+              addedHierarchyEdges = hierarchyEdgesCreated;
+              addedAttributes = attributesAdded;
+              addedSources = ?sourcesAdded;
+            };
+            let updatedMeta : PublishedSourceGraphMeta = {
+              existingMeta with
+              nodeCount = existingMeta.nodeCount + nodesToCreate;
+              edgeCount = existingMeta.edgeCount + edgesToCreate + hierarchyEdgesCreated;
+              hierarchyEdgeCount = existingMeta.hierarchyEdgeCount + hierarchyEdgesCreated;
+              attributeCount = existingMeta.attributeCount + attributesAdded;
+              sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
+              extensionLog = existingMeta.extensionLog.concat([newEntry]);
+            };
+            publishedSourceGraphs.add(pid, updatedMeta);
+            let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
+              case (?m) { m };
+              case (null) { { cumulativeBuzzSpent = 0; extensionCount = 0 } };
+            };
+            publishedGraphBuzzMetrics.add(pid, {
+              cumulativeBuzzSpent = existingMetrics.cumulativeBuzzSpent + publishCost;
+              extensionCount = existingMetrics.extensionCount + 1;
+            });
+          };
+          case (null) {};
+        };
+        pid
+      };
+      case (null) {
+        // First publish: create new metadata
+        let newPid = generatePublishedSourceGraphId(caller);
+        let creatorName = switch (userProfiles.get(caller)) {
+          case (?profile) { profile.name };
+          case (null) { caller.toText() };
+        };
+        let newMeta : PublishedSourceGraphMeta = {
+          id = newPid;
+          name = rootCurationName;
+          creator = caller;
+          creatorName;
+          publishedAt = Time.now();
+          nodeCount = nodesToCreate;
+          edgeCount = edgesToCreate + hierarchyEdgesCreated;
+          hierarchyEdgeCount = hierarchyEdgesCreated;
+          attributeCount = attributesAdded;
+          sourcesCount = ?sourcesAdded;
+          extensionLog = [];
+          artworkDataUrl = null;
+          terrainParams = null;
+        };
+        publishedSourceGraphs.add(newPid, newMeta);
+        publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
+        newPid
+      };
+    };
+
+    // Tag all staging curations with the publishedSourceGraphId before commit
+    for ((id, _curation) in stagingCurations.entries()) {
+      curationToPublishedGraphId.add(id, thePublishedId);
+    };
+
+    // ── Auto-join chat channels based on published curations and swarms ───────
+    for ((_, curation) in stagingCurations.entries()) {
+      // Top-level channel keyed by curation name
+      ensureChatMember(curation.name, curation.name, false, null, caller);
+    };
+    for ((_, swarm) in stagingSwarms.entries()) {
+      // Find parent curation name for this swarm
+      let parentCurationName = switch (curationMap.get(swarm.parentCurationId)) {
+        case (?c) { c.name };
+        case (null) {
+          // May be in staging curations (first publish)
+          switch (stagingCurations.get(swarm.parentCurationId)) {
+            case (?c) { c.name };
+            case (null) { "" };
+          };
+        };
+      };
+      if (parentCurationName != "") {
+        let subChannelId = parentCurationName # "@" # swarm.name;
+        ensureChatMember(subChannelId, swarm.name, true, ?parentCurationName, caller);
+      };
+    };
+
+    // ── All staging succeeded — commit to real maps ──────────────────────────
+    for ((id, curation) in stagingCurations.entries()) {
+      curationMap.add(id, curation);
+    };
+    for ((id, swarm) in stagingSwarms.entries()) {
+      swarmMap.add(id, swarm);
+    };
+    for ((id, location) in stagingLocations.entries()) {
+      locationMap.add(id, location);
+    };
+    for ((id, lt) in stagingLawTokens.entries()) {
+      lawTokenMap.add(id, lt);
+    };
+    for ((id, it) in stagingInterpTokens.entries()) {
+      interpretationTokenMap.add(id, it);
+    };
+    for ((id, edgeList) in stagingEdges.entries()) {
+      sourceEdges.add(id, edgeList);
+    };
+
+
+    // Commit node contributions
+    if (tempContribs.size() > 0) {
+      let existingMap = switch (publishedNodeContributions.get(thePublishedId)) {
+        case (null) { Map.empty<NodeId, NodeContribution>() };
+        case (?m) { m };
+      };
+      for ((nodeId, contrib) in tempContribs.entries()) {
+        switch (existingMap.get(nodeId)) {
+          case (null) {
+            existingMap.add(nodeId, contrib);
+          };
+          case (?existing) {
+            for ((payer, cost) in contrib.payers.values()) {
+              existing.payers.add((payer, cost));
+            };
+            existingMap.add(nodeId, { payers = existing.payers });
+          };
+        };
+      };
+      publishedNodeContributions.add(thePublishedId, existingMap);
+    };
+
+    #success({
+      nodeMappings = nodeMappings.toArray();
+      message = "Published successfully";
+      publishedSourceGraphId = ?thePublishedId;
+      buzzCost = publishCost;
+    });
+  };
+
+  // ─── Graph Helper Functions ─────────────────────────────────────────────────
+
+  func createInterpretationTokenNodes(parentTokenId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (interpretationToken in interpretationTokenMap.values()) {
+      if (interpretationToken.parentLawTokenId == parentTokenId
+          and not archivedNodes.containsKey(interpretationToken.id)) {
+        let node : GraphNode = {
+          id = interpretationToken.id;
+          nodeType = "interpretationToken";
+          tokenLabel = interpretationToken.title;
+          jurisdiction = null;
+          parentId = ?parentTokenId;
+          children = [];
+          customAttributes = interpretationToken.customAttributes;
+          sources = interpretationToken.sources;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createLawTokenNodes(parentLocationId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (lawToken in lawTokenMap.values()) {
+      if (lawToken.parentLocationId == parentLocationId
+          and not archivedNodes.containsKey(lawToken.id)) {
+        let childNodes = createInterpretationTokenNodes(lawToken.id);
+        let node : GraphNode = {
+          id = lawToken.id;
+          nodeType = "lawToken";
+          tokenLabel = lawToken.tokenLabel;
+          jurisdiction = null;
+          parentId = ?parentLocationId;
+          children = childNodes;
+          customAttributes = lawToken.customAttributes;
+          sources = lawToken.sources;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createLocationNodes(parentSwarmId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (location in locationMap.values()) {
+      if (location.parentSwarmId == parentSwarmId
+          and not archivedNodes.containsKey(location.id)) {
+        let childNodes = createLawTokenNodes(location.id);
+        let node : GraphNode = {
+          id = location.id;
+          nodeType = "location";
+          tokenLabel = location.title;
+          jurisdiction = null;
+          parentId = ?parentSwarmId;
+          children = childNodes;
+          customAttributes = location.customAttributes;
+          sources = location.sources;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  func createSwarmNodes(parentCurationId : NodeId) : [GraphNode] {
+    let nodes = List.empty<GraphNode>();
+    for (swarm in swarmMap.values()) {
+      if (swarm.parentCurationId == parentCurationId
+          and not archivedNodes.containsKey(swarm.id)) {
+        let childNodes = createLocationNodes(swarm.id);
+        let node : GraphNode = {
+          id = swarm.id;
+          nodeType = "swarm";
+          tokenLabel = swarm.name;
+          jurisdiction = null;
+          parentId = ?parentCurationId;
+          children = childNodes;
+          customAttributes = swarm.customAttributes;
+          sources = swarm.sources;
+        };
+        nodes.add(node);
+      };
+    };
+    nodes.toArray();
+  };
+
+  // ─── generatePublishedSourceGraphId: unique ID for a published source graph ───
+  func generatePublishedSourceGraphId(creator : Principal) : Text {
+    "published-" # Time.now().toText() # "-" # creator.hash().toText()
+  };
+
+  // ─── getAllPublishedSourceGraphs: Return all published source graph metadata ──
+  public query func getAllPublishedSourceGraphs() : async [PublishedSourceGraphMeta] {
+    publishedSourceGraphs.values().toArray()
+  };
+
+  // ─── updateSourceGraphArtwork: Store artwork for a published graph ────────────
+  public shared ({ caller }) func updateSourceGraphArtwork(id : Text, dataUrl : Text) : async Bool {
+    switch (publishedSourceGraphs.get(id)) {
+      case (null) { false };
+      case (?meta) {
+        if (meta.creator != caller) { return false };
+        let updated : PublishedSourceGraphMeta = { meta with artworkDataUrl = ?dataUrl };
+        publishedSourceGraphs.add(id, updated);
+        true;
+      };
+    };
+  };
+
+  // ─── updateSourceGraphTerrainParams: Store terrain params for a published graph ─
+  public shared ({ caller }) func updateSourceGraphTerrainParams(id : Text, paramsJson : Text) : async Bool {
+    switch (publishedSourceGraphs.get(id)) {
+      case (null) { false };
+      case (?meta) {
+        if (meta.creator != caller) { return false };
+        let updated : PublishedSourceGraphMeta = { meta with terrainParams = ?paramsJson };
+        publishedSourceGraphs.add(id, updated);
+        true;
+      };
+    };
+  };
+
+  // ─── getPublishedSourceGraph: Return full GraphData for a published graph ─────
+  public query func getPublishedSourceGraph(publishedId : Text) : async ?GraphData {
+    // Collect all curations belonging to this published graph
+    let matchingCurations = List.empty<Curation>();
+    for ((cid, curation) in curationMap.entries()) {
+      switch (curationToPublishedGraphId.get(cid)) {
+        case (?pid) {
+          if (pid == publishedId) { matchingCurations.add(curation) };
+        };
+        case (null) {};
+      };
+    };
+
+    if (matchingCurations.isEmpty()) { return null };
+
+    // Build a Set of all node IDs belonging to this published graph
+    let publishedNodeIds = Set.empty<NodeId>();
+    let collectedSwarms = List.empty<Swarm>();
+    let collectedLocations = List.empty<Location>();
+    let collectedLawTokens = List.empty<LawToken>();
+    let collectedInterpTokens = List.empty<InterpretationToken>();
+
+    // Add curation IDs
+    for (curation in matchingCurations.values()) {
+      publishedNodeIds.add(curation.id);
+    };
+
+    // Collect swarms whose parentCurationId is in the set
+    for (swarm in swarmMap.values()) {
+      if (publishedNodeIds.contains(swarm.parentCurationId)) {
+        collectedSwarms.add(swarm);
+        publishedNodeIds.add(swarm.id);
+      };
+    };
+
+    // Collect locations whose parentSwarmId is in the set
+    for (location in locationMap.values()) {
+      if (publishedNodeIds.contains(location.parentSwarmId)) {
+        collectedLocations.add(location);
+        publishedNodeIds.add(location.id);
+      };
+    };
+
+    // Collect law tokens whose parentLocationId is in the set
+    for (lt in lawTokenMap.values()) {
+      if (publishedNodeIds.contains(lt.parentLocationId)) {
+        collectedLawTokens.add(lt);
+        publishedNodeIds.add(lt.id);
+      };
+    };
+
+    // Collect interpretation tokens whose parentLawTokenId is in the set
+    for (it in interpretationTokenMap.values()) {
+      if (publishedNodeIds.contains(it.parentLawTokenId)) {
+        collectedInterpTokens.add(it);
+        publishedNodeIds.add(it.id);
+      };
+    };
+
+    // Filter sourceEdges: only keep edges where both source and target are in the set
+    let collectedEdges = List.empty<GraphEdge>();
+    for ((sourceId, edgeList) in sourceEdges.entries()) {
+      if (publishedNodeIds.contains(sourceId)) {
+        for (edge in edgeList.values()) {
+          if (publishedNodeIds.contains(edge.target)) {
+            collectedEdges.add({
+              source = edge.source;
+              target = edge.target;
+              edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
+              directionality = edge.directionality;
+            });
+          };
+        };
+      };
+    };
+
+    // Build root GraphNodes from matchingCurations
+    let rootNodes = List.empty<GraphNode>();
+    for (curation in matchingCurations.values()) {
+      let childNodes = createSwarmNodes(curation.id);
+      rootNodes.add({
+        id = curation.id;
+        nodeType = "curation";
+        tokenLabel = curation.name;
+        jurisdiction = null;
+        parentId = null;
+        children = childNodes;
+        customAttributes = curation.customAttributes;
+        sources = curation.sources;
+      });
+    };
+
+    ?{
+      curations = matchingCurations.toArray();
+      swarms = collectedSwarms.toArray();
+      locations = collectedLocations.toArray();
+      lawTokens = collectedLawTokens.toArray();
+      interpretationTokens = collectedInterpTokens.toArray();
+      rootNodes = rootNodes.toArray();
+      edges = collectedEdges.toArray();
+      sources = [];
+    };
+  };
+
+  // ─── Chat: ensure channel exists and add member ────────────────────────────
+
+  func ensureChatMember(channelId : Text, channelName : Text, isSubchannel : Bool, parentCuration : ?Text, member : Principal) {
+    switch (chatChannels.get(channelId)) {
+      case (null) {
+        let newChannel : ChatChannel = {
+          id = channelId;
+          name = channelName;
+          isSubchannel;
+          parentCuration;
+          members = List.singleton<Principal>(member);
+          messages = List.empty<ChatMessage>();
+          unreadCounts = Map.empty<Principal, Nat>();
+        };
+        chatChannels.add(channelId, newChannel);
+      };
+      case (?channel) {
+        if (not channel.members.contains(member)) {
+          channel.members.add(member);
+        };
+      };
+    };
+  };
+
+  // ─── getChannels: Returns channels where caller is a member ────────────────
+
+  public shared query ({ caller }) func getChannels() : async [ChatChannelSummary] {
+    if (caller.isAnonymous()) { return [] };
+    let result = List.empty<ChatChannelSummary>();
+    for ((_, channel) in chatChannels.entries()) {
+      if (channel.members.contains(caller)) {
+        let unreadCount = switch (channel.unreadCounts.get(caller)) {
+          case (?n) { n };
+          case (null) { 0 };
+        };
+        result.add({
+          id = channel.id;
+          name = channel.name;
+          isSubchannel = channel.isSubchannel;
+          parentCuration = channel.parentCuration;
+          unreadCount;
+        });
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── sendMessage: Members-only message send ────────────────────────────────
+
+  public shared ({ caller }) func sendMessage(channelId : Text, text : Text) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (chatChannels.get(channelId)) {
+      case (null) { return #err("Channel not found") };
+      case (?channel) {
+        if (not channel.members.contains(caller)) {
+          return #err("Not a member of this channel");
+        };
+        let senderName = switch (userProfiles.get(caller)) {
+          case (?profile) { profile.name };
+          case (null) { caller.toText() };
+        };
+        let msg : ChatMessage = {
+          sender = caller;
+          senderName;
+          timestamp = Time.now();
+          text;
+        };
+        channel.messages.add(msg);
+        // Cap at 100 messages — drop oldest if over limit
+        if (channel.messages.size() > 100) {
+          let sz = channel.messages.size();
+          let kept = channel.messages.sliceToArray((sz - 100).toInt(), sz.toInt());
+          channel.messages.clear();
+          channel.messages.addAll(kept.values());
+        };
+        // Increment unread for all members except sender
+        for (member in channel.members.values()) {
+          if (not Principal.equal(member, caller)) {
+            let current = switch (channel.unreadCounts.get(member)) {
+              case (?n) { n };
+              case (null) { 0 };
+            };
+            channel.unreadCounts.add(member, current + 1);
+          };
+        };
+        #ok
+      };
+    };
+  };
+
+  // ─── getMessages: Members-only fetch; resets caller unread count ────────────
+
+  public shared ({ caller }) func getMessages(channelId : Text) : async { #ok : [ChatMessage]; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (chatChannels.get(channelId)) {
+      case (null) { return #err("Channel not found") };
+      case (?channel) {
+        if (not channel.members.contains(caller)) {
+          return #err("Not a member of this channel");
+        };
+        channel.unreadCounts.add(caller, 0);
+        #ok(channel.messages.toArray())
+      };
+    };
+  };
+
+  // ── HTTP API: Types ──────────────────────────────────────────────────────────
+
+  type HttpRequest = {
+    method : Text;
+    url : Text;
+    headers : [(Text, Text)];
+    body : Blob;
+  };
+
+  type HttpResponse = {
+    status_code : Nat16;
+    headers : [(Text, Text)];
+    body : Blob;
+  };
+
+  // ── HTTP API: JSON helpers ───────────────────────────────────────────────────
+
+  func jsonText(t : Text) : Text {
+    let escaped = t.replace(#text "\\", "\\\\").replace(#text "\"", "\\\"");
+    "\"" # escaped # "\"";
+  };
+
+  func jsonBool(b : Bool) : Text {
+    if (b) { "true" } else { "false" };
+  };
+
+  func jsonNat(n : Nat) : Text {
+    n.toText();
+  };
+
+  func jsonInt(i : Int) : Text {
+    i.toText();
+  };
+
+  func jsonNull() : Text { "null" };
+
+  func jsonArray(items : [Text]) : Text {
+    "[" # items.vals().join(",") # "]";
+  };
+
+  func jsonObject(fields : [(Text, Text)]) : Text {
+    let parts = fields.map(func((k, v) : (Text, Text)) : Text { "\"" # k # "\":" # v });
+    "{" # parts.vals().join(",") # "}";
+  };
+
+  // ── HTTP API: URL parsing ────────────────────────────────────────────────────
+
+  // Returns (path, queryString) split on '?'
+  func splitUrl(url : Text) : (Text, Text) {
+    let parts = url.split(#char '?');
+    let partsArr = parts.toArray();
+    if (partsArr.size() == 0) { return ("", "") };
+    if (partsArr.size() == 1) { return (partsArr[0], "") };
+    (partsArr[0], partsArr[1]);
+  };
+
+  // Extract value of a named query param from a query string like "a=1&b=2"
+  func getQueryParam(queryString : Text, paramName : Text) : ?Text {
+    let pairs = queryString.split(#char '&');
+    for (pair in pairs) {
+      let kv = pair.split(#char '=').toArray();
+      if (kv.size() == 2 and kv[0] == paramName) {
+        return ?kv[1];
+      };
+    };
+    null;
+  };
+
+  // Extract value of a named request header (case-insensitive key match)
+  func getHeaderValue(headers : [(Text, Text)], name : Text) : ?Text {
+    let nameLower = name.toLower();
+    for ((k, v) in headers.vals()) {
+      if (k.toLower() == nameLower) { return ?v };
+    };
+    null;
+  };
+
+  // Extract API key from Authorization: Bearer <key> header, or null
+  func getAuthBearerKey(headers : [(Text, Text)]) : ?Text {
+    switch (getHeaderValue(headers, "authorization")) {
+      case (null) { null };
+      case (?hdr) {
+        let prefix = "Bearer ";
+        switch (hdr.stripStart(#text prefix)) {
+          case (?key) { ?key };
+          case (null) { null };
+        };
+      };
+    };
+  };
+
+  // ── HTTP API: Response builders ──────────────────────────────────────────────
+
+  func httpOk(body : Text) : HttpResponse {
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
+  };
+
+  func httpError(statusCode : Nat16, msg : Text) : HttpResponse {
+    let body = jsonObject([("error", jsonText(msg))]);
+    {
+      status_code = statusCode;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+      ];
+      body = body.encodeUtf8();
+    };
+  };
+
+  // ── HTTP API: Node / edge serializers ───────────────────────────────────────
+
+  func serializeWeightedAttributes(attrs : [WeightedAttribute]) : Text {
+    let attrJsons = attrs.map(func(attr : WeightedAttribute) : Text {
+      let valuesJson = attr.weightedValues.map(func(wv : WeightedValue) : Text {
+        jsonObject([("value", jsonText(wv.value)), ("weight", jsonNat(wv.weight))]);
+      });
+      jsonObject([("key", jsonText(attr.key)), ("weightedValues", jsonArray(valuesJson))]);
+    });
+    jsonArray(attrJsons);
+  };
+
+  func serializeSources(sources : [SourceRef]) : Text {
+    let items = sources.map(func(s : SourceRef) : Text {
+      jsonObject([("name", jsonText(s.name)), ("url", jsonText(s.url))])
+    });
+    jsonArray(items);
+  };
+
+  func serializeCuration(c : Curation) : Text {
+    jsonObject([
+      ("id", jsonText(c.id)),
+      ("name", jsonText(c.name)),
+      ("type", jsonText("curation")),
+      ("creator", jsonText(c.creator.toText())),
+      ("attributes", serializeWeightedAttributes(c.customAttributes)),
+      ("sources", serializeSources(c.sources)),
+    ]);
+  };
+
+  func serializeSwarm(s : Swarm) : Text {
+    jsonObject([
+      ("id", jsonText(s.id)),
+      ("name", jsonText(s.name)),
+      ("type", jsonText("swarm")),
+      ("parentId", jsonText(s.parentCurationId)),
+      ("tags", jsonArray(s.tags.map<Text, Text>(jsonText))),
+      ("attributes", serializeWeightedAttributes(s.customAttributes)),
+      ("sources", serializeSources(s.sources)),
+    ]);
+  };
+
+  func serializeLocation(l : Location) : Text {
+    jsonObject([
+      ("id", jsonText(l.id)),
+      ("name", jsonText(l.title)),
+      ("type", jsonText("location")),
+      ("parentId", jsonText(l.parentSwarmId)),
+      ("attributes", serializeWeightedAttributes(l.customAttributes)),
+      ("sources", serializeSources(l.sources)),
+    ]);
+  };
+
+  func serializeLawToken(lt : LawToken) : Text {
+    jsonObject([
+      ("id", jsonText(lt.id)),
+      ("name", jsonText(lt.tokenLabel)),
+      ("type", jsonText("lawEntity")),
+      ("parentId", jsonText(lt.parentLocationId)),
+      ("attributes", serializeWeightedAttributes(lt.customAttributes)),
+      ("sources", serializeSources(lt.sources)),
+    ]);
+  };
+
+  func serializeInterpToken(it : InterpretationToken) : Text {
+    let latestContent = switch (it.contentVersions.size() > 0) {
+      case (true) { it.contentVersions[it.contentVersions.size() - 1].content };
+      case (false) { "" };
+    };
+    jsonObject([
+      ("id", jsonText(it.id)),
+      ("name", jsonText(it.title)),
+      ("type", jsonText("interpEntity")),
+      ("parentId", jsonText(it.parentLawTokenId)),
+      ("content", jsonText(latestContent)),
+      ("attributes", serializeWeightedAttributes(it.customAttributes)),
+      ("sources", serializeSources(it.sources)),
+    ]);
+  };
+
+  func serializeEdge(e : GraphEdge) : Text {
+    jsonObject([
+      ("source", jsonText(e.source)),
+      ("target", jsonText(e.target)),
+      ("label", jsonText(e.edgeLabel)),
+      ("bidirectional", jsonBool(e.directionality == #bidirectional)),
+    ]);
+  };
+
+  func serializeMeta(m : PublishedSourceGraphMeta) : Text {
+    jsonObject([
+      ("id", jsonText(m.id)),
+      ("name", jsonText(m.name)),
+      ("creator", jsonText(m.creator.toText())),
+      ("creatorName", jsonText(m.creatorName)),
+      ("publishedAt", jsonInt(m.publishedAt)),
+      ("nodeCount", jsonNat(m.nodeCount)),
+      ("edgeCount", jsonNat(m.edgeCount)),
+      ("hierarchyEdgeCount", jsonNat(m.hierarchyEdgeCount)),
+      ("attributeCount", jsonNat(m.attributeCount)),
+      ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
+      ("extensionCount", jsonNat(m.extensionLog.size())),
+    ]);
+  };
+
+  // ── HTTP API: graph data lookup (mirrors getPublishedSourceGraph logic) ──────
+
+  func lookupPublishedGraph(publishedId : Text) : ?GraphData {
+    let matchingCurations = List.empty<Curation>();
+    for ((cid, curation) in curationMap.entries()) {
+      switch (curationToPublishedGraphId.get(cid)) {
+        case (?pid) { if (pid == publishedId) { matchingCurations.add(curation) } };
+        case (null) {};
+      };
+    };
+    if (matchingCurations.isEmpty()) { return null };
+
+    let publishedNodeIds = Set.empty<NodeId>();
+    let collectedSwarms = List.empty<Swarm>();
+    let collectedLocations = List.empty<Location>();
+    let collectedLawTokens = List.empty<LawToken>();
+    let collectedInterpTokens = List.empty<InterpretationToken>();
+
+    for (c in matchingCurations.values()) { publishedNodeIds.add(c.id) };
+
+    for (swarm in swarmMap.values()) {
+      if (publishedNodeIds.contains(swarm.parentCurationId)) {
+        collectedSwarms.add(swarm);
+        publishedNodeIds.add(swarm.id);
+      };
+    };
+    for (location in locationMap.values()) {
+      if (publishedNodeIds.contains(location.parentSwarmId)) {
+        collectedLocations.add(location);
+        publishedNodeIds.add(location.id);
+      };
+    };
+    for (lt in lawTokenMap.values()) {
+      if (publishedNodeIds.contains(lt.parentLocationId)) {
+        collectedLawTokens.add(lt);
+        publishedNodeIds.add(lt.id);
+      };
+    };
+    for (it in interpretationTokenMap.values()) {
+      if (publishedNodeIds.contains(it.parentLawTokenId)) {
+        collectedInterpTokens.add(it);
+        publishedNodeIds.add(it.id);
+      };
+    };
+
+    let collectedEdges = List.empty<GraphEdge>();
+    for ((sourceId, edgeList) in sourceEdges.entries()) {
+      if (publishedNodeIds.contains(sourceId)) {
+        for (edge in edgeList.values()) {
+          if (publishedNodeIds.contains(edge.target)) {
+            collectedEdges.add({
+              source = edge.source;
+              target = edge.target;
+              edgeLabel = aggregateWeightedLabels(edge.weightedLabels);
+              directionality = edge.directionality;
+            });
+          };
+        };
+      };
+    };
+
+    let rootNodes = List.empty<GraphNode>();
+    for (curation in matchingCurations.values()) {
+      rootNodes.add({
+        id = curation.id;
+        nodeType = "curation";
+        tokenLabel = curation.name;
+        jurisdiction = null;
+        parentId = null;
+        children = createSwarmNodes(curation.id);
+        customAttributes = curation.customAttributes;
+        sources = curation.sources;
+      });
+    };
+
+    ?{
+      curations = matchingCurations.toArray();
+      swarms = collectedSwarms.toArray();
+      locations = collectedLocations.toArray();
+      lawTokens = collectedLawTokens.toArray();
+      interpretationTokens = collectedInterpTokens.toArray();
+      rootNodes = rootNodes.toArray();
+      edges = collectedEdges.toArray();
+      sources = [];
+    };
+  };
+
+  // ── HTTP API: endpoint handlers ──────────────────────────────────────────────
+
+  func handleGetAllGraphs() : HttpResponse {
+    let metaJsons = publishedSourceGraphs.values().map(serializeMeta).toArray();
+    httpOk(jsonArray(metaJsons));
+  };
+
+  func handleGetGraph(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        let body = jsonObject([
+          ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
+          ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
+          ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
+          ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
+          ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
+          ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+        ]);
+        httpOk(body);
+      };
+    };
+  };
+
+  func handleGetNodes(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        let nodes = List.empty<Text>();
+        for (c in data.curations.vals()) { nodes.add(serializeCuration(c)) };
+        for (s in data.swarms.vals()) { nodes.add(serializeSwarm(s)) };
+        for (l in data.locations.vals()) { nodes.add(serializeLocation(l)) };
+        for (lt in data.lawTokens.vals()) { nodes.add(serializeLawToken(lt)) };
+        for (it in data.interpretationTokens.vals()) { nodes.add(serializeInterpToken(it)) };
+        httpOk(jsonArray(nodes.toArray()));
+      };
+    };
+  };
+
+  func handleGetEdges(graphId : Text) : HttpResponse {
+    switch (lookupPublishedGraph(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?data) {
+        httpOk(jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge)));
+      };
+    };
+  };
+
+  func handleGetTools() : HttpResponse {
+    let tools = [
+      jsonObject([
+        ("name", jsonText("get_all_graphs")),
+        ("description", jsonText("List all published knowledge graphs with metadata")),
+        ("inputSchema", jsonObject([("type", jsonText("object")), ("properties", "{}"), ("required", "[]")])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_data")),
+        ("description", jsonText("Get full graph data (nodes and edges) for a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_nodes")),
+        ("description", jsonText("Get all nodes in a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph_edges")),
+        ("description", jsonText("Get all edges in a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+    ];
+    httpOk(jsonObject([("tools", jsonArray(tools))]));
+  };
+
+  // ── HTTP API: MCP JSON-RPC helpers ──────────────────────────────────────────
+
+  // Build a JSON-RPC 2.0 success response
+  func mcpSuccess(id : Text, result : Text) : HttpResponse {
+    let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"result\":" # result # "}";
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
+  };
+
+  // Build a JSON-RPC 2.0 error response
+  func mcpError(id : Text, code : Int, msg : Text) : HttpResponse {
+    let body = "{\"jsonrpc\":\"2.0\",\"id\":" # id # ",\"error\":{\"code\":" # code.toText() # ",\"message\":" # jsonText(msg) # "}}";
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+      ];
+      body = body.encodeUtf8();
+    };
+  };
+
+  // Extract a JSON string value for a top-level key (naïve but sufficient for
+  // well-formed MCP messages where values are simple quoted strings).
+  // Returns null when the key is absent or its value is not a quoted string.
+  func extractJsonStringField(json : Text, key : Text) : ?Text {
+    let needle = "\"" # key # "\"";
+    let parts = json.split(#text needle).toArray();
+    if (parts.size() < 2) { return null };
+    let rest = parts[1];
+    // Skip leading whitespace and the ':' separator to find the value
+    let restChars = rest.chars().toArray();
+    var idx = 0;
+    while (idx < restChars.size() and (restChars[idx] == ' ' or restChars[idx] == ':' or restChars[idx] == '\t')) {
+      idx += 1;
+    };
+    // Expect an opening quote char (use Char.fromNat32 for double-quote = 34)
+    let dq : Char = Char.fromNat32(34);
+    if (idx >= restChars.size() or not (restChars[idx] == dq)) { return null };
+    idx += 1;
+    // Collect until next unescaped closing quote
+    var result = "";
+    var stop = false;
+    while (idx < restChars.size() and not stop) {
+      let c = restChars[idx];
+      if (c == dq) {
+        stop := true;
+      } else if (c == '\\' and idx + 1 < restChars.size()) {
+        result := result # Text.fromChar(restChars[idx + 1]);
+        idx += 2;
+      } else {
+        result := result # Text.fromChar(c);
+        idx += 1;
+      };
+    };
+    if (stop) { ?result } else { null };
+  };
+
+  // MCP tools list (shared between tools/list and initialize capabilities)
+  func mcpToolsList() : Text {
+    let tools = [
+      jsonObject([
+        ("name", jsonText("get_all_graphs")),
+        ("description", jsonText("List all published knowledge graphs with metadata (id, name, creator, node/edge counts)")),
+        ("inputSchema", jsonObject([("type", jsonText("object")), ("properties", jsonObject([])), ("required", jsonArray([]))])),
+      ]),
+      jsonObject([
+        ("name", jsonText("get_graph")),
+        ("description", jsonText("Get full graph data (curations, swarms, locations, law entities, interpretation entities, and edges) for a specific published graph")),
+        ("inputSchema", jsonObject([
+          ("type", jsonText("object")),
+          ("properties", jsonObject([("graph_id", jsonObject([("type", jsonText("string")), ("description", jsonText("The published graph ID returned by get_all_graphs"))]))])),
+          ("required", jsonArray([jsonText("graph_id")])),
+        ])),
+      ]),
+    ];
+    jsonArray(tools);
+  };
+
+  // Handle a single MCP JSON-RPC request body (already decoded to Text)
+  func handleMcpBody(body : Text) : HttpResponse {
+    // Extract id field (may be number or string – capture raw token)
+    let idRaw : Text = switch (extractJsonStringField(body, "id")) {
+      case (?s) { "\"" # s # "\"" };
+      case (null) { "null" };
+    };
+
+    let method : Text = switch (extractJsonStringField(body, "method")) {
+      case (?m) { m };
+      case (null) { return mcpError(idRaw, -32600, "Invalid Request: missing method") };
+    };
+
+    if (method == "initialize") {
+      let result = jsonObject([
+        ("protocolVersion", jsonText("2024-11-05")),
+        ("capabilities", jsonObject([("tools", jsonObject([("listChanged", jsonBool(false))]))])),
+        ("serverInfo", jsonObject([("name", jsonText("hyvmind")), ("version", jsonText("1.0"))])),
+      ]);
+      mcpSuccess(idRaw, result);
+    } else if (method == "tools/list") {
+      let result = jsonObject([("tools", mcpToolsList())]);
+      mcpSuccess(idRaw, result);
+    } else if (method == "tools/call") {
+      // Extract tool name from params.name
+      let toolName : Text = switch (extractJsonStringField(body, "name")) {
+        case (?n) { n };
+        case (null) { return mcpError(idRaw, -32602, "Invalid params: missing tool name") };
+      };
+      if (toolName == "get_all_graphs") {
+        let metaJsons = publishedSourceGraphs.values().map(serializeMeta).toArray();
+        let content = jsonArray([jsonObject([("type", jsonText("text")), ("text", jsonText(jsonArray(metaJsons)))])]);
+        mcpSuccess(idRaw, jsonObject([("content", content)]));
+      } else if (toolName == "get_graph") {
+        let graphId : Text = switch (extractJsonStringField(body, "graph_id")) {
+          case (?g) { g };
+          case (null) { return mcpError(idRaw, -32602, "Invalid params: missing graph_id") };
+        };
+        switch (lookupPublishedGraph(graphId)) {
+          case (null) { mcpError(idRaw, -32602, "Graph not found: " # graphId) };
+          case (?data) {
+            let graphJson = jsonObject([
+              ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
+              ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
+              ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
+              ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
+              ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
+              ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+            ]);
+            let content = jsonArray([jsonObject([("type", jsonText("text")), ("text", jsonText(graphJson))])]);
+            mcpSuccess(idRaw, jsonObject([("content", content)]));
+          };
+        };
+      } else {
+        mcpError(idRaw, -32601, "Tool not found: " # toolName);
+      };
+    } else if (method == "notifications/initialized") {
+      // Notification — no response needed but return 200 with empty result
+      mcpSuccess(idRaw, "{}");
+    } else {
+      mcpError(idRaw, -32601, "Method not found: " # method);
+    };
+  };
+
+  // ── HTTP API: http_request (public query — required for IC HTTP interface) ───
+
+  public query func http_request(req : HttpRequest) : async HttpResponse {
+    let (path, queryString) = splitUrl(req.url);
+    ignore queryString;
+
+    // Handle CORS preflight requests
+    if (req.method == "OPTIONS") {
+      return {
+        status_code = 204;
+        headers = [
+          ("Access-Control-Allow-Origin", "*"),
+          ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+          ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+          ("Access-Control-Max-Age", "86400"),
+        ];
+        body = Blob.fromArray([]);
+      };
+    };
+
+    // Route
+    if (path == "/mcp") {
+      // MCP JSON-RPC 2.0 endpoint
+      switch (req.body.decodeUtf8()) {
+        case (null) { httpError(400, "Invalid request body: not valid UTF-8") };
+        case (?bodyText) { handleMcpBody(bodyText) };
+      };
+    } else if (path == "/api/tools") {
+      handleGetTools();
+    } else if (path == "/api/graphs") {
+      handleGetAllGraphs();
+    } else if (path.startsWith(#text "/api/graphs/")) {
+      let graphId = switch (path.stripStart(#text "/api/graphs/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetGraph(graphId);
+    } else if (path.startsWith(#text "/api/nodes/")) {
+      let graphId = switch (path.stripStart(#text "/api/nodes/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetNodes(graphId);
+    } else if (path.startsWith(#text "/api/edges/")) {
+      let graphId = switch (path.stripStart(#text "/api/edges/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetEdges(graphId);
+    } else {
+      httpError(404, "Not found");
+    };
+  };
+
+  // ── HTTP API: track_api_request — update call for per-key rate limiting ─────
+  // Called by the HTTP gateway on each request to increment the per-key rate counter.
+
+  public shared func track_api_request(apiKey : Text) : async () {
+    let now = Time.now();
+    let windowStart = switch (apiRateLimitWindowStarts.get(apiKey)) {
+      case (?w) { w };
+      case (null) { 0 };
+    };
+    if (now - windowStart > 60_000_000_000) {
+      apiRateLimitCounts.add(apiKey, 1);
+      apiRateLimitWindowStarts.add(apiKey, now);
+    } else {
+      let current = switch (apiRateLimitCounts.get(apiKey)) {
+        case (?c) { c };
+        case (null) { 0 };
+      };
+      apiRateLimitCounts.add(apiKey, current + 1);
+    };
+  };
+
+  // ── HTTP API: Candid functions for per-user API key management ──────────────
+
+  // Generate (or regenerate) an API key for the calling user
+  public shared ({ caller }) func generateApiKey() : async Text {
+    if (caller.isAnonymous()) { Runtime.trap("Unauthorized: must be logged in") };
+    // Remove old key from reverse map if one exists
+    switch (apiKeysByPrincipal.get(caller)) {
+      case (?oldKey) { principalByApiKey.remove(oldKey) };
+      case (null) {};
+    };
+    let newKey = "hvm-" # caller.hash().toText() # "-" # Time.now().toText();
+    apiKeysByPrincipal.add(caller, newKey);
+    principalByApiKey.add(newKey, caller);
+    newKey;
+  };
+
+  // Returns the calling user's current API key, or null if none generated yet
+  public query ({ caller }) func getMyApiKey() : async ?Text {
+    if (caller.isAnonymous()) { return null };
+    apiKeysByPrincipal.get(caller);
+  };
+
+  // Revoke the calling user's API key
+  public shared ({ caller }) func revokeApiKey() : async () {
+    switch (apiKeysByPrincipal.get(caller)) {
+      case (?key) {
+        principalByApiKey.remove(key);
+        apiKeysByPrincipal.remove(caller);
+        apiRateLimitCounts.remove(key);
+        apiRateLimitWindowStarts.remove(key);
+      };
+      case (null) {};
+    };
+  };
+
+  // ── Telegram Bridge ──────────────────────────────────────────────────────────
+
+  // Derive a fixed 32-byte obfuscation secret from the UTF-8 bytes of "telegram_config_v1"
+  func deriveSecret() : Blob {
+    let base = "telegram_config_v1".encodeUtf8().toArray();
+    let len = base.size();
+    let result = Array.tabulate(32, func(i : Nat) : Nat8 {
+      let a = base[i % len];
+      let b = base[(i + 1) % len];
+      a ^ b;
+    });
+    Blob.fromArray(result);
+  };
+
+  // XOR each byte of data with repeating secret bytes — symmetric, so decrypt == encrypt
+  func xorEncrypt(data : Blob, secret : Blob) : Blob {
+    let dataBytes = data.toArray();
+    let secretBytes = secret.toArray();
+    let secretLen = secretBytes.size();
+    if (secretLen == 0) { return data };
+    let result = Array.tabulate(dataBytes.size(), func(i : Nat) : Nat8 {
+      dataBytes[i] ^ secretBytes[i % secretLen];
+    });
+    Blob.fromArray(result);
+  };
+
+  func xorDecrypt(encrypted : Blob, secret : Blob) : Blob {
+    xorEncrypt(encrypted, secret);
+  };
+
+  // Admin-only: store encrypted Telegram credentials. Pass empty strings to clear.
+  public shared ({ caller }) func setTelegramConfig(botToken : Text, chatId : Text) : async { #ok; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    // Clear config if both are empty
+    if (botToken == "" and chatId == "") {
+      telegramConfig := null;
+      return #ok;
+    };
+    let secret = deriveSecret();
+    let now64 = Nat64.fromNat(Int.abs(Time.now()));
+    switch (telegramConfig) {
+      case (null) {
+        // Fresh config — both fields required if neither is empty; store whatever is provided
+        let encToken = if (botToken != "") { xorEncrypt(botToken.encodeUtf8(), secret) } else { Blob.fromArray([]) };
+        let encChat  = if (chatId  != "") { xorEncrypt(chatId.encodeUtf8(),   secret) } else { Blob.fromArray([]) };
+        telegramConfig := ?{
+          encryptedBotToken = encToken;
+          encryptedChatId   = encChat;
+          updatedAt = now64;
+          updatedBy = caller;
+        };
+      };
+      case (?existing) {
+        // Partial update: preserve existing value when new value is empty
+        let encToken = if (botToken != "") { xorEncrypt(botToken.encodeUtf8(), secret) } else { existing.encryptedBotToken };
+        let encChat  = if (chatId  != "") { xorEncrypt(chatId.encodeUtf8(),   secret) } else { existing.encryptedChatId };
+        telegramConfig := ?{
+          encryptedBotToken = encToken;
+          encryptedChatId   = encChat;
+          updatedAt = now64;
+          updatedBy = caller;
+        };
+      };
+    };
+    #ok;
+  };
+
+  // Any authenticated user can retrieve the decrypted config
+  public shared ({ caller }) func getTelegramConfig() : async ?{ botToken : Text; chatId : Text } {
+    if (caller.isAnonymous()) { return null };
+    switch (telegramConfig) {
+      case (null) { null };
+      case (?config) {
+        let secret = deriveSecret();
+        let botTokenBlob = xorDecrypt(config.encryptedBotToken, secret);
+        let chatIdBlob   = xorDecrypt(config.encryptedChatId,   secret);
+        let botToken = switch (botTokenBlob.decodeUtf8()) {
+          case (?t) { t };
+          case (null) { "" };
+        };
+        let chatId = switch (chatIdBlob.decodeUtf8()) {
+          case (?t) { t };
+          case (null) { "" };
+        };
+        ?{ botToken; chatId };
+      };
+    };
+  };
+
+  // Quick boolean check — available to all callers
+  public query func hasTelegramConfig() : async Bool {
+    telegramConfig != null;
+  };
+
+  // Status check with masked info — available to all callers
+  public query func getTelegramConfigStatus() : async {
+    hasToken : Bool;
+    hasChatId : Bool;
+    updatedAt : ?Nat64;
+    updatedBy : ?Text;
+  } {
+    switch (telegramConfig) {
+      case (null) {
+        { hasToken = false; hasChatId = false; updatedAt = null; updatedBy = null };
+      };
+      case (?config) {
+        {
+          hasToken  = config.encryptedBotToken.size() > 0;
+          hasChatId = config.encryptedChatId.size() > 0;
+          updatedAt = ?config.updatedAt;
+          updatedBy = ?config.updatedBy.toText();
+        };
+      };
+    };
+  };
+
+  public query func icChallengeNonce() : async Text {
+    "ic-gateway-challenge-18a800cbf63cf59f";
+  };
+
+  public shared ({ caller }) func resetAllData() : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      Runtime.trap("Unauthorized: Only admins can reset data");
+    };
+    curationMap := Map.empty<NodeId, Curation>();
+    swarmMap := Map.empty<NodeId, Swarm>();
+    locationMap := Map.empty<NodeId, Location>();
+    lawTokenMap := Map.empty<NodeId, LawToken>();
+    interpretationTokenMap := Map.empty<NodeId, InterpretationToken>();
+    archivedNodes := Map.empty<NodeId, ()>();
+    sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
+    publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
+    curationToPublishedGraphId := Map.empty<NodeId, Text>();
+    chatChannels := Map.empty<Text, ChatChannel>();
+    telegramConfig := null;
+    apiKeysByPrincipal := Map.empty<Principal, Text>();
+    principalByApiKey := Map.empty<Text, Principal>();
+    apiRateLimitCounts := Map.empty<Text, Nat>();
+    apiRateLimitWindowStarts := Map.empty<Text, Int>();
+    pendingPluginBindings := Map.empty<Principal, List.List<Principal>>();
+    pluginBindings := Map.empty<Principal, Principal>();
+    notesImports := Map.empty<Principal, Text>();
+    trustScores := Map.empty<Principal, TrustScore>();
+    buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
+    graphSavers := Map.empty<Text, List.List<Principal>>();
+    publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
+    trustTransactions := Map.empty<Principal, List.List<TrustTransaction>>();
+  };
+};

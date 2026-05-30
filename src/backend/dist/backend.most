@@ -1,0 +1,298 @@
+// Version: 1.0.0
+type BuzzScore__549704771 = Int;
+type BuzzSecretRecord__48813143 =
+  {createdAt : Int; expiresAt : Int; isUsed : Bool; points : Int};
+type BuzzTransaction__948862079 =
+  {amount : Int; publishedGraphId : Text; timestamp : Int};
+type ChatChannel__404664671 =
+  {
+    id : Text;
+    isSubchannel : Bool;
+    members : List__291137870<Principal>;
+    messages : List__291137870<ChatMessage__537823148>;
+    name : Text;
+    parentCuration : ?Text;
+    unreadCounts : Map__466055834<Principal, Nat>
+  };
+type ChatMessage__537823148 =
+  {sender : Principal; senderName : Text; text : Text; timestamp : Int};
+type ContentVersion__543796904 =
+  {content : Text; contributor : Principal; timestamp : Time__772726445};
+type Curation__852736695 =
+  {
+    creator : Principal;
+    customAttributes : [WeightedAttribute__157451270];
+    id : NodeId__1021555701;
+    name : Text;
+    sources : [SourceRef__945159389];
+    timestamps : Timestamps__731160076
+  };
+type Data__678143819<K, V> =
+  {var count : Nat__107743821; kvs : [var ?(K, V)]};
+type Directionality__459640046 = {#bidirectional; #none; #unidirectional};
+type ExtensionEntry__700920700 =
+  {
+    addedAttributes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedNodes : Nat;
+    addedSources : ?Nat;
+    extendedAt : Time__772726445;
+    extendedBy : Principal;
+    extendedByName : Text
+  };
+type Int__616954475 = Int;
+type Int__889119593 = Int__616954475;
+type Internal__272372588<K, V> =
+  {children : [var ?Node__216023231<K, V>]; data : Data__678143819<K, V>};
+type InterpretationToken__766599104 =
+  {
+    contentVersions : [ContentVersion__543796904];
+    creator : Principal;
+    customAttributes : [WeightedAttribute__157451270];
+    id : NodeId__1021555701;
+    parentLawTokenId : NodeId__1021555701;
+    sources : [SourceRef__945159389];
+    timestamps : Timestamps__731160076;
+    title : Text
+  };
+type LawToken__823187815 =
+  {
+    creator : Principal;
+    customAttributes : [WeightedAttribute__157451270];
+    id : NodeId__1021555701;
+    parentLocationId : NodeId__1021555701;
+    sources : [SourceRef__945159389];
+    timestamps : Timestamps__731160076;
+    tokenLabel : Text
+  };
+type Leaf__366843236<K, V> = {data : Data__678143819<K, V>};
+type List__291137870<T> = List__731530306<T>;
+type List__731530306<T> =
+  {
+    var blockIndex : Nat__107743821;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__107743821
+  };
+type Location__371014670 =
+  {
+    creator : Principal;
+    customAttributes : [WeightedAttribute__157451270];
+    id : NodeId__1021555701;
+    parentSwarmId : NodeId__1021555701;
+    sources : [SourceRef__945159389];
+    timestamps : Timestamps__731160076;
+    title : Text
+  };
+type Map__267009501<K, V> = Map__966517126<K, V>;
+type Map__466055834<K, V> = Map__267009501<K, V>;
+type Map__966517126<K, V> =
+  {var root : Node__216023231<K, V>; var size : Nat__107743821};
+type Nat__107743821 = Nat__920180692;
+type Nat__920180692 = Nat;
+type NodeContribution__716145722 =
+  {payers : List__291137870<(Principal, Int)>};
+type NodeId__1021555701 = Text;
+type Node__216023231<K, V> =
+  {#internal : Internal__272372588<K, V>; #leaf : Leaf__366843236<K, V>};
+type PublishedSourceGraphMeta__815873310 =
+  {
+    artworkDataUrl : ?Text;
+    attributeCount : Nat;
+    creator : Principal;
+    creatorName : Text;
+    edgeCount : Nat;
+    extensionLog : [ExtensionEntry__700920700];
+    hierarchyEdgeCount : Nat;
+    id : Text;
+    name : Text;
+    nodeCount : Nat;
+    publishedAt : Time__772726445;
+    sourcesCount : ?Nat;
+    terrainParams : ?Text
+  };
+type SourceGraphEdge__536230393 =
+  {
+    directionality : Directionality__459640046;
+    source : NodeId__1021555701;
+    target : NodeId__1021555701;
+    weightedLabels : [WeightedValue__540875069]
+  };
+type SourceRef__945159389 = {name : Text; url : Text};
+type Swarm__1026829766 =
+  {
+    creator : Principal;
+    customAttributes : [WeightedAttribute__157451270];
+    forkPrincipal : ?Principal;
+    forkSource : ?NodeId__1021555701;
+    id : NodeId__1021555701;
+    name : Text;
+    parentCurationId : NodeId__1021555701;
+    sources : [SourceRef__945159389];
+    tags : [Tag__224776864];
+    timestamps : Timestamps__731160076
+  };
+type Tag__224776864 = Text;
+type TelegramConfig__578784225 =
+  {
+    encryptedBotToken : Blob;
+    encryptedChatId : Blob;
+    updatedAt : Nat64;
+    updatedBy : Principal
+  };
+type Time__56537243 = Int__889119593;
+type Time__772726445 = Time__56537243;
+type Timestamps__731160076 = {createdAt : Time__772726445};
+type TrustScore__205361434 = Int;
+type TrustTransaction__15493831 =
+  {
+    earned : Int;
+    saveNumber : Nat;
+    savedAt : Int;
+    saver : Principal;
+    totalBuzzCost : Int
+  };
+type UserProfile__852920818 = {name : Text; socialUrl : ?Text};
+type UserRole__585387465 = {#admin; #guest; #user};
+type WeightedAttribute__157451270 =
+  {key : Text; weightedValues : [WeightedValue__540875069]};
+type WeightedValue__540875069 = {value : Text; weight : Nat};
+actor {
+  stable BUZZ_DECIMALS : Int;
+  stable HEX_CHARS : [Text];
+  stable TRUST_DECIMALS : Int;
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__466055834<Principal, UserRole__585387465>
+    };
+  stable var apiKeysByPrincipal :
+    {var root : Node__216023231<Principal, Text>; var size : Nat__107743821};
+  stable var apiRateLimitCounts :
+    {var root : Node__216023231<Text, Nat>; var size : Nat__107743821};
+  stable var apiRateLimitWindowStarts :
+    {var root : Node__216023231<Text, Int>; var size : Nat__107743821};
+  stable var archivedNodes :
+    {
+      var root : Node__216023231<NodeId__1021555701, ()>;
+      var size : Nat__107743821
+    };
+  stable var buzzScores :
+    {
+      var root : Node__216023231<Principal, BuzzScore__549704771>;
+      var size : Nat__107743821
+    };
+  stable var buzzSecrets :
+    {
+      var root : Node__216023231<Text, BuzzSecretRecord__48813143>;
+      var size : Nat__107743821
+    };
+  stable var buzzTransactions :
+    {
+      var root :
+        Node__216023231<Principal,
+                         List__291137870<BuzzTransaction__948862079>>;
+      var size : Nat__107743821
+    };
+  stable var chatChannels :
+    {
+      var root : Node__216023231<Text, ChatChannel__404664671>;
+      var size : Nat__107743821
+    };
+  stable var curationMap :
+    {
+      var root : Node__216023231<NodeId__1021555701, Curation__852736695>;
+      var size : Nat__107743821
+    };
+  stable var curationToPublishedGraphId :
+    {
+      var root : Node__216023231<NodeId__1021555701, Text>;
+      var size : Nat__107743821
+    };
+  stable var existingAdmins : [Principal];
+  stable var graphSavers :
+    {
+      var root : Node__216023231<Text, List__291137870<Principal>>;
+      var size : Nat__107743821
+    };
+  stable var interpretationTokenMap :
+    {
+      var root :
+        Node__216023231<NodeId__1021555701, InterpretationToken__766599104>;
+      var size : Nat__107743821
+    };
+  stable var lawTokenMap :
+    {
+      var root : Node__216023231<NodeId__1021555701, LawToken__823187815>;
+      var size : Nat__107743821
+    };
+  stable var locationMap :
+    {
+      var root : Node__216023231<NodeId__1021555701, Location__371014670>;
+      var size : Nat__107743821
+    };
+  stable var notesImports :
+    {var root : Node__216023231<Principal, Text>; var size : Nat__107743821};
+  stable var pendingPluginBindings :
+    {
+      var root : Node__216023231<Principal, List__291137870<Principal>>;
+      var size : Nat__107743821
+    };
+  stable var pluginBindings :
+    {
+      var root : Node__216023231<Principal, Principal>;
+      var size : Nat__107743821
+    };
+  stable var principalByApiKey :
+    {var root : Node__216023231<Text, Principal>; var size : Nat__107743821};
+  stable var publishedGraphBuzzMetrics :
+    {
+      var root :
+        Node__216023231<Text,
+                         {cumulativeBuzzSpent : Int; extensionCount : Nat}>;
+      var size : Nat__107743821
+    };
+  stable var publishedNodeContributions :
+    {
+      var root :
+        Node__216023231<Text,
+                         Map__466055834<NodeId__1021555701,
+                                         NodeContribution__716145722>>;
+      var size : Nat__107743821
+    };
+  stable var publishedSourceGraphs :
+    {
+      var root : Node__216023231<Text, PublishedSourceGraphMeta__815873310>;
+      var size : Nat__107743821
+    };
+  stable var sourceEdges :
+    {
+      var root :
+        Node__216023231<NodeId__1021555701,
+                         List__291137870<SourceGraphEdge__536230393>>;
+      var size : Nat__107743821
+    };
+  stable var swarmMap :
+    {
+      var root : Node__216023231<NodeId__1021555701, Swarm__1026829766>;
+      var size : Nat__107743821
+    };
+  stable var telegramConfig : ?TelegramConfig__578784225;
+  stable var trustScores :
+    {
+      var root : Node__216023231<Principal, TrustScore__205361434>;
+      var size : Nat__107743821
+    };
+  stable var trustTransactions :
+    {
+      var root :
+        Node__216023231<Principal,
+                         List__291137870<TrustTransaction__15493831>>;
+      var size : Nat__107743821
+    };
+  stable var userProfiles :
+    {
+      var root : Node__216023231<Principal, UserProfile__852920818>;
+      var size : Nat__107743821
+    }
+};

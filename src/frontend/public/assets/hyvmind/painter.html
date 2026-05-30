@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collision Painter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; color: #ccc; font-family: monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+  .header { padding: 8px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; border-bottom: 1px solid #333; flex-wrap: wrap; }
+  .header h1 { color: #f0c060; font-size: 13px; }
+  .header .help { font-size: 10px; color: #666; }
+  .tools { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tool-btn { padding: 4px 10px; font-size: 10px; border: 1px solid #555; background: #222; color: #999; cursor: pointer; border-radius: 2px; font-family: monospace; }
+  .tool-btn.active { background: #333; color: #fff; border-color: #f0c060; }
+   .tool-btn.walk.active { background: #1a3a1a; border-color: #4c4; color: #4c4; }
+    .tool-btn.trigger.active { background: #3a1a3a; border-color: #c4c; color: #c4c; }
+    .tool-btn.over.active { background: #1a3a3a; border-color: #4cc; color: #4cc; }
+    .tool-btn.erase.active { background: #5a1a1a; border-color: #f44; color: #f44; }
+    .tool-btn.door.active { background: #1a1a4a; border-color: #48f; color: #48f; }
+  .brush { display: flex; gap: 4px; align-items: center; font-size: 10px; color: #888; }
+  .brush button { padding: 2px 6px; font-size: 10px; border: 1px solid #555; background: #222; color: #888; cursor: pointer; border-radius: 2px; font-family: monospace; }
+  .brush button.active { background: #333; color: #fff; border-color: #f0c060; }
+  .actions { display: flex; gap: 4px; flex-wrap: wrap; }
+  .actions button { padding: 4px 10px; font-size: 10px; border: 1px solid #555; background: #222; color: #aaa; cursor: pointer; border-radius: 2px; font-family: monospace; }
+  .actions button:hover { background: #333; color: #fff; }
+  .stats { font-size: 10px; color: #666; }
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+  .canvas-wrap canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+  .tooltip { position: fixed; pointer-events: none; z-index: 100; background: rgba(10,10,20,0.92); border: 1px solid #555; border-radius: 3px; padding: 6px 10px; font-size: 10px; color: #ccc; display: none; white-space: nowrap; font-family: monospace; line-height: 1.6; }
+  .tooltip .tt-kind { font-weight: bold; }
+  .tooltip .tt-walk { color: #4c4; } .tooltip .tt-trigger { color: #c4c; } .tooltip .tt-over { color: #4cc; } .tooltip .tt-door { color: #48f; } .tooltip .tt-none { color: #666; }
+  .legend { font-size: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 3px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Collision Painter</h1>
+  <span class="help">Click-drag &middot; scroll zoom &middot; right-click pan</span>
+  <div class="tools">
+    <button class="tool-btn walk active" data-mode="walk">+ Walk</button>
+    <button class="tool-btn trigger" data-mode="trigger">💬 Trigger</button>
+    <button class="tool-btn over" data-mode="over">🔼 Over</button>
+    <button class="tool-btn erase" data-mode="erase">✕ Erase</button>
+    <button class="tool-btn door" data-mode="door">🚪 Door</button>
+  </div>
+  <div class="brush">
+    Brush: <button data-size="1">1</button><button data-size="2" class="active">2</button><button data-size="4">4</button><button data-size="8">8</button>
+  </div>
+  <div class="actions">
+    <button id="saveBtn">💾 Save</button>
+    <button id="downloadBtn">📥 Download</button>
+    <button id="importBtn">📤 Import</button>
+    <input id="importFile" type="file" accept=".json" style="display:none">
+    <button id="clearBtn">✕ Clear</button>
+    <button id="loadBtn">📂 Load</button>
+  </div>
+  <span class="stats" id="stats"></span>
+</div>
+<div class="legend">
+  <span><span class="swatch" style="background:#4c4"></span> Walk</span>
+  <span><span class="swatch" style="background:#c4c"></span> Trigger</span>
+  <span><span class="swatch" style="background:#4cc"></span> Over</span>
+  <span><span class="swatch" style="background:transparent;border:1px solid #555"></span> None</span>
+  <span><span class="swatch" style="background:#48f"></span> Door</span>
+</div>
+<div id="tooltip" class="tooltip"></div>
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+
+<script>
+var ASSETS = '/assets/hyvmind';
+var TILE = 8;
+var IMG_W = 574, IMG_H = 2176;
+var COLS = Math.ceil(IMG_W / TILE), ROWS = Math.ceil(IMG_H / TILE);
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+var map = [];
+for (var y = 0; y < ROWS; y++) { map[y] = []; for (var x = 0; x < COLS; x++) map[y][x] = 0; }
+
+// Trigger messages: key = "tx,ty", value = message string
+var triggerMessages = {};
+// Door labels: key = "tx,ty", value = label string
+var doorLabels = {};
+
+var mode = 'walk', brushSize = 2, drawing = false;
+var hoverPos = null;
+var zoom = 0.5, panX = 0, panY = 0;
+var imgLoaded = false;
+
+function resize() {
+  var wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function toWorld(cx, cy) {
+  return { x: (cx - panX) / zoom, y: (cy - panY) / zoom };
+}
+
+function toTile(wx, wy) {
+  return { tx: Math.floor(wx / TILE), ty: Math.floor(wy / TILE) };
+}
+
+function paintTile(tx, ty) {
+  var val = mode === 'walk' ? 1 : mode === 'trigger' ? 4 : mode === 'over' ? 5 : mode === 'door' ? 6 : 0;
+  var half = Math.floor(brushSize / 2);
+  var changed = false;
+  // Prompt once before the loop
+  var newDoorLabel = null, newTriggerMsg = null;
+  if (val === 6) {
+    var centerKey = tx + ',' + ty;
+    var lbl = prompt('Door label (e.g. "puzzles"):', doorLabels[centerKey] || '');
+    if (lbl && lbl.trim()) newDoorLabel = lbl.trim();
+  }
+  if (val === 4) {
+    var centerKey = tx + ',' + ty;
+    var msg = prompt('Popup message for this trigger:', triggerMessages[centerKey] || '');
+    if (msg && msg.trim()) newTriggerMsg = msg.trim();
+  }
+  for (var dy = -half; dy <= half; dy++)
+    for (var dx = -half; dx <= half; dx++) {
+      var cx = tx + dx, cy = ty + dy;
+      if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) continue;
+      if (map[cy][cx] !== val) { map[cy][cx] = val; changed = true; }
+      if (val === 6 && newDoorLabel) doorLabels[cx + ',' + cy] = newDoorLabel;
+      if (val === 4 && newTriggerMsg) triggerMessages[cx + ',' + cy] = newTriggerMsg;
+      if (val === 0) {
+        var key2 = cx + ',' + cy;
+        delete triggerMessages[key2];
+        delete doorLabels[key2];
+      }
+    }
+  if (changed) { draw(); updateStats(); }
+}
+
+var img = new Image();
+img.onload = function() {
+  imgLoaded = true;
+  zoom = Math.min(canvas.width / IMG_W, canvas.height / IMG_H) * 0.9;
+  panX = (canvas.width - IMG_W * zoom) / 2;
+  panY = (canvas.height - IMG_H * zoom) / 2;
+  resize();
+};
+img.src = '/assets/hyvmind/bottom.png';
+
+function overlayColor(val) {
+  if (val === 1) return { fill: 'rgba(68,204,68,0.4)', stroke: 'rgba(68,204,68,0.7)' };
+  if (val === 4) return { fill: 'rgba(204,68,204,0.35)', stroke: 'rgba(204,68,204,0.7)' };
+  if (val === 5) return { fill: 'rgba(68,204,204,0.35)', stroke: 'rgba(68,204,204,0.7)' };
+  if (val === 6) return { fill: 'rgba(68,68,255,0.35)', stroke: 'rgba(68,68,255,0.7)' };
+  return null;
+}
+
+function draw() {
+  var W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0, 0, W, H);
+  if (!imgLoaded) return;
+
+  ctx.save();
+  ctx.translate(panX, panY);
+  ctx.scale(zoom, zoom);
+  ctx.drawImage(img, 0, 0, IMG_W, IMG_H);
+  ctx.restore();
+
+  var ts = TILE * zoom;
+
+  for (var y = 0; y < ROWS; y++) {
+    for (var x = 0; x < COLS; x++) {
+      var val = map[y][x];
+      if (val === 0) continue;
+      var sx = panX + x * ts, sy = panY + y * ts;
+      if (sx + ts < -10 || sx > W + 10 || sy + ts < -10 || sy > H + 10) continue;
+      var c = overlayColor(val);
+      ctx.fillStyle = c.fill;
+      ctx.fillRect(sx, sy, ts, ts);
+      ctx.strokeStyle = c.stroke;
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(sx, sy, ts, ts);
+      // Draw trigger message indicator
+      if (val === 4) {
+        var key = x + ',' + y;
+        if (triggerMessages[key]) {
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = Math.max(6, ts * 0.4) + 'px monospace';
+          ctx.fillText('!', sx + ts/2 - ts*0.15, sy + ts/2 + ts*0.2);
+        }
+      }
+      // Draw door label
+      if (val === 6) {
+        var dkey = x + ',' + y;
+        if (doorLabels[dkey]) {
+          ctx.fillStyle = 'rgba(68,136,255,0.8)';
+          ctx.font = 'bold ' + Math.max(6, ts * 0.35) + 'px monospace';
+          ctx.fillText('D', sx + ts/2 - ts*0.2, sy + ts/2 + ts*0.2);
+        }
+      }
+    }
+  }
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
+  for (var x = 0; x <= COLS; x++) {
+    var sx = panX + x * ts;
+    ctx.beginPath(); ctx.moveTo(sx, panY); ctx.lineTo(sx, panY + IMG_H * zoom); ctx.stroke();
+  }
+  for (var y = 0; y <= ROWS; y++) {
+    var sy = panY + y * ts;
+    ctx.beginPath(); ctx.moveTo(panX, sy); ctx.lineTo(panX + IMG_W * zoom, sy); ctx.stroke();
+  }
+
+  // Brush preview
+  if (hoverPos) {
+    var hx = panX + hoverPos.tx * ts - (brushSize-1)/2 * ts;
+    var hy = panY + hoverPos.ty * ts - (brushSize-1)/2 * ts;
+    var hw = brushSize * ts, hh = brushSize * ts;
+    var col = mode === 'walk' ? 'rgba(68,204,68,0.3)' : mode === 'trigger' ? 'rgba(204,68,204,0.3)' : mode === 'over' ? 'rgba(68,204,204,0.3)' : mode === 'door' ? 'rgba(68,68,255,0.3)' : 'rgba(204,68,68,0.25)';
+    var border = mode === 'erase' ? '#f44' : mode === 'walk' ? '#4c4' : mode === 'trigger' ? '#c4c' : mode === 'over' ? '#4cc' : mode === 'door' ? '#48f' : '#888';
+    ctx.fillStyle = col;
+    ctx.fillRect(hx, hy, hw, hh);
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(hx, hy, hw, hh);
+    ctx.setLineDash([]);
+  }
+}
+
+function getPointer(clientX, clientY) {
+  var rect = canvas.getBoundingClientRect();
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', function(e) {
+  var p = getPointer(e.clientX, e.clientY);
+  var w = toWorld(p.x, p.y);
+  var t = toTile(w.x, w.y);
+  if (t.tx >= 0 && t.tx < COLS && t.ty >= 0 && t.ty < ROWS) {
+    drawing = true;
+    paintTile(t.tx, t.ty);
+  }
+});
+
+function getTileInfo(tx, ty) {
+  if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return null;
+  var val = map[ty][tx];
+  var names = {0:'None',1:'Walk',4:'Trigger',5:'Over',6:'Door'};
+  var info = { val: val, name: names[val] || 'None' };
+  var key = tx + ',' + ty;
+  if (val === 4 && triggerMessages[key]) info.triggerMsg = triggerMessages[key];
+  if (val === 6 && doorLabels[key]) info.doorLabel = doorLabels[key];
+  return info;
+}
+
+function updateTooltip(clientX, clientY, tx, ty) {
+  var tip = document.getElementById('tooltip');
+  var info = getTileInfo(tx, ty);
+  if (!info) { tip.style.display = 'none'; return; }
+  var cls = info.val === 0 ? 'tt-none' : 'tt-' + info.name.toLowerCase();
+  var html = '<span class="tt-kind ' + cls + '">' + info.name + '</span> &middot; (' + tx + ', ' + ty + ')';
+  if (info.triggerMsg) html += '<br><span style="color:#c4c;font-size:9px;">💬 ' + info.triggerMsg + '</span>';
+  if (info.doorLabel) html += '<br><span style="color:#48f;font-size:9px;">🚪 ' + info.doorLabel + '</span>';
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  tip.style.left = (clientX + 14) + 'px';
+  tip.style.top = (clientY + 14) + 'px';
+}
+
+canvas.addEventListener('mousemove', function(e) {
+  var p = getPointer(e.clientX, e.clientY);
+  var w = toWorld(p.x, p.y);
+  var t = toTile(w.x, w.y);
+  hoverPos = t;
+  if (t.tx >= 0 && t.tx < COLS && t.ty >= 0 && t.ty < ROWS) updateTooltip(e.clientX, e.clientY, t.tx, t.ty);
+  if (!drawing) { draw(); return; }
+  if (t.tx >= 0 && t.tx < COLS && t.ty >= 0 && t.ty < ROWS) paintTile(t.tx, t.ty);
+});
+
+canvas.addEventListener('mouseup', function() { drawing = false; });
+canvas.addEventListener('mouseleave', function() { drawing = false; hoverPos = null; draw(); document.getElementById('tooltip').style.display = 'none'; });
+
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  var t = e.touches[0];
+  var p = getPointer(t.clientX, t.clientY);
+  var w = toWorld(p.x, p.y);
+  var t2 = toTile(w.x, w.y);
+  hoverPos = t2;
+  if (t2.tx >= 0 && t2.tx < COLS && t2.ty >= 0 && t2.ty < ROWS) { drawing = true; paintTile(t2.tx, t2.ty); }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (!drawing) return;
+  var t = e.touches[0];
+  var p = getPointer(t.clientX, t.clientY);
+  var w = toWorld(p.x, p.y);
+  var t2 = toTile(w.x, w.y);
+  if (t2.tx >= 0 && t2.tx < COLS && t2.ty >= 0 && t2.ty < ROWS) paintTile(t2.tx, t2.ty);
+}, { passive: false });
+
+canvas.addEventListener('touchend', function() { drawing = false; });
+canvas.addEventListener('touchcancel', function() { drawing = false; });
+
+canvas.addEventListener('wheel', function(e) {
+  e.preventDefault();
+  var p = getPointer(e.clientX, e.clientY);
+  var world = toWorld(p.x, p.y);
+  var factor = e.deltaY > 0 ? 0.85 : 1.18;
+  zoom = Math.max(0.1, Math.min(4, zoom * factor));
+  panX = p.x - world.x * zoom;
+  panY = p.y - world.y * zoom;
+  draw();
+}, { passive: false });
+
+var panning = false, panStart = null;
+canvas.addEventListener('mousedown', function(e) {
+  if (e.button === 1 || e.button === 2) { panning = true; panStart = { x: e.clientX, y: e.clientY }; e.preventDefault(); }
+});
+canvas.addEventListener('mousemove', function(e) {
+  if (panning && panStart) {
+    panX += e.clientX - panStart.x;
+    panY += e.clientY - panStart.y;
+    panStart = { x: e.clientX, y: e.clientY };
+    draw();
+  }
+});
+canvas.addEventListener('mouseup', function(e) { if (e.button === 1 || e.button === 2) panning = false; });
+canvas.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+document.querySelectorAll('.tool-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tool-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    canvas.style.cursor = mode === 'erase' ? 'cell' : mode === 'walk' ? 'copy' : 'crosshair';
+  });
+});
+
+document.querySelectorAll('.brush button').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.brush button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    brushSize = parseInt(btn.dataset.size);
+  });
+});
+
+function updateStats() {
+  var counts = [0, 0, 0, 0, 0, 0, 0];
+  for (var y = 0; y < ROWS; y++)
+    for (var x = 0; x < COLS; x++)
+      counts[map[y][x]]++;
+  var tCount = Object.keys(triggerMessages).length;
+  var dCount = Object.keys(doorLabels).length;
+  document.getElementById('stats').textContent = 'Walk:' + counts[1] + ' Trigger:' + counts[4] + ' Over:' + counts[5] + ' Door:' + counts[6] + ' None:' + counts[0];
+}
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+  for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) map[y][x] = 0;
+  triggerMessages = {};
+  doorLabels = {};
+  draw(); updateStats();
+});
+
+document.getElementById('loadBtn').addEventListener('click', function() {
+  var loader = new Image();
+  loader.onload = function() {
+    var c = document.createElement('canvas');
+    c.width = COLS; c.height = ROWS;
+    var cx = c.getContext('2d');
+    cx.drawImage(loader, 0, 0, COLS, ROWS);
+    var data = cx.getImageData(0, 0, COLS, ROWS).data;
+    for (var y = 0; y < ROWS; y++)
+      for (var x = 0; x < COLS; x++) {
+        var idx = (y * COLS + x) * 4;
+        var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+        if (a === 0) map[y][x] = 0;
+        else if (r > 150 && b > 150 && g < 150) map[y][x] = 4;
+        else if (g > 150 && b > 150 && r < 150) map[y][x] = 5;
+        else if (g > 150 && r < 150) map[y][x] = 1;
+        else if (b > 150 && r < 150 && g < 150) map[y][x] = 6;
+        else map[y][x] = 0;
+      }
+    // Load trigger messages
+    fetch('/assets/hyvmind/triggers.json?' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) { triggerMessages = d || {}; })
+      .catch(function() { triggerMessages = {}; });
+    // Load door labels
+    fetch('/assets/hyvmind/doors.json?' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) { doorLabels = d || {}; draw(); updateStats(); })
+      .catch(function() { doorLabels = {}; draw(); updateStats(); });
+  };
+  loader.src = '/assets/hyvmind/collision.png?' + Date.now();
+});
+
+document.getElementById('saveBtn').addEventListener('click', function() {
+  var pixelData = [];
+  for (var y = 0; y < ROWS; y++)
+    for (var x = 0; x < COLS; x++) {
+      var val = map[y][x];
+      if (val === 1) { pixelData.push(68,204,68,255); }
+      else if (val === 4) { pixelData.push(204,68,204,255); }
+      else if (val === 5) { pixelData.push(68,204,204,255); }
+      else if (val === 6) { pixelData.push(68,68,255,255); }
+      else { pixelData.push(0,0,0,0); }
+    }
+
+  var btn = document.getElementById('saveBtn');
+  btn.textContent = '⏳...';
+  btn.disabled = true;
+
+  // Save collision
+  fetch('/save-collision', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pixels: pixelData, w: COLS, h: ROWS })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    // Save triggers
+    return fetch('/save-triggers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(triggerMessages)
+    });
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    // Save doors
+    return fetch('/save-doors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doorLabels)
+    });
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    btn.textContent = '✅ Saved!';
+    setTimeout(function() { btn.textContent = '💾 Save'; btn.disabled = false; }, 2000);
+  })
+  .catch(function(err) {
+    btn.textContent = '❌ ' + err.message;
+    setTimeout(function() { btn.textContent = '💾 Save'; btn.disabled = false; }, 3000);
+  });
+});
+
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  var tiles = {};
+  for (var y = 0; y < ROWS; y++)
+    for (var x = 0; x < COLS; x++)
+      if (map[y][x] !== 0) tiles[y + ',' + x] = map[y][x];
+  var data = {
+    version: 2,
+    cols: COLS,
+    rows: ROWS,
+    tiles: tiles,
+    triggers: triggerMessages,
+    doors: doorLabels
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'collision_backup_' + Date.now() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', function() {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      if (!data.version || !data.cols || !data.rows) throw new Error('Invalid format');
+      // Clear current state
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          map[y][x] = 0;
+      triggerMessages = {};
+      doorLabels = {};
+      // Restore tiles
+      if (data.version === 1 && data.map) {
+        for (var y = 0; y < ROWS && y < data.map.length; y++)
+          for (var x = 0; x < COLS && x < data.map[y].length; x++)
+            map[y][x] = data.map[y][x] || 0;
+      } else if (data.version === 2 && data.tiles) {
+        for (var key in data.tiles) {
+          var parts = key.split(',');
+          var yy = parseInt(parts[0]), xx = parseInt(parts[1]);
+          if (xx >= 0 && xx < COLS && yy >= 0 && yy < ROWS) map[yy][xx] = data.tiles[key];
+        }
+      }
+      if (data.triggers) triggerMessages = JSON.parse(JSON.stringify(data.triggers));
+      if (data.doors) doorLabels = JSON.parse(JSON.stringify(data.doors));
+      draw();
+      updateStats();
+      document.getElementById('saveBtn').textContent = '⚠️ Imported - Save to persist';
+      setTimeout(function() { document.getElementById('saveBtn').textContent = '💾 Save'; }, 4000);
+    } catch(err) {
+      alert('Import failed: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+resize();
+updateStats();
+// Auto-load collision + triggers + doors on startup
+document.getElementById('loadBtn').click();
+</script>
+</body>
+</html>

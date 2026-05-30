@@ -1,0 +1,394 @@
+type WeightedValue = 
+ record {
+   value: text;
+   weight: nat;
+ };
+type WeightedAttribute = 
+ record {
+   key: text;
+   weightedValues: vec WeightedValue;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = 
+ record {
+   name: text;
+   socialUrl: opt text;
+ };
+type TrustTransaction = 
+ record {
+   earned: int;
+   saveNumber: nat;
+   savedAt: int;
+   saver: principal;
+   totalBuzzCost: int;
+ };
+type TrustScore = int;
+type Timestamps = record {createdAt: Time;};
+type Time = int;
+type Tag = text;
+type Swarm = 
+ record {
+   creator: principal;
+   customAttributes: vec WeightedAttribute;
+   forkPrincipal: opt principal;
+   forkSource: opt NodeId;
+   id: NodeId;
+   name: text;
+   parentCurationId: NodeId;
+   sources: vec SourceRef;
+   tags: vec Tag;
+   timestamps: Timestamps;
+ };
+type SourceRef = 
+ record {
+   name: text;
+   url: text;
+ };
+type SourceGraphNodeInput = 
+ record {
+   attributes: vec record {
+                     text;
+                     vec text;
+                   };
+   content: opt text;
+   id: opt text;
+   jurisdiction: opt text;
+   name: text;
+   nodeType: text;
+   parentName: opt text;
+   sources: vec SourceRef;
+   tags: vec text;
+ };
+type SourceGraphEdgeInput = 
+ record {
+   bidirectional: bool;
+   edgeLabel: text;
+   sourceName: text;
+   targetName: text;
+ };
+type PublishedSourceGraphMeta = 
+ record {
+   artworkDataUrl: opt text;
+   attributeCount: nat;
+   creator: principal;
+   creatorName: text;
+   edgeCount: nat;
+   extensionLog: vec ExtensionEntry;
+   hierarchyEdgeCount: nat;
+   id: text;
+   name: text;
+   nodeCount: nat;
+   publishedAt: Time;
+   sourcesCount: opt nat;
+   terrainParams: opt text;
+ };
+type PublishSourceGraphInput = 
+ record {
+   edges: vec SourceGraphEdgeInput;
+   nodes: vec SourceGraphNodeInput;
+ };
+type PublishPreviewResult = 
+ record {
+   buzzCost: int;
+   edgeOperations: vec EdgeOperation;
+   nodeOperations: vec NodeOperation;
+   summary:
+    record {
+      attributesAdded: nat;
+      edgesToCreate: nat;
+      edgesToUpdate: nat;
+      hierarchyEdgesToCreate: nat;
+      nodesToCreate: nat;
+      nodesToUpdate: nat;
+      sourcesAdded: nat;
+    };
+ };
+type PublishCommitResult = 
+ variant {
+   error:
+    record {
+      failedAt: opt record {
+                      name: text;
+                      nodeType: text;
+                    };
+      message: text;
+    };
+   success:
+    record {
+      buzzCost: int;
+      message: text;
+      nodeMappings: vec record {
+                          text;
+                          NodeId;
+                        };
+      publishedSourceGraphId: opt text;
+    };
+ };
+type NodeOperation = 
+ record {
+   action: variant {
+             create;
+             update: vec AttributeChange;
+           };
+   attributes: vec record {
+                     text;
+                     vec text;
+                   };
+   backendId: opt NodeId;
+   localName: text;
+   nodeType: text;
+   parentName: opt text;
+   sourceChanges: vec SourceRef;
+ };
+type NodeId = text;
+type Location = 
+ record {
+   creator: principal;
+   customAttributes: vec WeightedAttribute;
+   id: NodeId;
+   parentSwarmId: NodeId;
+   sources: vec SourceRef;
+   timestamps: Timestamps;
+   title: text;
+ };
+type LawToken = 
+ record {
+   creator: principal;
+   customAttributes: vec WeightedAttribute;
+   id: NodeId;
+   parentLocationId: NodeId;
+   sources: vec SourceRef;
+   timestamps: Timestamps;
+   tokenLabel: text;
+ };
+type InterpretationToken = 
+ record {
+   contentVersions: vec ContentVersion;
+   creator: principal;
+   customAttributes: vec WeightedAttribute;
+   id: NodeId;
+   parentLawTokenId: NodeId;
+   sources: vec SourceRef;
+   timestamps: Timestamps;
+   title: text;
+ };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec record {
+                  text;
+                  text;
+                };
+   status_code: nat16;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   headers: vec record {
+                  text;
+                  text;
+                };
+   method: text;
+   url: text;
+ };
+type GraphNode = 
+ record {
+   children: vec GraphNode;
+   customAttributes: vec WeightedAttribute;
+   id: NodeId;
+   jurisdiction: opt text;
+   nodeType: text;
+   parentId: opt NodeId;
+   sources: vec SourceRef;
+   tokenLabel: text;
+ };
+type GraphEdge = 
+ record {
+   directionality: Directionality;
+   edgeLabel: text;
+   source: NodeId;
+   target: NodeId;
+ };
+type GraphData = 
+ record {
+   curations: vec Curation;
+   edges: vec GraphEdge;
+   interpretationTokens: vec InterpretationToken;
+   lawTokens: vec LawToken;
+   locations: vec Location;
+   rootNodes: vec GraphNode;
+   sources: vec SourceRef;
+   swarms: vec Swarm;
+ };
+type ExtensionEntry = 
+ record {
+   addedAttributes: nat;
+   addedEdges: nat;
+   addedHierarchyEdges: nat;
+   addedNodes: nat;
+   addedSources: opt nat;
+   extendedAt: Time;
+   extendedBy: principal;
+   extendedByName: text;
+ };
+type EdgeOperation = 
+ record {
+   action: variant {
+             create;
+             update: record {newLabels: vec text;};
+           };
+   bidirectional: bool;
+   labels: vec text;
+   sourceId: opt NodeId;
+   sourceName: text;
+   targetId: opt NodeId;
+   targetName: text;
+ };
+type Directionality = 
+ variant {
+   bidirectional;
+   none;
+   unidirectional;
+ };
+type Curation = 
+ record {
+   creator: principal;
+   customAttributes: vec WeightedAttribute;
+   id: NodeId;
+   name: text;
+   sources: vec SourceRef;
+   timestamps: Timestamps;
+ };
+type ContentVersion = 
+ record {
+   content: text;
+   contributor: principal;
+   timestamp: Time;
+ };
+type ChatMessage = 
+ record {
+   sender: principal;
+   senderName: text;
+   "text": text;
+   timestamp: int;
+ };
+type ChatChannelSummary = 
+ record {
+   id: text;
+   isSubchannel: bool;
+   name: text;
+   parentCuration: opt text;
+   unreadCount: nat;
+ };
+type BuzzScore = int;
+type BuzzLeaderboardEntry = 
+ record {
+   "principal": principal;
+   profileName: opt text;
+   score: BuzzScore;
+ };
+type AttributeChange = 
+ record {
+   key: text;
+   newValues: vec text;
+   newWeightedValues: vec WeightedValue;
+   oldValues: vec WeightedValue;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  approvePluginBinding: (pluginPubKey: principal) -> ();
+  archiveNode: (nodeId: NodeId) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  commitPublishSourceGraph: (input: PublishSourceGraphInput,
+   existingMappings: vec record {
+                           text;
+                           NodeId;
+                         }) -> (PublishCommitResult);
+  createCuration: (name: text, customAttributes: vec WeightedAttribute) ->
+   (NodeId);
+  createInterpretationToken: (title: text, content: text, parentLawTokenId:
+   NodeId, customAttributes: vec WeightedAttribute) -> (NodeId);
+  createLocation: (title: text, customAttributes: vec WeightedAttribute,
+   parentSwarmId: NodeId) -> (NodeId);
+  createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId,
+   customAttributes: vec WeightedAttribute) -> (NodeId);
+  generateApiKey: () -> (text);
+  generateBuzzSecret: (score: int) -> (text);
+  generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
+  getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
+  getArchivedNodeIds: () -> (vec NodeId) query;
+  getBoundPluginKeys: () -> (vec principal) query;
+  getBuzzLeaderboard: (topN: nat) -> (vec BuzzLeaderboardEntry) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getChannels: () -> (vec ChatChannelSummary) query;
+  getMessages: (channelId: text) ->
+   (variant {
+      err: text;
+      ok: vec ChatMessage;
+    });
+  getMyApiKey: () -> (opt text) query;
+  getMyBuzzBalance: () -> (BuzzScore) query;
+  getMyPrincipal: () -> (principal) query;
+  getMyTrustBalance: () -> (TrustScore);
+  getMyTrustTransactions: () -> (vec TrustTransaction) query;
+  getNotesData: () -> (opt text) query;
+  getPendingPluginBindings: () -> (vec principal) query;
+  getPluginBindingStatus: () -> (bool) query;
+  getPublishedSourceGraph: (publishedId: text) -> (opt GraphData) query;
+  getTelegramConfig: () -> (opt record {
+                                  botToken: text;
+                                  chatId: text;
+                                });
+  getTelegramConfigStatus: () ->
+   (record {
+      hasChatId: bool;
+      hasToken: bool;
+      updatedAt: opt nat64;
+      updatedBy: opt text;
+    }) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  hasTelegramConfig: () -> (bool) query;
+  hasUserSavedGraph: (publishedGraphId: text) -> (bool) query;
+  http_request: (req: HttpRequest) -> (HttpResponse) query;
+  icChallengeNonce: () -> (text) query;
+  initializeAccessControl: () -> ();
+  isCallerAdmin: () -> (bool) query;
+  isNodeArchived: (nodeId: NodeId) -> (bool) query;
+  previewPublishSourceGraph: (input: PublishSourceGraphInput,
+   existingMappings: vec record {
+                           text;
+                           NodeId;
+                         }) -> (PublishPreviewResult);
+  redeemBuzzSecret: (secret: text) -> (variant {
+                                         err: text;
+                                         ok: text;
+                                       });
+  resetAllData: () -> ();
+  revokeApiKey: () -> ();
+  revokePluginBinding: (pluginKey: principal) -> ();
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  savePublishedGraph: (publishedGraphId: text, selectedNodeIds:
+   vec NodeId) -> (variant {
+                     err: text;
+                     ok: text;
+                   });
+  sendMessage: (channelId: text, "text": text) -> (variant {
+                                                     err: text;
+                                                     ok;
+                                                   });
+  setTelegramConfig: (botToken: text, chatId: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  storeNotesData: (json: text) -> ();
+  track_api_request: (apiKey: text) -> ();
+  updateSourceGraphArtwork: (id: text, dataUrl: text) -> (bool);
+  updateSourceGraphTerrainParams: (id: text, paramsJson: text) -> (bool);
+}

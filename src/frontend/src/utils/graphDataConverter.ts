@@ -1,0 +1,241 @@
+import type {
+  GraphData,
+  GraphEdge,
+  SourceRef,
+  WeightedAttribute,
+  WeightedValue,
+} from "../backend.d";
+import { Directionality } from "../backend.d";
+import type { Edge, SourceGraph, SourceNode } from "../types/sourceGraph";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Formats a single WeightedValue as "value" or "value(×N)" when weight > 1.
+ */
+function formatWeightedValue(wv: WeightedValue): string {
+  const w = Number(wv.weight);
+  return w > 1 ? `${wv.value}(×${w})` : wv.value;
+}
+
+/**
+ * Converts backend WeightedAttribute[] to a flat Record<string, string>.
+ * Multiple values for the same key are joined with ", ".
+ */
+export function convertWeightedAttributes(
+  attrs: WeightedAttribute[],
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const attr of attrs) {
+    result[attr.key] = attr.weightedValues.map(formatWeightedValue).join(", ");
+  }
+  return result;
+}
+
+/**
+ * Converts backend SourceRef[] to frontend SourceRef[]. Simple passthrough
+ * mapping — kept as a typed conversion so future backend changes are isolated.
+ */
+export function convertSources(
+  sources: SourceRef[] | undefined,
+): import("../types/sourceGraph").SourceRef[] | undefined {
+  if (!sources || sources.length === 0) return undefined;
+  return sources.map((s) => ({ name: s.name, url: s.url }));
+}
+
+/**
+ * Determines whether a GraphEdge is bidirectional, handling both the enum
+ * form (Directionality.bidirectional) and any object/string variants that
+ * the Motoko JS serialiser may produce at runtime.
+ */
+function isBidirectional(directionality: GraphEdge["directionality"]): boolean {
+  if (directionality === Directionality.bidirectional) return true;
+  // Motoko variant objects: { bidirectional: null }
+  if (
+    typeof directionality === "object" &&
+    directionality !== null &&
+    "bidirectional" in directionality
+  )
+    return true;
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Hierarchy edge generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates hierarchy edges from parent-child node relationships.
+ * Produces unidirectional edges flowing from parent to child for all four
+ * hierarchy levels: curation→swarm, swarm→location, location→lawToken,
+ * lawToken→interpToken.
+ */
+function generateHierarchyEdges(data: GraphData): Edge[] {
+  const hierarchyEdges: Edge[] = [];
+
+  for (const swarm of data.swarms) {
+    hierarchyEdges.push({
+      source: swarm.parentCurationId,
+      target: swarm.id,
+      label: undefined,
+      bidirectional: false,
+      edgeType: "hierarchy",
+    });
+  }
+
+  for (const location of data.locations) {
+    hierarchyEdges.push({
+      source: location.parentSwarmId,
+      target: location.id,
+      label: undefined,
+      bidirectional: false,
+      edgeType: "hierarchy",
+    });
+  }
+
+  for (const lawToken of data.lawTokens) {
+    hierarchyEdges.push({
+      source: lawToken.parentLocationId,
+      target: lawToken.id,
+      label: undefined,
+      bidirectional: false,
+      edgeType: "hierarchy",
+    });
+  }
+
+  for (const interpToken of data.interpretationTokens) {
+    hierarchyEdges.push({
+      source: interpToken.parentLawTokenId,
+      target: interpToken.id,
+      label: undefined,
+      bidirectional: false,
+      edgeType: "hierarchy",
+    });
+  }
+
+  return hierarchyEdges;
+}
+
+// ---------------------------------------------------------------------------
+// Main converter
+// ---------------------------------------------------------------------------
+
+/**
+ * Converts backend GraphData into the frontend SourceGraph format used by
+ * SourceGraphDiagram.
+ *
+ * @param data    GraphData returned from the backend
+ * @param name    Display name for the graph
+ * @param id      Optional stable identifier (defaults to first curation id)
+ */
+export function graphDataToSourceGraph(
+  data: GraphData,
+  name: string,
+  id?: string,
+): SourceGraph {
+  // ------------------------------------------------------------------
+  // Build ID → display-name lookup
+  // ------------------------------------------------------------------
+  const idToName = new Map<string, string>();
+
+  for (const c of data.curations) idToName.set(c.id, c.name);
+  for (const s of data.swarms) idToName.set(s.id, s.name);
+  for (const l of data.locations) idToName.set(l.id, l.title);
+  for (const lt of data.lawTokens) idToName.set(lt.id, lt.tokenLabel);
+  for (const it of data.interpretationTokens) idToName.set(it.id, it.title);
+
+  // ------------------------------------------------------------------
+  // Convert each entity type to SourceNode
+  // ------------------------------------------------------------------
+  const curationNodes: SourceNode[] = data.curations.map((c) => ({
+    id: c.id,
+    name: c.name,
+    nodeType: "curation" as const,
+    attributes: convertWeightedAttributes(c.customAttributes),
+    sources: convertSources(c.sources),
+  }));
+
+  const swarmNodes: SourceNode[] = data.swarms.map((s) => ({
+    id: s.id,
+    name: s.name,
+    nodeType: "swarm" as const,
+    parentName: idToName.get(s.parentCurationId),
+    attributes: convertWeightedAttributes(s.customAttributes),
+    sources: convertSources(s.sources),
+  }));
+
+  const locationNodes: SourceNode[] = data.locations.map((l) => ({
+    id: l.id,
+    name: l.title,
+    nodeType: "location" as const,
+    parentName: idToName.get(l.parentSwarmId),
+    attributes: convertWeightedAttributes(l.customAttributes),
+    sources: convertSources(l.sources),
+  }));
+
+  const lawTokenNodes: SourceNode[] = data.lawTokens.map((lt) => ({
+    id: lt.id,
+    name: lt.tokenLabel,
+    nodeType: "lawEntity" as const,
+    parentName: idToName.get(lt.parentLocationId),
+    attributes: convertWeightedAttributes(lt.customAttributes),
+    sources: convertSources(lt.sources),
+  }));
+
+  const interpNodes: SourceNode[] = data.interpretationTokens.map((it) => ({
+    id: it.id,
+    name: it.title,
+    nodeType: "interpEntity" as const,
+    parentName: idToName.get(it.parentLawTokenId),
+    // contentVersions holds historical content; use most recent version if available
+    content:
+      it.contentVersions.length > 0
+        ? it.contentVersions[it.contentVersions.length - 1].content
+        : undefined,
+    attributes: convertWeightedAttributes(it.customAttributes),
+    sources: convertSources(it.sources),
+  }));
+
+  // ------------------------------------------------------------------
+  // Generate hierarchy edges from parent-child relationships
+  // ------------------------------------------------------------------
+  const hierarchyEdges = generateHierarchyEdges(data);
+
+  // ------------------------------------------------------------------
+  // Convert edges — source/target are backend NodeIds (UUIDs); map to names
+  // for SourceGraphDiagram which matches edges against node.id
+  // ------------------------------------------------------------------
+  const edges: Edge[] = [
+    ...hierarchyEdges,
+    ...data.edges.map((e) => ({
+      // Use the UUID directly — SourceGraphDiagram matches node.id, and nodes
+      // above are created with id = backend UUID.
+      source: e.source,
+      target: e.target,
+      label: e.edgeLabel || undefined,
+      bidirectional: isBidirectional(e.directionality),
+      edgeType: "cross-ref" as const,
+    })),
+  ];
+
+  // ------------------------------------------------------------------
+  // Assemble result
+  // ------------------------------------------------------------------
+  const nodes: SourceNode[] = [
+    ...curationNodes,
+    ...swarmNodes,
+    ...locationNodes,
+    ...lawTokenNodes,
+    ...interpNodes,
+  ];
+
+  return {
+    id: id ?? data.curations[0]?.id ?? "unknown",
+    name,
+    nodes,
+    edges,
+    createdAt: Date.now(),
+  };
+}

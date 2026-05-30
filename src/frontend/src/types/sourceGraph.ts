@@ -1,0 +1,105 @@
+export type NodeType =
+  | "curation"
+  | "swarm"
+  | "location"
+  | "lawEntity"
+  | "interpEntity";
+
+export interface SourceRef {
+  name: string;
+  url: string;
+}
+
+export interface SourceNode {
+  id?: string;
+  name: string;
+  nodeType: NodeType;
+  content?: string;
+  parentName?: string;
+  attributes?: Record<string, unknown>;
+  sources?: SourceRef[];
+}
+
+export interface Edge {
+  source: string;
+  target: string;
+  label?: string;
+  bidirectional?: boolean;
+  edgeType?: "hierarchy" | "cross-ref";
+}
+
+export interface SourceGraph {
+  id: string;
+  name: string;
+  nodes: SourceNode[];
+  edges: Edge[];
+  createdAt: number;
+  publishedAt?: number;
+}
+
+export interface SourceGraphsStore {
+  graphs: SourceGraph[];
+  activeGraphId: string | null;
+}
+
+export interface PublishedNodeInfo {
+  localName: string;
+  backendId: string;
+  nodeType: string;
+  publishedAt: number;
+}
+
+export interface WeightedValue {
+  value: string;
+  weight: number;
+}
+
+export interface AttributeChange {
+  key: string;
+  oldValues: WeightedValue[];
+  newValues: string[];
+  newWeightedValues?: WeightedValue[];
+}
+
+export interface NodeOperation {
+  nodeType: string;
+  localName: string;
+  backendId: string | null;
+  parentName: string | null;
+  action: "create" | "update";
+  attributeChanges?: AttributeChange[];
+  sourceChanges?: SourceRef[];
+  attributes: [string, string[]][];
+}
+
+export interface EdgeOperation {
+  sourceName: string;
+  targetName: string;
+  sourceId: string | null;
+  targetId: string | null;
+  action: "create" | "update";
+  labels: string[];
+  bidirectional: boolean;
+  newLabels?: string[];
+}
+
+export interface PublishPreviewResult {
+  nodeOperations: NodeOperation[];
+  edgeOperations: EdgeOperation[];
+  summary: {
+    nodesToCreate: number;
+    nodesToUpdate: number;
+    edgesToCreate: number;
+    edgesToUpdate: number;
+    hierarchyEdgesToCreate: number;
+    attributesToCreate: number;
+    sourcesToCreate: number;
+  };
+  buzzCost: number;
+}
+
+export interface ContentVersionInfo {
+  content: string;
+  contributor: string;
+  timestamp: number;
+}
