@@ -2330,6 +2330,16 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     }
   }, [hyvmindLoading, phase.type]);
 
+  // Focus the terrain iframe once it becomes visible after loading
+  useEffect(() => {
+    if (!terrainLoading && hyvmindOverlay === "terrain-world") {
+      const el = terrainIframeRef.current;
+      if (el) {
+        el.focus();
+      }
+    }
+  }, [terrainLoading, hyvmindOverlay]);
+
   const handleWordleComplete = useCallback((score: number) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
