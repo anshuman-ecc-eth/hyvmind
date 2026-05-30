@@ -22,7 +22,10 @@ interface TerrainItem {
   artworkUrl: string;
 }
 
-export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): ReactNode {
+export default function MapsOverlay({
+  onBack,
+  onPlay,
+}: MapsOverlayProps): ReactNode {
   const { data: metas, isLoading } = usePublishedGraphMetas();
   const [testMaps, setTestMaps] = useState<TerrainItem[]>([]);
   const [testMapsLoading, setTestMapsLoading] = useState(true);
@@ -62,7 +65,7 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
     }));
 
   const allTerrains = [...testMaps, ...publishedTerrains];
-  const cols = 2;
+  const cols = 3;
 
   const openTerrain = useCallback(
     (idx: number) => {
@@ -98,7 +101,7 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
       } else if (e.key === "ArrowRight") {
         setTerrainIdx((prev) => Math.min(allTerrains.length - 1, prev + 1));
       } else if (e.key === "z" || e.key === "Z") {
-        openTerrain(terrainIdx);
+        playTerrain(terrainIdx);
       } else if (e.key === "Enter") {
         playTerrain(terrainIdx);
       } else if (e.key === "x" || e.key === "X") {
@@ -109,15 +112,12 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedMeta, allTerrains.length, terrainIdx, openTerrain, playTerrain, onBack]);
+  }, [selectedMeta, allTerrains.length, terrainIdx, playTerrain, onBack]);
 
   const loading = isLoading || testMapsLoading;
 
   return (
-    <div
-      className="flex-1 flex flex-col items-center justify-start overflow-y-auto"
-      style={{ background: "rgba(0,0,0,0.7)" }}
-    >
+    <div className="flex-1 flex flex-col items-center justify-start overflow-y-auto">
       {selectedMeta && (
         <ArtworkModal
           artworkUrl={selectedMeta.artworkUrl}
@@ -125,7 +125,10 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
           onClose={() => setSelectedMeta(null)}
         />
       )}
-      <div className="w-full max-w-md flex flex-col items-center gap-4 p-4">
+      <div
+        className="w-full h-full flex flex-col items-center gap-4 p-4 overflow-auto"
+        style={{ background: "rgba(0,0,0,0.7)" }}
+      >
         <div
           className="text-foreground tracking-widest"
           style={{
@@ -165,14 +168,14 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
         )}
 
         {allTerrains.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+          <div className="grid grid-cols-3 gap-2 w-full max-w-sm">
             {allTerrains.map((t, i) => {
               const isSelected = i === terrainIdx;
               return (
                 <button
                   key={t.id}
                   type="button"
-                  className={`flex flex-col items-center gap-1 p-2 border transition-colors rounded cursor-pointer ${
+                  className={`flex flex-col items-center gap-1 p-1 border transition-colors rounded cursor-pointer ${
                     isSelected
                       ? "border-foreground bg-card scale-105"
                       : "border-border bg-card/50 hover:bg-card"
@@ -183,7 +186,7 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
                   <img
                     src={t.artworkUrl}
                     alt={t.name}
-                    className="w-full aspect-square object-contain"
+                    className="w-full max-w-[125px] aspect-square object-contain"
                   />
                   <span
                     className="text-muted-foreground truncate w-full text-center"
@@ -213,56 +216,31 @@ export default function MapsOverlay({ onBack, onPlay }: MapsOverlayProps): React
               borderRadius: "2px",
             }}
           >
-            [Z] view [Enter] play [X] back
+            [Z] travel [X] back
           </div>
           <div className="flex gap-4">
             {allTerrains.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => openTerrain(terrainIdx)}
-                  className="active:scale-95 transition-transform"
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,0.5)",
-                    border: "2px solid #888",
-                    color: "#000",
-                    fontFamily: '"Press Start 2P", monospace',
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Z
-                </button>
-                {onPlay && (
-                  <button
-                    type="button"
-                    onClick={() => playTerrain(terrainIdx)}
-                    className="active:scale-95 transition-transform"
-                    style={{
-                      width: "48px",
-                      height: "48px",
-                      borderRadius: "50%",
-                      background: "rgba(255,255,255,0.5)",
-                      border: "2px solid #888",
-                      color: "#000",
-                      fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "10px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    Play
-                  </button>
-                )}
-              </>
+              <button
+                type="button"
+                onClick={() => playTerrain(terrainIdx)}
+                className="active:scale-95 transition-transform"
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.5)",
+                  border: "2px solid #888",
+                  color: "#000",
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                Z
+              </button>
             )}
             <button
               type="button"

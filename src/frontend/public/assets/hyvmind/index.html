@@ -124,6 +124,12 @@ window.addEventListener('message', function(e) {
     (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
+  if (e.data?.type === 'hyvmind-pause-bgm') {
+    if (typeof bgm !== 'undefined' && bgm) { bgm.pause(); bgm.currentTime = 0; }
+  }
+  if (e.data?.type === 'hyvmind-resume-bgm') {
+    if (typeof bgm !== 'undefined' && bgm) { bgm.currentTime = 0; bgm.play().catch(function(){}); }
+  }
 
 function showBavaDialog() {
   if (activePopup) activePopup.remove();

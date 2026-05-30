@@ -19,13 +19,20 @@
   .action-buttons { display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:144px;height:150px;padding-top:24px; }
   .action-row { display:flex;flex-direction:row;gap:16px; }
   .action-btn { width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.5);border:none;color:#000;font-family:'Press Start 2P',monospace;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
-  .action-btn:active,.action-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+   .action-btn:active,.action-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+   .zoom-row { display:flex;flex-direction:row;gap:6px;width:100%;margin-top:25px; }
+   .screen-size-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;width:100%;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+   .screen-size-btn:active,.screen-size-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+   .dpad-btn::after,.action-btn::after,.screen-size-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
   .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
   .viewport { position:absolute;inset:0;overflow:hidden; }
   .world-layer { display:block;image-rendering:pixelated;position:absolute;top:0;left:0; }
   .game-layer { position:absolute;inset:0;z-index:1; }
   .sprite { position:absolute;left:0;top:0;width:32px;height:36px;background-size:32px 36px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat;z-index:5;will-change:transform; }
-  #minimap { position:absolute;top:4px;left:4px;z-index:10;pointer-events:none;image-rendering:pixelated;border:1px solid rgba(255,255,255,0.15);border-radius:2px; }
+    #minimap { position:absolute;top:4px;left:4px;z-index:10;pointer-events:none;image-rendering:pixelated;border:1px solid rgba(255,255,255,0.15);border-radius:2px; }
+    #transitionOverlay { position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000; }
+    #transitionOverlay.show { display:flex; }
+    @keyframes terminal-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 </head>
 <body tabindex="-1">
@@ -39,20 +46,45 @@
     </div>
     <div class="screen">
       <div class="viewport" id="viewport">
-        <img id="worldBg" class="world-layer" src="">
+        <img id="worldBg" class="world-layer" src="" style="display:none">
         <div id="gameLayer" class="game-layer"></div>
       </div>
       <canvas id="minimap" width="80" height="80"></canvas>
+      <div id="transitionOverlay">
+        <div style="font-family:'Press Start 2P',monospace;font-size:0.65rem;letter-spacing:0.1em;color:#fff">Travelling..</div>
+        <div style="display:flex;gap:2px">
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.00s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.05s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.10s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.15s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.20s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.25s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.30s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.35s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.40s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.45s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.50s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.55s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.60s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.65s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.70s infinite">█</span>
+          <span style="font-size:0.55rem;color:#fff;animation:terminal-blink 0.8s step-end 0.75s infinite">█</span>
+        </div>
+      </div>
     </div>
     <div class="action-buttons">
       <div class="action-row">
         <button class="action-btn" id="btnZ">Z</button>
         <button class="action-btn" id="btnX">X</button>
       </div>
+      <div class="zoom-row">
+        <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+      </div>
     </div>
   </div>
-  <button id="backBtn" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#fff">&gt; Back</button>
+  <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
 </div>
+<audio id="bgm" src="/assets/hyvmind/whichbrandofmustartshallibuy.ogg" loop preload="auto"></audio>
 <script>
 var ASSETS = '/assets/hyvmind';
 var LPC_PATH = '/assets/lpc/terrain-map-v7.png';
@@ -229,7 +261,7 @@ var worldCanvas = null;
 var collisionMap = [];
 var gObjects = [];
 var px = 0, py = 0, pDir = 0, pMoving = false, pWalk = 0;
-var STEP = 10; // ~32/3
+var STEP = 5;
 var gamePaused = false;
 var activePopup = null;
 var navPaused = false;
@@ -493,13 +525,6 @@ function renderMinimap() {
   // 30% dark overlay for readability
   minimapCtx.fillStyle = 'rgba(0,0,0,0.3)';
   minimapCtx.fillRect(0, 0, mm, mm);
-  // Player dot
-  var dotX = (px + 16) / WORLD_W * mm;
-  var dotY = (py + 16) / WORLD_H * mm;
-  minimapCtx.fillStyle = '#ff4444';
-  minimapCtx.beginPath();
-  minimapCtx.arc(dotX, dotY, 2, 0, Math.PI * 2);
-  minimapCtx.fill();
   // Viewport rectangle
   var scrEl = document.querySelector('.screen');
   var vw = scrEl ? (scrEl.clientWidth || SCREEN_W) : SCREEN_W;
@@ -540,9 +565,9 @@ function render() {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { window.parent.postMessage({type:'hyvmind-close'},'*'); return; }
+  if (e.key === 'Escape') { closeTerrain(); return; }
   if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; }
-  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(activePopup)closePopup();else showPopup('Explore the terrain!');setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
+  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
   if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);}
 });
 document.addEventListener('keyup', function(e) {
@@ -555,9 +580,48 @@ document.querySelectorAll('.dpad-btn').forEach(function(b){
   b.addEventListener('mousedown',s);b.addEventListener('mouseup',en);b.addEventListener('mouseleave',en);
   b.addEventListener('touchstart',s,{passive:false});b.addEventListener('touchend',en,{passive:false});b.addEventListener('touchcancel',en,{passive:false});
 });
-document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(activePopup)closePopup();else showPopup('Explore the terrain!');setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
 document.getElementById('btnX').addEventListener('click',function(){this.classList.add('active');closePopup();setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
-document.getElementById('backBtn').addEventListener('click',function(){window.parent.postMessage({type:'hyvmind-close'},'*');});
+document.getElementById('backBtn').addEventListener('click',closeTerrain);
+
+var zoomValues = [1, 1.25, 1.5];
+var zoomLabels = ['100%', '125%', '150%'];
+var zoomIdx = 0;
+var layoutEl = document.querySelector('.layout');
+document.getElementById('screenSizeBtn').addEventListener('click', function() {
+  zoomIdx = (zoomIdx + 1) % zoomValues.length;
+  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
+  layoutEl.style.transform = 'scale(' + zoomValues[zoomIdx] + ')';
+});
+
+function startBgMusic() {
+  var bgm = document.getElementById('bgm');
+  if (!bgm) return;
+  bgm.volume = 0.1;
+  bgm.play().catch(function() {
+    function onInteraction() {
+      bgm.play().catch(function(){});
+      document.removeEventListener('click', onInteraction);
+      document.removeEventListener('keydown', onInteraction);
+    }
+    document.addEventListener('click', onInteraction);
+    document.addEventListener('keydown', onInteraction);
+  });
+}
+
+function stopBgMusic() {
+  var bgm = document.getElementById('bgm');
+  if (bgm) { bgm.pause(); bgm.currentTime = 0; }
+}
+
+function closeTerrain() {
+  stopBgMusic();
+  document.getElementById('transitionOverlay').classList.add('show');
+  setTimeout(function() {
+    window.parent.postMessage({type:'hyvmind-resume-bgm'},'*');
+    window.parent.postMessage({type:'hyvmind-close'},'*');
+  }, 2000);
+}
 
 function loop() {
   if (navPaused) { render(); return; }
@@ -623,10 +687,17 @@ function boot() {
           var img2 = new Image();
           img2.onload = function() {
             worldCanvas = renderWorld(img2, tileGrid, GRID_W, GRID_H, gObjects, sheetImages);
+            worldBg.style.display = 'block';
+            worldBg.onload = function() {
+              showPopup("You've reached a strange new land: " + seed);
+              window.parent.postMessage({type:'hyvmind-terrain-ready'},'*');
+            };
             worldBg.src = worldCanvas.toDataURL('image/png');
             render();
             setInterval(loop, 40);
             requestAnimationFrame(function() { document.body.focus(); });
+            window.parent.postMessage({type:'hyvmind-stop-bgm'},'*');
+            startBgMusic();
           };
           img2.crossOrigin = 'anonymous';
           img2.src = LPC_PATH;
@@ -643,15 +714,22 @@ function boot() {
             ctx.fillStyle='rgb('+r+','+g+','+b+')';ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
           }
           for (var oi = 0; oi < gObjects.length; oi++) {
-            var o = objects[oi];
+            var o = gObjects[oi];
             var sh = sheetImages[o.sheet];
             if (sh) ctx.drawImage(sh, o.sx * TILE, o.sy * TILE, o.w * TILE, o.h * TILE, o.col * TILE, o.row * TILE, o.w * TILE, o.h * TILE);
           }
           worldCanvas = fallbackCanvas;
+          worldBg.style.display = 'block';
+          worldBg.onload = function() {
+            showPopup("You've reached a strange new land: " + seed);
+            window.parent.postMessage({type:'hyvmind-terrain-ready'},'*');
+          };
           worldBg.src = worldCanvas.toDataURL('image/png');
           render();
           setInterval(loop,40);
           requestAnimationFrame(function(){document.body.focus();});
+          window.parent.postMessage({type:'hyvmind-stop-bgm'},'*');
+          startBgMusic();
         });
     }
   }

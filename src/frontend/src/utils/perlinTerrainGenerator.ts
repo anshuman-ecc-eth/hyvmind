@@ -454,16 +454,16 @@ export async function generateTerrainArtwork(
         ? 500
         : 865
       : projection === "topdown"
-        ? 250
-        : 433;
+        ? 125
+        : 216;
   const canvasHeight =
     size === "full"
       ? projection === "topdown"
         ? 500
         : 690
       : projection === "topdown"
-        ? 250
-        : 345;
+        ? 125
+        : 172;
   const gridWidth = 100;
   const gridHeight = 100;
 
@@ -678,7 +678,7 @@ export async function generateTerrainArtwork(
 
     // Scale canvas for thumbnail
     if (size === "thumbnail") {
-      ctx.scale(0.5, 0.5);
+      ctx.scale(0.25, 0.25);
     }
 
     // Translate origin as specified
