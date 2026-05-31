@@ -219,7 +219,6 @@ actor {
     extensionLog : [ExtensionEntry];
     artworkDataUrl : ?Text;
     terrainParams : ?Text;
-    authors : [Text];
   };
 
   // Source graph edge with weighted labels
@@ -3137,16 +3136,6 @@ actor {
               addedAttributes = attributesAdded;
               addedSources = ?sourcesAdded;
             };
-            var found = false;
-            label w for (a in existingMeta.authors.vals()) {
-              if (a == extendedByName) { found := true; break w };
-            };
-            let authors = if (found) { existingMeta.authors } else {
-              let len = existingMeta.authors.size();
-              Array.tabulate(len + 1, func (i) {
-                if (i < len) { existingMeta.authors[i] } else { extendedByName }
-              })
-            };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
               nodeCount = existingMeta.nodeCount + nodesToCreate;
@@ -3155,7 +3144,6 @@ actor {
               attributeCount = existingMeta.attributeCount + attributesAdded;
               sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
-              authors;
             };
             publishedSourceGraphs.add(pid, updatedMeta);
             let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
@@ -3192,7 +3180,6 @@ actor {
           extensionLog = [];
           artworkDataUrl = null;
           terrainParams = null;
-          authors = [creatorName];
         };
         publishedSourceGraphs.add(newPid, newMeta);
         publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
@@ -3834,7 +3821,6 @@ actor {
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
       ("extensionCount", jsonNat(m.extensionLog.size())),
-      ("authors", jsonArray(m.authors)),
     ]);
   };
 

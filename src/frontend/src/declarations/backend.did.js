@@ -85,7 +85,6 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'hierarchyEdgeCount' : IDL.Nat,
   'nodeCount' : IDL.Nat,
   'terrainParams' : IDL.Opt(IDL.Text),
-  'authors' : IDL.Vec(IDL.Text),
 });
 export const BuzzScore = IDL.Int;
 export const BuzzLeaderboardEntry = IDL.Record({
@@ -480,7 +479,6 @@ export const idlFactory = ({ IDL }) => {
     'hierarchyEdgeCount' : IDL.Nat,
     'nodeCount' : IDL.Nat,
     'terrainParams' : IDL.Opt(IDL.Text),
-    'authors' : IDL.Vec(IDL.Text),
   });
   const BuzzScore = IDL.Int;
   const BuzzLeaderboardEntry = IDL.Record({

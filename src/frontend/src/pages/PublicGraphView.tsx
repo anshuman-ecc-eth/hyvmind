@@ -76,6 +76,12 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
   const crossRefEdges =
     Number(meta.edgeCount) - Number(meta.hierarchyEdgeCount ?? 0n);
   const hierarchyEdges = Number(meta.hierarchyEdgeCount ?? 0n);
+  const allAuthors = [meta.creatorName];
+  for (const entry of meta.extensionLog) {
+    if (entry.extendedByName && !allAuthors.includes(entry.extendedByName)) {
+      allAuthors.push(entry.extendedByName);
+    }
+  }
 
   return (
     <div
@@ -84,7 +90,7 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
     >
       {/* Authors */}
       <div className="font-mono text-xs text-muted-foreground mb-0.5">
-        Authors: {meta.authors.join(", ")}
+        Authors: {allAuthors.join(", ")}
       </div>
 
       {/* Core line */}
