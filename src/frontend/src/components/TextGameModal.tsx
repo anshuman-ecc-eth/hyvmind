@@ -2282,6 +2282,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const hyvmindOverlayRef = useRef<string | null>(null);
   const unsubmittedScoreRef = useRef(0);
   const [terrainSeed, setTerrainSeed] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(() => {
+    const saved = localStorage.getItem("hyvmind-zoom");
+    return saved ? Number.parseFloat(saved) : 1;
+  });
 
   hyvmindOverlayRef.current = hyvmindOverlay;
   unsubmittedScoreRef.current = unsubmittedScore;
@@ -2508,6 +2512,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           win.postMessage({ type: "hyvmind-resume-bgm" }, "*");
         }
       } else if (e.data?.type === "hyvmind-zoom-sync") {
+        setZoom(e.data.zoom);
+        localStorage.setItem("hyvmind-zoom", String(e.data.zoom));
         // Forward zoom to the other game (whichever isn't the sender)
         const target =
           hyvmindOverlayRef.current === "terrain-world"
@@ -3404,7 +3410,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       <div
         ref={modalRef}
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
-        style={{ inset: 0, fontSize: "80%" }}
+        style={{ inset: 0 }}
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
@@ -3458,7 +3464,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             style={{ opacity: 1 }}
           />
-          <div className="relative z-10 flex-1 flex flex-col min-h-0">
+          <div
+            className="relative z-10 flex-1 flex flex-col min-h-0"
+            style={{ fontSize: `${100 * zoom}%` }}
+          >
             {renderContent()}
 
             {/* Buzz Secret Banner — persists until dismissed */}
