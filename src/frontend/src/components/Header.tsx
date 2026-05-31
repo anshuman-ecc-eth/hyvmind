@@ -51,7 +51,7 @@ export default function Header() {
 
   return (
     <header className="border-b border-dashed border-border bg-background font-mono flex-shrink-0">
-      <div className="container mx-auto px-6 py-3">
+      <div className="px-2 py-3">
         <div className="flex items-center justify-between">
           {/* Image Logo */}
           <div className="flex items-center">
