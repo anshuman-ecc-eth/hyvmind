@@ -466,6 +466,17 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       >
         Credits
       </div>
+      <div
+        className="text-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.7em",
+          letterSpacing: "0.05em",
+          textAlign: "center",
+        }}
+      >
+        Thanks to the following artists for making this project possible!
+      </div>
       <Tabs
         defaultValue="assets"
         className="w-full max-w-md flex flex-col items-center gap-4"
@@ -501,12 +512,13 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
         <TabsContent value="assets" className="w-full">
           <div
-            className="w-full flex flex-col items-start gap-4"
+            className="w-full flex flex-col items-start gap-4 overflow-y-auto"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.65em",
+              fontSize: "0.6em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
+              maxHeight: "50vh",
             }}
           >
             <div className="flex flex-col items-start gap-1 w-full">
@@ -969,12 +981,13 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
         <TabsContent value="fonts" className="w-full">
           <div
-            className="w-full flex flex-col items-start gap-3"
+            className="w-full flex flex-col items-start gap-3 overflow-y-auto"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
+              maxHeight: "50vh",
             }}
           >
             <div
@@ -1021,12 +1034,13 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
         <TabsContent value="libraries" className="w-full">
           <div
-            className="w-full flex flex-col items-start gap-4"
+            className="w-full flex flex-col items-start gap-4 overflow-y-auto"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
+              maxHeight: "50vh",
             }}
           >
             {[

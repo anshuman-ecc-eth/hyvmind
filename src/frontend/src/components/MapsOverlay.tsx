@@ -34,11 +34,7 @@ export default function MapsOverlay({
   );
 
   const allItems = useMemo(() => {
-    const terrainNames = [
-      ...TEST_SEEDS,
-      ...publishedTerrains.map((t) => t.name),
-    ];
-    return terrainNames.length > 0 ? [...terrainNames, "Back"] : ["Back"];
+    return [...TEST_SEEDS, ...publishedTerrains.map((t) => t.name)];
   }, [publishedTerrains]);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -47,17 +43,14 @@ export default function MapsOverlay({
     (idx: number) => {
       const item = allItems[idx];
       if (!item) return;
-      if (item === "Back") {
-        onBack();
-        return;
-      }
       if (onPlay) onPlay(item);
     },
-    [allItems, onBack, onPlay],
+    [allItems, onPlay],
   );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (allItems.length === 0) return;
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIdx((prev) => Math.max(0, prev - 1));
@@ -108,7 +101,7 @@ export default function MapsOverlay({
         </div>
       )}
 
-      {!loading && publishedTerrains.length === 0 && allItems.length <= 1 && (
+      {!loading && publishedTerrains.length === 0 && allItems.length === 0 && (
         <div
           className="text-muted-foreground text-center px-4"
           style={{
@@ -157,6 +150,23 @@ export default function MapsOverlay({
           })}
         </div>
       )}
+      <button
+        type="button"
+        className="text-foreground transition-colors hover:text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          marginTop: "4px",
+        }}
+        onClick={onBack}
+      >
+        {"> Back"}
+      </button>
     </div>
   );
 }

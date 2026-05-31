@@ -10,7 +10,8 @@
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; }
   body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
   body:focus { outline: none; }
-  .layout { display: flex; align-items: center; gap: 24px; }
+  .layout { display: flex; flex-direction: column; align-items: center; }
+  .layout-row { display: flex; align-items: center; gap: 24px; }
   .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
   .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666; }
   .dpad-btn:active,.dpad-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
@@ -35,30 +36,32 @@
 <body tabindex="-1">
 <div id="gameContainer" style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%">
   <div class="layout" id="gameLayout">
-    <div class="dpad">
-      <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
-      <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
-      <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
-      <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
-    </div>
-    <div class="screen">
-      <div class="viewport" id="viewport">
-        <img id="worldBg" class="world-layer" src="" style="display:none">
-        <div id="gameLayer" class="game-layer"></div>
+    <div class="layout-row">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
+        <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
+        <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
+        <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
       </div>
-      <canvas id="minimap" width="80" height="80"></canvas>
-    </div>
-    <div class="action-buttons">
-      <div class="action-row">
-        <button class="action-btn" id="btnZ">Z</button>
-        <button class="action-btn" id="btnX">X</button>
+      <div class="screen">
+        <div class="viewport" id="viewport">
+          <img id="worldBg" class="world-layer" src="" style="display:none">
+          <div id="gameLayer" class="game-layer"></div>
+        </div>
+        <canvas id="minimap" width="80" height="80"></canvas>
       </div>
-      <div class="zoom-row">
-        <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+      <div class="action-buttons">
+        <div class="action-row">
+          <button class="action-btn" id="btnZ">Z</button>
+          <button class="action-btn" id="btnX">X</button>
+        </div>
+        <div class="zoom-row">
+          <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+        </div>
       </div>
     </div>
+    <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
   </div>
-  <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
 </div>
 <audio id="bgm" src="/assets/hyvmind/which_brand_of_mustard_shall_i_buy.mp3" loop preload="auto"></audio>
 <script>
