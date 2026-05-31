@@ -1229,7 +1229,7 @@ function StartScreen({
                 letterSpacing: "0.2em",
               }}
             >
-              LOADING
+              Loading..
             </span>
             <div className="flex gap-[2px]">
               {Array.from({ length: 16 }).map((_, i) => {
@@ -3041,23 +3041,23 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         return (
           <div className="flex-1 relative flex flex-col overflow-hidden">
             {hyvmindLoading && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none">
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
                 <div
-                  className="text-foreground"
+                  className="text-white/70"
                   style={{
                     fontFamily: '"Press Start 2P", monospace',
                     fontSize: "0.65em",
                     letterSpacing: "0.1em",
                   }}
                 >
-                  Loading...
+                  Loading..
                 </div>
                 <div className="flex gap-[2px]">
                   {Array.from({ length: 16 }).map((_, i) => (
                     <span
                       // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
                       key={i}
-                      className="text-foreground"
+                      className="text-white"
                       style={{
                         fontSize: "0.55em",
                         animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
