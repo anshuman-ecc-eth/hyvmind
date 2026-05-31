@@ -1,4 +1,3 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuzzLeaderboardEntry } from "../backend.d";
@@ -477,654 +476,699 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       >
         Thanks to the following artists for making this project possible!
       </div>
-      <Tabs
-        defaultValue="assets"
-        className="flex-1 flex flex-row min-h-0 w-full max-w-md gap-3"
-      >
-        <TabsList
-          className="flex-col bg-transparent gap-2 justify-center h-auto"
+      <div className="flex-1 min-h-0 overflow-y-auto w-full max-w-md">
+        <div
+          className="w-full flex flex-col items-start gap-3"
           style={{
             fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.7em",
+            lineHeight: "1.8",
+            letterSpacing: "0.05em",
           }}
         >
-          <TabsTrigger
-            value="assets"
-            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-          >
-            Game Assets
-          </TabsTrigger>
-          <TabsTrigger
-            value="fonts"
-            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-          >
-            Fonts
-          </TabsTrigger>
-          <TabsTrigger
-            value="libraries"
-            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-          >
-            Code Libraries
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="assets" className="flex-1 min-h-0 overflow-y-auto">
           <div
-            className="w-full flex flex-col items-start gap-4"
+            className="text-foreground w-full text-center"
             style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.7em",
-              lineHeight: "1.8",
-              letterSpacing: "0.05em",
+              fontSize: "0.85em",
+              marginBottom: "2px",
+              letterSpacing: "0.1em",
+              color: "#c89420",
             }}
           >
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">forest.mp3 — BGM</span>
-              <a
-                href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                syncopika
-              </a>
+            — Game Assets —
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">forest.mp3 — BGM</span>
+            <a
+              href="https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              syncopika
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
               <span
                 className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
               >
                 CC-BY 3.0
               </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                which_brand_of_mustard_shall_i_buy.mp3 — terrain world BGM
-              </span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by
-                glitchart
-              </span>
-              <a
-                href="https://opengameart.org/content/which-brand-of-mustard-shall-i-buy-congusbongus-springyspringo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                OpenGameArt
-              </a>
               <span
                 className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
               >
-                CC-BY 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                forest and moon — background image
-              </span>
-              <a
-                href="https://forest-elfs.itch.io/forestmoon"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                forest-elfs
-              </a>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">bottom.png — world tiles</span>
-              <a
-                href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                Ivan Voirol
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY 4.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                terrain-map-v7.png — LPC terrain tileset
-              </span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                Lanea Zimmerman (Sharm), based on LPC base terrain tiles
-              </span>
-              <a
-                href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                OpenGameArt (LPC Base Assets)
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                lpc-baobab/ — baobab trees
-              </span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                bluecarrot16
-              </span>
-              <a
-                href="https://opentaxa.miraheze.org/wiki/Index"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                OpenTaxa
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0+
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                rowboat.png — boat sprites
-              </span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                shadowfinderstudios, Zabin, Daniel Eddeland
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-rowboat-topdown-4-directional-recolor-for-rpg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY-SA 4.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">
-                sprites/cultist_*.png — player
-              </span>
-              <span className="text-foreground">Antifarea</span>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY
-              </span>
-            </div>
-
-            <div className="w-full" style={{ height: "4px" }} />
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — body</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating),
-                Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano,
-                Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
-              </span>
-              <a
-                href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — head</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener
-                (Redshrike)
-              </span>
-              <a
-                href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — face</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
-              </span>
-              <a
-                href="https://github.com/ElizaWy/LPC/tree/main/Characters/Head"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                GitHub (ElizaWy)
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — hat</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames),
-                Tracy
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-celestial-wizard-hats"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — boots</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                JaidynReiman, bluecarrot16, Nila122
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-clothes-and-hair"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — hair</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                Yamilian, bluecarrot16
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-heroine-2"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — mustache</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                JaidynReiman, Thane Brimhall (pennomi), laetissima
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-base-character-expressions"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — vest</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen
-                Challener (Redshrike), Johannes Sjölund (wulax)
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-2-characters"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">sprites/bava/ — jacket</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                bluecarrot16
-              </span>
-              <a
-                href="https://opengameart.org/content/lpc-gentleman"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-                style={{ fontSize: "0.85em" }}
-              >
-                OpenGameArt
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  fontSize: "0.7em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                CC-BY-SA 3.0 / GPL 3.0
-              </span>
-            </div>
-
-            <div className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">Chess puzzles</span>
-              <a
-                href="https://lichess.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-muted-foreground underline"
-              >
-                Lichess
-              </a>
-              <span
-                className="text-muted-foreground"
-                style={{
-                  background: "rgba(0,0,0,0.7)",
-                  padding: "1px 6px",
-                  alignSelf: "flex-start",
-                }}
-              >
-                Community puzzle database
+                game asset
               </span>
             </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="fonts" className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              which_brand_of_mustard_shall_i_buy.mp3 — terrain world BGM
+            </span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by
+              glitchart
+            </span>
+            <a
+              href="https://opengameart.org/content/which-brand-of-mustard-shall-i-buy-congusbongus-springyspringo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              forest and moon — background image
+            </span>
+            <a
+              href="https://forest-elfs.itch.io/forestmoon"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              forest-elfs
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">bottom.png — world tiles</span>
+            <a
+              href="https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              Ivan Voirol
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY 4.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              terrain-map-v7.png — LPC terrain tileset
+            </span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              Lanea Zimmerman (Sharm), based on LPC base terrain tiles
+            </span>
+            <a
+              href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              OpenGameArt (LPC Base Assets)
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">lpc-baobab/ — baobab trees</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              bluecarrot16
+            </span>
+            <a
+              href="https://opentaxa.miraheze.org/wiki/Index"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              OpenTaxa
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0+
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">rowboat.png — boat sprites</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              shadowfinderstudios, Zabin, Daniel Eddeland
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-rowboat-topdown-4-directional-recolor-for-rpg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY-SA 4.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              sprites/cultist_*.png — player
+            </span>
+            <span className="text-foreground">Antifarea</span>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="w-full" style={{ height: "4px" }} />
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — body</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating),
+              Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano,
+              Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+            </span>
+            <a
+              href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — head</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener
+              (Redshrike)
+            </span>
+            <a
+              href="https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — face</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+            </span>
+            <a
+              href="https://github.com/ElizaWy/LPC/tree/main/Characters/Head"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              GitHub (ElizaWy)
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — hat</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames), Tracy
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-celestial-wizard-hats"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — boots</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              JaidynReiman, bluecarrot16, Nila122
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-clothes-and-hair"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — hair</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              Yamilian, bluecarrot16
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-heroine-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — mustache</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              JaidynReiman, Thane Brimhall (pennomi), laetissima
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-base-character-expressions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — vest</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen
+              Challener (Redshrike), Johannes Sjölund (wulax)
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-2-characters"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">sprites/bava/ — jacket</span>
+            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+              bluecarrot16
+            </span>
+            <a
+              href="https://opengameart.org/content/lpc-gentleman"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+              style={{ fontSize: "0.85em" }}
+            >
+              OpenGameArt
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                CC-BY-SA 3.0 / GPL 3.0
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">Chess puzzles</span>
+            <a
+              href="https://lichess.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              Lichess
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                Community puzzle database
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
           <div
-            className="w-full flex flex-col items-start gap-3"
+            className="text-foreground w-full text-center"
             style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.7em",
-              lineHeight: "1.8",
-              letterSpacing: "0.05em",
+              fontSize: "0.85em",
+              marginTop: "8px",
+              marginBottom: "2px",
+              letterSpacing: "0.1em",
+              color: "#c89420",
             }}
           >
-            <div
-              className="text-foreground"
-              style={{ fontSize: "0.85em", marginBottom: "4px" }}
-            >
-              All fonts loaded from Google Fonts.
-            </div>
-            {[
-              ["Press Start 2P", "CodeMan38", "SIL OFL 1.1"],
-              ["Quattrocento Sans", "SIL OFL"],
-              ["Muli", "SIL OFL"],
-              ["Josefin Sans", "SIL OFL"],
-              ["Cardo", "SIL OFL"],
-              ["Oswald", "SIL OFL"],
-              ["Barlow", "SIL OFL"],
-              ["Montserrat", "SIL OFL"],
-              ["Source Sans 3", "SIL OFL"],
-              ["Chivo", "SIL OFL"],
-              ["Krub", "SIL OFL"],
-              ["Lora", "SIL OFL"],
-              ["Rubik", "SIL OFL"],
-              ["Assistant", "SIL OFL"],
-              ["Six Caps", "SIL OFL"],
-              ["JetBrains Mono", "SIL OFL"],
-              ["Roboto", "Apache-2.0"],
-              ["Open Sans Condensed", "Apache-2.0"],
-            ].map(([font, ...rest]) => (
-              <div
-                key={font}
-                className="flex flex-col items-start gap-0 w-full"
-              >
-                <span className="text-foreground">{font}</span>
+            — Fonts —
+          </div>
+
+          <div className="text-foreground" style={{ fontSize: "0.85em" }}>
+            All fonts loaded from Google Fonts.
+          </div>
+          {[
+            ["Press Start 2P", "CodeMan38", "SIL OFL 1.1"],
+            ["Quattrocento Sans", "SIL OFL"],
+            ["Muli", "SIL OFL"],
+            ["Josefin Sans", "SIL OFL"],
+            ["Cardo", "SIL OFL"],
+            ["Oswald", "SIL OFL"],
+            ["Barlow", "SIL OFL"],
+            ["Montserrat", "SIL OFL"],
+            ["Source Sans 3", "SIL OFL"],
+            ["Chivo", "SIL OFL"],
+            ["Krub", "SIL OFL"],
+            ["Lora", "SIL OFL"],
+            ["Rubik", "SIL OFL"],
+            ["Assistant", "SIL OFL"],
+            ["Six Caps", "SIL OFL"],
+            ["JetBrains Mono", "SIL OFL"],
+            ["Roboto", "Apache-2.0"],
+            ["Open Sans Condensed", "Apache-2.0"],
+          ].map(([font, ...rest]) => (
+            <div key={font} className="flex flex-col items-start gap-0 w-full">
+              <span className="text-foreground">{font}</span>
+              <div className="flex flex-row gap-2 items-center flex-wrap">
                 <span
                   className="text-muted-foreground"
                   style={{ fontSize: "0.85em" }}
                 >
                   {rest.join(", ")}
                 </span>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent
-          value="libraries"
-          className="flex-1 min-h-0 overflow-y-auto"
-        >
-          <div
-            className="w-full flex flex-col items-start gap-4"
-            style={{
-              fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.7em",
-              lineHeight: "1.8",
-              letterSpacing: "0.05em",
-            }}
-          >
-            {[
-              ["GSAP", "GreenSock", "Standard License", "https://gsap.com"],
-              [
-                "crisp-game-lib",
-                "abagames",
-                "MIT",
-                "https://github.com/abagames/crisp-game-lib",
-              ],
-              ["pixi.js", "PixiJS contributors", "MIT", "https://pixijs.com"],
-              [
-                "pixi-filters",
-                "PixiJS contributors",
-                "MIT",
-                "https://github.com/pixijs/filters",
-              ],
-              [
-                "lodash (clonedeep)",
-                "lodash authors",
-                "MIT",
-                "https://lodash.com",
-              ],
-              [
-                "chess.js",
-                "Jeff Hlywa",
-                "MIT",
-                "https://github.com/jhlywa/chess.js",
-              ],
-              ["jquery", "OpenJS Foundation", "MIT", "https://jquery.com"],
-              [
-                "chessboard.js",
-                "Chris Oakman",
-                "MIT",
-                "https://chessboardjs.com",
-              ],
-              [
-                "@dfinity/auth-client / @dfinity/principal",
-                "DFINITY Stiftung",
-                "Apache-2.0",
-                "https://github.com/dfinity/agent-js",
-              ],
-              [
-                "@icp-sdk/core",
-                "DFINITY Stiftung",
-                "Apache-2.0",
-                "https://github.com/dfinity/icp-core",
-              ],
-            ].map(([name, author, license, url]) => (
-              <div
-                key={name}
-                className="flex flex-col items-start gap-1 w-full"
-              >
-                <span className="text-foreground">{name}</span>
-                <span
-                  className="text-foreground"
-                  style={{ fontSize: "0.85em" }}
-                >
-                  {author}
-                </span>
-                {url && (
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-foreground hover:text-muted-foreground underline"
-                    style={{ fontSize: "0.85em" }}
-                  >
-                    {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </a>
-                )}
                 <span
                   className="text-muted-foreground"
                   style={{
-                    background: "rgba(0,0,0,0.7)",
+                    border: "1px solid #5a4a2a",
                     padding: "1px 6px",
-                    alignSelf: "flex-start",
+                    fontSize: "0.85em",
                   }}
+                >
+                  font
+                </span>
+              </div>
+            </div>
+          ))}
+
+          <div
+            className="text-foreground w-full text-center"
+            style={{
+              fontSize: "0.85em",
+              marginTop: "8px",
+              marginBottom: "2px",
+              letterSpacing: "0.1em",
+              color: "#c89420",
+            }}
+          >
+            — Code Libraries —
+          </div>
+
+          {[
+            ["GSAP", "GreenSock", "Standard License", "https://gsap.com"],
+            [
+              "crisp-game-lib",
+              "abagames",
+              "MIT",
+              "https://github.com/abagames/crisp-game-lib",
+            ],
+            ["pixi.js", "PixiJS contributors", "MIT", "https://pixijs.com"],
+            [
+              "pixi-filters",
+              "PixiJS contributors",
+              "MIT",
+              "https://github.com/pixijs/filters",
+            ],
+            [
+              "lodash (clonedeep)",
+              "lodash authors",
+              "MIT",
+              "https://lodash.com",
+            ],
+            [
+              "chess.js",
+              "Jeff Hlywa",
+              "MIT",
+              "https://github.com/jhlywa/chess.js",
+            ],
+            ["jquery", "OpenJS Foundation", "MIT", "https://jquery.com"],
+            [
+              "chessboard.js",
+              "Chris Oakman",
+              "MIT",
+              "https://chessboardjs.com",
+            ],
+            [
+              "@dfinity/auth-client / @dfinity/principal",
+              "DFINITY Stiftung",
+              "Apache-2.0",
+              "https://github.com/dfinity/agent-js",
+            ],
+            [
+              "@icp-sdk/core",
+              "DFINITY Stiftung",
+              "Apache-2.0",
+              "https://github.com/dfinity/icp-core",
+            ],
+          ].map(([name, author, license, url]) => (
+            <div key={name} className="flex flex-col items-start gap-1 w-full">
+              <span className="text-foreground">{name}</span>
+              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
+                {author}
+              </span>
+              {url && (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:text-muted-foreground underline"
+                  style={{ fontSize: "0.85em" }}
+                >
+                  {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                </a>
+              )}
+              <div className="flex flex-row gap-2 items-center flex-wrap">
+                <span
+                  className="text-muted-foreground"
+                  style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
                 >
                   {license}
                 </span>
+                <span
+                  className="text-muted-foreground"
+                  style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+                >
+                  code library
+                </span>
               </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </div>
+          ))}
+        </div>
+      </div>
       <button
         type="button"
         className="text-foreground transition-colors hover:text-muted-foreground"
