@@ -37,12 +37,12 @@ type ContextOption =
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
   curation: [
     "new-swarm",
+    "convert-to-source-graph",
     "download",
     "add-attributes",
     "add-sources",
     "rename",
     "delete",
-    "convert-to-source-graph",
   ],
   swarm: ["new-location", "add-attributes", "add-sources", "rename", "delete"],
   location: [

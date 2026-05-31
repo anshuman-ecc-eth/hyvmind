@@ -217,7 +217,7 @@ export default function PublishConfirmDialog({
           {/* Conflict warning */}
           {hasCurationConflict && (
             <div
-              className="px-3 py-2 border border-dashed border-destructive/40 text-destructive text-xs"
+              className="px-3 py-2 border border-dashed border-border text-foreground text-xs"
               data-ocid="publish_dialog.curation_conflict_warning"
             >
               ⚠ this curation name already exists. your changes will be added to
