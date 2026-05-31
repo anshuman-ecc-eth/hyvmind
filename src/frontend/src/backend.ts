@@ -129,6 +129,7 @@ export interface PublishedSourceGraphMeta {
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams?: string;
+    authors: string[];
 }
 export interface NodeOperation {
     localName: string;
@@ -1350,6 +1351,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams: [] | [string];
+    authors: Array<string>;
 }): {
     id: string;
     creator: Principal;
@@ -1364,6 +1366,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams?: string;
+    authors: string[];
 } {
     return {
         id: value.id,
@@ -1378,7 +1381,8 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
         artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
         hierarchyEdgeCount: value.hierarchyEdgeCount,
         nodeCount: value.nodeCount,
-        terrainParams: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.terrainParams))
+        terrainParams: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.terrainParams)),
+        authors: value.authors
     };
 }
 function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {

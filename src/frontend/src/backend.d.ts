@@ -47,6 +47,7 @@ export interface PublishedSourceGraphMeta {
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams?: string;
+    authors: string[];
 }
 export interface NodeOperation {
     localName: string;
