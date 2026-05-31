@@ -21,79 +21,9 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "Migration";
 
-type ExtensionEntry = {
-  extendedAt : Time.Time;
-  extendedBy : Principal;
-  extendedByName : Text;
-  addedNodes : Nat;
-  addedEdges : Nat;
-  addedHierarchyEdges : Nat;
-  addedAttributes : Nat;
-  addedSources : ?Nat;
-};
-
-type PublishedSourceGraphMetaOld = {
-  id : Text;
-  name : Text;
-  creator : Principal;
-  creatorName : Text;
-  publishedAt : Time.Time;
-  nodeCount : Nat;
-  edgeCount : Nat;
-  hierarchyEdgeCount : Nat;
-  attributeCount : Nat;
-  sourcesCount : ?Nat;
-  extensionLog : [ExtensionEntry];
-  artworkDataUrl : ?Text;
-  terrainParams : ?Text;
-};
-
-type PublishedSourceGraphMeta = {
-  id : Text;
-  name : Text;
-  creator : Principal;
-  creatorName : Text;
-  publishedAt : Time.Time;
-  nodeCount : Nat;
-  edgeCount : Nat;
-  hierarchyEdgeCount : Nat;
-  attributeCount : Nat;
-  sourcesCount : ?Nat;
-  extensionLog : [ExtensionEntry];
-  artworkDataUrl : ?Text;
-  terrainParams : ?Text;
-  authors : [Text];
-};
-
-(with migration = func (old : { var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMetaOld> }) : { var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMeta> } {
-  var migrated = Map.empty<Text, PublishedSourceGraphMeta>();
-  for ((id, meta) in old.publishedSourceGraphs.entries()) {
-    let names = Array.tabulate(meta.extensionLog.size() + 1, func (j) {
-      if (j == 0) { meta.creatorName } else { meta.extensionLog[j - 1].extendedByName }
-    });
-    var authors : [Text] = [];
-    for (name in names.vals()) {
-      var found = false;
-      label w for (a in authors.vals()) {
-        if (a == name) { found := true; break w };
-      };
-      if (not found) {
-        authors := Array.tabulate<Text>(authors.size() + 1, func (k) {
-          if (k < authors.size()) { authors[k] } else { name }
-        });
-      };
-    };
-    migrated.add(id, {
-      id = meta.id; name = meta.name; creator = meta.creator; creatorName = meta.creatorName;
-      publishedAt = meta.publishedAt; nodeCount = meta.nodeCount; edgeCount = meta.edgeCount;
-      hierarchyEdgeCount = meta.hierarchyEdgeCount; attributeCount = meta.attributeCount;
-      sourcesCount = meta.sourcesCount; extensionLog = meta.extensionLog;
-      artworkDataUrl = meta.artworkDataUrl; terrainParams = meta.terrainParams; authors;
-    });
-  };
-  { var publishedSourceGraphs = migrated };
-})
+(with migration = Migration.migration)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -119,6 +49,34 @@ actor {
     earned : Int;
   };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+
+  type ExtensionEntry = {
+    extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
+  };
+
+  type PublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [ExtensionEntry];
+    artworkDataUrl : ?Text;
+    terrainParams : ?Text;
+    authors : [Text];
+  };
 
   type BuzzSecretRecord = {
     points : Int;
