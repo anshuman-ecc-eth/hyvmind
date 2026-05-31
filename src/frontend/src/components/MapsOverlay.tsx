@@ -2,13 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { usePublishedGraphMetas } from "../hooks/usePublicGraphs";
 
-const TEST_SEEDS = [
-  "Indian Constitutional Law",
-  "Singapore Company Law",
-  "American Contract Law",
-  "Chinese Administrative Law",
-];
-
 interface MapsOverlayProps {
   onBack: () => void;
   onPlay?: (name: string) => void;
@@ -34,7 +27,7 @@ export default function MapsOverlay({
   );
 
   const allItems = useMemo(() => {
-    return [...TEST_SEEDS, ...publishedTerrains.map((t) => t.name)];
+    return publishedTerrains.map((t) => t.name);
   }, [publishedTerrains]);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
