@@ -22,6 +22,78 @@ import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
 
+type ExtensionEntry = {
+  extendedAt : Time.Time;
+  extendedBy : Principal;
+  extendedByName : Text;
+  addedNodes : Nat;
+  addedEdges : Nat;
+  addedHierarchyEdges : Nat;
+  addedAttributes : Nat;
+  addedSources : ?Nat;
+};
+
+type PublishedSourceGraphMetaOld = {
+  id : Text;
+  name : Text;
+  creator : Principal;
+  creatorName : Text;
+  publishedAt : Time.Time;
+  nodeCount : Nat;
+  edgeCount : Nat;
+  hierarchyEdgeCount : Nat;
+  attributeCount : Nat;
+  sourcesCount : ?Nat;
+  extensionLog : [ExtensionEntry];
+  artworkDataUrl : ?Text;
+  terrainParams : ?Text;
+};
+
+type PublishedSourceGraphMeta = {
+  id : Text;
+  name : Text;
+  creator : Principal;
+  creatorName : Text;
+  publishedAt : Time.Time;
+  nodeCount : Nat;
+  edgeCount : Nat;
+  hierarchyEdgeCount : Nat;
+  attributeCount : Nat;
+  sourcesCount : ?Nat;
+  extensionLog : [ExtensionEntry];
+  artworkDataUrl : ?Text;
+  terrainParams : ?Text;
+  authors : [Text];
+};
+
+(with migration = func (old : { var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMetaOld> }) : { var publishedSourceGraphs : Map.Map<Text, PublishedSourceGraphMeta> } {
+  var migrated = Map.empty<Text, PublishedSourceGraphMeta>();
+  for ((id, meta) in old.publishedSourceGraphs.entries()) {
+    let names = Array.tabulate(meta.extensionLog.size() + 1, func (j) {
+      if (j == 0) { meta.creatorName } else { meta.extensionLog[j - 1].extendedByName }
+    });
+    var authors : [Text] = [];
+    for (name in names.vals()) {
+      var found = false;
+      label w for (a in authors.vals()) {
+        if (a == name) { found := true; break w };
+      };
+      if (not found) {
+        authors := Array.tabulate<Text>(authors.size() + 1, func (k) {
+          if (k < authors.size()) { authors[k] } else { name }
+        });
+      };
+    };
+    migrated.add(id, {
+      id = meta.id; name = meta.name; creator = meta.creator; creatorName = meta.creatorName;
+      publishedAt = meta.publishedAt; nodeCount = meta.nodeCount; edgeCount = meta.edgeCount;
+      hierarchyEdgeCount = meta.hierarchyEdgeCount; attributeCount = meta.attributeCount;
+      sourcesCount = meta.sourcesCount; extensionLog = meta.extensionLog;
+      artworkDataUrl = meta.artworkDataUrl; terrainParams = meta.terrainParams; authors;
+    });
+  };
+  { var publishedSourceGraphs = migrated };
+})
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -194,32 +266,7 @@ actor {
     edges : [GraphEdge];
   };
 
-  type ExtensionEntry = {
-    extendedAt : Time.Time;
-    extendedBy : Principal;
-    extendedByName : Text;
-    addedNodes : Nat;
-    addedEdges : Nat;
-    addedHierarchyEdges : Nat;
-    addedAttributes : Nat;
-    addedSources : ?Nat;
-  };
 
-  type PublishedSourceGraphMeta = {
-    id : Text;
-    name : Text;
-    creator : Principal;
-    creatorName : Text;
-    publishedAt : Time.Time;
-    nodeCount : Nat;
-    edgeCount : Nat;
-    hierarchyEdgeCount : Nat;
-    attributeCount : Nat;
-    sourcesCount : ?Nat;
-    extensionLog : [ExtensionEntry];
-    artworkDataUrl : ?Text;
-    terrainParams : ?Text;
-  };
 
   // Source graph edge with weighted labels
   type SourceGraphEdge = {
@@ -3136,6 +3183,11 @@ actor {
               addedAttributes = attributesAdded;
               addedSources = ?sourcesAdded;
             };
+            let newAuthors = if (existingMeta.authors.find<Text>(func (a) { a == extendedByName }) == null) {
+              Array.tabulate(existingMeta.authors.size() + 1, func (i) {
+                if (i < existingMeta.authors.size()) { existingMeta.authors[i] } else { extendedByName }
+              })
+            } else { existingMeta.authors };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
               nodeCount = existingMeta.nodeCount + nodesToCreate;
@@ -3144,6 +3196,7 @@ actor {
               attributeCount = existingMeta.attributeCount + attributesAdded;
               sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
+              authors = newAuthors;
             };
             publishedSourceGraphs.add(pid, updatedMeta);
             let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
@@ -3180,6 +3233,7 @@ actor {
           extensionLog = [];
           artworkDataUrl = null;
           terrainParams = null;
+          authors = [creatorName];
         };
         publishedSourceGraphs.add(newPid, newMeta);
         publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
@@ -3821,6 +3875,7 @@ actor {
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
       ("extensionCount", jsonNat(m.extensionLog.size())),
+      ("authors", jsonArray(m.authors)),
     ]);
   };
 

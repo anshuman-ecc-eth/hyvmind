@@ -193,6 +193,7 @@ export interface PublishedSourceGraphMeta {
   'hierarchyEdgeCount' : bigint,
   'nodeCount' : bigint,
   'terrainParams' : [] | [string],
+  'authors' : Array<string>,
 }
 export interface SourceGraphEdgeInput {
   'sourceName' : string,
