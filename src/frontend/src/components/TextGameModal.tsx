@@ -456,7 +456,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div
-      className="flex-1 flex flex-col items-center gap-4 px-6 py-4 select-none"
+      className="flex-1 flex flex-col items-center gap-4 px-6 py-4 select-none min-h-0"
       style={{ background: "rgba(0,0,0,0.7)" }}
     >
       <div
@@ -486,18 +486,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
             letterSpacing: "0.05em",
           }}
         >
-          <div
-            className="text-foreground w-full text-center"
-            style={{
-              fontSize: "0.85em",
-              marginBottom: "2px",
-              letterSpacing: "0.1em",
-              color: "#c89420",
-            }}
-          >
-            — Game Assets —
-          </div>
-
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">forest.mp3 — BGM</span>
             <a
@@ -1016,19 +1004,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
-          <div
-            className="text-foreground w-full text-center"
-            style={{
-              fontSize: "0.85em",
-              marginTop: "8px",
-              marginBottom: "2px",
-              letterSpacing: "0.1em",
-              color: "#c89420",
-            }}
-          >
-            — Fonts —
-          </div>
-
           <div className="text-foreground" style={{ fontSize: "0.85em" }}>
             All fonts loaded from Google Fonts.
           </div>
@@ -1074,19 +1049,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
               </div>
             </div>
           ))}
-
-          <div
-            className="text-foreground w-full text-center"
-            style={{
-              fontSize: "0.85em",
-              marginTop: "8px",
-              marginBottom: "2px",
-              letterSpacing: "0.1em",
-              color: "#c89420",
-            }}
-          >
-            — Code Libraries —
-          </div>
 
           {[
             ["GSAP", "GreenSock", "Standard License", "https://gsap.com"],
