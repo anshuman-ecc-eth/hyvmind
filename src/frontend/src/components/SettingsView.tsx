@@ -414,10 +414,19 @@ export function SettingsView() {
                 data-ocid="settings.plugin_binding.section"
               >
                 <div>
-                  <h2 className="text-sm font-semibold">Obsidian</h2>
+                  <h2 className="text-sm font-semibold">Plugin Settings</h2>
                   <p className="text-sm text-muted-foreground">
-                    Link this Obsidian plugin to your Hyvmind account so
-                    uploaded notes appear here.
+                    Download and install 'Hyvmind Uploader' from Obsidian's
+                    Community Plugins, or click{" "}
+                    <a
+                      href="https://community.obsidian.md/plugins/hyvmind-uploader"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      here
+                    </a>
+                    .
                   </p>
                 </div>
 
