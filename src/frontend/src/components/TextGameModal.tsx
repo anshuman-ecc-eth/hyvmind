@@ -479,46 +479,43 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       </div>
       <Tabs
         defaultValue="assets"
-        className="w-full max-w-md flex flex-col items-center gap-4"
+        className="flex-1 flex flex-row min-h-0 w-full max-w-md gap-3"
       >
-        <div
-          className="flex gap-2"
+        <TabsList
+          className="flex-col bg-transparent gap-2 justify-center h-auto"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.55em",
+            fontSize: "0.7em",
           }}
         >
-          <TabsList className="bg-transparent gap-2">
-            <TabsTrigger
-              value="assets"
-              className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-            >
-              Game Assets
-            </TabsTrigger>
-            <TabsTrigger
-              value="fonts"
-              className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-            >
-              Fonts
-            </TabsTrigger>
-            <TabsTrigger
-              value="libraries"
-              className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
-            >
-              Code Libraries
-            </TabsTrigger>
-          </TabsList>
-        </div>
+          <TabsTrigger
+            value="assets"
+            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
+          >
+            Game Assets
+          </TabsTrigger>
+          <TabsTrigger
+            value="fonts"
+            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
+          >
+            Fonts
+          </TabsTrigger>
+          <TabsTrigger
+            value="libraries"
+            className="data-[state=active]:bg-[#fff3d4] data-[state=active]:text-[#c89420] bg-white/50 text-black rounded-md px-3 py-1.5 data-[state=active]:translate-y-0.5 transition-all border-0 shadow-[-2px_0_0_0_#666,2px_0_0_0_#666,0_-2px_0_0_#666,0_2px_0_0_#666]"
+          >
+            Code Libraries
+          </TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="assets" className="w-full">
+        <TabsContent value="assets" className="flex-1 min-h-0 overflow-y-auto">
           <div
-            className="w-full flex flex-col items-start gap-4 overflow-y-auto"
+            className="w-full flex flex-col items-start gap-4"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6em",
+              fontSize: "0.7em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
-              maxHeight: "50vh",
             }}
           >
             <div className="flex flex-col items-start gap-1 w-full">
@@ -979,20 +976,19 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
         </TabsContent>
 
-        <TabsContent value="fonts" className="w-full">
+        <TabsContent value="fonts" className="flex-1 min-h-0 overflow-y-auto">
           <div
-            className="w-full flex flex-col items-start gap-3 overflow-y-auto"
+            className="w-full flex flex-col items-start gap-3"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6em",
+              fontSize: "0.7em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
-              maxHeight: "50vh",
             }}
           >
             <div
               className="text-foreground"
-              style={{ fontSize: "0.8em", marginBottom: "4px" }}
+              style={{ fontSize: "0.85em", marginBottom: "4px" }}
             >
               All fonts loaded from Google Fonts.
             </div>
@@ -1032,15 +1028,17 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
         </TabsContent>
 
-        <TabsContent value="libraries" className="w-full">
+        <TabsContent
+          value="libraries"
+          className="flex-1 min-h-0 overflow-y-auto"
+        >
           <div
-            className="w-full flex flex-col items-start gap-4 overflow-y-auto"
+            className="w-full flex flex-col items-start gap-4"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "0.6em",
+              fontSize: "0.7em",
               lineHeight: "1.8",
               letterSpacing: "0.05em",
-              maxHeight: "50vh",
             }}
           >
             {[
