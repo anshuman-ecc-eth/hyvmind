@@ -481,7 +481,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           className="w-full flex flex-col items-start gap-3"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.7em",
+            fontSize: "0.6em",
             lineHeight: "1.8",
             letterSpacing: "0.05em",
           }}
