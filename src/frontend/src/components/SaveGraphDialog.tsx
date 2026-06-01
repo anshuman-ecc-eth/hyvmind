@@ -570,16 +570,16 @@ export default function SaveGraphDialog({
     setAlertMode("loading");
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     try {
+      const selectedNodeIds = new Set(
+        contributions
+          .filter((c) => checkedContribIds.has(c.id))
+          .map((c) => c.nodeId),
+      );
       const result = await savePublishedGraph.mutateAsync({
         publishedGraphId: graphId,
-        selectedContributionIds: Array.from(checkedContribIds),
+        selectedContributionIds: Array.from(selectedNodeIds),
       });
       if ("ok" in result) {
-        const selectedNodeIds = new Set(
-          contributions
-            .filter((c) => checkedContribIds.has(c.id))
-            .map((c) => c.nodeId),
-        );
         const { nodes, rootIds: importRootIds } = graphDataToEditorNodes(
           graphData,
           selectedNodeIds,
