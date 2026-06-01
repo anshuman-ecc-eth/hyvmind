@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2, XIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import type {
@@ -269,6 +269,108 @@ function TreeNodeCheckbox({
   );
 }
 
+interface ChecklistDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  graphName: string;
+  rootIds: string[];
+  treeNodes: Map<string, TreeNodeData>;
+  contribsByNode: Map<string, ContributionView[]>;
+  checkedContribIds: Set<string>;
+  expandedIds: Set<string>;
+  alreadySaved: boolean | undefined;
+  selectableContributions: ContributionView[];
+  selectedCount: number;
+  hasNewSelections: boolean;
+  handleSave: () => void;
+  handleToggleNode: (nodeId: string) => void;
+  handleToggleContribution: (contribId: string) => void;
+  handleToggleExpand: (id: string) => void;
+  handleOpenChange: (open: boolean) => void;
+}
+
+function ChecklistDialog({
+  isOpen,
+  onClose,
+  graphName,
+  rootIds,
+  treeNodes,
+  contribsByNode,
+  checkedContribIds,
+  expandedIds,
+  alreadySaved,
+  selectableContributions,
+  selectedCount,
+  hasNewSelections,
+  handleSave,
+  handleToggleNode,
+  handleToggleContribution,
+  handleToggleExpand,
+  handleOpenChange,
+}: ChecklistDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Save Graph to Notes</DialogTitle>
+        </DialogHeader>
+
+        <p className="text-xs text-muted-foreground">
+          Select contributions from{" "}
+          <span className="text-foreground">{graphName}</span> to import into
+          your Notes workspace.
+        </p>
+
+        <div
+          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
+        >
+          {rootIds.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              No nodes found
+            </div>
+          ) : (
+            rootIds.map((rootId) => (
+              <TreeNodeCheckbox
+                key={rootId}
+                id={rootId}
+                nodes={treeNodes}
+                contribsByNode={contribsByNode}
+                checkedContribIds={checkedContribIds}
+                expandedIds={expandedIds}
+                rootIds={rootIds}
+                onToggleNode={handleToggleNode}
+                onToggleContribution={handleToggleContribution}
+                onToggleExpand={handleToggleExpand}
+              />
+            ))
+          )}
+        </div>
+
+        {alreadySaved && selectableContributions.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            You have already saved all contributions in this graph.
+          </p>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={!hasNewSelections || selectedCount === 0}
+          >
+            Save Selected ({selectedCount})
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const ChecklistDialogMemo = memo(ChecklistDialog);
+
 export default function SaveGraphDialog({
   isOpen,
   onClose,
@@ -378,7 +480,7 @@ export default function SaveGraphDialog({
     });
   }, []);
 
-  const handleSave = () => setAlertMode("confirm");
+  const handleSave = useCallback(() => setAlertMode("confirm"), []);
 
   const handleConfirmSave = async () => {
     setAlertMode("loading");
@@ -429,9 +531,12 @@ export default function SaveGraphDialog({
     onClose();
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open && alertMode === null) onClose();
-  };
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) onClose();
+    },
+    [onClose],
+  );
 
   const selectedCount = checkedContribIds.size;
   const hasNewSelections = selectableContributions.some((c) =>
@@ -439,62 +544,26 @@ export default function SaveGraphDialog({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Save Graph to Notes</DialogTitle>
-        </DialogHeader>
-
-        <p className="text-xs text-muted-foreground">
-          Select contributions from{" "}
-          <span className="text-foreground">{graphName}</span> to import into
-          your Notes workspace.
-        </p>
-
-        <div
-          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
-        >
-          {rootIds.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">
-              No nodes found
-            </div>
-          ) : (
-            rootIds.map((rootId) => (
-              <TreeNodeCheckbox
-                key={rootId}
-                id={rootId}
-                nodes={treeNodes}
-                contribsByNode={contribsByNode}
-                checkedContribIds={checkedContribIds}
-                expandedIds={expandedIds}
-                rootIds={rootIds}
-                onToggleNode={handleToggleNode}
-                onToggleContribution={handleToggleContribution}
-                onToggleExpand={handleToggleExpand}
-              />
-            ))
-          )}
-        </div>
-
-        {alreadySaved && selectableContributions.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            You have already saved all contributions in this graph.
-          </p>
-        )}
-
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!hasNewSelections || selectedCount === 0}
-          >
-            Save Selected ({selectedCount})
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+    <>
+      <ChecklistDialogMemo
+        isOpen={isOpen}
+        onClose={onClose}
+        graphName={graphName}
+        rootIds={rootIds}
+        treeNodes={treeNodes}
+        contribsByNode={contribsByNode}
+        checkedContribIds={checkedContribIds}
+        expandedIds={expandedIds}
+        alreadySaved={alreadySaved}
+        selectableContributions={selectableContributions}
+        selectedCount={selectedCount}
+        hasNewSelections={hasNewSelections}
+        handleSave={handleSave}
+        handleToggleNode={handleToggleNode}
+        handleToggleContribution={handleToggleContribution}
+        handleToggleExpand={handleToggleExpand}
+        handleOpenChange={handleOpenChange}
+      />
 
       {alertMode !== null &&
         createPortal(
@@ -596,6 +665,6 @@ export default function SaveGraphDialog({
           </div>,
           document.body,
         )}
-    </Dialog>
+    </>
   );
 }
