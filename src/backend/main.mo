@@ -54,7 +54,7 @@ actor {
     earned : Int;
     saveCount : Nat;
   };
-  type StoredTrustTransaction = {
+  type TrustTransaction = {
     saver : Principal;
     savedAt : Int;
     saveNumber : Nat;
@@ -62,7 +62,7 @@ actor {
     earned : Int;
     contributionIds : [Text];
   };
-  type TrustTransaction = {
+  type TrustTransactionDetail = {
     saver : Principal;
     savedAt : Int;
     saveNumber : Nat;
@@ -417,7 +417,7 @@ actor {
   var buzzTransactions = Map.empty<Principal, List.List<BuzzTransaction>>();
   var graphSavers = Map.empty<Text, List.List<Principal>>();
   var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
-  var trustTransactions = Map.empty<Principal, List.List<StoredTrustTransaction>>();
+  var trustTransactions = Map.empty<Principal, List.List<TrustTransaction>>();
   var trustContributionDetails = Map.empty<Text, [CreditedContribution]>();
 
   // Per-graph contribution registry: graphId -> [ContributionEntry]
@@ -657,7 +657,7 @@ actor {
       };
       updateTrustScore(payer, totalEarned);
       let savedAt = Time.now();
-      let trustTx : StoredTrustTransaction = {
+      let trustTx : TrustTransaction = {
         saver = msg.caller;
         savedAt;
         saveNumber = 0; // legacy field kept for backward compat, use contribution-level saveCount
@@ -668,7 +668,7 @@ actor {
       let detailKey = payer.toText() # "_" # debug_show(savedAt);
       trustContributionDetails.add(detailKey, payerCredited.toArray());
       let existingTrustTxs = switch (trustTransactions.get(payer)) {
-        case (null) { List.empty<StoredTrustTransaction>() };
+        case (null) { List.empty<TrustTransaction>() };
         case (?list) { list };
       };
       existingTrustTxs.add(trustTx);
@@ -727,11 +727,11 @@ actor {
     migrateGraphContributions(publishedGraphId);
   };
 
-  public query ({ caller }) func getMyTrustTransactions() : async [TrustTransaction] {
+   public query ({ caller }) func getMyTrustTransactions() : async [TrustTransactionDetail] {
     switch (trustTransactions.get(caller)) {
       case (null) { [] };
       case (?list) {
-        let result = List.empty<TrustTransaction>();
+        let result = List.empty<TrustTransactionDetail>();
         for (tx in list.values()) {
           let detailKey = caller.toText() # "_" # debug_show(tx.savedAt);
           let details = switch (trustContributionDetails.get(detailKey)) {
@@ -4657,7 +4657,7 @@ actor {
     buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
     graphSavers := Map.empty<Text, List.List<Principal>>();
     publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
-    trustTransactions := Map.empty<Principal, List.List<StoredTrustTransaction>>();
+    trustTransactions := Map.empty<Principal, List.List<TrustTransaction>>();
     trustContributionDetails := Map.empty<Text, [CreditedContribution]>();
   };
 };

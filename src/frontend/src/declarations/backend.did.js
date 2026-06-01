@@ -111,7 +111,7 @@ export const ChatMessage = IDL.Record({
   'senderName' : IDL.Text,
 });
 export const TrustScore = IDL.Int;
-export const TrustTransaction = IDL.Record({
+export const TrustTransactionDetail = IDL.Record({
   'totalBuzzCost' : IDL.Int,
   'saver' : IDL.Principal,
   'earned' : IDL.Int,
@@ -343,7 +343,7 @@ export const idlService = IDL.Service({
   'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
   'getMyTrustTransactions' : IDL.Func(
       [],
-      [IDL.Vec(TrustTransaction)],
+      [IDL.Vec(TrustTransactionDetail)],
       ['query'],
     ),
   'getNotesData' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
@@ -531,13 +531,14 @@ export const idlFactory = ({ IDL }) => {
     'senderName' : IDL.Text,
   });
   const TrustScore = IDL.Int;
-  const TrustTransaction = IDL.Record({
+  const TrustTransactionDetail = IDL.Record({
     'totalBuzzCost' : IDL.Int,
     'saver' : IDL.Principal,
     'earned' : IDL.Int,
     'savedAt' : IDL.Int,
     'saveNumber' : IDL.Nat,
     'contributionIds' : IDL.Vec(IDL.Text),
+    'contributionDetails' : IDL.Vec(CreditedContribution),
   });
   const CreditedContribution = IDL.Record({
     'contributionId' : IDL.Text,
@@ -766,7 +767,7 @@ export const idlFactory = ({ IDL }) => {
     'getMyTrustBalance' : IDL.Func([], [TrustScore], []),
     'getMyTrustTransactions' : IDL.Func(
         [],
-        [IDL.Vec(TrustTransaction)],
+        [IDL.Vec(TrustTransactionDetail)],
         ['query'],
       ),
     'getNotesData' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),

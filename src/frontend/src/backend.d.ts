@@ -197,7 +197,7 @@ export interface ContentVersion {
     timestamp: Time;
     contributor: Principal;
 }
-export interface TrustTransaction {
+export interface TrustTransactionDetail {
     totalBuzzCost: bigint;
     saver: Principal;
     earned: bigint;
@@ -334,7 +334,7 @@ export interface backendInterface {
     getMyBuzzBalance(): Promise<BuzzScore>;
     getMyPrincipal(): Promise<Principal>;
     getMyTrustBalance(): Promise<TrustScore>;
-    getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
+    getMyTrustTransactions(): Promise<Array<TrustTransactionDetail>>;
     getNotesData(): Promise<string | null>;
     getPendingPluginBindings(): Promise<Array<Principal>>;
     getPluginBindingStatus(): Promise<boolean>;

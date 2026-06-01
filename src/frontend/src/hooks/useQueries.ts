@@ -154,7 +154,7 @@ export function useGetMyBuzzBalance() {
 import type { BuzzBackendExtensions } from "../types/buzzExtensions.d";
 import type {
   TrustBackendExtensions,
-  TrustTransaction,
+  TrustTransactionDetail,
 } from "../types/trustExtensions.d";
 
 type BuzzActor = backendInterface & BuzzBackendExtensions;
@@ -250,7 +250,7 @@ export function useGetMyTrustTransactions() {
   const { actor, isFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
-  return useQuery<TrustTransaction[]>({
+  return useQuery<TrustTransactionDetail[]>({
     queryKey: [
       "myTrustTransactions",
       identity?.getPrincipal().toText() ?? "anonymous",

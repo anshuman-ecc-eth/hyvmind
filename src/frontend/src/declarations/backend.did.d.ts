@@ -229,7 +229,7 @@ export type Tag = string;
 export type Time = bigint;
 export interface Timestamps { 'createdAt' : Time }
 export type TrustScore = bigint;
-export interface TrustTransaction {
+export interface TrustTransactionDetail {
   'totalBuzzCost' : bigint,
   'saver' : Principal,
   'earned' : bigint,
@@ -310,7 +310,7 @@ export interface _SERVICE {
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getMyPrincipal' : ActorMethod<[], Principal>,
   'getMyTrustBalance' : ActorMethod<[], TrustScore>,
-  'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransaction>>,
+  'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransactionDetail>>,
   'getNotesData' : ActorMethod<[], [] | [string]>,
   'getPendingPluginBindings' : ActorMethod<[], Array<Principal>>,
   'getPluginBindingStatus' : ActorMethod<[], boolean>,
