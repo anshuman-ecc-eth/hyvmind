@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -317,11 +318,11 @@ function ChecklistDialog({
           <DialogTitle>Save Graph to Notes</DialogTitle>
         </DialogHeader>
 
-        <p className="text-xs text-muted-foreground">
+        <DialogDescription className="text-xs">
           Select contributions from{" "}
           <span className="text-foreground">{graphName}</span> to import into
           your Notes workspace.
-        </p>
+        </DialogDescription>
 
         <div
           className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
@@ -575,7 +576,7 @@ export default function SaveGraphDialog({
 
       {alertMode !== null &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
             <div
               className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
               data-state={alertMode !== null ? "open" : "closed"}
