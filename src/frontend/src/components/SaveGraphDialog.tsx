@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2, XIcon } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import type {
@@ -291,6 +291,7 @@ interface ChecklistDialogProps {
   handleToggleContribution: (contribId: string) => void;
   handleToggleExpand: (id: string) => void;
   handleOpenChange: (open: boolean) => void;
+  portalRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function ChecklistDialog({
@@ -311,10 +312,18 @@ function ChecklistDialog({
   handleToggleContribution,
   handleToggleExpand,
   handleOpenChange,
+  portalRef,
 }: ChecklistDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent
+        className="sm:max-w-lg"
+        onPointerDownOutside={(e) => {
+          if (portalRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Save Graph to Notes</DialogTitle>
         </DialogHeader>
@@ -385,6 +394,8 @@ export default function SaveGraphDialog({
   const savePublishedGraph = useSavePublishedGraph();
   const { actor } = useBackendActor();
   const { data: alreadySaved } = useHasUserSavedGraph(graphId);
+
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const { nodes: treeNodes, rootIds } = useMemo(
     () => buildTree(graphData),
@@ -575,12 +586,14 @@ export default function SaveGraphDialog({
         handleToggleContribution={handleToggleContribution}
         handleToggleExpand={handleToggleExpand}
         handleOpenChange={handleOpenChange}
+        portalRef={portalRef}
       />
 
       {alertMode !== null &&
         createPortal(
           <div
             className="fixed inset-0 flex items-center justify-center"
+            ref={portalRef}
             style={{ zIndex: 9999 }}
           >
             <div
