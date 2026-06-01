@@ -8,12 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Loader2, XIcon } from "lucide-react";
-import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type {
   ContributionView,
@@ -291,7 +288,13 @@ interface ChecklistDialogProps {
   handleToggleContribution: (contribId: string) => void;
   handleToggleExpand: (id: string) => void;
   handleOpenChange: (open: boolean) => void;
-  portalRef: React.RefObject<HTMLDivElement | null>;
+  alertMode: null | "confirm" | "loading" | "result";
+  resultData: {
+    contributions?: CreditedContribution[];
+    noNewTrust?: string;
+  } | null;
+  onSaveConfirm: () => void;
+  onDismissAlert: () => void;
 }
 
 function ChecklistDialog({
@@ -312,71 +315,133 @@ function ChecklistDialog({
   handleToggleContribution,
   handleToggleExpand,
   handleOpenChange,
-  portalRef,
+  alertMode,
+  resultData,
+  onSaveConfirm,
+  onDismissAlert,
 }: ChecklistDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        onPointerDownOutside={(e) => {
-          if (portalRef.current?.contains(e.target as Node)) {
-            e.preventDefault();
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Save Graph to Notes</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg">
+        {!alertMode ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Save Graph to Notes</DialogTitle>
+            </DialogHeader>
 
-        <DialogDescription className="text-xs">
-          Select contributions from{" "}
-          <span className="text-foreground">{graphName}</span> to import into
-          your Notes workspace.
-        </DialogDescription>
+            <DialogDescription className="text-xs">
+              Select contributions from{" "}
+              <span className="text-foreground">{graphName}</span> to import
+              into your Notes workspace.
+            </DialogDescription>
 
-        <div
-          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
-        >
-          {rootIds.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">
-              No nodes found
+            <div
+              className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              {rootIds.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No nodes found
+                </div>
+              ) : (
+                rootIds.map((rootId) => (
+                  <TreeNodeCheckbox
+                    key={rootId}
+                    id={rootId}
+                    nodes={treeNodes}
+                    contribsByNode={contribsByNode}
+                    checkedContribIds={checkedContribIds}
+                    expandedIds={expandedIds}
+                    rootIds={rootIds}
+                    onToggleNode={handleToggleNode}
+                    onToggleContribution={handleToggleContribution}
+                    onToggleExpand={handleToggleExpand}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            rootIds.map((rootId) => (
-              <TreeNodeCheckbox
-                key={rootId}
-                id={rootId}
-                nodes={treeNodes}
-                contribsByNode={contribsByNode}
-                checkedContribIds={checkedContribIds}
-                expandedIds={expandedIds}
-                rootIds={rootIds}
-                onToggleNode={handleToggleNode}
-                onToggleContribution={handleToggleContribution}
-                onToggleExpand={handleToggleExpand}
-              />
-            ))
-          )}
-        </div>
 
-        {alreadySaved && selectableContributions.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            You have already saved all contributions in this graph.
-          </p>
-        )}
+            {alreadySaved && selectableContributions.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                You have already saved all contributions in this graph.
+              </p>
+            )}
 
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!hasNewSelections || selectedCount === 0}
-          >
-            Save Selected ({selectedCount})
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!hasNewSelections || selectedCount === 0}
+              >
+                Save Selected ({selectedCount})
+              </Button>
+            </DialogFooter>
+          </>
+        ) : alertMode === "confirm" ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Save this graph?</DialogTitle>
+            </DialogHeader>
+
+            <DialogDescription className="text-sm text-muted-foreground">
+              The selected contributions will be imported into your Notes. This
+              action cannot be undone.
+            </DialogDescription>
+
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={onDismissAlert}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={onSaveConfirm}>
+                Save to Notes
+              </Button>
+            </DialogFooter>
+          </>
+        ) : alertMode === "loading" ? (
+          <div className="flex flex-col gap-2 text-center sm:text-left">
+            <DialogHeader>
+              <DialogTitle>Saving...</DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground text-sm">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
+              Please wait while your graph is being saved.
+            </p>
+          </div>
+        ) : resultData ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Save Result</DialogTitle>
+            </DialogHeader>
+            {resultData.noNewTrust ? (
+              <DialogDescription className="text-sm">
+                {resultData.noNewTrust}
+              </DialogDescription>
+            ) : resultData.contributions &&
+              resultData.contributions.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {resultData.contributions.map((c) => (
+                  <div
+                    key={c.contributionId}
+                    className="text-xs border-b border-border pb-1"
+                  >
+                    <p className="text-foreground">{c.description}</p>
+                    <p className="text-muted-foreground">
+                      +{c.earned.toString()} Trust · Save #
+                      {c.saveCount.toString()} · {c.buzzAmount.toString()} Buzz
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Close
+              </Button>
+            </DialogFooter>
+          </>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -394,8 +459,6 @@ export default function SaveGraphDialog({
   const savePublishedGraph = useSavePublishedGraph();
   const { actor } = useBackendActor();
   const { data: alreadySaved } = useHasUserSavedGraph(graphId);
-
-  const portalRef = useRef<HTMLDivElement>(null);
 
   const { nodes: treeNodes, rootIds } = useMemo(
     () => buildTree(graphData),
@@ -504,9 +567,7 @@ export default function SaveGraphDialog({
   const handleSave = useCallback(() => setAlertMode("confirm"), []);
 
   const handleConfirmSave = async () => {
-    console.log("[SaveGraph] handleConfirmSave called, alertMode=", alertMode);
     setAlertMode("loading");
-    // Defer past the current render cycle so the Presence transition settles
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     try {
       const result = await savePublishedGraph.mutateAsync({
@@ -546,19 +607,25 @@ export default function SaveGraphDialog({
     }
   };
 
-  const handleAlertClose = () => {
-    console.log("[SaveGraph] handleAlertClose called, alertMode=", alertMode);
+  const handleDismissAlert = () => {
     if (alertMode === "loading") return;
     setAlertMode(null);
     setResultData(null);
-    onClose();
   };
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open) onClose();
+      if (!open) {
+        if (alertMode === "loading") return;
+        if (alertMode !== null) {
+          setAlertMode(null);
+          setResultData(null);
+          return;
+        }
+        onClose();
+      }
     },
-    [onClose],
+    [onClose, alertMode],
   );
 
   const selectedCount = checkedContribIds.size;
@@ -567,145 +634,28 @@ export default function SaveGraphDialog({
   );
 
   return (
-    <>
-      <ChecklistDialogMemo
-        isOpen={isOpen}
-        onClose={onClose}
-        graphName={graphName}
-        rootIds={rootIds}
-        treeNodes={treeNodes}
-        contribsByNode={contribsByNode}
-        checkedContribIds={checkedContribIds}
-        expandedIds={expandedIds}
-        alreadySaved={alreadySaved}
-        selectableContributions={selectableContributions}
-        selectedCount={selectedCount}
-        hasNewSelections={hasNewSelections}
-        handleSave={handleSave}
-        handleToggleNode={handleToggleNode}
-        handleToggleContribution={handleToggleContribution}
-        handleToggleExpand={handleToggleExpand}
-        handleOpenChange={handleOpenChange}
-        portalRef={portalRef}
-      />
-
-      {alertMode !== null &&
-        createPortal(
-          <div
-            className="fixed inset-0 flex items-center justify-center"
-            ref={portalRef}
-            style={{ zIndex: 9999 }}
-          >
-            <div
-              className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-              data-state={alertMode !== null ? "open" : "closed"}
-              onClick={
-                alertMode !== "loading"
-                  ? (e: React.MouseEvent) => {
-                      console.log(
-                        "[SaveGraph] backdrop onClick, target:",
-                        (e.target as HTMLElement).tagName,
-                      );
-                      handleAlertClose();
-                    }
-                  : undefined
-              }
-              onKeyDown={
-                alertMode !== "loading"
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        handleAlertClose();
-                    }
-                  : undefined
-              }
-              role="button"
-              tabIndex={0}
-              aria-label="Close dialog"
-            />
-            <div
-              className={cn(
-                "bg-background fixed top-[50%] left-[50%] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-              )}
-              data-state={alertMode !== null ? "open" : "closed"}
-            >
-              <button
-                type="button"
-                onClick={handleAlertClose}
-                disabled={alertMode === "loading"}
-                className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
-              >
-                <XIcon className="size-4" />
-                <span className="sr-only">Close</span>
-              </button>
-              {alertMode === "confirm" && (
-                <>
-                  <div className="flex flex-col gap-2 text-center sm:text-left">
-                    <h2 className="text-lg font-semibold">Save this graph?</h2>
-                    <p className="text-muted-foreground text-sm">
-                      The selected contributions will be imported into your
-                      Notes. This action cannot be undone.
-                    </p>
-                  </div>
-                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        console.log("[SaveGraph] Cancel button onClick");
-                        setAlertMode(null);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleConfirmSave}>Save to Notes</Button>
-                  </div>
-                </>
-              )}
-              {alertMode === "loading" && (
-                <div className="flex flex-col gap-2 text-center sm:text-left">
-                  <h2 className="text-lg font-semibold">Saving...</h2>
-                  <p className="text-muted-foreground text-sm">
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
-                    Please wait while your graph is being saved.
-                  </p>
-                </div>
-              )}
-              {alertMode === "result" && resultData && (
-                <>
-                  <div className="flex flex-col gap-2 text-center sm:text-left">
-                    <h2 className="text-lg font-semibold">Save Result</h2>
-                  </div>
-                  {resultData.noNewTrust ? (
-                    <p className="text-muted-foreground text-sm">
-                      {resultData.noNewTrust}
-                    </p>
-                  ) : resultData.contributions &&
-                    resultData.contributions.length > 0 ? (
-                    <div className="max-h-64 overflow-y-auto space-y-2">
-                      {resultData.contributions.map((c) => (
-                        <div
-                          key={c.contributionId}
-                          className="text-xs border-b border-border pb-1"
-                        >
-                          <p className="text-foreground">{c.description}</p>
-                          <p className="text-muted-foreground">
-                            +{c.earned.toString()} Trust · Save #
-                            {c.saveCount.toString()} · {c.buzzAmount.toString()}{" "}
-                            Buzz
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button onClick={handleAlertClose}>Close</Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>,
-          document.body,
-        )}
-    </>
+    <ChecklistDialogMemo
+      isOpen={isOpen}
+      onClose={onClose}
+      graphName={graphName}
+      rootIds={rootIds}
+      treeNodes={treeNodes}
+      contribsByNode={contribsByNode}
+      checkedContribIds={checkedContribIds}
+      expandedIds={expandedIds}
+      alreadySaved={alreadySaved}
+      selectableContributions={selectableContributions}
+      selectedCount={selectedCount}
+      hasNewSelections={hasNewSelections}
+      handleSave={handleSave}
+      handleToggleNode={handleToggleNode}
+      handleToggleContribution={handleToggleContribution}
+      handleToggleExpand={handleToggleExpand}
+      handleOpenChange={handleOpenChange}
+      alertMode={alertMode}
+      resultData={resultData}
+      onSaveConfirm={handleConfirmSave}
+      onDismissAlert={handleDismissAlert}
+    />
   );
 }
