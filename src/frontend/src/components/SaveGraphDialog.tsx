@@ -26,6 +26,8 @@ import {
 import type { TrustBackendExtensions } from "../types/trustExtensions";
 import { graphDataToEditorNodes } from "../utils/graphDataToEditorNodes";
 
+const EMPTY_CONTRIBS: ContributionView[] = [];
+
 interface SaveGraphDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -402,7 +404,7 @@ export default function SaveGraphDialog({
     noNewTrust?: string;
   } | null>(null);
 
-  const { data: contributions = [] } = useQuery({
+  const { data: contributions = EMPTY_CONTRIBS } = useQuery({
     queryKey: ["graphContributions", graphId],
     queryFn: async () => {
       const ext = actor as unknown as TrustBackendExtensions;
@@ -440,7 +442,13 @@ export default function SaveGraphDialog({
   );
 
   useEffect(() => {
-    setCheckedContribIds(new Set(selectableContributions.map((c) => c.id)));
+    const newIds = selectableContributions.map((c) => c.id);
+    setCheckedContribIds((prev) => {
+      if (prev.size === newIds.length && newIds.every((id) => prev.has(id))) {
+        return prev;
+      }
+      return new Set(newIds);
+    });
   }, [selectableContributions]);
 
   const handleToggleNode = useCallback(
