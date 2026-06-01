@@ -277,54 +277,6 @@ function TreeNodeCheckbox({
   );
 }
 
-function SaveResultDialog({
-  contributions,
-  noNewTrust,
-  open,
-  onClose,
-}: {
-  contributions?: CreditedContribution[];
-  noNewTrust?: string;
-  open: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <AlertDialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Save Result</AlertDialogTitle>
-        </AlertDialogHeader>
-        {noNewTrust ? (
-          <AlertDialogDescription>{noNewTrust}</AlertDialogDescription>
-        ) : contributions && contributions.length > 0 ? (
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {contributions.map((c) => (
-              <div
-                key={c.contributionId}
-                className="text-xs border-b border-border pb-1"
-              >
-                <p className="text-foreground">{c.description}</p>
-                <p className="text-muted-foreground">
-                  +{c.earned.toString()} Trust · Save #{c.saveCount.toString()}{" "}
-                  · {c.buzzAmount.toString()} Buzz
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <AlertDialogFooter>
-          <AlertDialogAction onClick={onClose}>Close</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
 export default function SaveGraphDialog({
   isOpen,
   onClose,
@@ -348,9 +300,10 @@ export default function SaveGraphDialog({
   const [checkedContribIds, setCheckedContribIds] = useState<Set<string>>(
     new Set(),
   );
-  const [saving, setSaving] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [saveResult, setSaveResult] = useState<{
+  const [alertMode, setAlertMode] = useState<
+    null | "confirm" | "loading" | "result"
+  >(null);
+  const [resultData, setResultData] = useState<{
     contributions?: CreditedContribution[];
     noNewTrust?: string;
   } | null>(null);
@@ -401,17 +354,13 @@ export default function SaveGraphDialog({
       setCheckedContribIds((prev) => {
         const next = new Set(prev);
         const nodeContribs = contribsByNode.get(nodeId) ?? [];
-        const unchecked = nodeContribs.filter(
-          (c) => !c.alreadyCredited && !next.has(c.id),
+        const allSelected = nodeContribs.every(
+          (c) => c.alreadyCredited || next.has(c.id),
         );
-        if (unchecked.length > 0) {
-          for (const c of nodeContribs) {
-            if (!c.alreadyCredited) next.add(c.id);
-          }
-        } else {
-          for (const c of nodeContribs) {
-            next.delete(c.id);
-          }
+        for (const c of nodeContribs) {
+          if (c.alreadyCredited) continue;
+          if (allSelected) next.delete(c.id);
+          else next.add(c.id);
         }
         return next;
       });
@@ -437,11 +386,12 @@ export default function SaveGraphDialog({
     });
   }, []);
 
-  const handleSave = () => setShowConfirm(true);
+  const handleSave = () => setAlertMode("confirm");
 
   const handleConfirmSave = async () => {
-    setShowConfirm(false);
-    setSaving(true);
+    setAlertMode("loading");
+    // Defer past the current render cycle so the Presence transition settles
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     try {
       const result = await savePublishedGraph.mutateAsync({
         publishedGraphId: graphId,
@@ -463,28 +413,32 @@ export default function SaveGraphDialog({
             detail: { nodes, rootIds: importRootIds },
           }),
         );
-        setSaveResult({ contributions: result.ok.contributions });
+        setResultData({ contributions: result.ok.contributions });
+        setAlertMode("result");
         toast.success("Graph saved to Notes!");
       } else if ("noNewTrust" in result) {
-        setSaveResult({ noNewTrust: result.noNewTrust.reason });
+        setResultData({ noNewTrust: result.noNewTrust.reason });
+        setAlertMode("result");
       } else {
+        setAlertMode(null);
         toast.error(result.err ?? "Failed to save graph");
       }
     } catch (err) {
+      setAlertMode(null);
       console.error("Failed to save graph:", err);
       toast.error(err instanceof Error ? err.message : "Failed to save graph");
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open && !saving && saveResult === null) onClose();
+  const handleAlertClose = () => {
+    if (alertMode === "loading") return;
+    setAlertMode(null);
+    setResultData(null);
+    onClose();
   };
 
-  const handleResultClose = () => {
-    setSaveResult(null);
-    onClose();
+  const handleOpenChange = (open: boolean) => {
+    if (!open && alertMode === null) onClose();
   };
 
   const selectedCount = checkedContribIds.size;
@@ -537,57 +491,90 @@ export default function SaveGraphDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-          >
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!hasNewSelections || saving || selectedCount === 0}
+            disabled={!hasNewSelections || selectedCount === 0}
           >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              `Save Selected (${selectedCount})`
-            )}
+            Save Selected ({selectedCount})
           </Button>
         </DialogFooter>
       </DialogContent>
 
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <AlertDialog
+        open={alertMode !== null}
+        onOpenChange={(v) => {
+          if (!v) handleAlertClose();
+        }}
+      >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Save this graph?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The selected contributions will be imported into your Notes. This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowConfirm(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSave}>
-              Save to Notes
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {alertMode === "confirm" && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Save this graph?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The selected contributions will be imported into your Notes.
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setAlertMode(null)}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmSave}>
+                  Save to Notes
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+          {alertMode === "loading" && (
+            <AlertDialogHeader>
+              <AlertDialogTitle>Saving...</AlertDialogTitle>
+              <AlertDialogDescription>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
+                Please wait while your graph is being saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          )}
+          {alertMode === "result" && resultData && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Save Result</AlertDialogTitle>
+              </AlertDialogHeader>
+              {resultData.noNewTrust ? (
+                <AlertDialogDescription>
+                  {resultData.noNewTrust}
+                </AlertDialogDescription>
+              ) : resultData.contributions &&
+                resultData.contributions.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {resultData.contributions.map((c) => (
+                    <div
+                      key={c.contributionId}
+                      className="text-xs border-b border-border pb-1"
+                    >
+                      <p className="text-foreground">{c.description}</p>
+                      <p className="text-muted-foreground">
+                        +{c.earned.toString()} Trust · Save #
+                        {c.saveCount.toString()} · {c.buzzAmount.toString()}{" "}
+                        Buzz
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={handleAlertClose}>
+                  Close
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
-
-      <SaveResultDialog
-        open={saveResult !== null}
-        contributions={saveResult?.contributions}
-        noNewTrust={saveResult?.noNewTrust}
-        onClose={handleResultClose}
-      />
     </Dialog>
   );
 }
