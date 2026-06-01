@@ -21,6 +21,7 @@ type UserProfile =
  };
 type TrustTransaction = 
  record {
+   contributionIds: vec text;
    earned: int;
    saveNumber: nat;
    savedAt: int;
@@ -71,10 +72,17 @@ type SourceGraphEdgeInput =
    sourceName: text;
    targetName: text;
  };
+type SaveResult = 
+ variant {
+   err: text;
+   noNewTrust: record {reason: text;};
+   ok: record {contributions: vec CreditedContribution;};
+ };
 type PublishedSourceGraphMeta = 
  record {
    artworkDataUrl: opt text;
    attributeCount: nat;
+   authors: vec text;
    creator: principal;
    creatorName: text;
    edgeCount: nat;
@@ -264,6 +272,24 @@ type Curation =
    sources: vec SourceRef;
    timestamps: Timestamps;
  };
+type CreditedContribution = 
+ record {
+   buzzAmount: int;
+   contributionId: text;
+   description: text;
+   earned: int;
+   payer: principal;
+   saveCount: nat;
+ };
+type ContributionView = 
+ record {
+   alreadyCredited: bool;
+   buzzAmount: int;
+   description: text;
+   id: text;
+   nodeId: NodeId;
+   payer: principal;
+ };
 type ContentVersion = 
  record {
    content: text;
@@ -317,6 +343,7 @@ service : {
    parentSwarmId: NodeId) -> (NodeId);
   createSwarm: (name: text, tags: vec Tag, parentCurationId: NodeId,
    customAttributes: vec WeightedAttribute) -> (NodeId);
+  ensureContributionsMigrated: (publishedGraphId: text) -> ();
   generateApiKey: () -> (text);
   generateBuzzSecret: (score: int) -> (text);
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
@@ -327,6 +354,8 @@ service : {
   getCallerUserProfile: () -> (opt UserProfile) query;
   getCallerUserRole: () -> (UserRole) query;
   getChannels: () -> (vec ChatChannelSummary) query;
+  getGraphContributions: (publishedGraphId: text) ->
+   (vec ContributionView) query;
   getMessages: (channelId: text) ->
    (variant {
       err: text;
@@ -374,10 +403,7 @@ service : {
   revokePluginBinding: (pluginKey: principal) -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
   savePublishedGraph: (publishedGraphId: text, selectedNodeIds:
-   vec NodeId) -> (variant {
-                     err: text;
-                     ok: text;
-                   });
+   vec NodeId) -> (SaveResult);
   sendMessage: (channelId: text, "text": text) -> (variant {
                                                      err: text;
                                                      ok;

@@ -17,19 +17,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { GraphData } from "../backend.d";
+import type {
+  ContributionView,
+  CreditedContribution,
+  GraphData,
+} from "../backend.d";
 import {
+  useBackendActor,
   useHasUserSavedGraph,
   useSavePublishedGraph,
 } from "../hooks/useQueries";
+import type { TrustBackendExtensions } from "../types/trustExtensions";
 import { graphDataToEditorNodes } from "../utils/graphDataToEditorNodes";
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
 
 interface SaveGraphDialogProps {
   isOpen: boolean;
@@ -38,10 +41,6 @@ interface SaveGraphDialogProps {
   graphData: GraphData;
   graphId: string;
 }
-
-// ---------------------------------------------------------------------------
-// Internal tree types
-// ---------------------------------------------------------------------------
 
 interface TreeNodeData {
   id: string;
@@ -52,17 +51,11 @@ interface TreeNodeData {
   childrenIds: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Build flat tree from GraphData
-// ---------------------------------------------------------------------------
-
 function buildTree(data: GraphData): {
   nodes: Map<string, TreeNodeData>;
   rootIds: string[];
 } {
   const nodes = new Map<string, TreeNodeData>();
-
-  // curations — depth 0
   for (const c of data.curations) {
     nodes.set(c.id, {
       id: c.id,
@@ -73,8 +66,6 @@ function buildTree(data: GraphData): {
       childrenIds: [],
     });
   }
-
-  // swarms — depth 1
   for (const s of data.swarms) {
     nodes.set(s.id, {
       id: s.id,
@@ -86,8 +77,6 @@ function buildTree(data: GraphData): {
     });
     nodes.get(s.parentCurationId)?.childrenIds.push(s.id);
   }
-
-  // locations — depth 2
   for (const l of data.locations) {
     nodes.set(l.id, {
       id: l.id,
@@ -99,8 +88,6 @@ function buildTree(data: GraphData): {
     });
     nodes.get(l.parentSwarmId)?.childrenIds.push(l.id);
   }
-
-  // lawTokens — depth 3
   for (const lt of data.lawTokens) {
     nodes.set(lt.id, {
       id: lt.id,
@@ -112,8 +99,6 @@ function buildTree(data: GraphData): {
     });
     nodes.get(lt.parentLocationId)?.childrenIds.push(lt.id);
   }
-
-  // interpretationTokens — depth 4
   for (const it of data.interpretationTokens) {
     nodes.set(it.id, {
       id: it.id,
@@ -125,50 +110,77 @@ function buildTree(data: GraphData): {
     });
     nodes.get(it.parentLawTokenId)?.childrenIds.push(it.id);
   }
-
-  const rootIds = data.curations.map((c) => c.id);
-  return { nodes, rootIds };
+  return { nodes, rootIds: data.curations.map((c) => c.id) };
 }
 
-// ---------------------------------------------------------------------------
-// Collect all descendant IDs (recursive)
-// ---------------------------------------------------------------------------
-
-function collectDescendants(
-  id: string,
-  nodes: Map<string, TreeNodeData>,
-): string[] {
-  const node = nodes.get(id);
-  if (!node) return [];
-  const result: string[] = [];
-  for (const childId of node.childrenIds) {
-    result.push(childId);
-    result.push(...collectDescendants(childId, nodes));
-  }
-  return result;
+interface ContributionRowProps {
+  contribution: ContributionView;
+  checked: boolean;
+  onToggle: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Single tree node row (recursive)
-// ---------------------------------------------------------------------------
+function ContributionRow({
+  contribution,
+  checked,
+  onToggle,
+}: ContributionRowProps) {
+  return (
+    <div
+      className="flex items-center gap-1.5 py-0.5 hover:bg-accent/50 rounded transition-colors duration-100 cursor-pointer"
+      style={{ paddingLeft: 32 }}
+      onClick={() => {
+        if (!contribution.alreadyCredited) onToggle();
+      }}
+      onKeyDown={(e) => {
+        if (
+          (e.key === "Enter" || e.key === " ") &&
+          !contribution.alreadyCredited
+        )
+          onToggle();
+      }}
+    >
+      <Checkbox
+        checked={checked}
+        disabled={contribution.alreadyCredited}
+        onCheckedChange={() => {
+          if (!contribution.alreadyCredited) onToggle();
+        }}
+        onClick={(e) => e.stopPropagation()}
+        className="h-3 w-3 flex-shrink-0"
+      />
+      <span
+        className={`truncate min-w-0 flex-1 text-[10px] font-mono ${contribution.alreadyCredited ? "text-muted-foreground" : "text-foreground"}`}
+      >
+        {contribution.description}
+      </span>
+      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+        {contribution.buzzAmount.toString()} Buzz
+      </span>
+    </div>
+  );
+}
 
 interface TreeNodeCheckboxProps {
   id: string;
   nodes: Map<string, TreeNodeData>;
-  checkedIds: Set<string>;
+  contribsByNode: Map<string, ContributionView[]>;
+  checkedContribIds: Set<string>;
   expandedIds: Set<string>;
   rootIds: string[];
-  onToggleCheck: (id: string) => void;
+  onToggleNode: (nodeId: string) => void;
+  onToggleContribution: (contribId: string) => void;
   onToggleExpand: (id: string) => void;
 }
 
 function TreeNodeCheckbox({
   id,
   nodes,
-  checkedIds,
+  contribsByNode,
+  checkedContribIds,
   expandedIds,
   rootIds,
-  onToggleCheck,
+  onToggleNode,
+  onToggleContribution,
   onToggleExpand,
 }: TreeNodeCheckboxProps) {
   const node = nodes.get(id);
@@ -176,25 +188,26 @@ function TreeNodeCheckbox({
 
   const isRoot = rootIds.includes(id);
   const isExpanded = expandedIds.has(id);
-  const isChecked = checkedIds.has(id);
   const hasChildren = node.childrenIds.length > 0;
+  const nodeContribs = contribsByNode.get(id) ?? [];
+  const someChecked = nodeContribs.some(
+    (c) => checkedContribIds.has(c.id) || c.alreadyCredited,
+  );
+
   return (
     <div>
       <div
         className="flex items-center gap-1.5 py-1 hover:bg-accent/50 rounded transition-colors duration-100 cursor-pointer"
         style={{ paddingLeft: node.depth * 16 + 8 }}
-        data-ocid={`save_graph.item.${id}`}
         onClick={() => {
-          if (!isRoot) onToggleCheck(id);
+          if (!isRoot) onToggleNode(id);
         }}
         onKeyDown={(e) => {
-          if ((e.key === "Enter" || e.key === " ") && !isRoot)
-            onToggleCheck(id);
+          if ((e.key === "Enter" || e.key === " ") && !isRoot) onToggleNode(id);
         }}
       >
-        {/* Expand chevron */}
         <span className="w-3 h-3 flex-shrink-0 text-muted-foreground">
-          {hasChildren ? (
+          {hasChildren || nodeContribs.length > 0 ? (
             <button
               type="button"
               aria-label={isExpanded ? "Collapse" : "Expand"}
@@ -213,36 +226,48 @@ function TreeNodeCheckbox({
           ) : null}
         </span>
 
-        {/* Checkbox */}
         <Checkbox
-          checked={isChecked}
+          checked={someChecked}
           disabled={isRoot}
           onCheckedChange={() => {
-            if (!isRoot) onToggleCheck(id);
+            if (!isRoot) onToggleNode(id);
           }}
           onClick={(e) => e.stopPropagation()}
           className="h-3.5 w-3.5 flex-shrink-0"
-          data-ocid={`save_graph.checkbox.${id}`}
         />
 
-        {/* Label */}
         <span className="truncate min-w-0 flex-1 text-xs font-mono text-foreground">
           {node.name}
         </span>
+        {nodeContribs.length > 0 && (
+          <span className="text-[10px] text-muted-foreground flex-shrink-0 mr-1">
+            {nodeContribs.filter((c) => checkedContribIds.has(c.id)).length}/
+            {nodeContribs.filter((c) => !c.alreadyCredited).length}
+          </span>
+        )}
       </div>
 
-      {/* Children */}
-      {hasChildren && isExpanded && (
+      {isExpanded && (
         <div>
+          {nodeContribs.map((c) => (
+            <ContributionRow
+              key={c.id}
+              contribution={c}
+              checked={checkedContribIds.has(c.id)}
+              onToggle={() => onToggleContribution(c.id)}
+            />
+          ))}
           {node.childrenIds.map((childId) => (
             <TreeNodeCheckbox
               key={childId}
               id={childId}
               nodes={nodes}
-              checkedIds={checkedIds}
+              contribsByNode={contribsByNode}
+              checkedContribIds={checkedContribIds}
               expandedIds={expandedIds}
               rootIds={rootIds}
-              onToggleCheck={onToggleCheck}
+              onToggleNode={onToggleNode}
+              onToggleContribution={onToggleContribution}
               onToggleExpand={onToggleExpand}
             />
           ))}
@@ -252,9 +277,53 @@ function TreeNodeCheckbox({
   );
 }
 
-// ---------------------------------------------------------------------------
-// SaveGraphDialog
-// ---------------------------------------------------------------------------
+function SaveResultDialog({
+  contributions,
+  noNewTrust,
+  open,
+  onClose,
+}: {
+  contributions?: CreditedContribution[];
+  noNewTrust?: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Save Result</AlertDialogTitle>
+        </AlertDialogHeader>
+        {noNewTrust ? (
+          <AlertDialogDescription>{noNewTrust}</AlertDialogDescription>
+        ) : contributions && contributions.length > 0 ? (
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {contributions.map((c) => (
+              <div
+                key={c.contributionId}
+                className="text-xs border-b border-border pb-1"
+              >
+                <p className="text-foreground">{c.description}</p>
+                <p className="text-muted-foreground">
+                  +{c.earned.toString()} Trust · Save #{c.saveCount.toString()}{" "}
+                  · {c.buzzAmount.toString()} Buzz
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <AlertDialogFooter>
+          <AlertDialogAction onClick={onClose}>Close</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 export default function SaveGraphDialog({
   isOpen,
@@ -264,80 +333,144 @@ export default function SaveGraphDialog({
   graphId,
 }: SaveGraphDialogProps) {
   const savePublishedGraph = useSavePublishedGraph();
+  const { actor } = useBackendActor();
+  const { data: alreadySaved } = useHasUserSavedGraph(graphId);
 
   const { nodes: treeNodes, rootIds } = useMemo(
     () => buildTree(graphData),
     [graphData],
   );
+  const allNodeIds = useMemo(() => Array.from(treeNodes.keys()), [treeNodes]);
 
-  const allIds = useMemo(() => Array.from(treeNodes.keys()), [treeNodes]);
-
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(
-    () => new Set(allIds),
-  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    () => new Set(allIds),
+    () => new Set(allNodeIds),
+  );
+  const [checkedContribIds, setCheckedContribIds] = useState<Set<string>>(
+    new Set(),
   );
   const [saving, setSaving] = useState(false);
-  const { data: alreadySaved } = useHasUserSavedGraph(graphId);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [saveResult, setSaveResult] = useState<{
+    contributions?: CreditedContribution[];
+    noNewTrust?: string;
+  } | null>(null);
 
-  const handleToggleCheck = (id: string) => {
-    setCheckedIds((prev) => {
+  const { data: contributions = [] } = useQuery({
+    queryKey: ["graphContributions", graphId],
+    queryFn: async () => {
+      const ext = actor as unknown as TrustBackendExtensions;
+      const result = await ext.getGraphContributions(graphId);
+      return result ?? [];
+    },
+    enabled: isOpen && !!graphId && !!actor,
+  });
+
+  const ensureMigration = useMutation({
+    mutationFn: async () => {
+      const ext = actor as unknown as TrustBackendExtensions;
+      await ext.ensureContributionsMigrated(graphId);
+    },
+  });
+
+  useEffect(() => {
+    if (isOpen && graphId) {
+      ensureMigration.mutate();
+    }
+  }, [isOpen, graphId, ensureMigration]);
+
+  const contribsByNode = useMemo(() => {
+    const map = new Map<string, ContributionView[]>();
+    for (const c of contributions) {
+      if (!map.has(c.nodeId)) map.set(c.nodeId, []);
+      map.get(c.nodeId)!.push(c);
+    }
+    return map;
+  }, [contributions]);
+
+  const selectableContributions = useMemo(
+    () => contributions.filter((c) => !c.alreadyCredited),
+    [contributions],
+  );
+
+  useEffect(() => {
+    setCheckedContribIds(new Set(selectableContributions.map((c) => c.id)));
+  }, [selectableContributions]);
+
+  const handleToggleNode = useCallback(
+    (nodeId: string) => {
+      setCheckedContribIds((prev) => {
+        const next = new Set(prev);
+        const nodeContribs = contribsByNode.get(nodeId) ?? [];
+        const unchecked = nodeContribs.filter(
+          (c) => !c.alreadyCredited && !next.has(c.id),
+        );
+        if (unchecked.length > 0) {
+          for (const c of nodeContribs) {
+            if (!c.alreadyCredited) next.add(c.id);
+          }
+        } else {
+          for (const c of nodeContribs) {
+            next.delete(c.id);
+          }
+        }
+        return next;
+      });
+    },
+    [contribsByNode],
+  );
+
+  const handleToggleContribution = useCallback((contribId: string) => {
+    setCheckedContribIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        // Uncheck this node and all descendants
-        next.delete(id);
-        for (const descId of collectDescendants(id, treeNodes)) {
-          next.delete(descId);
-        }
-      } else {
-        // Check this node and all descendants
-        next.add(id);
-        for (const descId of collectDescendants(id, treeNodes)) {
-          next.add(descId);
-        }
-      }
+      if (next.has(contribId)) next.delete(contribId);
+      else next.add(contribId);
       return next;
     });
-  };
+  }, []);
 
-  const handleToggleExpand = (id: string) => {
+  const handleToggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const handleSave = () => {
-    setShowConfirm(true);
-  };
+  const handleSave = () => setShowConfirm(true);
 
   const handleConfirmSave = async () => {
     setShowConfirm(false);
     setSaving(true);
     try {
-      await savePublishedGraph.mutateAsync({
+      const result = await savePublishedGraph.mutateAsync({
         publishedGraphId: graphId,
-        selectedNodes: Array.from(checkedIds),
+        selectedContributionIds: Array.from(checkedContribIds),
       });
-      const { nodes, rootIds: importRootIds } = graphDataToEditorNodes(
-        graphData,
-        checkedIds,
-        graphName,
-      );
-      window.dispatchEvent(
-        new CustomEvent("hyvmind:import-nodes", {
-          detail: { nodes, rootIds: importRootIds },
-        }),
-      );
-      toast.success("Graph saved to Notes!");
-      onClose();
+      if ("ok" in result) {
+        setSaveResult({ contributions: result.ok.contributions });
+        const selectedNodeIds = new Set(
+          contributions
+            .filter((c) => checkedContribIds.has(c.id))
+            .map((c) => c.nodeId),
+        );
+        const { nodes, rootIds: importRootIds } = graphDataToEditorNodes(
+          graphData,
+          selectedNodeIds,
+          graphName,
+        );
+        window.dispatchEvent(
+          new CustomEvent("hyvmind:import-nodes", {
+            detail: { nodes, rootIds: importRootIds },
+          }),
+        );
+        toast.success("Graph saved to Notes!");
+        onClose();
+      } else if ("noNewTrust" in result) {
+        setSaveResult({ noNewTrust: result.noNewTrust.reason });
+      } else {
+        toast.error(result.err ?? "Failed to save graph");
+      }
     } catch (err) {
       console.error("Failed to save graph:", err);
       toast.error(err instanceof Error ? err.message : "Failed to save graph");
@@ -350,31 +483,29 @@ export default function SaveGraphDialog({
     if (!open && !saving) onClose();
   };
 
-  const selectedCount = checkedIds.size;
-  const _totalCount = allIds.length;
+  const selectedCount = checkedContribIds.size;
+  const hasNewSelections = selectableContributions.some((c) =>
+    checkedContribIds.has(c.id),
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg" data-ocid="save_graph.dialog">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Save Graph to Notes</DialogTitle>
         </DialogHeader>
 
         <p className="text-xs text-muted-foreground">
-          Select nodes from <span className="text-foreground">{graphName}</span>{" "}
-          to import into your Notes workspace.
+          Select contributions from{" "}
+          <span className="text-foreground">{graphName}</span> to import into
+          your Notes workspace.
         </p>
 
-        {/* Scrollable tree */}
         <div
-          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved ? "opacity-50 pointer-events-none" : ""}`}
-          data-ocid="save_graph.list"
+          className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
         >
           {rootIds.length === 0 ? (
-            <div
-              className="py-8 text-center text-xs text-muted-foreground"
-              data-ocid="save_graph.empty_state"
-            >
+            <div className="py-8 text-center text-xs text-muted-foreground">
               No nodes found
             </div>
           ) : (
@@ -383,22 +514,21 @@ export default function SaveGraphDialog({
                 key={rootId}
                 id={rootId}
                 nodes={treeNodes}
-                checkedIds={checkedIds}
+                contribsByNode={contribsByNode}
+                checkedContribIds={checkedContribIds}
                 expandedIds={expandedIds}
                 rootIds={rootIds}
-                onToggleCheck={handleToggleCheck}
+                onToggleNode={handleToggleNode}
+                onToggleContribution={handleToggleContribution}
                 onToggleExpand={handleToggleExpand}
               />
             ))
           )}
         </div>
 
-        {alreadySaved && (
-          <p
-            className="text-xs text-muted-foreground"
-            data-ocid="save_graph.already_saved"
-          >
-            You have already saved this graph.
+        {alreadySaved && selectableContributions.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            You have already saved all contributions in this graph.
           </p>
         )}
 
@@ -408,19 +538,15 @@ export default function SaveGraphDialog({
             variant="outline"
             onClick={onClose}
             disabled={saving}
-            data-ocid="save_graph.cancel_button"
           >
             Cancel
           </Button>
           <Button
             type="button"
             onClick={handleSave}
-            disabled={alreadySaved || saving || selectedCount === 0}
-            data-ocid="save_graph.submit_button"
+            disabled={!hasNewSelections || saving || selectedCount === 0}
           >
-            {alreadySaved ? (
-              "Already Saved"
-            ) : saving ? (
+            {saving ? (
               <>
                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Saving...
@@ -437,8 +563,8 @@ export default function SaveGraphDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Save this graph?</AlertDialogTitle>
             <AlertDialogDescription>
-              You can only save this graph once. The selected nodes will be
-              imported into your Notes. This action cannot be undone.
+              The selected contributions will be imported into your Notes. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -451,6 +577,13 @@ export default function SaveGraphDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SaveResultDialog
+        open={saveResult !== null}
+        contributions={saveResult?.contributions}
+        noNewTrust={saveResult?.noNewTrust}
+        onClose={() => setSaveResult(null)}
+      />
     </Dialog>
   );
 }

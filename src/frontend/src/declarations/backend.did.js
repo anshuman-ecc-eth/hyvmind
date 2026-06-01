@@ -117,6 +117,28 @@ export const TrustTransaction = IDL.Record({
   'earned' : IDL.Int,
   'savedAt' : IDL.Int,
   'saveNumber' : IDL.Nat,
+  'contributionIds' : IDL.Vec(IDL.Text),
+});
+export const CreditedContribution = IDL.Record({
+  'contributionId' : IDL.Text,
+  'description' : IDL.Text,
+  'payer' : IDL.Principal,
+  'buzzAmount' : IDL.Int,
+  'earned' : IDL.Int,
+  'saveCount' : IDL.Nat,
+});
+export const ContributionView = IDL.Record({
+  'id' : IDL.Text,
+  'nodeId' : NodeId,
+  'description' : IDL.Text,
+  'payer' : IDL.Principal,
+  'buzzAmount' : IDL.Int,
+  'alreadyCredited' : IDL.Bool,
+});
+const SaveResult = IDL.Variant({
+  'ok' : IDL.Record({ 'contributions' : IDL.Vec(CreditedContribution) }),
+  'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
+  'err' : IDL.Text,
 });
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
 export const Curation = IDL.Record({
@@ -379,10 +401,12 @@ export const idlService = IDL.Service({
   'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'savePublishedGraph' : IDL.Func(
-      [IDL.Text, IDL.Vec(NodeId)],
-      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [IDL.Text, IDL.Vec(IDL.Text)],
+      [SaveResult],
       [],
     ),
+  'getGraphContributions' : IDL.Func([IDL.Text], [IDL.Vec(ContributionView)], ['query']),
+  'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
   'sendMessage' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
@@ -512,6 +536,28 @@ export const idlFactory = ({ IDL }) => {
     'earned' : IDL.Int,
     'savedAt' : IDL.Int,
     'saveNumber' : IDL.Nat,
+    'contributionIds' : IDL.Vec(IDL.Text),
+  });
+  const CreditedContribution = IDL.Record({
+    'contributionId' : IDL.Text,
+    'description' : IDL.Text,
+    'payer' : IDL.Principal,
+    'buzzAmount' : IDL.Int,
+    'earned' : IDL.Int,
+    'saveCount' : IDL.Nat,
+  });
+  const ContributionView = IDL.Record({
+    'id' : IDL.Text,
+    'nodeId' : NodeId,
+    'description' : IDL.Text,
+    'payer' : IDL.Principal,
+    'buzzAmount' : IDL.Int,
+    'alreadyCredited' : IDL.Bool,
+  });
+  const SaveResult = IDL.Variant({
+    'ok' : IDL.Record({ 'contributions' : IDL.Vec(CreditedContribution) }),
+    'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
+    'err' : IDL.Text,
   });
   const Timestamps = IDL.Record({ 'createdAt' : Time });
   const Curation = IDL.Record({
@@ -778,10 +824,12 @@ export const idlFactory = ({ IDL }) => {
     'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'savePublishedGraph' : IDL.Func(
-        [IDL.Text, IDL.Vec(NodeId)],
-        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [IDL.Text, IDL.Vec(IDL.Text)],
+        [SaveResult],
         [],
       ),
+    'getGraphContributions' : IDL.Func([IDL.Text], [IDL.Vec(ContributionView)], ['query']),
+    'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
     'sendMessage' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],

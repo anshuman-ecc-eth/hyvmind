@@ -203,7 +203,37 @@ export interface TrustTransaction {
     earned: bigint;
     savedAt: bigint;
     saveNumber: bigint;
+    contributionIds: string[];
 }
+
+export interface CreditedContribution {
+    contributionId: string;
+    description: string;
+    payer: Principal;
+    buzzAmount: bigint;
+    earned: bigint;
+    saveCount: bigint;
+}
+
+export interface ContributionView {
+    id: string;
+    nodeId: NodeId;
+    description: string;
+    payer: Principal;
+    buzzAmount: bigint;
+    alreadyCredited: boolean;
+}
+
+export type SaveResult = {
+    __kind__: "ok";
+    ok: { contributions: CreditedContribution[] };
+} | {
+    __kind__: "noNewTrust";
+    noNewTrust: { reason: string };
+} | {
+    __kind__: "err";
+    err: string;
+};
 export interface GraphData {
     curations: Array<Curation>;
     rootNodes: Array<GraphNode>;
@@ -338,13 +368,9 @@ export interface backendInterface {
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
+    savePublishedGraph(publishedGraphId: string, selectedContributionIds: Array<string>): Promise<SaveResult>;
+    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
+    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;

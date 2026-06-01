@@ -28,7 +28,7 @@ function createActorWithDefaults(
 }
 
 // Typed wrapper to get a properly-typed backend actor
-function useBackendActor(): {
+export function useBackendActor(): {
   actor: backendInterface | null;
   isFetching: boolean;
 } {
@@ -206,21 +206,22 @@ export function useSavePublishedGraph() {
   return useMutation({
     mutationFn: async ({
       publishedGraphId,
-      selectedNodes,
+      selectedContributionIds,
     }: {
       publishedGraphId: string;
-      selectedNodes: string[];
+      selectedContributionIds: string[];
     }) => {
       if (!actor) throw new Error("Actor not available");
-      const result = await (
+      return await (
         actor as unknown as TrustBackendExtensions
-      ).savePublishedGraph(publishedGraphId, selectedNodes);
-      if ("err" in result) throw new Error(result.err);
-      return result;
+      ).savePublishedGraph(publishedGraphId, selectedContributionIds);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myTrustBalance"] });
-      queryClient.invalidateQueries({ queryKey: ["hasUserSavedGraph"] });
+    onSuccess: (data) => {
+      if ("ok" in data) {
+        queryClient.invalidateQueries({ queryKey: ["myTrustBalance"] });
+        queryClient.invalidateQueries({ queryKey: ["hasUserSavedGraph"] });
+        queryClient.invalidateQueries({ queryKey: ["graphContributions"] });
+      }
     },
   });
 }

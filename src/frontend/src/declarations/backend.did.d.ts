@@ -235,7 +235,27 @@ export interface TrustTransaction {
   'earned' : bigint,
   'savedAt' : bigint,
   'saveNumber' : bigint,
+  'contributionIds' : Array<string>,
 }
+export interface CreditedContribution {
+  'contributionId' : string,
+  'description' : string,
+  'payer' : Principal,
+  'buzzAmount' : bigint,
+  'earned' : bigint,
+  'saveCount' : bigint,
+}
+export interface ContributionView {
+  'id' : string,
+  'nodeId' : NodeId,
+  'description' : string,
+  'payer' : Principal,
+  'buzzAmount' : bigint,
+  'alreadyCredited' : boolean,
+}
+export type SaveResult = { 'ok' : { 'contributions' : Array<CreditedContribution> } } |
+  { 'noNewTrust' : { 'reason' : string } } |
+  { 'err' : string };
 export interface UserProfile { 'name' : string, 'socialUrl' : [] | [string] }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -328,11 +348,9 @@ export interface _SERVICE {
   'revokeApiKey' : ActorMethod<[], undefined>,
   'revokePluginBinding' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'savePublishedGraph' : ActorMethod<
-    [string, Array<NodeId>],
-    { 'ok' : string } |
-      { 'err' : string }
-  >,
+  'savePublishedGraph' : ActorMethod<[string, Array<string>], SaveResult>,
+  'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
+  'ensureContributionsMigrated' : ActorMethod<[string], undefined>,
   'sendMessage' : ActorMethod<
     [string, string],
     { 'ok' : null } |

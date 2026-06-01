@@ -285,7 +285,31 @@ export interface TrustTransaction {
     earned: bigint;
     savedAt: bigint;
     saveNumber: bigint;
+    contributionIds: string[];
 }
+
+export interface CreditedContribution {
+    contributionId: string;
+    description: string;
+    payer: Principal;
+    buzzAmount: bigint;
+    earned: bigint;
+    saveCount: bigint;
+}
+
+export interface ContributionView {
+    id: string;
+    nodeId: NodeId;
+    description: string;
+    payer: Principal;
+    buzzAmount: bigint;
+    alreadyCredited: boolean;
+}
+
+export type SaveResult =
+    | { __kind__: "ok"; ok: { contributions: CreditedContribution[] } }
+    | { __kind__: "noNewTrust"; noNewTrust: { reason: string } }
+    | { __kind__: "err"; err: string };
 export interface GraphData {
     curations: Array<Curation>;
     rootNodes: Array<GraphNode>;
@@ -421,13 +445,9 @@ export interface backendInterface {
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
+    savePublishedGraph(publishedGraphId: string, selectedContributionIds: string[]): Promise<SaveResult>;
+    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
+    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -1100,24 +1120,44 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async savePublishedGraph(arg0: string, arg1: Array<NodeId>): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }> {
+    async savePublishedGraph(arg0: string, arg1: string[]): Promise<SaveResult> {
         if (this.processError) {
             try {
                 const result = await this.actor.savePublishedGraph(arg0, arg1);
-                return from_candid_variant_n62(this._uploadFile, this._downloadFile, result);
+                return from_candid_save_result(result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.savePublishedGraph(arg0, arg1);
-            return from_candid_variant_n62(this._uploadFile, this._downloadFile, result);
+            return from_candid_save_result(result);
+        }
+    }
+    async getGraphContributions(arg0: string): Promise<Array<ContributionView>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGraphContributions(arg0);
+                return result as Array<ContributionView>;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGraphContributions(arg0);
+            return result as Array<ContributionView>;
+        }
+    }
+    async ensureContributionsMigrated(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.ensureContributionsMigrated(arg0);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.ensureContributionsMigrated(arg0);
         }
     }
     async sendMessage(arg0: string, arg1: string): Promise<{
@@ -1985,6 +2025,18 @@ export interface CreateActorOptions {
     actorOptions?: ActorConfig;
     processError?: (error: unknown) => never;
 }
+function from_candid_save_result(value: {
+    ok: { contributions: Array<unknown> };
+} | {
+    noNewTrust: { reason: string };
+} | {
+    err: string;
+}): SaveResult {
+    if ("ok" in value) return { __kind__: "ok", ok: { contributions: value.ok.contributions as CreditedContribution[] } };
+    if ("noNewTrust" in value) return { __kind__: "noNewTrust", noNewTrust: value.noNewTrust };
+    return { __kind__: "err", err: (value as { err: string }).err };
+}
+
 export function createActor(canisterId: string, _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, options: CreateActorOptions = {}): Backend {
     const agent = options.agent || HttpAgent.createSync({
         ...options.agentOptions

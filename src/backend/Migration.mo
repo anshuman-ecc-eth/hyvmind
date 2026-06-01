@@ -1,4 +1,5 @@
 import Array "mo:core/Array";
+import List "mo:core/List";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Time "mo:core/Time";
@@ -47,8 +48,32 @@ type NewMeta = {
   authors : [Text];
 };
 
-func migration(old : { var publishedSourceGraphs : Map.Map<Text, OldMeta> }) : { var publishedSourceGraphs : Map.Map<Text, NewMeta> } {
-  var migrated = Map.empty<Text, NewMeta>();
+type OldTrustTransaction = {
+  saver : Principal;
+  savedAt : Int;
+  saveNumber : Nat;
+  totalBuzzCost : Int;
+  earned : Int;
+};
+
+type NewTrustTransaction = {
+  saver : Principal;
+  savedAt : Int;
+  saveNumber : Nat;
+  totalBuzzCost : Int;
+  earned : Int;
+  contributionIds : [Text];
+};
+
+func migration(old : {
+  var publishedSourceGraphs : Map.Map<Text, OldMeta>;
+  var trustTransactions : Map.Map<Principal, List.List<OldTrustTransaction>>;
+}) : {
+  var publishedSourceGraphs : Map.Map<Text, NewMeta>;
+  var trustTransactions : Map.Map<Principal, List.List<NewTrustTransaction>>;
+} {
+  // Migrate publishedSourceGraphs (add authors field)
+  var migratedGraphs = Map.empty<Text, NewMeta>();
   for ((id, meta) in old.publishedSourceGraphs.entries()) {
     let names = Array.tabulate(meta.extensionLog.size() + 1, func (j) {
       if (j == 0) { meta.creatorName } else { meta.extensionLog[j - 1].extendedByName }
@@ -65,7 +90,7 @@ func migration(old : { var publishedSourceGraphs : Map.Map<Text, OldMeta> }) : {
         });
       };
     };
-    migrated.add(id, {
+    migratedGraphs.add(id, {
       id = meta.id; name = meta.name; creator = meta.creator; creatorName = meta.creatorName;
       publishedAt = meta.publishedAt; nodeCount = meta.nodeCount; edgeCount = meta.edgeCount;
       hierarchyEdgeCount = meta.hierarchyEdgeCount; attributeCount = meta.attributeCount;
@@ -73,5 +98,23 @@ func migration(old : { var publishedSourceGraphs : Map.Map<Text, OldMeta> }) : {
       artworkDataUrl = meta.artworkDataUrl; terrainParams = meta.terrainParams; authors;
     });
   };
-  { var publishedSourceGraphs = migrated };
+
+  // Migrate trustTransactions (add empty contributionIds)
+  var migratedTxs = Map.empty<Principal, List.List<NewTrustTransaction>>();
+  for ((principal, txList) in old.trustTransactions.entries()) {
+    let newList = List.empty<NewTrustTransaction>();
+    for (tx in txList.values()) {
+      newList.add({
+        saver = tx.saver;
+        savedAt = tx.savedAt;
+        saveNumber = tx.saveNumber;
+        totalBuzzCost = tx.totalBuzzCost;
+        earned = tx.earned;
+        contributionIds = [];
+      });
+    };
+    migratedTxs.add(principal, newList);
+  };
+
+  { var publishedSourceGraphs = migratedGraphs; var trustTransactions = migratedTxs };
 };
