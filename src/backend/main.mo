@@ -21,9 +21,7 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
-import Migration "Migration";
 
-(with migration = Migration.migration)
 actor {
   // Type Aliases
   type NodeId = Text;
