@@ -21,6 +21,7 @@ type UserProfile =
  };
 type TrustTransaction = 
  record {
+   contributionDetails: vec CreditedContribution;
    contributionIds: vec text;
    earned: int;
    saveNumber: nat;

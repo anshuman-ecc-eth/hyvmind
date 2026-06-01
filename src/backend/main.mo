@@ -48,14 +48,6 @@ actor {
     buzzAmount : Int;
     description : Text;
   };
-  type TrustTransaction = {
-    saver : Principal;
-    savedAt : Int;
-    saveNumber : Nat;
-    totalBuzzCost : Int;
-    earned : Int;
-    contributionIds : [Text];
-  };
   type CreditedContribution = {
     contributionId : Text;
     description : Text;
@@ -63,6 +55,15 @@ actor {
     buzzAmount : Int;
     earned : Int;
     saveCount : Nat;
+  };
+  type TrustTransaction = {
+    saver : Principal;
+    savedAt : Int;
+    saveNumber : Nat;
+    totalBuzzCost : Int;
+    earned : Int;
+    contributionIds : [Text];
+    contributionDetails : [CreditedContribution];
   };
   type SaveResult = {
     #ok : { contributions : [CreditedContribution] };
@@ -611,6 +612,7 @@ actor {
       var totalEarned : Int = 0;
       var allContribIds : [Text] = [];
       var payerDescs : [Text] = [];
+      let payerCredited = List.empty<CreditedContribution>();
       var i = 0;
       while (i < bucket.contribIds.size()) {
         let cid = bucket.contribIds[i];
@@ -643,6 +645,7 @@ actor {
           if (j < payerDescs.size()) { payerDescs[j] } else { desc }
         });
         creditedResults.add({ contributionId = cid; description = desc; payer; buzzAmount; earned; saveCount });
+        payerCredited.add({ contributionId = cid; description = desc; payer; buzzAmount; earned; saveCount });
         i += 1;
       };
       updateTrustScore(payer, totalEarned);
@@ -653,6 +656,7 @@ actor {
         totalBuzzCost = bucket.buzzTotal;
         earned = totalEarned;
         contributionIds = allContribIds;
+        contributionDetails = payerCredited.toArray();
       };
       let existingTrustTxs = switch (trustTransactions.get(payer)) {
         case (null) { List.empty<TrustTransaction>() };

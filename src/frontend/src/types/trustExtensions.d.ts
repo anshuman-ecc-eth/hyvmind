@@ -1,5 +1,14 @@
 import type { Principal } from "@icp-sdk/core/principal";
 
+export interface CreditedContributionDetail {
+  contributionId: string;
+  description: string;
+  payer: Principal;
+  buzzAmount: bigint;
+  earned: bigint;
+  saveCount: bigint;
+}
+
 export interface TrustTransaction {
   saver: Principal;
   savedAt: bigint;
@@ -7,17 +16,11 @@ export interface TrustTransaction {
   totalBuzzCost: bigint;
   earned: bigint;
   contributionIds: string[];
+  contributionDetails: CreditedContributionDetail[];
 }
 
 export interface SavedOkResult {
-  contributions: Array<{
-    contributionId: string;
-    description: string;
-    payer: Principal;
-    buzzAmount: bigint;
-    earned: bigint;
-    saveCount: bigint;
-  }>;
+  contributions: CreditedContributionDetail[];
 }
 
 export type SaveResult =

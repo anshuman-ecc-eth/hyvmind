@@ -286,6 +286,7 @@ export interface TrustTransaction {
     savedAt: bigint;
     saveNumber: bigint;
     contributionIds: string[];
+    contributionDetails: CreditedContribution[];
 }
 
 export interface CreditedContribution {

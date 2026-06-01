@@ -236,6 +236,7 @@ export interface TrustTransaction {
   'savedAt' : bigint,
   'saveNumber' : bigint,
   'contributionIds' : Array<string>,
+  'contributionDetails' : Array<CreditedContribution>,
 }
 export interface CreditedContribution {
   'contributionId' : string,

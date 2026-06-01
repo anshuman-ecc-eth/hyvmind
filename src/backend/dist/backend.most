@@ -26,6 +26,15 @@ type ContributionEntry__516340155 =
     nodeId : NodeId__1021555701;
     payer : Principal
   };
+type CreditedContribution__298401669 =
+  {
+    buzzAmount : Int;
+    contributionId : Text;
+    description : Text;
+    earned : Int;
+    payer : Principal;
+    saveCount : Nat
+  };
 type Curation__852736695 =
   {
     creator : Principal;
@@ -39,17 +48,6 @@ type Data__453681254<T> = {var count : Nat__107743821; elements : [var ?T]};
 type Data__678143819<K, V> =
   {var count : Nat__107743821; kvs : [var ?(K, V)]};
 type Directionality__459640046 = {#bidirectional; #none; #unidirectional};
-type ExtensionEntry__506122597 =
-  {
-    addedAttributes : Nat;
-    addedEdges : Nat;
-    addedHierarchyEdges : Nat;
-    addedNodes : Nat;
-    addedSources : ?Nat;
-    extendedAt : Time__772726445;
-    extendedBy : Principal;
-    extendedByName : Text
-  };
 type ExtensionEntry__700920700 =
   {
     addedAttributes : Nat;
@@ -120,24 +118,9 @@ type Node__216023231<K, V> =
   {#internal : Internal__272372588<K, V>; #leaf : Leaf__366843236<K, V>};
 type Node__398398520<T> =
   {#internal : Internal__1061244309<T>; #leaf : Leaf__928866731<T>};
-type OldMeta__476501223 =
+type OldTrustTransactionV2__477872985 =
   {
-    artworkDataUrl : ?Text;
-    attributeCount : Nat;
-    creator : Principal;
-    creatorName : Text;
-    edgeCount : Nat;
-    extensionLog : [ExtensionEntry__506122597];
-    hierarchyEdgeCount : Nat;
-    id : Text;
-    name : Text;
-    nodeCount : Nat;
-    publishedAt : Time__772726445;
-    sourcesCount : ?Nat;
-    terrainParams : ?Text
-  };
-type OldTrustTransaction__377599360 =
-  {
+    contributionIds : [Text];
     earned : Int;
     saveNumber : Nat;
     savedAt : Int;
@@ -199,6 +182,7 @@ type Timestamps__731160076 = {createdAt : Time__772726445};
 type TrustScore__205361434 = Int;
 type TrustTransaction__15493831 =
   {
+    contributionDetails : [CreditedContribution__298401669];
     contributionIds : [Text];
     earned : Int;
     saveNumber : Nat;
@@ -326,7 +310,11 @@ actor ({
                                          NodeContribution__716145722>>;
       var size : Nat__107743821
     };
-  in var publishedSourceGraphs : Map__466055834<Text, OldMeta__476501223>;
+  stable var publishedSourceGraphs :
+    {
+      var root : Node__216023231<Text, PublishedSourceGraphMeta__815873310>;
+      var size : Nat__107743821
+    };
   stable var sourceEdges :
     {
       var root :
@@ -346,7 +334,8 @@ actor ({
       var size : Nat__107743821
     };
   in var trustTransactions :
-    Map__466055834<Principal, List__291137870<OldTrustTransaction__377599360>>;
+    Map__466055834<Principal,
+                    List__291137870<OldTrustTransactionV2__477872985>>;
   stable var userContributionCredits :
     {
       var root :

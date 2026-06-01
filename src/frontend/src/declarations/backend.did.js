@@ -118,6 +118,7 @@ export const TrustTransaction = IDL.Record({
   'savedAt' : IDL.Int,
   'saveNumber' : IDL.Nat,
   'contributionIds' : IDL.Vec(IDL.Text),
+  'contributionDetails' : IDL.Vec(CreditedContribution),
 });
 export const CreditedContribution = IDL.Record({
   'contributionId' : IDL.Text,
