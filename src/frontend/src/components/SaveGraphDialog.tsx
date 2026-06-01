@@ -448,7 +448,6 @@ export default function SaveGraphDialog({
         selectedContributionIds: Array.from(checkedContribIds),
       });
       if ("ok" in result) {
-        setSaveResult({ contributions: result.ok.contributions });
         const selectedNodeIds = new Set(
           contributions
             .filter((c) => checkedContribIds.has(c.id))
@@ -464,8 +463,8 @@ export default function SaveGraphDialog({
             detail: { nodes, rootIds: importRootIds },
           }),
         );
+        setSaveResult({ contributions: result.ok.contributions });
         toast.success("Graph saved to Notes!");
-        onClose();
       } else if ("noNewTrust" in result) {
         setSaveResult({ noNewTrust: result.noNewTrust.reason });
       } else {
@@ -480,7 +479,12 @@ export default function SaveGraphDialog({
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open && !saving) onClose();
+    if (!open && !saving && saveResult === null) onClose();
+  };
+
+  const handleResultClose = () => {
+    setSaveResult(null);
+    onClose();
   };
 
   const selectedCount = checkedContribIds.size;
@@ -582,7 +586,7 @@ export default function SaveGraphDialog({
         open={saveResult !== null}
         contributions={saveResult?.contributions}
         noNewTrust={saveResult?.noNewTrust}
-        onClose={() => setSaveResult(null)}
+        onClose={handleResultClose}
       />
     </Dialog>
   );
