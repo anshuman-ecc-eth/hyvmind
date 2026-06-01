@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,9 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Loader2, XIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import type {
   ContributionView,
@@ -504,77 +496,106 @@ export default function SaveGraphDialog({
         </DialogFooter>
       </DialogContent>
 
-      <AlertDialog
-        open={alertMode !== null}
-        onOpenChange={(v) => {
-          if (!v) handleAlertClose();
-        }}
-      >
-        <AlertDialogContent>
-          {alertMode === "confirm" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Save this graph?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  The selected contributions will be imported into your Notes.
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setAlertMode(null)}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmSave}>
-                  Save to Notes
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-          {alertMode === "loading" && (
-            <AlertDialogHeader>
-              <AlertDialogTitle>Saving...</AlertDialogTitle>
-              <AlertDialogDescription>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
-                Please wait while your graph is being saved.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-          )}
-          {alertMode === "result" && resultData && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Save Result</AlertDialogTitle>
-              </AlertDialogHeader>
-              {resultData.noNewTrust ? (
-                <AlertDialogDescription>
-                  {resultData.noNewTrust}
-                </AlertDialogDescription>
-              ) : resultData.contributions &&
-                resultData.contributions.length > 0 ? (
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {resultData.contributions.map((c) => (
-                    <div
-                      key={c.contributionId}
-                      className="text-xs border-b border-border pb-1"
+      {alertMode !== null &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+              data-state={alertMode !== null ? "open" : "closed"}
+              onClick={alertMode !== "loading" ? handleAlertClose : undefined}
+              onKeyDown={
+                alertMode !== "loading"
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        handleAlertClose();
+                    }
+                  : undefined
+              }
+              role="button"
+              tabIndex={0}
+              aria-label="Close dialog"
+            />
+            <div
+              className={cn(
+                "bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+              )}
+              data-state={alertMode !== null ? "open" : "closed"}
+            >
+              <button
+                type="button"
+                onClick={handleAlertClose}
+                disabled={alertMode === "loading"}
+                className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+              >
+                <XIcon className="size-4" />
+                <span className="sr-only">Close</span>
+              </button>
+              {alertMode === "confirm" && (
+                <>
+                  <div className="flex flex-col gap-2 text-center sm:text-left">
+                    <h2 className="text-lg font-semibold">Save this graph?</h2>
+                    <p className="text-muted-foreground text-sm">
+                      The selected contributions will be imported into your
+                      Notes. This action cannot be undone.
+                    </p>
+                  </div>
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setAlertMode(null)}
                     >
-                      <p className="text-foreground">{c.description}</p>
-                      <p className="text-muted-foreground">
-                        +{c.earned.toString()} Trust · Save #
-                        {c.saveCount.toString()} · {c.buzzAmount.toString()}{" "}
-                        Buzz
-                      </p>
-                    </div>
-                  ))}
+                      Cancel
+                    </Button>
+                    <Button onClick={handleConfirmSave}>Save to Notes</Button>
+                  </div>
+                </>
+              )}
+              {alertMode === "loading" && (
+                <div className="flex flex-col gap-2 text-center sm:text-left">
+                  <h2 className="text-lg font-semibold">Saving...</h2>
+                  <p className="text-muted-foreground text-sm">
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
+                    Please wait while your graph is being saved.
+                  </p>
                 </div>
-              ) : null}
-              <AlertDialogFooter>
-                <AlertDialogAction onClick={handleAlertClose}>
-                  Close
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+              )}
+              {alertMode === "result" && resultData && (
+                <>
+                  <div className="flex flex-col gap-2 text-center sm:text-left">
+                    <h2 className="text-lg font-semibold">Save Result</h2>
+                  </div>
+                  {resultData.noNewTrust ? (
+                    <p className="text-muted-foreground text-sm">
+                      {resultData.noNewTrust}
+                    </p>
+                  ) : resultData.contributions &&
+                    resultData.contributions.length > 0 ? (
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {resultData.contributions.map((c) => (
+                        <div
+                          key={c.contributionId}
+                          className="text-xs border-b border-border pb-1"
+                        >
+                          <p className="text-foreground">{c.description}</p>
+                          <p className="text-muted-foreground">
+                            +{c.earned.toString()} Trust · Save #
+                            {c.saveCount.toString()} · {c.buzzAmount.toString()}{" "}
+                            Buzz
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button onClick={handleAlertClose}>Close</Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </Dialog>
   );
 }
