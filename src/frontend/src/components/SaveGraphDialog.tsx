@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2, XIcon } from "lucide-react";
+import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
@@ -492,6 +493,7 @@ export default function SaveGraphDialog({
   const handleSave = useCallback(() => setAlertMode("confirm"), []);
 
   const handleConfirmSave = async () => {
+    console.log("[SaveGraph] handleConfirmSave called, alertMode=", alertMode);
     setAlertMode("loading");
     // Defer past the current render cycle so the Presence transition settles
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -534,6 +536,7 @@ export default function SaveGraphDialog({
   };
 
   const handleAlertClose = () => {
+    console.log("[SaveGraph] handleAlertClose called, alertMode=", alertMode);
     if (alertMode === "loading") return;
     setAlertMode(null);
     setResultData(null);
@@ -580,7 +583,17 @@ export default function SaveGraphDialog({
             <div
               className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
               data-state={alertMode !== null ? "open" : "closed"}
-              onClick={alertMode !== "loading" ? handleAlertClose : undefined}
+              onClick={
+                alertMode !== "loading"
+                  ? (e: React.MouseEvent) => {
+                      console.log(
+                        "[SaveGraph] backdrop onClick, target:",
+                        (e.target as HTMLElement).tagName,
+                      );
+                      handleAlertClose();
+                    }
+                  : undefined
+              }
               onKeyDown={
                 alertMode !== "loading"
                   ? (e) => {
@@ -621,7 +634,10 @@ export default function SaveGraphDialog({
                   <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button
                       variant="outline"
-                      onClick={() => setAlertMode(null)}
+                      onClick={() => {
+                        console.log("[SaveGraph] Cancel button onClick");
+                        setAlertMode(null);
+                      }}
                     >
                       Cancel
                     </Button>
