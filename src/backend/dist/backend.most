@@ -1,4 +1,4 @@
-// Version: 3.0.0
+// Version: 1.0.0
 type BuzzScore__549704771 = Int;
 type BuzzSecretRecord__48813143 =
   {createdAt : Int; expiresAt : Int; isUsed : Bool; points : Int};
@@ -118,15 +118,6 @@ type Node__216023231<K, V> =
   {#internal : Internal__272372588<K, V>; #leaf : Leaf__366843236<K, V>};
 type Node__398398520<T> =
   {#internal : Internal__1061244309<T>; #leaf : Leaf__928866731<T>};
-type OldTrustTransactionV2__477872985 =
-  {
-    contributionIds : [Text];
-    earned : Int;
-    saveNumber : Nat;
-    savedAt : Int;
-    saver : Principal;
-    totalBuzzCost : Int
-  };
 type PublishedSourceGraphMeta__815873310 =
   {
     artworkDataUrl : ?Text;
@@ -195,159 +186,7 @@ type UserRole__585387465 = {#admin; #guest; #user};
 type WeightedAttribute__157451270 =
   {key : Text; weightedValues : [WeightedValue__540875069]};
 type WeightedValue__540875069 = {value : Text; weight : Nat};
-actor ({
-  stable BUZZ_DECIMALS : Int;
-  stable HEX_CHARS : [Text];
-  stable TRUST_DECIMALS : Int;
-  stable accessControlState :
-    {
-      var adminAssigned : Bool;
-      userRoles : Map__466055834<Principal, UserRole__585387465>
-    };
-  stable var apiKeysByPrincipal :
-    {var root : Node__216023231<Principal, Text>; var size : Nat__107743821};
-  stable var apiRateLimitCounts :
-    {var root : Node__216023231<Text, Nat>; var size : Nat__107743821};
-  stable var apiRateLimitWindowStarts :
-    {var root : Node__216023231<Text, Int>; var size : Nat__107743821};
-  stable var archivedNodes :
-    {
-      var root : Node__216023231<NodeId__1021555701, ()>;
-      var size : Nat__107743821
-    };
-  stable var buzzScores :
-    {
-      var root : Node__216023231<Principal, BuzzScore__549704771>;
-      var size : Nat__107743821
-    };
-  stable var buzzSecrets :
-    {
-      var root : Node__216023231<Text, BuzzSecretRecord__48813143>;
-      var size : Nat__107743821
-    };
-  stable var buzzTransactions :
-    {
-      var root :
-        Node__216023231<Principal,
-                         List__291137870<BuzzTransaction__948862079>>;
-      var size : Nat__107743821
-    };
-  stable var chatChannels :
-    {
-      var root : Node__216023231<Text, ChatChannel__404664671>;
-      var size : Nat__107743821
-    };
-  stable var contributionSavers :
-    {
-      var root :
-        Node__216023231<Text,
-                         Map__466055834<Text, List__291137870<Principal>>>;
-      var size : Nat__107743821
-    };
-  stable var curationMap :
-    {
-      var root : Node__216023231<NodeId__1021555701, Curation__852736695>;
-      var size : Nat__107743821
-    };
-  stable var curationToPublishedGraphId :
-    {
-      var root : Node__216023231<NodeId__1021555701, Text>;
-      var size : Nat__107743821
-    };
-  stable var existingAdmins : [Principal];
-  stable var graphContributionList :
-    {
-      var root : Node__216023231<Text, [ContributionEntry__516340155]>;
-      var size : Nat__107743821
-    };
-  stable var graphSavers :
-    {
-      var root : Node__216023231<Text, List__291137870<Principal>>;
-      var size : Nat__107743821
-    };
-  stable var interpretationTokenMap :
-    {
-      var root :
-        Node__216023231<NodeId__1021555701, InterpretationToken__766599104>;
-      var size : Nat__107743821
-    };
-  stable var lawTokenMap :
-    {
-      var root : Node__216023231<NodeId__1021555701, LawToken__823187815>;
-      var size : Nat__107743821
-    };
-  stable var locationMap :
-    {
-      var root : Node__216023231<NodeId__1021555701, Location__371014670>;
-      var size : Nat__107743821
-    };
-  stable var notesImports :
-    {var root : Node__216023231<Principal, Text>; var size : Nat__107743821};
-  stable var pendingPluginBindings :
-    {
-      var root : Node__216023231<Principal, List__291137870<Principal>>;
-      var size : Nat__107743821
-    };
-  stable var pluginBindings :
-    {
-      var root : Node__216023231<Principal, Principal>;
-      var size : Nat__107743821
-    };
-  stable var principalByApiKey :
-    {var root : Node__216023231<Text, Principal>; var size : Nat__107743821};
-  stable var publishedGraphBuzzMetrics :
-    {
-      var root :
-        Node__216023231<Text,
-                         {cumulativeBuzzSpent : Int; extensionCount : Nat}>;
-      var size : Nat__107743821
-    };
-  stable var publishedNodeContributions :
-    {
-      var root :
-        Node__216023231<Text,
-                         Map__466055834<NodeId__1021555701,
-                                         NodeContribution__716145722>>;
-      var size : Nat__107743821
-    };
-  stable var publishedSourceGraphs :
-    {
-      var root : Node__216023231<Text, PublishedSourceGraphMeta__815873310>;
-      var size : Nat__107743821
-    };
-  stable var sourceEdges :
-    {
-      var root :
-        Node__216023231<NodeId__1021555701,
-                         List__291137870<SourceGraphEdge__536230393>>;
-      var size : Nat__107743821
-    };
-  stable var swarmMap :
-    {
-      var root : Node__216023231<NodeId__1021555701, Swarm__1026829766>;
-      var size : Nat__107743821
-    };
-  stable var telegramConfig : ?TelegramConfig__578784225;
-  stable var trustScores :
-    {
-      var root : Node__216023231<Principal, TrustScore__205361434>;
-      var size : Nat__107743821
-    };
-  in var trustTransactions :
-    Map__466055834<Principal,
-                    List__291137870<OldTrustTransactionV2__477872985>>;
-  stable var userContributionCredits :
-    {
-      var root :
-        Node__216023231<Text, Map__466055834<Principal, Set__790398992<Text>>>;
-      var size : Nat__107743821
-    };
-  stable var userProfiles :
-    {
-      var root : Node__216023231<Principal, UserProfile__852920818>;
-      var size : Nat__107743821
-    }
-}, {
+actor {
   stable BUZZ_DECIMALS : Int;
   stable HEX_CHARS : [Text];
   stable TRUST_DECIMALS : Int;
@@ -503,4 +342,4 @@ actor ({
       var root : Node__216023231<Principal, UserProfile__852920818>;
       var size : Nat__107743821
     }
-}) ;
+};
