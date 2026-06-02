@@ -147,7 +147,7 @@ function ContributionRow({
         {contribution.description}
       </span>
       <span className="text-[10px] text-muted-foreground flex-shrink-0">
-        {contribution.buzzAmount.toString()} Buzz
+        {(Number(contribution.buzzAmount) / 10).toFixed(1)} Buzz
       </span>
     </div>
   );
@@ -428,8 +428,8 @@ function ChecklistDialog({
                   >
                     <p className="text-foreground">{c.description}</p>
                     <p className="text-muted-foreground">
-                      +{c.earned.toString()} Trust · Save #
-                      {c.saveCount.toString()} · {c.buzzAmount.toString()} Buzz
+                      +{(Number(c.earned) / 10_000_000).toFixed(7)} Trust · Save #
+                      {c.saveCount.toString()} · {(Number(c.buzzAmount) / 10).toFixed(1)} Buzz
                     </p>
                   </div>
                 ))}
