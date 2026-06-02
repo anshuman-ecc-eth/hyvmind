@@ -273,6 +273,7 @@ export interface WeightedValue { 'weight' : bigint, 'value' : string }
 export interface _SERVICE {
   '_initializeAccessControl' : ActorMethod<[], undefined>,
   'approvePluginBinding' : ActorMethod<[Principal], undefined>,
+  'requestPluginBinding' : ActorMethod<[Principal, Principal], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'commitPublishSourceGraph' : ActorMethod<

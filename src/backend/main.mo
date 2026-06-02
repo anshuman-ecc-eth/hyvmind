@@ -878,6 +878,26 @@ actor {
     };
   };
 
+  public shared ({ caller }) func requestPluginBinding(pluginPubKey : Principal, forPrincipal : Principal) : async () {
+    if (pluginPubKey != caller) {
+      Runtime.trap("Unauthorized: Only the plugin key can request binding for itself");
+    };
+    switch (pluginBindings.get(pluginPubKey)) {
+      case (?_) { Runtime.trap("Plugin is already bound") };
+      case (null) {};
+    };
+    let existing = switch (pendingPluginBindings.get(forPrincipal)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+    let alreadyPending = existing.find(func(p : Principal) : Bool { p == pluginPubKey });
+    switch (alreadyPending) {
+      case (null) { existing.add(pluginPubKey) };
+      case (?_) { return };
+    };
+    pendingPluginBindings.add(forPrincipal, existing);
+  };
+
   // USER PROFILES
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {

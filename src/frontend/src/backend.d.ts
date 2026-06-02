@@ -308,6 +308,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;

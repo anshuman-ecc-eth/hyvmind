@@ -392,6 +392,7 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControl(): Promise<void>;
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
@@ -505,6 +506,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.approvePluginBinding(arg0);
+            return result;
+        }
+    }
+    async requestPluginBinding(arg0: Principal, arg1: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.requestPluginBinding(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.requestPluginBinding(arg0, arg1);
             return result;
         }
     }

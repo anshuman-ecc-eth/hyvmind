@@ -289,6 +289,7 @@ export const SaveResult = IDL.Variant({
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
   'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
+  'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
   'archiveNode' : IDL.Func([NodeId], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'commitPublishSourceGraph' : IDL.Func(
@@ -713,6 +714,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
     'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
+  'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
     'archiveNode' : IDL.Func([NodeId], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'commitPublishSourceGraph' : IDL.Func(
