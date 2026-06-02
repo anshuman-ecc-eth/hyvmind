@@ -21,7 +21,9 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "Migration";
 
+(with migration = Migration.migration)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -2483,15 +2485,7 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
-      var contribCounter = switch (earlyPublishedId) {
-        case (?pid) {
-          switch (graphContributionList.get(pid)) {
-            case (?existing) { existing.size() };
-            case (null) { 0 };
-          };
-        };
-        case (null) { 0 };
-      };
+      var contribCounter = 0;
       let tempContribEntries = List.empty<ContributionEntry>();
       func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
         let contribId = "c" # debug_show(contribCounter);
@@ -3469,11 +3463,7 @@ actor {
 
     // Commit contribution entries to flat registry
     if (tempContribEntries.size() > 0) {
-      let existing = switch (graphContributionList.get(thePublishedId)) {
-        case (null) { [] };
-        case (?e) { e };
-      };
-      graphContributionList.add(thePublishedId, existing.concat(tempContribEntries.toArray()));
+      graphContributionList.add(thePublishedId, tempContribEntries.toArray());
     };
 
     #success({
