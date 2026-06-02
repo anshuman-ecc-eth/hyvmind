@@ -109,16 +109,17 @@ function ChecklistDialog({
   onSaveConfirm,
   onDismissAlert,
 }: ChecklistDialogProps) {
-  const [previewPhase, setPreviewPhase] = useState<
-    { kind: "core" } | { kind: "extension"; index: number } | null
+  const [previewDialog, setPreviewDialog] = useState<
+    | { kind: "core"; label: string }
+    | { kind: "extension"; index: number; label: string }
+    | null
   >(null);
-  const [hasOpenedPreview, setHasOpenedPreview] = useState(false);
 
   const previewNodeIds = useMemo(() => {
-    if (!previewPhase) return null;
-    if (previewPhase.kind === "core") return coreNodeIds;
-    return extNodeIdsByIndex.get(previewPhase.index) ?? new Set<string>();
-  }, [previewPhase, coreNodeIds, extNodeIdsByIndex]);
+    if (!previewDialog) return null;
+    if (previewDialog.kind === "core") return coreNodeIds;
+    return extNodeIdsByIndex.get(previewDialog.index) ?? new Set<string>();
+  }, [previewDialog, coreNodeIds, extNodeIdsByIndex]);
 
   const previewMermaid = useMemo(() => {
     if (!previewNodeIds || previewNodeIds.size === 0) return null;
@@ -128,227 +129,227 @@ function ChecklistDialog({
 
   const handleRowClick = useCallback(
     (phase: { kind: "core" } | { kind: "extension"; index: number }) => {
-      setPreviewPhase((prev) =>
-        prev?.kind === phase.kind &&
-        (phase.kind === "core" ||
-          prev.kind === "core" ||
-          (prev as { index: number }).index ===
-            (phase as { index: number }).index)
-          ? null
-          : phase,
-      );
-      setHasOpenedPreview(true);
+      const label =
+        phase.kind === "core"
+          ? coreLabel
+          : (extEntries.find((e) => e.index === phase.index)?.label ?? "");
+      setPreviewDialog({ ...phase, label });
     },
-    [],
+    [coreLabel, extEntries],
   );
 
-  const showPreview = previewPhase !== null && previewMermaid !== null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className={showPreview ? "sm:max-w-4xl" : "sm:max-w-lg"}
-        showCloseButton={!alertMode || alertMode === "result"}
-      >
-        {!alertMode ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Save Graph to Notes</DialogTitle>
-            </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent
+          className="sm:max-w-lg"
+          showCloseButton={!alertMode || alertMode === "result"}
+        >
+          {!alertMode ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Save Graph to Notes</DialogTitle>
+              </DialogHeader>
 
-            <DialogDescription className="text-sm">
-              Select extensions from{" "}
-              <span className="text-foreground">{graphName}</span> to import
-              into your Notes workspace. Core contributions are always imported.
-            </DialogDescription>
+              <DialogDescription className="text-sm">
+                Select extensions from{" "}
+                <span className="text-foreground">{graphName}</span> to import
+                into your Notes workspace. Core contributions are always
+                imported.
+              </DialogDescription>
 
-            <div className="space-y-3">
-              <div className="rounded-sm border border-border bg-muted/30 p-3">
-                <div className="flex items-center justify-between mb-1">
+              <div className="space-y-3">
+                <div className="rounded-sm border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-left hover:underline"
+                      onClick={() => handleRowClick({ kind: "core" })}
+                    >
+                      Core
+                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      always imported{allCoreCredited ? " (already saved)" : ""}
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    className="text-xs font-semibold text-left hover:underline"
+                    className="w-full text-left text-xs text-muted-foreground leading-relaxed hover:underline"
                     onClick={() => handleRowClick({ kind: "core" })}
                   >
-                    Core
+                    {coreLabel}
                   </button>
-                  <span className="text-xs text-muted-foreground">
-                    always imported{allCoreCredited ? " (already saved)" : ""}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="w-full text-left text-xs text-muted-foreground leading-relaxed hover:underline"
-                  onClick={() => handleRowClick({ kind: "core" })}
-                >
-                  {coreLabel}
-                </button>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">
-                  {coreStatLabel}
-                </p>
-              </div>
-
-              {extEntries.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold mb-2">Extensions</p>
-                  <div className="space-y-2">
-                    {extEntries.map((ext) => (
-                      <div
-                        key={ext.index}
-                        className="rounded-sm border border-border p-3"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Checkbox
-                            checked={checkedExtensions.has(ext.index)}
-                            onCheckedChange={() =>
-                              handleToggleExtension(ext.index)
-                            }
-                            className="h-3.5 w-3.5 flex-shrink-0"
-                          />
-                          <button
-                            type="button"
-                            className="text-xs text-left hover:underline flex-1"
-                            onClick={() =>
-                              handleRowClick({
-                                kind: "extension",
-                                index: ext.index,
-                              })
-                            }
-                          >
-                            {ext.label}
-                          </button>
-                        </div>
-                        <p className="text-xs text-muted-foreground/70 ml-6">
-                          {ext.statLabel}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {hasOpenedPreview && (
-              <div
-                className="overflow-hidden transition-all duration-300 ease-in-out"
-                style={{
-                  maxHeight: showPreview ? "500px" : "0px",
-                  opacity: showPreview ? 1 : 0,
-                  borderTopWidth: showPreview ? 1 : 0,
-                }}
-              >
-                <div className="pt-3 border-border">
-                  <p className="text-xs font-semibold mb-2">
-                    {previewPhase?.kind === "core"
-                      ? coreLabel
-                      : extEntries.find(
-                          (e) =>
-                            e.index ===
-                            (previewPhase as { index: number })?.index,
-                        )?.label}
+                  <p className="text-xs text-muted-foreground/70 mt-0.5">
+                    {coreStatLabel}
                   </p>
-                  {previewMermaid && (
-                    <div className="max-h-[400px] overflow-auto rounded-sm border border-border bg-background p-2">
-                      <MermaidDiagram
-                        mermaidText={previewMermaid.mermaidText}
-                      />
-                    </div>
-                  )}
-                  {previewMermaid && previewMermaid.sourceLines.length > 0 && (
-                    <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                      <p className="font-semibold text-foreground">Sources</p>
-                      {previewMermaid.sourceLines.map((line) => (
-                        <p key={line}>{line}</p>
+                </div>
+
+                {extEntries.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold mb-2">Extensions</p>
+                    <div className="space-y-2">
+                      {extEntries.map((ext) => (
+                        <div
+                          key={ext.index}
+                          className="rounded-sm border border-border p-3"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Checkbox
+                              checked={checkedExtensions.has(ext.index)}
+                              onCheckedChange={() =>
+                                handleToggleExtension(ext.index)
+                              }
+                              className="h-3.5 w-3.5 flex-shrink-0"
+                            />
+                            <button
+                              type="button"
+                              className="text-xs text-left hover:underline flex-1"
+                              onClick={() =>
+                                handleRowClick({
+                                  kind: "extension",
+                                  index: ext.index,
+                                })
+                              }
+                            >
+                              {ext.label}
+                            </button>
+                          </div>
+                          <p className="text-xs text-muted-foreground/70 ml-6">
+                            {ext.statLabel}
+                          </p>
+                        </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={handleSave} disabled={!canSave}>
-                Save
-                {extEntries.length > 0
-                  ? ` (core${selectedExtCount > 0 ? ` + ${selectedExtCount}` : ""})`
-                  : allCoreCredited
-                    ? " (none)"
-                    : ""}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : alertMode === "confirm" ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Save this graph?</DialogTitle>
-            </DialogHeader>
-
-            <DialogDescription className="text-sm text-muted-foreground">
-              Core by {meta.creatorName}
-              {extEntries.length > 0 &&
-                selectedExtCount > 0 &&
-                ` + ${selectedExtCount} extension${selectedExtCount !== 1 ? "s" : ""} selected`}{" "}
-              will be imported into your Notes.
-            </DialogDescription>
-
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={onDismissAlert}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={onSaveConfirm}>
-                Save to Notes
-              </Button>
-            </DialogFooter>
-          </>
-        ) : alertMode === "loading" ? (
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <DialogHeader>
-              <DialogTitle>Saving...</DialogTitle>
-            </DialogHeader>
-            <p className="text-muted-foreground text-sm">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
-              Please wait while your graph is being saved.
-            </p>
-          </div>
-        ) : resultData ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Save Result</DialogTitle>
-            </DialogHeader>
-            {resultData.noNewTrust ? (
-              <DialogDescription className="text-sm">
-                {resultData.noNewTrust}
-              </DialogDescription>
-            ) : resultData.contributions &&
-              resultData.contributions.length > 0 ? (
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {resultData.contributions.map((c) => (
-                  <div
-                    key={c.contributionId}
-                    className="text-xs border-b border-border pb-1"
-                  >
-                    <p className="text-foreground">{c.description}</p>
-                    <p className="text-muted-foreground">
-                      +{(Number(c.earned) / 10_000_000).toFixed(7)} Trust · Save
-                      #{c.saveCount.toString()} ·{" "}
-                      {(Number(c.buzzAmount) / 10).toFixed(1)} Buzz
-                    </p>
                   </div>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleSave} disabled={!canSave}>
+                  Save
+                  {extEntries.length > 0
+                    ? ` (core${selectedExtCount > 0 ? ` + ${selectedExtCount}` : ""})`
+                    : allCoreCredited
+                      ? " (none)"
+                      : ""}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : alertMode === "confirm" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Save this graph?</DialogTitle>
+              </DialogHeader>
+
+              <DialogDescription className="text-sm text-muted-foreground">
+                Core by {meta.creatorName}
+                {extEntries.length > 0 &&
+                  selectedExtCount > 0 &&
+                  ` + ${selectedExtCount} extension${selectedExtCount !== 1 ? "s" : ""} selected`}{" "}
+                will be imported into your Notes.
+              </DialogDescription>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onDismissAlert}
+                >
+                  Cancel
+                </Button>
+                <Button type="button" onClick={onSaveConfirm}>
+                  Save to Notes
+                </Button>
+              </DialogFooter>
+            </>
+          ) : alertMode === "loading" ? (
+            <div className="flex flex-col gap-2 text-center sm:text-left">
+              <DialogHeader>
+                <DialogTitle>Saving...</DialogTitle>
+              </DialogHeader>
+              <p className="text-muted-foreground text-sm">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin inline" />
+                Please wait while your graph is being saved.
+              </p>
+            </div>
+          ) : resultData ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Save Result</DialogTitle>
+              </DialogHeader>
+              {resultData.noNewTrust ? (
+                <DialogDescription className="text-sm">
+                  {resultData.noNewTrust}
+                </DialogDescription>
+              ) : resultData.contributions &&
+                resultData.contributions.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {resultData.contributions.map((c) => (
+                    <div
+                      key={c.contributionId}
+                      className="text-xs border-b border-border pb-1"
+                    >
+                      <p className="text-foreground">{c.description}</p>
+                      <p className="text-muted-foreground">
+                        +{(Number(c.earned) / 10_000_000).toFixed(7)} Trust ·
+                        Save #{c.saveCount.toString()} ·{" "}
+                        {(Number(c.buzzAmount) / 10).toFixed(1)} Buzz
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {previewDialog && previewMermaid && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+          onClick={() => setPreviewDialog(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setPreviewDialog(null);
+          }}
+        >
+          <div
+            className="bg-background rounded-lg border shadow-lg p-6 max-w-4xl w-[calc(100%-2rem)] max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={() => {}}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">{previewDialog.label}</h2>
+              <button
+                type="button"
+                onClick={() => setPreviewDialog(null)}
+                className="text-muted-foreground hover:text-foreground text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto rounded-sm border border-border bg-muted/30 p-2">
+              <MermaidDiagram mermaidText={previewMermaid.mermaidText} />
+            </div>
+            {previewMermaid.sourceLines.length > 0 && (
+              <div className="mt-3 text-xs text-muted-foreground space-y-0.5">
+                <p className="font-semibold text-foreground">Sources</p>
+                {previewMermaid.sourceLines.map((line) => (
+                  <p key={line}>{line}</p>
                 ))}
               </div>
-            ) : null}
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Close
-              </Button>
-            </DialogFooter>
-          </>
-        ) : null}
-      </DialogContent>
-    </Dialog>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
