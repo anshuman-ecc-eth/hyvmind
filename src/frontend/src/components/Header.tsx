@@ -51,7 +51,7 @@ export default function Header() {
 
   return (
     <header className="border-b border-dashed border-border bg-background font-mono flex-shrink-0">
-      <div className="container mx-auto px-6 py-3">
+      <div className="pl-[12px] pr-2 py-3">
         <div className="flex items-center justify-between">
           {/* Image Logo */}
           <div className="flex items-center">
@@ -64,7 +64,7 @@ export default function Header() {
           </div>
 
           {/* Right Side Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
             {/* Theme toggle button */}
             <Button
               variant="ghost"
@@ -73,6 +73,7 @@ export default function Header() {
               className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
               aria-label="Toggle theme"
               data-ocid="header.toggle"
+              style={{ transform: "scale(1.1)" }}
             >
               {isDark ? (
                 <Sun className="h-4 w-4" />
@@ -89,6 +90,7 @@ export default function Header() {
                   size="sm"
                   className="font-mono text-xs hover:bg-accent hover:text-accent-foreground border border-dashed border-transparent hover:border-border"
                   data-ocid="header.open_modal_button"
+                  style={{ transform: "scale(1.1)" }}
                 >
                   <Menu className="h-4 w-4" />
                 </Button>

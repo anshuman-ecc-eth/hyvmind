@@ -141,17 +141,17 @@ function AppShell() {
 
   if (isInitializing) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center justify-center gap-4">
           <span
-            className="text-foreground/70"
+            className="text-white/70"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.2em",
             }}
           >
-            LOADING
+            Loading..
           </span>
           <div className="flex gap-[2px]">
             {Array.from({ length: 16 }).map((_, i) => (

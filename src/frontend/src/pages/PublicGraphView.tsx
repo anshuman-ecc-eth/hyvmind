@@ -82,6 +82,11 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
       className="border border-border bg-card p-4 rounded-sm mb-2"
       data-ocid="public_graph.card"
     >
+      {/* Authors */}
+      <div className="font-mono text-xs text-muted-foreground mb-0.5">
+        Authors: {meta.authors.join(", ")}
+      </div>
+
       {/* Core line */}
       <div className="font-mono text-xs text-muted-foreground mb-1">
         Core &mdash; {meta.creatorName} &mdash; {date}

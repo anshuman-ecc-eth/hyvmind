@@ -80,6 +80,7 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'attributeCount' : IDL.Nat,
   'creatorName' : IDL.Text,
   'edgeCount' : IDL.Nat,
+  'authors' : IDL.Vec(IDL.Text),
   'sourcesCount' : IDL.Opt(IDL.Nat),
   'artworkDataUrl' : IDL.Opt(IDL.Text),
   'hierarchyEdgeCount' : IDL.Nat,
@@ -103,6 +104,14 @@ export const ChatChannelSummary = IDL.Record({
   'unreadCount' : IDL.Nat,
   'parentCuration' : IDL.Opt(IDL.Text),
 });
+export const ContributionView = IDL.Record({
+  'id' : IDL.Text,
+  'buzzAmount' : IDL.Int,
+  'nodeId' : NodeId,
+  'description' : IDL.Text,
+  'payer' : IDL.Principal,
+  'alreadyCredited' : IDL.Bool,
+});
 export const ChatMessage = IDL.Record({
   'text' : IDL.Text,
   'sender' : IDL.Principal,
@@ -110,12 +119,22 @@ export const ChatMessage = IDL.Record({
   'senderName' : IDL.Text,
 });
 export const TrustScore = IDL.Int;
+export const CreditedContribution = IDL.Record({
+  'buzzAmount' : IDL.Int,
+  'contributionId' : IDL.Text,
+  'description' : IDL.Text,
+  'earned' : IDL.Int,
+  'payer' : IDL.Principal,
+  'saveCount' : IDL.Nat,
+});
 export const TrustTransaction = IDL.Record({
+  'contributionDetails' : IDL.Vec(CreditedContribution),
   'totalBuzzCost' : IDL.Int,
   'saver' : IDL.Principal,
   'earned' : IDL.Int,
   'savedAt' : IDL.Int,
   'saveNumber' : IDL.Nat,
+  'contributionIds' : IDL.Vec(IDL.Text),
 });
 export const Timestamps = IDL.Record({ 'createdAt' : Time });
 export const Curation = IDL.Record({
@@ -259,6 +278,11 @@ export const PublishPreviewResult = IDL.Record({
   'edgeOperations' : IDL.Vec(EdgeOperation),
   'nodeOperations' : IDL.Vec(NodeOperation),
 });
+export const SaveResult = IDL.Variant({
+  'ok' : IDL.Record({ 'contributions' : IDL.Vec(CreditedContribution) }),
+  'err' : IDL.Text,
+  'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
@@ -290,6 +314,7 @@ export const idlService = IDL.Service({
       [NodeId],
       [],
     ),
+  'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
   'generateInviteCodes' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Vec(IDL.Text)], []),
@@ -308,6 +333,11 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
+  'getGraphContributions' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(ContributionView)],
+      ['query'],
+    ),
   'getMessages' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -379,7 +409,7 @@ export const idlService = IDL.Service({
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'savePublishedGraph' : IDL.Func(
       [IDL.Text, IDL.Vec(NodeId)],
-      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [SaveResult],
       [],
     ),
   'sendMessage' : IDL.Func(
@@ -474,6 +504,7 @@ export const idlFactory = ({ IDL }) => {
     'attributeCount' : IDL.Nat,
     'creatorName' : IDL.Text,
     'edgeCount' : IDL.Nat,
+    'authors' : IDL.Vec(IDL.Text),
     'sourcesCount' : IDL.Opt(IDL.Nat),
     'artworkDataUrl' : IDL.Opt(IDL.Text),
     'hierarchyEdgeCount' : IDL.Nat,
@@ -497,6 +528,14 @@ export const idlFactory = ({ IDL }) => {
     'unreadCount' : IDL.Nat,
     'parentCuration' : IDL.Opt(IDL.Text),
   });
+  const ContributionView = IDL.Record({
+    'id' : IDL.Text,
+    'buzzAmount' : IDL.Int,
+    'nodeId' : NodeId,
+    'description' : IDL.Text,
+    'payer' : IDL.Principal,
+    'alreadyCredited' : IDL.Bool,
+  });
   const ChatMessage = IDL.Record({
     'text' : IDL.Text,
     'sender' : IDL.Principal,
@@ -504,12 +543,22 @@ export const idlFactory = ({ IDL }) => {
     'senderName' : IDL.Text,
   });
   const TrustScore = IDL.Int;
+  const CreditedContribution = IDL.Record({
+    'buzzAmount' : IDL.Int,
+    'contributionId' : IDL.Text,
+    'description' : IDL.Text,
+    'earned' : IDL.Int,
+    'payer' : IDL.Principal,
+    'saveCount' : IDL.Nat,
+  });
   const TrustTransaction = IDL.Record({
+    'contributionDetails' : IDL.Vec(CreditedContribution),
     'totalBuzzCost' : IDL.Int,
     'saver' : IDL.Principal,
     'earned' : IDL.Int,
     'savedAt' : IDL.Int,
     'saveNumber' : IDL.Nat,
+    'contributionIds' : IDL.Vec(IDL.Text),
   });
   const Timestamps = IDL.Record({ 'createdAt' : Time });
   const Curation = IDL.Record({
@@ -653,6 +702,11 @@ export const idlFactory = ({ IDL }) => {
     'edgeOperations' : IDL.Vec(EdgeOperation),
     'nodeOperations' : IDL.Vec(NodeOperation),
   });
+  const SaveResult = IDL.Variant({
+    'ok' : IDL.Record({ 'contributions' : IDL.Vec(CreditedContribution) }),
+    'err' : IDL.Text,
+    'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
+  });
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
@@ -684,6 +738,7 @@ export const idlFactory = ({ IDL }) => {
         [NodeId],
         [],
       ),
+    'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
     'generateInviteCodes' : IDL.Func(
@@ -706,6 +761,11 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getChannels' : IDL.Func([], [IDL.Vec(ChatChannelSummary)], ['query']),
+    'getGraphContributions' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(ContributionView)],
+        ['query'],
+      ),
     'getMessages' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -777,7 +837,7 @@ export const idlFactory = ({ IDL }) => {
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'savePublishedGraph' : IDL.Func(
         [IDL.Text, IDL.Vec(NodeId)],
-        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [SaveResult],
         [],
       ),
     'sendMessage' : IDL.Func(

@@ -21,7 +21,9 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "Migration";
 
+(with migration = Migration.migration)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -39,14 +41,72 @@ actor {
   type NodeContribution = {
     payers : List.List<(Principal, Int)>;
   };
+  type ContributionEntry = {
+    id : Text;
+    nodeId : NodeId;
+    payer : Principal;
+    buzzAmount : Int;
+    description : Text;
+  };
+  type CreditedContribution = {
+    contributionId : Text;
+    description : Text;
+    payer : Principal;
+    buzzAmount : Int;
+    earned : Int;
+    saveCount : Nat;
+  };
   type TrustTransaction = {
     saver : Principal;
     savedAt : Int;
     saveNumber : Nat;
     totalBuzzCost : Int;
     earned : Int;
+    contributionIds : [Text];
+    contributionDetails : [CreditedContribution];
+  };
+  type SaveResult = {
+    #ok : { contributions : [CreditedContribution] };
+    #noNewTrust : { reason : Text };
+    #err : Text;
+  };
+  type ContributionView = {
+    id : Text;
+    nodeId : NodeId;
+    description : Text;
+    payer : Principal;
+    buzzAmount : Int;
+    alreadyCredited : Bool;
   };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+
+  type ExtensionEntry = {
+    extendedAt : Time.Time;
+    extendedBy : Principal;
+    extendedByName : Text;
+    addedNodes : Nat;
+    addedEdges : Nat;
+    addedHierarchyEdges : Nat;
+    addedAttributes : Nat;
+    addedSources : ?Nat;
+  };
+
+  type PublishedSourceGraphMeta = {
+    id : Text;
+    name : Text;
+    creator : Principal;
+    creatorName : Text;
+    publishedAt : Time.Time;
+    nodeCount : Nat;
+    edgeCount : Nat;
+    hierarchyEdgeCount : Nat;
+    attributeCount : Nat;
+    sourcesCount : ?Nat;
+    extensionLog : [ExtensionEntry];
+    artworkDataUrl : ?Text;
+    terrainParams : ?Text;
+    authors : [Text];
+  };
 
   type BuzzSecretRecord = {
     points : Int;
@@ -194,32 +254,7 @@ actor {
     edges : [GraphEdge];
   };
 
-  type ExtensionEntry = {
-    extendedAt : Time.Time;
-    extendedBy : Principal;
-    extendedByName : Text;
-    addedNodes : Nat;
-    addedEdges : Nat;
-    addedHierarchyEdges : Nat;
-    addedAttributes : Nat;
-    addedSources : ?Nat;
-  };
 
-  type PublishedSourceGraphMeta = {
-    id : Text;
-    name : Text;
-    creator : Principal;
-    creatorName : Text;
-    publishedAt : Time.Time;
-    nodeCount : Nat;
-    edgeCount : Nat;
-    hierarchyEdgeCount : Nat;
-    attributeCount : Nat;
-    sourcesCount : ?Nat;
-    extensionLog : [ExtensionEntry];
-    artworkDataUrl : ?Text;
-    terrainParams : ?Text;
-  };
 
   // Source graph edge with weighted labels
   type SourceGraphEdge = {
@@ -378,6 +413,13 @@ actor {
   var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
   var trustTransactions = Map.empty<Principal, List.List<TrustTransaction>>();
 
+  // Per-graph contribution registry: graphId -> [ContributionEntry]
+  var graphContributionList = Map.empty<Text, [ContributionEntry]>();
+  // Per-contribution save tracking: graphId -> contributionId -> [savers]
+  var contributionSavers = Map.empty<Text, Map.Map<Text, List.List<Principal>>>();
+  // Per-user credited contribution IDs: graphId -> userPrincipal -> Set<contributionId>
+  var userContributionCredits = Map.empty<Text, Map.Map<Principal, Set.Set<Text>>>();
+
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
 
@@ -450,7 +492,46 @@ actor {
     archivedNodes.containsKey(nodeId);
   };
 
-  public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async { #ok : Text; #err : Text } {
+  func getNodeName(id : NodeId) : Text {
+    switch (curationMap.get(id)) { case (?c) { return c.name }; case (null) {} };
+    switch (swarmMap.get(id)) { case (?s) { return s.name }; case (null) {} };
+    switch (locationMap.get(id)) { case (?l) { return l.title }; case (null) {} };
+    switch (lawTokenMap.get(id)) { case (?lt) { return lt.tokenLabel }; case (null) {} };
+    switch (interpretationTokenMap.get(id)) { case (?it) { return it.title }; case (null) {} };
+    id
+  };
+
+  func migrateGraphContributions(graphId : Text) {
+    switch (publishedNodeContributions.get(graphId)) {
+      case (null) {};
+      case (?nodeContribMap) {
+        switch (graphContributionList.get(graphId)) {
+          case (?_) {}; // already migrated
+          case (null) {
+            var counter = 0;
+            let entries = List.empty<ContributionEntry>();
+            for ((nodeId, contrib) in nodeContribMap.entries()) {
+              let nodeName = getNodeName(nodeId);
+              for ((payer, cost) in contrib.payers.values()) {
+                let cid = "m-" # debug_show(counter);
+                counter += 1;
+                entries.add({
+                  id = cid;
+                  nodeId;
+                  payer;
+                  buzzAmount = cost;
+                  description = "Contributed " # debug_show(cost) # " Buzz to '" # nodeName # "'";
+                });
+              };
+            };
+            graphContributionList.add(graphId, entries.toArray());
+          };
+        };
+      };
+    };
+  };
+
+  public shared (msg) func savePublishedGraph(publishedGraphId : Text, selectedNodeIds : [NodeId]) : async SaveResult {
     Debug.print("[savePublishedGraph] publishedGraphId = " # publishedGraphId);
     Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     switch (publishedSourceGraphs.get(publishedGraphId)) {
@@ -458,77 +539,183 @@ actor {
       case (?_) {};
     };
     if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
-    let savers = switch (graphSavers.get(publishedGraphId)) {
-      case (null) { List.empty<Principal>() };
-      case (?list) { list };
+
+    // Lazy migrate old contributions if needed
+    migrateGraphContributions(publishedGraphId);
+
+    // Get contribution registry for this graph
+    let entries = switch (graphContributionList.get(publishedGraphId)) {
+      case (null) { return #err("No contributions found for graph") };
+      case (?e) { e };
     };
-    let alreadySaved = savers.any(func(p : Principal) : Bool { Principal.equal(p, msg.caller) });
-    if (alreadySaved) { return #err("Already saved") };
-    savers.add(msg.caller);
-    graphSavers.add(publishedGraphId, savers);
-    let saveNumber = savers.size();
-    Debug.print("[savePublishedGraph] saveNumber = " # debug_show (saveNumber));
-    var bucket = Map.empty<Principal, Int>();
-    let contribMap = switch (publishedNodeContributions.get(publishedGraphId)) {
-      case (null) {
-        Debug.print("[savePublishedGraph] NO contributions found for this graph");
-        Map.empty<NodeId, NodeContribution>()
-      };
-      case (?m) {
-        var count = 0;
-        for ((_, _) in m.entries()) { count += 1; };
-        Debug.print("[savePublishedGraph] contribMap entries = " # debug_show (count));
-        m
-      };
+
+    // Filter to selected nodes
+    let selectedSet = Set.empty<NodeId>();
+    for (nid in selectedNodeIds.vals()) { selectedSet.add(nid) };
+    let filtered = List.empty<ContributionEntry>();
+    for (e in entries.vals()) {
+      if (selectedSet.contains(e.nodeId)) { filtered.add(e) };
     };
-    var matchedCount = 0;
-    var skippedSelfCount = 0;
-    for (nodeId in selectedNodeIds.vals()) {
-      switch (contribMap.get(nodeId)) {
-        case (null) {};
-        case (?contrib) {
-          matchedCount += 1;
-          for ((paidBy, buzzCost) in contrib.payers.values()) {
-            if (Principal.equal(paidBy, msg.caller)) {
-              skippedSelfCount += 1;
-            } else {
-              let existing = switch (bucket.get(paidBy)) { case (null) { 0 }; case (?v) { v }; };
-              bucket.add(paidBy, existing + buzzCost);
-            };
-          };
+
+    // Get already-credited contribution IDs for this caller
+    let creditedSet = switch (userContributionCredits.get(publishedGraphId)) {
+      case (null) { Set.empty<Text>() };
+      case (?userMap) {
+        switch (userMap.get(msg.caller)) {
+          case (null) { Set.empty<Text>() };
+          case (?s) { s.clone() };
         };
       };
     };
-    Debug.print("[savePublishedGraph] matchedCount = " # debug_show (matchedCount) # ", skippedSelfCount = " # debug_show (skippedSelfCount));
-    var bucketEntryCount = 0;
-    for ((_, _) in bucket.entries()) { bucketEntryCount += 1; };
-    Debug.print("[savePublishedGraph] bucket entries = " # debug_show (bucketEntryCount));
-    for ((creator, totalBuzzCost) in bucket.entries()) {
-      let earned : Int = (Float.sqrt(saveNumber.toFloat()) * ((totalBuzzCost * TRUST_DECIMALS) / BUZZ_DECIMALS).toFloat()).toInt();
-      Debug.print("[savePublishedGraph] Crediting creator " # creator.toText() # " with " # debug_show (earned) # " Trust (buzzCost=" # debug_show (totalBuzzCost) # ")");
-      updateTrustScore(creator, earned);
+
+    // Separate: new (not credited, payer != caller) vs self-filtered
+    let newEntries = List.empty<ContributionEntry>();
+    var hasSelfFiltered = false;
+    for (e in filtered.values()) {
+      if (not creditedSet.contains(e.id)) {
+        if (Principal.equal(e.payer, msg.caller)) {
+          hasSelfFiltered := true;
+        } else {
+          newEntries.add(e);
+        };
+      };
+    };
+
+    // If nothing new to credit, return noNewTrust
+    if (newEntries.size() == 0) {
+      return #noNewTrust({ reason = "No new Trust generated" });
+    };
+
+    // Group new contributions by payer, collecting contribution IDs and descriptions
+    let payerMap = Map.empty<Principal, { buzzTotal : Int; contribIds : [Text]; descriptions : [Text] }>();
+    for (e in newEntries.values()) {
+      switch (payerMap.get(e.payer)) {
+        case (null) {
+          payerMap.add(e.payer, { buzzTotal = e.buzzAmount; contribIds = [e.id]; descriptions = [e.description] });
+        };
+        case (?existing) {
+          let newBuzz = existing.buzzTotal + e.buzzAmount;
+          let newIds = Array.tabulate(existing.contribIds.size() + 1, func (i) {
+            if (i < existing.contribIds.size()) { existing.contribIds[i] } else { e.id }
+          });
+          let newDescs = Array.tabulate(existing.descriptions.size() + 1, func (i) {
+            if (i < existing.descriptions.size()) { existing.descriptions[i] } else { e.description }
+          });
+          payerMap.add(e.payer, { buzzTotal = newBuzz; contribIds = newIds; descriptions = newDescs });
+        };
+      };
+    };
+
+    // Compute trust per contribution and credit
+    let creditedResults = List.empty<CreditedContribution>();
+    for ((payer, bucket) in payerMap.entries()) {
+      var totalEarned : Int = 0;
+      var allContribIds : [Text] = [];
+      var payerDescs : [Text] = [];
+      let payerCredited = List.empty<CreditedContribution>();
+      var i = 0;
+      while (i < bucket.contribIds.size()) {
+        let cid = bucket.contribIds[i];
+        let desc = bucket.descriptions[i];
+        // Look up or initialize saver list for this contribution
+        let saverMap = switch (contributionSavers.get(publishedGraphId)) {
+          case (null) { Map.empty<Text, List.List<Principal>>() };
+          case (?m) { m };
+        };
+        let saverList = switch (saverMap.get(cid)) {
+          case (null) { List.empty<Principal>() };
+          case (?l) { l };
+        };
+        let saveCount = saverList.size() + 1;
+        saverList.add(msg.caller);
+        saverMap.add(cid, saverList);
+        contributionSavers.add(publishedGraphId, saverMap);
+
+        // Find buzz amount for this specific contribution
+        var buzzAmount : Int = 0;
+        for (e in newEntries.values()) {
+          if (e.id == cid) { buzzAmount := e.buzzAmount };
+        };
+        let earned : Int = (Float.sqrt(saveCount.toFloat()) * ((buzzAmount * TRUST_DECIMALS) / BUZZ_DECIMALS).toFloat()).toInt();
+        totalEarned += earned;
+        allContribIds := Array.tabulate(allContribIds.size() + 1, func (j) {
+          if (j < allContribIds.size()) { allContribIds[j] } else { cid }
+        });
+        payerDescs := Array.tabulate(payerDescs.size() + 1, func (j) {
+          if (j < payerDescs.size()) { payerDescs[j] } else { desc }
+        });
+        creditedResults.add({ contributionId = cid; description = desc; payer; buzzAmount; earned; saveCount });
+        payerCredited.add({ contributionId = cid; description = desc; payer; buzzAmount; earned; saveCount });
+        i += 1;
+      };
+      updateTrustScore(payer, totalEarned);
       let trustTx : TrustTransaction = {
         saver = msg.caller;
         savedAt = Time.now();
-        saveNumber;
-        totalBuzzCost;
-        earned;
+        saveNumber = 0; // legacy field kept for backward compat, use contribution-level saveCount
+        totalBuzzCost = bucket.buzzTotal;
+        earned = totalEarned;
+        contributionIds = allContribIds;
+        contributionDetails = payerCredited.toArray();
       };
-      let existingTrustTxs = switch (trustTransactions.get(creator)) {
+      let existingTrustTxs = switch (trustTransactions.get(payer)) {
         case (null) { List.empty<TrustTransaction>() };
         case (?list) { list };
       };
       existingTrustTxs.add(trustTx);
-      trustTransactions.add(creator, existingTrustTxs);
+      trustTransactions.add(payer, existingTrustTxs);
     };
-    #ok("Graph saved")
+
+    // Mark all new contribution IDs as credited for this user
+    let updatedCredited = creditedSet;
+    for (e in newEntries.values()) {
+      updatedCredited.add(e.id);
+    };
+    let userMap = switch (userContributionCredits.get(publishedGraphId)) {
+      case (null) { Map.empty<Principal, Set.Set<Text>>() };
+      case (?m) { m };
+    };
+    userMap.add(msg.caller, updatedCredited);
+    userContributionCredits.add(publishedGraphId, userMap);
+
+    #ok({ contributions = creditedResults.toArray() })
   };
 
   public query ({ caller }) func hasUserSavedGraph(publishedGraphId : Text) : async Bool {
-    switch (graphSavers.get(publishedGraphId)) {
+    switch (userContributionCredits.get(publishedGraphId)) {
       case (null) { false };
-      case (?list) { list.contains(caller) };
+      case (?userMap) {
+        switch (userMap.get(caller)) {
+          case (null) { false };
+          case (?s) { s.size() > 0 };
+        };
+      };
     };
+  };
+
+  public query ({ caller }) func getGraphContributions(publishedGraphId : Text) : async [ContributionView] {
+    switch (graphContributionList.get(publishedGraphId)) {
+      case (null) { [] };
+      case (?entries) {
+        let creditedSet = switch (userContributionCredits.get(publishedGraphId)) {
+          case (null) { Set.empty<Text>() };
+          case (?userMap) {
+            switch (userMap.get(caller)) {
+              case (null) { Set.empty<Text>() };
+              case (?s) { s };
+            };
+          };
+        };
+        Array.tabulate(entries.size(), func (i : Nat) : ContributionView {
+          let e = entries[i];
+          { id = e.id; nodeId = e.nodeId; description = e.description; payer = e.payer; buzzAmount = e.buzzAmount; alreadyCredited = creditedSet.contains(e.id) }
+        })
+      };
+    };
+  };
+
+  public shared (msg) func ensureContributionsMigrated(publishedGraphId : Text) : async () {
+    migrateGraphContributions(publishedGraphId);
   };
 
   public query ({ caller }) func getMyTrustTransactions() : async [TrustTransaction] {
@@ -2298,8 +2485,13 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
-      func recordContrib(nodeId : NodeId, buzzCost : Int) {
-    tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
+      var contribCounter = 0;
+      let tempContribEntries = List.empty<ContributionEntry>();
+      func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
+        let contribId = "c" # debug_show(contribCounter);
+        contribCounter += 1;
+        tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
+        tempContribEntries.add({ id = contribId; nodeId; payer = caller; buzzAmount = buzzCost; description });
       };
 
 
@@ -2363,14 +2555,14 @@ actor {
                 let newCurationAttrs = countNewAttributes(curationExistingAttrs, node.attributes);
                 let newCurationSrcs = countNewSources(curationExistingSources, node.sources);
                 let curationExtCost = newCurationAttrs * 1 + newCurationSrcs * 1;
-                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost) };
+                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost, "Extended curation '" # node.name # "' (+" # debug_show(newCurationAttrs) # " attr, +" # debug_show(newCurationSrcs) # " src)") };
                 attributesAdded += newCurationAttrs;
                 sourcesAdded += newCurationSrcs;
               } else {
                 nodesToCreate += 1;
                 let curationAttrCount = countRawAttributes(node.attributes);
                 let curationSrcCount = node.sources.size();
-                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1);
+                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1, "Created curation '" # node.name # "'");
                 attributesAdded += curationAttrCount;
                 sourcesAdded += curationSrcCount;
               };
@@ -2379,7 +2571,7 @@ actor {
               nodesToCreate += 1;
               let curationAttrCount2 = countRawAttributes(node.attributes);
               let curationSrcCount2 = node.sources.size();
-              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1);
+              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1, "Created curation '" # node.name # "'");
               attributesAdded += curationAttrCount2;
               sourcesAdded += curationSrcCount2;
             };
@@ -2413,7 +2605,7 @@ actor {
           curationsToCreate += 1;
           let newCurationAttrCount = countRawAttributes(node.attributes);
           let newCurationSrcCount = node.sources.size();
-          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1);
+          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1, "Created curation '" # node.name # "'");
           attributesAdded += newCurationAttrCount;
           sourcesAdded += newCurationSrcCount;
         };
@@ -2498,14 +2690,14 @@ actor {
                 let newSwarmAttrs = countNewAttributes(swarmExistingAttrs, node.attributes);
                 let newSwarmSrcs = countNewSources(swarmExistingSources, node.sources);
                 let swarmExtCost = newSwarmAttrs * 1 + newSwarmSrcs * 1;
-                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost) };
+                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost, "Extended swarm '" # node.name # "' (+" # debug_show(newSwarmAttrs) # " attr, +" # debug_show(newSwarmSrcs) # " src)") };
                 attributesAdded += newSwarmAttrs;
                 sourcesAdded += newSwarmSrcs;
               } else {
                 nodesToCreate += 1;
                 let swarmAttrCount = countRawAttributes(node.attributes);
                 let swarmSrcCount = node.sources.size();
-                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1);
+                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1, "Created swarm '" # node.name # "'");
                 attributesAdded += swarmAttrCount;
                 sourcesAdded += swarmSrcCount;
               };
@@ -2514,7 +2706,7 @@ actor {
               nodesToCreate += 1;
               let swarmAttrCount2 = countRawAttributes(node.attributes);
               let swarmSrcCount2 = node.sources.size();
-              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1);
+              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1, "Created swarm '" # node.name # "'");
               attributesAdded += swarmAttrCount2;
               sourcesAdded += swarmSrcCount2;
             };
@@ -2553,7 +2745,7 @@ actor {
           swarmsToCreate += 1;
           let newSwarmAttrCount = countRawAttributes(node.attributes);
           let newSwarmSrcCount = node.sources.size();
-          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1);
+          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1, "Created swarm '" # node.name # "'");
           attributesAdded += newSwarmAttrCount;
           sourcesAdded += newSwarmSrcCount;
         };
@@ -2629,14 +2821,14 @@ actor {
                 let newLocAttrs = countNewAttributes(locExistingAttrs, node.attributes);
                 let newLocSrcs = countNewSources(locExistingSources, node.sources);
                 let locExtCost = newLocAttrs * 1 + newLocSrcs * 1;
-                if (locExtCost > 0) { recordContrib(existingId, locExtCost) };
+                if (locExtCost > 0) { recordContrib(existingId, locExtCost, "Extended location '" # node.name # "' (+" # debug_show(newLocAttrs) # " attr, +" # debug_show(newLocSrcs) # " src)") };
                 attributesAdded += newLocAttrs;
                 sourcesAdded += newLocSrcs;
               } else {
                 nodesToCreate += 1;
                 let locAttrCount = countRawAttributes(node.attributes);
                 let locSrcCount = node.sources.size();
-                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1);
+                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1, "Created location '" # node.name # "'");
                 attributesAdded += locAttrCount;
                 sourcesAdded += locSrcCount;
               };
@@ -2645,7 +2837,7 @@ actor {
               nodesToCreate += 1;
               let locAttrCount2 = countRawAttributes(node.attributes);
               let locSrcCount2 = node.sources.size();
-              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1);
+              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1, "Created location '" # node.name # "'");
               attributesAdded += locAttrCount2;
               sourcesAdded += locSrcCount2;
             };
@@ -2680,7 +2872,7 @@ actor {
           locationsToCreate += 1;
           let newLocAttrCount = countRawAttributes(node.attributes);
           let newLocSrcCount = node.sources.size();
-          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1);
+          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1, "Created location '" # node.name # "'");
           attributesAdded += newLocAttrCount;
           sourcesAdded += newLocSrcCount;
         };
@@ -2756,14 +2948,14 @@ actor {
                 let newLtAttrs = countNewAttributes(ltExistingAttrs, node.attributes);
                 let newLtSrcs = countNewSources(ltExistingSources, node.sources);
                 let ltExtCost = newLtAttrs * 1 + newLtSrcs * 1;
-                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost) };
+                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost, "Extended law entity '" # node.name # "' (+" # debug_show(newLtAttrs) # " attr, +" # debug_show(newLtSrcs) # " src)") };
                 attributesAdded += newLtAttrs;
                 sourcesAdded += newLtSrcs;
               } else {
                 nodesToCreate += 1;
                 let ltAttrCount = countRawAttributes(node.attributes);
                 let ltSrcCount = node.sources.size();
-                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1);
+                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1, "Created law entity '" # node.name # "'");
                 attributesAdded += ltAttrCount;
                 sourcesAdded += ltSrcCount;
               };
@@ -2772,7 +2964,7 @@ actor {
               nodesToCreate += 1;
               let ltAttrCount2 = countRawAttributes(node.attributes);
               let ltSrcCount2 = node.sources.size();
-              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1);
+              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1, "Created law entity '" # node.name # "'");
               attributesAdded += ltAttrCount2;
               sourcesAdded += ltSrcCount2;
             };
@@ -2807,7 +2999,7 @@ actor {
           lawEntitiesToCreate += 1;
           let newLtAttrCount = countRawAttributes(node.attributes);
           let newLtSrcCount = node.sources.size();
-          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1);
+          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1, "Created law entity '" # node.name # "'");
           attributesAdded += newLtAttrCount;
           sourcesAdded += newLtSrcCount;
         };
@@ -2888,14 +3080,14 @@ actor {
                 let newItAttrs = countNewAttributes(itExistingAttrs, node.attributes);
                 let newItSrcs = countNewSources(itExistingSources, node.sources);
                 let itExtCost = newItAttrs * 1 + newItSrcs * 1;
-                if (itExtCost > 0) { recordContrib(existingId, itExtCost) };
+                if (itExtCost > 0) { recordContrib(existingId, itExtCost, "Extended interpretation '" # node.name # "' (+" # debug_show(newItAttrs) # " attr, +" # debug_show(newItSrcs) # " src)") };
                 attributesAdded += newItAttrs;
                 sourcesAdded += newItSrcs;
               } else {
                 nodesToCreate += 1;
                 let itAttrCount = countRawAttributes(node.attributes);
                 let itSrcCount = node.sources.size();
-                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1);
+                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1, "Created interpretation '" # node.name # "'");
                 attributesAdded += itAttrCount;
                 sourcesAdded += itSrcCount;
               };
@@ -2904,7 +3096,7 @@ actor {
               nodesToCreate += 1;
               let itAttrCount2 = countRawAttributes(node.attributes);
               let itSrcCount2 = node.sources.size();
-              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1);
+              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1, "Created interpretation '" # node.name # "'");
               attributesAdded += itAttrCount2;
               sourcesAdded += itSrcCount2;
             };
@@ -2940,7 +3132,7 @@ actor {
           interpEntitiesToCreate += 1;
           let newItAttrCount = countRawAttributes(node.attributes);
           let newItSrcCount = node.sources.size();
-          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1);
+          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1, "Created interpretation '" # node.name # "'");
           attributesAdded += newItAttrCount;
           sourcesAdded += newItSrcCount;
         };
@@ -2948,7 +3140,7 @@ actor {
     };
 
     // Process source graph edges with scope-aware target resolution
-    let tempEdgeCosts = Map.empty<NodeId, Int>();
+    let tempEdgeCosts = Map.empty<NodeId, (Int, Text)>();
     for (edge in input.edges.values()) {
       let sourceId = switch (nameToId.get(edge.sourceName)) {
         case (null) { "" };
@@ -3017,14 +3209,14 @@ actor {
                     edgesToUpdate += 1;
                   } else {
                     edgesToCreate += 1;
-                    let existingEdgeCost0 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
-                    tempEdgeCosts.add(sourceId, existingEdgeCost0 + 1);
+                    let ex0 = switch (tempEdgeCosts.get(sourceId)) { case (null) { (0, edge.sourceName) }; case (?pair) { pair }; };
+                    tempEdgeCosts.add(sourceId, (ex0.0 + 1, ex0.1));
                   };
                 };
                 case (null) {
                   edgesToCreate += 1;
-                  let existingEdgeCost1 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
-                  tempEdgeCosts.add(sourceId, existingEdgeCost1 + 1);
+                  let ex1 = switch (tempEdgeCosts.get(sourceId)) { case (null) { (0, edge.sourceName) }; case (?pair) { pair }; };
+                  tempEdgeCosts.add(sourceId, (ex1.0 + 1, ex1.1));
                 };
               };
             };
@@ -3048,8 +3240,8 @@ actor {
               edgeList.add(newEdge);
               stagingEdges.add(sourceId, edgeList);
               edgesToCreate += 1;
-              let existingEdgeCost2 = switch (tempEdgeCosts.get(sourceId)) { case (null) { 0 }; case (?c) { c }; };
-              tempEdgeCosts.add(sourceId, existingEdgeCost2 + 1);
+              let ex2 = switch (tempEdgeCosts.get(sourceId)) { case (null) { (0, edge.sourceName) }; case (?pair) { pair }; };
+              tempEdgeCosts.add(sourceId, (ex2.0 + 1, ex2.1));
             };
           };
         };
@@ -3057,7 +3249,10 @@ actor {
     };
 
     // Merge edge costs into tempContribs
-    for ((edgeNodeId, edgeCost) in tempEdgeCosts.entries()) {
+    for ((edgeNodeId, (edgeCost, sourceName)) in tempEdgeCosts.entries()) {
+      let contribId = "c" # debug_show(contribCounter);
+      contribCounter += 1;
+      let description = "Added " # debug_show(edgeCost) # " cross-reference" # (if (edgeCost == 1) { "" } else { "s" }) # " from '" # sourceName # "'";
       switch (tempContribs.get(edgeNodeId)) {
         case (null) {
           tempContribs.add(edgeNodeId, { payers = List.singleton<(Principal, Int)>((caller, edgeCost)) });
@@ -3067,6 +3262,7 @@ actor {
           tempContribs.add(edgeNodeId, { payers = existing.payers });
         };
       };
+      tempContribEntries.add({ id = contribId; nodeId = edgeNodeId; payer = caller; buzzAmount = edgeCost; description });
     };
 
     if (nodesToCreate == 0 and edgesToCreate == 0 and attributesAdded == 0) {
@@ -3136,6 +3332,11 @@ actor {
               addedAttributes = attributesAdded;
               addedSources = ?sourcesAdded;
             };
+            let newAuthors = if (existingMeta.authors.find<Text>(func (a) { a == extendedByName }) == null) {
+              Array.tabulate(existingMeta.authors.size() + 1, func (i) {
+                if (i < existingMeta.authors.size()) { existingMeta.authors[i] } else { extendedByName }
+              })
+            } else { existingMeta.authors };
             let updatedMeta : PublishedSourceGraphMeta = {
               existingMeta with
               nodeCount = existingMeta.nodeCount + nodesToCreate;
@@ -3144,6 +3345,7 @@ actor {
               attributeCount = existingMeta.attributeCount + attributesAdded;
               sourcesCount = ?(existingMeta.sourcesCount.get(0) + sourcesAdded);
               extensionLog = existingMeta.extensionLog.concat([newEntry]);
+              authors = newAuthors;
             };
             publishedSourceGraphs.add(pid, updatedMeta);
             let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
@@ -3180,6 +3382,7 @@ actor {
           extensionLog = [];
           artworkDataUrl = null;
           terrainParams = null;
+          authors = [creatorName];
         };
         publishedSourceGraphs.add(newPid, newMeta);
         publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
@@ -3256,6 +3459,11 @@ actor {
         };
       };
       publishedNodeContributions.add(thePublishedId, existingMap);
+    };
+
+    // Commit contribution entries to flat registry
+    if (tempContribEntries.size() > 0) {
+      graphContributionList.add(thePublishedId, tempContribEntries.toArray());
     };
 
     #success({
@@ -3821,6 +4029,7 @@ actor {
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
       ("extensionCount", jsonNat(m.extensionLog.size())),
+      ("authors", jsonArray(m.authors)),
     ]);
   };
 

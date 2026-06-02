@@ -92,3 +92,46 @@ The annotation system integrates with the hierarchical node type chain: **Curati
 ## License
 
 GNU General Public License v3.0 — see [LICENSE](./LICENSE).
+
+## Credits
+
+See the in-game Credits screen for the full interactive breakdown. Below is a summary of all third-party assets and libraries used:
+
+### Game Assets
+
+| Asset | Author(s) | License |
+|---|---|---|
+| `forest.mp3` — BGM | syncopika ([Bandcamp](https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5)) | CC-BY 3.0 |
+| `which_brand_of_mustard_shall_i_buy.mp3` — terrain BGM | congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by glitchart | CC-BY 3.0 |
+| Forest background image | [forest-elfs](https://forest-elfs.itch.io/forestmoon) | — |
+| `bottom.png` — world tiles | Ivan Voirol ([OpenGameArt](https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol)) | CC-BY 4.0 |
+| `terrain-map-v7.png` — LPC terrain tileset | Lanea Zimmerman (Sharm), based on LPC base terrain tiles | OGA-BY 3.0+ / CC-BY-SA 3.0 / GPL 3.0 |
+| `lpc-baobab/` — baobab trees | bluecarrot16 ([OpenTaxa](https://opentaxa.miraheze.org/wiki/Index)) | OGA-BY 3.0+ |
+| `rowboat.png` — boat sprites | shadowfinderstudios, Zabin, Daniel Eddeland ([OpenGameArt](https://opengameart.org/content/lpc-rowboat-topdown-4-directional-recolor-for-rpg)) | CC-BY-SA 4.0 |
+| `sprites/cultist_*.png` — player character | Antifarea | CC-BY |
+| `sprites/bava/` — wizard character body/head/face/hat/boots/hair/mustache/vest/jacket | bluecarrot16, JaidynReiman, Benjamin K. Smith, Stephen Challener, Eliza Wyatt, Napsio, Yamilian, Thane Brimhall, and others ([OpenGameArt](https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles)) | OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 |
+| Chess puzzles | [Lichess](https://lichess.org) community puzzle database | — |
+
+### Fonts
+
+All loaded from Google Fonts.
+
+| Font | Author | License |
+|---|---|---|
+| Press Start 2P | CodeMan38 | SIL OFL 1.1 |
+| Quattrocento Sans, Muli, Josefin Sans, Cardo, Oswald, Barlow, Montserrat, Source Sans 3, Chivo, Krub, Lora, Rubik, Assistant, Six Caps, JetBrains Mono | Various | SIL OFL 1.1 |
+| Roboto, Open Sans Condensed | Various | Apache-2.0 |
+
+### Code Libraries
+
+| Library | Author | License |
+|---|---|---|
+| GSAP | GreenSock | Standard License |
+| crisp-game-lib | abagames ([GitHub](https://github.com/abagames/crisp-game-lib)) | MIT |
+| pixi.js / pixi-filters | PixiJS contributors | MIT |
+| lodash (clonedeep) | lodash authors | MIT |
+| chess.js | Jeff Hlywa ([GitHub](https://github.com/jhlywa/chess.js)) | MIT |
+| jquery | OpenJS Foundation | MIT |
+| chessboard.js | Chris Oakman ([chessboardjs.com](https://chessboardjs.com)) | MIT |
+| @dfinity/auth-client / @dfinity/principal | DFINITY Stiftung ([GitHub](https://github.com/dfinity/agent-js)) | Apache-2.0 |
+| @icp-sdk/core | DFINITY Stiftung ([GitHub](https://github.com/dfinity/icp-core)) | Apache-2.0 |

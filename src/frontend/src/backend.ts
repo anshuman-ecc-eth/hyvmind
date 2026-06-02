@@ -98,6 +98,14 @@ export interface Location {
     parentSwarmId: NodeId;
     sources: Array<SourceRef>;
 }
+export interface ContributionView {
+    id: string;
+    buzzAmount: bigint;
+    nodeId: NodeId;
+    description: string;
+    payer: Principal;
+    alreadyCredited: boolean;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -108,6 +116,20 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
+export type SaveResult = {
+    __kind__: "ok";
+    ok: {
+        contributions: Array<CreditedContribution>;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+} | {
+    __kind__: "noNewTrust";
+    noNewTrust: {
+        reason: string;
+    };
+};
 export interface ChatChannelSummary {
     id: string;
     name: string;
@@ -124,6 +146,7 @@ export interface PublishedSourceGraphMeta {
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    authors: Array<string>;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
@@ -278,12 +301,22 @@ export interface ContentVersion {
     timestamp: Time;
     contributor: Principal;
 }
+export interface CreditedContribution {
+    buzzAmount: bigint;
+    contributionId: string;
+    description: string;
+    earned: bigint;
+    payer: Principal;
+    saveCount: bigint;
+}
 export interface TrustTransaction {
+    contributionDetails: Array<CreditedContribution>;
     totalBuzzCost: bigint;
     saver: Principal;
     earned: bigint;
     savedAt: bigint;
     saveNumber: bigint;
+    contributionIds: Array<string>;
 }
 export interface GraphData {
     curations: Array<Curation>;
@@ -364,6 +397,7 @@ export interface backendInterface {
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
@@ -374,6 +408,7 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
+    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -420,13 +455,7 @@ export interface backendInterface {
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
+    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -446,7 +475,7 @@ export interface backendInterface {
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
 }
-import type { AttributeChange as _AttributeChange, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
+import type { AttributeChange as _AttributeChange, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CreditedContribution as _CreditedContribution, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SaveResult as _SaveResult, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControl(): Promise<void> {
@@ -572,6 +601,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createSwarm(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async ensureContributionsMigrated(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.ensureContributionsMigrated(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.ensureContributionsMigrated(arg0);
             return result;
         }
     }
@@ -713,6 +756,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getChannels();
             return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getGraphContributions(arg0: string): Promise<Array<ContributionView>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGraphContributions(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGraphContributions(arg0);
+            return result;
         }
     }
     async getMessages(arg0: string): Promise<{
@@ -1099,24 +1156,18 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async savePublishedGraph(arg0: string, arg1: Array<NodeId>): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }> {
+    async savePublishedGraph(arg0: string, arg1: Array<NodeId>): Promise<SaveResult> {
         if (this.processError) {
             try {
                 const result = await this.actor.savePublishedGraph(arg0, arg1);
-                return from_candid_variant_n62(this._uploadFile, this._downloadFile, result);
+                return from_candid_SaveResult_n65(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.savePublishedGraph(arg0, arg1);
-            return from_candid_variant_n62(this._uploadFile, this._downloadFile, result);
+            return from_candid_SaveResult_n65(this._uploadFile, this._downloadFile, result);
         }
     }
     async sendMessage(arg0: string, arg1: string): Promise<{
@@ -1129,14 +1180,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.sendMessage(arg0, arg1);
-                return from_candid_variant_n65(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n67(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.sendMessage(arg0, arg1);
-            return from_candid_variant_n65(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n67(this._uploadFile, this._downloadFile, result);
         }
     }
     async setTelegramConfig(arg0: string, arg1: string): Promise<{
@@ -1149,14 +1200,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.setTelegramConfig(arg0, arg1);
-                return from_candid_variant_n65(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n67(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.setTelegramConfig(arg0, arg1);
-            return from_candid_variant_n65(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n67(this._uploadFile, this._downloadFile, result);
         }
     }
     async storeNotesData(arg0: string): Promise<void> {
@@ -1252,6 +1303,9 @@ function from_candid_PublishPreviewResult_n52(_uploadFile: (file: ExternalBlob) 
 function from_candid_PublishedSourceGraphMeta_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PublishedSourceGraphMeta): PublishedSourceGraphMeta {
     return from_candid_record_n16(_uploadFile, _downloadFile, value);
 }
+function from_candid_SaveResult_n65(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _SaveResult): SaveResult {
+    return from_candid_variant_n66(_uploadFile, _downloadFile, value);
+}
 function from_candid_Swarm_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Swarm): Swarm {
     return from_candid_record_n47(_uploadFile, _downloadFile, value);
 }
@@ -1345,6 +1399,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    authors: Array<string>;
     sourcesCount: [] | [bigint];
     artworkDataUrl: [] | [string];
     hierarchyEdgeCount: bigint;
@@ -1359,6 +1414,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    authors: Array<string>;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
@@ -1374,6 +1430,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
         attributeCount: value.attributeCount,
         creatorName: value.creatorName,
         edgeCount: value.edgeCount,
+        authors: value.authors,
         sourcesCount: record_opt_to_undefined(from_candid_opt_n20(_uploadFile, _downloadFile, value.sourcesCount)),
         artworkDataUrl: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.artworkDataUrl)),
         hierarchyEdgeCount: value.hierarchyEdgeCount,
@@ -1801,7 +1858,42 @@ function from_candid_variant_n62(_uploadFile: (file: ExternalBlob) => Promise<Ui
         err: value.err
     } : value;
 }
-function from_candid_variant_n65(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n66(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: {
+        contributions: Array<_CreditedContribution>;
+    };
+} | {
+    err: string;
+} | {
+    noNewTrust: {
+        reason: string;
+    };
+}): {
+    __kind__: "ok";
+    ok: {
+        contributions: Array<CreditedContribution>;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+} | {
+    __kind__: "noNewTrust";
+    noNewTrust: {
+        reason: string;
+    };
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : "noNewTrust" in value ? {
+        __kind__: "noNewTrust",
+        noNewTrust: value.noNewTrust
+    } : value;
+}
+function from_candid_variant_n67(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     ok: null;
 } | {
     err: string;

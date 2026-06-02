@@ -34,7 +34,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
@@ -77,6 +77,7 @@ export function SettingsView() {
   const { data: trustTransactions, refetch: refetchTransactions } =
     useGetMyTrustTransactions();
   const [txLogOpen, setTxLogOpen] = useState(false);
+  const [expandedTxs, setExpandedTxs] = useState<Set<string>>(new Set());
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
@@ -414,10 +415,19 @@ export function SettingsView() {
                 data-ocid="settings.plugin_binding.section"
               >
                 <div>
-                  <h2 className="text-sm font-semibold">Obsidian</h2>
+                  <h2 className="text-sm font-semibold">Plugin Settings</h2>
                   <p className="text-sm text-muted-foreground">
-                    Link this Obsidian plugin to your Hyvmind account so
-                    uploaded notes appear here.
+                    Download and install 'Hyvmind Uploader' from Obsidian's
+                    Community Plugins, or click{" "}
+                    <a
+                      href="https://community.obsidian.md/plugins/hyvmind-uploader"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      here
+                    </a>
+                    .
                   </p>
                 </div>
 
@@ -705,40 +715,132 @@ export function SettingsView() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-8" />
                           <TableHead>Saver</TableHead>
                           <TableHead>Date</TableHead>
-                          <TableHead>Multiplier</TableHead>
-                          <TableHead>Buzz Base</TableHead>
                           <TableHead>Trust Earned</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {trustTransactions.map((tx: TrustTransaction) => (
-                          <TableRow
-                            key={`${String(tx.saver)}-${String(tx.savedAt)}`}
-                          >
-                            <TableCell className="font-mono text-xs">
-                              {typeof (tx.saver as { toText?: () => string })
-                                .toText === "function"
-                                ? `${(tx.saver as { toText: () => string }).toText().slice(0, 10)}...`
-                                : `${String(tx.saver).slice(0, 10)}...`}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {new Date(
-                                Number(tx.savedAt) / 1_000_000,
-                              ).toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {`\u221a${tx.saveNumber.toString()}`}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {(Number(tx.totalBuzzCost) / 10).toFixed(1)}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {(Number(tx.earned) / 10_000_000).toFixed(7)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {trustTransactions.map((tx: TrustTransaction) => {
+                          const txKey = `${String(tx.saver)}-${String(tx.savedAt)}`;
+                          const isExpanded = expandedTxs.has(txKey);
+                          const toggle = () => {
+                            const next = new Set(expandedTxs);
+                            if (isExpanded) {
+                              next.delete(txKey);
+                            } else {
+                              next.add(txKey);
+                            }
+                            setExpandedTxs(next);
+                          };
+                          const fmtPrincipal = (p: typeof tx.saver) =>
+                            typeof (p as { toText?: () => string }).toText ===
+                            "function"
+                              ? `${(p as { toText: () => string }).toText().slice(0, 10)}...`
+                              : `${String(p).slice(0, 10)}...`;
+
+                          const hasDetails =
+                            tx.contributionDetails &&
+                            tx.contributionDetails.length > 0;
+
+                          return (
+                            <Fragment key={txKey}>
+                              <TableRow
+                                className="cursor-pointer hover:bg-muted/50"
+                                onClick={toggle}
+                              >
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {isExpanded ? "\u25bc" : "\u25b6"}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">
+                                  {fmtPrincipal(tx.saver)}
+                                </TableCell>
+                                <TableCell className="text-xs">
+                                  {new Date(
+                                    Number(tx.savedAt) / 1_000_000,
+                                  ).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-xs">
+                                  {(Number(tx.earned) / 10_000_000).toFixed(7)}
+                                </TableCell>
+                              </TableRow>
+                              {isExpanded && hasDetails && (
+                                <>
+                                  <TableRow className="border-b-0 hover:bg-transparent">
+                                    <TableCell />
+                                    <TableCell colSpan={3} className="py-0.5">
+                                      <div className="grid grid-cols-12 gap-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
+                                        <span className="col-span-4">
+                                          Description
+                                        </span>
+                                        <span className="col-span-2">
+                                          Contributor
+                                        </span>
+                                        <span className="col-span-2">
+                                          Multiplier
+                                        </span>
+                                        <span className="col-span-2">Buzz</span>
+                                        <span className="col-span-2">
+                                          Earned
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                  {tx.contributionDetails.map((detail) => (
+                                    <TableRow
+                                      key={`${txKey}-detail-${detail.contributionId}`}
+                                      className="border-t-0 hover:bg-muted/30"
+                                    >
+                                      <TableCell />
+                                      <TableCell colSpan={3} className="py-0.5">
+                                        <div className="grid grid-cols-12 gap-1 text-[11px] pl-4">
+                                          <span className="col-span-4 truncate">
+                                            {detail.description}
+                                          </span>
+                                          <span className="col-span-2 font-mono text-muted-foreground">
+                                            {typeof (
+                                              detail.payer as {
+                                                toText?: () => string;
+                                              }
+                                            ).toText === "function"
+                                              ? `${(detail.payer as { toText: () => string }).toText().slice(0, 10)}...`
+                                              : `${String(detail.payer).slice(0, 10)}...`}
+                                          </span>
+                                          <span className="col-span-2">
+                                            {"\u221a"}
+                                            {detail.saveCount.toString()}
+                                          </span>
+                                          <span className="col-span-2">
+                                            {(
+                                              Number(detail.buzzAmount) / 10
+                                            ).toFixed(1)}
+                                          </span>
+                                          <span className="col-span-2">
+                                            {(
+                                              Number(detail.earned) / 10_000_000
+                                            ).toFixed(7)}
+                                          </span>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </>
+                              )}
+                              {isExpanded && !hasDetails && (
+                                <TableRow className="border-t-0 hover:bg-transparent">
+                                  <TableCell />
+                                  <TableCell
+                                    colSpan={3}
+                                    className="py-1 text-xs text-muted-foreground pl-4 italic"
+                                  >
+                                    (no per-contribution breakdown available)
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </Fragment>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   ) : (
