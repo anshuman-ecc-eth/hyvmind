@@ -283,12 +283,69 @@ export function graphDataToEditorNodes(
     }
   }
 
+  const folderIds = Array.from(nodes.keys());
+
+  // ------------------------------------------------------------------
+  // Step 5.5: Collapse duplicate inherited metadata upward.
+  // If a child folder's inheritedAttributes/inheritedSources are identical
+  // to its nearest ancestor that has non-empty metadata, clear the child's.
+  // The ancestor's _attributes.md/_sources.md already covers the child
+  // via inheritance during the next publish (sourceGraphToInput walks
+  // ancestors and merges downward).
+  // ------------------------------------------------------------------
+  const attrsEqual = (
+    a: Record<string, string>,
+    b: Record<string, string>,
+  ): boolean => {
+    const aKeys = Object.keys(a);
+    if (aKeys.length !== Object.keys(b).length) return false;
+    return aKeys.every((k) => b[k] === a[k]);
+  };
+
+  const sourcesEqual = (a: SourceRef[], b: SourceRef[]): boolean => {
+    if (a.length !== b.length) return false;
+    const aSet = new Set(a.map((s) => `${s.name}|${s.url}`));
+    return b.every((s) => aSet.has(`${s.name}|${s.url}`));
+  };
+
+  for (const folderId of folderIds) {
+    const folder = nodes.get(folderId);
+    if (!folder || folder.type !== "folder" || folder.parentId === null)
+      continue;
+
+    let ancestorId: string | null = folder.parentId;
+    while (ancestorId) {
+      const ancestor = nodes.get(ancestorId);
+      if (!ancestor || ancestor.type !== "folder") break;
+
+      const hasAncestorAttrs =
+        Object.keys(ancestor.inheritedAttributes).length > 0;
+      const hasAncestorSources = ancestor.inheritedSources.length > 0;
+
+      if (hasAncestorAttrs || hasAncestorSources) {
+        if (
+          hasAncestorAttrs &&
+          attrsEqual(folder.inheritedAttributes, ancestor.inheritedAttributes)
+        ) {
+          folder.inheritedAttributes = {};
+        }
+        if (
+          hasAncestorSources &&
+          sourcesEqual(folder.inheritedSources, ancestor.inheritedSources)
+        ) {
+          folder.inheritedSources = [];
+        }
+        break;
+      }
+      ancestorId = ancestor.parentId;
+    }
+  }
+
   // ------------------------------------------------------------------
   // Step 6: Create _attributes.md and _sources.md file nodes for folders
   // with non-empty inherited metadata. Clears the folder's inherited
   // fields afterwards to prevent duplication in editorToSourceGraph.
   // ------------------------------------------------------------------
-  const folderIds = Array.from(nodes.keys());
   for (const folderId of folderIds) {
     const folder = nodes.get(folderId);
     if (!folder || folder.type !== "folder") continue;
