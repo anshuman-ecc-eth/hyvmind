@@ -770,7 +770,7 @@ export function SettingsView() {
                                   <TableRow className="border-b-0 hover:bg-transparent">
                                     <TableCell />
                                     <TableCell colSpan={3} className="py-0.5">
-                                      <div className="grid grid-cols-12 gap-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
+                                      <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
                                         <span className="col-span-4">
                                           Description
                                         </span>
@@ -794,7 +794,7 @@ export function SettingsView() {
                                     >
                                       <TableCell />
                                       <TableCell colSpan={3} className="py-0.5">
-                                        <div className="grid grid-cols-12 gap-1 text-[11px] pl-4">
+                                        <div className="grid grid-cols-12 gap-1 text-xs pl-4">
                                           <span className="col-span-4 truncate">
                                             {detail.description}
                                           </span>

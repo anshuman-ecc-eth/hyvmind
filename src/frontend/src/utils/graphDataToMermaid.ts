@@ -1,5 +1,9 @@
 import type { GraphData, SourceRef } from "../backend.d";
-import { sanitizeToLocalName, truncateLabel } from "./ontologySanitize";
+import { truncateLabel } from "./ontologySanitize";
+
+function leafName(name: string): string {
+  return name.split("@").pop() ?? name;
+}
 
 interface NodeType {
   id: string;
@@ -21,7 +25,7 @@ function collectNodes(data: GraphData): NodeType[] {
   for (const c of data.curations) {
     nodes.push({
       id: c.id,
-      name: c.name,
+      name: leafName(c.name),
       typeLabel: "curation",
       parentId: null,
       attrs: buildAttrs(c.customAttributes),
@@ -31,7 +35,7 @@ function collectNodes(data: GraphData): NodeType[] {
   for (const s of data.swarms) {
     nodes.push({
       id: s.id,
-      name: s.name,
+      name: leafName(s.name),
       typeLabel: "swarm",
       parentId: s.parentCurationId,
       attrs: buildAttrs(s.customAttributes),
@@ -41,7 +45,7 @@ function collectNodes(data: GraphData): NodeType[] {
   for (const l of data.locations) {
     nodes.push({
       id: l.id,
-      name: l.title,
+      name: leafName(l.title),
       typeLabel: "location",
       parentId: l.parentSwarmId,
       attrs: buildAttrs(l.customAttributes),
@@ -51,7 +55,7 @@ function collectNodes(data: GraphData): NodeType[] {
   for (const lt of data.lawTokens) {
     nodes.push({
       id: lt.id,
-      name: lt.tokenLabel,
+      name: leafName(lt.tokenLabel),
       typeLabel: "lawEntity",
       parentId: lt.parentLocationId,
       attrs: buildAttrs(lt.customAttributes),
@@ -61,7 +65,7 @@ function collectNodes(data: GraphData): NodeType[] {
   for (const it of data.interpretationTokens) {
     nodes.push({
       id: it.id,
-      name: it.title,
+      name: leafName(it.title),
       typeLabel: "interpEntity",
       parentId: it.parentLawTokenId,
       attrs: buildAttrs(it.customAttributes),

@@ -112,6 +112,7 @@ function ChecklistDialog({
   const [previewPhase, setPreviewPhase] = useState<
     { kind: "core" } | { kind: "extension"; index: number } | null
   >(null);
+  const [hasOpenedPreview, setHasOpenedPreview] = useState(false);
 
   const previewNodeIds = useMemo(() => {
     if (!previewPhase) return null;
@@ -136,11 +137,12 @@ function ChecklistDialog({
           ? null
           : phase,
       );
+      setHasOpenedPreview(true);
     },
     [],
   );
 
-  const showPreview = previewMermaid !== null;
+  const showPreview = previewPhase !== null && previewMermaid !== null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -226,28 +228,41 @@ function ChecklistDialog({
               )}
             </div>
 
-            {showPreview && (
-              <div className="border-t border-border pt-3">
-                <p className="text-xs font-semibold mb-2">
-                  {previewPhase?.kind === "core"
-                    ? coreLabel
-                    : extEntries.find(
-                        (e) =>
-                          e.index ===
-                          (previewPhase as { index: number })?.index,
-                      )?.label}
-                </p>
-                <div className="max-h-[400px] overflow-auto rounded-sm border border-border bg-background p-2">
-                  <MermaidDiagram mermaidText={previewMermaid.mermaidText} />
+            {hasOpenedPreview && (
+              <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{
+                  maxHeight: showPreview ? "500px" : "0px",
+                  opacity: showPreview ? 1 : 0,
+                  borderTopWidth: showPreview ? 1 : 0,
+                }}
+              >
+                <div className="pt-3 border-border">
+                  <p className="text-xs font-semibold mb-2">
+                    {previewPhase?.kind === "core"
+                      ? coreLabel
+                      : extEntries.find(
+                          (e) =>
+                            e.index ===
+                            (previewPhase as { index: number })?.index,
+                        )?.label}
+                  </p>
+                  {previewMermaid && (
+                    <div className="max-h-[400px] overflow-auto rounded-sm border border-border bg-background p-2">
+                      <MermaidDiagram
+                        mermaidText={previewMermaid.mermaidText}
+                      />
+                    </div>
+                  )}
+                  {previewMermaid && previewMermaid.sourceLines.length > 0 && (
+                    <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                      <p className="font-semibold text-foreground">Sources</p>
+                      {previewMermaid.sourceLines.map((line) => (
+                        <p key={line}>{line}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {previewMermaid.sourceLines.length > 0 && (
-                  <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-                    <p className="font-semibold text-foreground">Sources</p>
-                    {previewMermaid.sourceLines.map((line) => (
-                      <p key={line}>{line}</p>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
