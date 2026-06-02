@@ -16,6 +16,14 @@ export interface Location {
     parentSwarmId: NodeId;
     sources: Array<SourceRef>;
 }
+export interface ContributionView {
+    id: string;
+    buzzAmount: bigint;
+    nodeId: NodeId;
+    description: string;
+    payer: Principal;
+    alreadyCredited: boolean;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -26,6 +34,20 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
+export type SaveResult = {
+    __kind__: "ok";
+    ok: {
+        contributions: Array<CreditedContribution>;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+} | {
+    __kind__: "noNewTrust";
+    noNewTrust: {
+        reason: string;
+    };
+};
 export interface ChatChannelSummary {
     id: string;
     name: string;
@@ -42,12 +64,12 @@ export interface PublishedSourceGraphMeta {
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    authors: Array<string>;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams?: string;
-    authors: string[];
 }
 export interface NodeOperation {
     localName: string;
@@ -197,44 +219,23 @@ export interface ContentVersion {
     timestamp: Time;
     contributor: Principal;
 }
+export interface CreditedContribution {
+    buzzAmount: bigint;
+    contributionId: string;
+    description: string;
+    earned: bigint;
+    payer: Principal;
+    saveCount: bigint;
+}
 export interface TrustTransaction {
+    contributionDetails: Array<CreditedContribution>;
     totalBuzzCost: bigint;
     saver: Principal;
     earned: bigint;
     savedAt: bigint;
     saveNumber: bigint;
-    contributionIds: string[];
-    contributionDetails: CreditedContribution[];
+    contributionIds: Array<string>;
 }
-
-export interface CreditedContribution {
-    contributionId: string;
-    description: string;
-    payer: Principal;
-    buzzAmount: bigint;
-    earned: bigint;
-    saveCount: bigint;
-}
-
-export interface ContributionView {
-    id: string;
-    nodeId: NodeId;
-    description: string;
-    payer: Principal;
-    buzzAmount: bigint;
-    alreadyCredited: boolean;
-}
-
-export type SaveResult = {
-    __kind__: "ok";
-    ok: { contributions: CreditedContribution[] };
-} | {
-    __kind__: "noNewTrust";
-    noNewTrust: { reason: string };
-} | {
-    __kind__: "err";
-    err: string;
-};
 export interface GraphData {
     curations: Array<Curation>;
     rootNodes: Array<GraphNode>;
@@ -313,6 +314,7 @@ export interface backendInterface {
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
@@ -323,6 +325,7 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
+    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -369,9 +372,7 @@ export interface backendInterface {
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    savePublishedGraph(publishedGraphId: string, selectedContributionIds: Array<string>): Promise<SaveResult>;
-    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
-    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
+    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;

@@ -51584,7 +51584,7 @@ function ContributionRow({
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[10px] text-muted-foreground flex-shrink-0", children: [
-          contribution.buzzAmount.toString(),
+          (Number(contribution.buzzAmount) / 10).toFixed(1),
           " Buzz"
         ] })
       ]
@@ -51778,11 +51778,12 @@ function ChecklistDialog({
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-foreground", children: c2.description }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-muted-foreground", children: [
             "+",
-            c2.earned.toString(),
+            (Number(c2.earned) / 1e7).toFixed(7),
             " Trust · Save #",
             c2.saveCount.toString(),
-            " · ",
-            c2.buzzAmount.toString(),
+            " ·",
+            " ",
+            (Number(c2.buzzAmount) / 10).toFixed(1),
             " Buzz"
           ] })
         ]

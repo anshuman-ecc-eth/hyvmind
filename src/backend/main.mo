@@ -23,7 +23,7 @@ import Debug "mo:core/Debug";
 import Float "mo:core/Float";
 import Migration "Migration";
 
-(with migration = Migration.migration)
+
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -2485,7 +2485,16 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
-      var contribCounter = 0;
+      let earlySize = switch (earlyPublishedId) {
+        case (null) { 0 };
+        case (?pid) {
+          switch (graphContributionList.get(pid)) {
+            case (null) { 0 };
+            case (?arr) { arr.size() };
+          };
+        };
+      };
+      var contribCounter = earlySize;
       let tempContribEntries = List.empty<ContributionEntry>();
       func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
         let contribId = "c" # debug_show(contribCounter);
@@ -3463,7 +3472,11 @@ actor {
 
     // Commit contribution entries to flat registry
     if (tempContribEntries.size() > 0) {
-      graphContributionList.add(thePublishedId, tempContribEntries.toArray());
+      let existingContribs = switch (graphContributionList.get(thePublishedId)) {
+        case (null) { [] };
+        case (?arr) { arr };
+      };
+      graphContributionList.add(thePublishedId, existingContribs.concat(tempContribEntries.toArray()));
     };
 
     #success({
