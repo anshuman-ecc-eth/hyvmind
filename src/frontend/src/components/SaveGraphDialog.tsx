@@ -166,7 +166,7 @@ function ChecklistDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-4xl"
+        className="sm:max-w-4xl max-h-[85vh] overflow-y-auto"
         showCloseButton={!alertMode || alertMode === "result"}
       >
         {!alertMode ? (
