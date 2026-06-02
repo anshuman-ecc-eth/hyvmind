@@ -21,7 +21,9 @@ import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
+import Migration "Migration";
 
+(with migration = Migration.migration)
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -55,14 +57,6 @@ actor {
     saveCount : Nat;
   };
   type TrustTransaction = {
-    saver : Principal;
-    savedAt : Int;
-    saveNumber : Nat;
-    totalBuzzCost : Int;
-    earned : Int;
-    contributionIds : [Text];
-  };
-  type TrustTransactionDetail = {
     saver : Principal;
     savedAt : Int;
     saveNumber : Nat;
@@ -418,7 +412,6 @@ actor {
   var graphSavers = Map.empty<Text, List.List<Principal>>();
   var publishedNodeContributions = Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
   var trustTransactions = Map.empty<Principal, List.List<TrustTransaction>>();
-  var trustContributionDetails = Map.empty<Text, [CreditedContribution]>();
 
   // Per-graph contribution registry: graphId -> [ContributionEntry]
   var graphContributionList = Map.empty<Text, [ContributionEntry]>();
@@ -656,17 +649,15 @@ actor {
         i += 1;
       };
       updateTrustScore(payer, totalEarned);
-      let savedAt = Time.now();
       let trustTx : TrustTransaction = {
         saver = msg.caller;
-        savedAt;
+        savedAt = Time.now();
         saveNumber = 0; // legacy field kept for backward compat, use contribution-level saveCount
         totalBuzzCost = bucket.buzzTotal;
         earned = totalEarned;
         contributionIds = allContribIds;
+        contributionDetails = payerCredited.toArray();
       };
-      let detailKey = payer.toText() # "_" # debug_show(savedAt);
-      trustContributionDetails.add(detailKey, payerCredited.toArray());
       let existingTrustTxs = switch (trustTransactions.get(payer)) {
         case (null) { List.empty<TrustTransaction>() };
         case (?list) { list };
@@ -727,29 +718,10 @@ actor {
     migrateGraphContributions(publishedGraphId);
   };
 
-   public query ({ caller }) func getMyTrustTransactions() : async [TrustTransactionDetail] {
+  public query ({ caller }) func getMyTrustTransactions() : async [TrustTransaction] {
     switch (trustTransactions.get(caller)) {
       case (null) { [] };
-      case (?list) {
-        let result = List.empty<TrustTransactionDetail>();
-        for (tx in list.values()) {
-          let detailKey = caller.toText() # "_" # debug_show(tx.savedAt);
-          let details = switch (trustContributionDetails.get(detailKey)) {
-            case (?d) { d };
-            case (null) { [] };
-          };
-          result.add({
-            saver = tx.saver;
-            savedAt = tx.savedAt;
-            saveNumber = tx.saveNumber;
-            totalBuzzCost = tx.totalBuzzCost;
-            earned = tx.earned;
-            contributionIds = tx.contributionIds;
-            contributionDetails = details;
-          });
-        };
-        result.toArray();
-      };
+      case (?list) { list.toArray() };
     };
   };
 
@@ -2513,15 +2485,7 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
-      var contribCounter = switch (earlyPublishedId) {
-        case (?pid) {
-          switch (graphContributionList.get(pid)) {
-            case (?existing) { existing.size() };
-            case (null) { 0 };
-          };
-        };
-        case (null) { 0 };
-      };
+      var contribCounter = 0;
       let tempContribEntries = List.empty<ContributionEntry>();
       func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
         let contribId = "c" # debug_show(contribCounter);
@@ -3497,13 +3461,9 @@ actor {
       publishedNodeContributions.add(thePublishedId, existingMap);
     };
 
-    // Commit contribution entries to flat registry (append on extension)
+    // Commit contribution entries to flat registry
     if (tempContribEntries.size() > 0) {
-      let existing = switch (graphContributionList.get(thePublishedId)) {
-        case (null) { [] };
-        case (?e) { e };
-      };
-      graphContributionList.add(thePublishedId, existing.concat(tempContribEntries.toArray()));
+      graphContributionList.add(thePublishedId, tempContribEntries.toArray());
     };
 
     #success({
@@ -4658,6 +4618,5 @@ actor {
     graphSavers := Map.empty<Text, List.List<Principal>>();
     publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
     trustTransactions := Map.empty<Principal, List.List<TrustTransaction>>();
-    trustContributionDetails := Map.empty<Text, [CreditedContribution]>();
   };
 };

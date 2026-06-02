@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HYVMIND</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; }
+  body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
+  body:focus { outline: none; }
+
+
+  /* ── Layout (desktop) ── */
+  .layout { display: flex; align-items: center; gap: 24px; }
+  .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
+  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; }
+  .dpad-btn:active, .dpad-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .dpad-up    { top: 0; left: 49px; }
+  .dpad-down  { bottom: 0; left: 49px; }
+  .dpad-left  { left: 0; top: 52px; }
+  .dpad-right { right: 0; top: 52px; }
+  .action-buttons { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 144px; height: 150px; padding-top: 24px; }
+  .action-row { display: flex; flex-direction: row; gap: 16px; }
+  .action-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .action-btn:active, .action-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .zoom-row { display: flex; flex-direction: row; gap: 6px; width: 100%; margin-top: 25px; }
+  .screen-size-btn { display: flex; align-items: center; justify-content: center; padding: 6px 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; color: #000; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; white-space: nowrap; width: 100%; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .screen-size-btn:active, .screen-size-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
+  .dpad-btn::after, .action-btn::after, .screen-size-btn::after { content: ""; position: absolute; bottom: 0; right: 0; width: 100%; height: 100%; pointer-events: none; border-right: 3px solid rgba(0,0,0,0.15); border-bottom: 3px solid rgba(0,0,0,0.15); border-radius: inherit; }
+
+  .game-container { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; }
+  .layout { display: flex; flex-direction: column; align-items: center; width: fit-content; flex-shrink: 0; padding: 16px; border-radius: 4px; }
+  .layout-row { display: flex; align-items: center; gap: 24px; }
+  .screen { width: 500px; height: 500px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
+  .viewport { position: absolute; inset: 0; overflow: hidden; }
+  .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
+  .game-layer { position: absolute; inset: 0; z-index: 1; }
+  .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
+</style>
+</head>
+<body tabindex="-1">
+
+<div id="gameContainer" class="game-container">
+  <div class="layout" id="gameLayout">
+    <div class="layout-row">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up"    data-dir="up">&#9650;</button>
+        <button class="dpad-btn dpad-down"  data-dir="down">&#9660;</button>
+        <button class="dpad-btn dpad-left"  data-dir="left">&#9664;</button>
+        <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+      </div>
+      <div class="screen">
+        <div class="viewport" id="viewport">
+          <img id="worldBg" class="world-layer" src="/assets/hyvmind/bottom.png">
+          <div id="gameLayer" class="game-layer"></div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <div class="action-row">
+          <button class="action-btn" id="btnZ">Z</button>
+          <button class="action-btn" id="btnX">X</button>
+        </div>
+        <div class="zoom-row">
+          <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+        </div>
+      </div>
+    </div>
+    <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+  </div>
+</div>
+
+<audio id="bgm" src="/assets/hyvmind/forest.mp3" loop preload="auto"></audio>
+<script>
+var ASSETS = '/assets/hyvmind';
+var WORLD_W = 574, WORLD_H = 2176;
+var SCREEN_W = 550, SCREEN_H = 480;
+var TILE = 8;
+var COLS = 72, ROWS = 272;
+function frm(col, row, prefix) { return 'url(' + ASSETS + '/sprites/' + (prefix||'cultist') + '_' + col + '_' + row + '.png)'; }
+
+var gamePaused = false;
+
+var currentScore = 0;
+var storedSecrets = [];
+var isGenerating = false;
+var activeMenu = null;
+var menuSelected = 0;
+var secretsScroll = 0;
+
+// ── Boat / ferry constants ──
+var BOAT_SHEET = ASSETS + '/sprites/rowboat.png';
+var BOAT_FRAME_W = 73, BOAT_FRAME_H = 73;
+var BOAT_SPRITESHEET_W = 192, BOAT_SPRITESHEET_H = 160;
+var BOAT_SOUTH_X = 1, BOAT_SOUTH_Y = 17;
+var BOAT_NORTH_X = 98, BOAT_NORTH_Y = 17;
+var BOAT_TILE_SIZE = 8;
+var BOAT_STEP = 3; // pixels per tick when driving
+var BOAT_LR_W = 146, BOAT_LR_H = 53; // left/right frame size
+var BOAT_UP_W = 52, BOAT_UP_H = 145;
+var BOAT_DOWN_W = 52, BOAT_DOWN_H = 145;
+
+var boatX = 160, boatY = 160;
+var boatEl = null;
+var isRiding = false;
+var boatTerminalCenter = null;
+var boatTriggerKeys = {};
+var boatBlockedTiles = {};
+
+window.addEventListener('message', function(e) {
+  if (e.data?.type === 'hyvmind-resume') { console.log('RESUME received'); gamePaused = false; navPaused = false; document.body.focus(); }
+  if (e.data?.type === 'hyvmind-focus') { requestAnimationFrame(function() { document.body.focus(); }); }
+  if (e.data?.type === 'hyvmind-score-update') { currentScore = e.data.score || 0; }
+  if (e.data?.type === 'hyvmind-popup') {
+    if (e.data?.msg) showPopup(e.data.msg);
+  }
+  if (e.data?.type === 'hyvmind-generating') {
+    isGenerating = true;
+    activeMenu = 'loading';
+    closePopup();
+  var pop = document.createElement('div');
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+    pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+    (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+  if (e.data?.type === 'hyvmind-pause-bgm') {
+    if (typeof bgm !== 'undefined' && bgm) { bgm.pause(); bgm.currentTime = 0; }
+  }
+  if (e.data?.type === 'hyvmind-resume-bgm') {
+    if (typeof bgm !== 'undefined' && bgm) { bgm.currentTime = 0; bgm.play().catch(function(){}); }
+  }
+
+function showBavaDialog() {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'bava';
+  pop._step = 0; // 0 = menu, 1+ = showing response to that index
+  pop._selected = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderBavaPopup(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function renderBavaPopup(pop) {
+  if (pop._step === 0) {
+    renderBavaMenu(pop);
+  } else {
+    renderBavaResponse(pop);
+  }
+}
+
+function renderBavaMenu(pop) {
+  var sel = pop._selected;
+  var items = '';
+  for (var i = 0; i < BAVA_DIALOGS.length; i++) {
+    var arrow = i === sel ? '>' : '&nbsp;';
+    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
+    items += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + BAVA_DIALOGS[i].question + '</div>';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:8px;">~ Bava ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Ask me anything:</div>' + items + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+}
+
+function renderBavaResponse(pop) {
+  var idx = pop._step - 1;
+  var response = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].response : '';
+  var question = idx >= 0 && idx < BAVA_DIALOGS.length ? BAVA_DIALOGS[idx].question : '';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + question + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + response + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> back <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+}
+  if (e.data?.type === 'hyvmind-buzz-secret') {
+    isGenerating = false;
+    if (e.data.secret) storedSecrets.push({ secret: e.data.secret, score: e.data.score || 0 });
+  closePopup();
+    showSecretsMenu();
+  }
+});
+
+var dirMap = [2, 3, 1, 0];
+var dirMap = [2, 3, 1, 0];
+var dirMap = [2, 3, 1, 0];
+var collisionMap = [];
+for (var y = 0; y < ROWS; y++) { collisionMap[y] = []; for (var x = 0; x < COLS; x++) collisionMap[y][x] = 1; }
+
+function initCollision(callback) {
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = COLS; c.height = ROWS;
+      var cx = c.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      var data = cx.getImageData(0, 0, COLS, ROWS).data;
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++) {
+          var idx = (y * COLS + x) * 4;
+          var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+          if (a === 0) collisionMap[y][x] = 0;
+          else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
+          else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
+          else if (g > 150 && r < 150) collisionMap[y][x] = 1;
+          else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
+          else collisionMap[y][x] = 0;
+        }
+    } catch(e) { console.error('initCollision error:', e); }
+    callback();
+  };
+  img.onerror = function() { console.error('initCollision img load failed'); callback(); };
+  img.src = ASSETS + '/collision.png';
+}
+
+var triggerMessages = {};
+var triggerPositions = [];
+var lastTriggerTile = null;
+var doorLabels = {};
+var doorPositions = [];
+var nearDoor = null;
+
+function scanBoatTriggers() {
+  boatTriggerKeys = {};
+  boatBlockedTiles = {};
+  boatTerminalCenter = null;
+  var t1sumX = 0, t1sumY = 0, t1c = 0;
+  var blockedKeys = [];
+  for (var key in triggerMessages) {
+    var msg = triggerMessages[key];
+    if (msg === 'boat terminal 1') {
+      boatTriggerKeys[key] = true;
+      var parts = key.split(',');
+      t1sumX += parseInt(parts[0]); t1sumY += parseInt(parts[1]); t1c++;
+    } else if (msg === 'boat terminal 2') {
+      boatTriggerKeys[key] = true;
+    } else if (msg === 'blocked') {
+      boatBlockedTiles[key] = true;
+      blockedKeys.push(key);
+    }
+  }
+  // Remove blocked entries from triggerMessages so no sparkles or Z dialogs
+  for (var i = 0; i < blockedKeys.length; i++) {
+    delete triggerMessages[blockedKeys[i]];
+  }
+  if (t1c > 0) {
+    boatTerminalCenter = {tx: Math.round(t1sumX / t1c), ty: Math.round(t1sumY / t1c)};
+  }
+}
+
+function loadTriggers(callback) {
+  fetch(ASSETS + '/triggers.json')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      triggerMessages = d || {};
+      triggerPositions = [];
+      var cmap = {};
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++)
+          if (collisionMap[y][x] === 4) { triggerPositions.push({tx: x, ty: y, key: x+','+y}); cmap[x+','+y] = true; }
+      for (var key in triggerMessages) {
+        if (!cmap[key]) {
+          var parts = key.split(',');
+          triggerPositions.push({tx: parseInt(parts[0]), ty: parseInt(parts[1]), key: key});
+        }
+      }
+    })
+    .catch(function() { triggerMessages = {}; triggerPositions = []; })
+    .then(function() {
+      fetch(ASSETS + '/doors.json')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          doorLabels = d || {};
+          doorPositions = [];
+          for (var y = 0; y < ROWS; y++)
+            for (var x = 0; x < COLS; x++)
+              if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
+          scanBoatTriggers();
+          callback();
+        })
+        .catch(function() { doorLabels = {}; doorPositions = []; callback(); });
+    });
+}
+
+function checkNearbyTriggers(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  nearTrigger = null;
+  nearDoor = null;
+  var bestDist = 999;
+  for (var i = 0; i < triggerPositions.length; i++) {
+    var tp = triggerPositions[i];
+    if (triggerMessages[tp.key]) {
+      var dist = Math.abs(tp.tx - tx) + Math.abs(tp.ty - ty);
+      if (dist < bestDist) { bestDist = dist; nearTrigger = tp; }
+    }
+  }
+  if (bestDist > 3) nearTrigger = null;
+  var doorDist = 999;
+  for (var i = 0; i < doorPositions.length; i++) {
+    var dp = doorPositions[i];
+    var dist = Math.abs(dp.tx - tx) + Math.abs(dp.ty - ty);
+    if (dist < doorDist) { doorDist = dist; nearDoor = dp; }
+  }
+  if (doorDist > 3) nearDoor = null;
+}
+
+var activePopup = null;
+var triggerMemory = {};
+function showPopup(msg) {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  // If message starts with >>, show input popup instead
+  if (msg === 'trunk' || msg === '>>trunk') { showTrunkPopup(); return; }
+  if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
+  var pop = document.createElement('div');
+  pop._dismissKey = 'msg:' + msg;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function showDefaultPopup() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  var pop = document.createElement('div');
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  var scoreHtml = '<div style="font-family:monospace;font-size:14px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + currentScore + '</div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function showInputPopup(raw) {
+  var lines = raw.split('\n');
+  var question = lines[0].slice(2);
+  var rules = [];
+  for (var i = 1; i < lines.length; i++) {
+    var idx = lines[i].indexOf('->');
+    if (idx !== -1) {
+      rules.push({ pattern: lines[i].slice(0, idx).trim().toLowerCase(), response: lines[i].slice(idx + 2).trim() });
+    }
+  }
+  // If memory exists for this key, show stored response instead
+  var triggerKey = nearTrigger ? nearTrigger.key : null;
+  if (triggerKey && triggerMemory[triggerKey]) {
+    showPopup(triggerMemory[triggerKey]);
+    return;
+  }
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'input';
+  pop._dismissKey = 'msg:' + raw;
+  pop._rules = rules;
+  pop._triggerKey = triggerKey;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:30px;">' + question + '</div><input id="inputField" type="text" style="display:block;margin:10px auto 0;width:80%;background:#0a0a12;border:1px solid #5a4a2a;color:#e0d0b0;font-family:monospace;font-size:14px;padding:6px 8px;outline:none;text-align:center;"><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Enter</span> submit  <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div></div></div>';
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+  // Focus the input field after a delay for Firefox
+  setTimeout(function() { var f = document.getElementById('inputField'); if (f) f.focus(); }, 50);
+}
+function submitInput() {
+  if (!activePopup || activePopup._type !== 'input') return;
+  var input = document.getElementById('inputField');
+  var val = input ? input.value.trim().toLowerCase() : '';
+  var rules = activePopup._rules;
+  var triggerKey = activePopup._triggerKey;
+  var response = null;
+  for (var i = 0; i < rules.length; i++) {
+    if (rules[i].pattern === '*') { response = rules[i].response; break; }
+    if (val.indexOf(rules[i].pattern) !== -1) { response = rules[i].response; break; }
+  }
+  if (!response) response = 'I don\'t understand.';
+  if (triggerKey) triggerMemory[triggerKey] = response;
+  showPopup(response);
+  if (triggerKey && response.indexOf('Correct') !== -1) {
+    window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
+  }
+}
+function showDoorPopup(label) {
+  if (activePopup && activePopup._type === 'door') return;
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'door';
+  pop._label = label;
+  if (nearDoor) pop._dismissKey = 'door:' + (label || 'unlabeled');
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  var title = label ? '~ ' + label + ' ~' : '~ door ~';
+  var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + verb + '?  [Z] yes  [X] no</div></div></div>';
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+var popupDismissedAt = {};
+function closePopup() { if (activePopup) { var k = activePopup._dismissKey; activePopup.remove(); activePopup = null; if (k) popupDismissedAt[k] = Date.now(); } }
+function closeDoorPopup() { if (activePopup && activePopup._type === 'door') { activePopup.remove(); activePopup = null; } }
+
+var STARTUP_SENTENCES = [
+  'You have found a way out of the Walled Gardens.',
+  'Near you, sits the Ranting Well.',
+  'It collects the anger of trapped researchers.',
+  'And turns it into water for the Sanctuary.'
+];
+
+var BAVA_TREE = [
+  { q: "Who are you?", r: "I'm Bava, keeper of Hyvmind." },
+  { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
+  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. Meditating on that distinction will unlock this world for you. Check the diagrams in the lab if you're wondering where to start. Happy exploring!" },
+  { q: "What can I do here?", r: "Here, you can explore maps and collect points. That'll help you gain Buzz, which you can use in the app to publish notes." },
+  { q: "What's the app for?", r: "It converts your notes into knowledge graphs. This makes it easy for others to use and extend your knowledge. Each graph shows up here as a map, so there's always something to explore on the open seas!" },
+];
+
+var SEQUENTIAL_AREAS = [
+  { x1: 43, y1: 39, x2: 47, y2: 43, sentences: ['Welcome to Hyvmind, your sanctuary beyond the Walled Gardens.', "Don't mind the Well.", 'It collects the anger of trapped researchers.', 'And turns it into water for the Sanctuary.'] },
+  { x1: 51, y1: 71, x2: 55, y2: 75, sentences: ['For Puzzles, go right.', 'For Games, go to the Inn.', 'Your scores will add up.'] },
+  { x1: 52, y1: 144, x2: 56, y2: 148, sentences: ['Games give you Scores.', 'Scores can be converted to Buzz.', 'Buzz lets you publish Graphs.', 'Graphs help you earn Trust.', 'Trust puts you on the Leaderboard.'] }
+];
+
+function getBavaNode(path) {
+  var node = { children: BAVA_TREE };
+  for (var i = 0; i < path.length; i++) {
+    if (!node.children || path[i] >= node.children.length) return null;
+    node = node.children[path[i]];
+  }
+  return node;
+}
+
+function getBavaItems(path) {
+  var node = getBavaNode(path);
+  return node ? (node.children || []) : [];
+}
+
+function showBavaDialog() {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'bava';
+  pop._path = [];
+  pop._showing = 'menu';
+  pop._selected = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderBavaPopup(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function renderBavaPopup(pop) {
+  if (pop._showing === 'menu') {
+    renderBavaMenu(pop);
+  } else {
+    renderBavaResponse(pop);
+  }
+}
+
+function renderBavaMenu(pop) {
+  var items = getBavaItems(pop._path);
+  var sel = pop._selected;
+  var menuItems = '';
+  for (var i = 0; i < items.length; i++) {
+    var arrow = i === sel ? '>' : '&nbsp;';
+    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
+    menuItems += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + items[i].q + '</div>';
+  }
+  var parentInfo = '';
+  if (pop._path.length > 0) {
+    var parentNode = getBavaNode(pop._path.slice(0, -1));
+    if (parentNode && parentNode.q) parentInfo = '<div style="font-family:monospace;font-size:10px;color:#4a7a8a;text-align:center;letter-spacing:0.5px;margin-bottom:4px;">' + parentNode.q + '</div>';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Bava ~</div>' + parentInfo + menuItems + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back</div></div></div>';
+}
+
+function renderBavaResponse(pop) {
+  var node = getBavaNode(pop._path);
+  if (!node) return;
+  if (!pop._sentences) {
+    var parts = node.r.split('\n');
+    if (parts.length < 2) {
+      parts = node.r.split(/\. +/);
+      if (parts.length > 1) {
+        for (var pi = 0; pi < parts.length - 1; pi++) parts[pi] = parts[pi].trim() + '.';
+        parts[parts.length - 1] = parts[parts.length - 1].trim();
+      }
+    }
+    pop._sentences = parts.length > 1 ? parts : null;
+    pop._sentenceStep = 0;
+  }
+  var msg = pop._sentences ? pop._sentences[pop._sentenceStep] : node.r;
+  var isLastSentence = !pop._sentences || pop._sentenceStep >= pop._sentences.length - 1;
+  var hasChildren = node.children && node.children.length > 0;
+  var footer;
+  if (pop._sentences && pop._sentences.length > 1 && !isLastSentence) {
+    footer = '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> continue <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
+  } else {
+    footer = hasChildren ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> ask more <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + node.q + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + msg + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px">' + footer + '</div></div></div>';
+}
+
+function renderSequentialPopup(pop, step, sentences) {
+  var sentence = step < sentences.length ? sentences[step] : '';
+  var isLast = step >= sentences.length - 1;
+  var footer = isLast ? '[X] close' : '[Z] continue &nbsp; [X] close';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+}
+
+function showSequentialPopup(sentences, type, dismissKey) {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = type || 'sequential';
+  pop._step = 0;
+  pop._sentences = sentences;
+  pop._dismissKey = dismissKey || null;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderSequentialPopup(pop, 0, sentences);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function showStartupPopup() {
+  gamePaused = true;
+  showSequentialPopup(STARTUP_SENTENCES, 'startup');
+}
+
+function showSecretsMenu() {
+  var selected = menuSelected;
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  activeMenu = 'secrets';
+  var pop = document.createElement('div');
+  pop._type = 'secrets';
+  pop._selected = selected;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  refreshSecretsMenuContent(pop, selected);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function refreshSecretsMenuContent(pop, selected) {
+  var secretsCount = storedSecrets.length;
+  var scoreLine = 'Score: ' + currentScore;
+  var opt0Arrow = selected === 0 ? '>' : '&nbsp;';
+  var opt0Class = selected === 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
+  var opt1Arrow = selected === 1 && currentScore > 0 ? '>' : '&nbsp;';
+  var opt1Class = selected === 1 && currentScore > 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
+  var opt1Disabled = currentScore === 0 ? 'color:#3a2e18;' : '';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">BUZZ SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:13px;' + opt0Class + 'text-align:left;padding:3px 8px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="font-family:monospace;font-size:13px;' + opt1Class + opt1Disabled + 'text-align:left;padding:3px 8px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> select <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop._selected = selected;
+  activePopup = pop;
+}
+function showSecretsList() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  activeMenu = 'view-secrets';
+  var pop = document.createElement('div');
+  pop._type = 'view-secrets';
+  pop._scroll = 0;
+  secretsScroll = 0;
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  refreshSecretsListContent(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function refreshSecretsListContent(pop) {
+  if (!pop) return;
+  var scroll = pop._scroll || 0;
+  var visible = 6;
+  var html = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:300px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 20px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">YOUR SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #3a2e18;margin-bottom:6px;"></div>';
+  var start = scroll;
+  var end = Math.min(scroll + visible, storedSecrets.length);
+  for (var i = start; i < end; i++) {
+    var s = storedSecrets[i];
+    var secStr = s.secret;
+    html += '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:left;padding:3px 4px;word-break:break-all;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
+  }
+  if (storedSecrets.length === 0) {
+    html += '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
+  }
+  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
+  pop.innerHTML = html;
+  activePopup = pop;
+}
+function refreshSecretsList() {
+  if (activePopup && activePopup._type === 'view-secrets') {
+    refreshSecretsListContent(activePopup);
+  }
+}
+
+function showTrunkPopup() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  var pop = document.createElement('div');
+  pop._type = 'trunk';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  showTrunkPopupContent(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function showTrunkPopupContent(pop) {
+  var scoreLine = 'Score: ' + currentScore;
+  var hasScore = currentScore > 0;
+  var hasSecrets = storedSecrets.length > 0;
+  var body;
+  if (hasScore) {
+    body = '<div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">Submit this score for a Buzz secret?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> submit <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div>';
+    pop._action = 'submit';
+  } else if (hasSecrets) {
+    body = '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">Secrets in trunk: ' + storedSecrets.length + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">View your saved Buzz secrets?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> view <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    pop._action = 'view-secrets';
+  } else {
+    body = '<div style="font-family:monospace;font-size:13px;color:#7a6a4a;text-align:center;padding:8px 0;">No score to submit. Try some games or puzzles.</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    pop._action = 'none';
+  }
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">~ Trunk ~</div>' + body + '</div></div>';
+  pop._type = 'trunk';
+}
+
+function isWalkable(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return false;
+  var v = collisionMap[ty][tx];
+  return v === 1 || v === 5;
+}
+
+function findNearestWalkable(gx, gy) {
+  var tx = Math.floor((gx + 16) / TILE);
+  var ty = Math.floor((gy + 14) / TILE);
+  for (var r = 0; r < 200; r++) {
+    for (var dy = -r; dy <= r; dy++) {
+      for (var dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        var nx = tx + dx, ny = ty + dy;
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        var v = collisionMap[ny][nx];
+        if (v === 1) {
+          return { x: nx * TILE + 4 - 16, y: ny * TILE + 4 - 14 };
+        }
+      }
+    }
+  }
+  return { x: gx, y: gy };
+}
+
+var worldBg = document.getElementById('worldBg');
+worldBg.style.width = WORLD_W + 'px';
+worldBg.style.height = WORLD_H + 'px';
+
+var imgCache = {};
+function preload(name, url) {
+  var img = new Image();
+  img.src = url;
+  imgCache[name] = img;
+}
+for (var r = 0; r < 4; r++) {
+  for (var c = 0; c < 3; c++)
+    preload('cultist_' + c + '_' + r, ASSETS + '/sprites/cultist_' + c + '_' + r + '.png');
+  for (var c = 0; c < 9; c++)
+    preload('wizard_' + c + '_' + r, ASSETS + '/sprites/wizard_' + c + '_' + r + '.png');
+  for (var s = 0; s < 28; s++)
+    preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
+}
+preload('rowboat', BOAT_SHEET);
+preload('boat_left', ASSETS + '/sprites/boat_left.png');
+preload('boat_right', ASSETS + '/sprites/boat_right.png');
+preload('boat_down', ASSETS + '/sprites/boat_down.png');
+preload('boat_up', ASSETS + '/sprites/boat_up.png');
+
+var viewport = document.getElementById('viewport');
+var layer = document.getElementById('gameLayer');
+
+var elP = document.createElement('div');
+elP.className = 'sprite';
+elP.style.zIndex = '5';
+layer.appendChild(elP);
+
+// --- Bava NPC: stationary with random spell animations ---
+var npcEl = document.createElement('div');
+npcEl.className = 'sprite';
+npcEl.style.zIndex = '4';
+layer.appendChild(npcEl);
+
+// --- Ferry boat ---
+boatEl = document.createElement('div');
+boatEl.style.cssText = 'position:absolute;width:' + BOAT_FRAME_W + 'px;height:' + BOAT_FRAME_H + 'px;background-image:url(' + BOAT_SHEET + ');background-size:' + BOAT_SPRITESHEET_W + 'px ' + BOAT_SPRITESHEET_H + 'px;background-position:-' + BOAT_SOUTH_X + 'px -' + BOAT_SOUTH_Y + 'px;background-repeat:no-repeat;image-rendering:pixelated;pointer-events:none;';
+boatEl.style.zIndex = '3';
+boatEl.style.display = 'none';
+layer.appendChild(boatEl);
+
+var npx = 0, npy = 0;
+var npcTileX = 0, npcTileY = 0;
+var npcSpellFrame = 0;
+var npcSpellTimer = 0;
+var NPC_SPELL_FRAMES = 28;
+function npcInit() {
+  // Permanent spot: tile (16, 170)
+  npcTileX = 16; npcTileY = 170;
+  npx = npcTileX * 8 - 12;
+  npy = npcTileY * 8 - 10;
+}
+
+function updateNPC() {
+  if (gamePaused) return;
+  npcSpellTimer--;
+  if (npcSpellTimer <= 0) {
+    npcSpellFrame = Math.floor(Math.random() * NPC_SPELL_FRAMES);
+    npcSpellTimer = 12; // ~0.5 seconds at 40ms per tick
+  }
+}
+
+var lastNpcSpriteBg = '';
+function renderNPC() {
+  var scrEl = document.querySelector('.screen');
+  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+
+  var newBg = 'url(' + ASSETS + '/sprites/wizard_spell_' + npcSpellFrame + '.png)';
+  npcEl.style.transform = 'translate(' + Math.round(npx - camX) + 'px, ' + Math.round(npy - camY) + 'px)';
+  if (newBg !== lastNpcSpriteBg) {
+    var img = imgCache['wizard_spell_' + npcSpellFrame];
+    if (img && img.complete && img.naturalWidth > 0) {
+      npcEl.style.backgroundImage = newBg;
+      lastNpcSpriteBg = newBg;
+    }
+  }
+}
+
+function initBoat() {
+  if (!boatTerminalCenter) {
+    boatEl.style.display = 'none';
+    return;
+  }
+  boatEl.style.display = 'block';
+  boatX = boatTerminalCenter.tx * BOAT_TILE_SIZE + BOAT_TILE_SIZE/2 - BOAT_FRAME_W/2;
+  boatY = boatTerminalCenter.ty * BOAT_TILE_SIZE + BOAT_TILE_SIZE/2 - BOAT_FRAME_H/2;
+}
+
+function renderBoat() {
+  if (!boatEl || boatEl.style.display === 'none') return;
+  var scrEl = document.querySelector('.screen');
+  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  var tx = Math.round(boatX - camX);
+  var ty = Math.round(boatY - camY);
+  var imgName = 'boat_left.png';
+  if (isRiding) {
+    if (pDir === 0) { imgName = 'boat_down.png'; }
+    else if (pDir === 1) { imgName = 'boat_left.png'; }
+    else if (pDir === 2) { imgName = 'boat_right.png'; }
+    else if (pDir === 3) { imgName = 'boat_up.png'; }
+  }
+  var ds = Math.max(BOAT_LR_W, BOAT_LR_H, BOAT_UP_W, BOAT_UP_H) / 2;
+  boatEl.style.width = ds + 'px';
+  boatEl.style.height = ds + 'px';
+  boatEl.style.backgroundImage = 'url(' + ASSETS + '/sprites/' + imgName + ')';
+  boatEl.style.backgroundSize = 'contain';
+  boatEl.style.backgroundPosition = 'center';
+  boatEl.style.backgroundRepeat = 'no-repeat';
+  boatEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+}
+
+var sparkles = [];
+var sparkleSizes = [8,6,9,7,8,10,6,7];
+var sparkleRadii = [16,22,14,20,18,12,24,15];
+var sparklePhases = [0,2.1,4.2,1.0,3.0,5.1,0.5,3.8];
+var sparkleSpeeds = [1,1.2,0.8,1.3,0.9,0.7,1.4,1.1];
+var sparkleHues = [0,45,90,135,180,225,270,315];
+(function() {
+  for (var i = 0; i < 8; i++) {
+    var dot = document.createElement('div');
+    dot.className = 'sparkle';
+    dot.style.cssText = 'position:absolute;width:' + sparkleSizes[i] + 'px;height:' + sparkleSizes[i] + 'px;border-radius:50%;opacity:0;';
+    layer.appendChild(dot);
+    sparkles.push(dot);
+  }
+})();
+
+var STEP = 5;
+var px = 144, py = 194, pDir = 0, pMoving = false, pWalk = 0;
+var nearTrigger = null;
+var doorDismissed = false;
+var lastNearDoorKey = null;
+var lastSpriteBg = '';
+var navPaused = false;
+var navPauseTick = 0;
+
+function navigatePopup(dir, fromDpad) {
+  if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'bava')) {
+    if (activePopup._type === 'secrets') {
+      var newSel = activePopup._selected;
+      if (dir === 'up') newSel = 0;
+      else if (dir === 'down') newSel = (currentScore > 0) ? 1 : 0;
+      if (newSel !== activePopup._selected) {
+        refreshSecretsMenuContent(activePopup, newSel);
+      }
+    }
+    if (activePopup._type === 'view-secrets') {
+      if (dir === 'up' && activePopup._scroll > 0) {
+        activePopup._scroll--;
+        secretsScroll = activePopup._scroll;
+        refreshSecretsListContent(activePopup);
+      } else if (dir === 'down' && activePopup._scroll < storedSecrets.length - 6) {
+        activePopup._scroll++;
+        secretsScroll = activePopup._scroll;
+        refreshSecretsListContent(activePopup);
+      }
+    }
+    if (activePopup._type === 'bava' && activePopup._showing === 'menu') {
+      var items = getBavaItems(activePopup._path);
+      var newIdx = activePopup._selected;
+      if (dir === 'up') newIdx = (newIdx - 1 + items.length) % items.length;
+      else if (dir === 'down') newIdx = (newIdx + 1) % items.length;
+      if (newIdx !== activePopup._selected) {
+        activePopup._selected = newIdx;
+        renderBavaPopup(activePopup);
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+    return;
+  }
+  if (e.key.startsWith('Arrow')) {
+    e.preventDefault();
+    var dir = e.key.slice(5).toLowerCase();
+    var btn = document.querySelector('.dpad-btn.dpad-' + dir);
+    if (btn) { btn.classList.add('active'); }
+    if (!navigatePopup(dir, false)) dpadState[dir] = true;
+  }
+  if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
+  if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
+  if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; } else if (activePopup && activePopup._type === 'bava') { if (activePopup._path.length === 0) { closePopup(); } else { activePopup._path.pop(); activePopup._showing = 'menu'; activePopup._selected = 0; delete activePopup._sentences; delete activePopup._sentenceStep; renderBavaPopup(activePopup); } } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
+  if (e.key === 'd' || e.key === 'D') debugCollision();
+  if (e.key === 'r' || e.key === 'R' || e.key === 'F5') { reloadCollisionData(); console.log('MAP RELOAD: triggered by key'); }
+});
+
+function debugCollision() {
+  var tx = Math.floor((px + 16) / TILE);
+  var ty = Math.floor((py + 14) / TILE);
+  console.log('DEBUG: pos=(' + px + ',' + py + ') tile=(' + tx + ',' + ty + ') val=' + collisionMap[ty][tx] + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null') + ' nearDoor=' + (nearDoor ? nearDoor.key + ' label=' + (doorLabels[nearDoor.key] || 'none') : 'null') + ' nearTrigger msg=' + (nearTrigger ? triggerMessages[nearTrigger.key] : 'null') + ' doorLabels keys=' + Object.keys(doorLabels).join(','));
+}
+
+function activateZ() {
+  var btnZ = document.getElementById('btnZ');
+  if (btnZ) btnZ.textContent = '!';
+  var msg = '';
+  if (activePopup && activePopup._type === 'secrets') {
+    var sel = activePopup._selected;
+    if (sel === 0) { closePopup(); activeMenu = 'view-secrets'; showSecretsList(); }
+    else {
+      if (currentScore === 0) { showPopup('No new score to submit.'); }
+      else {
+        isGenerating = true; activeMenu = 'loading';
+        window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
+        closePopup();
+        var pop = document.createElement('div');
+        pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+        pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+        (document.querySelector('.screen') || document.body).appendChild(pop);
+        activePopup = pop;
+      }
+    }
+    msg = 'menu action';
+  } else if (activePopup && activePopup._type === 'view-secrets') {
+    window.parent.postMessage({ type: 'hyvmind-copy-secrets', secrets: storedSecrets }, '*');
+    showPopup('Secrets copied!');
+    activeMenu = null;
+    msg = 'copy secrets';
+  } else if (activePopup && activePopup._type === 'input') {
+    submitInput();
+    msg = 'input submitted';
+  } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
+    var nextStep = activePopup._step + 1;
+    if (nextStep >= activePopup._sentences.length) {
+      msg = activePopup._type + '-end';
+    } else {
+      activePopup._step = nextStep;
+      renderSequentialPopup(activePopup, nextStep, activePopup._sentences);
+      msg = activePopup._type + '-' + nextStep;
+    }
+  } else if (activePopup && activePopup._type === 'door') {
+    var label = activePopup._label;
+    closePopup();
+    if (label) {
+      window.parent.postMessage({ type: 'hyvmind-nav', target: label }, '*');
+      navPaused = true;
+      navPauseTick = 0;
+      msg = 'nav:' + label;
+    } else {
+      showDefaultPopup();
+      msg = 'unlabeled door';
+    }
+  } else if (nearTrigger && boatTriggerKeys[nearTrigger.key]) {
+    if (isRiding && activePopup && activePopup._type === 'boat-disembark') {
+      // Z confirmed disembark
+      closePopup();
+      isRiding = false;
+      var landing = findNearestWalkable(px, py);
+      px = landing.x;
+      py = landing.y;
+      msg = 'disembark';
+    } else if (isRiding && !(activePopup && activePopup._type === 'boat-board')) {
+      // Show disembark prompt
+      if (activePopup) activePopup.remove();
+      var pop = document.createElement('div');
+      pop._type = 'boat-disembark';
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Disembark? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      (document.querySelector('.screen') || document.body).appendChild(pop);
+      activePopup = pop;
+      msg = 'disembark-prompt';
+    } else if (!isRiding && activePopup && activePopup._type === 'boat-board') {
+      // Z confirmed boarding
+      closePopup();
+      isRiding = true;
+      px = boatX + Math.floor(BOAT_FRAME_W/2) - 16;
+      py = boatY + Math.floor(BOAT_FRAME_H/2) - 50;
+      msg = 'board';
+    } else if (!isRiding) {
+      // Show boarding prompt
+      if (activePopup) activePopup.remove();
+      var pop = document.createElement('div');
+      pop._type = 'boat-board';
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Board the ferry? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      (document.querySelector('.screen') || document.body).appendChild(pop);
+      activePopup = pop;
+      msg = 'boat-board-prompt';
+    }
+  } else if (activePopup && activePopup._type === 'trunk') {
+    if (activePopup._action === 'submit') {
+      isGenerating = true;
+      window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
+      closePopup();
+      var pop = document.createElement('div');
+      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+      (document.querySelector('.screen') || document.body).appendChild(pop);
+      activePopup = pop;
+      msg = 'trunk-submit';
+    } else if (activePopup._action === 'view-secrets') {
+      closePopup();
+      activeMenu = 'view-secrets';
+      showSecretsList();
+      msg = 'trunk-view-secrets';
+    } else {
+      msg = 'trunk-noop';
+    }
+  } else if (activePopup && activePopup._type === 'bava') {
+    if (activePopup._showing === 'menu') {
+      var items = getBavaItems(activePopup._path);
+      var sel = activePopup._selected;
+      if (sel >= 0 && sel < items.length) {
+        activePopup._path.push(sel);
+        activePopup._showing = 'response';
+        delete activePopup._sentences;
+        delete activePopup._sentenceStep;
+        renderBavaPopup(activePopup);
+        msg = 'bava-select';
+      }
+    } else {
+      if (activePopup._sentences && activePopup._sentenceStep < activePopup._sentences.length - 1) {
+        activePopup._sentenceStep++;
+        renderBavaPopup(activePopup);
+        msg = 'bava-sentence';
+      } else {
+        var node = getBavaNode(activePopup._path);
+        if (node && node.children && node.children.length > 0) {
+          activePopup._showing = 'menu';
+          activePopup._selected = 0;
+          renderBavaPopup(activePopup);
+          msg = 'bava-children';
+        } else {
+          msg = 'bava-end';
+        }
+      }
+    }
+  } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
+    if (Date.now() - (popupDismissedAt['msg:' + triggerMessages[nearTrigger.key]] || 0) < 5000) { showDefaultPopup(); msg = 'cooldown'; }
+    else if (triggerMessages[nearTrigger.key] === 'Bava Dialog') {
+      showBavaDialog();
+      msg = 'bava-dialog';
+    } else if (triggerMessages[nearTrigger.key] === 'maps') {
+      closePopup();
+      window.parent.postMessage({ type: 'hyvmind-nav', target: 'maps' }, '*');
+      navPaused = true;
+      navPauseTick = 0;
+      msg = 'nav:maps';
+    } else if (triggerMessages[nearTrigger.key] === 'trunk' || triggerMessages[nearTrigger.key] === '>>trunk') {
+      showTrunkPopup();
+      msg = 'trunk-dialog';
+    } else if (storedSecrets.length > 0 && triggerMessages[nearTrigger.key].indexOf('>>') === 0) {
+      showSecretsMenu();
+      activeMenu = 'secrets';
+    } else {
+      var seqSentences = null;
+      for (var si = 0; si < SEQUENTIAL_AREAS.length; si++) {
+        var a = SEQUENTIAL_AREAS[si];
+        if (nearTrigger.tx >= a.x1 && nearTrigger.tx <= a.x2 && nearTrigger.ty >= a.y1 && nearTrigger.ty <= a.y2) {
+          seqSentences = a.sentences;
+          break;
+        }
+      }
+      if (seqSentences) {
+        showSequentialPopup(seqSentences, 'welcome', 'msg:' + triggerMessages[nearTrigger.key]);
+      } else {
+        var parts = triggerMessages[nearTrigger.key].split('\n');
+        if (parts.length < 2) {
+          parts = triggerMessages[nearTrigger.key].split(/\. +/);
+          if (parts.length > 1) {
+            for (var pi = 0; pi < parts.length - 1; pi++) parts[pi] = parts[pi].trim() + '.';
+            parts[parts.length - 1] = parts[parts.length - 1].trim();
+          }
+        }
+        if (parts.length > 1) {
+          showSequentialPopup(parts, 'welcome', 'msg:' + triggerMessages[nearTrigger.key]);
+        } else {
+          showPopup(triggerMessages[nearTrigger.key]);
+        }
+      }
+    }
+    msg = 'trigger:' + triggerMessages[nearTrigger.key];
+  } else {
+    showDefaultPopup();
+    msg = 'nothing';
+  }
+  console.log('Z PRESSED: ' + msg);
+  if (btnZ) setTimeout(function() { btnZ.textContent = 'Z'; }, 500);
+}
+
+function render() {
+  var scrEl = document.querySelector('.screen');
+  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+
+  worldBg.style.left = (-camX) + 'px';
+  worldBg.style.top = (-camY) + 'px';
+
+  var pc = pMoving ? (Math.floor(pWalk / 2) % 2) : 2;
+  var pTileX = Math.floor((px + 16) / TILE);
+  var pTileY = Math.floor((py + 14) / TILE);
+  var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
+  elP.style.transform = 'translate(' + Math.round(px - camX) + 'px, ' + Math.round(py - camY) + 'px)';
+  var newBg = frm(pc, dirMap[pDir]);
+  if (newBg !== lastSpriteBg) {
+    var spriteName = 'cultist_' + pc + '_' + dirMap[pDir];
+    var img = imgCache[spriteName];
+    if (img && img.complete && img.naturalWidth > 0) {
+      elP.style.backgroundImage = newBg;
+      lastSpriteBg = newBg;
+    }
+  }
+  elP.style.opacity = isUnderObject ? '0.4' : '1';
+
+  var t = Date.now() / 300;
+  for (var s = 0; s < sparkles.length; s++) {
+    if ((nearTrigger && triggerMessages[nearTrigger.key]) || nearDoor) {
+      var angle = t * sparkleSpeeds[s] + sparklePhases[s];
+      var hue = (sparkleHues[s] + t * 40) % 360;
+      sparkles[s].style.left = (px - camX + 16 + Math.cos(angle) * sparkleRadii[s]) + 'px';
+      sparkles[s].style.top = (py - camY + 16 + Math.sin(angle) * sparkleRadii[s]) + 'px';
+      sparkles[s].style.background = 'hsl(' + hue + ', 100%, 70%)';
+      sparkles[s].style.boxShadow = '0 0 ' + (sparkleSizes[s] + 4) + 'px hsl(' + hue + ', 100%, 55%)';
+      sparkles[s].style.opacity = 0.7 + 0.3 * Math.sin(angle * 2.5);
+    } else {
+      sparkles[s].style.opacity = 0;
+    }
+  }
+  // Auto-show door confirmation popup when near a labeled door
+  var doorLabel = nearDoor && doorLabels[nearDoor.key];
+  if (nearDoor) {
+    if (lastNearDoorKey !== nearDoor.key) { doorDismissed = false; lastNearDoorKey = nearDoor.key; }
+  } else {
+    lastNearDoorKey = null;
+  }
+  if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
+    // keep popup visible
+  } else if (nearDoor && !doorDismissed && Date.now() - (popupDismissedAt['door:' + (doorLabel || 'unlabeled')] || 0) > 5000) {
+    showDoorPopup(doorLabel);
+  } else {
+    closeDoorPopup();
+  }
+}
+
+document.addEventListener('keyup', function(e) {
+  if (e.key.startsWith('Arrow')) {
+    var dir = e.key.slice(5).toLowerCase();
+    var btn = document.querySelector('.dpad-btn.dpad-' + dir);
+    if (btn) { btn.classList.remove('active'); dpadState[dir] = false; }
+  }
+});
+
+var dpadState = {};
+document.querySelectorAll('.dpad-btn').forEach(function(btn) {
+  function start(e) { e.preventDefault(); btn.classList.add('active'); if (!navigatePopup(btn.dataset.dir, true)) dpadState[btn.dataset.dir] = true; }
+  function end(e) { e.preventDefault(); btn.classList.remove('active'); dpadState[btn.dataset.dir] = false; }
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('mouseup', end);
+  btn.addEventListener('mouseleave', end);
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('touchend', end, { passive: false });
+  btn.addEventListener('touchcancel', end, { passive: false });
+});
+
+document.getElementById('btnZ').addEventListener('click', function() {
+  this.classList.add('active');
+  activateZ();
+  setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
+});
+document.getElementById('btnX').addEventListener('click', function() {
+  this.classList.add('active');
+  if (activePopup && activePopup._type === 'door') doorDismissed = true;
+  if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; }
+  else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); }
+  else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; }
+  else { closePopup(); }
+  setTimeout(function() { this.classList.remove('active'); }.bind(this), 150);
+});
+
+document.getElementById('backBtn').addEventListener('click', function() {
+  window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+});
+
+// Screen size toggle
+var zoomValues = [1, 1.25, 1.5];
+var zoomLabels = ['100%', '125%', '150%'];
+var zoomIdx = 0;
+var layoutEl = document.querySelector('.layout');
+// Restore persisted zoom
+var savedZoom = localStorage.getItem('hyvmind-zoom');
+if (savedZoom !== null) {
+  var idx = zoomValues.indexOf(parseFloat(savedZoom));
+  if (idx >= 0) {
+    zoomIdx = idx;
+    layoutEl.style.transform = 'scale(' + savedZoom + ')';
+    document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+  }
+}
+document.getElementById('screenSizeBtn').addEventListener('click', function() {
+  zoomIdx = (zoomIdx + 1) % zoomValues.length;
+  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
+  var val = zoomValues[zoomIdx];
+  layoutEl.style.transform = 'scale(' + val + ')';
+  localStorage.setItem('hyvmind-zoom', val);
+  window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
+});
+// Listen for zoom changes from terrain world
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'hyvmind-set-zoom') {
+    var val = e.data.zoom;
+    var idx = zoomValues.indexOf(parseFloat(val));
+    if (idx >= 0) {
+      zoomIdx = idx;
+      layoutEl.style.transform = 'scale(' + val + ')';
+      document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+    }
+  }
+});
+
+var tick = 0;
+function loop() {
+  if (navPaused) {
+    render(); renderNPC(); renderBoat();
+    navPauseTick++;
+    if (navPauseTick > 40) { navPaused = false; console.log('navPaused fallback timeout'); }
+    return;
+  }
+  if (gamePaused) { render(); renderNPC(); renderBoat(); return; }
+  tick++;
+  if (isRiding) {
+    // Player drives the boat with dpad; sync player direction
+    var bdx = 0, bdy = 0;
+    if (dpadState['left']) { bdx = -BOAT_STEP; pDir = 1; }
+    else if (dpadState['right']) { bdx = BOAT_STEP; pDir = 2; }
+    else if (dpadState['up']) { bdy = -BOAT_STEP; pDir = 3; }
+    else if (dpadState['down']) { bdy = BOAT_STEP; pDir = 0; }
+    if (bdx !== 0 || bdy !== 0) {
+      var nbx = boatX + bdx, nby = boatY + bdy;
+      // Check if the tile at the boat's center is blocked
+      var centerIsBlocked = function(gx, gy) {
+        var tx2 = Math.floor((gx + BOAT_FRAME_W/2) / TILE);
+        var ty2 = Math.floor((gy + BOAT_FRAME_H/2) / TILE);
+        if (tx2 < 0 || tx2 >= COLS || ty2 < 0 || ty2 >= ROWS) return true;
+        var k = tx2+','+ty2;
+        if (collisionMap[ty2][tx2] === 1) {
+          return !(boatTriggerKeys[k] && (triggerMessages[k] === 'boat terminal 1' || triggerMessages[k] === 'boat terminal 2'));
+        }
+        if (boatBlockedTiles[k]) return true;
+        return false;
+      };
+      if (bdx !== 0) {
+        var nbx = boatX + bdx;
+        if (!centerIsBlocked(nbx, boatY)) boatX = nbx;
+      }
+      if (bdy !== 0) {
+        var nby = boatY + bdy;
+        if (!centerIsBlocked(boatX, nby)) boatY = nby;
+      }
+    }
+    boatX = Math.max(0, Math.min(WORLD_W - BOAT_FRAME_W, boatX));
+    boatY = Math.max(0, Math.min(WORLD_H - BOAT_FRAME_H, boatY));
+    px = boatX + Math.floor(BOAT_FRAME_W/2) - 16;
+    py = boatY + Math.floor(BOAT_FRAME_H/2) - 35;
+  } else {
+    var dx = 0, dy = 0;
+    if (dpadState['left']) { dx = -STEP; pDir = 1; }
+    else if (dpadState['right']) { dx = STEP; pDir = 2; }
+    else if (dpadState['up']) { dy = -STEP; pDir = 3; }
+    else if (dpadState['down']) { dy = STEP; pDir = 0; }
+    if (dx !== 0 || dy !== 0) {
+      var nx = px + dx, ny = py + dy;
+      var wizBlock = function(gx, gy) {
+        var tx = Math.floor((gx + 16) / TILE);
+        var ty = Math.floor((gy + 14) / TILE);
+        return (tx === npcTileX && ty === npcTileY);
+      };
+      if (dx !== 0 && isWalkable(nx, py) && !wizBlock(nx, py)) px = nx;
+      if (dy !== 0 && isWalkable(px, ny) && !wizBlock(px, ny)) py = ny;
+      pMoving = true;
+      if (tick % 2 === 0) pWalk++;
+    } else { pMoving = false; pWalk = 0; }
+    px = Math.max(0, Math.min(WORLD_W - 32, px));
+    py = Math.max(0, Math.min(WORLD_H - 32, py));
+  }
+  checkNearbyTriggers(px, py);
+  updateNPC();
+  render();
+  renderNPC();
+  renderBoat();
+}
+
+var bgm = document.getElementById('bgm');
+var bgmStarted = false;
+function startBGM() {
+  if (bgmStarted) return;
+  bgmStarted = true;
+  bgm.volume = 0.35;
+  bgm.play().catch(function(){});
+  document.removeEventListener('keydown', startBGM);
+  document.removeEventListener('click', startBGM);
+  document.removeEventListener('touchend', startBGM);
+}
+document.addEventListener('keydown', startBGM);
+document.addEventListener('click', startBGM);
+document.addEventListener('touchend', startBGM);
+
+initCollision(function() {
+  loadTriggers(function() {
+    if (!isWalkable(px, py)) {
+      var n = findNearestWalkable(px, py);
+      px = n.x; py = n.y;
+      if (!isWalkable(px, py)) {
+        for (var yy = -16; yy <= 16; yy += 8)
+          for (var xx = -16; xx <= 16; xx += 8)
+            if (isWalkable(144 + xx, 194 + yy)) { px = 144 + xx; py = 194 + yy; yy = 999; break; }
+      }
+    }
+    npcInit();
+    initBoat();
+    render();
+    setTimeout(function() {
+      window.parent.postMessage({ type: 'hyvmind-loaded' }, '*');
+    }, 300);
+    setInterval(loop, 40);
+    requestAnimationFrame(function() { document.body.focus(); });
+    console.log('HYVMIND DEBUG: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length + ' boatTerminalCenter=' + (boatTerminalCenter ? boatTerminalCenter.tx+','+boatTerminalCenter.ty : 'none') + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null'));
+  });
+});
+
+// Reload collision data without page refresh
+function reloadCollisionData() {
+  var oldPx = px, oldPy = py;
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = COLS; c.height = ROWS;
+      var cx = c.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(img, 0, 0);
+      var data = cx.getImageData(0, 0, COLS, ROWS).data;
+      for (var y = 0; y < ROWS; y++)
+        for (var x = 0; x < COLS; x++) {
+          var idx = (y * COLS + x) * 4;
+          var r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+          if (a === 0) collisionMap[y][x] = 0;
+          else if (r > 150 && b > 150 && g < 150) collisionMap[y][x] = 4;
+          else if (g > 150 && b > 150 && r < 150) collisionMap[y][x] = 5;
+          else if (g > 150 && r < 150) collisionMap[y][x] = 1;
+          else if (b > 150 && r < 150 && g < 150) collisionMap[y][x] = 6;
+          else collisionMap[y][x] = 0;
+        }
+    } catch(e) { console.error('reloadCollision decode error:', e); }
+    // Build positions from refreshed collision map
+    triggerPositions = [];
+    doorPositions = [];
+    for (var y = 0; y < ROWS; y++)
+      for (var x = 0; x < COLS; x++) {
+        if (collisionMap[y][x] === 4) triggerPositions.push({tx: x, ty: y, key: x+','+y});
+        if (collisionMap[y][x] === 6) doorPositions.push({tx: x, ty: y, key: x+','+y});
+      }
+    fetch(ASSETS + '/triggers.json')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { triggerMessages = d || {}; })
+      .catch(function() { triggerMessages = {}; })
+      .then(function() {
+        return fetch(ASSETS + '/doors.json');
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        doorLabels = d || {};
+        scanBoatTriggers();
+        if (isRiding) { isRiding = false; }
+        initBoat();
+        px = oldPx; py = oldPy;
+        closePopup();
+        console.log('MAP RELOADED: triggers=' + triggerPositions.length + ' doors=' + doorPositions.length + ' triggerMessages=' + Object.keys(triggerMessages).length + ' doorLabels=' + Object.keys(doorLabels).length);
+      })
+      .catch(function(e) { console.error('MAP RELOAD FAILED:', e); });
+  };
+  img.onerror = function() { console.error('reloadCollision img load failed'); };
+  img.src = ASSETS + '/collision.png';
+}
+
+// Auto-poll for map changes every 3 seconds
+var lastMapSize = 0;
+function pollMapUpdate() {
+  fetch(ASSETS + '/collision.png?' + Date.now(), { method: 'HEAD' })
+    .then(function(r) {
+      var size = parseInt(r.headers.get('Content-Length')) || 0;
+      if (lastMapSize !== 0 && size !== 0 && size !== lastMapSize) {
+        console.log('MAP CHANGE DETECTED: size=' + size + ' (was ' + lastMapSize + '), reloading...');
+        reloadCollisionData();
+      }
+      if (size !== 0) lastMapSize = size;
+    })
+    .catch(function() {});
+}
+setInterval(pollMapUpdate, 3000);
+</script>
+</body>
+</html>

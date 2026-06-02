@@ -55,7 +55,7 @@ import {
   getBaseTheme,
   getVariant,
 } from "../lib/themes";
-import type { TrustTransactionDetail } from "../types/trustExtensions";
+import type { TrustTransaction } from "../types/trustExtensions";
 import { CreateBuzzModal } from "./CreateBuzzModal";
 
 export function SettingsView() {
@@ -722,7 +722,7 @@ export function SettingsView() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {trustTransactions.map((tx: TrustTransactionDetail) => {
+                        {trustTransactions.map((tx: TrustTransaction) => {
                           const txKey = `${String(tx.saver)}-${String(tx.savedAt)}`;
                           const isExpanded = expandedTxs.has(txKey);
                           const toggle = () => {

@@ -40,6 +40,22 @@ export interface ContentVersion {
   'timestamp' : Time,
   'contributor' : Principal,
 }
+export interface ContributionView {
+  'id' : string,
+  'buzzAmount' : bigint,
+  'nodeId' : NodeId,
+  'description' : string,
+  'payer' : Principal,
+  'alreadyCredited' : boolean,
+}
+export interface CreditedContribution {
+  'buzzAmount' : bigint,
+  'contributionId' : string,
+  'description' : string,
+  'earned' : bigint,
+  'payer' : Principal,
+  'saveCount' : bigint,
+}
 export interface Curation {
   'id' : NodeId,
   'creator' : Principal,
@@ -188,13 +204,18 @@ export interface PublishedSourceGraphMeta {
   'attributeCount' : bigint,
   'creatorName' : string,
   'edgeCount' : bigint,
+  'authors' : Array<string>,
   'sourcesCount' : [] | [bigint],
   'artworkDataUrl' : [] | [string],
   'hierarchyEdgeCount' : bigint,
   'nodeCount' : bigint,
   'terrainParams' : [] | [string],
-  'authors' : Array<string>,
 }
+export type SaveResult = {
+    'ok' : { 'contributions' : Array<CreditedContribution> }
+  } |
+  { 'err' : string } |
+  { 'noNewTrust' : { 'reason' : string } };
 export interface SourceGraphEdgeInput {
   'sourceName' : string,
   'bidirectional' : boolean,
@@ -229,34 +250,15 @@ export type Tag = string;
 export type Time = bigint;
 export interface Timestamps { 'createdAt' : Time }
 export type TrustScore = bigint;
-export interface TrustTransactionDetail {
+export interface TrustTransaction {
+  'contributionDetails' : Array<CreditedContribution>,
   'totalBuzzCost' : bigint,
   'saver' : Principal,
   'earned' : bigint,
   'savedAt' : bigint,
   'saveNumber' : bigint,
   'contributionIds' : Array<string>,
-  'contributionDetails' : Array<CreditedContribution>,
 }
-export interface CreditedContribution {
-  'contributionId' : string,
-  'description' : string,
-  'payer' : Principal,
-  'buzzAmount' : bigint,
-  'earned' : bigint,
-  'saveCount' : bigint,
-}
-export interface ContributionView {
-  'id' : string,
-  'nodeId' : NodeId,
-  'description' : string,
-  'payer' : Principal,
-  'buzzAmount' : bigint,
-  'alreadyCredited' : boolean,
-}
-export type SaveResult = { 'ok' : { 'contributions' : Array<CreditedContribution> } } |
-  { 'noNewTrust' : { 'reason' : string } } |
-  { 'err' : string };
 export interface UserProfile { 'name' : string, 'socialUrl' : [] | [string] }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -288,6 +290,7 @@ export interface _SERVICE {
     [string, Array<Tag>, NodeId, Array<WeightedAttribute>],
     NodeId
   >,
+  'ensureContributionsMigrated' : ActorMethod<[string], undefined>,
   'generateApiKey' : ActorMethod<[], string>,
   'generateBuzzSecret' : ActorMethod<[bigint], string>,
   'generateInviteCodes' : ActorMethod<[bigint, bigint], Array<string>>,
@@ -301,6 +304,7 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getChannels' : ActorMethod<[], Array<ChatChannelSummary>>,
+  'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
   'getMessages' : ActorMethod<
     [string],
     { 'ok' : Array<ChatMessage> } |
@@ -310,7 +314,7 @@ export interface _SERVICE {
   'getMyBuzzBalance' : ActorMethod<[], BuzzScore>,
   'getMyPrincipal' : ActorMethod<[], Principal>,
   'getMyTrustBalance' : ActorMethod<[], TrustScore>,
-  'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransactionDetail>>,
+  'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransaction>>,
   'getNotesData' : ActorMethod<[], [] | [string]>,
   'getPendingPluginBindings' : ActorMethod<[], Array<Principal>>,
   'getPluginBindingStatus' : ActorMethod<[], boolean>,
@@ -349,9 +353,7 @@ export interface _SERVICE {
   'revokeApiKey' : ActorMethod<[], undefined>,
   'revokePluginBinding' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'savePublishedGraph' : ActorMethod<[string, Array<string>], SaveResult>,
-  'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
-  'ensureContributionsMigrated' : ActorMethod<[string], undefined>,
+  'savePublishedGraph' : ActorMethod<[string, Array<NodeId>], SaveResult>,
   'sendMessage' : ActorMethod<
     [string, string],
     { 'ok' : null } |

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TERRAIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; }
+  body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
+  body:focus { outline: none; }
+  .layout { display: flex; flex-direction: column; align-items: center; }
+  .layout-row { display: flex; align-items: center; gap: 24px; }
+  .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
+  .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666; }
+  .dpad-btn:active,.dpad-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+  .dpad-up { top:0; left:49px; } .dpad-down { bottom:0; left:49px; }
+  .dpad-left { left:0; top:52px; } .dpad-right { right:0; top:52px; }
+  .action-buttons { display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:144px;height:150px;padding-top:24px; }
+  .action-row { display:flex;flex-direction:row;gap:16px; }
+  .action-btn { width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.5);border:none;color:#000;font-family:'Press Start 2P',monospace;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+   .action-btn:active,.action-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+   .zoom-row { display:flex;flex-direction:row;gap:6px;width:100%;margin-top:25px; }
+   .screen-size-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;width:100%;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+   .screen-size-btn:active,.screen-size-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+   .dpad-btn::after,.action-btn::after,.screen-size-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
+  .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
+  .viewport { position:absolute;inset:0;overflow:hidden; }
+  .world-layer { display:block;image-rendering:pixelated;position:absolute;top:0;left:0; }
+  .game-layer { position:absolute;inset:0;z-index:1; }
+  .sprite { position:absolute;left:0;top:0;width:32px;height:36px;background-size:32px 36px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat;z-index:5;will-change:transform; }
+    #minimap { position:absolute;top:4px;left:4px;z-index:10;pointer-events:none;image-rendering:pixelated;border:1px solid rgba(255,255,255,0.15);border-radius:2px; }
+</style>
+</head>
+<body tabindex="-1">
+<div id="gameContainer" style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%">
+  <div class="layout" id="gameLayout">
+    <div class="layout-row">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
+        <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
+        <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
+        <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+      </div>
+      <div class="screen">
+        <div class="viewport" id="viewport">
+          <img id="worldBg" class="world-layer" src="" style="display:none">
+          <div id="gameLayer" class="game-layer"></div>
+        </div>
+        <canvas id="minimap" width="80" height="80"></canvas>
+      </div>
+      <div class="action-buttons">
+        <div class="action-row">
+          <button class="action-btn" id="btnZ">Z</button>
+          <button class="action-btn" id="btnX">X</button>
+        </div>
+        <div class="zoom-row">
+          <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+        </div>
+      </div>
+    </div>
+    <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+  </div>
+</div>
+<audio id="bgm" src="/assets/hyvmind/which_brand_of_mustard_shall_i_buy.mp3" loop preload="auto"></audio>
+<script>
+var ASSETS = '/assets/hyvmind';
+var LPC_PATH = '/assets/lpc/terrain-map-v7.png';
+var LPC_TSX_PATH = '/assets/lpc/terrain-map-v7.tsx';
+var TILE = 32;
+var GRID_W = 100;
+var GRID_H = 100;
+var COLS = GRID_W;
+var ROWS = GRID_H;
+var WORLD_W = COLS * TILE;
+var WORLD_H = ROWS * TILE;
+var SCREEN_W = 550;
+var SCREEN_H = 480;
+
+// Baobab trees — individual species files, native pixel sizes
+var BAOBAB_BASE = '/assets/lpc/baobab/lpc-baobab/';
+
+// Baobab trees for all biomes
+var BAOBAB_TREES = [
+  {sheet:'b0', file:'full/a_digitata.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'b1', file:'full/a_grandideri.png', sx:0, sy:0, w:3, h:5},
+  {sheet:'b2', file:'full/a_gregorii.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'b3', file:'full/a_rubrostipa.png', sx:0, sy:0, w:4, h:4},
+  {sheet:'b4', file:'full/a_suarazensis.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'b5', file:'full/a_za.png', sx:0, sy:0, w:3, h:5},
+  {sheet:'b6', file:'full/adansonia_spp.png', sx:0, sy:0, w:3, h:4},
+];
+
+// Leafless baobabs for isolated trees
+var BAOBAB_BARE_TREES = [
+  {sheet:'n0', file:'noleaves/a_digitata.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'n1', file:'noleaves/a_grandideri.png', sx:0, sy:0, w:3, h:5},
+  {sheet:'n2', file:'noleaves/a_gregorii.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'n3', file:'noleaves/a_rubrostipa.png', sx:0, sy:0, w:4, h:4},
+  {sheet:'n4', file:'noleaves/a_suarazensis.png', sx:0, sy:0, w:3, h:4},
+  {sheet:'n5', file:'noleaves/a_za.png', sx:0, sy:0, w:3, h:5},
+  {sheet:'n6', file:'noleaves/adansonia_spp.png', sx:0, sy:0, w:3, h:4},
+];
+
+// ── Terrain type IDs from LPC terrain-map-v7 ──
+var T = {
+  DIRT_BROWN: 0, DIRT_DARK: 1, DIRT_ROOTS: 2, DIRT_TAN: 3,
+  EARTH_CRACKED: 4, GRASS: 5, GRASS_DARK: 6, GRASS_DEAD: 7,
+  GRASS_LIGHT: 8, GRAVEL: 9, HOLE_BLACK: 10, HOLE_BROWN: 11,
+  ICE: 12, ICE_MELTING: 13, LAVA: 14, MUD_BROWN: 15,
+  MUDSTONE_BROWN: 16, MUDSTONE_GRAY: 17, ROCK_BLACK: 18,
+  ROCK_DARK: 19, ROCK_GRAY: 20, ROCK_WHITE: 21, SAND: 22,
+  SNOW_1: 23, SNOW_2: 24, SOIL: 25, STONE_TAN: 26,
+  STONE_WHITE: 27, WATER: 28, WATER_DEEP: 29,
+  WATER_GREEN: 30, WATER_PURPLE: 31,
+  WATER_SHALLOWS_DIRT: 32, WATER_SHALLOWS_SAND: 33
+};
+
+// Elevation to terrain type mapping
+function elevToTerrain(elev, waterLevel) {
+  if (elev < waterLevel) return T.WATER;
+  if (elev < waterLevel + 12) return T.SAND;
+  if (elev < 100) return T.GRASS;
+  if (elev < 160) return T.GRASS_DARK;
+  if (elev < 190) return T.DIRT_BROWN;
+  if (elev < 220) return T.ROCK_DARK;
+  return T.SNOW_1;
+}
+
+// ── Perlin noise ──
+function fnv1a(str) {
+  var h = 2166136261;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function PRNG(seed) { this.seed = seed; }
+PRNG.prototype.next = function() { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; };
+function ease(t) { return t < 0.5 ? 2*t*t : -1 + (4-2*t)*t; }
+function perlinNoise(w, h, persistence, octaves, wavelength, prng) {
+  var gx=[], gy=[];
+  for (var o = 0; o < octaves; o++) {
+    var gw = w+1, gh = h+1, gxL=[], gyL=[];
+    for (var y = 0; y < gh; y++) { var gxR=[], gyR=[]; for (var x = 0; x < gw; x++) { var a = prng.next() * Math.PI * 2; gxR.push(Math.cos(a)); gyR.push(Math.sin(a)); } gxL.push(gxR); gyL.push(gyR); }
+    gx.push(gxL); gy.push(gyL);
+  }
+  var res = [];
+  for (var y = 0; y < h; y++) { var row = []; for (var x = 0; x < w; x++) { var n=0, amp=1, f=1/wavelength, maxA=0; for (var o = 0; o < octaves; o++) { var px=x*f, py=y*f, ix=Math.floor(px), iy=Math.floor(py), fx=px-ix, fy=py-iy, wx=ease(fx), wy=ease(fy); var gw=w+1, gh=h+1, ix0=((ix%gw)+gw)%gw, ix1=(((ix+1)%gw)+gw)%gw, iy0=((iy%gh)+gh)%gh, iy1=(((iy+1)%gh)+gh)%gh; var d00=gx[o][iy0][ix0]*fx+gy[o][iy0][ix0]*fy, d10=gx[o][iy0][ix1]*(fx-1)+gy[o][iy0][ix1]*fy, d01=gx[o][iy1][ix0]*fx+gy[o][iy1][ix0]*(fy-1), d11=gx[o][iy1][ix1]*(fx-1)+gy[o][iy1][ix1]*(fy-1); n += ((d00+wx*(d10-d00)) + wy*((d01+wx*(d11-d01)) - (d00+wx*(d10-d00)))) * amp; maxA += amp; amp *= persistence; f *= 2; } row.push(n/maxA); } res.push(row); }
+  return res;
+}
+
+// ── LPC TSX parser ──
+function parseLpcTsx(xmlText) {
+  var lookup = {};
+  var re = /<tile\s+id="(\d+)"\s+terrain="([\d,]+)"/g;
+  var match;
+  while ((match = re.exec(xmlText)) !== null) {
+    lookup[match[2]] = parseInt(match[1]);
+  }
+  return lookup;
+}
+
+function buildTileGrid(cornerElev, waterLevel, gridW, gridH, lookup) {
+  var result = [];
+  for (var y = 0; y < gridH; y++) {
+    result[y] = [];
+    for (var x = 0; x < gridW; x++) {
+      var tl = elevToTerrain(cornerElev[y][x], waterLevel);
+      var tr = elevToTerrain(cornerElev[y][x+1], waterLevel);
+      var bl = elevToTerrain(cornerElev[y+1][x], waterLevel);
+      var br = elevToTerrain(cornerElev[y+1][x+1], waterLevel);
+      var key = tl + ',' + tr + ',' + bl + ',' + br;
+      var tid = lookup[key];
+      if (tid === undefined) {
+        // Fallback: use the majority terrain type
+        var counts = {};
+        counts[tl] = (counts[tl]||0)+1; counts[tr] = (counts[tr]||0)+1;
+        counts[bl] = (counts[bl]||0)+1; counts[br] = (counts[br]||0)+1;
+        var majority = tl, maxC = 0;
+        for (var c in counts) { if (counts[c] > maxC) { maxC = counts[c]; majority = parseInt(c); } }
+        // Look for pure fill tile of majority type
+        var fillKey = majority+','+majority+','+majority+','+majority;
+        tid = lookup[fillKey];
+        if (tid === undefined) tid = lookup['5,5,5,5'] || 0;
+      }
+      result[y][x] = tid;
+    }
+  }
+  return result;
+}
+
+function renderWorld(lpcImg, tileGrid, gridW, gridH, objs, sheetImages) {
+  var w = gridW * TILE, h = gridH * TILE;
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var ctx = c.getContext('2d');
+  for (var y = 0; y < gridH; y++) {
+    for (var x = 0; x < gridW; x++) {
+      var tid = tileGrid[y][x];
+      var sx = (tid % 16) * TILE;
+      var sy = Math.floor(tid / 16) * TILE;
+      ctx.drawImage(lpcImg, sx, sy, TILE, TILE, x * TILE, y * TILE, TILE, TILE);
+    }
+  }
+  for (var oi = 0; oi < objs.length; oi++) {
+    var o = objs[oi];
+    var sh = sheetImages[o.sheet];
+    if (sh) ctx.drawImage(sh, o.sx * TILE, o.sy * TILE, o.w * TILE, o.h * TILE, o.col * TILE, o.row * TILE, o.w * TILE, o.h * TILE);
+  }
+  return c;
+}
+
+function buildCollision(cornerElev, waterLevel, gridW, gridH) {
+  var cmap = [];
+  for (var y = 0; y < gridH; y++) {
+    cmap[y] = [];
+    for (var x = 0; x < gridW; x++) {
+      var avg = (cornerElev[y][x] + cornerElev[y][x+1] + cornerElev[y+1][x] + cornerElev[y+1][x+1]) / 4;
+      cmap[y][x] = avg < waterLevel ? 0 : 1;
+    }
+  }
+  return cmap;
+}
+
+function findSpawn(cmap, gw, gh) {
+  var cx = Math.floor(gw/2), cy = Math.floor(gh/2);
+  for (var r = 0; r < 100; r++) {
+    for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+      if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+      var nx = cx+dx, ny = cy+dy;
+      if (nx < 0 || nx >= gw || ny < 0 || ny >= gh) continue;
+      if (cmap[ny][nx] === 1) return {px: nx*TILE+16, py: ny*TILE+16};
+    }
+  }
+  return {px:16, py:16};
+}
+
+// ── Game state ──
+var worldCanvas = null;
+var collisionMap = [];
+var gObjects = [];
+var px = 0, py = 0, pDir = 0, pMoving = false, pWalk = 0;
+var STEP = 5;
+var gamePaused = false;
+var activePopup = null;
+var navPaused = false;
+function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+var dirMap = [2,3,1,0];
+var imgCache = {};
+function preload(n,u){var i=new Image();i.src=u;imgCache[n]=i;}
+for(var r=0;r<4;r++)for(var c=0;c<3;c++)preload('cultist_'+c+'_'+r,ASSETS+'/sprites/cultist_'+c+'_'+r+'.png');
+
+var viewport = document.getElementById('viewport');
+var layer = document.getElementById('gameLayer');
+var worldBg = document.getElementById('worldBg');
+var elP = document.createElement('div');
+elP.className = 'sprite';
+elP.style.zIndex = '5';
+layer.appendChild(elP);
+var lastSpriteBg = '';
+
+function showPopup(m) {
+  if(activePopup)activePopup.remove();
+  var p=document.createElement('div');p.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  p.innerHTML='<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9);min-width:260px;padding:20px 24px 16px"><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;min-height:50px">'+m+'</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div>';
+  (document.querySelector('.screen')||document.body).appendChild(p);activePopup=p;
+}
+function closePopup(){if(activePopup){activePopup.remove();activePopup=null;}}
+function isWalkable(gx,gy){var tx=Math.floor(gx/TILE),ty=Math.floor(gy/TILE);if(tx<0||tx>=COLS||ty<0||ty>=ROWS)return false;return collisionMap[ty]&&collisionMap[ty][tx]===1;}
+
+// Cellular automaton clustering: returns 2D grid of cluster IDs (0 = empty)
+function growClusters(seedGrid, passes, prng, birthThresh, growthProb) {
+  var gh = seedGrid.length, gw = seedGrid[0].length;
+  var ids = [];
+  var nextId = 1;
+  for (var y = 0; y < gh; y++) {
+    ids[y] = [];
+    for (var x = 0; x < gw; x++) {
+      ids[y][x] = seedGrid[y][x] ? nextId++ : 0;
+    }
+  }
+  for (var p = 0; p < passes; p++) {
+    var grown = [];
+    for (var y = 0; y < gh; y++) grown[y] = [];
+    for (var y = 0; y < gh; y++) {
+      for (var x = 0; x < gw; x++) {
+        if (ids[y][x] !== 0) { grown[y][x] = ids[y][x]; continue; }
+        var neighborIds = {};
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          var ny = y + dy, nx = x + dx;
+          if (nx >= 0 && nx < gw && ny >= 0 && ny < gh && ids[ny][nx] !== 0) {
+            neighborIds[ids[ny][nx]] = true;
+          }
+        }
+        var nCount = 0;
+        for (var k in neighborIds) nCount++;
+        if (nCount >= birthThresh && prng.next() < growthProb) {
+          for (var k in neighborIds) { grown[y][x] = parseInt(k); break; }
+        } else {
+          grown[y][x] = 0;
+        }
+      }
+    }
+    ids = grown;
+  }
+  return ids;
+}
+
+function filterSmallClusters(grid, minSize) {
+  var gh = grid.length, gw = grid[0].length;
+  var counts = {};
+  for (var y = 0; y < gh; y++) for (var x = 0; x < gw; x++) {
+    var cid = grid[y][x];
+    if (cid) counts[cid] = (counts[cid] || 0) + 1;
+  }
+  for (var y = 0; y < gh; y++) for (var x = 0; x < gw; x++) {
+    if (grid[y][x] && counts[grid[y][x]] < minSize) grid[y][x] = 0;
+  }
+  return grid;
+}
+
+// Roughen cluster edges by adding AND removing cells to create irregular shapes
+function roughenEdge(clusters, prng, prob) {
+  var gh = clusters.length, gw = clusters[0].length;
+  var toAdd = [], toRemove = [];
+  for (var y = 0; y < gh; y++) {
+    for (var x = 0; x < gw; x++) {
+      var cid = clusters[y][x];
+      if (!cid) continue;
+      var n = 0;
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        var ny = y + dy, nx = x + dx;
+        if (nx >= 0 && nx < gw && ny >= 0 && ny < gh && clusters[ny][nx] === cid) n++;
+      }
+      // Interior cell: remove with small probability (creates holes)
+      if (n >= 6 && n <= 7 && prng.next() < prob * 0.3) {
+        toRemove.push({x:x, y:y});
+      }
+      // Edge cell (3-5 neighbors): sometimes remove, sometimes add a bump
+      if (n >= 3 && n <= 5) {
+        if (prng.next() < prob * 0.25) toRemove.push({x:x, y:y});
+        else if (prng.next() < prob * 0.2) {
+          var dirs = [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,1],[-1,1],[1,-1]];
+          for (var di = dirs.length - 1; di > 0; di--) {
+            var j = Math.floor(prng.next() * (di + 1));
+            var tmp = dirs[di]; dirs[di] = dirs[j]; dirs[j] = tmp;
+          }
+          for (var di = 0; di < dirs.length; di++) {
+            var nx = x + dirs[di][0], ny = y + dirs[di][1];
+            if (nx >= 0 && nx < gw && ny >= 0 && ny < gh && clusters[ny][nx] === 0) {
+              toAdd.push({x:nx, y:ny, cid:cid}); break;
+            }
+          }
+        }
+      }
+      // Tip cell (1-2 neighbors): remove with moderate probability
+      if (n <= 2 && prng.next() < prob * 0.4) toRemove.push({x:x, y:y});
+    }
+  }
+  for (var i = 0; i < toAdd.length; i++) clusters[toAdd[i].y][toAdd[i].x] = toAdd[i].cid;
+  for (var i = 0; i < toRemove.length; i++) clusters[toRemove[i].y][toRemove[i].x] = 0;
+  return clusters;
+}
+
+// Break straight-line segments by notching edges
+function notchEdges(clusters, prng) {
+  var gh = clusters.length, gw = clusters[0].length;
+  var toRemove = [];
+  for (var y = 1; y < gh - 1; y++) {
+    for (var x = 1; x < gw - 1; x++) {
+      var cid = clusters[y][x];
+      if (!cid) continue;
+      // Check for straight horizontal edge: three cells in a row
+      var sameL = clusters[y][x-1] === cid;
+      var sameR = clusters[y][x+1] === cid;
+      var emptyU = clusters[y-1][x] === 0;
+      var emptyD = clusters[y+1][x] === 0;
+      if (sameL && sameR && (emptyU || emptyD) && prng.next() < 0.35) {
+        toRemove.push({x:x, y:y});
+      }
+      // Check for straight vertical edge: three cells in a column
+      var sameU = clusters[y-1][x] === cid;
+      var sameD = clusters[y+1][x] === cid;
+      var emptyL = clusters[y][x-1] === 0;
+      var emptyR = clusters[y][x+1] === 0;
+      if (sameU && sameD && (emptyL || emptyR) && prng.next() < 0.35) {
+        toRemove.push({x:x, y:y});
+      }
+    }
+  }
+  for (var i = 0; i < toRemove.length; i++) clusters[toRemove[i].y][toRemove[i].x] = 0;
+  return clusters;
+}
+
+// Ensure walkable gap between different clusters
+function separateClusters(grid) {
+  var gh = grid.length, gw = grid[0].length;
+  var toRemove = {};
+  for (var y = 0; y < gh; y++) {
+    for (var x = 0; x < gw; x++) {
+      var cid = grid[y][x];
+      if (!cid) continue;
+      for (var dy = -1; dy <= 1; dy++) {
+        for (var dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          var ny = y + dy, nx = x + dx;
+          if (nx >= 0 && nx < gw && ny >= 0 && ny < gh && grid[ny][nx] !== 0 && grid[ny][nx] !== cid) {
+            toRemove[y * gw + x] = true;
+            toRemove[ny * gw + nx] = true;
+          }
+        }
+      }
+    }
+  }
+  for (var key in toRemove) {
+    var y = Math.floor(key / gw), x = key % gw;
+    grid[y][x] = 0;
+  }
+  return grid;
+}
+
+function blockCells(col, row, w, h) {
+  for (var dy = 0; dy < h; dy++) {
+    for (var dx = 0; dx < w; dx++) {
+      var nc = col + dx, nr = row + dy;
+      if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS && collisionMap[nr]) collisionMap[nr][nc] = 0;
+    }
+  }
+}
+
+function generateDecorations(prng, seedHash, cornerElev, waterLevel) {
+  var de = [];
+  var decoPrng = new PRNG((seedHash ^ 0xbeef) >>> 0);
+
+  // Build biome map from elevation
+  var biomeMap = [];
+  for (var y = 0; y < GRID_H; y++) {
+    biomeMap[y] = [];
+    for (var x = 0; x < GRID_W; x++) {
+      var avg = (cornerElev[y][x] + cornerElev[y][x+1] + cornerElev[y+1][x] + cornerElev[y+1][x+1]) / 4;
+      if (avg < waterLevel) biomeMap[y][x] = 'none';
+      else if (avg < waterLevel + 12) biomeMap[y][x] = 'sand';
+      else if (avg < 100) biomeMap[y][x] = 'grass';
+      else if (avg < 160) biomeMap[y][x] = 'forest';
+      else if (avg < 190) biomeMap[y][x] = 'dirt';
+      else biomeMap[y][x] = 'mountain';
+    }
+  }
+
+  // --- Seed rates by biome ---
+  var treeSeed = [];
+  for (var y = 0; y < GRID_H; y++) {
+    treeSeed[y] = [];
+    for (var x = 0; x < GRID_W; x++) {
+      if (!collisionMap[y] || !collisionMap[y][x]) { treeSeed[y][x] = false; continue; }
+      var bio = biomeMap[y][x];
+      var rate;
+      if (bio === 'forest') rate = 0.05;
+      else if (bio === 'grass') rate = 0.03;
+      else if (bio === 'dirt') rate = 0.02;
+      else if (bio === 'sand') rate = 0.02;
+      else { treeSeed[y][x] = false; continue; }
+      treeSeed[y][x] = decoPrng.next() < rate;
+    }
+  }
+
+  // CA clustering for forest
+  var clusters = growClusters(treeSeed, 2, decoPrng, 2, 0.5);
+  clusters = filterSmallClusters(clusters, 1);
+  for (var ri = 0; ri < 2; ri++) clusters = roughenEdge(clusters, decoPrng, 0.4);
+  for (var ni = 0; ni < 2; ni++) clusters = notchEdges(clusters, decoPrng);
+
+  // Place cluster trees
+  var spriteMap = {};
+  for (var y = 0; y < GRID_H; y++) {
+    for (var x = 0; x < GRID_W; x++) {
+      var cid = clusters[y][x];
+      if (!cid) continue;
+      if (!spriteMap[cid]) spriteMap[cid] = BAOBAB_TREES[Math.floor(decoPrng.next() * BAOBAB_TREES.length)];
+      var t = spriteMap[cid];
+      de.push({col:x, row:y, sx:t.sx, sy:t.sy, w:t.w, h:t.h, sheet:t.sheet, layer:2});
+      var bw = Math.floor(t.w * 0.75);
+      var bo = Math.floor((t.w - bw) / 2);
+      blockCells(x + bo, y + t.h - 2, bw, 1);
+    }
+  }
+  return de;
+}
+
+// ── Minimap ──
+var minimapEl = document.getElementById('minimap');
+var minimapCtx = minimapEl ? minimapEl.getContext('2d') : null;
+var MM = 80; // minimap size in px
+
+function renderMinimap() {
+  if (!worldCanvas || !minimapCtx) return;
+  var mm = MM;
+  minimapCtx.imageSmoothingEnabled = false;
+  minimapCtx.clearRect(0, 0, mm, mm);
+  // Scaled-down world
+  minimapCtx.drawImage(worldCanvas, 0, 0, WORLD_W, WORLD_H, 0, 0, mm, mm);
+  // 30% dark overlay for readability
+  minimapCtx.fillStyle = 'rgba(0,0,0,0.3)';
+  minimapCtx.fillRect(0, 0, mm, mm);
+  // Viewport rectangle
+  var scrEl = document.querySelector('.screen');
+  var vw = scrEl ? (scrEl.clientWidth || SCREEN_W) : SCREEN_W;
+  var vh = scrEl ? (scrEl.clientHeight || SCREEN_H) : SCREEN_H;
+  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 16 - vw/2));
+  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 16 - vh/2));
+  minimapCtx.strokeStyle = '#fff';
+  minimapCtx.lineWidth = 2;
+  minimapCtx.strokeRect(cx / WORLD_W * mm - 1, cy / WORLD_H * mm - 1, vw / WORLD_W * mm + 2, vh / WORLD_H * mm + 2);
+}
+
+function render() {
+  var scrEl = document.querySelector('.screen');
+  var vw = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var vh = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 16 - vw/2));
+  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 16 - vh/2));
+  worldBg.style.left = (-cx) + 'px'; worldBg.style.top = (-cy) + 'px';
+  var pc = pMoving ? (Math.floor(pWalk/2)%2) : 2;
+  elP.style.transform = 'translate(' + Math.round(px-cx) + 'px,' + Math.round(py-cy) + 'px)';
+  var nb = frm(pc, dirMap[pDir]);
+  if (nb !== lastSpriteBg) {
+    var sn = 'cultist_' + pc + '_' + dirMap[pDir];
+    var im = imgCache[sn];
+    if (im && im.complete && im.naturalWidth > 0) { elP.style.backgroundImage = nb; lastSpriteBg = nb; }
+  }
+  // Player transparency when under tree canopy
+  var pL = px - 16, pR = px + 16, pT = py - 18, pB = py + 18;
+  var underTree = false;
+  for (var oi = 0; oi < gObjects.length; oi++) {
+    var o = gObjects[oi];
+    var tL = o.col * TILE, tR = (o.col + o.w) * TILE;
+    var tT = o.row * TILE, tB = (o.row + o.h) * TILE;
+    if (pL < tR && pR > tL && pT < tB && pB > tT) { underTree = true; break; }
+  }
+  elP.style.opacity = underTree ? '0.5' : '1';
+  renderMinimap();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeTerrain(); return; }
+  if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; }
+  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
+  if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);}
+});
+document.addEventListener('keyup', function(e) {
+  if (e.key.startsWith('Arrow')) { var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.remove('active'); dpadState[d]=false; }
+});
+var dpadState = {};
+document.querySelectorAll('.dpad-btn').forEach(function(b){
+  function s(e){e.preventDefault();b.classList.add('active');dpadState[b.dataset.dir]=true;}
+  function en(e){e.preventDefault();b.classList.remove('active');dpadState[b.dataset.dir]=false;}
+  b.addEventListener('mousedown',s);b.addEventListener('mouseup',en);b.addEventListener('mouseleave',en);
+  b.addEventListener('touchstart',s,{passive:false});b.addEventListener('touchend',en,{passive:false});b.addEventListener('touchcancel',en,{passive:false});
+});
+document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('btnX').addEventListener('click',function(){this.classList.add('active');closePopup();setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('backBtn').addEventListener('click',closeTerrain);
+
+var zoomValues = [1, 1.25, 1.5];
+var zoomLabels = ['100%', '125%', '150%'];
+var zoomIdx = 0;
+var layoutEl = document.querySelector('.layout');
+// Restore persisted zoom
+var savedZoom = localStorage.getItem('hyvmind-zoom');
+if (savedZoom !== null) {
+  var idx = zoomValues.indexOf(parseFloat(savedZoom));
+  if (idx >= 0) {
+    zoomIdx = idx;
+    layoutEl.style.transform = 'scale(' + savedZoom + ')';
+    document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+  }
+}
+document.getElementById('screenSizeBtn').addEventListener('click', function() {
+  zoomIdx = (zoomIdx + 1) % zoomValues.length;
+  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
+  var val = zoomValues[zoomIdx];
+  layoutEl.style.transform = 'scale(' + val + ')';
+  localStorage.setItem('hyvmind-zoom', val);
+  window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
+});
+// Listen for zoom changes from world game
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'hyvmind-set-zoom') {
+    var val = e.data.zoom;
+    var idx = zoomValues.indexOf(parseFloat(val));
+    if (idx >= 0) {
+      zoomIdx = idx;
+      layoutEl.style.transform = 'scale(' + val + ')';
+      document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
+    }
+  }
+});
+
+function startBgMusic() {
+  var bgm = document.getElementById('bgm');
+  if (!bgm) return;
+  bgm.volume = 0.2;
+  bgm.play().catch(function() {
+    function onInteraction() {
+      bgm.play().catch(function(){});
+      document.removeEventListener('click', onInteraction);
+      document.removeEventListener('keydown', onInteraction);
+    }
+    document.addEventListener('click', onInteraction);
+    document.addEventListener('keydown', onInteraction);
+  });
+}
+
+function stopBgMusic() {
+  var bgm = document.getElementById('bgm');
+  if (bgm) { bgm.pause(); bgm.currentTime = 0; }
+}
+
+function closeTerrain() {
+  stopBgMusic();
+  window.parent.postMessage({type:'hyvmind-transition-start'},'*');
+  setTimeout(function() {
+    window.parent.postMessage({type:'hyvmind-resume-bgm'},'*');
+    window.parent.postMessage({type:'hyvmind-close'},'*');
+  }, 2000);
+}
+
+function loop() {
+  if (navPaused) { render(); return; }
+  if (gamePaused) { render(); return; }
+  var dx=0,dy=0;
+  if(dpadState['left']){dx=-STEP;pDir=1;}else if(dpadState['right']){dx=STEP;pDir=2;}else if(dpadState['up']){dy=-STEP;pDir=3;}else if(dpadState['down']){dy=STEP;pDir=0;}
+  if(dx!==0||dy!==0){var nx=px+dx,ny=py+dy;if(dx!==0&&isWalkable(nx,py))px=nx;if(dy!==0&&isWalkable(px,ny))py=ny;pMoving=true;pWalk++;}else{pMoving=false;pWalk=0;}
+  px=Math.max(0,Math.min(WORLD_W-32,px));py=Math.max(0,Math.min(WORLD_H-32,py));
+  render();
+}
+
+// ── Bootstrap ──
+function boot() {
+  var seed = new URLSearchParams(window.location.search).get('seed') || 'Indian Constitutional Law';
+  var seedHash = fnv1a(seed);
+  var prng = new PRNG(seedHash ^ 0xdeadbeef);
+  var rawMap = perlinNoise(GRID_W+1, GRID_H+1, 0.5, 5, 133, prng);
+
+  // Build 101x101 corner elevation map
+  var cornerElev = [];
+  for (var y = 0; y <= GRID_H; y++) {
+    var row = [];
+    for (var x = 0; x <= GRID_W; x++) {
+      var raw = (rawMap[y] && rawMap[y][x] != null) ? rawMap[y][x] : 0;
+      var norm = (raw + 1) / 2 + 0.25;
+      var elev = Math.pow(Math.max(0, norm), 3.3) * 255;
+      row.push(Math.max(0, Math.min(255, elev)));
+    }
+    cornerElev.push(row);
+  }
+
+  // Water level (20th percentile of all elevations)
+  var allE = [];
+  for (var y = 0; y <= GRID_H; y++) for (var x = 0; x <= GRID_W; x++) allE.push(cornerElev[y][x]);
+  allE.sort(function(a,b){return a-b;});
+  var waterLevel = allE[Math.floor(allE.length * 0.2)];
+
+  // Collision
+  collisionMap = buildCollision(cornerElev, waterLevel, GRID_W, GRID_H);
+
+  // World sizing
+  worldBg.style.width = WORLD_W + 'px';
+  worldBg.style.height = WORLD_H + 'px';
+
+  // Spawn
+  var spawn = findSpawn(collisionMap, GRID_W, GRID_H);
+  px = spawn.px; py = spawn.py;
+
+  // Load individual baobab species, then generate decorations and render
+  var sheetImages = {};
+  var allTrees = BAOBAB_TREES.concat(BAOBAB_BARE_TREES);
+  var sheetsToLoad = allTrees.length;
+  var sheetsLoaded = 0;
+  function onSheetLoad() {
+    sheetsLoaded++;
+    if (sheetsLoaded >= sheetsToLoad) {
+      gObjects = generateDecorations(prng, seedHash, cornerElev, waterLevel);
+      fetch(LPC_TSX_PATH)
+        .then(function(r) { return r.text(); })
+        .then(function(xml) {
+          var lookup = parseLpcTsx(xml);
+          var tileGrid = buildTileGrid(cornerElev, waterLevel, GRID_W, GRID_H, lookup);
+          var img2 = new Image();
+          img2.onload = function() {
+            worldCanvas = renderWorld(img2, tileGrid, GRID_W, GRID_H, gObjects, sheetImages);
+            worldBg.style.display = 'block';
+            worldBg.onload = function() {
+              showPopup("You've reached a strange new land: " + seed);
+              window.parent.postMessage({type:'hyvmind-terrain-ready'},'*');
+            };
+            worldBg.src = worldCanvas.toDataURL('image/png');
+            render();
+            setInterval(loop, 40);
+            requestAnimationFrame(function() { document.body.focus(); });
+            window.parent.postMessage({type:'hyvmind-stop-bgm'},'*');
+            startBgMusic();
+          };
+          img2.crossOrigin = 'anonymous';
+          img2.src = LPC_PATH;
+        })
+        .catch(function(err) {
+          console.error('Failed to load LPC data:', err);
+          var fallbackCanvas = document.createElement('canvas');
+          fallbackCanvas.width = GRID_W * TILE;
+          fallbackCanvas.height = GRID_H * TILE;
+          var ctx = fallbackCanvas.getContext('2d');
+          for(var y=0;y<GRID_H;y++) for(var x=0;x<GRID_W;x++){
+            var e=(cornerElev[y][x]+cornerElev[y][x+1]+cornerElev[y+1][x]+cornerElev[y+1][x+1])/4;
+            var r,g,b;if(e<waterLevel){r=30;g=60;b=100;}else if(e<waterLevel+12){r=210;g=180;b=100;}else if(e<100){r=100;g=188;b=100;}else if(e<160){r=140;g=160;b=100;}else if(e<190){r=160;g=150;b=100;}else{r=180;g=170;b=150;}
+            ctx.fillStyle='rgb('+r+','+g+','+b+')';ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+          }
+          for (var oi = 0; oi < gObjects.length; oi++) {
+            var o = gObjects[oi];
+            var sh = sheetImages[o.sheet];
+            if (sh) ctx.drawImage(sh, o.sx * TILE, o.sy * TILE, o.w * TILE, o.h * TILE, o.col * TILE, o.row * TILE, o.w * TILE, o.h * TILE);
+          }
+          worldCanvas = fallbackCanvas;
+          worldBg.style.display = 'block';
+          worldBg.onload = function() {
+            showPopup("You've reached a strange new land: " + seed);
+            window.parent.postMessage({type:'hyvmind-terrain-ready'},'*');
+          };
+          worldBg.src = worldCanvas.toDataURL('image/png');
+          render();
+          setInterval(loop,40);
+          requestAnimationFrame(function(){document.body.focus();});
+          window.parent.postMessage({type:'hyvmind-stop-bgm'},'*');
+          startBgMusic();
+        });
+    }
+  }
+  for (var ti = 0; ti < allTrees.length; ti++) {
+    var t = allTrees[ti];
+    var img = new Image();
+    img.onload = function(idx) { return function() { sheetImages[allTrees[idx].sheet] = this; onSheetLoad(); }; }(ti);
+    img.onerror = function() { onSheetLoad(); };
+    img.crossOrigin = 'anonymous';
+    img.src = BAOBAB_BASE + t.file;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

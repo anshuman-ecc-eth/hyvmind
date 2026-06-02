@@ -9,7 +9,7 @@ export interface CreditedContributionDetail {
   saveCount: bigint;
 }
 
-export interface TrustTransactionDetail {
+export interface TrustTransaction {
   saver: Principal;
   savedAt: bigint;
   saveNumber: bigint;
@@ -46,5 +46,5 @@ export interface TrustBackendExtensions {
   ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
   getMyTrustBalance(): Promise<bigint>;
   hasUserSavedGraph(publishedGraphId: string): Promise<boolean>;
-  getMyTrustTransactions(): Promise<TrustTransactionDetail[]>;
+  getMyTrustTransactions(): Promise<TrustTransaction[]>;
 }
