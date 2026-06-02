@@ -185,23 +185,25 @@ function ChecklistDialog({
               <div className="rounded-sm border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-semibold">Core</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      always imported
-                      {allCoreCredited ? " (already saved)" : ""}
-                    </span>
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                      onClick={() => handleTogglePreview({ kind: "core" })}
-                    >
-                      {isPreviewOpen({ kind: "core" }) ? "▾" : "▸"}
-                    </button>
-                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    auto-imported
+                    {allCoreCredited ? " (already saved)" : ""}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {coreLabel}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {coreLabel}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0 ml-2"
+                    onClick={() => handleTogglePreview({ kind: "core" })}
+                  >
+                    {isPreviewOpen({ kind: "core" })
+                      ? "Hide Diagram"
+                      : "See Diagram"}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground/70 mt-0.5">
                   {coreStatLabel}
                 </p>
@@ -225,6 +227,11 @@ function ChecklistDialog({
                             className="h-3.5 w-3.5 flex-shrink-0"
                           />
                           <span className="text-xs flex-1">{ext.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between ml-6">
+                          <p className="text-xs text-muted-foreground/70">
+                            {ext.statLabel}
+                          </p>
                           <button
                             type="button"
                             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0"
@@ -239,13 +246,10 @@ function ChecklistDialog({
                               kind: "extension",
                               index: ext.index,
                             })
-                              ? "▾"
-                              : "▸"}
+                              ? "Hide Diagram"
+                              : "See Diagram"}
                           </button>
                         </div>
-                        <p className="text-xs text-muted-foreground/70 ml-6">
-                          {ext.statLabel}
-                        </p>
                       </div>
                     ))}
                   </div>
