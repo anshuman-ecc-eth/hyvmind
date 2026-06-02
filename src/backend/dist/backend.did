@@ -287,7 +287,9 @@ type ContributionView =
    alreadyCredited: bool;
    buzzAmount: int;
    description: text;
+   extensionIndex: opt nat;
    id: text;
+   isFromExtension: bool;
    nodeId: NodeId;
    payer: principal;
  };

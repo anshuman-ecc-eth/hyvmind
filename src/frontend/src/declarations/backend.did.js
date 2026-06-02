@@ -111,6 +111,8 @@ export const ContributionView = IDL.Record({
   'description' : IDL.Text,
   'payer' : IDL.Principal,
   'alreadyCredited' : IDL.Bool,
+  'isFromExtension' : IDL.Bool,
+  'extensionIndex' : IDL.Opt(IDL.Nat),
 });
 export const ChatMessage = IDL.Record({
   'text' : IDL.Text,

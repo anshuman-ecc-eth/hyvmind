@@ -77,6 +77,8 @@ actor {
     payer : Principal;
     buzzAmount : Int;
     alreadyCredited : Bool;
+    isFromExtension : Bool;
+    extensionIndex : ?Nat;
   };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 
@@ -697,6 +699,20 @@ actor {
     switch (graphContributionList.get(publishedGraphId)) {
       case (null) { [] };
       case (?entries) {
+        func parsePhase(id : Text) : (Bool, ?Nat) {
+          if (not id.startsWith(#text "e")) { return (false, null) };
+          let parts = id.split(#char ':').toArray();
+          if (parts.size() == 0) { return (false, null) };
+          switch (parts[0].stripStart(#text "e")) {
+            case (?s) {
+              switch (Nat.fromText(s)) {
+                case (?n) { (true, ?n) };
+                case (null) { (false, null) };
+              };
+            };
+            case (null) { (false, null) };
+          };
+        };
         let creditedSet = switch (userContributionCredits.get(publishedGraphId)) {
           case (null) { Set.empty<Text>() };
           case (?userMap) {
@@ -708,7 +724,8 @@ actor {
         };
         Array.tabulate(entries.size(), func (i : Nat) : ContributionView {
           let e = entries[i];
-          { id = e.id; nodeId = e.nodeId; description = e.description; payer = e.payer; buzzAmount = e.buzzAmount; alreadyCredited = creditedSet.contains(e.id) }
+          let (isExt, extIdx) = parsePhase(e.id);
+          { id = e.id; nodeId = e.nodeId; description = e.description; payer = e.payer; buzzAmount = e.buzzAmount; alreadyCredited = creditedSet.contains(e.id); isFromExtension = isExt; extensionIndex = extIdx }
         })
       };
     };
@@ -2485,6 +2502,20 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
+      var extIndex : Nat = 0;
+      switch (earlyPublishedId) {
+        case (?pid) {
+          switch (publishedGraphBuzzMetrics.get(pid)) {
+            case (?m) { extIndex := m.extensionCount };
+            case (null) {};
+          };
+        };
+        case (null) {};
+      };
+      let extPrefix = switch (earlyPublishedId) {
+        case (?_) { "e" # extIndex.toText() # ":" };
+        case (null) { "c" };
+      };
       var contribCounter = switch (earlyPublishedId) {
         case (?pid) {
           switch (graphContributionList.get(pid)) {
@@ -2496,7 +2527,7 @@ actor {
       };
       let tempContribEntries = List.empty<ContributionEntry>();
       func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
-        let contribId = "c" # debug_show(contribCounter);
+        let contribId = extPrefix # debug_show(contribCounter);
         contribCounter += 1;
         tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
         tempContribEntries.add({ id = contribId; nodeId; payer = caller; buzzAmount = buzzCost; description });
@@ -3258,7 +3289,7 @@ actor {
 
     // Merge edge costs into tempContribs
     for ((edgeNodeId, (edgeCost, sourceName)) in tempEdgeCosts.entries()) {
-      let contribId = "c" # debug_show(contribCounter);
+      let contribId = extPrefix # debug_show(contribCounter);
       contribCounter += 1;
       let description = "Added " # debug_show(edgeCost) # " cross-reference" # (if (edgeCost == 1) { "" } else { "s" }) # " from '" # sourceName # "'";
       switch (tempContribs.get(edgeNodeId)) {

@@ -223,6 +223,8 @@ export interface ContributionView {
     payer: Principal;
     buzzAmount: bigint;
     alreadyCredited: boolean;
+    isFromExtension: boolean;
+    extensionIndex?: bigint;
 }
 
 export type SaveResult = {

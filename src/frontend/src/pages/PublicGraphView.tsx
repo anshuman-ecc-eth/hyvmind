@@ -497,6 +497,7 @@ export default function PublicGraphView({
           graphName={savingMeta.name}
           graphData={savingGraphData.data}
           graphId={savingGraphId}
+          meta={savingMeta}
         />
       )}
 

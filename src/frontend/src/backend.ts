@@ -105,6 +105,8 @@ export interface ContributionView {
     description: string;
     payer: Principal;
     alreadyCredited: boolean;
+    isFromExtension: boolean;
+    extensionIndex?: bigint;
 }
 export interface LawToken {
     id: NodeId;
