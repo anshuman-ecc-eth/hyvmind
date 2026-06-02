@@ -20,9 +20,9 @@ import type {
 import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
 import { useBackendActor, useSavePublishedGraph } from "../hooks/useQueries";
 import type { TrustBackendExtensions } from "../types/trustExtensions";
-import { graphDataToSourceGraph } from "../utils/graphDataConverter";
 import { graphDataToEditorNodes } from "../utils/graphDataToEditorNodes";
-import SourceGraphDiagram from "./SourceGraphDiagram";
+import { graphDataToMermaid } from "../utils/graphDataToMermaid";
+import MermaidDiagram from "./MermaidDiagram";
 
 const EMPTY_CONTRIBS: ContributionView[] = [];
 
@@ -59,7 +59,6 @@ interface ChecklistDialogProps {
   isOpen: boolean;
   onClose: () => void;
   graphName: string;
-  graphId: string;
   graphData: GraphData;
   meta: PublishedSourceGraphMeta;
   coreLabel: string;
@@ -91,7 +90,6 @@ function ChecklistDialog({
   isOpen,
   onClose,
   graphName,
-  graphId,
   graphData,
   meta,
   coreLabel,
@@ -121,19 +119,11 @@ function ChecklistDialog({
     return extNodeIdsByIndex.get(previewPhase.index) ?? new Set<string>();
   }, [previewPhase, coreNodeIds, extNodeIdsByIndex]);
 
-  const previewGraph = useMemo(() => {
+  const previewMermaid = useMemo(() => {
     if (!previewNodeIds || previewNodeIds.size === 0) return null;
     const filtered = filterGraphDataByNodeIds(graphData, previewNodeIds);
-    const previewId =
-      previewPhase?.kind === "core"
-        ? `${graphId}-core`
-        : `${graphId}-ext${previewPhase?.index ?? 0}`;
-    const previewName =
-      previewPhase?.kind === "core"
-        ? `${coreLabel}`
-        : `${extEntries.find((e) => e.index === (previewPhase as { index: number }).index)?.label ?? ""}`;
-    return graphDataToSourceGraph(filtered, previewName, previewId);
-  }, [previewNodeIds, graphData, previewPhase, graphId, coreLabel, extEntries]);
+    return graphDataToMermaid(filtered);
+  }, [previewNodeIds, graphData]);
 
   const handleRowClick = useCallback(
     (phase: { kind: "core" } | { kind: "extension"; index: number }) => {
@@ -150,7 +140,7 @@ function ChecklistDialog({
     [],
   );
 
-  const showPreview = previewGraph !== null;
+  const showPreview = previewMermaid !== null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -164,7 +154,7 @@ function ChecklistDialog({
               <DialogTitle>Save Graph to Notes</DialogTitle>
             </DialogHeader>
 
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-sm">
               Select extensions from{" "}
               <span className="text-foreground">{graphName}</span> to import
               into your Notes workspace. Core contributions are always imported.
@@ -180,18 +170,18 @@ function ChecklistDialog({
                   >
                     Core
                   </button>
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-xs text-muted-foreground">
                     always imported{allCoreCredited ? " (already saved)" : ""}
                   </span>
                 </div>
                 <button
                   type="button"
-                  className="w-full text-left text-[11px] text-muted-foreground leading-relaxed hover:underline"
+                  className="w-full text-left text-xs text-muted-foreground leading-relaxed hover:underline"
                   onClick={() => handleRowClick({ kind: "core" })}
                 >
                   {coreLabel}
                 </button>
-                <p className="text-[10px] text-muted-foreground/70 font-mono mt-0.5">
+                <p className="text-xs text-muted-foreground/70 mt-0.5">
                   {coreStatLabel}
                 </p>
               </div>
@@ -226,7 +216,7 @@ function ChecklistDialog({
                             {ext.label}
                           </button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground/70 font-mono ml-6">
+                        <p className="text-xs text-muted-foreground/70 ml-6">
                           {ext.statLabel}
                         </p>
                       </div>
@@ -247,9 +237,17 @@ function ChecklistDialog({
                           (previewPhase as { index: number })?.index,
                       )?.label}
                 </p>
-                <div className="h-[350px] rounded-sm border border-border bg-background">
-                  <SourceGraphDiagram graph={previewGraph} />
+                <div className="max-h-[400px] overflow-auto rounded-sm border border-border bg-background p-2">
+                  <MermaidDiagram mermaidText={previewMermaid.mermaidText} />
                 </div>
+                {previewMermaid.sourceLines.length > 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                    <p className="font-semibold text-foreground">Sources</p>
+                    {previewMermaid.sourceLines.map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -549,7 +547,6 @@ export default function SaveGraphDialog({
       isOpen={isOpen}
       onClose={onClose}
       graphName={graphName}
-      graphId={graphId}
       graphData={graphData}
       meta={meta}
       coreLabel={coreLabel}
