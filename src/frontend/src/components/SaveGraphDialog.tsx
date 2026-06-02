@@ -321,27 +321,29 @@ function ChecklistDialog({
           }}
         >
           <div
-            className="bg-background rounded-lg border shadow-lg p-6 max-w-4xl w-[calc(100%-2rem)] max-h-[85vh] flex flex-col"
+            className="bg-background rounded-lg border shadow-lg p-6 max-w-4xl w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto flex flex-col"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={() => {}}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{previewDialog.label}</h2>
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <h2 className="text-sm font-semibold">{previewDialog.label}</h2>
               <button
                 type="button"
                 onClick={() => setPreviewDialog(null)}
-                className="text-muted-foreground hover:text-foreground text-xs"
+                className="text-muted-foreground hover:text-foreground text-xs cursor-pointer"
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 min-h-0 overflow-auto rounded-sm border border-border bg-muted/30 p-2">
+            <div className="flex-shrink-0 rounded-sm border border-border bg-muted/30 p-2 mb-3">
               <MermaidDiagram mermaidText={previewMermaid.mermaidText} />
             </div>
-            {previewMermaid.sourceLines.length > 0 && (
-              <div className="mt-3 text-xs text-muted-foreground space-y-0.5">
-                <p className="font-semibold text-foreground">Sources</p>
-                {previewMermaid.sourceLines.map((line) => (
+            {previewMermaid.detailLines.length > 0 && (
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <p className="font-semibold text-foreground mb-1">
+                  Attributes & Sources
+                </p>
+                {previewMermaid.detailLines.map((line) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>

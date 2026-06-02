@@ -16,7 +16,7 @@ interface NodeType {
 
 interface MermaidResult {
   mermaidText: string;
-  sourceLines: string[];
+  detailLines: string[];
 }
 
 function collectNodes(data: GraphData): NodeType[] {
@@ -94,19 +94,6 @@ function buildAttrs(
   return result;
 }
 
-function formatAttrs(attrs: Record<string, string>): string {
-  const entries = Object.entries(attrs);
-  if (entries.length === 0) return "";
-  const maxAttrs = 3;
-  const parts = entries
-    .slice(0, maxAttrs)
-    .map(([k, v]) => `${k}: ${truncateLabel(v, 15)}`);
-  const label = parts.join(" · ");
-  if (entries.length > maxAttrs)
-    return `${label} · +${entries.length - maxAttrs}`;
-  return label;
-}
-
 const ID_PREFIX = "n";
 
 export function graphDataToMermaid(data: GraphData): MermaidResult {
@@ -120,11 +107,8 @@ export function graphDataToMermaid(data: GraphData): MermaidResult {
 
   for (const node of nodes) {
     const sid = nodeIdx.get(node.id)!;
-    const name = truncateLabel(node.name, 22);
-    const attrs = formatAttrs(node.attrs);
-    let label = `${name}<br>(${node.typeLabel})`;
-    if (attrs) label += `<br>${attrs}`;
-    lines.push(`  ${sid}["${label}"]`);
+    const name = truncateLabel(node.name, 20);
+    lines.push(`  ${sid}["${name}<br>${node.typeLabel}"]`);
   }
 
   for (const node of nodes) {
@@ -148,15 +132,24 @@ export function graphDataToMermaid(data: GraphData): MermaidResult {
     }
   }
 
-  const sourceLines: string[] = [];
+  const detailLines: string[] = [];
   for (const node of nodes) {
-    if (node.sources.length > 0) {
-      const titles = node.sources.map((s) => s.name).join(", ");
-      sourceLines.push(
-        `${truncateLabel(node.name, 18)} (${node.typeLabel}): ${titles}`,
+    const name = truncateLabel(node.name, 18);
+    const entries = Object.entries(node.attrs);
+    for (const [key, val] of entries.slice(0, 5)) {
+      detailLines.push(
+        `${name} (${node.typeLabel}): ${key}: ${truncateLabel(val, 30)}`,
       );
+    }
+    if (entries.length > 5) {
+      detailLines.push(
+        `${name} (${node.typeLabel}): +${entries.length - 5} more attributes`,
+      );
+    }
+    for (const source of node.sources) {
+      detailLines.push(`${name} (${node.typeLabel}): source: ${source.name}`);
     }
   }
 
-  return { mermaidText: lines.join("\n"), sourceLines };
+  return { mermaidText: lines.join("\n"), detailLines };
 }
