@@ -538,11 +538,7 @@ actor {
     Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     switch (publishedSourceGraphs.get(publishedGraphId)) {
       case (null) { return #err("Graph not found") };
-      case (?meta) {
-        if (Principal.equal(msg.caller, meta.creator)) {
-          return #selfAuthor({ message = "Can't save. You're the author." });
-        };
-      };
+      case (?_) {};
     };
     if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
 
@@ -587,9 +583,13 @@ actor {
       };
     };
 
-    // If nothing new to credit, return noNewTrust
+    // If nothing new to credit, return noNewTrust or selfAuthor
     if (newEntries.size() == 0) {
-      return #noNewTrust({ reason = "No new Trust generated" });
+      if (hasSelfFiltered) {
+        return #selfAuthor({ message = "Can't save. You're the author." });
+      } else {
+        return #noNewTrust({ reason = "No new Trust generated" });
+      };
     };
 
     // Group new contributions by payer, collecting contribution IDs and descriptions
