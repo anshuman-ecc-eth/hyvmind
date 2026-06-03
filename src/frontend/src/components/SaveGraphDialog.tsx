@@ -534,9 +534,23 @@ export default function SaveGraphDialog({
         setResultData({ contributions: result.ok.contributions });
         setAlertMode("result");
         toast.success("Graph saved to Notes!");
+      } else if ("selfAuthor" in result) {
+        toast.error(result.selfAuthor.message);
+        onClose();
       } else if ("noNewTrust" in result) {
+        const { nodes, rootIds: importRootIds } = graphDataToEditorNodes(
+          graphData,
+          selectedNodeIds,
+          graphName,
+        );
+        window.dispatchEvent(
+          new CustomEvent("hyvmind:import-nodes", {
+            detail: { nodes, rootIds: importRootIds },
+          }),
+        );
         setResultData({ noNewTrust: result.noNewTrust.reason });
         setAlertMode("result");
+        toast.success("Graph re-saved to Notes!");
       } else {
         setAlertMode(null);
         toast.error(result.err ?? "Failed to save graph");

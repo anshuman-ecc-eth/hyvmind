@@ -26,6 +26,7 @@ export interface SavedOkResult {
 export type SaveResult =
   | { ok: SavedOkResult }
   | { noNewTrust: { reason: string } }
+  | { selfAuthor: { message: string } }
   | { err: string };
 
 export interface ContributionView {

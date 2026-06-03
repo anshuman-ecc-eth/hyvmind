@@ -67,6 +67,7 @@ actor {
   type SaveResult = {
     #ok : { contributions : [CreditedContribution] };
     #noNewTrust : { reason : Text };
+    #selfAuthor : { message : Text };
     #err : Text;
   };
   type ContributionView = {
@@ -537,7 +538,11 @@ actor {
     Debug.print("[savePublishedGraph] selectedNodeIds count = " # debug_show (selectedNodeIds.size()));
     switch (publishedSourceGraphs.get(publishedGraphId)) {
       case (null) { return #err("Graph not found") };
-      case (?_) {};
+      case (?meta) {
+        if (Principal.equal(msg.caller, meta.creator)) {
+          return #selfAuthor({ message = "Can't save. You're the author." });
+        };
+      };
     };
     if (msg.caller.isAnonymous()) { return #err("Must be authenticated") };
 
