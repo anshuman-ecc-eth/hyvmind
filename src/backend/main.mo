@@ -2404,8 +2404,21 @@ actor {
     hierarchyEdgesToCreate := nodesToCreate - curationsToCreate;
 
     // ── Early exit check ─────────────────────────────────────────────────────
-    if (nodesToCreate == 0 and nodesToUpdate == 0 and edgesToCreate == 0 and edgesToUpdate == 0) {
-      Debug.print("Preview: Nothing to update - all counts are zero");
+    if (nodesToCreate == 0 and edgesToCreate == 0) {
+      return {
+        nodeOperations = [];
+        edgeOperations = [];
+        summary = {
+          nodesToCreate = 0;
+          nodesToUpdate = 0;
+          edgesToCreate = 0;
+          edgesToUpdate = 0;
+          hierarchyEdgesToCreate = 0;
+          attributesAdded = 0;
+          sourcesAdded = 0;
+        };
+        buzzCost = 0;
+      };
     };
 
     // ── Final debug log ──────────────────────────────────────────────────────
@@ -2417,9 +2430,7 @@ actor {
       + locationsToCreate * 30
       + lawEntitiesToCreate * 40
       + interpEntitiesToCreate * 50
-      + attributesAdded * 1
-      + edgesToCreate * 1
-      + sourcesAdded * 1;
+      + edgesToCreate * 1;
 
     {
       nodeOperations = nodeOps.toArray();
@@ -2612,15 +2623,13 @@ actor {
                 nodesToUpdate += 1;
                 let newCurationAttrs = countNewAttributes(curationExistingAttrs, node.attributes);
                 let newCurationSrcs = countNewSources(curationExistingSources, node.sources);
-                let curationExtCost = newCurationAttrs * 1 + newCurationSrcs * 1;
-                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost, "Extended curation '" # node.name # "' (+" # debug_show(newCurationAttrs) # " attr, +" # debug_show(newCurationSrcs) # " src)") };
                 attributesAdded += newCurationAttrs;
                 sourcesAdded += newCurationSrcs;
               } else {
                 nodesToCreate += 1;
                 let curationAttrCount = countRawAttributes(node.attributes);
                 let curationSrcCount = node.sources.size();
-                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1, "Created curation '" # node.name # "'");
+                recordContrib(existingId, 10, "Created curation '" # node.name # "'");
                 attributesAdded += curationAttrCount;
                 sourcesAdded += curationSrcCount;
               };
@@ -2629,7 +2638,7 @@ actor {
               nodesToCreate += 1;
               let curationAttrCount2 = countRawAttributes(node.attributes);
               let curationSrcCount2 = node.sources.size();
-              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1, "Created curation '" # node.name # "'");
+              recordContrib(existingId, 10, "Created curation '" # node.name # "'");
               attributesAdded += curationAttrCount2;
               sourcesAdded += curationSrcCount2;
             };
@@ -2663,7 +2672,7 @@ actor {
           curationsToCreate += 1;
           let newCurationAttrCount = countRawAttributes(node.attributes);
           let newCurationSrcCount = node.sources.size();
-          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1, "Created curation '" # node.name # "'");
+          recordContrib(newId, 10, "Created curation '" # node.name # "'");
           attributesAdded += newCurationAttrCount;
           sourcesAdded += newCurationSrcCount;
         };
@@ -2747,15 +2756,13 @@ actor {
                 nodesToUpdate += 1;
                 let newSwarmAttrs = countNewAttributes(swarmExistingAttrs, node.attributes);
                 let newSwarmSrcs = countNewSources(swarmExistingSources, node.sources);
-                let swarmExtCost = newSwarmAttrs * 1 + newSwarmSrcs * 1;
-                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost, "Extended swarm '" # node.name # "' (+" # debug_show(newSwarmAttrs) # " attr, +" # debug_show(newSwarmSrcs) # " src)") };
                 attributesAdded += newSwarmAttrs;
                 sourcesAdded += newSwarmSrcs;
               } else {
                 nodesToCreate += 1;
                 let swarmAttrCount = countRawAttributes(node.attributes);
                 let swarmSrcCount = node.sources.size();
-                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1, "Created swarm '" # node.name # "'");
+                recordContrib(existingId, 20, "Created swarm '" # node.name # "'");
                 attributesAdded += swarmAttrCount;
                 sourcesAdded += swarmSrcCount;
               };
@@ -2764,7 +2771,7 @@ actor {
               nodesToCreate += 1;
               let swarmAttrCount2 = countRawAttributes(node.attributes);
               let swarmSrcCount2 = node.sources.size();
-              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1, "Created swarm '" # node.name # "'");
+              recordContrib(existingId, 20, "Created swarm '" # node.name # "'");
               attributesAdded += swarmAttrCount2;
               sourcesAdded += swarmSrcCount2;
             };
@@ -2803,7 +2810,7 @@ actor {
           swarmsToCreate += 1;
           let newSwarmAttrCount = countRawAttributes(node.attributes);
           let newSwarmSrcCount = node.sources.size();
-          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1, "Created swarm '" # node.name # "'");
+          recordContrib(newId, 20, "Created swarm '" # node.name # "'");
           attributesAdded += newSwarmAttrCount;
           sourcesAdded += newSwarmSrcCount;
         };
@@ -2878,15 +2885,13 @@ actor {
                 nodesToUpdate += 1;
                 let newLocAttrs = countNewAttributes(locExistingAttrs, node.attributes);
                 let newLocSrcs = countNewSources(locExistingSources, node.sources);
-                let locExtCost = newLocAttrs * 1 + newLocSrcs * 1;
-                if (locExtCost > 0) { recordContrib(existingId, locExtCost, "Extended location '" # node.name # "' (+" # debug_show(newLocAttrs) # " attr, +" # debug_show(newLocSrcs) # " src)") };
                 attributesAdded += newLocAttrs;
                 sourcesAdded += newLocSrcs;
               } else {
                 nodesToCreate += 1;
                 let locAttrCount = countRawAttributes(node.attributes);
                 let locSrcCount = node.sources.size();
-                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1, "Created location '" # node.name # "'");
+                recordContrib(existingId, 30, "Created location '" # node.name # "'");
                 attributesAdded += locAttrCount;
                 sourcesAdded += locSrcCount;
               };
@@ -2895,7 +2900,7 @@ actor {
               nodesToCreate += 1;
               let locAttrCount2 = countRawAttributes(node.attributes);
               let locSrcCount2 = node.sources.size();
-              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1, "Created location '" # node.name # "'");
+              recordContrib(existingId, 30, "Created location '" # node.name # "'");
               attributesAdded += locAttrCount2;
               sourcesAdded += locSrcCount2;
             };
@@ -2930,7 +2935,7 @@ actor {
           locationsToCreate += 1;
           let newLocAttrCount = countRawAttributes(node.attributes);
           let newLocSrcCount = node.sources.size();
-          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1, "Created location '" # node.name # "'");
+          recordContrib(newId, 30, "Created location '" # node.name # "'");
           attributesAdded += newLocAttrCount;
           sourcesAdded += newLocSrcCount;
         };
@@ -3005,15 +3010,13 @@ actor {
                 nodesToUpdate += 1;
                 let newLtAttrs = countNewAttributes(ltExistingAttrs, node.attributes);
                 let newLtSrcs = countNewSources(ltExistingSources, node.sources);
-                let ltExtCost = newLtAttrs * 1 + newLtSrcs * 1;
-                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost, "Extended law entity '" # node.name # "' (+" # debug_show(newLtAttrs) # " attr, +" # debug_show(newLtSrcs) # " src)") };
                 attributesAdded += newLtAttrs;
                 sourcesAdded += newLtSrcs;
               } else {
                 nodesToCreate += 1;
                 let ltAttrCount = countRawAttributes(node.attributes);
                 let ltSrcCount = node.sources.size();
-                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1, "Created law entity '" # node.name # "'");
+                recordContrib(existingId, 40, "Created law entity '" # node.name # "'");
                 attributesAdded += ltAttrCount;
                 sourcesAdded += ltSrcCount;
               };
@@ -3022,7 +3025,7 @@ actor {
               nodesToCreate += 1;
               let ltAttrCount2 = countRawAttributes(node.attributes);
               let ltSrcCount2 = node.sources.size();
-              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1, "Created law entity '" # node.name # "'");
+              recordContrib(existingId, 40, "Created law entity '" # node.name # "'");
               attributesAdded += ltAttrCount2;
               sourcesAdded += ltSrcCount2;
             };
@@ -3057,7 +3060,7 @@ actor {
           lawEntitiesToCreate += 1;
           let newLtAttrCount = countRawAttributes(node.attributes);
           let newLtSrcCount = node.sources.size();
-          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1, "Created law entity '" # node.name # "'");
+          recordContrib(newId, 40, "Created law entity '" # node.name # "'");
           attributesAdded += newLtAttrCount;
           sourcesAdded += newLtSrcCount;
         };
@@ -3137,15 +3140,13 @@ actor {
                 nodesToUpdate += 1;
                 let newItAttrs = countNewAttributes(itExistingAttrs, node.attributes);
                 let newItSrcs = countNewSources(itExistingSources, node.sources);
-                let itExtCost = newItAttrs * 1 + newItSrcs * 1;
-                if (itExtCost > 0) { recordContrib(existingId, itExtCost, "Extended interpretation '" # node.name # "' (+" # debug_show(newItAttrs) # " attr, +" # debug_show(newItSrcs) # " src)") };
                 attributesAdded += newItAttrs;
                 sourcesAdded += newItSrcs;
               } else {
                 nodesToCreate += 1;
                 let itAttrCount = countRawAttributes(node.attributes);
                 let itSrcCount = node.sources.size();
-                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1, "Created interpretation '" # node.name # "'");
+                recordContrib(existingId, 50, "Created interpretation '" # node.name # "'");
                 attributesAdded += itAttrCount;
                 sourcesAdded += itSrcCount;
               };
@@ -3154,7 +3155,7 @@ actor {
               nodesToCreate += 1;
               let itAttrCount2 = countRawAttributes(node.attributes);
               let itSrcCount2 = node.sources.size();
-              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1, "Created interpretation '" # node.name # "'");
+              recordContrib(existingId, 50, "Created interpretation '" # node.name # "'");
               attributesAdded += itAttrCount2;
               sourcesAdded += itSrcCount2;
             };
@@ -3190,7 +3191,7 @@ actor {
           interpEntitiesToCreate += 1;
           let newItAttrCount = countRawAttributes(node.attributes);
           let newItSrcCount = node.sources.size();
-          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1, "Created interpretation '" # node.name # "'");
+          recordContrib(newId, 50, "Created interpretation '" # node.name # "'");
           attributesAdded += newItAttrCount;
           sourcesAdded += newItSrcCount;
         };
@@ -3323,7 +3324,7 @@ actor {
       tempContribEntries.add({ id = contribId; nodeId = edgeNodeId; payer = caller; buzzAmount = edgeCost; description });
     };
 
-    if (nodesToCreate == 0 and edgesToCreate == 0 and attributesAdded == 0) {
+    if (nodesToCreate == 0 and edgesToCreate == 0) {
       return #error({ message = "nothing to update"; failedAt = null });
     };
 
@@ -3336,9 +3337,7 @@ actor {
       + locationsToCreate * 30
       + lawEntitiesToCreate * 40
       + interpEntitiesToCreate * 50
-      + attributesAdded * 1
-      + edgesToCreate * 1
-      + sourcesAdded * 1;
+      + edgesToCreate * 1;
     let callerBuzzBalance = switch (buzzScores.get(caller)) {
       case (null) { 0 };
       case (?b) { b };

@@ -161,11 +161,7 @@ export default function PublishConfirmDialog({
   if (!isOpen) return null;
 
   const { summary, nodeOperations, edgeOperations } = previewResult;
-  const noChanges =
-    summary.nodesToCreate === 0 &&
-    summary.nodesToUpdate === 0 &&
-    summary.edgesToCreate === 0 &&
-    summary.edgesToUpdate === 0;
+  const noChanges = summary.nodesToCreate === 0 && summary.edgesToCreate === 0;
 
   const hasCurationConflict = nodeOperations.some(
     (op) => op.action === "update" && op.nodeType === "curation",
@@ -232,22 +228,32 @@ export default function PublishConfirmDialog({
           >
             <div className="flex gap-4 flex-wrap">
               <span>
-                <span className="text-foreground">{summary.nodesToCreate}</span>{" "}
-                new nodes
+                <span className="text-foreground">
+                  {perTypeCreateCounts.swarm ?? 0}
+                </span>{" "}
+                new swarms
+              </span>
+              <span>
+                <span className="text-foreground">
+                  {perTypeCreateCounts.location ?? 0}
+                </span>{" "}
+                new locations
+              </span>
+              <span>
+                <span className="text-foreground">
+                  {perTypeCreateCounts.lawEntity ?? 0}
+                </span>{" "}
+                new law tokens
+              </span>
+              <span>
+                <span className="text-foreground">
+                  {perTypeCreateCounts.interpEntity ?? 0}
+                </span>{" "}
+                new interpretation tokens
               </span>
               <span>
                 <span className="text-foreground">{summary.edgesToCreate}</span>{" "}
                 cross-ref new
-              </span>
-              <span>
-                <span className="text-foreground">
-                  {summary.hierarchyEdgesToCreate}
-                </span>{" "}
-                hierarchy new
-              </span>
-              <span>
-                <span className="text-foreground">{summary.edgesToUpdate}</span>{" "}
-                updated edges
               </span>
               <span>
                 publish cost:{" "}
@@ -311,18 +317,7 @@ export default function PublishConfirmDialog({
                     {(summary.edgesToCreate / 10).toFixed(1)}
                   </div>
                 )}
-                {(summary.attributesToCreate ?? 0) > 0 && (
-                  <div>
-                    attributes: {summary.attributesToCreate} × 0.1 ={" "}
-                    {(summary.attributesToCreate / 10).toFixed(1)}
-                  </div>
-                )}
-                {(summary.sourcesToCreate ?? 0) > 0 && (
-                  <div>
-                    sources: {summary.sourcesToCreate} × 0.1 ={" "}
-                    {(summary.sourcesToCreate / 10).toFixed(1)}
-                  </div>
-                )}
+
                 <div className="border-t border-dashed border-muted-foreground/40 my-0.5" />
                 <div className="text-foreground">
                   total: {(previewResult.buzzCost / 10).toFixed(1)} buzz
