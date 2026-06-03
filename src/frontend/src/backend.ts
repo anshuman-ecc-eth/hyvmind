@@ -410,6 +410,20 @@ export interface backendInterface {
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    createChannel(name: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    joinChannel(channelId: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getMessages(channelId: string): Promise<{
@@ -773,6 +787,46 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getChannels();
             return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createChannel(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createChannel(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createChannel(arg0);
+            return result;
+        }
+    }
+    async joinChannel(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.joinChannel(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.joinChannel(arg0);
+            return result;
         }
     }
     async getGraphContributions(arg0: string): Promise<Array<ContributionView>> {

@@ -3875,6 +3875,38 @@ actor {
     };
   };
 
+  // ─── createChannel: Create a custom group channel ────────────────────────────
+
+  public shared ({ caller }) func createChannel(name : Text) : async { #ok : Text; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    let trimmed = name.trim(#char(' '));
+    if (trimmed.size() == 0 or trimmed.size() > 100) {
+      return #err("Name must be 1-100 characters");
+    };
+    let channelId = "group:" # trimmed;
+    switch (chatChannels.get(channelId)) {
+      case (?_) { return #err("Channel already exists") };
+      case (null) {};
+    };
+    ensureChatMember(channelId, trimmed, false, null, caller);
+    #ok(channelId);
+  };
+
+  // ─── joinChannel: Join an existing group channel ──────────────────────────────
+
+  public shared ({ caller }) func joinChannel(channelId : Text) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (chatChannels.get(channelId)) {
+      case (null) { return #err("Channel not found") };
+      case (?channel) {
+        if (not channel.members.contains(caller)) {
+          channel.members.add(caller);
+        };
+        #ok;
+      };
+    };
+  };
+
   // ── HTTP API: Types ──────────────────────────────────────────────────────────
 
   type HttpRequest = {

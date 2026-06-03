@@ -27,7 +27,7 @@ import McpSetupPage from "./pages/McpSetupPage";
 import ObsidianTokenPage from "./pages/ObsidianTokenPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
-import SwarmsView from "./pages/SwarmsView";
+import ChatView from "./pages/ChatView";
 import TerminalPage from "./pages/TerminalPage";
 
 // Standalone public page — no auth, no layout
@@ -238,7 +238,7 @@ function AppShell() {
               height: "100%",
             }}
           >
-            <SwarmsView />
+            <ChatView />
           </div>
           <div
             style={{

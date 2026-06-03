@@ -306,6 +306,8 @@ export interface _SERVICE {
   'getBuzzLeaderboard' : ActorMethod<[bigint], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'createChannel' : ActorMethod<[string], { 'ok' : string } | { 'err' : string }>,
+  'joinChannel' : ActorMethod<[string], { 'ok' : null } | { 'err' : string }>,
   'getChannels' : ActorMethod<[], Array<ChatChannelSummary>>,
   'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
   'getMessages' : ActorMethod<
