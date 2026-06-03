@@ -63,7 +63,8 @@ export default function ChatView() {
       <div className="flex flex-col px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground">Chat</span>
         <span className="text-xs text-muted-foreground/50 mt-0.5">
-          You can chat with Beesbury, our custom agent, in the Telegram group.
+          You can chat with Beesbury, our community agent, in the Telegram
+          group.
         </span>
       </div>
 
@@ -157,7 +158,7 @@ export default function ChatView() {
         </div>
 
         {/* ── Sidebar (right) ── */}
-        <aside className="flex w-[220px] shrink-0 flex-col border-l border-dashed border-border bg-card">
+        <aside className="flex min-w-fit shrink-0 flex-col border-l border-dashed border-border bg-card">
           <ScrollArea className="flex-1 min-h-0 px-2 py-2">
             {groupChannels.map((ch) => (
               <button
