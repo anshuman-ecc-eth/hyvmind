@@ -3787,7 +3787,7 @@ actor {
     if (caller.isAnonymous()) { return [] };
     let result = List.empty<ChatChannelSummary>();
     for ((_, channel) in chatChannels.entries()) {
-      if (channel.id.startsWith("group:")) {
+      if (channel.id.startsWith(#text("group:"))) {
         let unreadCount = switch (channel.unreadCounts.get(caller)) {
           case (?n) { n };
           case (null) { 0 };
