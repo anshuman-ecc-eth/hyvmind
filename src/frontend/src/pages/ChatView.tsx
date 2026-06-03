@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+  useCreateChannel,
   useGetChatChannels,
   useGetChatMessages,
-  useSendChatMessage,
-  useCreateChannel,
   useJoinChannel,
+  useSendChatMessage,
 } from "../hooks/useQueries";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -81,6 +81,7 @@ export default function ChatView() {
   }, [beesburyMessages]);
 
   // Auto-scroll
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on message change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [beesburyMessages, nativeMessages]);
@@ -176,9 +177,7 @@ export default function ChatView() {
     }
   };
 
-  const selectedChannel = groupChannels.find(
-    (c) => c.id === selectedGroupId,
-  );
+  const selectedChannel = groupChannels.find((c) => c.id === selectedGroupId);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -228,11 +227,10 @@ export default function ChatView() {
                 <div className="space-y-4">
                   {beesburyMessages.map((msg, i) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: stable message order
                       key={i}
                       className={`flex gap-3 ${
-                        msg.role === "user"
-                          ? "justify-end"
-                          : "justify-start"
+                        msg.role === "user" ? "justify-end" : "justify-start"
                       }`}
                     >
                       {msg.role === "assistant" && (
@@ -264,8 +262,18 @@ export default function ChatView() {
                       <div className="max-w-[70%] rounded-lg px-3 py-2 text-sm bg-card text-foreground/50 border border-border">
                         <span className="animate-pulse">thinking</span>
                         <span className="animate-pulse ml-0.5">.</span>
-                        <span className="animate-pulse ml-0.5" style={{ animationDelay: "0.2s" }}>.</span>
-                        <span className="animate-pulse ml-0.5" style={{ animationDelay: "0.4s" }}>.</span>
+                        <span
+                          className="animate-pulse ml-0.5"
+                          style={{ animationDelay: "0.2s" }}
+                        >
+                          .
+                        </span>
+                        <span
+                          className="animate-pulse ml-0.5"
+                          style={{ animationDelay: "0.4s" }}
+                        >
+                          .
+                        </span>
                       </div>
                     </div>
                   )}
@@ -300,7 +308,11 @@ export default function ChatView() {
                   )}
                 <div className="space-y-3">
                   {nativeMessages.map((msg, i) => (
-                    <div key={i} className="group">
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: positional message rows
+                      key={i}
+                      className="group"
+                    >
                       <div className="flex items-baseline gap-2 mb-0.5">
                         <span className="text-sm font-semibold text-foreground">
                           {msg.senderName}
@@ -359,9 +371,7 @@ export default function ChatView() {
                     size="sm"
                     variant="ghost"
                     onClick={handleGroupSend}
-                    disabled={
-                      !inputText.trim() || sendMutation.isPending
-                    }
+                    disabled={!inputText.trim() || sendMutation.isPending}
                     className="shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5"
                   >
                     <Send className="h-3.5 w-3.5" />

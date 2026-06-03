@@ -1243,13 +1243,13 @@ export default function TerminalPage() {
             addMessage("success", "IronClaw token updated.");
           } else {
             const data = await resp.json().catch(() => ({}));
-            addMessage(
-              "error",
-              `Failed: ${data.error || resp.statusText}`,
-            );
+            addMessage("error", `Failed: ${data.error || resp.statusText}`);
           }
         } catch (e) {
-          addMessage("error", `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`);
+          addMessage(
+            "error",
+            `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`,
+          );
         }
         return;
       }
@@ -1279,7 +1279,10 @@ export default function TerminalPage() {
             addMessage("error", `Failed: ${data.error || resp.statusText}`);
           }
         } catch (e) {
-          addMessage("error", `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`);
+          addMessage(
+            "error",
+            `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`,
+          );
         }
         return;
       }
@@ -1309,7 +1312,10 @@ export default function TerminalPage() {
             addMessage("error", `Failed: ${data.error || resp.statusText}`);
           }
         } catch (e) {
-          addMessage("error", `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`);
+          addMessage(
+            "error",
+            `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`,
+          );
         }
         return;
       }
@@ -1339,7 +1345,10 @@ export default function TerminalPage() {
             ].join("\n"),
           );
         } catch (e) {
-          addMessage("error", `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`);
+          addMessage(
+            "error",
+            `Could not reach proxy: ${e instanceof Error ? e.message : String(e)}`,
+          );
         }
         return;
       }

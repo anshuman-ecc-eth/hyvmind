@@ -21,13 +21,13 @@ import {
   getSavedFontSize,
 } from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
+import ChatView from "./pages/ChatView";
 import EditorView from "./pages/EditorView";
 import HyvmindSkillsPage from "./pages/HyvmindSkillsPage";
 import McpSetupPage from "./pages/McpSetupPage";
 import ObsidianTokenPage from "./pages/ObsidianTokenPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
-import ChatView from "./pages/ChatView";
 import TerminalPage from "./pages/TerminalPage";
 
 // Standalone public page — no auth, no layout
