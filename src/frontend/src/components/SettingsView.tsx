@@ -689,7 +689,7 @@ export function SettingsView() {
                           data-ocid="settings.wallet.refresh_trust"
                         >
                           <RotateCcw
-                            className={`h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`}
+                            className={`h-3 w-3${isTrustRefetching ? " animate-spin [animation-direction:reverse]" : ""}`}
                           />
                         </Button>
                         <Button
@@ -787,10 +787,7 @@ export function SettingsView() {
                                     <TableCell />
                                     <TableCell colSpan={3} className="py-0.5">
                                       <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
-                                        <span className="col-span-4">
-                                          Saver
-                                        </span>
-                                        <span className="col-span-4">
+                                        <span className="col-span-8">
                                           Entity
                                         </span>
                                         <span className="col-span-2">
@@ -810,10 +807,7 @@ export function SettingsView() {
                                       <TableCell />
                                       <TableCell colSpan={3} className="py-0.5">
                                         <div className="grid grid-cols-12 gap-1 text-xs pl-4">
-                                          <span className="col-span-4 font-mono text-muted-foreground">
-                                            {fmtPrincipal(tx.saver)}
-                                          </span>
-                                          <span className="col-span-4 truncate">
+                                          <span className="col-span-8 truncate">
                                             {parseEntity(detail.description)}
                                           </span>
                                           <span className="col-span-2">
