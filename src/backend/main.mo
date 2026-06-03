@@ -3457,26 +3457,14 @@ actor {
       curationToPublishedGraphId.add(id, thePublishedId);
     };
 
-    // ── Auto-join chat channels based on published curations and swarms ───────
+    // ── Auto-create group channels for each published swarm (flat A/B naming) ──
     for ((_, curation) in stagingCurations.entries()) {
-      // Top-level channel keyed by curation name
-      ensureChatMember(curation.name, curation.name, false, null, caller);
-    };
-    for ((_, swarm) in stagingSwarms.entries()) {
-      // Find parent curation name for this swarm
-      let parentCurationName = switch (curationMap.get(swarm.parentCurationId)) {
-        case (?c) { c.name };
-        case (null) {
-          // May be in staging curations (first publish)
-          switch (stagingCurations.get(swarm.parentCurationId)) {
-            case (?c) { c.name };
-            case (null) { "" };
-          };
+      for ((_, swarm) in stagingSwarms.entries()) {
+        if (swarm.parentCurationId == curation.id) {
+          let channelId = "group:" # curation.name # "/" # swarm.name;
+          let channelName = curation.name # "/" # swarm.name;
+          ensureChatMember(channelId, channelName, false, null, caller);
         };
-      };
-      if (parentCurationName != "") {
-        let subChannelId = parentCurationName # "@" # swarm.name;
-        ensureChatMember(subChannelId, swarm.name, true, ?parentCurationName, caller);
       };
     };
 
@@ -3824,7 +3812,7 @@ actor {
       case (null) { return #err("Channel not found") };
       case (?channel) {
         if (not channel.members.contains(caller)) {
-          return #err("Not a member of this channel");
+          channel.members.add(caller);
         };
         let senderName = switch (userProfiles.get(caller)) {
           case (?profile) { profile.name };
@@ -3867,42 +3855,10 @@ actor {
       case (null) { return #err("Channel not found") };
       case (?channel) {
         if (not channel.members.contains(caller)) {
-          return #err("Not a member of this channel");
+          channel.members.add(caller);
         };
         channel.unreadCounts.add(caller, 0);
         #ok(channel.messages.toArray())
-      };
-    };
-  };
-
-  // ─── createChannel: Create a custom group channel ────────────────────────────
-
-  public shared ({ caller }) func createChannel(name : Text) : async { #ok : Text; #err : Text } {
-    if (caller.isAnonymous()) { return #err("Not authenticated") };
-    let trimmed = name.trim(#char(' '));
-    if (trimmed.size() == 0 or trimmed.size() > 100) {
-      return #err("Name must be 1-100 characters");
-    };
-    let channelId = "group:" # trimmed;
-    switch (chatChannels.get(channelId)) {
-      case (?_) { return #err("Channel already exists") };
-      case (null) {};
-    };
-    ensureChatMember(channelId, trimmed, false, null, caller);
-    #ok(channelId);
-  };
-
-  // ─── joinChannel: Join an existing group channel ──────────────────────────────
-
-  public shared ({ caller }) func joinChannel(channelId : Text) : async { #ok; #err : Text } {
-    if (caller.isAnonymous()) { return #err("Not authenticated") };
-    switch (chatChannels.get(channelId)) {
-      case (null) { return #err("Channel not found") };
-      case (?channel) {
-        if (not channel.members.contains(caller)) {
-          channel.members.add(caller);
-        };
-        #ok;
       };
     };
   };

@@ -293,38 +293,6 @@ export function useResetAllData() {
   });
 }
 
-// ─── Chat: Custom Group Hooks ─────────────────────────────────────────────────
-
-export function useCreateChannel() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (name: string) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createChannel(name);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chatChannels"] });
-    },
-  });
-}
-
-export function useJoinChannel() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (channelId: string) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.joinChannel(channelId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chatChannels"] });
-    },
-  });
-}
-
 // ─── Chat Hooks ───────────────────────────────────────────────────────────────
 
 export function useGetChatChannels() {

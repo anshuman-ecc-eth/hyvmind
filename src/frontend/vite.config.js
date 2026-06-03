@@ -47,14 +47,6 @@ export default defineConfig({
         target: "http://127.0.0.1:8080",
         changeOrigin: true,
       },
-      "/ironclaw": {
-        target: "http://127.0.0.1:3001",
-        changeOrigin: true,
-      },
-      "/admin": {
-        target: "http://127.0.0.1:3001",
-        changeOrigin: true,
-      },
     },
   },
   plugins: [

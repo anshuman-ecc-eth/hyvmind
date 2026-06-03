@@ -325,20 +325,6 @@ export interface backendInterface {
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    createChannel(name: string): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
-    joinChannel(channelId: string): Promise<{
-        __kind__: "ok";
-        ok: null;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
