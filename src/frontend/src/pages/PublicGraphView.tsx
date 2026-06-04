@@ -14,7 +14,7 @@ import {
   usePublishedGraphData,
   usePublishedGraphMetas,
 } from "../hooks/usePublicGraphs";
-import type { SourceNode } from "../types/sourceGraph";
+import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
 import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
 
@@ -254,6 +254,21 @@ function GraphDetail({
     [graphData, graphName, selectedId],
   );
 
+  // Stabilize: public graph data never changes after initial load, so cache
+  // the first successful convertedGraph per selectedId. This prevents the
+  // duplicate fetch from useActor's refetchQueries from producing a different
+  // object reference that would restart the force simulation unnecessarily.
+  const stableGraphRef = useRef<SourceGraph | null>(null);
+  const stableIdRef = useRef<string | null>(null);
+
+  if (convertedGraph && stableIdRef.current !== selectedId) {
+    stableIdRef.current = selectedId;
+    stableGraphRef.current = convertedGraph;
+  }
+
+  const currentGraph =
+    stableIdRef.current === selectedId ? stableGraphRef.current : null;
+
   // ---------------------------------------------------------------------------
   // Filter state — per-graph persistence
   // ---------------------------------------------------------------------------
@@ -322,11 +337,11 @@ function GraphDetail({
 
       {isLoading && <Spinner />}
 
-      {!isLoading && convertedGraph && (
+      {!isLoading && currentGraph && (
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 min-w-0 min-h-0">
             <SourceGraphDiagram
-              graph={convertedGraph}
+              graph={currentGraph}
               graphId={selectedId}
               onNodeClick={setSelectedNode}
               searchText={filterState.searchText}
@@ -343,7 +358,7 @@ function GraphDetail({
             onNodeTypesChange={(types) =>
               setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
             }
-            totalNodes={convertedGraph.nodes.length}
+            totalNodes={currentGraph.nodes.length}
             visibleNodes={visibleNodeCount}
             onReset={() => setFilterState(defaultFilterState())}
             onFitToVisible={handleFitToVisible}
