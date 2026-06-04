@@ -17,6 +17,7 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
     /* Minimalist dark palette — default (full CSS values for var() compatibility) */
     --background: oklch(0% 0 0);
     --foreground: oklch(100% 0 0);
@@ -114,6 +115,11 @@ html.minimalist-dark {
   --panel-sidebar: oklch(8% 0 0);
   --panel-main: oklch(2% 0 0);
   --panel-details: oklch(8% 0 0);
+}
+
+/* All light themes get light color-scheme so the OS I-beam cursor stays visible */
+html[class$="-light"] {
+  color-scheme: light;
 }
 
 html.minimalist-light {
