@@ -278,7 +278,7 @@ export function MarkdownEditor({
               onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
               onContextMenu={(e) => e.stopPropagation()}
               className={[
-                "relative bg-transparent text-transparent caret-foreground",
+                "relative bg-transparent text-transparent caret-foreground cursor-default",
                 "flex-1 w-full h-full resize-none",
                 "font-mono text-sm leading-relaxed",
                 "px-4 py-4 pr-20",
