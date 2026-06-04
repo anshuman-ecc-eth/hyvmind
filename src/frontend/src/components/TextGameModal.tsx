@@ -481,7 +481,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           className="w-full flex flex-col items-start gap-3"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.6em",
+            fontSize: "0.5em",
             lineHeight: "1.8",
             letterSpacing: "0.05em",
           }}
@@ -1004,52 +1004,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
-          <div className="text-foreground" style={{ fontSize: "0.85em" }}>
-            All fonts loaded from Google Fonts.
-          </div>
-          {[
-            ["Press Start 2P", "CodeMan38", "SIL OFL 1.1"],
-            ["Quattrocento Sans", "SIL OFL"],
-            ["Muli", "SIL OFL"],
-            ["Josefin Sans", "SIL OFL"],
-            ["Cardo", "SIL OFL"],
-            ["Oswald", "SIL OFL"],
-            ["Barlow", "SIL OFL"],
-            ["Montserrat", "SIL OFL"],
-            ["Source Sans 3", "SIL OFL"],
-            ["Chivo", "SIL OFL"],
-            ["Krub", "SIL OFL"],
-            ["Lora", "SIL OFL"],
-            ["Rubik", "SIL OFL"],
-            ["Assistant", "SIL OFL"],
-            ["Six Caps", "SIL OFL"],
-            ["JetBrains Mono", "SIL OFL"],
-            ["Roboto", "Apache-2.0"],
-            ["Open Sans Condensed", "Apache-2.0"],
-          ].map(([font, ...rest]) => (
-            <div key={font} className="flex flex-col items-start gap-0 w-full">
-              <span className="text-foreground">{font}</span>
-              <div className="flex flex-row gap-2 items-center flex-wrap">
-                <span
-                  className="text-muted-foreground"
-                  style={{ fontSize: "0.85em" }}
-                >
-                  {rest.join(", ")}
-                </span>
-                <span
-                  className="text-muted-foreground"
-                  style={{
-                    border: "1px solid #5a4a2a",
-                    padding: "1px 6px",
-                    fontSize: "0.85em",
-                  }}
-                >
-                  font
-                </span>
-              </div>
-            </div>
-          ))}
-
           {[
             ["GSAP", "GreenSock", "Standard License", "https://gsap.com"],
             [
@@ -1125,6 +1079,52 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
                   style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
                 >
                   code library
+                </span>
+              </div>
+            </div>
+          ))}
+
+          <div className="text-foreground" style={{ fontSize: "0.85em" }}>
+            All fonts loaded from Google Fonts.
+          </div>
+          {[
+            ["Press Start 2P", "CodeMan38", "SIL OFL 1.1"],
+            ["Quattrocento Sans", "SIL OFL"],
+            ["Muli", "SIL OFL"],
+            ["Josefin Sans", "SIL OFL"],
+            ["Cardo", "SIL OFL"],
+            ["Oswald", "SIL OFL"],
+            ["Barlow", "SIL OFL"],
+            ["Montserrat", "SIL OFL"],
+            ["Source Sans 3", "SIL OFL"],
+            ["Chivo", "SIL OFL"],
+            ["Krub", "SIL OFL"],
+            ["Lora", "SIL OFL"],
+            ["Rubik", "SIL OFL"],
+            ["Assistant", "SIL OFL"],
+            ["Six Caps", "SIL OFL"],
+            ["JetBrains Mono", "SIL OFL"],
+            ["Roboto", "Apache-2.0"],
+            ["Open Sans Condensed", "Apache-2.0"],
+          ].map(([font, ...rest]) => (
+            <div key={font} className="flex flex-col items-start gap-0 w-full">
+              <span className="text-foreground">{font}</span>
+              <div className="flex flex-row gap-2 items-center flex-wrap">
+                <span
+                  className="text-muted-foreground"
+                  style={{ fontSize: "0.85em" }}
+                >
+                  {rest.join(", ")}
+                </span>
+                <span
+                  className="text-muted-foreground"
+                  style={{
+                    border: "1px solid #5a4a2a",
+                    padding: "1px 6px",
+                    fontSize: "0.85em",
+                  }}
+                >
+                  font
                 </span>
               </div>
             </div>
