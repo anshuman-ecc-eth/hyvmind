@@ -233,6 +233,13 @@ h6 {
   font-size: 0.7rem !important;
 }
 
+/* Never show I-beam cursor anywhere — use default arrow instead */
+input,
+textarea,
+[contenteditable="true"] {
+  cursor: default;
+}
+
 /* Fix chessboard.js draggable pieces appearing behind modals */
 body > img[data-piece] {
   z-index: 10000 !important;
