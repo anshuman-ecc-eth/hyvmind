@@ -799,7 +799,7 @@ export default function EditorView() {
         {/* Right sidebar: file tree */}
         {!isEmpty && (
           <div
-            className="w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden"
+            className="w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default"
             data-ocid="editor.sidebar"
           >
             <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
