@@ -59,7 +59,7 @@ const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
 const OPTION_LABELS: Record<ContextOption, string> = {
   "new-swarm": "New Swarm",
   "new-location": "New Location",
-  "new-law-entity": "New Law Entity",
+  "new-law-entity": "New Law Token",
   "new-file": "New File",
   "add-attributes": "Add Attributes",
   "add-sources": "Add Sources",

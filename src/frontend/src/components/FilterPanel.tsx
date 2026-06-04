@@ -22,8 +22,8 @@ const ALL_NODE_TYPES: { key: string; label: string; color: string }[] = [
   { key: "curation", label: "curation", color: "#4a9eff" },
   { key: "swarm", label: "swarm", color: "#ff7f50" },
   { key: "location", label: "location", color: "#90EE90" },
-  { key: "lawEntity", label: "law entity", color: "#FFD700" },
-  { key: "interpEntity", label: "interp entity", color: "#DA70D6" },
+  { key: "lawEntity", label: "law token", color: "#FFD700" },
+  { key: "interpEntity", label: "interp token", color: "#DA70D6" },
 ];
 
 // ---------------------------------------------------------------------------

@@ -296,7 +296,7 @@ export default function PublishConfirmDialog({
                 )}
                 {(perTypeCreateCounts.lawEntity ?? 0) > 0 && (
                   <div>
-                    law entity: {perTypeCreateCounts.lawEntity} × 4.0 ={" "}
+                    law token: {perTypeCreateCounts.lawEntity} × 4.0 ={" "}
                     {(((perTypeCreateCounts.lawEntity ?? 0) * 40) / 10).toFixed(
                       1,
                     )}
@@ -304,7 +304,7 @@ export default function PublishConfirmDialog({
                 )}
                 {(perTypeCreateCounts.interpEntity ?? 0) > 0 && (
                   <div>
-                    interp entity: {perTypeCreateCounts.interpEntity} × 5.0 ={" "}
+                    interp token: {perTypeCreateCounts.interpEntity} × 5.0 ={" "}
                     {(
                       ((perTypeCreateCounts.interpEntity ?? 0) * 50) /
                       10
