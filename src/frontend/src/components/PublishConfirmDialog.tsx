@@ -196,7 +196,7 @@ export default function PublishConfirmDialog({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-dashed border-border bg-card">
           <h2 className="text-sm text-foreground">
-            {isPublished ? "update graph" : "publish graph"}:{" "}
+            {isPublished ? "Update Graph" : "Publish Graph"}:{" "}
             <span className="text-muted-foreground">{graphName}</span>
           </h2>
           <button
@@ -331,7 +331,7 @@ export default function PublishConfirmDialog({
               className="px-3 py-2 border border-dashed border-border text-xs text-muted-foreground text-center"
               data-ocid="publish_dialog.no_changes_state"
             >
-              no changes detected — graph is already up to date.
+              No changes detected — graph is already up to date.
             </div>
           )}
 
