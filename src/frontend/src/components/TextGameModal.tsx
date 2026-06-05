@@ -460,12 +460,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       style={{ background: "rgba(0,0,0,0.7)" }}
     >
       <div
-        className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "0.9em" }}
-      >
-        Credits
-      </div>
-      <div
         className="text-foreground"
         style={{
           fontFamily: '"Press Start 2P", monospace',
