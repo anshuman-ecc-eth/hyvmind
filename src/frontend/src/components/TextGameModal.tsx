@@ -3287,7 +3287,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     key={game}
                     className="flex-1 relative flex flex-col overflow-hidden"
                   >
-                    <div className="flex-1 flex items-center justify-center p-0">
+                    <div
+                      className="flex-1 flex items-center justify-center p-0"
+                      style={{ background: "rgba(0,0,0,0.7)" }}
+                    >
                       {!gamesLoaded[game] && (
                         <div className="absolute inset-0 flex items-center justify-center z-10">
                           <div className="flex gap-[2px]">
