@@ -21,6 +21,9 @@
 window.addEventListener("load", function() { window.onLoad(); });
 </script>
 <script>
+(function() { var s = document.createElement('style'); s.textContent = 'body { background: #0a0a0a !important; }'; document.head.appendChild(s); })();
+</script>
+<script>
 window.addEventListener("keydown", function(e) {
   if (e.key === "Escape" || e.key === "x" || e.key === "X") {
     window.parent.postMessage({ type: "hyvmind-game-exit" }, "*");

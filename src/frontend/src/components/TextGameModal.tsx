@@ -1892,6 +1892,8 @@ function GamesOverlay({
 
   return (
     <div
+      data-ocid="text_game.games_menu"
+      tabIndex={-1}
       className="flex-1 flex flex-col items-center justify-center gap-6"
       style={{ background: "rgba(0,0,0,0.7)" }}
     >
@@ -2513,6 +2515,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         }
       } else if (e.data?.type === "hyvmind-game-exit") {
         setHyvmindOverlay("games");
+        setTimeout(() => {
+          document
+            .querySelector<HTMLElement>('[data-ocid="text_game.games_menu"]')
+            ?.focus();
+        }, 200);
       } else if (e.data?.type === "hyvmind-zoom-sync") {
         setZoom(e.data.zoom);
         localStorage.setItem("hyvmind-zoom", String(e.data.zoom));
