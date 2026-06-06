@@ -20,6 +20,13 @@
 <script>
 window.addEventListener("load", function() { window.onLoad(); });
 </script>
+<script>
+window.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" || e.key === "x" || e.key === "X") {
+    window.parent.postMessage({ type: "hyvmind-game-exit" }, "*");
+  }
+});
+</script>
 </head>
-<body style="background:#ddd"></body>
+<body style="background:transparent"></body>
 </html>

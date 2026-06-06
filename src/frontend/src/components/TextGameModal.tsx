@@ -369,7 +369,13 @@ function LeaderboardScreen({
 }: LeaderboardScreenProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter") onBack();
+      if (
+        e.key === "Enter" ||
+        e.key === "Escape" ||
+        e.key === "x" ||
+        e.key === "X"
+      )
+        onBack();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -2505,6 +2511,8 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         if (win) {
           win.postMessage({ type: "hyvmind-resume-bgm" }, "*");
         }
+      } else if (e.data?.type === "hyvmind-game-exit") {
+        setHyvmindOverlay("games");
       } else if (e.data?.type === "hyvmind-zoom-sync") {
         setZoom(e.data.zoom);
         localStorage.setItem("hyvmind-zoom", String(e.data.zoom));
@@ -3279,9 +3287,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     key={game}
                     className="flex-1 relative flex flex-col overflow-hidden"
                   >
-                    <div className="flex-1 flex items-center justify-center bg-background p-0">
+                    <div className="flex-1 flex items-center justify-center p-0">
                       {!gamesLoaded[game] && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
                           <div className="flex gap-[2px]">
                             {Array.from({ length: 16 }).map((_, i) => (
                               <span
