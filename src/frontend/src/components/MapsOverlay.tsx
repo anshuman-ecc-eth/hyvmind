@@ -43,6 +43,14 @@ export default function MapsOverlay({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === "x" || e.key === "X") {
+        onBack();
+        return;
+      }
+      if (e.key === "Escape") {
+        onBack();
+        return;
+      }
       if (allItems.length === 0) return;
       if (e.key === "ArrowUp") {
         e.preventDefault();
@@ -54,10 +62,6 @@ export default function MapsOverlay({
         handleSelect(selectedIdx);
       } else if (e.key === "Enter") {
         handleSelect(selectedIdx);
-      } else if (e.key === "x" || e.key === "X") {
-        onBack();
-      } else if (e.key === "Escape") {
-        onBack();
       }
     };
     window.addEventListener("keydown", handler);

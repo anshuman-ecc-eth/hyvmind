@@ -1872,6 +1872,8 @@ function GamesOverlay({
         else if (chosen === "Box Snake") onBoxSnake();
         else if (chosen === "Pillars 3D") onPillars3d();
         else if (chosen === "Back") onBack();
+      } else if (e.key === "x" || e.key === "X") {
+        onBack();
       } else if (e.key === "Escape") {
         onBack();
       }
@@ -1986,6 +1988,8 @@ function PuzzlesOverlay({
         if (chosen === "Chess") onChess();
         else if (chosen === "Wordle") onWordle();
         else if (chosen === "Back") onBack();
+      } else if (e.key === "x" || e.key === "X") {
+        onBack();
       } else if (e.key === "Escape") {
         onBack();
       }
