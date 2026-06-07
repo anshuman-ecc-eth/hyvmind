@@ -42,7 +42,7 @@ const ABOUT_LINES = [
   "",
   "Marketing teams say they're selling 'legal intelligence'.",
   "",
-  "But they don't tell you how their parrots were trained.",
+  "But they don't say how their parrots were trained.",
   "",
   "Subscribers to LAI Premium get bonus tricks, of course.",
   "",
