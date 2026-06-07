@@ -66,7 +66,7 @@ const ABOUT_LINES = [
   "",
   "That's why we don't trust them with the real stuff.",
   "",
-  "And that's why the LAI folks hate us.",
+  "And that's why the LAI folks are scared of us.",
   "",
   '"It sends the wrong message", they say.',
   "",
