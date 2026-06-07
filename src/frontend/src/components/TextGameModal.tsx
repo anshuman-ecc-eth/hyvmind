@@ -80,8 +80,6 @@ const ABOUT_LINES = [
   "",
   "Each variable is measured in non-parrot hours. That's why they're freaking out.",
   "",
-  "In order for the 'business model' to work, they must sell with one hand what they steal with another.",
-  "",
   "At this point, they have no other option but to test you.",
   "",
   "If you're scared, they'll throw you into a shadow factory.",
@@ -2401,6 +2399,11 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             return newScore;
           });
           setHyvmindOverlay("games");
+          setTimeout(() => {
+            document
+              .querySelector<HTMLElement>('[data-ocid="text_game.games_menu"]')
+              ?.focus();
+          }, 200);
         } else if (phase.type === "game1") {
           setGameScores((prev) => ({ ...prev, game1: receivedScore }));
           if (settings.skipMessages) {
