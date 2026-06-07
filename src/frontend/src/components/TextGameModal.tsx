@@ -380,7 +380,10 @@ function LeaderboardScreen({
   }, [onBack]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
+    <div
+      className="flex-1 flex flex-col items-center justify-center gap-8 select-none"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+    >
       <div
         className="text-foreground tracking-widest"
         style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1em" }}
