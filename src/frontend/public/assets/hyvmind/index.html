@@ -879,6 +879,9 @@ function activateZ() {
       renderSequentialPopup(activePopup, nextStep, activePopup._sentences);
       msg = activePopup._type + '-' + nextStep;
     }
+  } else if (nearDoor && !(activePopup && activePopup._type === 'door') && Date.now() - (popupDismissedAt['door:' + ((nearDoor && doorLabels[nearDoor.key]) || 'unlabeled')] || 0) > 5000) {
+    showDoorPopup(nearDoor && doorLabels[nearDoor.key]);
+    msg = 'door-prompt';
   } else if (activePopup && activePopup._type === 'door') {
     var label = activePopup._label;
     closePopup();
@@ -1069,18 +1072,8 @@ function render() {
       sparkles[s].style.opacity = 0;
     }
   }
-  // Auto-show door confirmation popup when near a labeled door
-  var doorLabel = nearDoor && doorLabels[nearDoor.key];
-  if (nearDoor) {
-    if (lastNearDoorKey !== nearDoor.key) { doorDismissed = false; lastNearDoorKey = nearDoor.key; }
-  } else {
-    lastNearDoorKey = null;
-  }
-  if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
-    // keep popup visible
-  } else if (nearDoor && !doorDismissed && Date.now() - (popupDismissedAt['door:' + (doorLabel || 'unlabeled')] || 0) > 5000) {
-    showDoorPopup(doorLabel);
-  } else {
+  // Door popups only show on Z press, not automatically
+  if (!nearDoor) {
     closeDoorPopup();
   }
 }
