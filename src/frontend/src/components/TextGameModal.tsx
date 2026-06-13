@@ -92,10 +92,10 @@ const ABOUT_LINES = [
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 const GAMES_MENU_ITEMS = [
-  "Up 1 Way",
+  "Flipo",
   "Thunder",
   "Box Snake",
-  "Pillars 3D",
+  "Charge Beam",
   "Back",
 ] as const;
 
@@ -1030,68 +1030,173 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           {[
-            ["@caffeineai/core-infrastructure", "Caffeine AI", "Apache-2.0", "https://github.com/caffeineai"],
-            ["@dfinity/auth-client / @dfinity/principal", "DFINITY Stiftung", "Apache-2.0", "https://github.com/dfinity/agent-js"],
-            ["@icp-sdk/core", "DFINITY Stiftung", "Apache-2.0", "https://github.com/dfinity/icp-core"],
-            ["@radix-ui/primitives", "Radix UI (WorkOS)", "MIT", "https://github.com/radix-ui/primitives"],
-            ["@tanstack/react-query", "TanStack", "MIT", "https://tanstack.com/query"],
-            ["caffeineai-authorization", "caffeinelabs", "Apache-2.0", "https://github.com/caffeinelabs/skills"],
-            ["chess.js", "Jeff Hlywa", "MIT", "https://github.com/jhlywa/chess.js"],
-            ["chessboard.js", "Chris Oakman", "MIT", "https://chessboardjs.com"],
-            ["class-variance-authority", "Joe Bell", "Apache-2.0", "https://cva.style"],
+            [
+              "@caffeineai/core-infrastructure",
+              "Caffeine AI",
+              "Apache-2.0",
+              "https://github.com/caffeineai",
+            ],
+            [
+              "@dfinity/auth-client / @dfinity/principal",
+              "DFINITY Stiftung",
+              "Apache-2.0",
+              "https://github.com/dfinity/agent-js",
+            ],
+            [
+              "@icp-sdk/core",
+              "DFINITY Stiftung",
+              "Apache-2.0",
+              "https://github.com/dfinity/icp-core",
+            ],
+            [
+              "@radix-ui/primitives",
+              "Radix UI (WorkOS)",
+              "MIT",
+              "https://github.com/radix-ui/primitives",
+            ],
+            [
+              "@tanstack/react-query",
+              "TanStack",
+              "MIT",
+              "https://tanstack.com/query",
+            ],
+            [
+              "caffeineai-authorization",
+              "caffeinelabs",
+              "Apache-2.0",
+              "https://github.com/caffeinelabs/skills",
+            ],
+            [
+              "chess.js",
+              "Jeff Hlywa",
+              "MIT",
+              "https://github.com/jhlywa/chess.js",
+            ],
+            [
+              "chessboard.js",
+              "Chris Oakman",
+              "MIT",
+              "https://chessboardjs.com",
+            ],
+            [
+              "class-variance-authority",
+              "Joe Bell",
+              "Apache-2.0",
+              "https://cva.style",
+            ],
             ["clsx", "Luke Edwards", "MIT", "https://github.com/lukeed/clsx"],
-            ["crisp-game-lib", "abagames", "MIT", "https://github.com/abagames/crisp-game-lib"],
-            ["force-graph", "Vasco Asturiano", "MIT", "https://github.com/vasturiano/force-graph"],
+            [
+              "crisp-game-lib",
+              "abagames",
+              "MIT",
+              "https://github.com/abagames/crisp-game-lib",
+            ],
+            [
+              "force-graph",
+              "Vasco Asturiano",
+              "MIT",
+              "https://github.com/vasturiano/force-graph",
+            ],
             ["fuse.js", "Alex Bardas", "Apache-2.0", "https://fusejs.io"],
             ["GSAP", "GreenSock", "Standard License", "https://gsap.com"],
             ["jquery", "OpenJS Foundation", "MIT", "https://jquery.com"],
-            ["jszip", "Stuart Knightley", "MIT", "https://stuk.github.io/jszip"],
-            ["lodash (clonedeep)", "lodash authors", "MIT", "https://lodash.com"],
-            ["lucide-react", "Lucide Contributors", "ISC", "https://lucide.dev"],
-            ["mo:core", "caffeinelabs", "Apache-2.0", "https://github.com/caffeinelabs/motoko-core"],
+            [
+              "jszip",
+              "Stuart Knightley",
+              "MIT",
+              "https://stuk.github.io/jszip",
+            ],
+            [
+              "lodash (clonedeep)",
+              "lodash authors",
+              "MIT",
+              "https://lodash.com",
+            ],
+            [
+              "lucide-react",
+              "Lucide Contributors",
+              "ISC",
+              "https://lucide.dev",
+            ],
+            [
+              "mo:core",
+              "caffeinelabs",
+              "Apache-2.0",
+              "https://github.com/caffeinelabs/motoko-core",
+            ],
             ["motion", "Matt Perry", "MIT", "https://motion.dev"],
-            ["next-themes", "Paco Coursey", "MIT", "https://github.com/pacocoursey/next-themes"],
-            ["pixi-filters", "PixiJS contributors", "MIT", "https://github.com/pixijs/filters"],
+            [
+              "next-themes",
+              "Paco Coursey",
+              "MIT",
+              "https://github.com/pacocoursey/next-themes",
+            ],
+            [
+              "pixi-filters",
+              "PixiJS contributors",
+              "MIT",
+              "https://github.com/pixijs/filters",
+            ],
             ["pixi.js", "PixiJS contributors", "MIT", "https://pixijs.com"],
             ["react / react-dom", "Meta Platforms", "MIT", "https://react.dev"],
             ["sonner", "Emil Kowalski", "MIT", "https://sonner.emilkowal.ski"],
-            ["tailwind-merge", "Dylan Aspden", "MIT", "https://github.com/dcastil/tailwind-merge"],
-            ["unified / remark / rehype", "unified collective", "MIT", "https://unifiedjs.com"],
+            [
+              "tailwind-merge",
+              "Dylan Aspden",
+              "MIT",
+              "https://github.com/dcastil/tailwind-merge",
+            ],
+            [
+              "unified / remark / rehype",
+              "unified collective",
+              "MIT",
+              "https://unifiedjs.com",
+            ],
             ["yaml", "Eemeli Aro", "ISC", "https://eemeli.org/yaml"],
-          ].sort((a, b) => a[0].localeCompare(b[0])).map(([name, author, license, url]) => (
-            <div key={name} className="flex flex-col items-start gap-1 w-full">
-              <span className="text-foreground">{name}</span>
-              <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-                {author}
-              </span>
-              {url && (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground hover:text-muted-foreground underline"
+          ]
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([name, author, license, url]) => (
+              <div
+                key={name}
+                className="flex flex-col items-start gap-1 w-full"
+              >
+                <span className="text-foreground">{name}</span>
+                <span
+                  className="text-foreground"
                   style={{ fontSize: "0.85em" }}
                 >
-                  {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </a>
-              )}
-              <div className="flex flex-row gap-2 items-center flex-wrap">
-                <span
-                  className="text-muted-foreground"
-                  style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
-                >
-                  {license}
+                  {author}
                 </span>
-                <span
-                  className="text-muted-foreground"
-                  style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
-                >
-                  code library
-                </span>
+                {url && (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground hover:text-muted-foreground underline"
+                    style={{ fontSize: "0.85em" }}
+                  >
+                    {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </a>
+                )}
+                <div className="flex flex-row gap-2 items-center flex-wrap">
+                  <span
+                    className="text-muted-foreground"
+                    style={{
+                      background: "rgba(0,0,0,0.7)",
+                      padding: "1px 6px",
+                    }}
+                  >
+                    {license}
+                  </span>
+                  <span
+                    className="text-muted-foreground"
+                    style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+                  >
+                    code library
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-
+            ))}
         </div>
       </div>
       <button
@@ -1804,10 +1909,10 @@ interface GamesOverlayProps {
   selectedIdx: number;
   onSelect: (i: number | ((prev: number) => number)) => void;
   onBack: () => void;
-  onUp1Way: () => void;
+  onFlipo: () => void;
   onThunder: () => void;
   onBoxSnake: () => void;
-  onPillars3d: () => void;
+  onChargeBeam: () => void;
   score: number;
 }
 
@@ -1815,10 +1920,10 @@ function GamesOverlay({
   selectedIdx,
   onSelect,
   onBack,
-  onUp1Way,
+  onFlipo,
   onThunder,
   onBoxSnake,
-  onPillars3d,
+  onChargeBeam,
   score,
 }: GamesOverlayProps) {
   useEffect(() => {
@@ -1832,10 +1937,10 @@ function GamesOverlay({
         onSelect((prev: number) => (prev + 1) % GAMES_MENU_ITEMS.length);
       } else if (e.key === "Enter") {
         const chosen = GAMES_MENU_ITEMS[selectedIdx];
-        if (chosen === "Up 1 Way") onUp1Way();
+        if (chosen === "Flipo") onFlipo();
         else if (chosen === "Thunder") onThunder();
         else if (chosen === "Box Snake") onBoxSnake();
-        else if (chosen === "Pillars 3D") onPillars3d();
+        else if (chosen === "Charge Beam") onChargeBeam();
         else if (chosen === "Back") onBack();
       } else if (e.key === "x" || e.key === "X") {
         onBack();
@@ -1848,10 +1953,10 @@ function GamesOverlay({
   }, [
     selectedIdx,
     onSelect,
-    onUp1Way,
+    onFlipo,
     onThunder,
     onBoxSnake,
-    onPillars3d,
+    onChargeBeam,
     onBack,
   ]);
 
@@ -1891,10 +1996,10 @@ function GamesOverlay({
               }}
               onClick={() => {
                 onSelect(i);
-                if (item === "Up 1 Way") onUp1Way();
+                if (item === "Flipo") onFlipo();
                 else if (item === "Thunder") onThunder();
                 else if (item === "Box Snake") onBoxSnake();
-                else if (item === "Pillars 3D") onPillars3d();
+                else if (item === "Charge Beam") onChargeBeam();
                 else if (item === "Back") onBack();
               }}
             >
@@ -3201,13 +3306,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   setGameIdx(typeof i === "function" ? i(gameIdx) : i)
                 }
                 onBack={handleHyvmindResume}
-                onUp1Way={() => {
-                  setHyvmindOverlay("games-up1way");
+                onFlipo={() => {
+                  setHyvmindOverlay("games-flipo");
                   setTimeout(
                     () =>
                       document
                         .querySelector<HTMLIFrameElement>(
-                          'iframe[title="Up 1 Way"]',
+                          'iframe[title="Flipo"]',
                         )
                         ?.focus(),
                     200,
@@ -3237,13 +3342,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     200,
                   );
                 }}
-                onPillars3d={() => {
-                  setHyvmindOverlay("games-pillars3d");
+                onChargeBeam={() => {
+                  setHyvmindOverlay("games-chargebeam");
                   setTimeout(
                     () =>
                       document
                         .querySelector<HTMLIFrameElement>(
-                          'iframe[title="Pillars 3D"]',
+                          'iframe[title="Charge Beam"]',
                         )
                         ?.focus(),
                     200,
@@ -3252,13 +3357,13 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 score={unsubmittedScore}
               />
             )}
-            {["up1way", "thunder", "boxsnake", "pillars3d"].map((game) => {
+            {["flipo", "thunder", "boxsnake", "chargebeam"].map((game) => {
               const overlayKey = `games-${game}`;
               const titles: Record<string, string> = {
-                up1way: "Up 1 Way",
+                flipo: "Flipo",
                 thunder: "Thunder",
                 boxsnake: "Box Snake",
-                pillars3d: "Pillars 3D",
+                chargebeam: "Charge Beam",
               };
               return (
                 hyvmindOverlay === overlayKey && (
