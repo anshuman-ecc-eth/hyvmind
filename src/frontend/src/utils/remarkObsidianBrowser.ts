@@ -53,9 +53,12 @@ function processInlineText(value: string): any[] {
     } else if (match[7]) {
       // {name} cross-reference
       const name = match[8];
+      const displayName = name.includes(" @ ")
+        ? name.split(" @ ").pop()!
+        : name;
       nodes.push({
         type: "html",
-        value: `<a class="ref-link" href="#${encodeURIComponent(name)}">${escapeHtml(name)}</a>`,
+        value: `<a class="ref-link" href="#${encodeURIComponent(name)}" title="${escapeHtml(name)}">${escapeHtml(displayName)}</a>`,
       });
     }
 

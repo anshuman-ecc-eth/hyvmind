@@ -117,18 +117,26 @@ export function MarkdownEditor({
   // ---------------------------------------------------------------------------
 
   const insertReference = useCallback(
-    (nodeName: string) => {
+    (node: ResolvableNode) => {
       const ta = textareaRef.current;
       if (!ta) return;
       const cursorPos = ta.selectionStart;
       const textBefore = content.slice(0, cursorPos);
       const atIndex = textBefore.lastIndexOf("{@");
       if (atIndex < 0) return;
-      const newContent = `${content.slice(0, atIndex)}{${nodeName}}${content.slice(cursorPos)}`;
+      const leafName =
+        node.nodeType === "interpEntity"
+          ? node.name.replace(/\.md$/, "")
+          : node.name;
+      const refText =
+        node.parentPath !== "(root)"
+          ? `${node.parentPath} @ ${leafName}`
+          : leafName;
+      const newContent = `${content.slice(0, atIndex)}{${refText}}${content.slice(cursorPos)}`;
       onChange(newContent);
       requestAnimationFrame(() => {
         if (textareaRef.current) {
-          const newPos = atIndex + nodeName.length + 2;
+          const newPos = atIndex + refText.length + 2;
           textareaRef.current.setSelectionRange(newPos, newPos);
           textareaRef.current.focus();
         }
@@ -180,7 +188,7 @@ export function MarkdownEditor({
       case "Enter":
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
-          insertReference(filtered[highlightedIndex].name);
+          insertReference(filtered[highlightedIndex]);
         }
         break;
       case "Escape":

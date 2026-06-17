@@ -13,7 +13,7 @@ export interface ReferenceDropdownProps {
   nodes: ResolvableNode[];
   anchorRect: DOMRect | null;
   highlightedIndex: number;
-  onSelect: (nodeName: string) => void;
+  onSelect: (node: ResolvableNode) => void;
   onHighlightChange: (index: number) => void;
   onClose: () => void;
 }
@@ -66,9 +66,9 @@ export default function ReferenceDropdown({
                   : "hover:bg-accent/50",
               ].join(" ")}
               onMouseEnter={() => onHighlightChange(index)}
-              onClick={() => onSelect(node.name)}
+              onClick={() => onSelect(node)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") onSelect(node.name);
+                if (e.key === "Enter") onSelect(node);
               }}
             >
               <span className={dotColorClass[node.nodeType]}>●</span>

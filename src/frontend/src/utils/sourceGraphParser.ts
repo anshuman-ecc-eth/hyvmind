@@ -242,11 +242,24 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
 
       // Build scope-aware resolver: interpEntity > lawEntity > location > swarm (no curation)
       const swarmPath_ = `${curationName}@${swarmName}`;
-      const resolveRef = (name: string): string | undefined =>
-        allInterpFilenames.get(name) ??
-        swarmWideLawEntityNames.get(name) ??
-        swarmWideLocationNames.get(name) ??
-        (name === swarmName ? swarmPath_ : undefined);
+
+      // Build full-path set for qualified ref resolution
+      const allFullPaths = new Set<string>();
+      for (const p of allInterpFilenames.values()) allFullPaths.add(p);
+      for (const p of swarmWideLawEntityNames.values()) allFullPaths.add(p);
+      for (const p of swarmWideLocationNames.values()) allFullPaths.add(p);
+      allFullPaths.add(swarmPath_);
+
+      const resolveRef = (name: string): string | undefined => {
+        const direct =
+          allInterpFilenames.get(name) ??
+          swarmWideLawEntityNames.get(name) ??
+          swarmWideLocationNames.get(name) ??
+          (name === swarmName ? swarmPath_ : undefined);
+        if (direct) return direct;
+        const normalized = name.replace(/ @ /g, "@");
+        return allFullPaths.has(normalized) ? normalized : undefined;
+      };
       console.log(
         "🟡 [PARSER] swarmWideLawEntityNames Map:",
         JSON.stringify([...swarmWideLawEntityNames.entries()]),
@@ -383,8 +396,11 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
             const uniqueRefs = [...new Set(refs)];
 
             // Hierarchy edge: lawEntity → interpEntity (bidirectional if self-reference)
+            const lawEntityPath = `${curationName}@${swarmName}@${locationName}@${entry.name}`;
             const hasSelfReference = uniqueRefs.some(
-              (ref) => swarmWideLawEntityNames.has(ref) && ref === entry.name,
+              (ref) =>
+                (swarmWideLawEntityNames.has(ref) && ref === entry.name) ||
+                ref.replace(/ @ /g, "@") === lawEntityPath,
             );
             edges.push({
               source: `${curationName}@${swarmName}@${locationName}@${entry.name}`,
@@ -407,6 +423,8 @@ export async function parseSourceGraphZip(file: File): Promise<SourceGraph> {
                 );
                 continue;
               }
+              // Skip qualified refs to own lawEntity
+              if (refPath === lawEntityPath) continue;
               // Avoid duplicate edges
               const alreadyExists = edges.some(
                 (e) => e.source === fullInterpPath && e.target === refPath,
