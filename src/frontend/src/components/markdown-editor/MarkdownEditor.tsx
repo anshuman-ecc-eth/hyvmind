@@ -233,266 +233,278 @@ export function MarkdownEditor({
   );
 
   return (
-    <div
-      className="relative flex flex-col flex-1 min-h-0 bg-background"
-      data-ocid="markdown_editor.panel"
-    >
-      {/* Save indicator — top-right corner */}
+    <>
+      <style>{`
+        textarea[data-ocid="markdown_editor.textarea"] {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        textarea[data-ocid="markdown_editor.textarea"]::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <div
-        className="absolute top-2 right-3 flex items-center gap-1 text-xs text-muted-foreground z-10 pointer-events-none"
-        aria-live="polite"
-        aria-label={isSaving ? "Saving\u2026" : "Saved"}
-        data-ocid="markdown_editor.loading_state"
+        className="relative flex flex-col flex-1 min-h-0 bg-background"
+        data-ocid="markdown_editor.panel"
       >
-        {isSaving ? (
-          <>
-            <Loader2 size={11} className="animate-spin" />
-            <span>Saving\u2026</span>
-          </>
-        ) : (
-          <>
-            <Check size={11} />
-            <span>Saved</span>
-          </>
-        )}
+        {/* Save indicator — top-right corner */}
+        <div
+          className="absolute top-2 right-3 flex items-center gap-1 text-xs text-muted-foreground z-10 pointer-events-none"
+          aria-live="polite"
+          aria-label={isSaving ? "Saving\u2026" : "Saved"}
+          data-ocid="markdown_editor.loading_state"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 size={11} className="animate-spin" />
+              <span>Saving\u2026</span>
+            </>
+          ) : (
+            <>
+              <Check size={11} />
+              <span>Saved</span>
+            </>
+          )}
+        </div>
+
+        {/* Editor textarea wrapped in context menu */}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div className="relative flex-1 min-h-0 bg-background">
+              <ReferenceHighlighter
+                ref={highlightPreRef}
+                content={content}
+                cursorPos={textareaRef.current?.selectionStart ?? 0}
+              />
+              <textarea
+                ref={textareaRef}
+                aria-label="Markdown editor"
+                spellCheck={false}
+                data-ocid="markdown_editor.textarea"
+                value={content}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onScroll={handleScroll}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
+                onContextMenu={(e) => e.stopPropagation()}
+                className={[
+                  "relative bg-transparent text-transparent caret-foreground cursor-default",
+                  "flex-1 w-full h-full resize-none",
+                  "font-mono text-sm leading-relaxed",
+                  "px-4 py-4 pr-20",
+                  "border-none outline-none focus:outline-none",
+                  "placeholder:text-muted-foreground",
+                  "whitespace-pre-wrap break-all",
+                ].join(" ")}
+                placeholder="Start writing markdown\u2026"
+              />
+            </div>
+          </ContextMenuTrigger>
+
+          <ContextMenuContent className="w-52 font-mono text-xs">
+            {/* Headings */}
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "# ", "\n", ""))
+              }
+            >
+              Heading 1
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "## ", "\n", ""))
+              }
+            >
+              Heading 2
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "### ", "\n", ""))
+              }
+            >
+              Heading 3
+            </ContextMenuItem>
+
+            <ContextMenuSeparator />
+
+            {/* Formatting */}
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "**", "**"))
+              }
+            >
+              Bold
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "_", "_"))
+              }
+            >
+              Italic
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "~~", "~~"))
+              }
+            >
+              Strikethrough
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "==", "=="))
+              }
+            >
+              Highlight
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "`", "`"))
+              }
+            >
+              Inline Code
+            </ContextMenuItem>
+
+            <ContextMenuSeparator />
+
+            {/* Lists */}
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "- ", "\n", ""))
+              }
+            >
+              Bullet List
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "1. ", "\n", ""))
+              }
+            >
+              Numbered List
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) =>
+                  insertAtCursor(c, s, generateTaskItem(false), "\n", ""),
+                )
+              }
+            >
+              Task Item
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) =>
+                  insertAtCursor(c, s, generateTaskItem(true), "\n", ""),
+                )
+              }
+            >
+              Checked Task
+            </ContextMenuItem>
+
+            <ContextMenuSeparator />
+
+            {/* Inserts */}
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) =>
+                  insertAtCursor(c, s, generateTable(), "\n\n", "\n\n"),
+                )
+              }
+            >
+              Table
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) =>
+                  insertAtCursor(c, s, generateFootnote(c), "", ""),
+                )
+              }
+            >
+              Footnote
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) => insertAtCursor(c, s, "---", "\n", "\n"))
+              }
+            >
+              Horizontal Rule
+            </ContextMenuItem>
+
+            <ContextMenuSeparator />
+
+            {/* Callouts submenu */}
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>Callout</ContextMenuSubTrigger>
+              <ContextMenuSubContent className="font-mono text-xs">
+                {[
+                  "Note",
+                  "Warning",
+                  "Tip",
+                  "Important",
+                  "Caution",
+                  "Info",
+                  "Success",
+                  "Danger",
+                ].map((type) => (
+                  <ContextMenuItem
+                    key={type}
+                    onSelect={() =>
+                      handleInsert((c, s) =>
+                        insertAtCursor(
+                          c,
+                          s,
+                          generateCallout(type.toLowerCase()),
+                          "\n\n",
+                          "\n\n",
+                        ),
+                      )
+                    }
+                  >
+                    {type}
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+
+            <ContextMenuSeparator />
+
+            {/* Links */}
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "[", "](url)"))
+              }
+            >
+              Link
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s, e) => wrapSelection(c, s, e, "[[", "]]"))
+              }
+            >
+              Wikilink
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() =>
+                handleInsert((c, s) =>
+                  insertAtCursor(c, s, "![alt](url)", "", ""),
+                )
+              }
+            >
+              Image
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+
+        <ReferenceDropdown
+          open={dropdownOpen}
+          searchText={dropdownSearchText}
+          nodes={dropdownNodes}
+          anchorRect={dropdownAnchorRect}
+          highlightedIndex={highlightedIndex}
+          onSelect={insertReference}
+          onHighlightChange={setHighlightedIndex}
+          onClose={() => setDropdownOpen(false)}
+        />
       </div>
-
-      {/* Editor textarea wrapped in context menu */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="relative flex-1 min-h-0 bg-background">
-            <ReferenceHighlighter
-              ref={highlightPreRef}
-              content={content}
-              cursorPos={textareaRef.current?.selectionStart ?? 0}
-            />
-            <textarea
-              ref={textareaRef}
-              aria-label="Markdown editor"
-              spellCheck={false}
-              data-ocid="markdown_editor.textarea"
-              value={content}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              onScroll={handleScroll}
-              onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
-              onContextMenu={(e) => e.stopPropagation()}
-              className={[
-                "relative bg-transparent text-transparent caret-foreground cursor-default",
-                "flex-1 w-full h-full resize-none",
-                "font-mono text-sm leading-relaxed",
-                "px-4 py-4 pr-20",
-                "border-none outline-none focus:outline-none",
-                "placeholder:text-muted-foreground",
-              ].join(" ")}
-              placeholder="Start writing markdown\u2026"
-            />
-          </div>
-        </ContextMenuTrigger>
-
-        <ContextMenuContent className="w-52 font-mono text-xs">
-          {/* Headings */}
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "# ", "\n", ""))
-            }
-          >
-            Heading 1
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "## ", "\n", ""))
-            }
-          >
-            Heading 2
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "### ", "\n", ""))
-            }
-          >
-            Heading 3
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          {/* Formatting */}
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "**", "**"))
-            }
-          >
-            Bold
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "_", "_"))
-            }
-          >
-            Italic
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "~~", "~~"))
-            }
-          >
-            Strikethrough
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "==", "=="))
-            }
-          >
-            Highlight
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "`", "`"))
-            }
-          >
-            Inline Code
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          {/* Lists */}
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "- ", "\n", ""))
-            }
-          >
-            Bullet List
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "1. ", "\n", ""))
-            }
-          >
-            Numbered List
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) =>
-                insertAtCursor(c, s, generateTaskItem(false), "\n", ""),
-              )
-            }
-          >
-            Task Item
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) =>
-                insertAtCursor(c, s, generateTaskItem(true), "\n", ""),
-              )
-            }
-          >
-            Checked Task
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          {/* Inserts */}
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) =>
-                insertAtCursor(c, s, generateTable(), "\n\n", "\n\n"),
-              )
-            }
-          >
-            Table
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) =>
-                insertAtCursor(c, s, generateFootnote(c), "", ""),
-              )
-            }
-          >
-            Footnote
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) => insertAtCursor(c, s, "---", "\n", "\n"))
-            }
-          >
-            Horizontal Rule
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          {/* Callouts submenu */}
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>Callout</ContextMenuSubTrigger>
-            <ContextMenuSubContent className="font-mono text-xs">
-              {[
-                "Note",
-                "Warning",
-                "Tip",
-                "Important",
-                "Caution",
-                "Info",
-                "Success",
-                "Danger",
-              ].map((type) => (
-                <ContextMenuItem
-                  key={type}
-                  onSelect={() =>
-                    handleInsert((c, s) =>
-                      insertAtCursor(
-                        c,
-                        s,
-                        generateCallout(type.toLowerCase()),
-                        "\n\n",
-                        "\n\n",
-                      ),
-                    )
-                  }
-                >
-                  {type}
-                </ContextMenuItem>
-              ))}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-
-          <ContextMenuSeparator />
-
-          {/* Links */}
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "[", "](url)"))
-            }
-          >
-            Link
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s, e) => wrapSelection(c, s, e, "[[", "]]"))
-            }
-          >
-            Wikilink
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() =>
-              handleInsert((c, s) =>
-                insertAtCursor(c, s, "![alt](url)", "", ""),
-              )
-            }
-          >
-            Image
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-
-      <ReferenceDropdown
-        open={dropdownOpen}
-        searchText={dropdownSearchText}
-        nodes={dropdownNodes}
-        anchorRect={dropdownAnchorRect}
-        highlightedIndex={highlightedIndex}
-        onSelect={insertReference}
-        onHighlightChange={setHighlightedIndex}
-        onClose={() => setDropdownOpen(false)}
-      />
-    </div>
+    </>
   );
 }
