@@ -35,36 +35,6 @@ interface MarkdownEditorProps {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function calculateCursorRect(
-  ta: HTMLTextAreaElement,
-  cursorPos: number,
-): DOMRect {
-  const text = ta.value.slice(0, cursorPos);
-  const mirror = document.createElement("div");
-  const style = getComputedStyle(ta);
-  mirror.style.cssText = `
-    position: fixed; top: 0; left: 0; visibility: hidden; overflow: hidden;
-    white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
-    font-family: ${style.fontFamily};
-    font-size: ${style.fontSize};
-    line-height: ${style.lineHeight};
-    padding: ${style.padding};
-    letter-spacing: ${style.letterSpacing};
-    width: ${ta.clientWidth}px;
-  `;
-  const span = document.createElement("span");
-  span.textContent = text;
-  mirror.appendChild(span);
-  document.body.appendChild(mirror);
-  const rect = span.getBoundingClientRect();
-  document.body.removeChild(mirror);
-  return new DOMRect(rect.left, rect.bottom, 0, 0);
-}
-
-// ---------------------------------------------------------------------------
 // MarkdownEditor
 // ---------------------------------------------------------------------------
 
@@ -75,14 +45,16 @@ export function MarkdownEditor({
   nodes = [],
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const highlightPreRef = useRef<HTMLPreElement>(null);
 
   // Dropdown state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownSearchText, setDropdownSearchText] = useState("");
-  const [dropdownAnchorRect, setDropdownAnchorRect] = useState<DOMRect | null>(
-    null,
-  );
+  const [dropdownCenter, setDropdownCenter] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   // Compute resolvable nodes with parent path
@@ -157,9 +129,15 @@ export function MarkdownEditor({
         const afterAt = textBefore.slice(atIndex + 2);
         if (!afterAt.includes("}")) {
           setDropdownSearchText(afterAt);
-          setDropdownAnchorRect(calculateCursorRect(ta, cursorPos));
           setHighlightedIndex(0);
           setDropdownOpen(true);
+          const rect = editorRef.current?.getBoundingClientRect();
+          if (rect) {
+            setDropdownCenter({
+              top: rect.top + rect.height / 2,
+              left: rect.left + rect.width / 2,
+            });
+          }
         } else {
           setDropdownOpen(false);
         }
@@ -170,33 +148,15 @@ export function MarkdownEditor({
     onChange(newContent);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!dropdownOpen) return;
-    const filtered = dropdownNodes.filter((n) =>
-      n.name.toLowerCase().includes(dropdownSearchText.toLowerCase()),
-    );
-    if (filtered.length === 0) return;
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setHighlightedIndex((i) => (i + 1) % filtered.length);
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setHighlightedIndex((i) => (i - 1 + filtered.length) % filtered.length);
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
-          insertReference(filtered[highlightedIndex]);
-        }
-        break;
-      case "Escape":
-        e.preventDefault();
-        setDropdownOpen(false);
-        break;
-    }
-  };
+  const handleClose = useCallback(() => {
+    setDropdownOpen(false);
+    textareaRef.current?.focus();
+  }, []);
+
+  const handleSearchTextChange = useCallback((text: string) => {
+    setDropdownSearchText(text);
+    setHighlightedIndex(0);
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
     if (highlightPreRef.current) {
@@ -252,6 +212,7 @@ export function MarkdownEditor({
         }
       `}</style>
       <div
+        ref={editorRef}
         className="relative flex flex-col flex-1 min-h-0 bg-background"
         data-ocid="markdown_editor.panel"
       >
@@ -291,9 +252,7 @@ export function MarkdownEditor({
                 data-ocid="markdown_editor.textarea"
                 value={content}
                 onChange={handleChange}
-                onKeyDown={handleKeyDown}
                 onScroll={handleScroll}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
                 onContextMenu={(e) => e.stopPropagation()}
                 className={[
                   "relative bg-transparent text-transparent caret-foreground cursor-default",
@@ -506,11 +465,12 @@ export function MarkdownEditor({
           open={dropdownOpen}
           searchText={dropdownSearchText}
           nodes={dropdownNodes}
-          anchorRect={dropdownAnchorRect}
+          editorCenter={dropdownCenter}
           highlightedIndex={highlightedIndex}
           onSelect={insertReference}
           onHighlightChange={setHighlightedIndex}
-          onClose={() => setDropdownOpen(false)}
+          onSearchTextChange={handleSearchTextChange}
+          onClose={handleClose}
         />
       </div>
     </>
