@@ -161,7 +161,7 @@ export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
     >
       <img
         ref={beeRef}
-        src="/assets/pixelbee-logo-small.png"
+        src="/assets/pixel-bee-vecteezy.png"
         alt=""
         aria-hidden={true}
         style={{
