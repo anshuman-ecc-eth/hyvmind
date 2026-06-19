@@ -8,7 +8,7 @@ interface FlyingBeeProps {
 }
 
 export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
-  const beeRef = useRef<SVGSVGElement>(null);
+  const beeRef = useRef<HTMLImageElement>(null);
   const statusRef = useRef<
     "idle" | "entering" | "perched" | "fleeing" | "returning"
   >("idle");
@@ -20,9 +20,9 @@ export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
     if (!yRef.current) return null;
     const yr = yRef.current.getBoundingClientRect();
     const titleEl = yRef.current.parentElement;
-    if (!titleEl) return { x: yr.left - 6, y: yr.top - 18 };
+    if (!titleEl) return { x: yr.left - 4, y: yr.top - 17 };
     const tr = titleEl.getBoundingClientRect();
-    return { x: yr.left - 6, y: tr.top - 18 };
+    return { x: yr.left - 4, y: tr.top - 17 };
   };
 
   const getCorner = () => {
@@ -139,8 +139,8 @@ export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
       if (statusRef.current === "perched" && beeRef.current) {
         const gx = gsap.getProperty(beeRef.current, "x") as number;
         const gy = gsap.getProperty(beeRef.current, "y") as number;
-        const dx = e.clientX - gx - 14;
-        const dy = e.clientY - gy - 8;
+        const dx = e.clientX - gx - 10;
+        const dy = e.clientY - gy - 9;
         if (dx * dx + dy * dy < 14400) {
           fleeRef.current();
         }
@@ -159,56 +159,22 @@ export default function FlyingBee({ modalRef, yRef, onReady }: FlyingBeeProps) {
         inset: 0,
       }}
     >
-      <svg
+      <img
         ref={beeRef}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 16"
-        width="24"
-        height="16"
+        src="/assets/pixelbee-logo-small.png"
+        alt=""
         aria-hidden={true}
         style={{
           position: "absolute",
           left: 0,
           top: 0,
-          width: "28px",
+          width: "20px",
           height: "auto",
           imageRendering: "pixelated",
           opacity: 0,
           willChange: "transform",
         }}
-      >
-        <ellipse cx="8" cy="4" rx="5" ry="3" fill="#c8e6f5" opacity="0.8" />
-        <ellipse cx="18" cy="5" rx="5" ry="2.5" fill="#c8e6f5" opacity="0.7" />
-        <ellipse cx="12" cy="10" rx="7" ry="5" fill="#f5c91e" />
-        <rect x="7" y="6" width="2" height="8" rx="1" fill="#1a1515" />
-        <rect x="11" y="5" width="2" height="9" rx="1" fill="#1a1515" />
-        <rect x="15" y="6" width="2" height="8" rx="1" fill="#1a1515" />
-        <circle cx="14" cy="8" r="1.2" fill="#1a1515" />
-        <circle cx="10" cy="8" r="1.2" fill="#1a1515" />
-        <circle cx="14.4" cy="7.6" r="0.5" fill="#fff" />
-        <circle cx="10.4" cy="7.6" r="0.5" fill="#fff" />
-        <polygon points="19,10 22,10 20,13" fill="#1a1515" />
-        <line
-          x1="13"
-          y1="4"
-          x2="15"
-          y2="1"
-          stroke="#1a1515"
-          strokeWidth="0.8"
-          strokeLinecap="round"
-        />
-        <line
-          x1="11"
-          y1="4"
-          x2="9"
-          y2="1"
-          stroke="#1a1515"
-          strokeWidth="0.8"
-          strokeLinecap="round"
-        />
-        <circle cx="15" cy="1" r="0.8" fill="#1a1515" />
-        <circle cx="9" cy="1" r="0.8" fill="#1a1515" />
-      </svg>
+      />
     </div>
   );
 }

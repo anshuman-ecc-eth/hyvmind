@@ -1029,6 +1029,34 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
+          <div className="flex flex-col items-start gap-1 w-full">
+            <span className="text-foreground">
+              pixelbee-logo-small.png — bee logo
+            </span>
+            <a
+              href="https://github.com/jacob-medina/pixel-bee"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-muted-foreground underline"
+            >
+              jacob-medina
+            </a>
+            <div className="flex flex-row gap-2 items-center flex-wrap">
+              <span
+                className="text-muted-foreground"
+                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
+              >
+                MIT
+              </span>
+              <span
+                className="text-muted-foreground"
+                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
+              >
+                game asset
+              </span>
+            </div>
+          </div>
+
           {[
             [
               "@caffeineai/core-infrastructure",
