@@ -63,7 +63,7 @@ export default function ChatView() {
       <div className="flex flex-col px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground">Chat</span>
         <span className="text-xs text-muted-foreground/50 mt-0.5">
-          Chat with our experimental community agent{" "}
+          Beesbury, our experimental community agent, lives{" "}
           <a
             href="https://telegram.me/hyvmind_tg"
             target="_blank"
@@ -71,7 +71,8 @@ export default function ChatView() {
             className="underline underline-offset-2"
           >
             here
-          </a>.
+          </a>
+          .
         </span>
       </div>
 

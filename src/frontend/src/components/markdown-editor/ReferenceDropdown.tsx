@@ -158,13 +158,16 @@ export default function ReferenceDropdown({
                     </span>
                     <span
                       className={[
-                        "text-xs ml-auto truncate pl-2",
+                        "text-xs ml-auto pl-2",
                         isHighlighted
                           ? "text-accent-foreground/70"
-                          : "text-muted-foreground",
+                          : "text-muted-foreground truncate",
                       ].join(" ")}
                     >
                       · {node.parentPath}
+                      {isHighlighted && (
+                        <span className="opacity-60"> · {node.id}</span>
+                      )}
                     </span>
                   </button>
                 );

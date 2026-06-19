@@ -356,10 +356,10 @@ mark {
 
 /* Reference highlight in editor backdrop */
 .ref-accent {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: 2px;
-  padding: 0 2px;
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
 }
 
 /* Pending {@ reference while typing */
