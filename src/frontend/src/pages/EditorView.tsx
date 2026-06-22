@@ -278,7 +278,7 @@ function editorNodeToObsidianFolder(
   }
   return {
     name: node.name,
-    folders: children.length > 0 ? children : undefined,
+    folders: children,
   };
 }
 
