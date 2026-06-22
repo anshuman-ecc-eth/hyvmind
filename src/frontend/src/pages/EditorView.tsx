@@ -69,7 +69,7 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   delete: "Delete",
   "convert-to-source-graph": "Convert",
   download: "Download ZIP",
-  "push-to-obsidian": "Push to Obsidian Vault",
+  "push-to-obsidian": "Push to Obsidian",
 };
 
 // ---------------------------------------------------------------------------
