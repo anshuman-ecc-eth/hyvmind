@@ -339,8 +339,10 @@ export interface backendInterface {
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
     getNotesData(): Promise<string | null>;
+    getAndClearPendingVaultPush(): Promise<string | null>;
     getPendingPluginBindings(): Promise<Array<Principal>>;
     getPluginBindingStatus(): Promise<boolean>;
+    hasPendingVaultPush(): Promise<boolean>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getTelegramConfig(): Promise<{
         chatId: string;
@@ -389,6 +391,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    pushToVault(json: string): Promise<void>;
     storeNotesData(json: string): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;

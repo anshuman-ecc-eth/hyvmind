@@ -32,13 +32,15 @@ type ContextOption =
   | "rename"
   | "delete"
   | "convert-to-source-graph"
-  | "download";
+  | "download"
+  | "push-to-obsidian";
 
 const CONTEXT_OPTIONS: Record<string, ContextOption[]> = {
   curation: [
     "new-swarm",
     "convert-to-source-graph",
     "download",
+    "push-to-obsidian",
     "add-attributes",
     "add-sources",
     "rename",
@@ -67,6 +69,7 @@ const OPTION_LABELS: Record<ContextOption, string> = {
   delete: "Delete",
   "convert-to-source-graph": "Convert",
   download: "Download ZIP",
+  "push-to-obsidian": "Push to Obsidian Vault",
 };
 
 // ---------------------------------------------------------------------------
@@ -229,6 +232,54 @@ function convertObsidianData(data: { folders: ObsidianFolder[] }): {
     processFolder(folder, null, folder.name, 0);
   }
   return { nodes, rootIds };
+}
+
+// ---------------------------------------------------------------------------
+// EditorNode → ObsidianFolder conversion (reverse of convertObsidianData)
+// ---------------------------------------------------------------------------
+
+interface FolderItem {
+  name: string;
+  content?: string;
+  folders?: FolderItem[];
+}
+
+function editorNodeToObsidianFolder(
+  nodeId: string,
+  nodes: Map<string, EditorNode>,
+): FolderItem {
+  const node = nodes.get(nodeId);
+  if (!node) return { name: "unknown" };
+
+  const children: FolderItem[] = [];
+  for (const childId of node.children) {
+    const child = nodes.get(childId);
+    if (!child) continue;
+    if (child.type === "folder") {
+      children.push(editorNodeToObsidianFolder(childId, nodes));
+    } else {
+      const fm = child.frontmatter;
+      const fmEntries = Object.entries(fm);
+      const fmBlock =
+        fmEntries.length > 0
+          ? `---\n${fmEntries
+              .map(([k, v]) =>
+                typeof v === "string"
+                  ? `${k}: ${v}`
+                  : `${k}: ${JSON.stringify(v)}`,
+              )
+              .join("\n")}\n---\n`
+          : "";
+      children.push({
+        name: child.name,
+        content: `${fmBlock}${child.content ?? ""}`,
+      });
+    }
+  }
+  return {
+    name: node.name,
+    folders: children.length > 0 ? children : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -413,6 +464,28 @@ export default function EditorView() {
           })();
           break;
         }
+        case "push-to-obsidian": {
+          void (async () => {
+            if (!session || !backendActor) return;
+            const curationNode = session.nodes.get(nodeId);
+            if (!curationNode || curationNode.nodeType !== "curation") return;
+            try {
+              const rootFolder = editorNodeToObsidianFolder(
+                nodeId,
+                session.nodes,
+              );
+              const payload = JSON.stringify({ folders: [rootFolder] });
+              await backendActor.pushToVault(payload);
+              toast.success(`Pushed "${curationNode.name}" to Obsidian vault`);
+            } catch (err) {
+              console.error("Push to vault failed:", err);
+              toast.error(
+                `Push failed: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          })();
+          break;
+        }
         case "download": {
           void (async () => {
             if (!session) return;
@@ -505,7 +578,7 @@ export default function EditorView() {
         }
       }
     },
-    [contextMenu, session, convertToSourceGraph, createNode],
+    [contextMenu, session, backendActor, convertToSourceGraph, createNode],
   );
 
   const handleFileChange = useCallback(

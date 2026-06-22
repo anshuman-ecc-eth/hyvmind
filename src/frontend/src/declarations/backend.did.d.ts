@@ -318,9 +318,11 @@ export interface _SERVICE {
   'getMyPrincipal' : ActorMethod<[], Principal>,
   'getMyTrustBalance' : ActorMethod<[], TrustScore>,
   'getMyTrustTransactions' : ActorMethod<[], Array<TrustTransaction>>,
+  'getAndClearPendingVaultPush' : ActorMethod<[], [] | [string]>,
   'getNotesData' : ActorMethod<[], [] | [string]>,
   'getPendingPluginBindings' : ActorMethod<[], Array<Principal>>,
   'getPluginBindingStatus' : ActorMethod<[], boolean>,
+  'hasPendingVaultPush' : ActorMethod<[], boolean>,
   'getPublishedSourceGraph' : ActorMethod<[string], [] | [GraphData]>,
   'getTelegramConfig' : ActorMethod<
     [],
@@ -367,6 +369,7 @@ export interface _SERVICE {
     { 'ok' : null } |
       { 'err' : string }
   >,
+  'pushToVault' : ActorMethod<[string], undefined>,
   'storeNotesData' : ActorMethod<[string], undefined>,
   'track_api_request' : ActorMethod<[string], undefined>,
   'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,

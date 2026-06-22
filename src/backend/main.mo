@@ -451,6 +451,9 @@ actor {
   // Notes import data: userPrincipal → json blob from Obsidian plugin
   var notesImports = Map.empty<Principal, Text>();
 
+  // Vault push data: userPrincipal → json blob destined for Obsidian vault
+  var vaultPushData = Map.empty<Principal, Text>();
+
 
   module LawToken {
     public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
@@ -849,6 +852,36 @@ actor {
 
   public query ({ caller }) func getNotesData() : async ?Text {
     notesImports.get(caller);
+  };
+
+  // ── Vault Push Methods ─────────────────────────────────────────────────────
+
+  /// Called by the web app user (via II) to stage notes for Obsidian vault export.
+  public shared ({ caller }) func pushToVault(json : Text) : async () {
+    let effectiveUser = getEffectiveUser(caller);
+    vaultPushData.add(effectiveUser, json);
+  };
+
+  /// Called by the Obsidian plugin to cheaply check if push data is available.
+  public query ({ caller }) func hasPendingVaultPush() : async Bool {
+    let effectiveUser = getEffectiveUser(caller);
+    switch (vaultPushData.get(effectiveUser)) {
+      case (?data) { data != "" };
+      case (null) { false };
+    };
+  };
+
+  /// Called by the Obsidian plugin to retrieve and clear pending vault push data.
+  /// Atomically reads and removes to prevent re-processing on retry.
+  public shared ({ caller }) func getAndClearPendingVaultPush() : async ?Text {
+    let effectiveUser = getEffectiveUser(caller);
+    switch (vaultPushData.get(effectiveUser)) {
+      case (?data) {
+        vaultPushData.remove(effectiveUser);
+        ?data
+      };
+      case (null) { null };
+    };
   };
 
   public query ({ caller }) func getPluginBindingStatus() : async Bool {

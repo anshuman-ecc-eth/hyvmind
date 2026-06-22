@@ -425,8 +425,10 @@ export interface backendInterface {
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
     getNotesData(): Promise<string | null>;
+    getAndClearPendingVaultPush(): Promise<string | null>;
     getPendingPluginBindings(): Promise<Array<Principal>>;
     getPluginBindingStatus(): Promise<boolean>;
+    hasPendingVaultPush(): Promise<boolean>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getTelegramConfig(): Promise<{
         chatId: string;
@@ -473,6 +475,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    pushToVault(json: string): Promise<void>;
     storeNotesData(json: string): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
@@ -893,6 +896,34 @@ export class Backend implements backendInterface {
             return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getAndClearPendingVaultPush(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAndClearPendingVaultPush();
+                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAndClearPendingVaultPush();
+            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async hasPendingVaultPush(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasPendingVaultPush();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasPendingVaultPush();
+            return result;
+        }
+    }
     async getPendingPluginBindings(): Promise<Array<Principal>> {
         if (this.processError) {
             try {
@@ -1238,6 +1269,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.storeNotesData(arg0);
+            return result;
+        }
+    }
+    async pushToVault(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.pushToVault(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.pushToVault(arg0);
             return result;
         }
     }
