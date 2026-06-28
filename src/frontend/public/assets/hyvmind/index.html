@@ -981,7 +981,7 @@ function activateZ() {
     }
   } else if (nearTrigger && triggerMessages[nearTrigger.key]) {
     if (Date.now() - (popupDismissedAt['msg:' + triggerMessages[nearTrigger.key]] || 0) < 5000) { showDefaultPopup(); msg = 'cooldown'; }
-    else if (triggerMessages[nearTrigger.key] === 'transformer-bava-dialog') {
+    else if (triggerMessages[nearTrigger.key] === "Transformer Bava's House" && nearTrigger.ty >= 168) {
       showTransformerBavaDialog();
       msg = 'transformer-bava-dialog';
     } else if (triggerMessages[nearTrigger.key] === 'maps') {
