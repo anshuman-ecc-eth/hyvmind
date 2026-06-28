@@ -646,7 +646,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — body</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — body
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating),
               Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano,
@@ -678,7 +680,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — boots</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — boots
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, bluecarrot16, Nila122
             </span>
@@ -708,7 +712,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — face</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — face
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
             </span>
@@ -738,7 +744,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — hat</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — hat
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames), Tracy
             </span>
@@ -768,7 +776,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — hair</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — hair
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               Yamilian, bluecarrot16
             </span>
@@ -798,7 +808,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — head</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — head
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener
               (Redshrike)
@@ -829,7 +841,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — jacket</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — jacket
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16
             </span>
@@ -859,7 +873,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — mustache</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — mustache
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, Thane Brimhall (pennomi), laetissima
             </span>
@@ -889,7 +905,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">sprites/bava/ — vest</span>
+            <span className="text-foreground">
+              sprites/transformer-bava/ — vest
+            </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen
               Challener (Redshrike), Johannes Sjölund (wulax)
@@ -2541,9 +2559,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       } else if (e.data?.type === "hyvmind-nav") {
         const target = e.data.target as string;
         const overlayMap: Record<string, string> = {
-          "House of Puzzles": "puzzles",
+          "Puzzle House": "puzzles",
           "House of Rant": "about",
-          "House of Games": "games",
+          "Game House": "games",
           "The Ranting Well": "about",
           Laboratory: "lab-diagrams",
           Leaderboard: "leaderboard",
