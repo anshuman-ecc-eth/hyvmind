@@ -29,12 +29,14 @@ interface FilterState {
   searchText: string;
   visibleNodeTypes: Set<string>;
   isCollapsed: boolean;
+  attributeFilterText?: string;
 }
 
 const defaultFilterState = (): FilterState => ({
   searchText: "",
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
+  attributeFilterText: undefined,
 });
 
 // ---------------------------------------------------------------------------
@@ -337,6 +339,13 @@ export default function SourcesView() {
             visibleNodeTypes={filterState.visibleNodeTypes}
             onNodeTypesChange={(types) =>
               setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
+            }
+            attributeFilterText={filterState.attributeFilterText ?? ""}
+            onAttributeFilterChange={(text) =>
+              setFilterState((prev) => ({
+                ...prev,
+                attributeFilterText: text || undefined,
+              }))
             }
             totalNodes={activeGraph.nodes.length}
             visibleNodes={visibleNodeCount}

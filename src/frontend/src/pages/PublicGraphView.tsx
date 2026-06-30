@@ -38,6 +38,7 @@ interface FilterState {
   visibleNodeTypes: Set<string>;
   isCollapsed: boolean;
   focusedNodeNames?: Set<string>;
+  attributeFilterText?: string;
 }
 
 const defaultFilterState = (): FilterState => ({
@@ -45,11 +46,33 @@ const defaultFilterState = (): FilterState => ({
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
   focusedNodeNames: undefined,
+  attributeFilterText: undefined,
 });
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+function matchesAttributeFilter(node: SourceNode, filter: string): boolean {
+  const attrs = node.attributes;
+  if (!attrs) return false;
+  const colonIdx = filter.indexOf(":");
+  if (colonIdx === -1) {
+    return Object.keys(attrs).some((k) =>
+      k.toLowerCase().includes(filter.toLowerCase()),
+    );
+  }
+  const key = filter.slice(0, colonIdx).toLowerCase();
+  const value = filter.slice(colonIdx + 1).toLowerCase();
+  if (!key) return false;
+  if (!value) {
+    return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));
+  }
+  return Object.entries(attrs).some(
+    ([k, v]) =>
+      k.toLowerCase().includes(key) && String(v).toLowerCase().includes(value),
+  );
+}
 
 function Spinner() {
   return (
@@ -121,7 +144,7 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
               >
                 Extension #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
                 {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}
-                edges, +{Number(entry.addedAttributes)} attrs
+                edges
               </li>
             );
           })}
@@ -309,22 +332,26 @@ function GraphDetail({
     const search = filterState.searchText.trim().toLowerCase();
     const types = filterState.visibleNodeTypes;
     const focused = filterState.focusedNodeNames;
+    const attrFilter = (filterState.attributeFilterText ?? "").trim();
     const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
     const noSearch = search.length === 0;
     const noFocused = !focused || focused.size === 0;
-    if (allTypesVisible && noSearch && noFocused)
+    const noAttr = attrFilter.length === 0;
+    if (allTypesVisible && noSearch && noFocused && noAttr)
       return convertedGraph.nodes.length;
     return convertedGraph.nodes.filter((n) => {
       const typeOk = allTypesVisible || types.has(n.nodeType);
       const searchOk = noSearch || n.name.toLowerCase().includes(search);
       const focusedOk = noFocused || focused.has(n.name);
-      return typeOk && searchOk && focusedOk;
+      const attrOk = noAttr || matchesAttributeFilter(n, attrFilter);
+      return typeOk && searchOk && focusedOk && attrOk;
     }).length;
   }, [
     convertedGraph,
     filterState.searchText,
     filterState.visibleNodeTypes,
     filterState.focusedNodeNames,
+    filterState.attributeFilterText,
   ]);
 
   return (
@@ -355,6 +382,7 @@ function GraphDetail({
               searchText={filterState.searchText}
               visibleNodeTypes={filterState.visibleNodeTypes}
               focusedNodeNames={filterState.focusedNodeNames}
+              attributeFilterText={filterState.attributeFilterText}
               onFitToVisible={handleFitRegister}
             />
           </div>
@@ -366,6 +394,13 @@ function GraphDetail({
             visibleNodeTypes={filterState.visibleNodeTypes}
             onNodeTypesChange={(types) =>
               setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
+            }
+            attributeFilterText={filterState.attributeFilterText ?? ""}
+            onAttributeFilterChange={(text) =>
+              setFilterState((prev) => ({
+                ...prev,
+                attributeFilterText: text || undefined,
+              }))
             }
             totalNodes={currentGraph.nodes.length}
             visibleNodes={visibleNodeCount}
@@ -435,21 +470,25 @@ export default function PublicGraphView({
 
   const handleFuzzySelect = (item: SearchableItem) => {
     let focusedNodeNames: Set<string> | undefined;
+    let attributeFilterText: string | undefined;
+    let searchText: string | undefined;
 
     if (item.type === "node" && item.node) {
       focusedNodeNames = new Set([item.node.name]);
+      searchText = item.node.name;
     } else if (item.type === "edge" && item.sourceName && item.targetName) {
       focusedNodeNames = new Set([item.sourceName, item.targetName]);
     } else if (item.type === "attribute" && item.nodeName) {
       focusedNodeNames = new Set([item.nodeName]);
+      attributeFilterText = `${item.key}${item.value ? `: ${item.value}` : ""}`;
     }
 
-    if (focusedNodeNames) {
-      filterStatesRef.current.set(item.graphId, {
-        ...defaultFilterState(),
-        focusedNodeNames,
-      });
-    }
+    filterStatesRef.current.set(item.graphId, {
+      ...defaultFilterState(),
+      ...(focusedNodeNames && { focusedNodeNames }),
+      ...(attributeFilterText && { attributeFilterText }),
+      searchText: searchText ?? "",
+    });
 
     setSelectedGraphId(item.graphId);
     setSearchSelectKey((k) => k + 1);

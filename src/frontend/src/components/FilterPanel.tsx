@@ -9,6 +9,8 @@ export interface FilterPanelProps {
   onSearchChange: (text: string) => void;
   visibleNodeTypes: Set<string>;
   onNodeTypesChange: (types: Set<string>) => void;
+  attributeFilterText: string;
+  onAttributeFilterChange: (text: string) => void;
   totalNodes: number;
   visibleNodes: number;
   onReset: () => void;
@@ -88,6 +90,8 @@ export default function FilterPanel({
   onSearchChange,
   visibleNodeTypes,
   onNodeTypesChange,
+  attributeFilterText,
+  onAttributeFilterChange,
   totalNodes,
   visibleNodes,
   onReset,
@@ -98,6 +102,7 @@ export default function FilterPanel({
   hasFocusedFilter = false,
 }: FilterPanelProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const attributeInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input when panel expands
   useEffect(() => {
@@ -120,6 +125,7 @@ export default function FilterPanel({
   const isFiltered =
     searchText.trim().length > 0 ||
     visibleNodeTypes.size < ALL_NODE_TYPES.length ||
+    attributeFilterText.trim().length > 0 ||
     hasFocusedFilter;
 
   return (
@@ -194,6 +200,24 @@ export default function FilterPanel({
                 />
               ))}
             </div>
+          </div>
+
+          {/* Attribute filter */}
+          <div className="px-3 pt-2 pb-2 border-b border-dashed border-border shrink-0">
+            <span className="block text-xs uppercase tracking-widest text-muted-foreground mb-1.5">
+              attributes
+            </span>
+            <input
+              ref={attributeInputRef}
+              id="filter-panel-attr"
+              type="text"
+              value={attributeFilterText}
+              onChange={(e) => onAttributeFilterChange(e.target.value)}
+              placeholder="key: value"
+              className="w-full bg-transparent border border-dashed border-input text-xs text-foreground placeholder:text-muted-foreground/50 px-2 py-1 outline-none focus:border-foreground transition-colors"
+              data-ocid="filter_panel.attr_input"
+              aria-label="Filter nodes by attribute key or key:value"
+            />
           </div>
 
           {/* Node count */}

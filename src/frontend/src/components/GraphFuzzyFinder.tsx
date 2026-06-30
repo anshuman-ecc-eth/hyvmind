@@ -177,13 +177,13 @@ export default function GraphFuzzyFinder({
     if (!results.length) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((i) => (i + 1) % results.length);
+      setSelectedIndex((i) => (i + 1) % ordered.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((i) => (i - 1 + results.length) % results.length);
+      setSelectedIndex((i) => (i - 1 + ordered.length) % ordered.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const item = results[selectedIndex]?.item;
+      const item = ordered[selectedIndex]?.item;
       if (item) {
         onSelect(item);
         setIsOpen(false);
