@@ -37,12 +37,14 @@ interface FilterState {
   searchText: string;
   visibleNodeTypes: Set<string>;
   isCollapsed: boolean;
+  focusedNodeNames?: Set<string>;
 }
 
 const defaultFilterState = (): FilterState => ({
   searchText: "",
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
+  focusedNodeNames: undefined,
 });
 
 // ---------------------------------------------------------------------------
@@ -309,15 +311,24 @@ function GraphDetail({
     if (!convertedGraph) return 0;
     const search = filterState.searchText.trim().toLowerCase();
     const types = filterState.visibleNodeTypes;
+    const focused = filterState.focusedNodeNames;
     const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
     const noSearch = search.length === 0;
-    if (allTypesVisible && noSearch) return convertedGraph.nodes.length;
+    const noFocused = !focused || focused.size === 0;
+    if (allTypesVisible && noSearch && noFocused)
+      return convertedGraph.nodes.length;
     return convertedGraph.nodes.filter((n) => {
       const typeOk = allTypesVisible || types.has(n.nodeType);
       const searchOk = noSearch || n.name.toLowerCase().includes(search);
-      return typeOk && searchOk;
+      const focusedOk = noFocused || focused.has(n.name);
+      return typeOk && searchOk && focusedOk;
     }).length;
-  }, [convertedGraph, filterState.searchText, filterState.visibleNodeTypes]);
+  }, [
+    convertedGraph,
+    filterState.searchText,
+    filterState.visibleNodeTypes,
+    filterState.focusedNodeNames,
+  ]);
 
   return (
     <div className="flex flex-col h-full bg-background font-mono">
@@ -346,6 +357,7 @@ function GraphDetail({
               onNodeClick={setSelectedNode}
               searchText={filterState.searchText}
               visibleNodeTypes={filterState.visibleNodeTypes}
+              focusedNodeNames={filterState.focusedNodeNames}
               onFitToVisible={handleFitRegister}
             />
           </div>
@@ -370,6 +382,10 @@ function GraphDetail({
               }))
             }
             onOntology={handleOntology}
+            hasFocusedFilter={
+              filterState.focusedNodeNames !== undefined &&
+              filterState.focusedNodeNames.size > 0
+            }
           />
         </div>
       )}
@@ -415,12 +431,35 @@ export default function PublicGraphView({
   const { data: graphs = [], isLoading, error } = usePublishedGraphMetas();
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
   const [savingGraphId, setSavingGraphId] = useState<string | null>(null);
+  const [searchSelectKey, setSearchSelectKey] = useState(0);
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
 
   const handleFuzzySelect = (item: SearchableItem) => {
+    let focusedNodeNames: Set<string> | undefined;
+
+    if (item.type === "node" && item.node) {
+      focusedNodeNames = new Set([item.node.name]);
+    } else if (item.type === "edge" && item.sourceName && item.targetName) {
+      focusedNodeNames = new Set([item.sourceName, item.targetName]);
+    } else if (item.type === "attribute" && item.nodeName) {
+      focusedNodeNames = new Set([item.nodeName]);
+    }
+
+    if (focusedNodeNames) {
+      filterStatesRef.current.set(item.graphId, {
+        ...defaultFilterState(),
+        focusedNodeNames,
+      });
+    }
+
     setSelectedGraphId(item.graphId);
+    setSearchSelectKey((k) => k + 1);
+  };
+
+  const handleViewGraph = (id: string) => {
+    setSelectedGraphId(id);
   };
 
   const savingGraphData = usePublishedGraphData(savingGraphId);
@@ -459,6 +498,7 @@ export default function PublicGraphView({
   if (selectedGraphId) {
     return (
       <GraphDetail
+        key={`${selectedGraphId}-${searchSelectKey}`}
         selectedId={selectedGraphId}
         graphs={graphs}
         onBack={() => setSelectedGraphId(null)}
@@ -529,7 +569,7 @@ export default function PublicGraphView({
                   key={curationName}
                   curationName={curationName}
                   graphs={gs}
-                  onView={(id) => setSelectedGraphId(id)}
+                  onView={handleViewGraph}
                   onSave={isLanding ? undefined : (id) => setSavingGraphId(id)}
                 />
               );
