@@ -102,9 +102,6 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
         <span data-ocid="public_graph.edge_count">
           {crossRefEdges} cross-ref, {hierarchyEdges} hierarchy
         </span>
-        <span data-ocid="public_graph.attr_count">
-          {Number(meta.attributeCount)} attrs
-        </span>
         <span data-ocid="public_graph.source_count">
           {Number(meta.sourcesCount ?? 0n)} sources
         </span>
@@ -122,7 +119,7 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
                 key={String(entry.extendedAt)}
                 className="font-mono text-xs text-muted-foreground"
               >
-                Ext #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
+                Extension #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
                 {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}
                 edges, +{Number(entry.addedAttributes)} attrs
               </li>
