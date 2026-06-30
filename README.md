@@ -21,7 +21,7 @@ A vanilla JS/HTML game (no framework, no canvas — CSS-positioned sprites over 
 
 - **World**: 72×272 tiles (574×2176px), 8px tile size, collision map encoded in a PNG with color-coded terrain (green = walkable, blue = doors, red+blue = triggers)
 - **Player**: Cultist character (3×4 animation frames, 32×36px), controlled by arrow keys/WASD or on-screen D-pad
-- **NPCs**: Transformer Bava LPC wizard with 28-frame spell animation cycle at tile (16,170)
+- **NPCs**: Gangesh Upadhyay LPC wizard with 28-frame spell animation cycle at tile (16,170)
 - **Doors**: Tile regions mapped to labels via `doors.json` — Z/X to enter, triggers back to the React app (puzzles, games, leaderboard, credits, about)
 - **Triggers**: Proximity-based text popups + a password challenge system (`>>` prefix in `triggers.json`) with pattern-matching rules (e.g., `lai/` → "Correct!")
 - **Audio**: `forest.mp3` background loop
@@ -109,7 +109,7 @@ See the in-game Credits screen for the full interactive breakdown. Below is a su
 | `lpc-baobab/` — baobab trees | bluecarrot16 ([OpenTaxa](https://opentaxa.miraheze.org/wiki/Index)) | OGA-BY 3.0+ |
 | `rowboat.png` — boat sprites | shadowfinderstudios, Zabin, Daniel Eddeland ([OpenGameArt](https://opengameart.org/content/lpc-rowboat-topdown-4-directional-recolor-for-rpg)) | CC-BY-SA 4.0 |
 | `sprites/cultist_*.png` — player character | Antifarea | CC-BY |
-| `sprites/transformer-bava/` — wizard character body/head/face/hat/boots/hair/mustache/vest/jacket | bluecarrot16, JaidynReiman, Benjamin K. Smith, Stephen Challener, Eliza Wyatt, Napsio, Yamilian, Thane Brimhall, and others ([OpenGameArt](https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles)) | OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 |
+| `sprites/gangesh-upadhyay/` — wizard character body/head/face/hat/boots/hair/mustache/vest/jacket | bluecarrot16, JaidynReiman, Benjamin K. Smith, Stephen Challener, Eliza Wyatt, Napsio, Yamilian, Thane Brimhall, and others ([OpenGameArt](https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles)) | OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 |
 | Chess puzzles | [Lichess](https://lichess.org) community puzzle database | — |
 
 ### Fonts

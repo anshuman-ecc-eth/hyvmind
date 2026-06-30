@@ -647,7 +647,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — body
+              sprites/gangesh-upadhyay/ — body
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating),
@@ -681,7 +681,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — boots
+              sprites/gangesh-upadhyay/ — boots
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, bluecarrot16, Nila122
@@ -713,7 +713,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — face
+              sprites/gangesh-upadhyay/ — face
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
@@ -745,7 +745,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — hat
+              sprites/gangesh-upadhyay/ — hat
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               Napsio (Vitruvian Studio), Michael Whitlock (bigbeargames), Tracy
@@ -777,7 +777,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — hair
+              sprites/gangesh-upadhyay/ — hair
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               Yamilian, bluecarrot16
@@ -809,7 +809,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — head
+              sprites/gangesh-upadhyay/ — head
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener
@@ -842,7 +842,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — jacket
+              sprites/gangesh-upadhyay/ — jacket
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16
@@ -874,7 +874,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — mustache
+              sprites/gangesh-upadhyay/ — mustache
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               JaidynReiman, Thane Brimhall (pennomi), laetissima
@@ -906,7 +906,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              sprites/transformer-bava/ — vest
+              sprites/gangesh-upadhyay/ — vest
             </span>
             <span className="text-foreground" style={{ fontSize: "0.85em" }}>
               bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen
