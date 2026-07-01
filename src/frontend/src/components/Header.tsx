@@ -149,13 +149,24 @@ export default function Header() {
                 <DropdownMenuItem
                   onClick={() =>
                     window.open(
+                      "https://www.youtube.com/@y-not-monologs",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Monologs
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
                       "https://github.com/anshuman-ecc-eth/hyvmind",
                       "_blank",
                     )
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
-                  GitHub
+                  Code
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
