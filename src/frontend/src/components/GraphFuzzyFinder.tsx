@@ -368,17 +368,26 @@ function ResultRow({
   return (
     <button
       type="button"
+      tabIndex={-1}
       className={`w-full text-left px-3 py-2 flex flex-col gap-0.5 transition-colors ${
-        isSelected ? "bg-accent/20" : "hover:bg-muted/40"
+        isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted/40"
       }`}
       onClick={() => onSelect(item)}
       onMouseEnter={() => onHover(index)}
       data-ocid={`fuzzy_finder.result.${index + 1}`}
     >
-      <span className="font-mono text-xs font-medium text-foreground truncate">
+      <span
+        className={`font-mono text-xs font-medium truncate ${
+          isSelected ? "text-accent-foreground" : "text-foreground"
+        }`}
+      >
         {item.label}
       </span>
-      <span className="font-mono text-xs text-muted-foreground truncate">
+      <span
+        className={`font-mono text-xs truncate ${
+          isSelected ? "text-accent-foreground/70" : "text-muted-foreground"
+        }`}
+      >
         {item.description}
         {" · "}
         <span className="opacity-60">{item.curationName}</span>

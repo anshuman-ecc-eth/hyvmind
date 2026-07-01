@@ -63,7 +63,7 @@ function matchesAttributeFilter(node: SourceNode, filter: string): boolean {
     );
   }
   const key = filter.slice(0, colonIdx).toLowerCase();
-  const value = filter.slice(colonIdx + 1).toLowerCase();
+  const value = filter.slice(colonIdx + 1).trim().toLowerCase();
   if (!key) return false;
   if (!value) {
     return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));
@@ -480,7 +480,7 @@ export default function PublicGraphView({
       focusedNodeNames = new Set([item.sourceName, item.targetName]);
     } else if (item.type === "attribute" && item.nodeName) {
       focusedNodeNames = new Set([item.nodeName]);
-      attributeFilterText = `${item.key}${item.value ? `: ${item.value}` : ""}`;
+      attributeFilterText = `${item.key}${item.value ? `:${item.value}` : ""}`;
     }
 
     filterStatesRef.current.set(item.graphId, {
