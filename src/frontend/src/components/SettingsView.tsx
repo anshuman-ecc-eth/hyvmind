@@ -46,6 +46,7 @@ import {
   useSaveCallerUserProfile,
 } from "../hooks/useQueries";
 import { useSettings } from "../hooks/useSettings";
+import { copyText } from "../lib/clipboard";
 import { FONT_PAIRINGS, type FontSize } from "../lib/fontSettings";
 import {
   DEFAULT_THEME,
@@ -178,11 +179,15 @@ Retrieval contract:
     }
   }, [userProfile]);
 
-  const handleCopyPrincipal = () => {
+  const handleCopyPrincipal = async () => {
     if (!myPrincipal) return;
-    navigator.clipboard.writeText(myPrincipal);
-    setPrincipalCopied(true);
-    setTimeout(() => setPrincipalCopied(false), 2000);
+    const ok = await copyText(myPrincipal);
+    if (ok) {
+      setPrincipalCopied(true);
+      setTimeout(() => setPrincipalCopied(false), 2000);
+    } else {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   const handleApproveBinding = async (key: string) => {
@@ -236,11 +241,11 @@ Retrieval contract:
   };
 
   const handleCopySkillPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(SAMPLE_PROMPT);
+    const ok = await copyText(SAMPLE_PROMPT);
+    if (ok) {
       setSkillPromptCopied(true);
       setTimeout(() => setSkillPromptCopied(false), 2000);
-    } catch {
+    } else {
       toast.error("Failed to copy to clipboard");
     }
   };
