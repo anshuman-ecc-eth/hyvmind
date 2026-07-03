@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@caffeineai/core-infrastructure": "~0.1.0",
+    "@caffeineai/object-storage": "0.1.0",
     "@chenglou/pretext": "^0.0.5",
     "@chrisoakman/chessboardjs": "^1.0.0",
     "@dfinity/agent": "~3.3.0",
