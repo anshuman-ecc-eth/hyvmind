@@ -84,14 +84,31 @@ function resolveNodeRef(
   location: Map<string, string>,
   swarm: Map<string, string>,
   curation: Map<string, string>,
+  fullPaths: Set<string>,
 ): string | undefined {
-  return (
+  // 1. Direct name match (backward compat for old {name} refs)
+  const direct =
     interp.get(name) ??
     law.get(name) ??
     location.get(name) ??
     swarm.get(name) ??
-    curation.get(name)
-  );
+    curation.get(name);
+  if (direct) return direct;
+
+  // 2. .md variant match (handles mismatch between .md/no-.md names)
+  if (name.endsWith(".md")) {
+    const withoutMd = interp.get(name.slice(0, -3));
+    if (withoutMd) return withoutMd;
+  } else {
+    const withMd = interp.get(`${name}.md`);
+    if (withMd) return withMd;
+  }
+
+  // 3. Normalized full-path match (handles new qualified refs like {A @ B @ C})
+  const normalized = name.replace(/ @ /g, "@");
+  if (fullPaths.has(normalized)) return normalized;
+
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +141,7 @@ export function editorToSourceGraph(
   const lawEntityNames = new Map<string, string>(); // name -> fullPath
   const interpFilenames = new Map<string, string>(); // name -> fullPath
   const nodeFullPaths = new Map<string, string>(); // nodeId -> fullPath
+  const allFullPaths = new Set<string>(); // all full paths for qualified ref resolution
 
   // Accumulators for metadata files (_attributes.md, _sources.md)
   const parentAttributes = new Map<string, Record<string, unknown>>();
@@ -158,6 +176,7 @@ export function editorToSourceGraph(
       nodeName = nodeName.replace(/\.md$/, "");
     }
     nodeFullPaths.set(node.id, fullPath);
+    allFullPaths.add(fullPath);
 
     if (node.nodeType === "curation") curationNames.set(node.name, fullPath);
     if (node.nodeType === "swarm") swarmNames.set(node.name, fullPath);
@@ -257,6 +276,7 @@ export function editorToSourceGraph(
           locationNames,
           swarmNames,
           curationNames,
+          allFullPaths,
         );
         if (refPath && refPath !== nodePath) {
           // Avoid duplicates

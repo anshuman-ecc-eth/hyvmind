@@ -323,7 +323,7 @@ export function useGetChatMessages(channelId: string | null) {
       return [];
     },
     enabled: !!actor && !isFetching && !!identity && !!channelId,
-    refetchInterval: 3000,
+    refetchInterval: 10000,
   });
 }
 

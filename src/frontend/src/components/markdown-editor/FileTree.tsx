@@ -213,6 +213,22 @@ export function FileTree({
     return new Set(rootIds);
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally react only to renameTarget.id change; nodes and renameTarget are stable references
+  useEffect(() => {
+    if (renameTarget) {
+      const node = nodes.get(renameTarget.id);
+      const parentId = node?.parentId;
+      if (parentId) {
+        setExpandedIds((prev) => {
+          if (prev.has(parentId)) return prev;
+          const next = new Set(prev);
+          next.add(parentId);
+          return next;
+        });
+      }
+    }
+  }, [renameTarget?.id]);
+
   const handleToggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);

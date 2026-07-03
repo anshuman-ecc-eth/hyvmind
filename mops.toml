@@ -10,22 +10,15 @@ args = [ "--release" ]
 main = "src/backend/main.mo"
 
 [toolchain]
-moc = "1.8.2"
+moc = "1.10.1"
 lintoko = "0.7.0"
 
 [lint]
 extends = true
 
 [moc]
-args = [
-  "--default-persistent-actors",
-  "--actor-idl=src/backend/system-idl",
-  "--implicit-package=core",
-  "-no-check-ir",
-  "-E=M0236,M0235,M0223,M0237",
-  "-A=M0198"
-]
+args = [ "--default-persistent-actors", "--actor-idl=src/backend/system-idl", "--implicit-package=core", "-no-check-ir", "-E=M0236,M0235,M0223,M0237", "-A=M0198" ]
 
 [dependencies]
-core = "2.5.0"
-caffeineai-authorization = "0.1.1"
+core = "2.6.0"
+caffeineai-authorization = "0.1.0"

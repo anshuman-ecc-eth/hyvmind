@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -17,13 +17,12 @@ import type {
   CreditedContribution,
   GraphData,
 } from "../backend.d";
-import {
-  useBackendActor,
-  useHasUserSavedGraph,
-  useSavePublishedGraph,
-} from "../hooks/useQueries";
+import type { PublishedSourceGraphMeta } from "../hooks/usePublicGraphs";
+import { useBackendActor, useSavePublishedGraph } from "../hooks/useQueries";
 import type { TrustBackendExtensions } from "../types/trustExtensions";
 import { graphDataToEditorNodes } from "../utils/graphDataToEditorNodes";
+import { graphDataToMermaid } from "../utils/graphDataToMermaid";
+import MermaidDiagram from "./MermaidDiagram";
 
 const EMPTY_CONTRIBS: ContributionView[] = [];
 
@@ -33,260 +32,50 @@ interface SaveGraphDialogProps {
   graphName: string;
   graphData: GraphData;
   graphId: string;
+  meta: PublishedSourceGraphMeta;
 }
 
-interface TreeNodeData {
-  id: string;
-  name: string;
-  nodeType: string;
-  depth: number;
-  parentId: string | null;
-  childrenIds: string[];
-}
-
-function buildTree(data: GraphData): {
-  nodes: Map<string, TreeNodeData>;
-  rootIds: string[];
-} {
-  const nodes = new Map<string, TreeNodeData>();
-  for (const c of data.curations) {
-    nodes.set(c.id, {
-      id: c.id,
-      name: c.name,
-      nodeType: "curation",
-      depth: 0,
-      parentId: null,
-      childrenIds: [],
-    });
-  }
-  for (const s of data.swarms) {
-    nodes.set(s.id, {
-      id: s.id,
-      name: s.name,
-      nodeType: "swarm",
-      depth: 1,
-      parentId: s.parentCurationId,
-      childrenIds: [],
-    });
-    nodes.get(s.parentCurationId)?.childrenIds.push(s.id);
-  }
-  for (const l of data.locations) {
-    nodes.set(l.id, {
-      id: l.id,
-      name: l.title,
-      nodeType: "location",
-      depth: 2,
-      parentId: l.parentSwarmId,
-      childrenIds: [],
-    });
-    nodes.get(l.parentSwarmId)?.childrenIds.push(l.id);
-  }
-  for (const lt of data.lawTokens) {
-    nodes.set(lt.id, {
-      id: lt.id,
-      name: lt.tokenLabel,
-      nodeType: "lawEntity",
-      depth: 3,
-      parentId: lt.parentLocationId,
-      childrenIds: [],
-    });
-    nodes.get(lt.parentLocationId)?.childrenIds.push(lt.id);
-  }
-  for (const it of data.interpretationTokens) {
-    nodes.set(it.id, {
-      id: it.id,
-      name: it.title,
-      nodeType: "interpEntity",
-      depth: 4,
-      parentId: it.parentLawTokenId,
-      childrenIds: [],
-    });
-    nodes.get(it.parentLawTokenId)?.childrenIds.push(it.id);
-  }
-  return { nodes, rootIds: data.curations.map((c) => c.id) };
-}
-
-interface ContributionRowProps {
-  contribution: ContributionView;
-  checked: boolean;
-  onToggle: () => void;
-}
-
-function ContributionRow({
-  contribution,
-  checked,
-  onToggle,
-}: ContributionRowProps) {
-  return (
-    <div
-      className="flex items-center gap-1.5 py-0.5 hover:bg-accent/50 rounded transition-colors duration-100 cursor-pointer"
-      style={{ paddingLeft: 32 }}
-      onClick={() => {
-        if (!contribution.alreadyCredited) onToggle();
-      }}
-      onKeyDown={(e) => {
-        if (
-          (e.key === "Enter" || e.key === " ") &&
-          !contribution.alreadyCredited
-        )
-          onToggle();
-      }}
-    >
-      <Checkbox
-        checked={checked}
-        disabled={contribution.alreadyCredited}
-        onCheckedChange={() => {
-          if (!contribution.alreadyCredited) onToggle();
-        }}
-        onClick={(e) => e.stopPropagation()}
-        className="h-3 w-3 flex-shrink-0"
-      />
-      <span
-        className={`truncate min-w-0 flex-1 text-[10px] font-mono ${contribution.alreadyCredited ? "text-muted-foreground" : "text-foreground"}`}
-      >
-        {contribution.description}
-      </span>
-      <span className="text-[10px] text-muted-foreground flex-shrink-0">
-        {(Number(contribution.buzzAmount) / 10).toFixed(1)} Buzz
-      </span>
-    </div>
-  );
-}
-
-interface TreeNodeCheckboxProps {
-  id: string;
-  nodes: Map<string, TreeNodeData>;
-  contribsByNode: Map<string, ContributionView[]>;
-  checkedContribIds: Set<string>;
-  expandedIds: Set<string>;
-  rootIds: string[];
-  onToggleNode: (nodeId: string) => void;
-  onToggleContribution: (contribId: string) => void;
-  onToggleExpand: (id: string) => void;
-}
-
-function TreeNodeCheckbox({
-  id,
-  nodes,
-  contribsByNode,
-  checkedContribIds,
-  expandedIds,
-  rootIds,
-  onToggleNode,
-  onToggleContribution,
-  onToggleExpand,
-}: TreeNodeCheckboxProps) {
-  const node = nodes.get(id);
-  if (!node) return null;
-
-  const isRoot = rootIds.includes(id);
-  const isExpanded = expandedIds.has(id);
-  const hasChildren = node.childrenIds.length > 0;
-  const nodeContribs = contribsByNode.get(id) ?? [];
-  const someChecked = nodeContribs.some(
-    (c) => checkedContribIds.has(c.id) || c.alreadyCredited,
-  );
-
-  return (
-    <div>
-      <div
-        className="flex items-center gap-1.5 py-1 hover:bg-accent/50 rounded transition-colors duration-100 cursor-pointer"
-        style={{ paddingLeft: node.depth * 16 + 8 }}
-        onClick={() => {
-          if (!isRoot) onToggleNode(id);
-        }}
-        onKeyDown={(e) => {
-          if ((e.key === "Enter" || e.key === " ") && !isRoot) onToggleNode(id);
-        }}
-      >
-        <span className="w-3 h-3 flex-shrink-0 text-muted-foreground">
-          {hasChildren || nodeContribs.length > 0 ? (
-            <button
-              type="button"
-              aria-label={isExpanded ? "Collapse" : "Expand"}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleExpand(id);
-              }}
-              className="w-3 h-3 flex items-center justify-center"
-            >
-              {isExpanded ? (
-                <ChevronDown size={12} />
-              ) : (
-                <ChevronRight size={12} />
-              )}
-            </button>
-          ) : null}
-        </span>
-
-        <Checkbox
-          checked={someChecked}
-          disabled={isRoot}
-          onCheckedChange={() => {
-            if (!isRoot) onToggleNode(id);
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className="h-3.5 w-3.5 flex-shrink-0"
-        />
-
-        <span className="truncate min-w-0 flex-1 text-xs font-mono text-foreground">
-          {node.name}
-        </span>
-        {nodeContribs.length > 0 && (
-          <span className="text-[10px] text-muted-foreground flex-shrink-0 mr-1">
-            {nodeContribs.filter((c) => checkedContribIds.has(c.id)).length}/
-            {nodeContribs.filter((c) => !c.alreadyCredited).length}
-          </span>
-        )}
-      </div>
-
-      {isExpanded && (
-        <div>
-          {nodeContribs.map((c) => (
-            <ContributionRow
-              key={c.id}
-              contribution={c}
-              checked={checkedContribIds.has(c.id)}
-              onToggle={() => onToggleContribution(c.id)}
-            />
-          ))}
-          {node.childrenIds.map((childId) => (
-            <TreeNodeCheckbox
-              key={childId}
-              id={childId}
-              nodes={nodes}
-              contribsByNode={contribsByNode}
-              checkedContribIds={checkedContribIds}
-              expandedIds={expandedIds}
-              rootIds={rootIds}
-              onToggleNode={onToggleNode}
-              onToggleContribution={onToggleContribution}
-              onToggleExpand={onToggleExpand}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function filterGraphDataByNodeIds(
+  graphData: GraphData,
+  nodeIds: Set<string>,
+): GraphData {
+  return {
+    curations: graphData.curations.filter((c) => nodeIds.has(c.id)),
+    swarms: graphData.swarms.filter((s) => nodeIds.has(s.id)),
+    locations: graphData.locations.filter((l) => nodeIds.has(l.id)),
+    lawTokens: graphData.lawTokens.filter((lt) => nodeIds.has(lt.id)),
+    interpretationTokens: graphData.interpretationTokens.filter((it) =>
+      nodeIds.has(it.id),
+    ),
+    rootNodes: graphData.rootNodes.filter((r) => nodeIds.has(r.id)),
+    edges: graphData.edges.filter(
+      (e) => nodeIds.has(e.source) && nodeIds.has(e.target),
+    ),
+    sources: graphData.sources,
+  };
 }
 
 interface ChecklistDialogProps {
   isOpen: boolean;
   onClose: () => void;
   graphName: string;
-  rootIds: string[];
-  treeNodes: Map<string, TreeNodeData>;
-  contribsByNode: Map<string, ContributionView[]>;
-  checkedContribIds: Set<string>;
-  expandedIds: Set<string>;
-  alreadySaved: boolean | undefined;
-  selectableContributions: ContributionView[];
-  selectedCount: number;
-  hasNewSelections: boolean;
+  graphData: GraphData;
+  meta: PublishedSourceGraphMeta;
+  coreLabel: string;
+  coreStatLabel: string;
+  extEntries: Array<{
+    index: number;
+    label: string;
+    statLabel: string;
+  }>;
+  checkedExtensions: Set<number>;
+  extNodeIdsByIndex: Map<number, Set<string>>;
+  coreNodeIds: Set<string>;
+  allCoreCredited: boolean;
+  selectedExtCount: number;
+  canSave: boolean;
+  handleToggleExtension: (index: number) => void;
   handleSave: () => void;
-  handleToggleNode: (nodeId: string) => void;
-  handleToggleContribution: (contribId: string) => void;
-  handleToggleExpand: (id: string) => void;
   handleOpenChange: (open: boolean) => void;
   alertMode: null | "confirm" | "loading" | "result";
   resultData: {
@@ -301,81 +90,205 @@ function ChecklistDialog({
   isOpen,
   onClose,
   graphName,
-  rootIds,
-  treeNodes,
-  contribsByNode,
-  checkedContribIds,
-  expandedIds,
-  alreadySaved,
-  selectableContributions,
-  selectedCount,
-  hasNewSelections,
+  graphData,
+  meta,
+  coreLabel,
+  coreStatLabel,
+  extEntries,
+  checkedExtensions,
+  extNodeIdsByIndex,
+  coreNodeIds,
+  allCoreCredited,
+  selectedExtCount,
+  canSave,
+  handleToggleExtension,
   handleSave,
-  handleToggleNode,
-  handleToggleContribution,
-  handleToggleExpand,
   handleOpenChange,
   alertMode,
   resultData,
   onSaveConfirm,
   onDismissAlert,
 }: ChecklistDialogProps) {
+  const [previewDialog, setPreviewDialog] = useState<
+    | { kind: "core"; label: string }
+    | { kind: "extension"; index: number; label: string }
+    | null
+  >(null);
+
+  const previewNodeIds = useMemo(() => {
+    if (!previewDialog) return null;
+    if (previewDialog.kind === "core") return coreNodeIds;
+    return extNodeIdsByIndex.get(previewDialog.index) ?? new Set<string>();
+  }, [previewDialog, coreNodeIds, extNodeIdsByIndex]);
+
+  const previewMermaid = useMemo(() => {
+    if (!previewNodeIds || previewNodeIds.size === 0) return null;
+    const filtered = filterGraphDataByNodeIds(graphData, previewNodeIds);
+    return graphDataToMermaid(filtered);
+  }, [previewNodeIds, graphData]);
+
+  const handleTogglePreview = useCallback(
+    (phase: { kind: "core" } | { kind: "extension"; index: number }) => {
+      setPreviewDialog((prev) => {
+        if (
+          prev?.kind === phase.kind &&
+          (phase.kind === "core" ||
+            (prev as { index: number }).index ===
+              (phase as { index: number }).index)
+        ) {
+          return null;
+        }
+        const label =
+          phase.kind === "core"
+            ? coreLabel
+            : (extEntries.find((e) => e.index === phase.index)?.label ?? "");
+        return { ...phase, label };
+      });
+    },
+    [coreLabel, extEntries],
+  );
+
+  const isPreviewOpen = (
+    phase:
+      | {
+          kind: "core";
+        }
+      | {
+          kind: "extension";
+          index: number;
+        },
+  ) =>
+    previewDialog?.kind === phase.kind &&
+    (phase.kind === "core" ||
+      (previewDialog as { index: number }).index ===
+        (phase as { index: number }).index);
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent
+        className="sm:max-w-4xl max-h-[85vh] overflow-y-auto"
+        showCloseButton={!alertMode || alertMode === "result"}
+      >
         {!alertMode ? (
           <>
             <DialogHeader>
               <DialogTitle>Save Graph to Notes</DialogTitle>
             </DialogHeader>
 
-            <DialogDescription className="text-xs">
-              Select contributions from{" "}
+            <DialogDescription className="text-sm">
+              Select extensions from{" "}
               <span className="text-foreground">{graphName}</span> to import
-              into your Notes workspace.
+              into your Notes workspace. Core contributions are always imported.
             </DialogDescription>
 
-            <div
-              className={`max-h-96 overflow-y-auto border border-border rounded-sm bg-background/50 ${alreadySaved && selectableContributions.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              {rootIds.length === 0 ? (
-                <div className="py-8 text-center text-xs text-muted-foreground">
-                  No nodes found
+            <div className="space-y-3">
+              <div className="rounded-sm border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold">Core</span>
+                  <span className="text-xs text-muted-foreground">
+                    auto-imported
+                    {allCoreCredited ? " (already saved)" : ""}
+                  </span>
                 </div>
-              ) : (
-                rootIds.map((rootId) => (
-                  <TreeNodeCheckbox
-                    key={rootId}
-                    id={rootId}
-                    nodes={treeNodes}
-                    contribsByNode={contribsByNode}
-                    checkedContribIds={checkedContribIds}
-                    expandedIds={expandedIds}
-                    rootIds={rootIds}
-                    onToggleNode={handleToggleNode}
-                    onToggleContribution={handleToggleContribution}
-                    onToggleExpand={handleToggleExpand}
-                  />
-                ))
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {coreLabel}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0 ml-2"
+                    onClick={() => handleTogglePreview({ kind: "core" })}
+                  >
+                    {isPreviewOpen({ kind: "core" })
+                      ? "Hide Diagram"
+                      : "See Diagram"}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground/70 mt-0.5">
+                  {coreStatLabel}
+                </p>
+              </div>
+
+              {extEntries.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold mb-2">Extensions</p>
+                  <div className="space-y-2">
+                    {extEntries.map((ext) => (
+                      <div
+                        key={ext.index}
+                        className="rounded-sm border border-border p-3"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            checked={checkedExtensions.has(ext.index)}
+                            onCheckedChange={() =>
+                              handleToggleExtension(ext.index)
+                            }
+                            className="h-3.5 w-3.5 flex-shrink-0"
+                          />
+                          <span className="text-xs flex-1">{ext.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between ml-6">
+                          <p className="text-xs text-muted-foreground/70">
+                            {ext.statLabel}
+                          </p>
+                          <button
+                            type="button"
+                            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0"
+                            onClick={() =>
+                              handleTogglePreview({
+                                kind: "extension",
+                                index: ext.index,
+                              })
+                            }
+                          >
+                            {isPreviewOpen({
+                              kind: "extension",
+                              index: ext.index,
+                            })
+                              ? "Hide Diagram"
+                              : "See Diagram"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
-            {alreadySaved && selectableContributions.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                You have already saved all contributions in this graph.
-              </p>
+            {previewDialog && previewMermaid && (
+              <div className="border-t border-border pt-3">
+                <p className="text-xs font-semibold mb-2">
+                  {previewDialog.label}
+                </p>
+                <div className="rounded-sm border border-border bg-muted/30 p-2 mb-3">
+                  <MermaidDiagram mermaidText={previewMermaid.mermaidText} />
+                </div>
+                {previewMermaid.detailLines.length > 0 && (
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    <p className="font-semibold text-foreground mb-1">
+                      Attributes & Sources
+                    </p>
+                    {previewMermaid.detailLines.map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                type="button"
-                onClick={handleSave}
-                disabled={!hasNewSelections || selectedCount === 0}
-              >
-                Save Selected ({selectedCount})
+              <Button type="button" onClick={handleSave} disabled={!canSave}>
+                Save
+                {extEntries.length > 0
+                  ? ` (core${selectedExtCount > 0 ? ` + ${selectedExtCount}` : ""})`
+                  : allCoreCredited
+                    ? " (none)"
+                    : ""}
               </Button>
             </DialogFooter>
           </>
@@ -386,8 +299,11 @@ function ChecklistDialog({
             </DialogHeader>
 
             <DialogDescription className="text-sm text-muted-foreground">
-              The selected contributions will be imported into your Notes. This
-              action cannot be undone.
+              Core by {meta.creatorName}
+              {extEntries.length > 0 &&
+                selectedExtCount > 0 &&
+                ` + ${selectedExtCount} extension${selectedExtCount !== 1 ? "s" : ""} selected`}{" "}
+              will be imported into your Notes.
             </DialogDescription>
 
             <DialogFooter className="gap-2">
@@ -450,27 +366,37 @@ function ChecklistDialog({
 
 const ChecklistDialogMemo = memo(ChecklistDialog);
 
+function formatDate(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatStatLabel(
+  nodeCount: bigint | number,
+  edgeCount: bigint | number,
+  attrCount: bigint | number,
+): string {
+  const n = Number(nodeCount);
+  const e = Number(edgeCount);
+  const a = Number(attrCount);
+  return `${n} node${n !== 1 ? "s" : ""} · ${e} edge${e !== 1 ? "s" : ""} · ${a} attr${a !== 1 ? "s" : ""}`;
+}
+
 export default function SaveGraphDialog({
   isOpen,
   onClose,
   graphName,
   graphData,
   graphId,
+  meta,
 }: SaveGraphDialogProps) {
   const savePublishedGraph = useSavePublishedGraph();
   const { actor } = useBackendActor();
-  const { data: alreadySaved } = useHasUserSavedGraph(graphId);
 
-  const { nodes: treeNodes, rootIds } = useMemo(
-    () => buildTree(graphData),
-    [graphData],
-  );
-  const allNodeIds = useMemo(() => Array.from(treeNodes.keys()), [treeNodes]);
-
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    () => new Set(allNodeIds),
-  );
-  const [checkedContribIds, setCheckedContribIds] = useState<Set<string>>(
+  const [checkedExtensions, setCheckedExtensions] = useState<Set<number>>(
     new Set(),
   );
   const [alertMode, setAlertMode] = useState<
@@ -504,63 +430,73 @@ export default function SaveGraphDialog({
     }
   }, [isOpen, graphId, ensureMigration]);
 
-  const contribsByNode = useMemo(() => {
-    const map = new Map<string, ContributionView[]>();
+  const coreContribs = useMemo(
+    () => contributions.filter((c) => !c.isFromExtension),
+    [contributions],
+  );
+
+  const extContribsByIndex = useMemo(() => {
+    const map = new Map<number, ContributionView[]>();
     for (const c of contributions) {
-      if (!map.has(c.nodeId)) map.set(c.nodeId, []);
-      map.get(c.nodeId)!.push(c);
+      if (!c.isFromExtension || c.extensionIndex == null) continue;
+      const idx = Number(c.extensionIndex);
+      if (!map.has(idx)) map.set(idx, []);
+      map.get(idx)!.push(c);
     }
     return map;
   }, [contributions]);
 
-  const selectableContributions = useMemo(
-    () => contributions.filter((c) => !c.alreadyCredited),
-    [contributions],
+  const coreNodeIds = useMemo(
+    () => new Set(coreContribs.map((c) => c.nodeId)),
+    [coreContribs],
   );
 
-  useEffect(() => {
-    const newIds = selectableContributions.map((c) => c.id);
-    setCheckedContribIds((prev) => {
-      if (prev.size === newIds.length && newIds.every((id) => prev.has(id))) {
-        return prev;
-      }
-      return new Set(newIds);
-    });
-  }, [selectableContributions]);
+  const extNodeIdsByIndex = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    for (const [idx, contribs] of extContribsByIndex) {
+      map.set(idx, new Set(contribs.map((c) => c.nodeId)));
+    }
+    return map;
+  }, [extContribsByIndex]);
 
-  const handleToggleNode = useCallback(
-    (nodeId: string) => {
-      setCheckedContribIds((prev) => {
-        const next = new Set(prev);
-        const nodeContribs = contribsByNode.get(nodeId) ?? [];
-        const allSelected = nodeContribs.every(
-          (c) => c.alreadyCredited || next.has(c.id),
-        );
-        for (const c of nodeContribs) {
-          if (c.alreadyCredited) continue;
-          if (allSelected) next.delete(c.id);
-          else next.add(c.id);
-        }
-        return next;
-      });
-    },
-    [contribsByNode],
+  const allCoreCredited = useMemo(
+    () =>
+      coreContribs.length > 0 && coreContribs.every((c) => c.alreadyCredited),
+    [coreContribs],
   );
 
-  const handleToggleContribution = useCallback((contribId: string) => {
-    setCheckedContribIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(contribId)) next.delete(contribId);
-      else next.add(contribId);
-      return next;
-    });
-  }, []);
+  const coreStatLabel = useMemo(
+    () => formatStatLabel(meta.nodeCount, meta.edgeCount, meta.attributeCount),
+    [meta],
+  );
 
-  const handleToggleExpand = useCallback((id: string) => {
-    setExpandedIds((prev) => {
+  const coreLabel = useMemo(() => {
+    const pubMs = Number(meta.publishedAt) / 1_000_000;
+    return `by ${meta.creatorName} · ${formatDate(pubMs)}`;
+  }, [meta]);
+
+  const extEntries = useMemo(() => {
+    return meta.extensionLog.map((entry, i) => {
+      const idx = i;
+      const extendedMs = Number(entry.extendedAt) / 1_000_000;
+      const label = `by ${entry.extendedByName} · ${formatDate(extendedMs)}`;
+      const statLabel = `+${Number(entry.addedNodes)} node${Number(entry.addedNodes) !== 1 ? "s" : ""} · +${Number(entry.addedEdges)} edge${Number(entry.addedEdges) !== 1 ? "s" : ""} · +${Number(entry.addedAttributes)} attr${Number(entry.addedAttributes) !== 1 ? "s" : ""}`;
+      return { index: idx, label, statLabel };
+    });
+  }, [meta]);
+
+  const selectedExtCount = checkedExtensions.size;
+
+  const canSave = useMemo(() => {
+    if (!allCoreCredited) return true;
+    return selectedExtCount > 0;
+  }, [allCoreCredited, selectedExtCount]);
+
+  const handleToggleExtension = useCallback((index: number) => {
+    setCheckedExtensions((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   }, []);
@@ -571,11 +507,15 @@ export default function SaveGraphDialog({
     setAlertMode("loading");
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     try {
-      const selectedNodeIds = new Set(
-        contributions
-          .filter((c) => checkedContribIds.has(c.id))
-          .map((c) => c.nodeId),
-      );
+      const selectedNodeIds = new Set(coreNodeIds);
+      for (const extIdx of checkedExtensions) {
+        const extIds = extNodeIdsByIndex.get(extIdx);
+        if (extIds) {
+          for (const nodeId of extIds) {
+            selectedNodeIds.add(nodeId);
+          }
+        }
+      }
       const result = await savePublishedGraph.mutateAsync({
         publishedGraphId: graphId,
         selectedContributionIds: Array.from(selectedNodeIds),
@@ -594,9 +534,23 @@ export default function SaveGraphDialog({
         setResultData({ contributions: result.ok.contributions });
         setAlertMode("result");
         toast.success("Graph saved to Notes!");
+      } else if ("selfAuthor" in result) {
+        toast.error(result.selfAuthor.message);
+        onClose();
       } else if ("noNewTrust" in result) {
+        const { nodes, rootIds: importRootIds } = graphDataToEditorNodes(
+          graphData,
+          selectedNodeIds,
+          graphName,
+        );
+        window.dispatchEvent(
+          new CustomEvent("hyvmind:import-nodes", {
+            detail: { nodes, rootIds: importRootIds },
+          }),
+        );
         setResultData({ noNewTrust: result.noNewTrust.reason });
         setAlertMode("result");
+        toast.success("Graph re-saved to Notes!");
       } else {
         setAlertMode(null);
         toast.error(result.err ?? "Failed to save graph");
@@ -629,29 +583,24 @@ export default function SaveGraphDialog({
     [onClose, alertMode],
   );
 
-  const selectedCount = checkedContribIds.size;
-  const hasNewSelections = selectableContributions.some((c) =>
-    checkedContribIds.has(c.id),
-  );
-
   return (
     <ChecklistDialogMemo
       isOpen={isOpen}
       onClose={onClose}
       graphName={graphName}
-      rootIds={rootIds}
-      treeNodes={treeNodes}
-      contribsByNode={contribsByNode}
-      checkedContribIds={checkedContribIds}
-      expandedIds={expandedIds}
-      alreadySaved={alreadySaved}
-      selectableContributions={selectableContributions}
-      selectedCount={selectedCount}
-      hasNewSelections={hasNewSelections}
+      graphData={graphData}
+      meta={meta}
+      coreLabel={coreLabel}
+      coreStatLabel={coreStatLabel}
+      extEntries={extEntries}
+      checkedExtensions={checkedExtensions}
+      extNodeIdsByIndex={extNodeIdsByIndex}
+      coreNodeIds={coreNodeIds}
+      allCoreCredited={allCoreCredited}
+      selectedExtCount={selectedExtCount}
+      canSave={canSave}
+      handleToggleExtension={handleToggleExtension}
       handleSave={handleSave}
-      handleToggleNode={handleToggleNode}
-      handleToggleContribution={handleToggleContribution}
-      handleToggleExpand={handleToggleExpand}
       handleOpenChange={handleOpenChange}
       alertMode={alertMode}
       resultData={resultData}

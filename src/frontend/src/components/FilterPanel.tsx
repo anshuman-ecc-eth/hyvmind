@@ -9,6 +9,8 @@ export interface FilterPanelProps {
   onSearchChange: (text: string) => void;
   visibleNodeTypes: Set<string>;
   onNodeTypesChange: (types: Set<string>) => void;
+  attributeFilterText: string;
+  onAttributeFilterChange: (text: string) => void;
   totalNodes: number;
   visibleNodes: number;
   onReset: () => void;
@@ -16,14 +18,15 @@ export interface FilterPanelProps {
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
   onOntology?: () => void;
+  hasFocusedFilter?: boolean;
 }
 
 const ALL_NODE_TYPES: { key: string; label: string; color: string }[] = [
   { key: "curation", label: "curation", color: "#4a9eff" },
   { key: "swarm", label: "swarm", color: "#ff7f50" },
   { key: "location", label: "location", color: "#90EE90" },
-  { key: "lawEntity", label: "law entity", color: "#FFD700" },
-  { key: "interpEntity", label: "interp entity", color: "#DA70D6" },
+  { key: "lawEntity", label: "law token", color: "#FFD700" },
+  { key: "interpEntity", label: "interp token", color: "#DA70D6" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -87,6 +90,8 @@ export default function FilterPanel({
   onSearchChange,
   visibleNodeTypes,
   onNodeTypesChange,
+  attributeFilterText,
+  onAttributeFilterChange,
   totalNodes,
   visibleNodes,
   onReset,
@@ -94,8 +99,10 @@ export default function FilterPanel({
   isCollapsed,
   onToggleCollapsed,
   onOntology,
+  hasFocusedFilter = false,
 }: FilterPanelProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const attributeInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input when panel expands
   useEffect(() => {
@@ -117,7 +124,9 @@ export default function FilterPanel({
 
   const isFiltered =
     searchText.trim().length > 0 ||
-    visibleNodeTypes.size < ALL_NODE_TYPES.length;
+    visibleNodeTypes.size < ALL_NODE_TYPES.length ||
+    attributeFilterText.trim().length > 0 ||
+    hasFocusedFilter;
 
   return (
     <div
@@ -171,6 +180,24 @@ export default function FilterPanel({
               className="w-full bg-transparent border border-dashed border-input text-xs text-foreground placeholder:text-muted-foreground/50 px-2 py-1 outline-none focus:border-foreground transition-colors"
               data-ocid="filter_panel.search_input"
               aria-label="Filter nodes by name"
+            />
+          </div>
+
+          {/* Attribute filter */}
+          <div className="px-3 pt-2 pb-2 border-b border-dashed border-border shrink-0">
+            <span className="block text-xs uppercase tracking-widest text-muted-foreground mb-1.5">
+              attributes
+            </span>
+            <input
+              ref={attributeInputRef}
+              id="filter-panel-attr"
+              type="text"
+              value={attributeFilterText}
+              onChange={(e) => onAttributeFilterChange(e.target.value)}
+              placeholder="key: value"
+              className="w-full bg-transparent border border-dashed border-input text-xs text-foreground placeholder:text-muted-foreground/50 px-2 py-1 outline-none focus:border-foreground transition-colors"
+              data-ocid="filter_panel.attr_input"
+              aria-label="Filter nodes by attribute key or key:value"
             />
           </div>
 

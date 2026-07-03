@@ -2462,6 +2462,7 @@ video {
   display: none;
 }
 :root {
+    color-scheme: dark;
     /* Minimalist dark palette — default (full CSS values for var() compatibility) */
     --background: oklch(0% 0 0);
     --foreground: oklch(100% 0 0);
@@ -3039,8 +3040,8 @@ body{
 .col-span-2{
   grid-column: span 2 / span 2;
 }
-.col-span-4{
-  grid-column: span 4 / span 4;
+.col-span-8{
+  grid-column: span 8 / span 8;
 }
 .col-start-2{
   grid-column-start: 2;
@@ -3107,6 +3108,9 @@ body{
 }
 .ml-2{
   margin-left: 0.5rem;
+}
+.ml-6{
+  margin-left: 1.5rem;
 }
 .ml-auto{
   margin-left: auto;
@@ -3270,9 +3274,6 @@ body{
 .max-h-80{
   max-height: 20rem;
 }
-.max-h-96{
-  max-height: 24rem;
-}
 .max-h-\[300px\]{
   max-height: 300px;
 }
@@ -3284,6 +3285,9 @@ body{
 }
 .max-h-\[80vh\]{
   max-height: 80vh;
+}
+.max-h-\[85vh\]{
+  max-height: 85vh;
 }
 .max-h-\[90vh\]{
   max-height: 90vh;
@@ -3369,9 +3373,6 @@ body{
 .w-\[200px\]{
   width: 200px;
 }
-.w-\[260px\]{
-  width: 260px;
-}
 .w-fit{
   width: -moz-fit-content;
   width: fit-content;
@@ -3391,14 +3392,18 @@ body{
 .min-w-\[1rem\]{
   min-width: 1rem;
 }
-.min-w-\[200px\]{
-  min-width: 200px;
+.min-w-\[300px\]{
+  min-width: 300px;
 }
 .min-w-\[8rem\]{
   min-width: 8rem;
 }
 .min-w-\[var\(--radix-select-trigger-width\)\]{
   min-width: var(--radix-select-trigger-width);
+}
+.min-w-fit{
+  min-width: -moz-fit-content;
+  min-width: fit-content;
 }
 .max-w-2xl{
   max-width: 42rem;
@@ -3572,9 +3577,6 @@ body{
 }
 .justify-items-start{
   justify-items: start;
-}
-.gap-0{
-  gap: 0px;
 }
 .gap-0\.5{
   gap: 0.125rem;
@@ -3826,16 +3828,8 @@ body{
 .border-white\/40{
   border-color: rgb(255 255 255 / 0.4);
 }
-.border-l-blue-500{
-  --tw-border-opacity: 1;
-  border-left-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
-}
-.border-l-cyan-400\/60{
-  border-left-color: rgb(34 211 238 / 0.6);
-}
-.border-l-orange-500{
-  --tw-border-opacity: 1;
-  border-left-color: rgb(249 115 22 / var(--tw-border-opacity, 1));
+.border-l-primary{
+  border-left-color: var(--primary);
 }
 .border-l-transparent{
   border-left-color: transparent;
@@ -4043,10 +4037,6 @@ body{
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
 }
-.py-8{
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
 .pb-1{
   padding-bottom: 0.25rem;
 }
@@ -4067,9 +4057,6 @@ body{
 }
 .pl-4{
   padding-left: 1rem;
-}
-.pl-6{
-  padding-left: 1.5rem;
 }
 .pl-8{
   padding-left: 2rem;
@@ -4132,12 +4119,6 @@ body{
 .text-4xl{
   font-size: 2.25rem;
   line-height: 2.5rem;
-}
-.text-\[10px\]{
-  font-size: 10px;
-}
-.text-\[11px\]{
-  font-size: 11px;
 }
 .text-base{
   font-size: 1rem;
@@ -4227,9 +4208,6 @@ body{
 }
 .text-current{
   color: currentColor;
-}
-.text-cyan-400\/70{
-  color: rgb(34 211 238 / 0.7);
 }
 .text-destructive{
   color: var(--destructive);
@@ -4453,9 +4431,6 @@ body{
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
-.duration-100{
-  transition-duration: 100ms;
-}
 .duration-150{
   transition-duration: 150ms;
 }
@@ -4495,9 +4470,6 @@ body{
 }
 .zoom-in-95{
   --tw-enter-scale: .95;
-}
-.duration-100{
-  animation-duration: 100ms;
 }
 .duration-150{
   animation-duration: 150ms;
@@ -4778,6 +4750,9 @@ body{
   line-height: 1rem;
   color: var(--muted-foreground);
 }
+.\[animation-direction\:reverse\]{
+  animation-direction: reverse;
+}
 /* ── Minimalist theme class selectors (for next-themes multi-theme support) ── */
 /* Use html.minimalist-* for higher specificity (0,1,1) so these win over
    tweakcn theme classes. tweakcn-themes.css also uses html.* prefix selectors
@@ -4821,6 +4796,10 @@ html.minimalist-dark {
   --panel-sidebar: oklch(8% 0 0);
   --panel-main: oklch(2% 0 0);
   --panel-details: oklch(8% 0 0);
+}
+/* All light themes get light color-scheme so the OS I-beam cursor stays visible */
+html[class$="-light"] {
+  color-scheme: light;
 }
 html.minimalist-light {
   --background: oklch(100% 0 0);
@@ -4907,6 +4886,12 @@ h6 {
   letter-spacing: 0.02em;
   line-height: 1.8 !important;
   font-size: 0.7rem !important;
+}
+/* Never show I-beam cursor anywhere — use default arrow instead */
+input,
+textarea,
+[contenteditable="true"] {
+  cursor: default;
 }
 /* Fix chessboard.js draggable pieces appearing behind modals */
 body > img[data-piece] {
@@ -5013,30 +4998,30 @@ mark {
 }
 /* Reference highlight in editor backdrop */
 .ref-accent {
-  background: var(--accent);
-  color: var(--accent-foreground);
-  border-radius: 2px;
-  padding: 0 2px;
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
 }
 /* Pending {@ reference while typing */
 .ref-pending {
-  background: color-mix(in srgb, var(--accent) 40%, transparent);
-  color: var(--accent-foreground);
+  background: color-mix(in srgb, var(--primary) 40%, transparent);
+  color: var(--primary-foreground);
   border-radius: 2px;
   padding: 0 2px;
   opacity: 0.7;
 }
 /* Reference link in preview mode */
 .ref-link {
-  color: var(--accent-foreground);
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--primary-foreground);
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
   border-radius: 2px;
   padding: 0 2px;
   text-decoration: none;
   transition: background 0.15s;
 }
 .ref-link:hover {
-  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--primary) 60%, transparent);
 }
 /* ────────────────────────────────────────────────────────── */
 /* Annotation Editor Utilities (NES Pixel Art + Token Highlights) */
@@ -5175,11 +5160,6 @@ mark {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
-.focus\:ring-0:focus{
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
 .focus\:ring-1:focus{
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
@@ -5192,9 +5172,6 @@ mark {
 }
 .focus\:ring-ring:focus{
   --tw-ring-color: var(--ring);
-}
-.focus\:ring-offset-0:focus{
-  --tw-ring-offset-width: 0px;
 }
 .focus\:ring-offset-2:focus{
   --tw-ring-offset-width: 2px;
@@ -5442,6 +5419,9 @@ mark {
 @media (min-width: 640px){
   .sm\:max-w-2xl{
     max-width: 42rem;
+  }
+  .sm\:max-w-4xl{
+    max-width: 56rem;
   }
   .sm\:max-w-lg{
     max-width: 32rem;

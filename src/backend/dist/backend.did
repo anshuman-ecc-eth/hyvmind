@@ -78,6 +78,7 @@ type SaveResult =
    err: text;
    noNewTrust: record {reason: text;};
    ok: record {contributions: vec CreditedContribution;};
+   selfAuthor: record {message: text;};
  };
 type PublishedSourceGraphMeta = 
  record {
@@ -287,7 +288,9 @@ type ContributionView =
    alreadyCredited: bool;
    buzzAmount: int;
    description: text;
+   extensionIndex: opt nat;
    id: text;
+   isFromExtension: bool;
    nodeId: NodeId;
    payer: principal;
  };
@@ -349,6 +352,9 @@ service : {
   generateBuzzSecret: (score: int) -> (text);
   generateInviteCodes: (count: nat, validDays: nat) -> (vec text);
   getAllPublishedSourceGraphs: () -> (vec PublishedSourceGraphMeta) query;
+  /// Called by the Obsidian plugin to retrieve and clear pending vault push data.
+  /// Atomically reads and removes to prevent re-processing on retry.
+  getAndClearPendingVaultPush: () -> (opt text);
   getArchivedNodeIds: () -> (vec NodeId) query;
   getBoundPluginKeys: () -> (vec principal) query;
   getBuzzLeaderboard: (topN: nat) -> (vec BuzzLeaderboardEntry) query;
@@ -383,6 +389,8 @@ service : {
       updatedBy: opt text;
     }) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;
+  /// Called by the Obsidian plugin to cheaply check if push data is available.
+  hasPendingVaultPush: () -> (bool) query;
   hasTelegramConfig: () -> (bool) query;
   hasUserSavedGraph: (publishedGraphId: text) -> (bool) query;
   http_request: (req: HttpRequest) -> (HttpResponse) query;
@@ -395,10 +403,14 @@ service : {
                            text;
                            NodeId;
                          }) -> (PublishPreviewResult);
+  /// Called by the web app user (via II) to stage notes for Obsidian vault export.
+  pushToVault: (json: text) -> ();
   redeemBuzzSecret: (secret: text) -> (variant {
                                          err: text;
                                          ok: text;
                                        });
+  requestPluginBinding: (pluginPubKey: principal, forPrincipal: principal) ->
+   ();
   resetAllData: () -> ();
   revokeApiKey: () -> ();
   revokePluginBinding: (pluginKey: principal) -> ();

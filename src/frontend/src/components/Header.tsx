@@ -140,19 +140,22 @@ export default function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
-                    window.open("https://telegram.me/hyvmind_tg", "_blank")
-                  }
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                >
-                  Telegram
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
                     window.open("https://nodes.desci.com/dpid/969", "_blank")
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   Whitepaper
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      "https://www.youtube.com/@y-not-monologs",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  Monologs
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
@@ -163,7 +166,7 @@ export default function Header() {
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
-                  GitHub
+                  Code
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

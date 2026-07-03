@@ -20,6 +20,8 @@ export interface ContributionView {
     id: string;
     buzzAmount: bigint;
     nodeId: NodeId;
+    isFromExtension: boolean;
+    extensionIndex?: bigint;
     description: string;
     payer: Principal;
     alreadyCredited: boolean;
@@ -46,6 +48,11 @@ export type SaveResult = {
     __kind__: "noNewTrust";
     noNewTrust: {
         reason: string;
+    };
+} | {
+    __kind__: "selfAuthor";
+    selfAuthor: {
+        message: string;
     };
 };
 export interface ChatChannelSummary {
@@ -319,6 +326,11 @@ export interface backendInterface {
     generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
+    /**
+     * / Called by the Obsidian plugin to retrieve and clear pending vault push data.
+     * / Atomically reads and removes to prevent re-processing on retry.
+     */
+    getAndClearPendingVaultPush(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getBoundPluginKeys(): Promise<Array<Principal>>;
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
@@ -353,6 +365,10 @@ export interface backendInterface {
         hasChatId: boolean;
     }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    /**
+     * / Called by the Obsidian plugin to cheaply check if push data is available.
+     */
+    hasPendingVaultPush(): Promise<boolean>;
     hasTelegramConfig(): Promise<boolean>;
     hasUserSavedGraph(publishedGraphId: string): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
@@ -361,6 +377,10 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
+    /**
+     * / Called by the web app user (via II) to stage notes for Obsidian vault export.
+     */
+    pushToVault(json: string): Promise<void>;
     redeemBuzzSecret(secret: string): Promise<{
         __kind__: "ok";
         ok: string;
@@ -368,6 +388,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;

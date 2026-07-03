@@ -58,6 +58,22 @@ import {
 import type { TrustTransaction } from "../types/trustExtensions";
 import { CreateBuzzModal } from "./CreateBuzzModal";
 
+function parseEntity(description: string): string {
+  const createMatch = description.match(
+    /^Created\s+(curation|swarm|location|law entity|interpretation)\s+'(.+)'$/,
+  );
+  if (createMatch) {
+    return `${createMatch[1]}: ${createMatch[2]}`;
+  }
+  const crossRefMatch = description.match(
+    /^Added\s+(\d+)\s+cross-reference[s]?\s+from\s+'(.+)'$/,
+  );
+  if (crossRefMatch) {
+    return `cross-ref from ${crossRefMatch[2]} (×${crossRefMatch[1]})`;
+  }
+  return description;
+}
+
 export function SettingsView() {
   const { theme, setTheme } = useTheme();
   const { data: userProfile, isLoading: profileLoading } =
@@ -673,7 +689,7 @@ export function SettingsView() {
                           data-ocid="settings.wallet.refresh_trust"
                         >
                           <RotateCcw
-                            className={`h-3 w-3${isTrustRefetching ? " animate-spin" : ""}`}
+                            className={`h-3 w-3${isTrustRefetching ? " animate-spin [animation-direction:reverse]" : ""}`}
                           />
                         </Button>
                         <Button
@@ -770,17 +786,13 @@ export function SettingsView() {
                                   <TableRow className="border-b-0 hover:bg-transparent">
                                     <TableCell />
                                     <TableCell colSpan={3} className="py-0.5">
-                                      <div className="grid grid-cols-12 gap-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
-                                        <span className="col-span-4">
-                                          Description
-                                        </span>
-                                        <span className="col-span-2">
-                                          Contributor
+                                      <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground font-medium uppercase tracking-wider pl-4 py-0.5">
+                                        <span className="col-span-8">
+                                          Entity
                                         </span>
                                         <span className="col-span-2">
                                           Multiplier
                                         </span>
-                                        <span className="col-span-2">Buzz</span>
                                         <span className="col-span-2">
                                           Earned
                                         </span>
@@ -794,27 +806,13 @@ export function SettingsView() {
                                     >
                                       <TableCell />
                                       <TableCell colSpan={3} className="py-0.5">
-                                        <div className="grid grid-cols-12 gap-1 text-[11px] pl-4">
-                                          <span className="col-span-4 truncate">
-                                            {detail.description}
-                                          </span>
-                                          <span className="col-span-2 font-mono text-muted-foreground">
-                                            {typeof (
-                                              detail.payer as {
-                                                toText?: () => string;
-                                              }
-                                            ).toText === "function"
-                                              ? `${(detail.payer as { toText: () => string }).toText().slice(0, 10)}...`
-                                              : `${String(detail.payer).slice(0, 10)}...`}
+                                        <div className="grid grid-cols-12 gap-1 text-xs pl-4">
+                                          <span className="col-span-8 truncate">
+                                            {parseEntity(detail.description)}
                                           </span>
                                           <span className="col-span-2">
                                             {"\u221a"}
                                             {detail.saveCount.toString()}
-                                          </span>
-                                          <span className="col-span-2">
-                                            {(
-                                              Number(detail.buzzAmount) / 10
-                                            ).toFixed(1)}
                                           </span>
                                           <span className="col-span-2">
                                             {(

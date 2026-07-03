@@ -9,8 +9,8 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   curation: "CURATION",
   swarm: "SWARM",
   location: "LOCATION",
-  lawEntity: "LAW ENTITY",
-  interpEntity: "INTERP ENTITY",
+  lawEntity: "LAW TOKEN",
+  interpEntity: "INTERPRETATION TOKEN",
 };
 
 export default function PublicNodeDetailsPanel({

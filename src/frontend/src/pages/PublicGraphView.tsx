@@ -14,7 +14,7 @@ import {
   usePublishedGraphData,
   usePublishedGraphMetas,
 } from "../hooks/usePublicGraphs";
-import type { SourceNode } from "../types/sourceGraph";
+import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
 import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
 
@@ -37,17 +37,45 @@ interface FilterState {
   searchText: string;
   visibleNodeTypes: Set<string>;
   isCollapsed: boolean;
+  focusedNodeNames?: Set<string>;
+  attributeFilterText?: string;
 }
 
 const defaultFilterState = (): FilterState => ({
   searchText: "",
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
+  focusedNodeNames: undefined,
+  attributeFilterText: undefined,
 });
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+function matchesAttributeFilter(node: SourceNode, filter: string): boolean {
+  const attrs = node.attributes;
+  if (!attrs) return false;
+  const colonIdx = filter.indexOf(":");
+  if (colonIdx === -1) {
+    return Object.keys(attrs).some((k) =>
+      k.toLowerCase().includes(filter.toLowerCase()),
+    );
+  }
+  const key = filter.slice(0, colonIdx).toLowerCase();
+  const value = filter
+    .slice(colonIdx + 1)
+    .trim()
+    .toLowerCase();
+  if (!key) return false;
+  if (!value) {
+    return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));
+  }
+  return Object.entries(attrs).some(
+    ([k, v]) =>
+      k.toLowerCase().includes(key) && String(v).toLowerCase().includes(value),
+  );
+}
 
 function Spinner() {
   return (
@@ -100,9 +128,6 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
         <span data-ocid="public_graph.edge_count">
           {crossRefEdges} cross-ref, {hierarchyEdges} hierarchy
         </span>
-        <span data-ocid="public_graph.attr_count">
-          {Number(meta.attributeCount)} attrs
-        </span>
         <span data-ocid="public_graph.source_count">
           {Number(meta.sourcesCount ?? 0n)} sources
         </span>
@@ -120,9 +145,9 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
                 key={String(entry.extendedAt)}
                 className="font-mono text-xs text-muted-foreground"
               >
-                Ext #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
+                Extension #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
                 {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}
-                edges, +{Number(entry.addedAttributes)} attrs
+                edges
               </li>
             );
           })}
@@ -254,6 +279,21 @@ function GraphDetail({
     [graphData, graphName, selectedId],
   );
 
+  // Stabilize: public graph data never changes after initial load, so cache
+  // the first successful convertedGraph per selectedId. This prevents the
+  // duplicate fetch from useActor's refetchQueries from producing a different
+  // object reference that would restart the force simulation unnecessarily.
+  const stableGraphRef = useRef<SourceGraph | null>(null);
+  const stableIdRef = useRef<string | null>(null);
+
+  if (convertedGraph && stableIdRef.current !== selectedId) {
+    stableIdRef.current = selectedId;
+    stableGraphRef.current = convertedGraph;
+  }
+
+  const currentGraph =
+    stableIdRef.current === selectedId ? stableGraphRef.current : null;
+
   // ---------------------------------------------------------------------------
   // Filter state — per-graph persistence
   // ---------------------------------------------------------------------------
@@ -294,15 +334,28 @@ function GraphDetail({
     if (!convertedGraph) return 0;
     const search = filterState.searchText.trim().toLowerCase();
     const types = filterState.visibleNodeTypes;
+    const focused = filterState.focusedNodeNames;
+    const attrFilter = (filterState.attributeFilterText ?? "").trim();
     const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
     const noSearch = search.length === 0;
-    if (allTypesVisible && noSearch) return convertedGraph.nodes.length;
+    const noFocused = !focused || focused.size === 0;
+    const noAttr = attrFilter.length === 0;
+    if (allTypesVisible && noSearch && noFocused && noAttr)
+      return convertedGraph.nodes.length;
     return convertedGraph.nodes.filter((n) => {
       const typeOk = allTypesVisible || types.has(n.nodeType);
       const searchOk = noSearch || n.name.toLowerCase().includes(search);
-      return typeOk && searchOk;
+      const focusedOk = noFocused || focused.has(n.name);
+      const attrOk = noAttr || matchesAttributeFilter(n, attrFilter);
+      return typeOk && searchOk && focusedOk && attrOk;
     }).length;
-  }, [convertedGraph, filterState.searchText, filterState.visibleNodeTypes]);
+  }, [
+    convertedGraph,
+    filterState.searchText,
+    filterState.visibleNodeTypes,
+    filterState.focusedNodeNames,
+    filterState.attributeFilterText,
+  ]);
 
   return (
     <div className="flex flex-col h-full bg-background font-mono">
@@ -322,15 +375,17 @@ function GraphDetail({
 
       {isLoading && <Spinner />}
 
-      {!isLoading && convertedGraph && (
+      {!isLoading && currentGraph && (
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 min-w-0 min-h-0">
             <SourceGraphDiagram
-              graph={convertedGraph}
+              graph={currentGraph}
               graphId={selectedId}
               onNodeClick={setSelectedNode}
               searchText={filterState.searchText}
               visibleNodeTypes={filterState.visibleNodeTypes}
+              focusedNodeNames={filterState.focusedNodeNames}
+              attributeFilterText={filterState.attributeFilterText}
               onFitToVisible={handleFitRegister}
             />
           </div>
@@ -343,7 +398,14 @@ function GraphDetail({
             onNodeTypesChange={(types) =>
               setFilterState((prev) => ({ ...prev, visibleNodeTypes: types }))
             }
-            totalNodes={convertedGraph.nodes.length}
+            attributeFilterText={filterState.attributeFilterText ?? ""}
+            onAttributeFilterChange={(text) =>
+              setFilterState((prev) => ({
+                ...prev,
+                attributeFilterText: text || undefined,
+              }))
+            }
+            totalNodes={currentGraph.nodes.length}
             visibleNodes={visibleNodeCount}
             onReset={() => setFilterState(defaultFilterState())}
             onFitToVisible={handleFitToVisible}
@@ -355,6 +417,10 @@ function GraphDetail({
               }))
             }
             onOntology={handleOntology}
+            hasFocusedFilter={
+              filterState.focusedNodeNames !== undefined &&
+              filterState.focusedNodeNames.size > 0
+            }
           />
         </div>
       )}
@@ -400,12 +466,39 @@ export default function PublicGraphView({
   const { data: graphs = [], isLoading, error } = usePublishedGraphMetas();
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
   const [savingGraphId, setSavingGraphId] = useState<string | null>(null);
+  const [searchSelectKey, setSearchSelectKey] = useState(0);
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
 
   const handleFuzzySelect = (item: SearchableItem) => {
+    let focusedNodeNames: Set<string> | undefined;
+    let attributeFilterText: string | undefined;
+    let searchText: string | undefined;
+
+    if (item.type === "node" && item.node) {
+      focusedNodeNames = new Set([item.node.name]);
+      searchText = item.node.name;
+    } else if (item.type === "edge" && item.sourceName && item.targetName) {
+      focusedNodeNames = new Set([item.sourceName, item.targetName]);
+    } else if (item.type === "attribute" && item.nodeName) {
+      focusedNodeNames = new Set([item.nodeName]);
+      attributeFilterText = `${item.key}${item.value ? `:${item.value}` : ""}`;
+    }
+
+    filterStatesRef.current.set(item.graphId, {
+      ...defaultFilterState(),
+      ...(focusedNodeNames && { focusedNodeNames }),
+      ...(attributeFilterText && { attributeFilterText }),
+      searchText: searchText ?? "",
+    });
+
     setSelectedGraphId(item.graphId);
+    setSearchSelectKey((k) => k + 1);
+  };
+
+  const handleViewGraph = (id: string) => {
+    setSelectedGraphId(id);
   };
 
   const savingGraphData = usePublishedGraphData(savingGraphId);
@@ -444,6 +537,7 @@ export default function PublicGraphView({
   if (selectedGraphId) {
     return (
       <GraphDetail
+        key={`${selectedGraphId}-${searchSelectKey}`}
         selectedId={selectedGraphId}
         graphs={graphs}
         onBack={() => setSelectedGraphId(null)}
@@ -497,6 +591,7 @@ export default function PublicGraphView({
           graphName={savingMeta.name}
           graphData={savingGraphData.data}
           graphId={savingGraphId}
+          meta={savingMeta}
         />
       )}
 
@@ -513,7 +608,7 @@ export default function PublicGraphView({
                   key={curationName}
                   curationName={curationName}
                   graphs={gs}
-                  onView={(id) => setSelectedGraphId(id)}
+                  onView={handleViewGraph}
                   onSave={isLanding ? undefined : (id) => setSavingGraphId(id)}
                 />
               );

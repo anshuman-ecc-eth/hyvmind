@@ -23,7 +23,6 @@ import Debug "mo:core/Debug";
 import Float "mo:core/Float";
 import Migration "Migration";
 
-
 actor {
   // Type Aliases
   type NodeId = Text;
@@ -68,6 +67,7 @@ actor {
   type SaveResult = {
     #ok : { contributions : [CreditedContribution] };
     #noNewTrust : { reason : Text };
+    #selfAuthor : { message : Text };
     #err : Text;
   };
   type ContributionView = {
@@ -77,6 +77,8 @@ actor {
     payer : Principal;
     buzzAmount : Int;
     alreadyCredited : Bool;
+    isFromExtension : Bool;
+    extensionIndex : ?Nat;
   };
   let HEX_CHARS : [Text] = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 
@@ -449,6 +451,9 @@ actor {
   // Notes import data: userPrincipal → json blob from Obsidian plugin
   var notesImports = Map.empty<Principal, Text>();
 
+  // Vault push data: userPrincipal → json blob destined for Obsidian vault
+  var vaultPushData = Map.empty<Principal, Text>();
+
 
   module LawToken {
     public func compareByTokenLabel(t1 : LawToken, t2 : LawToken) : Order.Order {
@@ -581,9 +586,13 @@ actor {
       };
     };
 
-    // If nothing new to credit, return noNewTrust
+    // If nothing new to credit, return noNewTrust or selfAuthor
     if (newEntries.size() == 0) {
-      return #noNewTrust({ reason = "No new Trust generated" });
+      if (hasSelfFiltered) {
+        return #selfAuthor({ message = "Can't save. You're the author." });
+      } else {
+        return #noNewTrust({ reason = "No new Trust generated" });
+      };
     };
 
     // Group new contributions by payer, collecting contribution IDs and descriptions
@@ -697,6 +706,20 @@ actor {
     switch (graphContributionList.get(publishedGraphId)) {
       case (null) { [] };
       case (?entries) {
+        func parsePhase(id : Text) : (Bool, ?Nat) {
+          if (not id.startsWith(#text "e")) { return (false, null) };
+          let parts = id.split(#char ':').toArray();
+          if (parts.size() == 0) { return (false, null) };
+          switch (parts[0].stripStart(#text "e")) {
+            case (?s) {
+              switch (Nat.fromText(s)) {
+                case (?n) { (true, ?n) };
+                case (null) { (false, null) };
+              };
+            };
+            case (null) { (false, null) };
+          };
+        };
         let creditedSet = switch (userContributionCredits.get(publishedGraphId)) {
           case (null) { Set.empty<Text>() };
           case (?userMap) {
@@ -708,7 +731,8 @@ actor {
         };
         Array.tabulate(entries.size(), func (i : Nat) : ContributionView {
           let e = entries[i];
-          { id = e.id; nodeId = e.nodeId; description = e.description; payer = e.payer; buzzAmount = e.buzzAmount; alreadyCredited = creditedSet.contains(e.id) }
+          let (isExt, extIdx) = parsePhase(e.id);
+          { id = e.id; nodeId = e.nodeId; description = e.description; payer = e.payer; buzzAmount = e.buzzAmount; alreadyCredited = creditedSet.contains(e.id); isFromExtension = isExt; extensionIndex = extIdx }
         })
       };
     };
@@ -740,7 +764,7 @@ actor {
         if (a.1 > b.1) { #less } else if (a.1 < b.1) { #greater } else { #equal };
     });
     let len = if (sorted.size() < topN) { sorted.size() } else { topN };
-    Array.tabulate<BuzzLeaderboardEntry>(
+    Array.tabulate(
         len,
         func (i : Nat) : BuzzLeaderboardEntry {
             let (principal, score) = sorted[i];
@@ -830,6 +854,36 @@ actor {
     notesImports.get(caller);
   };
 
+  // ── Vault Push Methods ─────────────────────────────────────────────────────
+
+  /// Called by the web app user (via II) to stage notes for Obsidian vault export.
+  public shared ({ caller }) func pushToVault(json : Text) : async () {
+    let effectiveUser = getEffectiveUser(caller);
+    vaultPushData.add(effectiveUser, json);
+  };
+
+  /// Called by the Obsidian plugin to cheaply check if push data is available.
+  public query ({ caller }) func hasPendingVaultPush() : async Bool {
+    let effectiveUser = getEffectiveUser(caller);
+    switch (vaultPushData.get(effectiveUser)) {
+      case (?data) { data != "" };
+      case (null) { false };
+    };
+  };
+
+  /// Called by the Obsidian plugin to retrieve and clear pending vault push data.
+  /// Atomically reads and removes to prevent re-processing on retry.
+  public shared ({ caller }) func getAndClearPendingVaultPush() : async ?Text {
+    let effectiveUser = getEffectiveUser(caller);
+    switch (vaultPushData.get(effectiveUser)) {
+      case (?data) {
+        vaultPushData.remove(effectiveUser);
+        ?data
+      };
+      case (null) { null };
+    };
+  };
+
   public query ({ caller }) func getPluginBindingStatus() : async Bool {
     var found = false;
     for ((_, user) in pluginBindings.entries()) {
@@ -860,6 +914,26 @@ actor {
       };
       case (null) { Runtime.trap("Plugin key not found in active bindings") };
     };
+  };
+
+  public shared ({ caller }) func requestPluginBinding(pluginPubKey : Principal, forPrincipal : Principal) : async () {
+    if (pluginPubKey != caller) {
+      Runtime.trap("Unauthorized: Only the plugin key can request binding for itself");
+    };
+    switch (pluginBindings.get(pluginPubKey)) {
+      case (?_) { Runtime.trap("Plugin is already bound") };
+      case (null) {};
+    };
+    let existing = switch (pendingPluginBindings.get(forPrincipal)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+    let alreadyPending = existing.find(func(p : Principal) : Bool { p == pluginPubKey });
+    switch (alreadyPending) {
+      case (null) { existing.add(pluginPubKey) };
+      case (?_) { return };
+    };
+    pendingPluginBindings.add(forPrincipal, existing);
   };
 
   // USER PROFILES
@@ -2368,8 +2442,21 @@ actor {
     hierarchyEdgesToCreate := nodesToCreate - curationsToCreate;
 
     // ── Early exit check ─────────────────────────────────────────────────────
-    if (nodesToCreate == 0 and nodesToUpdate == 0 and edgesToCreate == 0 and edgesToUpdate == 0) {
-      Debug.print("Preview: Nothing to update - all counts are zero");
+    if (nodesToCreate == 0 and edgesToCreate == 0) {
+      return {
+        nodeOperations = [];
+        edgeOperations = [];
+        summary = {
+          nodesToCreate = 0;
+          nodesToUpdate = 0;
+          edgesToCreate = 0;
+          edgesToUpdate = 0;
+          hierarchyEdgesToCreate = 0;
+          attributesAdded = 0;
+          sourcesAdded = 0;
+        };
+        buzzCost = 0;
+      };
     };
 
     // ── Final debug log ──────────────────────────────────────────────────────
@@ -2381,9 +2468,7 @@ actor {
       + locationsToCreate * 30
       + lawEntitiesToCreate * 40
       + interpEntitiesToCreate * 50
-      + attributesAdded * 1
-      + edgesToCreate * 1
-      + sourcesAdded * 1;
+      + edgesToCreate * 1;
 
     {
       nodeOperations = nodeOps.toArray();
@@ -2485,21 +2570,34 @@ actor {
     var lawEntitiesToCreate : Nat = 0;
       var interpEntitiesToCreate : Nat = 0;
       let tempContribs = Map.empty<NodeId, NodeContribution>();
-      let earlySize = switch (earlyPublishedId) {
-        case (null) { 0 };
+      var extIndex : Nat = 0;
+      switch (earlyPublishedId) {
         case (?pid) {
-          switch (graphContributionList.get(pid)) {
-            case (null) { 0 };
-            case (?arr) { arr.size() };
+          switch (publishedGraphBuzzMetrics.get(pid)) {
+            case (?m) { extIndex := m.extensionCount };
+            case (null) {};
           };
         };
+        case (null) {};
       };
-      var contribCounter = earlySize;
+      let extPrefix = switch (earlyPublishedId) {
+        case (?_) { "e" # extIndex.toText() # ":" };
+        case (null) { "c" };
+      };
+      var contribCounter = switch (earlyPublishedId) {
+        case (?pid) {
+          switch (graphContributionList.get(pid)) {
+            case (?existing) { existing.size() };
+            case (null) { 0 };
+          };
+        };
+        case (null) { 0 };
+      };
       let tempContribEntries = List.empty<ContributionEntry>();
       func recordContrib(nodeId : NodeId, buzzCost : Int, description : Text) {
-        let contribId = "c" # debug_show(contribCounter);
+        let contribId = extPrefix # debug_show(contribCounter);
         contribCounter += 1;
-        tempContribs.add(nodeId, { payers = List.singleton<(Principal, Int)>((caller, buzzCost)) });
+        tempContribs.add(nodeId, { payers = List.singleton((caller, buzzCost)) });
         tempContribEntries.add({ id = contribId; nodeId; payer = caller; buzzAmount = buzzCost; description });
       };
 
@@ -2563,15 +2661,13 @@ actor {
                 nodesToUpdate += 1;
                 let newCurationAttrs = countNewAttributes(curationExistingAttrs, node.attributes);
                 let newCurationSrcs = countNewSources(curationExistingSources, node.sources);
-                let curationExtCost = newCurationAttrs * 1 + newCurationSrcs * 1;
-                if (curationExtCost > 0) { recordContrib(existingId, curationExtCost, "Extended curation '" # node.name # "' (+" # debug_show(newCurationAttrs) # " attr, +" # debug_show(newCurationSrcs) # " src)") };
                 attributesAdded += newCurationAttrs;
                 sourcesAdded += newCurationSrcs;
               } else {
                 nodesToCreate += 1;
                 let curationAttrCount = countRawAttributes(node.attributes);
                 let curationSrcCount = node.sources.size();
-                recordContrib(existingId, 10 + curationAttrCount * 1 + curationSrcCount * 1, "Created curation '" # node.name # "'");
+                recordContrib(existingId, 10, "Created curation '" # node.name # "'");
                 attributesAdded += curationAttrCount;
                 sourcesAdded += curationSrcCount;
               };
@@ -2580,7 +2676,7 @@ actor {
               nodesToCreate += 1;
               let curationAttrCount2 = countRawAttributes(node.attributes);
               let curationSrcCount2 = node.sources.size();
-              recordContrib(existingId, 10 + curationAttrCount2 * 1 + curationSrcCount2 * 1, "Created curation '" # node.name # "'");
+              recordContrib(existingId, 10, "Created curation '" # node.name # "'");
               attributesAdded += curationAttrCount2;
               sourcesAdded += curationSrcCount2;
             };
@@ -2614,7 +2710,7 @@ actor {
           curationsToCreate += 1;
           let newCurationAttrCount = countRawAttributes(node.attributes);
           let newCurationSrcCount = node.sources.size();
-          recordContrib(newId, 10 + newCurationAttrCount * 1 + newCurationSrcCount * 1, "Created curation '" # node.name # "'");
+          recordContrib(newId, 10, "Created curation '" # node.name # "'");
           attributesAdded += newCurationAttrCount;
           sourcesAdded += newCurationSrcCount;
         };
@@ -2698,15 +2794,13 @@ actor {
                 nodesToUpdate += 1;
                 let newSwarmAttrs = countNewAttributes(swarmExistingAttrs, node.attributes);
                 let newSwarmSrcs = countNewSources(swarmExistingSources, node.sources);
-                let swarmExtCost = newSwarmAttrs * 1 + newSwarmSrcs * 1;
-                if (swarmExtCost > 0) { recordContrib(existingId, swarmExtCost, "Extended swarm '" # node.name # "' (+" # debug_show(newSwarmAttrs) # " attr, +" # debug_show(newSwarmSrcs) # " src)") };
                 attributesAdded += newSwarmAttrs;
                 sourcesAdded += newSwarmSrcs;
               } else {
                 nodesToCreate += 1;
                 let swarmAttrCount = countRawAttributes(node.attributes);
                 let swarmSrcCount = node.sources.size();
-                recordContrib(existingId, 20 + swarmAttrCount * 1 + swarmSrcCount * 1, "Created swarm '" # node.name # "'");
+                recordContrib(existingId, 20, "Created swarm '" # node.name # "'");
                 attributesAdded += swarmAttrCount;
                 sourcesAdded += swarmSrcCount;
               };
@@ -2715,7 +2809,7 @@ actor {
               nodesToCreate += 1;
               let swarmAttrCount2 = countRawAttributes(node.attributes);
               let swarmSrcCount2 = node.sources.size();
-              recordContrib(existingId, 20 + swarmAttrCount2 * 1 + swarmSrcCount2 * 1, "Created swarm '" # node.name # "'");
+              recordContrib(existingId, 20, "Created swarm '" # node.name # "'");
               attributesAdded += swarmAttrCount2;
               sourcesAdded += swarmSrcCount2;
             };
@@ -2754,7 +2848,7 @@ actor {
           swarmsToCreate += 1;
           let newSwarmAttrCount = countRawAttributes(node.attributes);
           let newSwarmSrcCount = node.sources.size();
-          recordContrib(newId, 20 + newSwarmAttrCount * 1 + newSwarmSrcCount * 1, "Created swarm '" # node.name # "'");
+          recordContrib(newId, 20, "Created swarm '" # node.name # "'");
           attributesAdded += newSwarmAttrCount;
           sourcesAdded += newSwarmSrcCount;
         };
@@ -2829,15 +2923,13 @@ actor {
                 nodesToUpdate += 1;
                 let newLocAttrs = countNewAttributes(locExistingAttrs, node.attributes);
                 let newLocSrcs = countNewSources(locExistingSources, node.sources);
-                let locExtCost = newLocAttrs * 1 + newLocSrcs * 1;
-                if (locExtCost > 0) { recordContrib(existingId, locExtCost, "Extended location '" # node.name # "' (+" # debug_show(newLocAttrs) # " attr, +" # debug_show(newLocSrcs) # " src)") };
                 attributesAdded += newLocAttrs;
                 sourcesAdded += newLocSrcs;
               } else {
                 nodesToCreate += 1;
                 let locAttrCount = countRawAttributes(node.attributes);
                 let locSrcCount = node.sources.size();
-                recordContrib(existingId, 30 + locAttrCount * 1 + locSrcCount * 1, "Created location '" # node.name # "'");
+                recordContrib(existingId, 30, "Created location '" # node.name # "'");
                 attributesAdded += locAttrCount;
                 sourcesAdded += locSrcCount;
               };
@@ -2846,7 +2938,7 @@ actor {
               nodesToCreate += 1;
               let locAttrCount2 = countRawAttributes(node.attributes);
               let locSrcCount2 = node.sources.size();
-              recordContrib(existingId, 30 + locAttrCount2 * 1 + locSrcCount2 * 1, "Created location '" # node.name # "'");
+              recordContrib(existingId, 30, "Created location '" # node.name # "'");
               attributesAdded += locAttrCount2;
               sourcesAdded += locSrcCount2;
             };
@@ -2881,7 +2973,7 @@ actor {
           locationsToCreate += 1;
           let newLocAttrCount = countRawAttributes(node.attributes);
           let newLocSrcCount = node.sources.size();
-          recordContrib(newId, 30 + newLocAttrCount * 1 + newLocSrcCount * 1, "Created location '" # node.name # "'");
+          recordContrib(newId, 30, "Created location '" # node.name # "'");
           attributesAdded += newLocAttrCount;
           sourcesAdded += newLocSrcCount;
         };
@@ -2956,15 +3048,13 @@ actor {
                 nodesToUpdate += 1;
                 let newLtAttrs = countNewAttributes(ltExistingAttrs, node.attributes);
                 let newLtSrcs = countNewSources(ltExistingSources, node.sources);
-                let ltExtCost = newLtAttrs * 1 + newLtSrcs * 1;
-                if (ltExtCost > 0) { recordContrib(existingId, ltExtCost, "Extended law entity '" # node.name # "' (+" # debug_show(newLtAttrs) # " attr, +" # debug_show(newLtSrcs) # " src)") };
                 attributesAdded += newLtAttrs;
                 sourcesAdded += newLtSrcs;
               } else {
                 nodesToCreate += 1;
                 let ltAttrCount = countRawAttributes(node.attributes);
                 let ltSrcCount = node.sources.size();
-                recordContrib(existingId, 40 + ltAttrCount * 1 + ltSrcCount * 1, "Created law entity '" # node.name # "'");
+                recordContrib(existingId, 40, "Created law entity '" # node.name # "'");
                 attributesAdded += ltAttrCount;
                 sourcesAdded += ltSrcCount;
               };
@@ -2973,7 +3063,7 @@ actor {
               nodesToCreate += 1;
               let ltAttrCount2 = countRawAttributes(node.attributes);
               let ltSrcCount2 = node.sources.size();
-              recordContrib(existingId, 40 + ltAttrCount2 * 1 + ltSrcCount2 * 1, "Created law entity '" # node.name # "'");
+              recordContrib(existingId, 40, "Created law entity '" # node.name # "'");
               attributesAdded += ltAttrCount2;
               sourcesAdded += ltSrcCount2;
             };
@@ -3008,7 +3098,7 @@ actor {
           lawEntitiesToCreate += 1;
           let newLtAttrCount = countRawAttributes(node.attributes);
           let newLtSrcCount = node.sources.size();
-          recordContrib(newId, 40 + newLtAttrCount * 1 + newLtSrcCount * 1, "Created law entity '" # node.name # "'");
+          recordContrib(newId, 40, "Created law entity '" # node.name # "'");
           attributesAdded += newLtAttrCount;
           sourcesAdded += newLtSrcCount;
         };
@@ -3088,15 +3178,13 @@ actor {
                 nodesToUpdate += 1;
                 let newItAttrs = countNewAttributes(itExistingAttrs, node.attributes);
                 let newItSrcs = countNewSources(itExistingSources, node.sources);
-                let itExtCost = newItAttrs * 1 + newItSrcs * 1;
-                if (itExtCost > 0) { recordContrib(existingId, itExtCost, "Extended interpretation '" # node.name # "' (+" # debug_show(newItAttrs) # " attr, +" # debug_show(newItSrcs) # " src)") };
                 attributesAdded += newItAttrs;
                 sourcesAdded += newItSrcs;
               } else {
                 nodesToCreate += 1;
                 let itAttrCount = countRawAttributes(node.attributes);
                 let itSrcCount = node.sources.size();
-                recordContrib(existingId, 50 + itAttrCount * 1 + itSrcCount * 1, "Created interpretation '" # node.name # "'");
+                recordContrib(existingId, 50, "Created interpretation '" # node.name # "'");
                 attributesAdded += itAttrCount;
                 sourcesAdded += itSrcCount;
               };
@@ -3105,7 +3193,7 @@ actor {
               nodesToCreate += 1;
               let itAttrCount2 = countRawAttributes(node.attributes);
               let itSrcCount2 = node.sources.size();
-              recordContrib(existingId, 50 + itAttrCount2 * 1 + itSrcCount2 * 1, "Created interpretation '" # node.name # "'");
+              recordContrib(existingId, 50, "Created interpretation '" # node.name # "'");
               attributesAdded += itAttrCount2;
               sourcesAdded += itSrcCount2;
             };
@@ -3141,7 +3229,7 @@ actor {
           interpEntitiesToCreate += 1;
           let newItAttrCount = countRawAttributes(node.attributes);
           let newItSrcCount = node.sources.size();
-          recordContrib(newId, 50 + newItAttrCount * 1 + newItSrcCount * 1, "Created interpretation '" # node.name # "'");
+          recordContrib(newId, 50, "Created interpretation '" # node.name # "'");
           attributesAdded += newItAttrCount;
           sourcesAdded += newItSrcCount;
         };
@@ -3259,12 +3347,12 @@ actor {
 
     // Merge edge costs into tempContribs
     for ((edgeNodeId, (edgeCost, sourceName)) in tempEdgeCosts.entries()) {
-      let contribId = "c" # debug_show(contribCounter);
+      let contribId = extPrefix # debug_show(contribCounter);
       contribCounter += 1;
       let description = "Added " # debug_show(edgeCost) # " cross-reference" # (if (edgeCost == 1) { "" } else { "s" }) # " from '" # sourceName # "'";
       switch (tempContribs.get(edgeNodeId)) {
         case (null) {
-          tempContribs.add(edgeNodeId, { payers = List.singleton<(Principal, Int)>((caller, edgeCost)) });
+          tempContribs.add(edgeNodeId, { payers = List.singleton((caller, edgeCost)) });
         };
         case (?existing) {
           existing.payers.add((caller, edgeCost));
@@ -3274,7 +3362,7 @@ actor {
       tempContribEntries.add({ id = contribId; nodeId = edgeNodeId; payer = caller; buzzAmount = edgeCost; description });
     };
 
-    if (nodesToCreate == 0 and edgesToCreate == 0 and attributesAdded == 0) {
+    if (nodesToCreate == 0 and edgesToCreate == 0) {
       return #error({ message = "nothing to update"; failedAt = null });
     };
 
@@ -3287,9 +3375,7 @@ actor {
       + locationsToCreate * 30
       + lawEntitiesToCreate * 40
       + interpEntitiesToCreate * 50
-      + attributesAdded * 1
-      + edgesToCreate * 1
-      + sourcesAdded * 1;
+      + edgesToCreate * 1;
     let callerBuzzBalance = switch (buzzScores.get(caller)) {
       case (null) { 0 };
       case (?b) { b };
@@ -3341,7 +3427,7 @@ actor {
               addedAttributes = attributesAdded;
               addedSources = ?sourcesAdded;
             };
-            let newAuthors = if (existingMeta.authors.find<Text>(func (a) { a == extendedByName }) == null) {
+            let newAuthors = if (existingMeta.authors.find(func (a) { a == extendedByName }) == null) {
               Array.tabulate(existingMeta.authors.size() + 1, func (i) {
                 if (i < existingMeta.authors.size()) { existingMeta.authors[i] } else { extendedByName }
               })
@@ -3404,26 +3490,14 @@ actor {
       curationToPublishedGraphId.add(id, thePublishedId);
     };
 
-    // ── Auto-join chat channels based on published curations and swarms ───────
+    // ── Auto-create group channels for each published swarm (flat A/B naming) ──
     for ((_, curation) in stagingCurations.entries()) {
-      // Top-level channel keyed by curation name
-      ensureChatMember(curation.name, curation.name, false, null, caller);
-    };
-    for ((_, swarm) in stagingSwarms.entries()) {
-      // Find parent curation name for this swarm
-      let parentCurationName = switch (curationMap.get(swarm.parentCurationId)) {
-        case (?c) { c.name };
-        case (null) {
-          // May be in staging curations (first publish)
-          switch (stagingCurations.get(swarm.parentCurationId)) {
-            case (?c) { c.name };
-            case (null) { "" };
-          };
+      for ((_, swarm) in stagingSwarms.entries()) {
+        if (swarm.parentCurationId == curation.id) {
+          let channelId = "group:" # curation.name # "/" # swarm.name;
+          let channelName = curation.name # "/" # swarm.name;
+          ensureChatMember(channelId, channelName, false, null, caller);
         };
-      };
-      if (parentCurationName != "") {
-        let subChannelId = parentCurationName # "@" # swarm.name;
-        ensureChatMember(subChannelId, swarm.name, true, ?parentCurationName, caller);
       };
     };
 
@@ -3470,13 +3544,13 @@ actor {
       publishedNodeContributions.add(thePublishedId, existingMap);
     };
 
-    // Commit contribution entries to flat registry
+    // Commit contribution entries to flat registry (append on extension)
     if (tempContribEntries.size() > 0) {
-      let existingContribs = switch (graphContributionList.get(thePublishedId)) {
+      let existing = switch (graphContributionList.get(thePublishedId)) {
         case (null) { [] };
-        case (?arr) { arr };
+        case (?e) { e };
       };
-      graphContributionList.add(thePublishedId, existingContribs.concat(tempContribEntries.toArray()));
+      graphContributionList.add(thePublishedId, existing.concat(tempContribEntries.toArray()));
     };
 
     #success({
@@ -3726,9 +3800,9 @@ actor {
           name = channelName;
           isSubchannel;
           parentCuration;
-          members = List.singleton<Principal>(member);
-          messages = List.empty<ChatMessage>();
-          unreadCounts = Map.empty<Principal, Nat>();
+          members = List.singleton(member);
+          messages = List.empty();
+          unreadCounts = Map.empty();
         };
         chatChannels.add(channelId, newChannel);
       };
@@ -3746,7 +3820,7 @@ actor {
     if (caller.isAnonymous()) { return [] };
     let result = List.empty<ChatChannelSummary>();
     for ((_, channel) in chatChannels.entries()) {
-      if (channel.members.contains(caller)) {
+      if (channel.id.startsWith(#text("group:"))) {
         let unreadCount = switch (channel.unreadCounts.get(caller)) {
           case (?n) { n };
           case (null) { 0 };
@@ -3771,7 +3845,7 @@ actor {
       case (null) { return #err("Channel not found") };
       case (?channel) {
         if (not channel.members.contains(caller)) {
-          return #err("Not a member of this channel");
+          channel.members.add(caller);
         };
         let senderName = switch (userProfiles.get(caller)) {
           case (?profile) { profile.name };
@@ -3814,7 +3888,7 @@ actor {
       case (null) { return #err("Channel not found") };
       case (?channel) {
         if (not channel.members.contains(caller)) {
-          return #err("Not a member of this channel");
+          channel.members.add(caller);
         };
         channel.unreadCounts.add(caller, 0);
         #ok(channel.messages.toArray())
@@ -3976,7 +4050,7 @@ actor {
       ("name", jsonText(s.name)),
       ("type", jsonText("swarm")),
       ("parentId", jsonText(s.parentCurationId)),
-      ("tags", jsonArray(s.tags.map<Text, Text>(jsonText))),
+      ("tags", jsonArray(s.tags.map(jsonText))),
       ("attributes", serializeWeightedAttributes(s.customAttributes)),
       ("sources", serializeSources(s.sources)),
     ]);
@@ -4145,12 +4219,12 @@ actor {
       case (null) { httpError(404, "Graph not found") };
       case (?data) {
         let body = jsonObject([
-          ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
-          ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
-          ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
-          ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
-          ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
-          ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+          ("curations", jsonArray(data.curations.map(serializeCuration))),
+          ("swarms", jsonArray(data.swarms.map(serializeSwarm))),
+          ("locations", jsonArray(data.locations.map(serializeLocation))),
+          ("lawTokens", jsonArray(data.lawTokens.map(serializeLawToken))),
+          ("interpretationTokens", jsonArray(data.interpretationTokens.map(serializeInterpToken))),
+          ("edges", jsonArray(data.edges.map(serializeEdge))),
         ]);
         httpOk(body);
       };
@@ -4176,7 +4250,7 @@ actor {
     switch (lookupPublishedGraph(graphId)) {
       case (null) { httpError(404, "Graph not found") };
       case (?data) {
-        httpOk(jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge)));
+        httpOk(jsonArray(data.edges.map(serializeEdge)));
       };
     };
   };
@@ -4350,12 +4424,12 @@ actor {
           case (null) { mcpError(idRaw, -32602, "Graph not found: " # graphId) };
           case (?data) {
             let graphJson = jsonObject([
-              ("curations", jsonArray(data.curations.map<Curation, Text>(serializeCuration))),
-              ("swarms", jsonArray(data.swarms.map<Swarm, Text>(serializeSwarm))),
-              ("locations", jsonArray(data.locations.map<Location, Text>(serializeLocation))),
-              ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
-              ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
-              ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+              ("curations", jsonArray(data.curations.map(serializeCuration))),
+              ("swarms", jsonArray(data.swarms.map(serializeSwarm))),
+              ("locations", jsonArray(data.locations.map(serializeLocation))),
+              ("lawTokens", jsonArray(data.lawTokens.map(serializeLawToken))),
+              ("interpretationTokens", jsonArray(data.interpretationTokens.map(serializeInterpToken))),
+              ("edges", jsonArray(data.edges.map(serializeEdge))),
             ]);
             let content = jsonArray([jsonObject([("type", jsonText("text")), ("text", jsonText(graphJson))])]);
             mcpSuccess(idRaw, jsonObject([("content", content)]));
@@ -4608,28 +4682,28 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
       Runtime.trap("Unauthorized: Only admins can reset data");
     };
-    curationMap := Map.empty<NodeId, Curation>();
-    swarmMap := Map.empty<NodeId, Swarm>();
-    locationMap := Map.empty<NodeId, Location>();
-    lawTokenMap := Map.empty<NodeId, LawToken>();
-    interpretationTokenMap := Map.empty<NodeId, InterpretationToken>();
-    archivedNodes := Map.empty<NodeId, ()>();
-    sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
-    publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
-    curationToPublishedGraphId := Map.empty<NodeId, Text>();
-    chatChannels := Map.empty<Text, ChatChannel>();
+    curationMap := Map.empty();
+    swarmMap := Map.empty();
+    locationMap := Map.empty();
+    lawTokenMap := Map.empty();
+    interpretationTokenMap := Map.empty();
+    archivedNodes := Map.empty();
+    sourceEdges := Map.empty();
+    publishedSourceGraphs := Map.empty();
+    curationToPublishedGraphId := Map.empty();
+    chatChannels := Map.empty();
     telegramConfig := null;
-    apiKeysByPrincipal := Map.empty<Principal, Text>();
-    principalByApiKey := Map.empty<Text, Principal>();
-    apiRateLimitCounts := Map.empty<Text, Nat>();
-    apiRateLimitWindowStarts := Map.empty<Text, Int>();
-    pendingPluginBindings := Map.empty<Principal, List.List<Principal>>();
-    pluginBindings := Map.empty<Principal, Principal>();
-    notesImports := Map.empty<Principal, Text>();
-    trustScores := Map.empty<Principal, TrustScore>();
-    buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
-    graphSavers := Map.empty<Text, List.List<Principal>>();
-    publishedNodeContributions := Map.empty<Text, Map.Map<NodeId, NodeContribution>>();
-    trustTransactions := Map.empty<Principal, List.List<TrustTransaction>>();
+    apiKeysByPrincipal := Map.empty();
+    principalByApiKey := Map.empty();
+    apiRateLimitCounts := Map.empty();
+    apiRateLimitWindowStarts := Map.empty();
+    pendingPluginBindings := Map.empty();
+    pluginBindings := Map.empty();
+    notesImports := Map.empty();
+    trustScores := Map.empty();
+    buzzTransactions := Map.empty();
+    graphSavers := Map.empty();
+    publishedNodeContributions := Map.empty();
+    trustTransactions := Map.empty();
   };
 };

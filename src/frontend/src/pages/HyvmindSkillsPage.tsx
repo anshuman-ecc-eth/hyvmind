@@ -186,9 +186,9 @@ const SAMPLE_QUERIES = [
     note: "Prints name + nodeCount for each graph",
   },
   {
-    label: "Get all law entity nodes from a graph",
+    label: "Get all law token nodes from a graph",
     code: `curl ${BASE_URL}/api/graphs/GRAPH_ID/nodes | jq '[.nodes[] | select(.type == "LawToken")]'`,
-    note: "Filters to law entity nodes only",
+    note: "Filters to law token nodes only",
   },
   {
     label: "Find edges by label",
@@ -328,14 +328,14 @@ export default function HyvmindSkillsPage() {
                 },
                 {
                   level: "4",
-                  name: "Law Entity",
+                  name: "Law Token",
                   desc: "A discrete legal concept, rule, or clause extracted from the source",
                   color: "text-red-400",
                 },
                 {
                   level: "5",
                   name: "Interpretation Token",
-                  desc: "Commentary, analysis, or annotation applied to a law entity",
+                  desc: "Commentary, analysis, or annotation applied to a law token",
                   color: "text-purple-400",
                 },
               ].map((row, i) => (
