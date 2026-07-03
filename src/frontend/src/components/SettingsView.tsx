@@ -235,10 +235,14 @@ Retrieval contract:
     }
   };
 
-  const handleCopySkillPrompt = () => {
-    navigator.clipboard.writeText(SAMPLE_PROMPT);
-    setSkillPromptCopied(true);
-    setTimeout(() => setSkillPromptCopied(false), 2000);
+  const handleCopySkillPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(SAMPLE_PROMPT);
+      setSkillPromptCopied(true);
+      setTimeout(() => setSkillPromptCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   const handleSave = async () => {
@@ -752,7 +756,7 @@ Retrieval contract:
                 className="space-y-5"
                 data-ocid="settings.skills.section"
               >
-                <h2 className="text-sm font-semibold">Skills</h2>
+                <h2 className="text-sm font-semibold">Skill</h2>
                 <p className="text-sm text-muted-foreground">
                   Give your AI agent access to Hyvmind's knowledge graphs.
                 </p>
@@ -768,84 +772,7 @@ Retrieval contract:
                 </div>
 
                 <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
-                  <p className="text-sm font-medium">Retrieval Contract</p>
-                  <p className="text-xs text-muted-foreground">
-                    This is a retrieval skill, not a reasoning skill. When your
-                    agent uses this API:
-                  </p>
-                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal pl-4">
-                    <li>
-                      Present fetched data exactly as returned — do not
-                      transform or summarize.
-                    </li>
-                    <li>
-                      Then add a separate{" "}
-                      <code className="bg-muted/40 px-1 py-0.5 rounded text-foreground">
-                        Reasoning (verify independently):
-                      </code>{" "}
-                      section for analysis.
-                    </li>
-                    <li>
-                      Fetched data is reliable as-is. Reasoning should be
-                      verified by the user.
-                    </li>
-                  </ol>
-                </div>
-
-                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-3">
-                  <p className="text-sm font-medium">Available Endpoints</p>
-                  <p className="text-xs text-muted-foreground">
-                    Base URL:{" "}
-                    <code className="bg-muted px-1 py-0.5 rounded text-foreground">
-                      https://4p5ty-yyaaa-aaaam-qfana-cai.raw.icp0.io
-                    </code>
-                  </p>
-                  <div className="text-xs">
-                    <div className="grid grid-cols-12 gap-2 py-1.5 border-b border-border font-medium text-muted-foreground">
-                      <span className="col-span-3">Endpoint</span>
-                      <span className="col-span-9">Returns</span>
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
-                      <code className="col-span-3 text-foreground">
-                        GET /api/graphs
-                      </code>
-                      <span className="col-span-9 text-muted-foreground">
-                        List all published graphs
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
-                      <code className="col-span-3 text-foreground break-all">
-                        GET /api/graphs/&#123;id&#125;
-                      </code>
-                      <span className="col-span-9 text-muted-foreground">
-                        Full graph data (all nodes, edges, attributes)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
-                      <code className="col-span-3 text-foreground break-all">
-                        GET /api/nodes/&#123;id&#125;
-                      </code>
-                      <span className="col-span-9 text-muted-foreground">
-                        Flat array of all nodes (type hierarchy: curation →
-                        swarm → location → law token → interpretation token)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 py-2">
-                      <code className="col-span-3 text-foreground break-all">
-                        GET /api/edges/&#123;id&#125;
-                      </code>
-                      <span className="col-span-9 text-muted-foreground">
-                        Cross-reference edges only (metadata edgeCount includes
-                        + hierarchy edges)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
-                  <p className="text-sm font-medium">
-                    Step-by-step: Give your agent this skill
-                  </p>
+                  <p className="text-sm font-medium">How to use</p>
                   <p className="text-xs text-muted-foreground">
                     Copy the prompt below and provide it to your AI agent. It
                     tells the agent everything it needs to use the Hyvmind graph
@@ -1086,7 +1013,7 @@ Retrieval contract:
               }`}
               data-ocid="settings.nav.skills"
             >
-              skills
+              skill
             </button>
             <button
               type="button"
