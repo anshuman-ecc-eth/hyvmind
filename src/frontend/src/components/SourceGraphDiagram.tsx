@@ -65,7 +65,10 @@ function matchesAttributeFilter(
     );
   }
   const key = filter.slice(0, colonIdx).toLowerCase();
-  const value = filter.slice(colonIdx + 1).trim().toLowerCase();
+  const value = filter
+    .slice(colonIdx + 1)
+    .trim()
+    .toLowerCase();
   if (!key) return false;
   if (!value) {
     return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));

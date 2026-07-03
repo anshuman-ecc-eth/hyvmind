@@ -62,18 +62,6 @@ export default function ChatView() {
       {/* Header bar */}
       <div className="flex flex-col px-4 py-2 border-b border-dashed border-border bg-card shrink-0">
         <span className="text-sm font-semibold text-foreground">Chat</span>
-        <span className="text-xs text-muted-foreground/50 mt-0.5">
-          Beesbury, our experimental community agent, lives{" "}
-          <a
-            href="https://telegram.me/hyvmind_tg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            here
-          </a>
-          .
-        </span>
       </div>
 
       <div className="flex flex-1 min-h-0">

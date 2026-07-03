@@ -23,64 +23,9 @@ import {
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
 import ChatView from "./pages/ChatView";
 import EditorView from "./pages/EditorView";
-import HyvmindSkillsPage from "./pages/HyvmindSkillsPage";
-import McpSetupPage from "./pages/McpSetupPage";
-import ObsidianTokenPage from "./pages/ObsidianTokenPage";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import TerminalPage from "./pages/TerminalPage";
-
-// Standalone public page — no auth, no layout
-function ApiDocsRoute() {
-  // Redirect /docs/api → /mcp
-  window.location.replace("/mcp");
-  return null;
-}
-
-// MCP setup page — public, no auth
-function McpSetupRoute() {
-  return (
-    <ThemeProvider
-      attribute="class"
-      themes={ALL_THEMES}
-      defaultTheme={DEFAULT_THEME}
-      enableSystem={false}
-      storageKey="hyvmind-theme"
-    >
-      <McpSetupPage />
-    </ThemeProvider>
-  );
-}
-
-// SKILLS documentation page — public, no auth
-function HyvmindSkillsRoute() {
-  return (
-    <ThemeProvider
-      attribute="class"
-      themes={ALL_THEMES}
-      defaultTheme={DEFAULT_THEME}
-      enableSystem={false}
-      storageKey="hyvmind-theme"
-    >
-      <HyvmindSkillsPage />
-    </ThemeProvider>
-  );
-}
-
-// Obsidian Token page — public, no auth
-function ObsidianTokenRoute() {
-  return (
-    <ThemeProvider
-      attribute="class"
-      themes={ALL_THEMES}
-      defaultTheme={DEFAULT_THEME}
-      enableSystem={false}
-      storageKey="hyvmind-theme"
-    >
-      <ObsidianTokenPage />
-    </ThemeProvider>
-  );
-}
 
 // Full authenticated app shell with all hooks
 function AppShell() {
@@ -286,26 +231,6 @@ export default function App() {
       localStorage.setItem("hyvmind-theme", migrateTheme(stored));
     }
   }, []);
-
-  // /skills is the SKILLS documentation page — public, no auth
-  if (window.location.pathname === "/skills") {
-    return <HyvmindSkillsRoute />;
-  }
-
-  // /mcp is a public standalone page — render it directly without auth or layout
-  if (window.location.pathname === "/mcp") {
-    return <McpSetupRoute />;
-  }
-
-  // /docs/api redirects to /mcp
-  if (window.location.pathname === "/docs/api") {
-    return <ApiDocsRoute />;
-  }
-
-  // /obsidian-token is a public standalone page — render it directly without auth or layout
-  if (window.location.pathname === "/obsidian-token") {
-    return <ObsidianTokenRoute />;
-  }
 
   return (
     <ThemeProvider

@@ -109,8 +109,32 @@ export function SettingsView() {
   const [approvingKey, setApprovingKey] = useState<string | null>(null);
   const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null);
   const [revokingKey, setRevokingKey] = useState<string | null>(null);
+  const [skillPromptCopied, setSkillPromptCopied] = useState(false);
   const [selectedSection, setSelectedSection] =
     useState<string>("settings-profile");
+
+  const SAMPLE_PROMPT = `You have access to the Hyvmind knowledge graph retrieval API.
+
+Base URL: https://4p5ty-yyaaa-aaaam-qfana-cai.raw.icp0.io
+No authentication required. All responses return JSON.
+
+Endpoints:
+  GET /api/graphs          → list all published graphs
+  GET /api/graphs/{id}     → full graph (curations, swarms, locations,
+                             law tokens, interpretation tokens, edges)
+  GET /api/nodes/{id}      → flat node array
+                             (type: curation/swarm/location/lawEntity/interpEntity)
+  GET /api/edges/{id}      → cross-reference edges only
+                             (source, target, label, bidirectional)
+
+Node hierarchy: curation → swarm → location → law token → interpretation token
+Edge note: metadata edgeCount = hierarchy + cross-references.
+           The /api/edges/{id} endpoint returns only explicit cross-references.
+
+Retrieval contract:
+  1. Present fetched data exactly as returned — do not transform or summarize.
+  2. Then add a separate "Reasoning (verify independently):" section for analysis.
+  3. Fetched data is reliable as-is. Reasoning should be verified by the user.`;
 
   // Load plugin binding data on mount
   useEffect(() => {
@@ -209,6 +233,12 @@ export function SettingsView() {
     } finally {
       setRevokingKey(null);
     }
+  };
+
+  const handleCopySkillPrompt = () => {
+    navigator.clipboard.writeText(SAMPLE_PROMPT);
+    setSkillPromptCopied(true);
+    setTimeout(() => setSkillPromptCopied(false), 2000);
   };
 
   const handleSave = async () => {
@@ -716,6 +746,136 @@ export function SettingsView() {
               </section>
             )}
 
+            {selectedSection === "settings-skills" && (
+              <section
+                id="settings-skills"
+                className="space-y-5"
+                data-ocid="settings.skills.section"
+              >
+                <h2 className="text-sm font-semibold">Skills</h2>
+                <p className="text-sm text-muted-foreground">
+                  Give your AI agent access to Hyvmind's knowledge graphs.
+                </p>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+                  <p className="text-sm font-medium">What this is</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    The Hyvmind graph API is a public, no-auth retrieval
+                    endpoint. It returns published legal knowledge graphs —
+                    curations of law tokens, interpretation tokens, and their
+                    cross-references — as structured JSON.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+                  <p className="text-sm font-medium">Retrieval Contract</p>
+                  <p className="text-xs text-muted-foreground">
+                    This is a retrieval skill, not a reasoning skill. When your
+                    agent uses this API:
+                  </p>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal pl-4">
+                    <li>
+                      Present fetched data exactly as returned — do not
+                      transform or summarize.
+                    </li>
+                    <li>
+                      Then add a separate{" "}
+                      <code className="bg-muted/40 px-1 py-0.5 rounded text-foreground">
+                        Reasoning (verify independently):
+                      </code>{" "}
+                      section for analysis.
+                    </li>
+                    <li>
+                      Fetched data is reliable as-is. Reasoning should be
+                      verified by the user.
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-3">
+                  <p className="text-sm font-medium">Available Endpoints</p>
+                  <p className="text-xs text-muted-foreground">
+                    Base URL:{" "}
+                    <code className="bg-muted px-1 py-0.5 rounded text-foreground">
+                      https://4p5ty-yyaaa-aaaam-qfana-cai.raw.icp0.io
+                    </code>
+                  </p>
+                  <div className="text-xs">
+                    <div className="grid grid-cols-12 gap-2 py-1.5 border-b border-border font-medium text-muted-foreground">
+                      <span className="col-span-3">Endpoint</span>
+                      <span className="col-span-9">Returns</span>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
+                      <code className="col-span-3 text-foreground">
+                        GET /api/graphs
+                      </code>
+                      <span className="col-span-9 text-muted-foreground">
+                        List all published graphs
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
+                      <code className="col-span-3 text-foreground break-all">
+                        GET /api/graphs/&#123;id&#125;
+                      </code>
+                      <span className="col-span-9 text-muted-foreground">
+                        Full graph data (all nodes, edges, attributes)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 py-2 border-b border-border">
+                      <code className="col-span-3 text-foreground break-all">
+                        GET /api/nodes/&#123;id&#125;
+                      </code>
+                      <span className="col-span-9 text-muted-foreground">
+                        Flat array of all nodes (type hierarchy: curation →
+                        swarm → location → law token → interpretation token)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-12 gap-2 py-2">
+                      <code className="col-span-3 text-foreground break-all">
+                        GET /api/edges/&#123;id&#125;
+                      </code>
+                      <span className="col-span-9 text-muted-foreground">
+                        Cross-reference edges only (metadata edgeCount includes
+                        + hierarchy edges)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+                  <p className="text-sm font-medium">
+                    Step-by-step: Give your agent this skill
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Copy the prompt below and provide it to your AI agent. It
+                    tells the agent everything it needs to use the Hyvmind graph
+                    API.
+                  </p>
+                  <div className="relative">
+                    <pre className="text-xs font-mono text-foreground bg-muted/40 p-4 rounded border border-border overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                      {SAMPLE_PROMPT}
+                    </pre>
+                    <button
+                      type="button"
+                      onClick={handleCopySkillPrompt}
+                      className="absolute top-2 right-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/80 px-2 py-1 rounded"
+                      data-ocid="settings.skills.copy_prompt"
+                    >
+                      {skillPromptCopied ? (
+                        <>
+                          <Check className="h-3 w-3" /> copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" /> copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
             <CreateBuzzModal
               isOpen={createBuzzOpen}
               onClose={() => setCreateBuzzOpen(false)}
@@ -910,6 +1070,23 @@ export function SettingsView() {
               data-ocid="settings.nav.obsidian"
             >
               obsidian
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSection("settings-skills");
+                document
+                  .getElementById("settings-skills")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                selectedSection === "settings-skills"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+              data-ocid="settings.nav.skills"
+            >
+              skills
             </button>
             <button
               type="button"
