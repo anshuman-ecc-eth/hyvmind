@@ -9,8 +9,8 @@ interface SidebarProps {
 const TABS = [
   { id: "notes", label: "Notes", ocid: "sidebar.tab.notes" },
   { id: "graphs", label: "Graphs", ocid: "sidebar.tab.graphs" },
-  { id: "chat", label: "Chat", ocid: "sidebar.tab.chat" },
   { id: "public", label: "Public", ocid: "sidebar.tab.public" },
+  { id: "chat", label: "Chat", ocid: "sidebar.tab.chat" },
   { id: "settings", label: "Settings", ocid: "sidebar.tab.settings" },
   { id: "terminal", label: "Terminal", ocid: "sidebar.tab.terminal" },
 ] as const;
