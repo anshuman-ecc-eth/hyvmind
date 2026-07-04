@@ -114,28 +114,34 @@ export function SettingsView() {
   const [selectedSection, setSelectedSection] =
     useState<string>("settings-profile");
 
-  const SAMPLE_PROMPT = `You have access to the Hyvmind knowledge graph retrieval API.
+  const SAMPLE_PROMPT = `You have access to the Hyvmind knowledge graph retrieval API for legal knowledge.
+
+Only use this API when the user explicitly mentions "Hyvmind" or "hyvmind" — do not auto-trigger on general legal questions.
 
 Base URL: https://4p5ty-yyaaa-aaaam-qfana-cai.raw.icp0.io
-No authentication required. All responses return JSON.
+No authentication. All responses return JSON.
 
 Endpoints:
   GET /api/graphs          → list all published graphs
-  GET /api/graphs/{id}     → full graph (curations, swarms, locations,
-                             law tokens, interpretation tokens, edges)
-  GET /api/nodes/{id}      → flat node array
-                             (type: curation/swarm/location/lawEntity/interpEntity)
-  GET /api/edges/{id}      → cross-reference edges only
-                             (source, target, label, bidirectional)
+  GET /api/graphs/{id}     → full graph (curations, swarms, locations, law tokens, interpretation tokens, edges)
+  GET /api/nodes/{id}      → flat node array (type: curation/swarm/location/lawEntity/interpEntity)
+  GET /api/edges/{id}      → cross-reference edges only (source, target, label, bidirectional)
 
-Node hierarchy: curation → swarm → location → law token → interpretation token
-Edge note: metadata edgeCount = hierarchy + cross-references.
-           The /api/edges/{id} endpoint returns only explicit cross-references.
+Data structure:
+  Node hierarchy: curation → swarm → location → law token → interpretation token
+  Edge note: metadata edgeCount = hierarchy + cross-references. /api/edges/{id} returns only explicit cross-references.
 
-Retrieval contract:
-  1. Present fetched data exactly as returned — do not transform or summarize.
-  2. Then add a separate "Reasoning (verify independently):" section for analysis.
-  3. Fetched data is reliable as-is. Reasoning should be verified by the user.`;
+  Node data includes:
+    • sources — array of {name, url}. External references. Present as citations; link URLs when available.
+    • customAttributes — array of {key, weightedValues: [{value, weight}]}. Custom key-value metadata inherited down the hierarchy. A node's customAttributes includes both its own attributes and those from ancestors. Same-named keys are merged. Display as structured metadata.
+    • tags — array of strings. Labels for discovery and categorization. Can appear on any node type.
+
+Instructions:
+  1. Only invoke when the user says "Hyvmind" or "hyvmind". Do not use this API for general queries.
+  2. Present relevant graph data in a tabular format — use columns appropriate to the data (e.g., name, type, jurisdiction for graph lists; key, values for attributes; name, URL for sources; source, label, target for edges).
+  3. After the table, add a "Reasoning (verify independently):" section analyzing the data in context of the user's request.
+  4. If no data matches the user's request, say: "Hyvmind doesn't have any data on this right now." Do not fabricate, guess, or extrapolate.
+  5. Fetched data is reliable as-is. Your reasoning should be marked for independent verification.`;
 
   // Load plugin binding data on mount
   useEffect(() => {
@@ -469,22 +475,20 @@ Retrieval contract:
                 className="space-y-5"
                 data-ocid="settings.plugin_binding.section"
               >
-                <div>
-                  <h2 className="text-sm font-semibold">Plugin Settings</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Download and install 'Hyvmind Uploader' from Obsidian's
-                    Community Plugins, or click{" "}
-                    <a
-                      href="https://community.obsidian.md/plugins/hyvmind-uploader"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      here
-                    </a>
-                    .
-                  </p>
-                </div>
+                <h2 className="text-sm font-semibold">Plugin Settings</h2>
+                <p className="text-sm text-muted-foreground">
+                  Download and install 'Hyvmind Uploader' from Obsidian's
+                  Community Plugins, or click{" "}
+                  <a
+                    href="https://community.obsidian.md/plugins/hyvmind-uploader"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    here
+                  </a>
+                  .
+                </p>
 
                 <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">
                   {/* Principal ID subsection */}
@@ -507,20 +511,23 @@ Retrieval contract:
                         >
                           {myPrincipal ?? "—"}
                         </code>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
+                          type="button"
                           onClick={handleCopyPrincipal}
                           disabled={!myPrincipal}
-                          className="shrink-0"
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/80 px-2 py-1 rounded shrink-0 disabled:opacity-50"
                           data-ocid="settings.plugin_binding.copy_principal_button"
                         >
                           {principalCopied ? (
-                            <Check className="h-4 w-4 text-foreground" />
+                            <>
+                              <Check className="h-3 w-3" /> copied
+                            </>
                           ) : (
-                            <Copy className="h-4 w-4" />
+                            <>
+                              <Copy className="h-3 w-3" /> copy
+                            </>
                           )}
-                        </Button>
+                        </button>
                       </div>
                     )}
                   </div>
