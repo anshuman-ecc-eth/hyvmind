@@ -4041,6 +4041,7 @@ actor {
       ("creator", jsonText(c.creator.toText())),
       ("attributes", serializeWeightedAttributes(c.customAttributes)),
       ("sources", serializeSources(c.sources)),
+      ("createdAt", jsonInt(c.timestamps.createdAt)),
     ]);
   };
 
@@ -4053,6 +4054,8 @@ actor {
       ("tags", jsonArray(s.tags.map<Text, Text>(jsonText))),
       ("attributes", serializeWeightedAttributes(s.customAttributes)),
       ("sources", serializeSources(s.sources)),
+      ("creator", jsonText(s.creator.toText())),
+      ("createdAt", jsonInt(s.timestamps.createdAt)),
     ]);
   };
 
@@ -4064,6 +4067,8 @@ actor {
       ("parentId", jsonText(l.parentSwarmId)),
       ("attributes", serializeWeightedAttributes(l.customAttributes)),
       ("sources", serializeSources(l.sources)),
+      ("creator", jsonText(l.creator.toText())),
+      ("createdAt", jsonInt(l.timestamps.createdAt)),
     ]);
   };
 
@@ -4075,6 +4080,8 @@ actor {
       ("parentId", jsonText(lt.parentLocationId)),
       ("attributes", serializeWeightedAttributes(lt.customAttributes)),
       ("sources", serializeSources(lt.sources)),
+      ("creator", jsonText(lt.creator.toText())),
+      ("createdAt", jsonInt(lt.timestamps.createdAt)),
     ]);
   };
 
@@ -4091,6 +4098,8 @@ actor {
       ("content", jsonText(latestContent)),
       ("attributes", serializeWeightedAttributes(it.customAttributes)),
       ("sources", serializeSources(it.sources)),
+      ("creator", jsonText(it.creator.toText())),
+      ("createdAt", jsonInt(it.timestamps.createdAt)),
     ]);
   };
 
@@ -4104,6 +4113,42 @@ actor {
   };
 
   func serializeMeta(m : PublishedSourceGraphMeta) : Text {
+    let authorNames = Map.empty<Principal, Text>();
+    authorNames.add(m.creator, m.creatorName);
+    for (ext in m.extensionLog.vals()) {
+      if (authorNames.get(ext.extendedBy) == null) {
+        authorNames.add(ext.extendedBy, ext.extendedByName);
+      };
+    };
+    let extEntries = List.empty<Text>();
+    for (ext in m.extensionLog.vals()) {
+      extEntries.add(jsonObject([
+        ("extendedAt", jsonInt(ext.extendedAt)),
+        ("extendedBy", jsonText(ext.extendedBy.toText())),
+        ("extendedByName", jsonText(ext.extendedByName)),
+        ("addedNodes", jsonNat(ext.addedNodes)),
+        ("addedEdges", jsonNat(ext.addedEdges)),
+        ("addedHierarchyEdges", jsonNat(ext.addedHierarchyEdges)),
+        ("addedAttributes", jsonNat(ext.addedAttributes)),
+        ("addedSources", switch (ext.addedSources) { case (null) { jsonNull() }; case (?n) { jsonNat(n) } }),
+      ]));
+    };
+    let authorEntries = List.empty<Text>();
+    for ((principal, name) in authorNames.entries()) {
+      let trustBalance = switch (trustScores.get(principal)) {
+        case (null) { 0 };
+        case (?b) { b };
+      };
+      authorEntries.add(jsonObject([
+        ("principal", jsonText(principal.toText())),
+        ("name", jsonText(name)),
+        ("trustScore", jsonInt(trustBalance)),
+        ("profileUrl", switch (userProfiles.get(principal)) {
+          case (null) { jsonNull() };
+          case (?p) { switch (p.socialUrl) { case (null) { jsonNull() }; case (?url) { jsonText(url) } } };
+        }),
+      ]));
+    };
     jsonObject([
       ("id", jsonText(m.id)),
       ("name", jsonText(m.name)),
@@ -4115,8 +4160,8 @@ actor {
       ("hierarchyEdgeCount", jsonNat(m.hierarchyEdgeCount)),
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
-      ("extensionCount", jsonNat(m.extensionLog.size())),
-      ("authors", jsonArray(m.authors)),
+      ("extensions", jsonArray(extEntries.toArray())),
+      ("authorDetails", jsonArray(authorEntries.toArray())),
     ]);
   };
 

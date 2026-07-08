@@ -131,7 +131,15 @@ Data structure:
   Node hierarchy: curation → swarm → location → law token → interpretation token
   Edge note: metadata edgeCount = hierarchy + cross-references. /api/edges/{id} returns only explicit cross-references.
 
-  Node data includes:
+  Graph metadata (from /api/graphs) includes:
+    • id, name, creator, creatorName, publishedAt
+    • nodeCount, edgeCount, hierarchyEdgeCount, attributeCount, sourcesCount
+    • extensions — array of {extendedAt, extendedBy, extendedByName, addedNodes, addedEdges, addedHierarchyEdges, addedAttributes, addedSources}. Each entry records when and by whom the graph was extended.
+    • authorDetails — array of {principal, name, trustScore, profileUrl}. Trust scores reflect accumulated reputation; profileUrl may be null.
+
+  Node data (from /api/graphs/{id} or /api/nodes/{id}) includes:
+    • creator — principal ID of the node's author
+    • createdAt — nanosecond timestamp when the node was created
     • sources — array of {name, url}. External references. Present as citations; link URLs when available.
     • customAttributes — array of {key, weightedValues: [{value, weight}]}. Custom key-value metadata inherited down the hierarchy. A node's customAttributes includes both its own attributes and those from ancestors. Same-named keys are merged. Display as structured metadata.
     • tags — array of strings. Labels for discovery and categorization. Can appear on any node type.
