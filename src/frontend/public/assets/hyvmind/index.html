@@ -772,7 +772,10 @@ var sparkleHues = [0,45,90,135,180,225,270,315];
 })();
 
 var STEP = 5;
+var DIAG_STEP = Math.round(STEP * 0.7071);
 var px = 144, py = 194, pDir = 0, pMoving = false, pWalk = 0;
+var lastDir = 'down';
+var dirNameToPDir = {left:1, right:2, up:3, down:0};
 var nearTrigger = null;
 var doorDismissed = false;
 var lastNearDoorKey = null;
@@ -826,7 +829,7 @@ document.addEventListener('keydown', function(e) {
     var dir = e.key.slice(5).toLowerCase();
     var btn = document.querySelector('.dpad-btn.dpad-' + dir);
     if (btn) { btn.classList.add('active'); }
-    if (!navigatePopup(dir, false)) dpadState[dir] = true;
+    if (!navigatePopup(dir, false)) { dpadState[dir] = true; lastDir = dir; }
   }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
@@ -1088,7 +1091,7 @@ document.addEventListener('keyup', function(e) {
 
 var dpadState = {};
 document.querySelectorAll('.dpad-btn').forEach(function(btn) {
-  function start(e) { e.preventDefault(); btn.classList.add('active'); if (!navigatePopup(btn.dataset.dir, true)) dpadState[btn.dataset.dir] = true; }
+  function start(e) { e.preventDefault(); btn.classList.add('active'); if (!navigatePopup(btn.dataset.dir, true)) { dpadState[btn.dataset.dir] = true; lastDir = btn.dataset.dir; } }
   function end(e) { e.preventDefault(); btn.classList.remove('active'); dpadState[btn.dataset.dir] = false; }
   btn.addEventListener('mousedown', start);
   btn.addEventListener('mouseup', end);
@@ -1199,10 +1202,14 @@ function loop() {
     py = boatY + Math.floor(BOAT_FRAME_H/2) - 35;
   } else {
     var dx = 0, dy = 0;
-    if (dpadState['left']) { dx = -STEP; pDir = 1; }
-    else if (dpadState['right']) { dx = STEP; pDir = 2; }
-    else if (dpadState['up']) { dy = -STEP; pDir = 3; }
-    else if (dpadState['down']) { dy = STEP; pDir = 0; }
+    if (dpadState['left']) dx = -STEP; if (dpadState['right']) dx = STEP;
+    if (dpadState['up']) dy = -STEP; if (dpadState['down']) dy = STEP;
+    if (dx !== 0 && dy !== 0) { dx = dx < 0 ? -DIAG_STEP : DIAG_STEP; dy = dy < 0 ? -DIAG_STEP : DIAG_STEP; }
+    if (dx !== 0 && dy !== 0 && lastDir) pDir = dirNameToPDir[lastDir];
+    else if (dx < 0) pDir = 1;
+    else if (dx > 0) pDir = 2;
+    else if (dy < 0) pDir = 3;
+    else if (dy > 0) pDir = 0;
     if (dx !== 0 || dy !== 0) {
       var nx = px + dx, ny = py + dy;
       var wizBlock = function(gx, gy) {
