@@ -3562,7 +3562,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-dashed border-border px-3 py-1 flex-shrink-0">
           <span
-            className="text-foreground/50"
+            className="text-white/50"
             style={{
               fontSize: "0.5em",
               letterSpacing: "0.3em",
@@ -3574,7 +3574,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           <button
             type="button"
             data-ocid="text_game.close_button"
-            className="text-muted-foreground hover:text-foreground px-2 py-1 transition-colors"
+            className="text-white/50 hover:text-white px-2 py-1 transition-colors"
             style={{
               fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.5em",
@@ -3589,14 +3589,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </button>
         </div>
 
-        <div className="relative flex-1 flex flex-col min-h-0 bg-[#0a0a0a]">
-          <img
-            src="/assets/forest background.png"
-            alt=""
-            fetchPriority="high"
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            style={{ opacity: 1 }}
-          />
+        <div
+          className="relative flex-1 flex flex-col min-h-0 bg-[#0a0a0a]"
+          style={{
+            backgroundImage: "url('/assets/forest background.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
           <div
             className="relative z-10 flex-1 flex flex-col min-h-0"
             style={{ fontSize: `${100 * zoom}%` }}
