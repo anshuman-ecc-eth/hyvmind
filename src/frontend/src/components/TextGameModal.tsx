@@ -3539,13 +3539,24 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   return (
     <>
       {/* Semi-transparent backdrop */}
-      <div className="fixed inset-0 z-40 bg-background/70" />
+      <div className="fixed inset-0 z-40 bg-black/70" />
 
       {/* Floating window */}
       <div
         ref={modalRef}
         className="fixed z-50 font-mono flex flex-col border border-dashed border-border bg-background"
-        style={{ inset: 0 }}
+        style={
+          {
+            inset: 0,
+            "--foreground": "#ffffff",
+            "--muted-foreground": "#9e9e9e",
+            "--background": "#0a0a0a",
+            "--border": "#222222",
+            "--muted": "#1a1a1a",
+            "--primary": "#ffffff",
+            "--destructive": "#ef4444",
+          } as React.CSSProperties
+        }
         data-ocid="text_game.modal"
       >
         {/* Title bar */}
@@ -3578,20 +3589,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </button>
         </div>
 
-        <div
-          className="relative flex-1 flex flex-col min-h-0"
-          style={
-            {
-              "--foreground": "#ffffff",
-              "--muted-foreground": "#9e9e9e",
-              "--background": "#0a0a0a",
-              "--border": "#222222",
-              "--muted": "#1a1a1a",
-              "--card": "#111111",
-              "--card-foreground": "#ffffff",
-            } as React.CSSProperties
-          }
-        >
+        <div className="relative flex-1 flex flex-col min-h-0 bg-[#0a0a0a]">
           <img
             src="/assets/forest background.png"
             alt=""
