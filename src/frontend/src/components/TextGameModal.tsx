@@ -3548,6 +3548,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         style={
           {
             inset: 0,
+            colorScheme: "dark",
             "--foreground": "#ffffff",
             "--muted-foreground": "#9e9e9e",
             "--background": "#0a0a0a",
