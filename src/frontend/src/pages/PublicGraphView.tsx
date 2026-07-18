@@ -121,15 +121,10 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
       </div>
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-3 font-mono text-xs text-muted-foreground mb-2">
-        <span data-ocid="public_graph.node_count">
-          {Number(meta.nodeCount)} nodes
-        </span>
-        <span data-ocid="public_graph.edge_count">
-          {crossRefEdges} cross-ref, {hierarchyEdges} hierarchy
-        </span>
-        <span data-ocid="public_graph.source_count">
-          {Number(meta.sourcesCount ?? 0n)} sources
+      <div className="font-mono text-xs text-muted-foreground mb-2">
+        <span data-ocid="public_graph.stats">
+          {Number(meta.nodeCount)} nodes, {Number(meta.edgeCount)} edges (
+          {crossRefEdges} cross-ref, {hierarchyEdges} hierarchy)
         </span>
       </div>
 
