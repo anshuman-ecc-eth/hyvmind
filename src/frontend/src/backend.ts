@@ -139,6 +139,41 @@ export interface ChatChannelSummary {
     unreadCount: bigint;
     parentCuration?: string;
 }
+export interface ForumPostSummary {
+    id: string;
+    title: string;
+    author: Principal;
+    authorName: string;
+    tags: Array<string>;
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    replyCount: bigint;
+    userVote?: bigint;
+}
+export interface ForumReplyDetail {
+    id: string;
+    author: Principal;
+    authorName: string;
+    text: string;
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    userVote?: bigint;
+}
+export interface ForumPostDetail {
+    id: string;
+    title: string;
+    content: string;
+    author: Principal;
+    authorName: string;
+    tags: Array<string>;
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    userVote?: bigint;
+    replies: Array<ForumReplyDetail>;
+}
 export interface PublishedSourceGraphMeta {
     id: string;
     creator: Principal;
@@ -462,6 +497,36 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
     sendMessage(channelId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    createForumPost(title: string, content: string, tags: Array<string>): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    getForumPosts(): Promise<Array<ForumPostSummary>>;
+    getForumPost(postId: string): Promise<ForumPostDetail | null>;
+    addForumReply(postId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    voteForumPost(postId: string, vote: bigint): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    voteForumReply(postId: string, replyId: string, vote: bigint): Promise<{
         __kind__: "ok";
         ok: null;
     } | {

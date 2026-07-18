@@ -314,6 +314,44 @@ type ChatChannelSummary =
    parentCuration: opt text;
    unreadCount: nat;
  };
+type ForumPostSummary = 
+ record {
+   id: text;
+   title: text;
+   author: principal;
+   authorName: text;
+   tags: vec text;
+   createdAt: int;
+   upvotes: nat;
+   downvotes: nat;
+   replyCount: nat;
+   userVote: opt int;
+ };
+type ForumReplyDetail = 
+ record {
+   id: text;
+   author: principal;
+   authorName: text;
+   text: text;
+   createdAt: int;
+   upvotes: nat;
+   downvotes: nat;
+   userVote: opt int;
+ };
+type ForumPostDetail = 
+ record {
+   id: text;
+   title: text;
+   content: text;
+   author: principal;
+   authorName: text;
+   tags: vec text;
+   createdAt: int;
+   upvotes: nat;
+   downvotes: nat;
+   userVote: opt int;
+   replies: vec ForumReplyDetail;
+ };
 type BuzzScore = int;
 type BuzzLeaderboardEntry = 
  record {
@@ -410,9 +448,29 @@ service : {
   savePublishedGraph: (publishedGraphId: text, selectedNodeIds:
    vec NodeId) -> (SaveResult);
   sendMessage: (channelId: text, "text": text) -> (variant {
-                                                     err: text;
-                                                     ok;
-                                                   });
+                                                      err: text;
+                                                      ok;
+                                                    });
+  createForumPost: (title: text, content: text, tags: vec text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  getForumPosts: () -> (vec ForumPostSummary) query;
+  getForumPost: (postId: text) -> (opt ForumPostDetail) query;
+  addForumReply: (postId: text, "text": text) -> (variant {
+                                                      err: text;
+                                                      ok;
+                                                    });
+  voteForumPost: (postId: text, vote: int) -> (variant {
+                                                   err: text;
+                                                   ok;
+                                                 });
+  voteForumReply: (postId: text, replyId: text, vote: int) ->
+   (variant {
+      err: text;
+      ok;
+    });
   setTelegramConfig: (botToken: text, chatId: text) ->
    (variant {
       err: text;

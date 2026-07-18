@@ -252,6 +252,41 @@ export interface HttpResponse {
     headers: Array<[string, string]>;
     status_code: number;
 }
+export interface ForumPostSummary {
+    id: string;
+    title: string;
+    author: Principal;
+    authorName: string;
+    tags: string[];
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    replyCount: bigint;
+    userVote?: bigint;
+}
+export interface ForumReplyDetail {
+    id: string;
+    author: Principal;
+    authorName: string;
+    text: string;
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    userVote?: bigint;
+}
+export interface ForumPostDetail {
+    id: string;
+    title: string;
+    content: string;
+    author: Principal;
+    authorName: string;
+    tags: string[];
+    createdAt: bigint;
+    upvotes: bigint;
+    downvotes: bigint;
+    userVote?: bigint;
+    replies: ForumReplyDetail[];
+}
 export type BuzzScore = bigint;
 export interface Swarm {
     id: NodeId;
@@ -378,6 +413,36 @@ export interface backendInterface {
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     sendMessage(channelId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    createForumPost(title: string, content: string, tags: string[]): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    getForumPosts(): Promise<ForumPostSummary[]>;
+    getForumPost(postId: string): Promise<ForumPostDetail | null>;
+    addForumReply(postId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    voteForumPost(postId: string, vote: bigint): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    voteForumReply(postId: string, replyId: string, vote: bigint): Promise<{
         __kind__: "ok";
         ok: null;
     } | {

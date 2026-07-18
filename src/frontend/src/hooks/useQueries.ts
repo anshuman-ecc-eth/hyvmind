@@ -5,6 +5,8 @@ import type {
   BuzzScore,
   ChatChannelSummary,
   ChatMessage,
+  ForumPostDetail,
+  ForumPostSummary,
   GraphData,
   NodeId,
   backendInterface,
@@ -345,6 +347,128 @@ export function useSendChatMessage() {
     onSuccess: (_data, { channelId }) => {
       queryClient.invalidateQueries({ queryKey: ["chatChannels"] });
       queryClient.invalidateQueries({ queryKey: ["chatMessages", channelId] });
+    },
+  });
+}
+
+// ─── Forum Hooks ─────────────────────────────────────────────────────────────
+
+export function useGetForumPosts() {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<ForumPostSummary[]>({
+    queryKey: ["forumPosts"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getForumPosts();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+    refetchInterval: 5000,
+  });
+}
+
+export function useGetForumPost(postId: string | null) {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<ForumPostDetail | null>({
+    queryKey: ["forumPost", postId],
+    queryFn: async () => {
+      if (!actor || !postId) return null;
+      return actor.getForumPost(postId);
+    },
+    enabled: !!actor && !isFetching && !!identity && !!postId,
+    refetchInterval: 5000,
+  });
+}
+
+export function useCreateForumPost() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      title,
+      content,
+      tags,
+    }: {
+      title: string;
+      content: string;
+      tags: string[];
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.createForumPost(title, content, tags);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forumPosts"] });
+    },
+  });
+}
+
+export function useAddForumReply() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      postId,
+      text,
+    }: {
+      postId: string;
+      text: string;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.addForumReply(postId, text);
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ["forumPost", postId] });
+      queryClient.invalidateQueries({ queryKey: ["forumPosts"] });
+    },
+  });
+}
+
+export function useVoteForumPost() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      postId,
+      vote,
+    }: {
+      postId: string;
+      vote: bigint;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.voteForumPost(postId, vote);
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ["forumPost", postId] });
+      queryClient.invalidateQueries({ queryKey: ["forumPosts"] });
+    },
+  });
+}
+
+export function useVoteForumReply() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      postId,
+      replyId,
+      vote,
+    }: {
+      postId: string;
+      replyId: string;
+      vote: bigint;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.voteForumReply(postId, replyId, vote);
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ["forumPost", postId] });
     },
   });
 }

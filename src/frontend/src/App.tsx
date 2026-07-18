@@ -21,8 +21,8 @@ import {
   getSavedFontSize,
 } from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
-import ChatView from "./pages/ChatView";
 import EditorView from "./pages/EditorView";
+import ForumView from "./pages/ForumView";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import TerminalPage from "./pages/TerminalPage";
@@ -179,11 +179,11 @@ function AppShell() {
           </div>
           <div
             style={{
-              display: activeTab === "chat" ? "block" : "none",
+              display: activeTab === "forum" ? "block" : "none",
               height: "100%",
             }}
           >
-            <ChatView />
+            <ForumView />
           </div>
           <div
             style={{

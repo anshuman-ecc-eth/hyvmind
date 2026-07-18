@@ -380,6 +380,73 @@ actor {
     unreadCount : Nat;
   };
 
+  // ── Forum Types ───────────────────────────────────────────────────────────────
+
+  type ForumVote = {
+    voter : Principal;
+    vote : Int; // 1 = upvote, -1 = downvote
+  };
+
+  type ForumReply = {
+    id : Text;
+    author : Principal;
+    authorName : Text;
+    text : Text;
+    createdAt : Int;
+    var votes : List.List<ForumVote>;
+  };
+
+  type ForumPost = {
+    id : Text;
+    title : Text;
+    content : Text;
+    author : Principal;
+    authorName : Text;
+    tags : List.List<Text>;
+    createdAt : Int;
+    var votes : List.List<ForumVote>;
+    var replies : List.List<ForumReply>;
+    var nextReplyId : Nat;
+  };
+
+  type ForumPostSummary = {
+    id : Text;
+    title : Text;
+    author : Principal;
+    authorName : Text;
+    tags : [Text];
+    createdAt : Int;
+    upvotes : Nat;
+    downvotes : Nat;
+    replyCount : Nat;
+    userVote : ?Int;
+  };
+
+  type ForumPostDetail = {
+    id : Text;
+    title : Text;
+    content : Text;
+    author : Principal;
+    authorName : Text;
+    tags : [Text];
+    createdAt : Int;
+    upvotes : Nat;
+    downvotes : Nat;
+    userVote : ?Int;
+    replies : [ForumReplyDetail];
+  };
+
+  type ForumReplyDetail = {
+    id : Text;
+    author : Principal;
+    authorName : Text;
+    text : Text;
+    createdAt : Int;
+    upvotes : Nat;
+    downvotes : Nat;
+    userVote : ?Int;
+  };
+
   // ── Telegram Bridge Types ────────────────────────────────────────────────────
 
   type TelegramConfig = {
@@ -427,6 +494,11 @@ actor {
 
   // Chat channels — keyed by curation name (top-level) or "curationName@swarmName" (sub-channel)
   var chatChannels = Map.empty<Text, ChatChannel>();
+
+  // Forum — keyed by post ID
+  var forumPosts = Map.empty<Text, ForumPost>();
+  var nextForumId : Nat = 0;
+  var nextReplyId : Nat = 0;
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
@@ -3896,6 +3968,209 @@ actor {
     };
   };
 
+  // ─── Forum Helpers ──────────────────────────────────────────────────────────
+
+  func forumVoteStats(votes : List.List<ForumVote>, caller : Principal) : (Nat, Nat, ?Int) {
+    var up = 0;
+    var down = 0;
+    var uv : ?Int = null;
+    for (v in votes.values()) {
+      if (v.vote == 1) { up += 1 } else { down += 1 };
+      if (Principal.equal(v.voter, caller)) { uv := ?v.vote };
+    };
+    (up, down, uv);
+  };
+
+  func applyVote(votes : List.List<ForumVote>, caller : Principal, vote : Int) {
+    var existing : ?Int = null;
+    let cleaned = List.empty<ForumVote>();
+    for (v in votes.values()) {
+      if (Principal.equal(v.voter, caller)) {
+        existing := ?v.vote;
+      } else {
+        cleaned.add(v);
+      };
+    };
+    votes.clear();
+    for (v in cleaned.values()) { votes.add(v) };
+    switch (existing) {
+      case (?v) { if (v != vote) { votes.add({ voter = caller; vote }) } };
+      case (null) { votes.add({ voter = caller; vote }) };
+    };
+  };
+
+  func computePostSummary(post : ForumPost, caller : Principal) : ForumPostSummary {
+    let (upvotes, downvotes, userVote) = forumVoteStats(post.votes, caller);
+    {
+      id = post.id;
+      title = post.title;
+      author = post.author;
+      authorName = post.authorName;
+      tags = post.tags.toArray();
+      createdAt = post.createdAt;
+      upvotes;
+      downvotes;
+      replyCount = post.replies.size();
+      userVote;
+    };
+  };
+
+  func computeReplyDetail(reply : ForumReply, caller : Principal) : ForumReplyDetail {
+    let (upvotes, downvotes, userVote) = forumVoteStats(reply.votes, caller);
+    {
+      id = reply.id;
+      author = reply.author;
+      authorName = reply.authorName;
+      text = reply.text;
+      createdAt = reply.createdAt;
+      upvotes;
+      downvotes;
+      userVote;
+    };
+  };
+
+  func computePostDetail(post : ForumPost, caller : Principal) : ForumPostDetail {
+    let (upvotes, downvotes, userVote) = forumVoteStats(post.votes, caller);
+    let replyList = List.empty<ForumReplyDetail>();
+    for (r in post.replies.values()) {
+      replyList.add(computeReplyDetail(r, caller));
+    };
+    {
+      id = post.id;
+      title = post.title;
+      content = post.content;
+      author = post.author;
+      authorName = post.authorName;
+      tags = post.tags.toArray();
+      createdAt = post.createdAt;
+      upvotes;
+      downvotes;
+      userVote;
+      replies = replyList.toArray();
+    };
+  };
+
+  // ─── Forum: createPost ──────────────────────────────────────────────────────
+
+  public shared ({ caller }) func createForumPost(title : Text, content : Text, tags : [Text]) : async { #ok : Text; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    let trimmedTitle = title.trim(#char ' ');
+    let trimmedContent = content.trim(#char ' ');
+    if (trimmedTitle.size() == 0) { return #err("Title is required") };
+    if (trimmedContent.size() == 0) { return #err("Content is required") };
+    if (trimmedTitle.size() > 200) { return #err("Title too long (max 200 chars)") };
+    if (trimmedContent.size() > 5000) { return #err("Content too long (max 5000 chars)") };
+    let authorName = switch (userProfiles.get(caller)) {
+      case (?p) { p.name };
+      case (null) { caller.toText() };
+    };
+    let id = "post-" # nextForumId.toText();
+    nextForumId += 1;
+    let tagList = List.empty<Text>();
+    for (t in tags.vals()) {
+      let trimmed = t.trim(#char ' ');
+      if (trimmed.size() > 0) { tagList.add(trimmed) };
+    };
+    let post : ForumPost = {
+      id;
+      title = trimmedTitle;
+      content = trimmedContent;
+      author = caller;
+      authorName;
+      tags = tagList;
+      createdAt = Time.now();
+      var votes = List.empty<ForumVote>();
+      var replies = List.empty<ForumReply>();
+      var nextReplyId = 0;
+    };
+    forumPosts.add(id, post);
+    #ok(id);
+  };
+
+  // ─── Forum: getPosts ────────────────────────────────────────────────────────
+
+  public shared query ({ caller }) func getForumPosts() : async [ForumPostSummary] {
+    if (caller.isAnonymous()) { return [] };
+    let result = List.empty<ForumPostSummary>();
+    for ((_, post) in forumPosts.entries()) {
+      result.add(computePostSummary(post, caller));
+    };
+    result.toArray();
+  };
+
+  // ─── Forum: getPost ─────────────────────────────────────────────────────────
+
+  public shared query ({ caller }) func getForumPost(postId : Text) : async ?ForumPostDetail {
+    if (caller.isAnonymous()) { return null };
+    switch (forumPosts.get(postId)) {
+      case (?post) { ?computePostDetail(post, caller) };
+      case (null) { null };
+    };
+  };
+
+  // ─── Forum: addReply ────────────────────────────────────────────────────────
+
+  public shared ({ caller }) func addForumReply(postId : Text, text : Text) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    let trimmed = text.trim(#char ' ');
+    if (trimmed.size() == 0) { return #err("Reply text is required") };
+    if (trimmed.size() > 2000) { return #err("Reply too long (max 2000 chars)") };
+    switch (forumPosts.get(postId)) {
+      case (null) { return #err("Post not found") };
+      case (?post) {
+        let authorName = switch (userProfiles.get(caller)) {
+          case (?p) { p.name };
+          case (null) { caller.toText() };
+        };
+        let replyId = "reply-" # nextReplyId.toText();
+        nextReplyId += 1;
+        let reply : ForumReply = {
+          id = replyId;
+          author = caller;
+          authorName;
+          text = trimmed;
+          createdAt = Time.now();
+          var votes = List.empty<ForumVote>();
+        };
+        post.replies.add(reply);
+        #ok;
+      };
+    };
+  };
+
+  // ─── Forum: votePost ────────────────────────────────────────────────────────
+
+  public shared ({ caller }) func voteForumPost(postId : Text, vote : Int) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    if (vote != 1 and vote != -1) { return #err("Invalid vote value") };
+    switch (forumPosts.get(postId)) {
+      case (null) { return #err("Post not found") };
+      case (?post) {
+        applyVote(post.votes, caller, vote);
+        #ok;
+      };
+    };
+  };
+
+  // ─── Forum: voteReply ───────────────────────────────────────────────────────
+
+  public shared ({ caller }) func voteForumReply(postId : Text, replyId : Text, vote : Int) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    if (vote != 1 and vote != -1) { return #err("Invalid vote value") };
+    switch (forumPosts.get(postId)) {
+      case (null) { return #err("Post not found") };
+      case (?post) {
+        for (r in post.replies.values()) {
+          if (r.id == replyId) {
+            applyVote(r.votes, caller, vote);
+            return #ok;
+          };
+        };
+        return #err("Reply not found");
+      };
+    };
+  };
+
   // ── HTTP API: Types ──────────────────────────────────────────────────────────
 
   type HttpRequest = {
@@ -4737,6 +5012,9 @@ actor {
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();
     chatChannels := Map.empty<Text, ChatChannel>();
+    forumPosts := Map.empty<Text, ForumPost>();
+    nextForumId := 0;
+    nextReplyId := 0;
     telegramConfig := null;
     apiKeysByPrincipal := Map.empty<Principal, Text>();
     principalByApiKey := Map.empty<Text, Principal>();
