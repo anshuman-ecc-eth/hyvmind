@@ -10,7 +10,7 @@
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; color-scheme: dark; }
   body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
   body:focus { outline: none; }
-  .layout { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .layout { display: flex; flex-direction: column; align-items: center; width: fit-content; flex-shrink: 0; padding: 16px; border-radius: 4px; gap: 24px; }
   .layout-row { display: flex; align-items: center; gap: 24px; }
   .dpad { position: relative; width: 144px; height: 150px; flex-shrink: 0; }
   .dpad-btn { position: absolute; width: 46px; height: 46px; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; color: #000; font-size: 19px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666; }
@@ -24,7 +24,9 @@
    .zoom-row { display:flex;flex-direction:row;gap:6px;width:100%;margin-top:25px; }
    .screen-size-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;width:100%;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
    .screen-size-btn:active,.screen-size-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
-   .dpad-btn::after,.action-btn::after,.screen-size-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
+    .top-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+    .top-btn:active,.top-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
+    .dpad-btn::after,.action-btn::after,.screen-size-btn::after,.top-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
   .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
   .viewport { position:absolute;inset:0;overflow:hidden; }
   .world-layer { display:block;image-rendering:pixelated;position:absolute;top:0;left:0; }
@@ -36,6 +38,7 @@
 <body tabindex="-1">
 <div id="gameContainer" style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%">
   <div class="layout" id="gameLayout">
+    <button id="audioToggleBtn" class="top-btn" style="margin-bottom:12px">Audio On</button>
     <div class="layout-row">
       <div class="dpad">
         <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
@@ -241,6 +244,9 @@ var collisionMap = [];
 var gObjects = [];
 var px = 0, py = 0, pDir = 0, pMoving = false, pWalk = 0;
 var STEP = 5;
+var DIAG_STEP = Math.round(STEP * 0.7071);
+var lastDir = 'down';
+var dirNameToPDir = {left:1, right:2, up:3, down:0};
 var gamePaused = false;
 var activePopup = null;
 var navPaused = false;
@@ -545,7 +551,7 @@ function render() {
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeTerrain(); return; }
-  if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; }
+  if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; lastDir=d; }
   if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
   if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);}
 });
@@ -554,7 +560,7 @@ document.addEventListener('keyup', function(e) {
 });
 var dpadState = {};
 document.querySelectorAll('.dpad-btn').forEach(function(b){
-  function s(e){e.preventDefault();b.classList.add('active');dpadState[b.dataset.dir]=true;}
+  function s(e){e.preventDefault();b.classList.add('active');dpadState[b.dataset.dir]=true;lastDir=b.dataset.dir;}
   function en(e){e.preventDefault();b.classList.remove('active');dpadState[b.dataset.dir]=false;}
   b.addEventListener('mousedown',s);b.addEventListener('mouseup',en);b.addEventListener('mouseleave',en);
   b.addEventListener('touchstart',s,{passive:false});b.addEventListener('touchend',en,{passive:false});b.addEventListener('touchcancel',en,{passive:false});
@@ -584,6 +590,25 @@ document.getElementById('screenSizeBtn').addEventListener('click', function() {
   layoutEl.style.transform = 'scale(' + val + ')';
   localStorage.setItem('hyvmind-zoom', val);
   window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
+});
+var audioMuted = false;
+document.getElementById('audioToggleBtn').addEventListener('click', function() {
+  var btn = this;
+  btn.classList.add('active');
+  setTimeout(function() { btn.classList.remove('active'); }, 150);
+  var bgm = document.getElementById('bgm');
+  if (!bgm) return;
+  if (audioMuted) {
+    bgm.volume = 0.2;
+    bgm.currentTime = 0;
+    bgm.play().catch(function(){});
+    btn.textContent = 'Audio On';
+    audioMuted = false;
+  } else {
+    bgm.pause();
+    btn.textContent = 'Audio Off';
+    audioMuted = true;
+  }
 });
 // Listen for zoom changes from world game
 window.addEventListener('message', function(e) {
@@ -631,7 +656,9 @@ function loop() {
   if (navPaused) { render(); return; }
   if (gamePaused) { render(); return; }
   var dx=0,dy=0;
-  if(dpadState['left']){dx=-STEP;pDir=1;}else if(dpadState['right']){dx=STEP;pDir=2;}else if(dpadState['up']){dy=-STEP;pDir=3;}else if(dpadState['down']){dy=STEP;pDir=0;}
+  if(dpadState['left'])dx=-STEP;if(dpadState['right'])dx=STEP;if(dpadState['up'])dy=-STEP;if(dpadState['down'])dy=STEP;
+  if(dx!==0&&dy!==0){dx=dx<0?-DIAG_STEP:DIAG_STEP;dy=dy<0?-DIAG_STEP:DIAG_STEP;}
+  if(dx!==0&&dy!==0&&lastDir)pDir=dirNameToPDir[lastDir];else if(dx<0)pDir=1;else if(dx>0)pDir=2;else if(dy<0)pDir=3;else if(dy>0)pDir=0;
   if(dx!==0||dy!==0){var nx=px+dx,ny=py+dy;if(dx!==0&&isWalkable(nx,py))px=nx;if(dy!==0&&isWalkable(px,ny))py=ny;pMoving=true;pWalk++;}else{pMoving=false;pWalk=0;}
   px=Math.max(0,Math.min(WORLD_W-32,px));py=Math.max(0,Math.min(WORLD_H-32,py));
   render();

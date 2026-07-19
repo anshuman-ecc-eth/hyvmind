@@ -513,6 +513,26 @@ function showSequentialPopup(sentences, type, dismissKey) {
   activePopup = pop;
 }
 
+function showUdayanDialog() {
+  if (activePopup) activePopup.remove();
+  var pop = document.createElement('div');
+  pop._type = 'udayan';
+  pop._step = 0;
+  pop._sentences = ["This world is Maya.", "Gangesh doesn't understand."];
+  pop._dismissKey = 'msg:udayan-dialog';
+  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  renderUdayanDialog(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+
+function renderUdayanDialog(pop) {
+  var sentence = pop._sentences[pop._step];
+  var isLast = pop._step >= pop._sentences.length - 1;
+  var footer = isLast ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> continue <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);width:fit-content;min-width:260px;max-width:425px;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;white-space:nowrap;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+}
+
 function showStartupPopup() {
   gamePaused = true;
   showSequentialPopup(STARTUP_SENTENCES, 'startup');
@@ -652,6 +672,7 @@ for (var r = 0; r < 4; r++) {
   for (var s = 0; s < 28; s++)
     preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
 }
+preload('udayan_sit_1_2', ASSETS + '/sprites/udayan_sit_1_2.png');
 preload('rowboat', BOAT_SHEET);
 preload('boat_left', ASSETS + '/sprites/boat_left.png');
 preload('boat_right', ASSETS + '/sprites/boat_right.png');
@@ -670,7 +691,16 @@ layer.appendChild(elP);
 var npcEl = document.createElement('div');
 npcEl.className = 'sprite';
 npcEl.style.zIndex = '4';
-layer.appendChild(npcEl);
+  layer.appendChild(npcEl);
+
+// --- Udayan NPC: sitting in sanctuary ---
+var udayanEl = document.createElement('div');
+udayanEl.className = 'sprite';
+udayanEl.style.width = '40px';
+udayanEl.style.height = '40px';
+udayanEl.style.backgroundSize = '40px 40px';
+udayanEl.style.zIndex = '4';
+layer.appendChild(udayanEl);
 
 // --- Ferry boat ---
 boatEl = document.createElement('div');
@@ -715,6 +745,37 @@ function renderNPC() {
     if (img && img.complete && img.naturalWidth > 0) {
       npcEl.style.backgroundImage = newBg;
       lastNpcSpriteBg = newBg;
+    }
+  }
+}
+
+// --- Udayan NPC: sitting in sanctuary ---
+var udx = 0, udy = 0;
+var udTileX = 0, udTileY = 0;
+
+function udayanInit() {
+  udTileX = 49; udTileY = 20;
+  udx = udTileX * 8 - 16;
+  udy = udTileY * 8 - 12;
+}
+
+function updateUdayan() {}
+
+var lastUdayanBg = '';
+function renderUdayan() {
+  var scrEl = document.querySelector('.screen');
+  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
+  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+
+  var newBg = 'url(' + ASSETS + '/sprites/udayan_sit_1_2.png)';
+  udayanEl.style.transform = 'translate(' + Math.round(udx - camX) + 'px, ' + Math.round(udy - camY) + 'px)';
+  if (newBg !== lastUdayanBg) {
+    var img = imgCache['udayan_sit_1_2'];
+    if (img && img.complete && img.naturalWidth > 0) {
+      udayanEl.style.backgroundImage = newBg;
+      lastUdayanBg = newBg;
     }
   }
 }
@@ -771,7 +832,7 @@ var sparkleHues = [0,45,90,135,180,225,270,315];
   }
 })();
 
-var STEP = 5;
+var STEP = 3;
 var DIAG_STEP = Math.round(STEP * 0.7071);
 var px = 144, py = 194, pDir = 0, pMoving = false, pWalk = 0;
 var lastDir = 'down';
@@ -873,13 +934,17 @@ function activateZ() {
   } else if (activePopup && activePopup._type === 'input') {
     submitInput();
     msg = 'input submitted';
-  } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) {
+  } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome' || activePopup._type === 'udayan')) {
     var nextStep = activePopup._step + 1;
     if (nextStep >= activePopup._sentences.length) {
       msg = activePopup._type + '-end';
     } else {
       activePopup._step = nextStep;
-      renderSequentialPopup(activePopup, nextStep, activePopup._sentences);
+      if (activePopup._type === 'udayan') {
+        renderUdayanDialog(activePopup);
+      } else {
+        renderSequentialPopup(activePopup, nextStep, activePopup._sentences);
+      }
       msg = activePopup._type + '-' + nextStep;
     }
   } else if (nearDoor && !(activePopup && activePopup._type === 'door') && Date.now() - (popupDismissedAt['door:' + ((nearDoor && doorLabels[nearDoor.key]) || 'unlabeled')] || 0) > 5000) {
@@ -987,6 +1052,9 @@ function activateZ() {
     else if (triggerMessages[nearTrigger.key] === 'gangesh-upadhyay-dialog') {
       showGangeshUpadhyayDialog();
       msg = 'gangesh-upadhyay-dialog';
+    } else if (triggerMessages[nearTrigger.key] === 'udayan-dialog') {
+      showUdayanDialog();
+      msg = 'udayan-dialog';
     } else if (triggerMessages[nearTrigger.key] === 'maps') {
       closePopup();
       window.parent.postMessage({ type: 'hyvmind-nav', target: 'maps' }, '*');
@@ -1045,15 +1113,14 @@ function render() {
   worldBg.style.left = (-camX) + 'px';
   worldBg.style.top = (-camY) + 'px';
 
-  var pc = pMoving ? (Math.floor(pWalk / 2) % 2) : 2;
   var pTileX = Math.floor((px + 16) / TILE);
   var pTileY = Math.floor((py + 14) / TILE);
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
   elP.style.transform = 'translate(' + Math.round(px - camX) + 'px, ' + Math.round(py - camY) + 'px)';
+  var pc = pMoving ? (Math.floor(pWalk / 2) % 2) : 2;
   var newBg = frm(pc, dirMap[pDir]);
   if (newBg !== lastSpriteBg) {
-    var spriteName = 'cultist_' + pc + '_' + dirMap[pDir];
-    var img = imgCache[spriteName];
+    var img = imgCache['cultist_' + pc + '_' + dirMap[pDir]];
     if (img && img.complete && img.naturalWidth > 0) {
       elP.style.backgroundImage = newBg;
       lastSpriteBg = newBg;
@@ -1212,13 +1279,15 @@ function loop() {
     else if (dy > 0) pDir = 0;
     if (dx !== 0 || dy !== 0) {
       var nx = px + dx, ny = py + dy;
-      var wizBlock = function(gx, gy) {
+      var blockCheck = function(gx, gy) {
         var tx = Math.floor((gx + 16) / TILE);
         var ty = Math.floor((gy + 14) / TILE);
-        return (tx === npcTileX && ty === npcTileY);
+        var udTtx = Math.floor((udx + 16) / TILE);
+        var udTty = Math.floor((udy + 14) / TILE);
+        return (tx === npcTileX && ty === npcTileY) || (tx === udTtx && ty === udTty);
       };
-      if (dx !== 0 && isWalkable(nx, py) && !wizBlock(nx, py)) px = nx;
-      if (dy !== 0 && isWalkable(px, ny) && !wizBlock(px, ny)) py = ny;
+      if (dx !== 0 && isWalkable(nx, py) && !blockCheck(nx, py)) px = nx;
+      if (dy !== 0 && isWalkable(px, ny) && !blockCheck(px, ny)) py = ny;
       pMoving = true;
       if (tick % 2 === 0) pWalk++;
     } else { pMoving = false; pWalk = 0; }
@@ -1227,8 +1296,10 @@ function loop() {
   }
   checkNearbyTriggers(px, py);
   updateNPC();
+  updateUdayan();
   render();
   renderNPC();
+  renderUdayan();
   renderBoat();
 }
 
@@ -1279,6 +1350,7 @@ initCollision(function() {
       }
     }
     npcInit();
+    udayanInit();
     initBoat();
     render();
     setTimeout(function() {
