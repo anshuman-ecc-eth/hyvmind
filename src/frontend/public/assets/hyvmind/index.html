@@ -530,7 +530,8 @@ function renderUdayanDialog(pop) {
   var sentence = pop._sentences[pop._step];
   var isLast = pop._step >= pop._sentences.length - 1;
   var footer = isLast ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> continue <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);width:fit-content;min-width:260px;max-width:425px;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;white-space:nowrap;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+  var titleHtml = '<div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Udayan ~</div>';
+  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);width:fit-content;min-width:260px;max-width:425px;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div>' + titleHtml + '<div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;white-space:nowrap;">' + sentence + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;">' + footer + '</div></div></div>';
 }
 
 function showStartupPopup() {
@@ -754,7 +755,7 @@ var udx = 0, udy = 0;
 var udTileX = 0, udTileY = 0;
 
 function udayanInit() {
-  udTileX = 49; udTileY = 20;
+  udTileX = 13; udTileY = 41;
   udx = udTileX * 8 - 16;
   udy = udTileY * 8 - 12;
 }
