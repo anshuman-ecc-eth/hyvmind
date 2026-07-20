@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HYVMIND</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; color-scheme: dark; }
@@ -36,17 +37,19 @@
   .layout { display: flex; flex-direction: column; align-items: center; width: fit-content; flex-shrink: 0; padding: 16px; border-radius: 4px; }
   .layout-row { display: flex; align-items: center; gap: 24px; }
   .screen { width: 500px; height: 500px; overflow: hidden; position: relative; box-shadow: 0 0 60px rgba(0,0,0,0.9); flex-shrink: 0; }
-  .viewport { position: absolute; inset: 0; overflow: hidden; }
+  .viewport { position: absolute; inset: 0; overflow: hidden; image-rendering: pixelated; }
   .world-layer { display: block; image-rendering: pixelated; position: absolute; top: 0; left: 0; }
   .game-layer { position: absolute; inset: 0; z-index: 1; }
   .sprite { position: absolute; left: 0; top: 0; width: 32px; height: 36px; background-size: 32px 36px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; z-index: 5; will-change: transform; }
+.player-wrapper { position: absolute; left: 0; top: 0; width: 38px; height: 42px; pointer-events: none; z-index: 5; will-change: transform; }
+.player-sprite { position: absolute; left: 0; top: 0; width: 38px; height: 42px; background-size: 38px 42px; image-rendering: pixelated; pointer-events: none; background-repeat: no-repeat; }
 </style>
 </head>
 <body tabindex="-1">
 
 <div id="gameContainer" class="game-container">
   <div class="layout" id="gameLayout">
-    <button id="audioToggleBtn" class="top-btn" style="margin-bottom:12px">Audio On</button>
+    <button id="settingsBtn" class="top-btn" style="margin-bottom:12px">Settings</button>
     <div class="layout-row">
       <div class="dpad">
         <button class="dpad-btn dpad-up"    data-dir="up">&#9650;</button>
@@ -66,11 +69,11 @@
           <button class="action-btn" id="btnX">X</button>
         </div>
         <div class="zoom-row">
-          <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+          <button class="screen-size-btn" id="rollBtn">Roll</button>
         </div>
       </div>
     </div>
-    <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
   </div>
 </div>
 
@@ -79,9 +82,12 @@
 var ASSETS = '/assets/hyvmind';
 var WORLD_W = 574, WORLD_H = 2176;
 var SCREEN_W = 550, SCREEN_H = 480;
+var gameZoom = 2;
 var TILE = 8;
 var COLS = 72, ROWS = 272;
-function frm(col, row, prefix) { return 'url(' + ASSETS + '/sprites/' + (prefix||'cultist') + '_' + col + '_' + row + '.png)'; }
+function luaUrl(anim, dir, frame) { return 'url(' + ASSETS + '/sprites/lua_' + anim + '_' + dir + '_' + frame + '.png)'; }
+function animDir(pDir) { return pDir === 3 ? 'u' : 'd'; }
+function isFlipped(pDir) { return pDir === 1; }
 
 var gamePaused = false;
 
@@ -123,8 +129,8 @@ window.addEventListener('message', function(e) {
     activeMenu = 'loading';
     closePopup();
   var pop = document.createElement('div');
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-    pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+    pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -141,7 +147,7 @@ function showGangeshUpadhyayDialog() {
   pop._type = 'gangesh-upadhyay';
   pop._step = 0; // 0 = menu, 1+ = showing response to that index
   pop._selected = 0;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   renderGangeshUpadhyayPopup(pop);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -160,17 +166,18 @@ function renderGangeshUpadhyayMenu(pop) {
   var items = '';
   for (var i = 0; i < GANGESH_UPADHYAY_DIALOGS.length; i++) {
     var arrow = i === sel ? '>' : '&nbsp;';
-    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
-    items += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + GANGESH_UPADHYAY_DIALOGS[i].question + '</div>';
+    var cls = i === sel ? '#e0e0e0' : '#888';
+    var op = i === sel ? '' : 'opacity:0.5;';
+    menuItems += '<div style="font-size:13px;color:' + cls + ';' + op + 'text-align:left;padding:4px 8px;">' + arrow + ' ' + GANGESH_UPADHYAY_DIALOGS[i].question + '</div>';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:8px;">~ Gangesh Upadhyay ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Ask me anything:</div>' + items + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Ask me anything:</div>' + items + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
 }
 
 function renderGangeshUpadhyayResponse(pop) {
   var idx = pop._step - 1;
   var response = idx >= 0 && idx < GANGESH_UPADHYAY_DIALOGS.length ? GANGESH_UPADHYAY_DIALOGS[idx].response : '';
   var question = idx >= 0 && idx < GANGESH_UPADHYAY_DIALOGS.length ? GANGESH_UPADHYAY_DIALOGS[idx].question : '';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + question + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + response + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> back <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#888;font-size:22px;margin-bottom:5px;">~ ' + question + ' ~</div><div style="padding:3px 0;">' + response + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] back  [X] close</div></div>';
 }
   if (e.data?.type === 'hyvmind-buzz-secret') {
     isGenerating = false;
@@ -283,8 +290,8 @@ function loadTriggers(callback) {
 }
 
 function checkNearbyTriggers(gx, gy) {
-  var tx = Math.floor((gx + 16) / TILE);
-  var ty = Math.floor((gy + 14) / TILE);
+  var tx = Math.floor((gx + 19) / TILE);
+  var ty = Math.floor((gy + 16) / TILE);
   nearTrigger = null;
   nearDoor = null;
   var bestDist = 999;
@@ -314,17 +321,17 @@ function showPopup(msg) {
   if (msg.indexOf('>>') === 0) { showInputPopup(msg); return; }
   var pop = document.createElement('div');
   pop._dismissKey = 'msg:' + msg;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">' + msg + '</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + msg + '<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
 function showDefaultPopup() {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   var pop = document.createElement('div');
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  var scoreHtml = '<div style="font-family:monospace;font-size:14px;color:#888;text-align:center;padding:0 0 8px 0;border-bottom:1px solid #3a2e18;margin-bottom:8px;letter-spacing:1px;">Score: ' + currentScore + '</div>';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div>' + scoreHtml + '<div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:50px;">who am I talking to?</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  var scoreHtml = '<div style="color:#888;padding:0 0 8px 0;border-bottom:1px solid #333;margin-bottom:2px;">Score: ' + currentScore + '</div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + scoreHtml + '<div style="margin-bottom:2px;">who am I talking to?</div><div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -350,8 +357,8 @@ function showInputPopup(raw) {
   pop._dismissKey = 'msg:' + raw;
   pop._rules = rules;
   pop._triggerKey = triggerKey;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;min-height:30px;">' + question + '</div><input id="inputField" type="text" style="display:block;margin:10px auto 0;width:80%;background:#0a0a12;border:1px solid #5a4a2a;color:#e0d0b0;font-family:monospace;font-size:14px;padding:6px 8px;outline:none;text-align:center;"><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Enter</span> submit  <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div></div></div>';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + question + '<input id="inputField" type="text" style="display:block;margin:12px auto 0;width:80%;background:#111;border:1px solid #444;color:#e0e0e0;font-family:VT323,monospace;font-size:28px;padding:2px 4px;outline:none;text-align:center;"><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Enter] submit  [X] cancel</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
   // Focus the input field after a delay for Firefox
@@ -382,10 +389,10 @@ function showDoorPopup(label) {
   pop._type = 'door';
   pop._label = label;
   if (nearDoor) pop._dismissKey = 'door:' + (label || 'unlabeled');
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
   var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + title + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + verb + '?  [Z] yes  [X] no</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">' + title + '</div><div style="font-size:26px;">' + verb + '?</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -401,7 +408,7 @@ var STARTUP_SENTENCES = [
 ];
 
 var GANGESH_UPADHYAY_TREE = [
-  { q: "Who are you?", r: "I'm Gangesh, keeper of Hyvmind." },
+  { q: "Who are you?", r: "A steward, of sorts." },
   { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
   { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. Meditating on that distinction will unlock this world for you. Check the diagrams in the lab if you're wondering where to start. Happy exploring!" },
   { q: "What can I do here?", r: "Here, you can explore maps and collect points. That'll help you gain Buzz, which you can use in the app to publish notes." },
@@ -435,7 +442,7 @@ function showGangeshUpadhyayDialog() {
   pop._path = [];
   pop._showing = 'menu';
   pop._selected = 0;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   renderGangeshUpadhyayPopup(pop);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -455,15 +462,16 @@ function renderGangeshUpadhyayMenu(pop) {
   var menuItems = '';
   for (var i = 0; i < items.length; i++) {
     var arrow = i === sel ? '>' : '&nbsp;';
-    var cls = i === sel ? 'color:#b0e0f0;' : 'color:#6a8a9a;';
-    menuItems += '<div style="font-family:monospace;font-size:13px;' + cls + 'text-align:left;padding:4px 8px;letter-spacing:0.5px;">' + arrow + ' ' + items[i].q + '</div>';
+    var cls = i === sel ? '#e0e0e0' : '#888';
+    var op = i === sel ? '' : 'opacity:0.5;';
+    menuItems += '<div style="font-size:26px;color:' + cls + ';' + op + 'text-align:left;padding:2px 6px;">' + arrow + ' ' + items[i].q + '</div>';
   }
   var parentInfo = '';
   if (pop._path.length > 0) {
     var parentNode = getGangeshUpadhyayNode(pop._path.slice(0, -1));
-    if (parentNode && parentNode.q) parentInfo = '<div style="font-family:monospace;font-size:10px;color:#4a7a8a;text-align:center;letter-spacing:0.5px;margin-bottom:4px;">' + parentNode.q + '</div>';
+    if (parentNode && parentNode.q) parentInfo = '<div style="font-size:22px;color:#888;text-align:center;margin-bottom:2px;">' + parentNode.q + '</div>';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Gangesh Upadhyay ~</div>' + parentInfo + menuItems + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px"><span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> select <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div>' + parentInfo + menuItems + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] back</div></div>';
 }
 
 function renderGangeshUpadhyayResponse(pop) {
@@ -486,18 +494,18 @@ function renderGangeshUpadhyayResponse(pop) {
   var hasChildren = node.children && node.children.length > 0;
   var footer;
   if (pop._sentences && pop._sentences.length > 1 && !isLastSentence) {
-    footer = '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> continue <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
+    footer = '[Z] continue  [X] back';
   } else {
-    footer = hasChildren ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> ask more <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> back';
+    footer = hasChildren ? '[Z] ask more  [X] back' : '[X] back';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:16px 20px 12px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:11px;color:#6a9aaa;text-align:center;letter-spacing:0.5px;margin-bottom:6px;">~ ' + node.q + ' ~</div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;padding:4px 0;">' + msg + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;text-align:center;font-family:monospace;font-size:10px;color:#5a8a9a;letter-spacing:1px">' + footer + '</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="font-size:22px;color:#888;margin-bottom:5px;">~ ' + node.q + ' ~</div><div style="padding:3px 0;">' + msg + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function renderSequentialPopup(pop, step, sentences) {
   var sentence = step < sentences.length ? sentences[step] : '';
   var isLast = step >= sentences.length - 1;
   var footer = isLast ? '[X] close' : '[Z] continue &nbsp; [X] close';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">' + sentence + '</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function showSequentialPopup(sentences, type, dismissKey) {
@@ -507,7 +515,7 @@ function showSequentialPopup(sentences, type, dismissKey) {
   pop._step = 0;
   pop._sentences = sentences;
   pop._dismissKey = dismissKey || null;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   renderSequentialPopup(pop, 0, sentences);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -518,9 +526,9 @@ function showUdayanDialog() {
   var pop = document.createElement('div');
   pop._type = 'udayan';
   pop._step = 0;
-  pop._sentences = ["This world is Maya.", "Gangesh doesn't understand."];
+  pop._sentences = ["This world is Maya.", "Gangesa must be reminded."];
   pop._dismissKey = 'msg:udayan-dialog';
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   renderUdayanDialog(pop);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -529,9 +537,9 @@ function showUdayanDialog() {
 function renderUdayanDialog(pop) {
   var sentence = pop._sentences[pop._step];
   var isLast = pop._step >= pop._sentences.length - 1;
-  var footer = isLast ? '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close' : '<span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">Z</span> continue <span style="border:1px solid #3a6a7a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#7ab0c0">X</span> close';
-  var titleHtml = '<div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:6px;">~ Udayan ~</div>';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);width:fit-content;min-width:260px;max-width:425px;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div>' + titleHtml + '<div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;white-space:nowrap;">' + sentence + '</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #1a3a4a;font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;letter-spacing:0.5px;">' + footer + '</div></div></div>';
+  var footer = isLast ? '[X] close' : '[Z] continue  [X] close';
+  var titleHtml = '<div style="color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ Udayana ~</div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;white-space:nowrap;">' + titleHtml + '<div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function showStartupPopup() {
@@ -546,7 +554,7 @@ function showSecretsMenu() {
   var pop = document.createElement('div');
   pop._type = 'secrets';
   pop._selected = selected;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   refreshSecretsMenuContent(pop, selected);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -554,12 +562,14 @@ function showSecretsMenu() {
 function refreshSecretsMenuContent(pop, selected) {
   var secretsCount = storedSecrets.length;
   var scoreLine = 'Score: ' + currentScore;
+  var opt0Class = selected === 0 ? '#e0e0e0' : '#888';
   var opt0Arrow = selected === 0 ? '>' : '&nbsp;';
-  var opt0Class = selected === 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
-  var opt1Arrow = selected === 1 && currentScore > 0 ? '>' : '&nbsp;';
-  var opt1Class = selected === 1 && currentScore > 0 ? 'color:#f0c060;' : 'color:#7a6a4a;';
-  var opt1Disabled = currentScore === 0 ? 'color:#3a2e18;' : '';
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:280px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">BUZZ SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:13px;' + opt0Class + 'text-align:left;padding:3px 8px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="font-family:monospace;font-size:13px;' + opt1Class + opt1Disabled + 'text-align:left;padding:3px 8px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> select <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div></div>';
+  var opt0Op = selected === 0 ? '' : 'opacity:0.5;';
+  var opt1Active = selected === 1 && currentScore > 0;
+  var opt1Class = opt1Active ? '#e0e0e0' : (currentScore === 0 ? '#444' : '#888');
+  var opt1Arrow = opt1Active ? '>' : '&nbsp;';
+  var opt1Op = opt1Active ? '' : 'opacity:0.5;';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">BUZZ SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="text-align:center;padding:4px 0 6px;border-bottom:1px solid #333;margin-bottom:5px;">' + scoreLine + '</div><div style="color:' + opt0Class + ';' + opt0Op + 'text-align:left;padding:2px 6px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="color:' + opt1Class + ';' + opt1Op + 'text-align:left;padding:2px 6px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
   pop._selected = selected;
   activePopup = pop;
 }
@@ -570,7 +580,7 @@ function showSecretsList() {
   pop._type = 'view-secrets';
   pop._scroll = 0;
   secretsScroll = 0;
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   refreshSecretsListContent(pop);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -579,18 +589,18 @@ function refreshSecretsListContent(pop) {
   if (!pop) return;
   var scroll = pop._scroll || 0;
   var visible = 6;
-  var html = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:300px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 20px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">YOUR SECRETS</div><div style="font-family:monospace;font-size:10px;color:#7a6a4a;text-align:center;letter-spacing:0.5px;margin-bottom:8px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #3a2e18;margin-bottom:6px;"></div>';
+  var html = '<div style="background:#0a0a0a;padding:8px 12px 8px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">YOUR SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #333;margin-bottom:5px;"></div>';
   var start = scroll;
   var end = Math.min(scroll + visible, storedSecrets.length);
   for (var i = start; i < end; i++) {
     var s = storedSecrets[i];
     var secStr = s.secret;
-    html += '<div style="font-family:monospace;font-size:11px;color:#e0d0b0;text-align:left;padding:3px 4px;word-break:break-all;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
+    html += '<div style="font-size:22px;text-align:left;padding:2px 4px;word-break:break-all;">Buzz: ' + secStr + ' (Score: ' + s.score + ')</div>';
   }
   if (storedSecrets.length === 0) {
-    html += '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:12px 4px;">No secrets yet.</div>';
+    html += '<div style="font-size:22px;color:#666;text-align:center;padding:6px 4px;">No secrets yet.</div>';
   }
-  html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> copy <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> back</div></div></div>';
+  html += '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] copy  [X] back</div></div>';
   pop.innerHTML = html;
   activePopup = pop;
 }
@@ -604,7 +614,7 @@ function showTrunkPopup() {
   if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
   var pop = document.createElement('div');
   pop._type = 'trunk';
-  pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   showTrunkPopupContent(pop);
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
@@ -615,30 +625,30 @@ function showTrunkPopupContent(pop) {
   var hasSecrets = storedSecrets.length > 0;
   var body;
   if (hasScore) {
-    body = '<div style="font-family:monospace;font-size:13px;color:#e0d0b0;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">' + scoreLine + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">Submit this score for a Buzz secret?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> submit <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> cancel</div>';
+    body = '<div style="padding:4px 0 6px;border-bottom:1px solid #333;margin-bottom:5px;">' + scoreLine + '</div><div style="font-size:26px;margin-bottom:2px;">Submit this score for a Buzz secret?</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] submit  [X] cancel</div>';
     pop._action = 'submit';
   } else if (hasSecrets) {
-    body = '<div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;padding:4px 0 6px;border-bottom:1px solid #3a2e18;margin-bottom:6px;">Secrets in trunk: ' + storedSecrets.length + '</div><div style="font-family:monospace;font-size:11px;color:#7a6a4a;text-align:center;margin-bottom:8px;">View your saved Buzz secrets?</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">Z</span> view <span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    body = '<div style="padding:4px 0 6px;border-bottom:1px solid #333;margin-bottom:5px;">Secrets in trunk: ' + storedSecrets.length + '</div><div style="font-size:26px;margin-bottom:2px;">View your saved Buzz secrets?</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] view  [X] close</div>';
     pop._action = 'view-secrets';
   } else {
-    body = '<div style="font-family:monospace;font-size:13px;color:#7a6a4a;text-align:center;padding:8px 0;">No score to submit. Try some games or puzzles.</div><div style="margin-top:10px;padding-top:8px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:10px;color:#7a6a4a;letter-spacing:1px"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div>';
+    body = '<div style="padding:3px 0;">No score to submit. Try some games or puzzles.</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div>';
     pop._action = 'none';
   }
-  pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border-image:linear-gradient(135deg,#8a7a4a,#c8a860,#8a7a4a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#2a2010,#1a1408);border:1px solid #5a4a2a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#5a4a2a,#c8a860,#5a4a2a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#c8a860;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:1px;margin-bottom:4px;">~ Trunk ~</div>' + body + '</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;text-align:center;line-height:1.7;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Trunk ~</div>' + body + '</div>';
   pop._type = 'trunk';
 }
 
 function isWalkable(gx, gy) {
-  var tx = Math.floor((gx + 16) / TILE);
-  var ty = Math.floor((gy + 14) / TILE);
+  var tx = Math.floor((gx + 19) / TILE);
+  var ty = Math.floor((gy + 16) / TILE);
   if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return false;
   var v = collisionMap[ty][tx];
   return v === 1 || v === 5;
 }
 
 function findNearestWalkable(gx, gy) {
-  var tx = Math.floor((gx + 16) / TILE);
-  var ty = Math.floor((gy + 14) / TILE);
+  var tx = Math.floor((gx + 19) / TILE);
+  var ty = Math.floor((gy + 16) / TILE);
   for (var r = 0; r < 200; r++) {
     for (var dy = -r; dy <= r; dy++) {
       for (var dx = -r; dx <= r; dx++) {
@@ -665,14 +675,27 @@ function preload(name, url) {
   img.src = url;
   imgCache[name] = img;
 }
-for (var r = 0; r < 4; r++) {
-  for (var c = 0; c < 3; c++)
-    preload('cultist_' + c + '_' + r, ASSETS + '/sprites/cultist_' + c + '_' + r + '.png');
+preload('lua_walk_d_0', ASSETS + '/sprites/lua_walk_d_0.png');
+preload('lua_walk_d_1', ASSETS + '/sprites/lua_walk_d_1.png');
+preload('lua_walk_u_0', ASSETS + '/sprites/lua_walk_u_0.png');
+preload('lua_walk_u_1', ASSETS + '/sprites/lua_walk_u_1.png');
+preload('lua_idle_d_0', ASSETS + '/sprites/lua_idle_d_0.png');
+preload('lua_idle_d_1', ASSETS + '/sprites/lua_idle_d_1.png');
+preload('lua_idle_d_2', ASSETS + '/sprites/lua_idle_d_2.png');
+preload('lua_idle_d_3', ASSETS + '/sprites/lua_idle_d_3.png');
+preload('lua_idle_u_0', ASSETS + '/sprites/lua_idle_u_0.png');
+preload('lua_idle_u_1', ASSETS + '/sprites/lua_idle_u_1.png');
+preload('lua_roll_d_0', ASSETS + '/sprites/lua_roll_d_0.png');
+preload('lua_roll_d_1', ASSETS + '/sprites/lua_roll_d_1.png');
+preload('lua_roll_d_2', ASSETS + '/sprites/lua_roll_d_2.png');
+preload('lua_roll_u_0', ASSETS + '/sprites/lua_roll_u_0.png');
+preload('lua_roll_u_1', ASSETS + '/sprites/lua_roll_u_1.png');
+preload('lua_roll_u_2', ASSETS + '/sprites/lua_roll_u_2.png');
+for (var r = 0; r < 4; r++)
   for (var c = 0; c < 9; c++)
     preload('wizard_' + c + '_' + r, ASSETS + '/sprites/wizard_' + c + '_' + r + '.png');
-  for (var s = 0; s < 28; s++)
-    preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
-}
+for (var s = 0; s < 28; s++)
+  preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
 preload('udayan_sit_1_2', ASSETS + '/sprites/udayan_sit_1_2.png');
 preload('rowboat', BOAT_SHEET);
 preload('boat_left', ASSETS + '/sprites/boat_left.png');
@@ -681,12 +704,18 @@ preload('boat_down', ASSETS + '/sprites/boat_down.png');
 preload('boat_up', ASSETS + '/sprites/boat_up.png');
 
 var viewport = document.getElementById('viewport');
+viewport.style.width = Math.round(500 / gameZoom) + 'px';
+viewport.style.height = Math.round(500 / gameZoom) + 'px';
+viewport.style.transform = 'scale(' + gameZoom + ')';
+viewport.style.transformOrigin = 'top left';
 var layer = document.getElementById('gameLayer');
 
 var elP = document.createElement('div');
-elP.className = 'sprite';
-elP.style.zIndex = '5';
+elP.className = 'player-wrapper';
 layer.appendChild(elP);
+var elPSprite = document.createElement('div');
+elPSprite.className = 'player-sprite';
+elP.appendChild(elPSprite);
 
 // --- Gangesh Upadhyay NPC: stationary with random spell animations ---
 var npcEl = document.createElement('div');
@@ -734,10 +763,10 @@ function updateNPC() {
 var lastNpcSpriteBg = '';
 function renderNPC() {
   var scrEl = document.querySelector('.screen');
-  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
-  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
-  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
-  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  var viewW = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
+  var viewH = (scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H) / gameZoom;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 19 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 21 - viewH / 2));
 
   var newBg = 'url(' + ASSETS + '/sprites/wizard_spell_' + npcSpellFrame + '.png)';
   npcEl.style.transform = 'translate(' + Math.round(npx - camX) + 'px, ' + Math.round(npy - camY) + 'px)';
@@ -765,10 +794,10 @@ function updateUdayan() {}
 var lastUdayanBg = '';
 function renderUdayan() {
   var scrEl = document.querySelector('.screen');
-  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
-  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
-  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
-  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  var viewW = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
+  var viewH = (scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H) / gameZoom;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 19 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 21 - viewH / 2));
 
   var newBg = 'url(' + ASSETS + '/sprites/udayan_sit_1_2.png)';
   udayanEl.style.transform = 'translate(' + Math.round(udx - camX) + 'px, ' + Math.round(udy - camY) + 'px)';
@@ -794,10 +823,10 @@ function initBoat() {
 function renderBoat() {
   if (!boatEl || boatEl.style.display === 'none') return;
   var scrEl = document.querySelector('.screen');
-  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
-  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
-  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
-  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  var viewW = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
+  var viewH = (scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H) / gameZoom;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 19 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 21 - viewH / 2));
   var tx = Math.round(boatX - camX);
   var ty = Math.round(boatY - camY);
   var imgName = 'boat_left.png';
@@ -835,18 +864,27 @@ var sparkleHues = [0,45,90,135,180,225,270,315];
 
 var STEP = 3;
 var DIAG_STEP = Math.round(STEP * 0.7071);
+var ROLL_STEP = Math.round(STEP * 1.8);
+var ROLL_DIAG = Math.round(ROLL_STEP * 0.7071);
 var px = 144, py = 194, pDir = 0, pMoving = false, pWalk = 0;
+var initVW = Math.round(500 / gameZoom), initVH = Math.round(500 / gameZoom);
+worldBg.style.left = (-Math.max(0, Math.min(WORLD_W - initVW, px + 19 - initVW / 2))) + 'px';
+worldBg.style.top = (-Math.max(0, Math.min(WORLD_H - initVH, py + 21 - initVH / 2))) + 'px';
 var lastDir = 'down';
 var dirNameToPDir = {left:1, right:2, up:3, down:0};
 var nearTrigger = null;
 var doorDismissed = false;
 var lastNearDoorKey = null;
 var lastSpriteBg = '';
+var lastFlipState = '';
+var playerAnim = 'idle';
+var animFrame = 0;
+var pRolling = false, rollTimer = 0, rollCooldown = 0, rollVx = 0, rollVy = 0;
 var navPaused = false;
 var navPauseTick = 0;
 
 function navigatePopup(dir, fromDpad) {
-  if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'gangesh-upadhyay')) {
+  if (activePopup && (activePopup._type === 'secrets' || activePopup._type === 'view-secrets' || activePopup._type === 'gangesh-upadhyay' || activePopup._type === 'settings')) {
     if (activePopup._type === 'secrets') {
       var newSel = activePopup._selected;
       if (dir === 'up') newSel = 0;
@@ -876,9 +914,60 @@ function navigatePopup(dir, fromDpad) {
         renderGangeshUpadhyayPopup(activePopup);
       }
     }
+    if (activePopup._type === 'settings') {
+      var newSel = activePopup._selected;
+      if (dir === 'up') newSel = 0;
+      else if (dir === 'down') newSel = 1;
+      if (newSel !== activePopup._selected) {
+        activePopup._selected = newSel;
+        settingsSelected = newSel;
+        renderSettingsOverlay(activePopup);
+      }
+    }
     return true;
   }
   return false;
+}
+
+var settingsSelected = 0;
+function showSettingsOverlay() {
+  if (activePopup) { if (activePopup._type !== 'door') activePopup.remove(); else return; }
+  var pop = document.createElement('div');
+  pop._type = 'settings';
+  pop._selected = 0; settingsSelected = 0;
+  pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  renderSettingsOverlay(pop);
+  (document.querySelector('.screen') || document.body).appendChild(pop);
+  activePopup = pop;
+}
+function renderSettingsOverlay(pop) {
+  var sel = pop ? pop._selected : settingsSelected;
+  var audioText = audioMuted ? 'Off' : 'On';
+  var audioArrow = sel === 0 ? '>' : '&nbsp;';
+  var audioCls = sel === 0 ? '#e0e0e0' : '#888';
+  var audioOp = sel === 0 ? '' : 'opacity:0.5;';
+  var zoomArrow = sel === 1 ? '>' : '&nbsp;';
+  var zoomCls = sel === 1 ? '#e0e0e0' : '#888';
+  var zoomOp = sel === 1 ? '' : 'opacity:0.5;';
+  var zoomText = zoomLabels[zoomIdx];
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:' + audioCls + ';' + audioOp + 'text-align:left;padding:2px 6px;">' + audioArrow + ' Audio: ' + audioText + '</div><div style="color:' + zoomCls + ';' + zoomOp + 'text-align:left;padding:2px 6px;">' + zoomArrow + ' Screen Size: ' + zoomText + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
+  if (pop) pop._selected = sel;
+}
+function activateSettings() {
+  if (settingsSelected === 0) {
+    var bgm = document.getElementById('bgm');
+    if (audioMuted) {
+      bgm.volume = 0.35; bgm.currentTime = 0; bgm.play().catch(function(){});
+      audioMuted = false;
+    } else { bgm.pause(); audioMuted = true; }
+  } else {
+    zoomIdx = (zoomIdx + 1) % zoomValues.length;
+    var val = zoomValues[zoomIdx];
+    layoutEl.style.transform = 'scale(' + val + ')';
+    localStorage.setItem('hyvmind-zoom', val);
+    window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
+  }
+  if (activePopup && activePopup._type === 'settings') renderSettingsOverlay(activePopup);
 }
 
 document.addEventListener('keydown', function(e) {
@@ -893,6 +982,18 @@ document.addEventListener('keydown', function(e) {
     if (btn) { btn.classList.add('active'); }
     if (!navigatePopup(dir, false)) { dpadState[dir] = true; lastDir = dir; }
   }
+  if (e.key === ' ') {
+    e.preventDefault();
+    document.getElementById('rollBtn').classList.add('active');
+    setTimeout(function() { document.getElementById('rollBtn').classList.remove('active'); }, 150);
+    if (!pRolling && rollCooldown <= 0 && !gamePaused && !navPaused && !activePopup && !isRiding) {
+      var sx = 0, sy = 0;
+      if (dpadState['left']) sx = -ROLL_STEP; if (dpadState['right']) sx = ROLL_STEP;
+      if (dpadState['up']) sy = -ROLL_STEP; if (dpadState['down']) sy = ROLL_STEP;
+      if (sx !== 0 && sy !== 0) { sx = sx < 0 ? -ROLL_DIAG : ROLL_DIAG; sy = sy < 0 ? -ROLL_DIAG : ROLL_DIAG; }
+      if (sx !== 0 || sy !== 0) { rollVx = sx; rollVy = sy; pRolling = true; rollTimer = 8; pMoving = true; if (sy < 0) pDir = 3; else if (sy > 0) pDir = 0; else if (sx < 0) pDir = 1; else if (sx > 0) pDir = 2; }
+    }
+  }
   if (e.key === 'Enter') { if (activePopup && activePopup._type === 'input') { activateZ(); return; } }
   if (e.key === 'z' || e.key === 'Z') { document.getElementById('btnZ').classList.add('active'); activateZ(); setTimeout(function() { document.getElementById('btnZ').classList.remove('active'); }, 150); }
   if (e.key === 'x' || e.key === 'X') { document.getElementById('btnX').classList.add('active'); if (activePopup && activePopup._type === 'door') doorDismissed = true; if (activePopup && activePopup._type === 'secrets') { closePopup(); menuSelected = 0; secretsScroll = 0; activeMenu = null; } else if (activePopup && activePopup._type === 'view-secrets') { closePopup(); activeMenu = 'secrets'; showSecretsMenu(); } else if (activePopup && (activePopup._type === 'startup' || activePopup._type === 'welcome')) { closePopup(); gamePaused = false; } else if (activePopup && activePopup._type === 'gangesh-upadhyay') { if (activePopup._path.length === 0) { closePopup(); } else { activePopup._path.pop(); activePopup._showing = 'menu'; activePopup._selected = 0; delete activePopup._sentences; delete activePopup._sentenceStep; renderGangeshUpadhyayPopup(activePopup); } } else { closePopup(); } setTimeout(function() { document.getElementById('btnX').classList.remove('active'); }, 150); }
@@ -901,8 +1002,8 @@ document.addEventListener('keydown', function(e) {
 });
 
 function debugCollision() {
-  var tx = Math.floor((px + 16) / TILE);
-  var ty = Math.floor((py + 14) / TILE);
+  var tx = Math.floor((px + 19) / TILE);
+  var ty = Math.floor((py + 16) / TILE);
   console.log('DEBUG: pos=(' + px + ',' + py + ') tile=(' + tx + ',' + ty + ') val=' + collisionMap[ty][tx] + ' nearTrigger=' + (nearTrigger ? nearTrigger.key : 'null') + ' nearDoor=' + (nearDoor ? nearDoor.key + ' label=' + (doorLabels[nearDoor.key] || 'none') : 'null') + ' nearTrigger msg=' + (nearTrigger ? triggerMessages[nearTrigger.key] : 'null') + ' doorLabels keys=' + Object.keys(doorLabels).join(','));
 }
 
@@ -920,8 +1021,8 @@ function activateZ() {
         window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
         closePopup();
         var pop = document.createElement('div');
-        pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-        pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+        pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+        pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
         (document.querySelector('.screen') || document.body).appendChild(pop);
         activePopup = pop;
       }
@@ -977,8 +1078,8 @@ function activateZ() {
       if (activePopup) activePopup.remove();
       var pop = document.createElement('div');
       pop._type = 'boat-disembark';
-      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Get off the boat? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Get off the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'disembark-prompt';
@@ -994,8 +1095,8 @@ function activateZ() {
       if (activePopup) activePopup.remove();
       var pop = document.createElement('div');
       pop._type = 'boat-board';
-      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:linear-gradient(180deg,#0a1a2a,#0e2a3e);border-image:linear-gradient(135deg,#4a7a8a,#60c0f0,#4a7a8a) 1;border:3px solid;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9),inset 0 0 60px rgba(0,0,0,0.5);min-width:260px;max-width:85%;position:relative"><div style="margin:3px;background:linear-gradient(180deg,#0e1a2a,#0a141e);border:1px solid #2a5a6a;padding:20px 24px 16px"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#2a5a6a,#60c0f0,#2a5a6a);height:3px;width:60%;border-radius:1px;"></div><div style="font-family:monospace;font-size:14px;color:#b0e0f0;text-align:center;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,0.6);letter-spacing:0.5px;">~ Take the boat? ~</div><div style="font-family:monospace;font-size:11px;color:#7ab0c0;text-align:center;margin-top:8px;letter-spacing:0.5px;">[Z] yes &nbsp; [X] no</div></div></div>';
+      pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Take the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'boat-board-prompt';
@@ -1006,8 +1107,8 @@ function activateZ() {
       window.parent.postMessage({ type: 'hyvmind-submit-score' }, '*');
       closePopup();
       var pop = document.createElement('div');
-      pop.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;padding:24px 32px;text-align:center;font-family:monospace;color:#c8a860;font-size:15px;box-shadow:0 0 40px rgba(0,0,0,0.9);">Generating secret..</div>';
+      pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'trunk-submit';
@@ -1096,6 +1197,9 @@ function activateZ() {
       }
     }
     msg = 'trigger:' + triggerMessages[nearTrigger.key];
+  } else if (activePopup && activePopup._type === 'settings') {
+    activateSettings();
+    msg = 'settings';
   } else {
     showDefaultPopup();
     msg = 'nothing';
@@ -1106,25 +1210,47 @@ function activateZ() {
 
 function render() {
   var scrEl = document.querySelector('.screen');
-  var viewW = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
-  var viewH = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
-  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 16 - viewW / 2));
-  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 16 - viewH / 2));
+  var viewW = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
+  var viewH = (scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H) / gameZoom;
+  var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 19 - viewW / 2));
+  var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 21 - viewH / 2));
 
   worldBg.style.left = (-camX) + 'px';
   worldBg.style.top = (-camY) + 'px';
+  viewport.style.width = Math.round(viewW) + 'px';
+  viewport.style.height = Math.round(viewH) + 'px';
+  viewport.style.transform = 'scale(' + gameZoom + ')';
+  viewport.style.transformOrigin = 'top left';
 
-  var pTileX = Math.floor((px + 16) / TILE);
-  var pTileY = Math.floor((py + 14) / TILE);
+  var pTileX = Math.floor((px + 19) / TILE);
+  var pTileY = Math.floor((py + 16) / TILE);
   var isUnderObject = (pTileX >= 0 && pTileX < COLS && pTileY >= 0 && pTileY < ROWS && collisionMap[pTileY][pTileX] === 5);
   elP.style.transform = 'translate(' + Math.round(px - camX) + 'px, ' + Math.round(py - camY) + 'px)';
-  var pc = pMoving ? (Math.floor(pWalk / 2) % 2) : 2;
-  var newBg = frm(pc, dirMap[pDir]);
-  if (newBg !== lastSpriteBg) {
-    var img = imgCache['cultist_' + pc + '_' + dirMap[pDir]];
+
+  var anim = pRolling ? 'roll' : (pMoving ? 'walk' : 'idle');
+  var aDir = animDir(pDir);
+  var flip = isFlipped(pDir);
+  if (anim !== playerAnim) {
+    playerAnim = anim;
+    animFrame = 0;
+  } else if (anim === 'walk') {
+    if (tick % 4 === 0) animFrame = (animFrame + 1) % 2;
+  } else if (anim === 'roll') {
+    if (tick % 2 === 0) animFrame = (animFrame + 1) % 3;
+  } else {
+    var idleFrames = (aDir === 'd') ? 4 : 2;
+    if (tick % 10 === 0) animFrame = (animFrame + 1) % idleFrames;
+  }
+  var newBg = luaUrl(playerAnim, aDir, animFrame);
+  var flipState = flip ? 'scaleX(-1)' : '';
+  if (newBg !== lastSpriteBg || flipState !== lastFlipState) {
+    var cacheKey = 'lua_' + playerAnim + '_' + aDir + '_' + animFrame;
+    var img = imgCache[cacheKey];
     if (img && img.complete && img.naturalWidth > 0) {
-      elP.style.backgroundImage = newBg;
+      elPSprite.style.backgroundImage = newBg;
+      elPSprite.style.transform = flipState;
       lastSpriteBg = newBg;
+      lastFlipState = flipState;
     }
   }
   elP.style.opacity = isUnderObject ? '0.4' : '1';
@@ -1134,8 +1260,8 @@ function render() {
     if ((nearTrigger && triggerMessages[nearTrigger.key]) || nearDoor) {
       var angle = t * sparkleSpeeds[s] + sparklePhases[s];
       var hue = (sparkleHues[s] + t * 40) % 360;
-      sparkles[s].style.left = (px - camX + 16 + Math.cos(angle) * sparkleRadii[s]) + 'px';
-      sparkles[s].style.top = (py - camY + 16 + Math.sin(angle) * sparkleRadii[s]) + 'px';
+      sparkles[s].style.left = (px - camX + 19 + Math.cos(angle) * sparkleRadii[s]) + 'px';
+      sparkles[s].style.top = (py - camY + 21 + Math.sin(angle) * sparkleRadii[s]) + 'px';
       sparkles[s].style.background = 'hsl(' + hue + ', 100%, 70%)';
       sparkles[s].style.boxShadow = '0 0 ' + (sparkleSizes[s] + 4) + 'px hsl(' + hue + ', 100%, 55%)';
       sparkles[s].style.opacity = 0.7 + 0.3 * Math.sin(angle * 2.5);
@@ -1200,17 +1326,8 @@ if (savedZoom !== null) {
   if (idx >= 0) {
     zoomIdx = idx;
     layoutEl.style.transform = 'scale(' + savedZoom + ')';
-    document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
   }
 }
-document.getElementById('screenSizeBtn').addEventListener('click', function() {
-  zoomIdx = (zoomIdx + 1) % zoomValues.length;
-  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
-  var val = zoomValues[zoomIdx];
-  layoutEl.style.transform = 'scale(' + val + ')';
-  localStorage.setItem('hyvmind-zoom', val);
-  window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
-});
 // Listen for zoom changes from terrain world
 window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'hyvmind-set-zoom') {
@@ -1219,7 +1336,6 @@ window.addEventListener('message', function(e) {
     if (idx >= 0) {
       zoomIdx = idx;
       layoutEl.style.transform = 'scale(' + val + ')';
-      document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
     }
   }
 });
@@ -1266,34 +1382,38 @@ function loop() {
     }
     boatX = Math.max(0, Math.min(WORLD_W - BOAT_FRAME_W, boatX));
     boatY = Math.max(0, Math.min(WORLD_H - BOAT_FRAME_H, boatY));
-    px = boatX + Math.floor(BOAT_FRAME_W/2) - 16;
-    py = boatY + Math.floor(BOAT_FRAME_H/2) - 35;
+    px = boatX + Math.floor(BOAT_FRAME_W/2) - 19;
+    py = boatY + Math.floor(BOAT_FRAME_H/2) - 37;
   } else {
-    var dx = 0, dy = 0;
-    if (dpadState['left']) dx = -STEP; if (dpadState['right']) dx = STEP;
-    if (dpadState['up']) dy = -STEP; if (dpadState['down']) dy = STEP;
-    if (dx !== 0 && dy !== 0) { dx = dx < 0 ? -DIAG_STEP : DIAG_STEP; dy = dy < 0 ? -DIAG_STEP : DIAG_STEP; }
-    if (dx !== 0 && dy !== 0 && lastDir) pDir = dirNameToPDir[lastDir];
-    else if (dx < 0) pDir = 1;
-    else if (dx > 0) pDir = 2;
-    else if (dy < 0) pDir = 3;
-    else if (dy > 0) pDir = 0;
-    if (dx !== 0 || dy !== 0) {
-      var nx = px + dx, ny = py + dy;
-      var blockCheck = function(gx, gy) {
-        var tx = Math.floor((gx + 16) / TILE);
-        var ty = Math.floor((gy + 14) / TILE);
-        var udTtx = Math.floor((udx + 16) / TILE);
-        var udTty = Math.floor((udy + 14) / TILE);
-        return (tx === npcTileX && ty === npcTileY) || (tx === udTtx && ty === udTty);
-      };
-      if (dx !== 0 && isWalkable(nx, py) && !blockCheck(nx, py)) px = nx;
-      if (dy !== 0 && isWalkable(px, ny) && !blockCheck(px, ny)) py = ny;
+    if (pRolling) {
+      var nx = px + rollVx, ny = py + rollVy;
+      var bc = function(gx,gy){var t=Math.floor((gx+19)/8),u=Math.floor((gy+16)/8);return (t===npcTileX&&u===npcTileY)||(t===Math.floor((udx+19)/8)&&u===Math.floor((udy+16)/8));};
+      if (rollVx !== 0 && isWalkable(nx, py) && !bc(nx, py)) px = nx;
+      if (rollVy !== 0 && isWalkable(px, ny) && !bc(px, ny)) py = ny;
       pMoving = true;
-      if (tick % 2 === 0) pWalk++;
-    } else { pMoving = false; pWalk = 0; }
-    px = Math.max(0, Math.min(WORLD_W - 32, px));
-    py = Math.max(0, Math.min(WORLD_H - 32, py));
+      rollTimer--; if (rollTimer <= 0) { pRolling = false; rollCooldown = 8; pMoving = false; }
+    } else {
+      if (rollCooldown > 0) rollCooldown--;
+      var dx = 0, dy = 0;
+      if (dpadState['left']) dx = -STEP; if (dpadState['right']) dx = STEP;
+      if (dpadState['up']) dy = -STEP; if (dpadState['down']) dy = STEP;
+      if (dx !== 0 && dy !== 0) { dx = dx < 0 ? -DIAG_STEP : DIAG_STEP; dy = dy < 0 ? -DIAG_STEP : DIAG_STEP; }
+      if (dx !== 0 && dy !== 0 && lastDir) pDir = dirNameToPDir[lastDir];
+      else if (dx < 0) pDir = 1;
+      else if (dx > 0) pDir = 2;
+      else if (dy < 0) pDir = 3;
+      else if (dy > 0) pDir = 0;
+      if (dx !== 0 || dy !== 0) {
+        var nx = px + dx, ny = py + dy;
+        var bc = function(gx,gy){var t=Math.floor((gx+19)/8),u=Math.floor((gy+16)/8);return (t===npcTileX&&u===npcTileY)||(t===Math.floor((udx+19)/8)&&u===Math.floor((udy+16)/8));};
+        if (dx !== 0 && isWalkable(nx, py) && !bc(nx, py)) px = nx;
+        if (dy !== 0 && isWalkable(px, ny) && !bc(px, ny)) py = ny;
+        pMoving = true;
+        if (tick % 2 === 0) pWalk++;
+      } else { pMoving = false; pWalk = 0; }
+    }
+    px = Math.max(0, Math.min(WORLD_W - 38, px));
+    py = Math.max(0, Math.min(WORLD_H - 42, py));
   }
   checkNearbyTriggers(px, py);
   updateNPC();
@@ -1320,22 +1440,20 @@ document.addEventListener('click', startBGM);
 document.addEventListener('touchend', startBGM);
 
 var audioMuted = false;
-document.getElementById('audioToggleBtn').addEventListener('click', function() {
-  var btn = this;
-  btn.classList.add('active');
-  setTimeout(function() { btn.classList.remove('active'); }, 150);
-  var bgm = document.getElementById('bgm');
-  if (!bgm) return;
-  if (audioMuted) {
-    bgm.volume = 0.35;
-    bgm.currentTime = 0;
-    bgm.play().catch(function(){});
-    btn.textContent = 'Audio On';
-    audioMuted = false;
-  } else {
-    bgm.pause();
-    btn.textContent = 'Audio Off';
-    audioMuted = true;
+document.getElementById('settingsBtn').addEventListener('click', function() {
+  this.classList.add('active');
+  setTimeout(function() { document.getElementById('settingsBtn').classList.remove('active'); }, 150);
+  showSettingsOverlay();
+});
+document.getElementById('rollBtn').addEventListener('click', function() {
+  this.classList.add('active');
+  setTimeout(function() { document.getElementById('rollBtn').classList.remove('active'); }, 150);
+  if (!pRolling && rollCooldown <= 0 && !gamePaused && !navPaused && !isRiding) {
+    var sx = 0, sy = 0;
+    if (dpadState['left']) sx = -ROLL_STEP; if (dpadState['right']) sx = ROLL_STEP;
+    if (dpadState['up']) sy = -ROLL_STEP; if (dpadState['down']) sy = ROLL_STEP;
+    if (sx !== 0 && sy !== 0) { sx = sx < 0 ? -ROLL_DIAG : ROLL_DIAG; sy = sy < 0 ? -ROLL_DIAG : ROLL_DIAG; }
+    if (sx !== 0 || sy !== 0) { rollVx = sx; rollVy = sy; pRolling = true; rollTimer = 8; pMoving = true; if (sy < 0) pDir = 3; else if (sy > 0) pDir = 0; else if (sx < 0) pDir = 1; else if (sx > 0) pDir = 2; }
   }
 });
 
@@ -1345,8 +1463,8 @@ initCollision(function() {
       var n = findNearestWalkable(px, py);
       px = n.x; py = n.y;
       if (!isWalkable(px, py)) {
-        for (var yy = -16; yy <= 16; yy += 8)
-          for (var xx = -16; xx <= 16; xx += 8)
+        for (var yy = -19; yy <= 19; yy += 8)
+          for (var xx = -22; xx <= 22; xx += 8)
             if (isWalkable(144 + xx, 194 + yy)) { px = 144 + xx; py = 194 + yy; yy = 999; break; }
       }
     }

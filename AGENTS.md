@@ -2,7 +2,9 @@
 
 ## User Preferences
 
-[No preferences yet]
+- prefer `gameZoom = 2` for both main world and terrain world (camera viewport shrinks from 500x500 to 250x250, CSS-scaled 2x to fill screen; ~31 tiles visible around player)
+- dodge roll: Space key or Roll button, 0.3s duration, 0.3s cooldown, 1.78× walk speed, 3-frame animation (LoL-style). Roll sprites at `/assets/hyvmind/sprites/lua_roll_[d/u]_[0-2].png`
+- Settings button (top) opens overlay with Audio toggle + Screen Size cycle. Screen Size button was removed; Roll button sits in its place under Z/X buttons.
 
 ## Verified Commands
 

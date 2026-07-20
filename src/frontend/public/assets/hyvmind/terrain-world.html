@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TERRAIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; color-scheme: dark; }
@@ -28,17 +29,19 @@
     .top-btn:active,.top-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
     .dpad-btn::after,.action-btn::after,.screen-size-btn::after,.top-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
   .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
-  .viewport { position:absolute;inset:0;overflow:hidden; }
+  .viewport { position:absolute;inset:0;overflow:hidden;image-rendering:pixelated; }
   .world-layer { display:block;image-rendering:pixelated;position:absolute;top:0;left:0; }
   .game-layer { position:absolute;inset:0;z-index:1; }
   .sprite { position:absolute;left:0;top:0;width:32px;height:36px;background-size:32px 36px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat;z-index:5;will-change:transform; }
+.player-wrapper { position:absolute;left:0;top:0;width:38px;height:42px;pointer-events:none;z-index:5;will-change:transform; }
+.player-sprite { position:absolute;left:0;top:0;width:38px;height:42px;background-size:38px 42px;image-rendering:pixelated;pointer-events:none;background-repeat:no-repeat; }
     #minimap { position:absolute;top:4px;left:4px;z-index:10;pointer-events:none;image-rendering:pixelated;border:1px solid rgba(255,255,255,0.15);border-radius:2px; }
 </style>
 </head>
 <body tabindex="-1">
 <div id="gameContainer" style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%">
   <div class="layout" id="gameLayout">
-    <button id="audioToggleBtn" class="top-btn" style="margin-bottom:12px">Audio On</button>
+    <button id="settingsBtn" class="top-btn" style="margin-bottom:12px">Settings</button>
     <div class="layout-row">
       <div class="dpad">
         <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
@@ -59,11 +62,11 @@
           <button class="action-btn" id="btnX">X</button>
         </div>
         <div class="zoom-row">
-          <button class="screen-size-btn" id="screenSizeBtn">Screen Size:100%</button>
+          <button class="screen-size-btn" id="rollBtn">Roll</button>
         </div>
       </div>
     </div>
-    <button id="backBtn" type="button" style="margin-top:12px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
   </div>
 </div>
 <audio id="bgm" src="/assets/hyvmind/which_brand_of_mustard_shall_i_buy.mp3" loop preload="auto"></audio>
@@ -80,6 +83,7 @@ var WORLD_W = COLS * TILE;
 var WORLD_H = ROWS * TILE;
 var SCREEN_W = 550;
 var SCREEN_H = 480;
+var gameZoom = 2;
 
 // Baobab trees — individual species files, native pixel sizes
 var BAOBAB_BASE = '/assets/lpc/baobab/lpc-baobab/';
@@ -245,34 +249,59 @@ var gObjects = [];
 var px = 0, py = 0, pDir = 0, pMoving = false, pWalk = 0;
 var STEP = 5;
 var DIAG_STEP = Math.round(STEP * 0.7071);
+var ROLL_STEP = Math.round(STEP * 1.8);
+var ROLL_DIAG = Math.round(ROLL_STEP * 0.7071);
 var lastDir = 'down';
 var dirNameToPDir = {left:1, right:2, up:3, down:0};
 var gamePaused = false;
 var activePopup = null;
 var navPaused = false;
-function frm(col, row) { return 'url(' + ASSETS + '/sprites/cultist_' + col + '_' + row + '.png)'; }
+function luaUrl(anim, dir, frame) { return 'url(' + ASSETS + '/sprites/lua_' + anim + '_' + dir + '_' + frame + '.png)'; }
+function animDir(pDir) { return pDir === 3 ? 'u' : 'd'; }
+function isFlipped(pDir) { return pDir === 1; }
 var dirMap = [2,3,1,0];
 var imgCache = {};
 function preload(n,u){var i=new Image();i.src=u;imgCache[n]=i;}
-for(var r=0;r<4;r++)for(var c=0;c<3;c++)preload('cultist_'+c+'_'+r,ASSETS+'/sprites/cultist_'+c+'_'+r+'.png');
+preload('lua_walk_d_0',ASSETS+'/sprites/lua_walk_d_0.png');
+preload('lua_walk_d_1',ASSETS+'/sprites/lua_walk_d_1.png');
+preload('lua_walk_u_0',ASSETS+'/sprites/lua_walk_u_0.png');
+preload('lua_walk_u_1',ASSETS+'/sprites/lua_walk_u_1.png');
+preload('lua_idle_d_0',ASSETS+'/sprites/lua_idle_d_0.png');
+preload('lua_idle_d_1',ASSETS+'/sprites/lua_idle_d_1.png');
+preload('lua_idle_d_2',ASSETS+'/sprites/lua_idle_d_2.png');
+preload('lua_idle_d_3',ASSETS+'/sprites/lua_idle_d_3.png');
+preload('lua_idle_u_0',ASSETS+'/sprites/lua_idle_u_0.png');
+preload('lua_idle_u_1',ASSETS+'/sprites/lua_idle_u_1.png');
+preload('lua_roll_d_0',ASSETS+'/sprites/lua_roll_d_0.png');
+preload('lua_roll_d_1',ASSETS+'/sprites/lua_roll_d_1.png');
+preload('lua_roll_d_2',ASSETS+'/sprites/lua_roll_d_2.png');
+preload('lua_roll_u_0',ASSETS+'/sprites/lua_roll_u_0.png');
+preload('lua_roll_u_1',ASSETS+'/sprites/lua_roll_u_1.png');
+preload('lua_roll_u_2',ASSETS+'/sprites/lua_roll_u_2.png');
 
 var viewport = document.getElementById('viewport');
 var layer = document.getElementById('gameLayer');
 var worldBg = document.getElementById('worldBg');
 var elP = document.createElement('div');
-elP.className = 'sprite';
-elP.style.zIndex = '5';
+elP.className = 'player-wrapper';
 layer.appendChild(elP);
+var elPSprite = document.createElement('div');
+elPSprite.className = 'player-sprite';
+elP.appendChild(elPSprite);
 var lastSpriteBg = '';
+var lastFlipState = '';
+var playerAnim = 'idle';
+var animFrame = 0;
+var pRolling = false, rollTimer = 0, rollCooldown = 0, rollVx = 0, rollVy = 0;
 
 function showPopup(m) {
   if(activePopup)activePopup.remove();
-  var p=document.createElement('div');p.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:auto;';
-  p.innerHTML='<div style="background:linear-gradient(180deg,#1a1208,#2a1e0e);border:3px solid #8a7a4a;border-radius:2px;box-shadow:0 0 40px rgba(0,0,0,0.9);min-width:260px;padding:20px 24px 16px"><div style="font-family:monospace;font-size:14px;color:#e0d0b0;text-align:center;line-height:1.7;min-height:50px">'+m+'</div><div style="margin-top:14px;padding-top:10px;border-top:1px solid #3a2e18;text-align:center;font-family:monospace;font-size:14px;color:#7a6a4a"><span style="border:1px solid #5a4a2a;padding:1px 5px;background:rgba(0,0,0,0.3);border-radius:1px;color:#8a7a5a">X</span> close</div></div>';
+  var p=document.createElement('div');p.style.cssText='position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  p.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">'+m+'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen')||document.body).appendChild(p);activePopup=p;
 }
 function closePopup(){if(activePopup){activePopup.remove();activePopup=null;}}
-function isWalkable(gx,gy){var tx=Math.floor(gx/TILE),ty=Math.floor(gy/TILE);if(tx<0||tx>=COLS||ty<0||ty>=ROWS)return false;return collisionMap[ty]&&collisionMap[ty][tx]===1;}
+function isWalkable(gx,gy){var tx=Math.floor((gx+19)/TILE),ty=Math.floor((gy+16)/TILE);if(tx<0||tx>=COLS||ty<0||ty>=ROWS)return false;return collisionMap[ty]&&collisionMap[ty][tx]===1;}
 
 // Cellular automaton clustering: returns 2D grid of cluster IDs (0 = empty)
 function growClusters(seedGrid, passes, prng, birthThresh, growthProb) {
@@ -512,10 +541,10 @@ function renderMinimap() {
   minimapCtx.fillRect(0, 0, mm, mm);
   // Viewport rectangle
   var scrEl = document.querySelector('.screen');
-  var vw = scrEl ? (scrEl.clientWidth || SCREEN_W) : SCREEN_W;
-  var vh = scrEl ? (scrEl.clientHeight || SCREEN_H) : SCREEN_H;
-  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 16 - vw/2));
-  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 16 - vh/2));
+  var vw = (scrEl ? (scrEl.clientWidth || SCREEN_W) : SCREEN_W) / gameZoom;
+  var vh = (scrEl ? (scrEl.clientHeight || SCREEN_H) : SCREEN_H) / gameZoom;
+  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 19 - vw/2));
+  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 21 - vh/2));
   minimapCtx.strokeStyle = '#fff';
   minimapCtx.lineWidth = 2;
   minimapCtx.strokeRect(cx / WORLD_W * mm - 1, cy / WORLD_H * mm - 1, vw / WORLD_W * mm + 2, vh / WORLD_H * mm + 2);
@@ -523,21 +552,40 @@ function renderMinimap() {
 
 function render() {
   var scrEl = document.querySelector('.screen');
-  var vw = scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W;
-  var vh = scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H;
-  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 16 - vw/2));
-  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 16 - vh/2));
+  var vw = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
+  var vh = (scrEl ? scrEl.clientHeight || SCREEN_H : SCREEN_H) / gameZoom;
+  var cx = Math.max(0, Math.min(WORLD_W - vw, px + 19 - vw/2));
+  var cy = Math.max(0, Math.min(WORLD_H - vh, py + 21 - vh/2));
   worldBg.style.left = (-cx) + 'px'; worldBg.style.top = (-cy) + 'px';
-  var pc = pMoving ? (Math.floor(pWalk/2)%2) : 2;
-  elP.style.transform = 'translate(' + Math.round(px-cx) + 'px,' + Math.round(py-cy) + 'px)';
-  var nb = frm(pc, dirMap[pDir]);
-  if (nb !== lastSpriteBg) {
-    var sn = 'cultist_' + pc + '_' + dirMap[pDir];
-    var im = imgCache[sn];
-    if (im && im.complete && im.naturalWidth > 0) { elP.style.backgroundImage = nb; lastSpriteBg = nb; }
+  viewport.style.width = Math.round(vw) + 'px';
+  viewport.style.height = Math.round(vh) + 'px';
+  viewport.style.transform = 'scale(' + gameZoom + ')';
+  viewport.style.transformOrigin = 'top left';
+  elP.style.transform = 'translate(' + Math.round(px - cx) + 'px,' + Math.round(py - cy) + 'px)';
+
+  var anim = pRolling ? 'roll' : (pMoving ? 'walk' : 'idle');
+  var aDir = animDir(pDir);
+  var flip = isFlipped(pDir);
+  if (anim !== playerAnim) {
+    playerAnim = anim;
+    animFrame = 0;
+  } else if (anim === 'walk') {
+    if (tick % 4 === 0) animFrame = (animFrame + 1) % 2;
+  } else if (anim === 'roll') {
+    if (tick % 2 === 0) animFrame = (animFrame + 1) % 3;
+  } else {
+    var idleFrames = (aDir === 'd') ? 4 : 2;
+    if (tick % 10 === 0) animFrame = (animFrame + 1) % idleFrames;
+  }
+  var nb = luaUrl(playerAnim, aDir, animFrame);
+  var flipState = flip ? 'scaleX(-1)' : '';
+  if (nb !== lastSpriteBg || flipState !== lastFlipState) {
+    var cacheKey = 'lua_' + playerAnim + '_' + aDir + '_' + animFrame;
+    var im = imgCache[cacheKey];
+    if (im && im.complete && im.naturalWidth > 0) { elPSprite.style.backgroundImage = nb; elPSprite.style.transform = flipState; lastSpriteBg = nb; lastFlipState = flipState; }
   }
   // Player transparency when under tree canopy
-  var pL = px - 16, pR = px + 16, pT = py - 18, pB = py + 18;
+  var pL = px, pR = px + 38, pT = py, pB = py + 42;
   var underTree = false;
   for (var oi = 0; oi < gObjects.length; oi++) {
     var o = gObjects[oi];
@@ -549,10 +597,58 @@ function render() {
   renderMinimap();
 }
 
+var settingsSelected = 0;
+function showSettingsOverlay() {
+  if(activePopup)activePopup.remove();
+  var pop=document.createElement('div');
+  pop._type='settings';pop._selected=0;settingsSelected=0;
+  pop.style.cssText='position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
+  renderSettingsOverlay(pop);
+  (document.querySelector('.screen')||document.body).appendChild(pop);activePopup=pop;
+}
+function renderSettingsOverlay(pop) {
+  var sel=pop?pop._selected:settingsSelected;
+  var audioText=audioMuted?'Off':'On';
+  var audioArrow=sel===0?'>':'&nbsp;';var audioCls=sel===0?'#e0e0e0':'#888';var audioOp=sel===0?'':'opacity:0.5;';
+  var zoomArrow=sel===1?'>':'&nbsp;';var zoomCls=sel===1?'#e0e0e0':'#888';var zoomOp=sel===1?'':'opacity:0.5;';
+  var zoomText=zoomLabels[zoomIdx];
+  pop.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:'+audioCls+';'+audioOp+'text-align:left;padding:2px 6px;">'+audioArrow+' Audio: '+audioText+'</div><div style="color:'+zoomCls+';'+zoomOp+'text-align:left;padding:2px 6px;">'+zoomArrow+' Screen Size: '+zoomText+'</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
+  if(pop)pop._selected=sel;
+}
+function navigateSettings(dir) {
+  if(dir==='up')settingsSelected=0;else if(dir==='down')settingsSelected=1;
+  if(activePopup&&activePopup._type==='settings'){activePopup._selected=settingsSelected;renderSettingsOverlay(activePopup);}
+}
+function activateSettings() {
+  if(settingsSelected===0){
+    var bgm=document.getElementById('bgm');
+    if(audioMuted){bgm.volume=0.2;bgm.currentTime=0;bgm.play().catch(function(){});audioMuted=false;}
+    else{bgm.pause();audioMuted=true;}
+  }else{
+    zoomIdx=(zoomIdx+1)%zoomValues.length;
+    var val=zoomValues[zoomIdx];
+    layoutEl.style.transform='scale('+val+')';
+    localStorage.setItem('hyvmind-zoom',val);
+    window.parent.postMessage({type:'hyvmind-zoom-sync',zoom:val},'*');
+  }
+  if(activePopup&&activePopup._type==='settings')renderSettingsOverlay(activePopup);
+}
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closeTerrain(); return; }
+  if (activePopup && activePopup._type === 'settings') {
+    if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); if(d==='up'||d==='down')navigateSettings(d); return; }
+    if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');activateSettings();setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);return;}
+    if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);return;}
+    return;
+  }
+  if (e.key === ' ') {
+    e.preventDefault();
+    document.getElementById('rollBtn').classList.add('active');
+    setTimeout(function(){document.getElementById('rollBtn').classList.remove('active')},150);
+    if(!pRolling&&rollCooldown<=0&&!gamePaused&&!navPaused&&!activePopup){var sx=0,sy=0;if(dpadState['left'])sx=-ROLL_STEP;if(dpadState['right'])sx=ROLL_STEP;if(dpadState['up'])sy=-ROLL_STEP;if(dpadState['down'])sy=ROLL_STEP;if(sx!==0&&sy!==0){sx=sx<0?-ROLL_DIAG:ROLL_DIAG;sy=sy<0?-ROLL_DIAG:ROLL_DIAG;}if(sx!==0||sy!==0){rollVx=sx;rollVy=sy;pRolling=true;rollTimer=8;pMoving=true;if(sy<0)pDir=3;else if(sy>0)pDir=0;else if(sx<0)pDir=1;else if(sx>0)pDir=2;}}
+  }
   if (e.key.startsWith('Arrow')) { e.preventDefault(); var d=e.key.slice(5).toLowerCase(); var b=document.querySelector('.dpad-btn.dpad-'+d); if(b)b.classList.add('active'); dpadState[d]=true; lastDir=d; }
-  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
+  if (e.key==='z'||e.key==='Z'){document.getElementById('btnZ').classList.add('active');if(activePopup&&activePopup._type==='settings')activateSettings();else if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){document.getElementById('btnZ').classList.remove('active')},150);}
   if (e.key==='x'||e.key==='X'){document.getElementById('btnX').classList.add('active');closePopup();setTimeout(function(){document.getElementById('btnX').classList.remove('active')},150);}
 });
 document.addEventListener('keyup', function(e) {
@@ -560,12 +656,12 @@ document.addEventListener('keyup', function(e) {
 });
 var dpadState = {};
 document.querySelectorAll('.dpad-btn').forEach(function(b){
-  function s(e){e.preventDefault();b.classList.add('active');dpadState[b.dataset.dir]=true;lastDir=b.dataset.dir;}
+  function s(e){e.preventDefault();b.classList.add('active');if(activePopup&&activePopup._type==='settings'){var d=b.dataset.dir;if(d==='up'||d==='down')navigateSettings(d);}else{dpadState[b.dataset.dir]=true;lastDir=b.dataset.dir;}}
   function en(e){e.preventDefault();b.classList.remove('active');dpadState[b.dataset.dir]=false;}
   b.addEventListener('mousedown',s);b.addEventListener('mouseup',en);b.addEventListener('mouseleave',en);
   b.addEventListener('touchstart',s,{passive:false});b.addEventListener('touchend',en,{passive:false});b.addEventListener('touchcancel',en,{passive:false});
 });
-document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
+document.getElementById('btnZ').addEventListener('click',function(){this.classList.add('active');if(activePopup&&activePopup._type==='settings')activateSettings();else if(!activePopup)showPopup("hmm..looks like I'm the first one here.");setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
 document.getElementById('btnX').addEventListener('click',function(){this.classList.add('active');closePopup();setTimeout(function(){this.classList.remove('active')}.bind(this),150);});
 document.getElementById('backBtn').addEventListener('click',closeTerrain);
 
@@ -580,35 +676,18 @@ if (savedZoom !== null) {
   if (idx >= 0) {
     zoomIdx = idx;
     layoutEl.style.transform = 'scale(' + savedZoom + ')';
-    document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
   }
 }
-document.getElementById('screenSizeBtn').addEventListener('click', function() {
-  zoomIdx = (zoomIdx + 1) % zoomValues.length;
-  this.textContent = 'Screen Size:' + zoomLabels[zoomIdx];
-  var val = zoomValues[zoomIdx];
-  layoutEl.style.transform = 'scale(' + val + ')';
-  localStorage.setItem('hyvmind-zoom', val);
-  window.parent.postMessage({type:'hyvmind-zoom-sync', zoom:val},'*');
-});
 var audioMuted = false;
-document.getElementById('audioToggleBtn').addEventListener('click', function() {
-  var btn = this;
-  btn.classList.add('active');
-  setTimeout(function() { btn.classList.remove('active'); }, 150);
-  var bgm = document.getElementById('bgm');
-  if (!bgm) return;
-  if (audioMuted) {
-    bgm.volume = 0.2;
-    bgm.currentTime = 0;
-    bgm.play().catch(function(){});
-    btn.textContent = 'Audio On';
-    audioMuted = false;
-  } else {
-    bgm.pause();
-    btn.textContent = 'Audio Off';
-    audioMuted = true;
-  }
+document.getElementById('settingsBtn').addEventListener('click', function() {
+  this.classList.add('active');
+  setTimeout(function() { document.getElementById('settingsBtn').classList.remove('active'); }, 150);
+  showSettingsOverlay();
+});
+document.getElementById('rollBtn').addEventListener('click', function() {
+  this.classList.add('active');
+  setTimeout(function() { document.getElementById('rollBtn').classList.remove('active'); }, 150);
+  if(!pRolling&&rollCooldown<=0&&!gamePaused&&!navPaused){var sx=0,sy=0;if(dpadState['left'])sx=-ROLL_STEP;if(dpadState['right'])sx=ROLL_STEP;if(dpadState['up'])sy=-ROLL_STEP;if(dpadState['down'])sy=ROLL_STEP;if(sx!==0&&sy!==0){sx=sx<0?-ROLL_DIAG:ROLL_DIAG;sy=sy<0?-ROLL_DIAG:ROLL_DIAG;}if(sx!==0||sy!==0){rollVx=sx;rollVy=sy;pRolling=true;rollTimer=8;pMoving=true;if(sy<0)pDir=3;else if(sy>0)pDir=0;else if(sx<0)pDir=1;else if(sx>0)pDir=2;}}
 });
 // Listen for zoom changes from world game
 window.addEventListener('message', function(e) {
@@ -618,7 +697,6 @@ window.addEventListener('message', function(e) {
     if (idx >= 0) {
       zoomIdx = idx;
       layoutEl.style.transform = 'scale(' + val + ')';
-      document.getElementById('screenSizeBtn').textContent = 'Screen Size:' + zoomLabels[idx];
     }
   }
 });
@@ -652,15 +730,25 @@ function closeTerrain() {
   }, 2000);
 }
 
+var tick = 0;
 function loop() {
   if (navPaused) { render(); return; }
   if (gamePaused) { render(); return; }
-  var dx=0,dy=0;
-  if(dpadState['left'])dx=-STEP;if(dpadState['right'])dx=STEP;if(dpadState['up'])dy=-STEP;if(dpadState['down'])dy=STEP;
-  if(dx!==0&&dy!==0){dx=dx<0?-DIAG_STEP:DIAG_STEP;dy=dy<0?-DIAG_STEP:DIAG_STEP;}
-  if(dx!==0&&dy!==0&&lastDir)pDir=dirNameToPDir[lastDir];else if(dx<0)pDir=1;else if(dx>0)pDir=2;else if(dy<0)pDir=3;else if(dy>0)pDir=0;
-  if(dx!==0||dy!==0){var nx=px+dx,ny=py+dy;if(dx!==0&&isWalkable(nx,py))px=nx;if(dy!==0&&isWalkable(px,ny))py=ny;pMoving=true;pWalk++;}else{pMoving=false;pWalk=0;}
-  px=Math.max(0,Math.min(WORLD_W-32,px));py=Math.max(0,Math.min(WORLD_H-32,py));
+  if (activePopup && activePopup._type === 'settings') { render(); return; }
+  tick++;
+  if (pRolling) {
+    var nx=px+rollVx,ny=py+rollVy;
+    if(rollVx!==0&&isWalkable(nx,py))px=nx;if(rollVy!==0&&isWalkable(px,ny))py=ny;
+    pMoving=true;rollTimer--;if(rollTimer<=0){pRolling=false;rollCooldown=8;pMoving=false;}
+  } else {
+    if(rollCooldown>0)rollCooldown--;
+    var dx=0,dy=0;
+    if(dpadState['left'])dx=-STEP;if(dpadState['right'])dx=STEP;if(dpadState['up'])dy=-STEP;if(dpadState['down'])dy=STEP;
+    if(dx!==0&&dy!==0){dx=dx<0?-DIAG_STEP:DIAG_STEP;dy=dy<0?-DIAG_STEP:DIAG_STEP;}
+    if(dx!==0&&dy!==0&&lastDir)pDir=dirNameToPDir[lastDir];else if(dx<0)pDir=1;else if(dx>0)pDir=2;else if(dy<0)pDir=3;else if(dy>0)pDir=0;
+    if(dx!==0||dy!==0){var nx=px+dx,ny=py+dy;if(dx!==0&&isWalkable(nx,py))px=nx;if(dy!==0&&isWalkable(px,ny))py=ny;pMoving=true;pWalk++;}else{pMoving=false;pWalk=0;}
+  }
+  px=Math.max(0,Math.min(WORLD_W-38,px));py=Math.max(0,Math.min(WORLD_H-42,py));
   render();
 }
 
