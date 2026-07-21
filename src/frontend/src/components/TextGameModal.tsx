@@ -11,7 +11,6 @@ import MapsOverlay from "./MapsOverlay";
 import PixelTransition from "./TextAnimations/PixelTransition";
 import TextType from "./TextType";
 import WordlePuzzleGame from "./WordlePuzzleGame";
-declare const Supademo: { open: (id: string) => void };
 
 function isComputerScreen(): boolean {
   return window.innerWidth >= 870 && window.innerHeight >= 540;
@@ -2661,9 +2660,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [hyvmindLoading, setHyvmindLoading] = useState(true);
   const hyvmindLoadingStartRef = useRef(0);
 
-  // Whether the tutorial is loading for first-time visitors
-  const [tutorialLoading, setTutorialLoading] = useState(false);
-
   // Block hyvmind on non-computer screens
   const [mobileDenied, setMobileDenied] = useState(false);
 
@@ -2735,11 +2731,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleExit = useCallback(() => {
-    if (!localStorage.getItem("hyvmind-tutorial-seen")) {
-      localStorage.setItem("hyvmind-tutorial-seen", "true");
-      setTutorialLoading(true);
-    } else {
-      onCompleteRef.current();
+    onCompleteRef.current();
+    if (localStorage.getItem("hyvmind-tutorial-seen") !== "true") {
+      window.location.href = "/tutorial.html";
     }
   }, []);
 
@@ -3007,57 +3001,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
   }, [generatingScore, generateBuzzSecret]);
 
-  // ── Tutorial loading effect ──────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!tutorialLoading) return;
-
-    let cancelled = false;
-    let scriptLoaded = false;
-    const startTime = Date.now();
-
-    const proceed = () => {
-      if (cancelled) return;
-      setTutorialLoading(false);
-      onCompleteRef.current();
-      if (typeof Supademo !== "undefined") {
-        (Supademo as { open: (id: string) => void }).open(
-          "cmoxxf92q04az4qulear09806",
-        );
-      }
-    };
-
-    const tryProceed = () => {
-      if (cancelled) return;
-      if (scriptLoaded && Date.now() - startTime >= 2000) {
-        proceed();
-      }
-    };
-
-    if (typeof Supademo !== "undefined") {
-      scriptLoaded = true;
-    } else {
-      const script = document.createElement("script");
-      script.src = "https://script.supademo.com/supademo.js";
-      script.onload = () => {
-        scriptLoaded = true;
-        tryProceed();
-      };
-      script.onerror = () => {
-        console.warn("Failed to load tutorial");
-        scriptLoaded = true;
-        tryProceed();
-      };
-      document.head.appendChild(script);
-    }
-
-    const timer = setTimeout(tryProceed, 2000);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [tutorialLoading]);
 
   // ── Unified advance handler ────────────────────────────────────────────────
 
@@ -4024,40 +3968,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         </div>
       </div>
 
-      {/* Tutorial loading overlay — covers everything while Supademo loads */}
-      {tutorialLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black z-[100]">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <div
-              className="text-white/70"
-              style={{
-                fontFamily: '"Press Start 2P", monospace',
-                fontSize: "0.6rem",
-                letterSpacing: "0.2em",
-              }}
-            >
-              Loading..
-            </div>
-            <div className="flex gap-[2px]">
-              {Array.from({ length: 16 }).map((_, i) => {
-                const id = `tutorial-loading-${i}`;
-                return (
-                  <span
-                    key={id}
-                    className="text-white"
-                    style={{
-                      fontSize: "0.55rem",
-                      animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
-                    }}
-                  >
-                    █
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+
     </>
   );
 }

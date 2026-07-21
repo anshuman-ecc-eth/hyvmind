@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyvmind Tutorial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #000;
+      color: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      font-variant-ligatures: none;
+      font-feature-settings: "rlig" 1, "calt" 1;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top bar — matches app header pattern */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      background: #000;
+      border-bottom: 1px dashed oklch(20% 0 0);
+    }
+    .top-bar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .top-bar .logo { height: 20px; object-fit: contain; }
+    .top-bar .back-link {
+      font-size: 0.75rem;
+      color: oklch(65% 0 0);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+    .top-bar .back-link:hover { color: #fff; }
+
+    /* Subtitle area */
+    .intro {
+      padding: 80px 0 48px;
+      text-align: center;
+    }
+    .intro .subtitle {
+      font-size: 1.1rem;
+      color: oklch(65% 0 0);
+      line-height: 1.5;
+    }
+
+    /* Steps */
+    .step {
+      display: flex;
+      gap: 48px;
+      padding: 40px 0;
+      border-bottom: 1px dashed oklch(20% 0 0);
+      align-items: center;
+    }
+    .step:last-child { border-bottom: none; padding-bottom: 80px; }
+    .step.reverse { flex-direction: row-reverse; }
+    .step-content { flex: 1; min-width: 0; }
+    .step-number {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: oklch(65% 0 0);
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .step-content p {
+      font-size: 1rem;
+      color: #fff;
+      line-height: 1.7;
+    }
+    .step-video { flex: 1; min-width: 0; }
+    .step-video video {
+      width: 100%;
+      border: 1px dashed oklch(20% 0 0);
+      background: oklch(15% 0 0);
+      display: block;
+      cursor: pointer;
+      outline: none;
+    }
+    .step-video video::-webkit-media-controls { display: none !important; }
+
+    /* Questions section */
+    .questions-section {
+      text-align: center;
+      padding: 40px 0 60px;
+    }
+    .questions-btn {
+      display: inline-block;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      color: oklch(65% 0 0);
+      background: transparent;
+      border: 1px dashed oklch(20% 0 0);
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .questions-btn:hover {
+      color: #fff;
+      background: oklch(15% 0 0);
+      border-color: oklch(65% 0 0);
+    }
+    .questions-msg {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+      font-size: 0.8rem;
+      color: oklch(65% 0 0);
+      line-height: 1.6;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .questions-msg.open {
+      max-height: 200px;
+      opacity: 1;
+      padding-top: 20px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0 48px;
+      font-size: 0.7rem;
+      color: oklch(65% 0 0);
+    }
+    .footer a { color: oklch(65% 0 0); text-decoration: none; }
+    .footer a:hover { color: #fff; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .step { flex-direction: column !important; gap: 24px; padding: 32px 0; }
+      .intro { padding: 64px 0 32px; }
+      .step-number { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="container">
+      <img src="/assets/hyvmind_logo_dark.png" alt="hyvmind" class="logo" />
+      <a href="/" class="back-link">&larr; Back to app</a>
+    </div>
+  </header>
+
+  <!-- Intro -->
+  <div class="intro">
+    <div class="container">
+      <div class="subtitle">A step by step walkthrough of the Hyvmind app.<br />From Buzz to Trust.</div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="container" id="steps">
+
+    <div class="step" data-step="1">
+      <div class="step-content">
+        <div class="step-number">STEP 1</div>
+        <p>Hyvmind is a note-sharing app. Earn Buzz and use it to publish graphs.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/1.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="2">
+      <div class="step-content">
+        <div class="step-number">STEP 2</div>
+        <p>Create a fresh top-level folder or import existing notes from your device.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/2.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="step-content">
+        <div class="step-number">STEP 3</div>
+        <p>Hyvmind follows a four-folder hierarchy. The top-level folder is called a Curation. Think of it as a broad category or area of law.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/3.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="4">
+      <div class="step-content">
+        <div class="step-number">STEP 4</div>
+        <p>The second level is called a Swarm. Use it for statutes, caselaws, reports or general themes.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/4.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="5">
+      <div class="step-content">
+        <div class="step-number">STEP 5</div>
+        <p>The third level is called a Location. Use it for important paragraphs, sections, orders, chapters etc.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/5.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="6">
+      <div class="step-content">
+        <div class="step-number">STEP 6</div>
+        <p>The fourth level is both important and subjective. It's called a Law Token. Use it to store the most important pieces of legal language in that Location. (e.g. 'equality before the law', 'securitisation' etc.)</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/6.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="7">
+      <div class="step-content">
+        <div class="step-number">STEP 7</div>
+        <p>Write your interpretations inside the fourth folder.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/7.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="8">
+      <div class="step-content">
+        <div class="step-number">STEP 8</div>
+        <p>If you're an Obsidian user, download the Hyvmind plugin for direct uploads.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/8.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="9">
+      <div class="step-content">
+        <div class="step-number">STEP 9</div>
+        <p>The Notes tab has a built-in markdown editor. Use it to write fresh notes, edit existing ones or update metadata.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/9.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="10">
+      <div class="step-content">
+        <div class="step-number">STEP 10</div>
+        <p>You can also use the editor to add internal cross-references (by typing '{@').</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/10.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="11">
+      <div class="step-content">
+        <div class="step-number">STEP 11</div>
+        <p>Attach sources and attributes to any folder by creating _sources.md and _attributes.md files. Sources and attributes of a parent folder are automatically applied to subfolders.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/11.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="12">
+      <div class="step-content">
+        <div class="step-number">STEP 12</div>
+        <p>When you're done making Notes, right-click the Curation folder and convert it into a Graph.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/12.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="13">
+      <div class="step-content">
+        <div class="step-number">STEP 13</div>
+        <p>Go to the Graphs tab to preview each node and connection. (Note: Graphs don't have to be complete, just accurate.)</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/13.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step reverse" data-step="14">
+      <div class="step-content">
+        <div class="step-number">STEP 14</div>
+        <p>When you're happy with a graph, publish it so others can save and extend it.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/14.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+    <div class="step" data-step="15">
+      <div class="step-content">
+        <div class="step-number">STEP 15</div>
+        <p>Go to the Public page to see what others have published. When someone saves your work, you'll earn Trust.</p>
+      </div>
+      <div class="step-video">
+        <video src="/tutorial-videos/15.webm" muted playsinline loop preload="none"></video>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Questions -->
+  <div class="container">
+    <div class="questions-section">
+      <button type="button" class="questions-btn" id="questions-btn">Got Questions?</button>
+      <div class="questions-msg" id="questions-msg">
+        You can reach me @anshuman.11 on signal. I'd love to hear your queries and feedback.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <a href="/">hyvmind.app</a> &middot; Tutorial
+    </div>
+  </footer>
+
+  <script>
+    if (localStorage.getItem("hyvmind-tutorial-seen") !== "true") {
+      localStorage.setItem("hyvmind-tutorial-seen", "true");
+    }
+    (function() {
+      const videos = document.querySelectorAll('.step-video video');
+
+      // Click to toggle mute
+      videos.forEach(v => {
+        v.addEventListener('click', () => {
+          v.muted = !v.muted;
+        });
+      });
+
+      // Hover to play / pause
+      videos.forEach(v => {
+        v.addEventListener('mouseenter', () => v.play().catch(() => {}));
+        v.addEventListener('mouseleave', () => v.pause());
+      });
+
+      // Lazy load: set src when video comes near viewport
+      const lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const video = entry.target;
+          if (entry.isIntersecting && !video.dataset.loaded) {
+            const src = video.dataset.src;
+            if (src) {
+              video.src = src;
+              video.removeAttribute('data-src');
+              video.dataset.loaded = 'true';
+            }
+          }
+        });
+      }, { rootMargin: '200px' });
+
+      videos.forEach(v => {
+        const src = v.querySelector('source')?.getAttribute('src') || v.getAttribute('src');
+        if (src) {
+          v.removeAttribute('src');
+          v.dataset.src = src;
+          v.querySelectorAll('source').forEach(s => s.remove());
+          lazyObserver.observe(v);
+        }
+      });
+
+      // Questions toggle
+      document.getElementById('questions-btn').addEventListener('click', function() {
+        document.getElementById('questions-msg').classList.toggle('open');
+      });
+    })();
+  </script>
+</body>
+</html>
