@@ -3001,8 +3001,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
   }, [generatingScore, generateBuzzSecret]);
 
-
-
   // ── Unified advance handler ────────────────────────────────────────────────
 
   const handleAdvance = useCallback(() => {
@@ -3967,8 +3965,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           </div>
         </div>
       </div>
-
-
     </>
   );
 }
