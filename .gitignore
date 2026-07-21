@@ -3,3 +3,5 @@ node_modules/
 src/backend/.mops/
 dist/
 src/frontend/dist/
+src/backend/dist/
+/frontend/
