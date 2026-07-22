@@ -6,7 +6,6 @@ import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
 import { useActor } from "@caffeineai/core-infrastructure";
-import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
@@ -884,16 +883,19 @@ export default function EditorView() {
               <>
                 <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0 flex items-center gap-1.5">
                   {currentFolderId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const node = session.nodes.get(currentFolderId);
-                        setCurrentFolderId(node?.parentId ?? null);
-                      }}
-                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                    >
-                      <ArrowLeft size={12} />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const node = session.nodes.get(currentFolderId);
+                          setCurrentFolderId(node?.parentId ?? null);
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                      >
+                        ← back
+                      </button>
+                      <span className="text-xs text-border">|</span>
+                    </>
                   )}
                   <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                     files
