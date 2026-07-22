@@ -28,114 +28,27 @@
           document.documentElement.classList.toggle("light", isLight);
           swapLogo();
         }
-        if (e.key === "hyvmind-font-pairing" || e.key === "hyvmind-font-size") {
-          applyTutorialFont();
-        }
       });
-
-      var FONT_FAMILIES = {
-        "system-default": "'JetBrains Mono', monospace",
-        "annie-use-your-telescope": "'Annie Use Your Telescope', monospace",
-        "architects-daughter": "'Architects Daughter', monospace",
-        "cedarville-cursive": "'Cedarville Cursive', monospace",
-        "crafty-girls": "'Crafty Girls', monospace",
-        "give-you-glory": "'Give You Glory', monospace",
-        "handlee": "'Handlee', monospace",
-        "mansalva": "'Mansalva', monospace",
-        "pangolin": "'Pangolin', monospace",
-        "sacramento": "'Sacramento', monospace",
-      };
-      var FONT_SIZES = {
-        small: "100%",
-        medium: "112.5%",
-        large: "137.5%",
-        huge: "175%",
-        colossal: "225%",
-      };
-
-      function applyTutorialFont() {
-        var pairing = localStorage.getItem("hyvmind-font-pairing") || "system-default";
-        var size = localStorage.getItem("hyvmind-font-size") || "medium";
-        document.body.style.fontFamily = FONT_FAMILIES[pairing] || FONT_FAMILIES["system-default"];
-        document.documentElement.style.fontSize = FONT_SIZES[size] || "112.5%";
-      }
-      applyTutorialFont();
     })();
   </script>
   <style>
     @font-face {
-      font-family: "Annie Use Your Telescope";
+      font-family: "VT323";
       font-style: normal;
       font-weight: 400;
       font-display: swap;
-      src: url("/fonts/annie-use-your-telescope.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Architects Daughter";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/architects-daughter.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Cedarville Cursive";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/cedarville-cursive.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Crafty Girls";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/crafty-girls.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Give You Glory";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/give-you-glory.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Handlee";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/handlee.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Mansalva";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/mansalva.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Pangolin";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/pangolin.woff2") format("woff2");
-    }
-    @font-face {
-      font-family: "Sacramento";
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url("/fonts/sacramento.woff2") format("woff2");
+      src: url("/fonts/vt323.woff2") format("woff2");
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
+      font-family: "VT323", monospace;
       background: #000;
       color: #fff;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       font-variant-ligatures: none;
-      font-feature-settings: "rlig" 1, "calt" 1;
     }
     html.light body {
       background: #fff;

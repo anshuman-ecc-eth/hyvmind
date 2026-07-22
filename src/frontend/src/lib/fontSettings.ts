@@ -11,8 +11,8 @@ export const FONT_PAIRINGS: FontPairing[] = [
   {
     id: "system-default",
     name: "System Default",
-    headingFont: "JetBrains Mono",
-    bodyFont: "JetBrains Mono",
+    headingFont: "VT323",
+    bodyFont: "VT323",
   },
   {
     id: "annie-use-your-telescope",
@@ -61,12 +61,6 @@ export const FONT_PAIRINGS: FontPairing[] = [
     name: "Pangolin",
     headingFont: "Pangolin",
     bodyFont: "Pangolin",
-  },
-  {
-    id: "sacramento",
-    name: "Sacramento",
-    headingFont: "Sacramento",
-    bodyFont: "Sacramento",
   },
 ];
 

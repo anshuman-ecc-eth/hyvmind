@@ -59,8 +59,8 @@
     --panel-sidebar: oklch(8% 0 0);
     --panel-main: oklch(2% 0 0);
     --panel-details: oklch(8% 0 0);
-    --font-heading: "JetBrains Mono", monospace;
-    --font-body: "JetBrains Mono", monospace;
+    --font-heading: "VT323", monospace;
+    --font-body: "VT323", monospace;
   }
 }
 
