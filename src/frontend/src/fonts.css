@@ -1,0 +1,63 @@
+@font-face {
+  font-family: "Cedarville Cursive";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cedarville-cursive.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Indie Flower";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/indie-flower.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Zeyada";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/zeyada.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sue Ellen Francisco";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/sue-ellen-francisco.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/architects-daughter.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "La Belle Aurore";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/la-belle-aurore.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Annie Use Your Telescope";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/annie-use-your-telescope.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Give You Glory";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/give-you-glory.woff2") format("woff2");
+}

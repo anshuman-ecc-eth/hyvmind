@@ -19,68 +19,68 @@ export const FONT_PAIRINGS: FontPairing[] = [
     bodyWeights: "400;700",
   },
   {
-    id: "quattrocento-muli",
-    name: "Quattrocento Sans + Muli",
-    headingFont: "Quattrocento Sans",
-    bodyFont: "Muli",
-    headingWeights: "400;700",
-    bodyWeights: "300;400;600",
-  },
-  {
-    id: "josefin-cardo",
-    name: "Josefin Sans + Cardo",
-    headingFont: "Josefin Sans",
-    bodyFont: "Cardo",
-    headingWeights: "300;400;700",
+    id: "cedarville-cursive",
+    name: "Cedarville Cursive",
+    headingFont: "Cedarville Cursive",
+    bodyFont: "Cedarville Cursive",
+    headingWeights: "400",
     bodyWeights: "400",
   },
   {
-    id: "oswald-barlow",
-    name: "Oswald + Barlow",
-    headingFont: "Oswald",
-    bodyFont: "Barlow",
-    headingWeights: "400;500;700",
-    bodyWeights: "300;400;500",
-  },
-  {
-    id: "montserrat-source-sans",
-    name: "Montserrat + Source Sans 3",
-    headingFont: "Montserrat",
-    bodyFont: "Source Sans 3",
-    headingWeights: "400;600;700",
-    bodyWeights: "300;400;600",
-  },
-  {
-    id: "chivo-krub",
-    name: "Chivo + Krub",
-    headingFont: "Chivo",
-    bodyFont: "Krub",
-    headingWeights: "400;700",
-    bodyWeights: "300;400",
-  },
-  {
-    id: "lora-roboto",
-    name: "Lora + Roboto",
-    headingFont: "Lora",
-    bodyFont: "Roboto",
-    headingWeights: "400;500;700",
-    bodyWeights: "300;400;500",
-  },
-  {
-    id: "rubik-assistant",
-    name: "Rubik + Assistant",
-    headingFont: "Rubik",
-    bodyFont: "Assistant",
-    headingWeights: "400;500;700",
-    bodyWeights: "300;400;600",
-  },
-  {
-    id: "six-caps-open-sans",
-    name: "Six Caps + Open Sans Condensed",
-    headingFont: "Six Caps",
-    bodyFont: "Open Sans Condensed",
+    id: "indie-flower",
+    name: "Indie Flower",
+    headingFont: "Indie Flower",
+    bodyFont: "Indie Flower",
     headingWeights: "400",
-    bodyWeights: "300;400;700",
+    bodyWeights: "400",
+  },
+  {
+    id: "zeyada",
+    name: "Zeyada",
+    headingFont: "Zeyada",
+    bodyFont: "Zeyada",
+    headingWeights: "400",
+    bodyWeights: "400",
+  },
+  {
+    id: "sue-ellen-francisco",
+    name: "Sue Ellen Francisco",
+    headingFont: "Sue Ellen Francisco",
+    bodyFont: "Sue Ellen Francisco",
+    headingWeights: "400",
+    bodyWeights: "400",
+  },
+  {
+    id: "architects-daughter",
+    name: "Architects Daughter",
+    headingFont: "Architects Daughter",
+    bodyFont: "Architects Daughter",
+    headingWeights: "400",
+    bodyWeights: "400",
+  },
+  {
+    id: "la-belle-aurore",
+    name: "La Belle Aurore",
+    headingFont: "La Belle Aurore",
+    bodyFont: "La Belle Aurore",
+    headingWeights: "400",
+    bodyWeights: "400",
+  },
+  {
+    id: "annie-use-your-telescope",
+    name: "Annie Use Your Telescope",
+    headingFont: "Annie Use Your Telescope",
+    bodyFont: "Annie Use Your Telescope",
+    headingWeights: "400",
+    bodyWeights: "400",
+  },
+  {
+    id: "give-you-glory",
+    name: "Give You Glory",
+    headingFont: "Give You Glory",
+    bodyFont: "Give You Glory",
+    headingWeights: "400",
+    bodyWeights: "400",
   },
 ];
 
@@ -93,34 +93,7 @@ export const FONT_SIZE_OPTIONS: Record<FontSize, string> = {
 export const DEFAULT_FONT_PAIRING = "system-default";
 export const DEFAULT_FONT_SIZE: FontSize = "medium";
 
-export function getGoogleFontsUrl(pairingId: string): string {
-  if (pairingId === "system-default") return "";
-  const pairing = FONT_PAIRINGS.find((p) => p.id === pairingId);
-  if (!pairing) return "";
-
-  const headingFamily = pairing.headingFont.replace(/ /g, "+");
-  const bodyFamily = pairing.bodyFont.replace(/ /g, "+");
-  const headingWeights = pairing.headingWeights.replace(/;/g, ";");
-  const bodyWeights = pairing.bodyWeights.replace(/;/g, ";");
-
-  return `https://fonts.googleapis.com/css2?family=${headingFamily}:wght@${headingWeights}&family=${bodyFamily}:wght@${bodyWeights}&display=swap`;
-}
-
 export function applyFontPairing(pairingId: string): void {
-  const existingLink = document.getElementById("hyvmind-google-fonts");
-  if (existingLink) existingLink.remove();
-
-  if (pairingId !== "system-default") {
-    const url = getGoogleFontsUrl(pairingId);
-    if (url) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.id = "hyvmind-google-fonts";
-      link.href = url;
-      document.head.appendChild(link);
-    }
-  }
-
   const pairing =
     FONT_PAIRINGS.find((p) => p.id === pairingId) ?? FONT_PAIRINGS[0];
   document.documentElement.style.setProperty(
