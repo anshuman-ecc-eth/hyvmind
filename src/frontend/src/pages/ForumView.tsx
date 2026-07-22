@@ -396,7 +396,7 @@ export default function ForumView() {
 
       <div className="flex flex-1 min-h-0">
         {/* ── Left Panel: Post List ── */}
-        <aside className="flex w-72 shrink-0 flex-col border-r border-dashed border-border bg-card">
+        <aside className="flex w-fit min-w-[200px] max-w-[340px] shrink-0 flex-col border-r border-dashed border-border bg-card">
           <ScrollArea className="flex-1 min-h-0 px-1 py-2">
             {sortedPosts.length === 0 && (
               <p className="px-3 py-4 text-xs text-muted-foreground/40">

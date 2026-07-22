@@ -326,6 +326,7 @@ export default function EditorView() {
     id: string;
     currentName: string;
   } | null>(null);
+  const [fileTreeCollapsed, setFileTreeCollapsed] = useState(false);
 
   // File input
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -872,28 +873,45 @@ export default function EditorView() {
         {/* Right sidebar: file tree */}
         {!isEmpty && (
           <div
-            className="w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default"
+            className={`${fileTreeCollapsed ? "w-[40px]" : "w-fit min-w-[160px] max-w-[300px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
             data-ocid="editor.sidebar"
           >
-            <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
-                files
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <FileTree
-                nodes={session.nodes}
-                rootIds={session.rootIds}
-                activeFileId={session.activeFileId}
-                onSelectFile={setActiveFile}
-                onCreateNode={createNode}
-                onRenameNode={renameNode}
-                onDeleteNode={(id) => setDeleteTarget(id)}
-                onContextMenu={handleContextMenu}
-                renameTarget={renameTarget}
-                onRenameEnd={() => setRenameTarget(null)}
-              />
-            </div>
+            {fileTreeCollapsed ? (
+              <div className="flex-1 flex items-center justify-center">
+                <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+                  FILES
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
+                    files
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  <FileTree
+                    nodes={session.nodes}
+                    rootIds={session.rootIds}
+                    activeFileId={session.activeFileId}
+                    onSelectFile={setActiveFile}
+                    onCreateNode={createNode}
+                    onRenameNode={renameNode}
+                    onDeleteNode={(id) => setDeleteTarget(id)}
+                    onContextMenu={handleContextMenu}
+                    renameTarget={renameTarget}
+                    onRenameEnd={() => setRenameTarget(null)}
+                  />
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setFileTreeCollapsed(!fileTreeCollapsed)}
+              className="p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-dashed border-border shrink-0"
+            >
+              {fileTreeCollapsed ? "\u00AB" : "\u00BB"}
+            </button>
           </div>
         )}
       </div>

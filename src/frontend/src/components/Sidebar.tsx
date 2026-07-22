@@ -26,37 +26,39 @@ export function Sidebar({
   return (
     <div
       className={`flex flex-col h-full border-r border-border bg-background transition-all duration-200 ${
-        collapsed ? "w-10" : "w-32"
+        collapsed ? "w-[40px]" : "w-fit min-w-[100px]"
       }`}
     >
-      <div className="flex flex-col flex-1 pt-2">
-        {visibleTabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              type="button"
-              key={tab.id}
-              data-ocid={tab.ocid}
-              onClick={() => onTabChange(tab.id)}
-              className={`w-full py-3 px-2 flex items-center justify-center transition-colors duration-150 ${
-                isActive
-                  ? "bg-accent text-accent-foreground border-l-2 border-primary"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              }`}
-            >
-              {collapsed ? (
-                <span className="text-xs font-medium uppercase select-none">
-                  {tab.label[0]}
-                </span>
-              ) : (
+      {collapsed ? (
+        <div className="flex-1 flex items-center justify-center">
+          <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+            NAVIGATION BAR
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-col flex-1 pt-2">
+          {visibleTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                type="button"
+                key={tab.id}
+                data-ocid={tab.ocid}
+                onClick={() => onTabChange(tab.id)}
+                className={`w-full py-3 px-2 flex items-center justify-center transition-colors duration-150 ${
+                  isActive
+                    ? "bg-accent text-accent-foreground border-l-2 border-primary"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                }`}
+              >
                 <span className="text-xs font-medium select-none">
                   {tab.label}
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <button
         type="button"

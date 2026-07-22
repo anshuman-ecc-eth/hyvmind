@@ -113,6 +113,7 @@ export function SettingsView() {
   const [skillPromptCopied, setSkillPromptCopied] = useState(false);
   const [selectedSection, setSelectedSection] =
     useState<string>("settings-profile");
+  const [sectionNavCollapsed, setSectionNavCollapsed] = useState(false);
 
   const SAMPLE_PROMPT = `You have access to the Hyvmind knowledge graph retrieval API for legal knowledge.
 
@@ -966,99 +967,118 @@ Instructions:
         </div>
 
         {/* ── Sidebar (right) ── */}
-        <aside className="w-60 shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden">
-          <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
-              sections
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto min-h-0 p-2 space-y-1">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedSection("settings-profile");
-                document
-                  .getElementById("settings-profile")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
-                selectedSection === "settings-profile"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              data-ocid="settings.nav.profile"
-            >
-              profile
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedSection("settings-appearance");
-                document
-                  .getElementById("settings-appearance")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
-                selectedSection === "settings-appearance"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              data-ocid="settings.nav.appearance"
-            >
-              appearance
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedSection("settings-obsidian");
-                document
-                  .getElementById("settings-obsidian")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
-                selectedSection === "settings-obsidian"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              data-ocid="settings.nav.obsidian"
-            >
-              obsidian
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedSection("settings-skills");
-                document
-                  .getElementById("settings-skills")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
-                selectedSection === "settings-skills"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              data-ocid="settings.nav.skills"
-            >
-              skill
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedSection("settings-wallet");
-                document
-                  .getElementById("settings-wallet")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
-                selectedSection === "settings-wallet"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              data-ocid="settings.nav.wallet"
-            >
-              wallet
-            </button>
-          </div>
+        <aside
+          className={`${sectionNavCollapsed ? "w-[40px]" : "w-fit min-w-[150px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden transition-all duration-200`}
+        >
+          {sectionNavCollapsed ? (
+            <div className="flex-1 flex items-center justify-center">
+              <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+                SECTIONS
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
+                <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
+                  sections
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-0 p-2 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-profile");
+                    document
+                      .getElementById("settings-profile")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-profile"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.profile"
+                >
+                  profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-appearance");
+                    document
+                      .getElementById("settings-appearance")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-appearance"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.appearance"
+                >
+                  appearance
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-obsidian");
+                    document
+                      .getElementById("settings-obsidian")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-obsidian"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.obsidian"
+                >
+                  obsidian
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-skills");
+                    document
+                      .getElementById("settings-skills")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-skills"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.skills"
+                >
+                  skill
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-wallet");
+                    document
+                      .getElementById("settings-wallet")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-wallet"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.wallet"
+                >
+                  wallet
+                </button>
+              </div>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setSectionNavCollapsed(!sectionNavCollapsed)}
+            className="p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-dashed border-border shrink-0"
+          >
+            {sectionNavCollapsed ? "\u00AB" : "\u00BB"}
+          </button>
         </aside>
       </div>
     </div>
