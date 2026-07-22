@@ -7,6 +7,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    (function() {
+      var theme = localStorage.getItem("hyvmind-theme");
+      var isLight = theme && theme.endsWith("-light");
+      if (isLight) document.documentElement.classList.add("light");
+
+      function swapLogo() {
+        var logo = document.getElementById("tutorial-logo");
+        if (logo) {
+          logo.src = isLight ? "/assets/hyvmind_logo_light.png" : "/assets/hyvmind_logo_dark.png";
+        }
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", swapLogo);
+      } else {
+        swapLogo();
+      }
+
+      window.addEventListener("storage", function(e) {
+        if (e.key === "hyvmind-theme") {
+          isLight = e.newValue && e.newValue.endsWith("-light");
+          document.documentElement.classList.toggle("light", isLight);
+          swapLogo();
+        }
+      });
+    })();
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -18,6 +45,10 @@
       -webkit-font-smoothing: antialiased;
       font-variant-ligatures: none;
       font-feature-settings: "rlig" 1, "calt" 1;
+    }
+    html.light body {
+      background: #fff;
+      color: #1a1a1a;
     }
     .container {
       max-width: 960px;
@@ -172,6 +203,28 @@
       .intro { padding: 64px 0 32px; }
       .step-number { margin-bottom: 8px; }
     }
+
+    /* Light mode overrides — activated by .light class on <html> */
+    html.light body { background: #fff; color: #1a1a1a; }
+    html.light .top-bar { background: #fff; border-bottom-color: #d4d4d4; }
+    html.light .top-bar .back-link { color: #666; }
+    html.light .top-bar .back-link:hover { color: #000; }
+    html.light .intro .subtitle { color: #666; }
+    html.light .step { border-bottom-color: #d4d4d4; }
+    html.light .step-number { color: #666; }
+    html.light .step-content p { color: #1a1a1a; }
+    html.light .step-video video { border-color: #d4d4d4; background: #f2f2f2; }
+    html.light .questions-btn { color: #666; border-color: #d4d4d4; }
+    html.light .questions-btn:hover { color: #000; background: #f2f2f2; border-color: #666; }
+    html.light .form-field input,
+    html.light .form-field textarea { background: #f2f2f2; color: #1a1a1a; border-color: #d4d4d4; }
+    html.light .form-field input:focus,
+    html.light .form-field textarea:focus { border-color: #666; }
+    html.light .q-feedback.success { color: #2e7d32; }
+    html.light .q-feedback.error { color: #c62828; }
+    html.light .footer { color: #666; }
+    html.light .footer a { color: #666; }
+    html.light .footer a:hover { color: #000; }
   </style>
 </head>
 <body>
@@ -179,7 +232,7 @@
   <!-- Top Bar -->
   <header class="top-bar">
     <div class="container">
-      <img src="/assets/hyvmind_logo_dark.png" alt="hyvmind" class="logo" />
+      <img src="/assets/hyvmind_logo_dark.png" alt="hyvmind" class="logo" id="tutorial-logo" />
       <a href="/" class="back-link">&larr; Back to app</a>
     </div>
   </header>
