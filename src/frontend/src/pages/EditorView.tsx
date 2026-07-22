@@ -873,15 +873,11 @@ export default function EditorView() {
         {/* Right sidebar: file tree */}
         {!isEmpty && (
           <div
-            className={`${fileTreeCollapsed ? "w-fit max-w-[40px] min-w-0" : "w-fit max-w-[300px] min-w-[160px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
+            className={`${fileTreeCollapsed ? "w-[40px]" : "w-[200px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
             data-ocid="editor.sidebar"
           >
             {fileTreeCollapsed ? (
-              <div className="flex-1 flex items-center justify-center">
-                <span className="[writing-mode:vertical-rl] text-xs uppercase tracking-widest text-muted-foreground/50 select-none">
-                  FILES
-                </span>
-              </div>
+              <div className="flex-1" />
             ) : (
               <>
                 <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
@@ -908,7 +904,7 @@ export default function EditorView() {
             <button
               type="button"
               onClick={() => setFileTreeCollapsed(!fileTreeCollapsed)}
-              className="p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-dashed border-border shrink-0"
+              className="p-2 w-full flex items-center justify-center text-muted-foreground hover:text-foreground border-t border-dashed border-border shrink-0"
             >
               {fileTreeCollapsed ? "\u00AB" : "\u00BB"}
             </button>

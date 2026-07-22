@@ -26,17 +26,11 @@ export function Sidebar({
   return (
     <div
       className={`flex flex-col h-full border-r border-border bg-background transition-all duration-200 ${
-        collapsed
-          ? "w-fit max-w-[40px] min-w-0"
-          : "w-fit max-w-[400px] min-w-[100px]"
+        collapsed ? "w-[40px]" : "w-[200px]"
       }`}
     >
       {collapsed ? (
-        <div className="flex-1 flex items-center justify-center">
-          <span className="[writing-mode:vertical-rl] text-xs uppercase tracking-widest text-muted-foreground/50 select-none">
-            NAVIGATION BAR
-          </span>
-        </div>
+        <div className="flex-1" />
       ) : (
         <div className="flex flex-col flex-1 pt-2">
           {visibleTabs.map((tab) => {
@@ -66,7 +60,7 @@ export function Sidebar({
         type="button"
         data-ocid="sidebar.toggle-collapse"
         onClick={onToggleCollapse}
-        className="p-2 w-full text-center text-muted-foreground hover:text-foreground border-t border-border transition-colors duration-150"
+        className="p-2 w-full flex items-center justify-center text-muted-foreground hover:text-foreground border-t border-border transition-colors duration-150"
       >
         {collapsed ? "»" : "«"}
       </button>
