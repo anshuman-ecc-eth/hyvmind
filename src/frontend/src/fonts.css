@@ -1,33 +1,9 @@
 @font-face {
-  font-family: "Cedarville Cursive";
+  font-family: "Annie Use Your Telescope";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/cedarville-cursive.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Indie Flower";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/indie-flower.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Zeyada";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/zeyada.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Sue Ellen Francisco";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/sue-ellen-francisco.woff2") format("woff2");
+  src: url("/fonts/annie-use-your-telescope.woff2") format("woff2");
 }
 
 @font-face {
@@ -39,19 +15,19 @@
 }
 
 @font-face {
-  font-family: "La Belle Aurore";
+  font-family: "Cedarville Cursive";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/la-belle-aurore.woff2") format("woff2");
+  src: url("/fonts/cedarville-cursive.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Annie Use Your Telescope";
+  font-family: "Crafty Girls";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/annie-use-your-telescope.woff2") format("woff2");
+  src: url("/fonts/crafty-girls.woff2") format("woff2");
 }
 
 @font-face {
@@ -60,4 +36,36 @@
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/give-you-glory.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Handlee";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/handlee.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Mansalva";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/mansalva.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Pangolin";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/pangolin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sacramento";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/sacramento.woff2") format("woff2");
 }
