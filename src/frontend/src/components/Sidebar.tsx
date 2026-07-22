@@ -26,12 +26,14 @@ export function Sidebar({
   return (
     <div
       className={`flex flex-col h-full border-r border-border bg-background transition-all duration-200 ${
-        collapsed ? "w-[40px]" : "w-fit min-w-[100px]"
+        collapsed
+          ? "w-fit max-w-[40px] min-w-0"
+          : "w-fit max-w-[400px] min-w-[100px]"
       }`}
     >
       {collapsed ? (
         <div className="flex-1 flex items-center justify-center">
-          <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+          <span className="[writing-mode:vertical-rl] text-xs uppercase tracking-widest text-muted-foreground/50 select-none">
             NAVIGATION BAR
           </span>
         </div>

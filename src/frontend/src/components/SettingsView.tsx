@@ -968,11 +968,11 @@ Instructions:
 
         {/* ── Sidebar (right) ── */}
         <aside
-          className={`${sectionNavCollapsed ? "w-[40px]" : "w-fit min-w-[150px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden transition-all duration-200`}
+          className={`${sectionNavCollapsed ? "w-fit max-w-[40px] min-w-0" : "w-fit max-w-[400px] min-w-[120px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden transition-all duration-200`}
         >
           {sectionNavCollapsed ? (
             <div className="flex-1 flex items-center justify-center">
-              <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+              <span className="[writing-mode:vertical-rl] text-xs uppercase tracking-widest text-muted-foreground/50 select-none">
                 SECTIONS
               </span>
             </div>

@@ -873,12 +873,12 @@ export default function EditorView() {
         {/* Right sidebar: file tree */}
         {!isEmpty && (
           <div
-            className={`${fileTreeCollapsed ? "w-[40px]" : "w-fit min-w-[160px] max-w-[300px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
+            className={`${fileTreeCollapsed ? "w-fit max-w-[40px] min-w-0" : "w-fit max-w-[300px] min-w-[160px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
             data-ocid="editor.sidebar"
           >
             {fileTreeCollapsed ? (
               <div className="flex-1 flex items-center justify-center">
-                <span className="[writing-mode:vertical-rl] text-[10px] uppercase tracking-widest text-muted-foreground/50 select-none">
+                <span className="[writing-mode:vertical-rl] text-xs uppercase tracking-widest text-muted-foreground/50 select-none">
                   FILES
                 </span>
               </div>
