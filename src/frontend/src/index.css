@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @import "./fonts.css";
 /* tweakcn themes imported before minimalist overrides so minimalist wins when active */
 @import "./themes/tweakcn-themes.css";
@@ -59,8 +58,8 @@
     --panel-sidebar: oklch(8% 0 0);
     --panel-main: oklch(2% 0 0);
     --panel-details: oklch(8% 0 0);
-    --font-heading: "VT323", monospace;
-    --font-body: "VT323", monospace;
+    --font-heading: "Press Start 2P", monospace;
+    --font-body: "Press Start 2P", monospace;
   }
 }
 

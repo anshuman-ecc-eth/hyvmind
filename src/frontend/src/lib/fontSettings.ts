@@ -11,8 +11,8 @@ export const FONT_PAIRINGS: FontPairing[] = [
   {
     id: "system-default",
     name: "System Default",
-    headingFont: "VT323",
-    bodyFont: "VT323",
+    headingFont: "Press Start 2P",
+    bodyFont: "Press Start 2P",
   },
   {
     id: "annie-use-your-telescope",
