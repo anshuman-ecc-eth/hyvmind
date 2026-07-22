@@ -1,12 +1,6 @@
 import type { EditorNode } from "@/types/markdownEditor";
-import {
-  ChevronDown,
-  ChevronRight,
-  File,
-  Folder,
-  FolderOpen,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { File, Folder } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,166 +21,120 @@ interface FileTreeProps {
   onContextMenu: (e: React.MouseEvent, nodeId: string) => void;
   renameTarget: { id: string; currentName: string } | null;
   onRenameEnd: () => void;
-}
-
-interface TreeNodeProps {
-  nodeId: string;
-  nodes: Map<string, EditorNode>;
-  activeFileId: string | null;
-  expandedIds: Set<string>;
-  onToggleExpand: (id: string) => void;
-  onSelectFile: (id: string) => void;
-  onContextMenu: (e: React.MouseEvent, nodeId: string) => void;
-  onRenameNode: (id: string, newName: string) => void;
-  depth: number;
-  renameTarget: { id: string; currentName: string } | null;
-  onRenameEnd: () => void;
+  currentFolderId: string | null;
+  onNavigateInto: (folderId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
-// Single tree node row
+// Node type labels for hover tooltips
 // ---------------------------------------------------------------------------
 
-function TreeNode({
+const NODE_TYPE_LABELS: Record<string, string> = {
+  curation: "Curation",
+  swarm: "Swarm",
+  location: "Location",
+  lawEntity: "Law Entity",
+  interpEntity: "Interpretation",
+};
+
+// ---------------------------------------------------------------------------
+// Single tree row (flat-list drill-down UI)
+// ---------------------------------------------------------------------------
+
+function TreeRow({
   nodeId,
-  nodes,
-  activeFileId,
-  expandedIds,
-  onToggleExpand,
+  node,
+  isActive,
+  isFolder,
+  inRename,
   onSelectFile,
-  onContextMenu,
+  onNavigateInto,
   onRenameNode,
-  depth,
-  renameTarget,
   onRenameEnd,
-}: TreeNodeProps) {
-  const node = nodes.get(nodeId);
+  onContextMenu,
+}: {
+  nodeId: string;
+  node: EditorNode;
+  isActive: boolean;
+  isFolder: boolean;
+  inRename: boolean;
+  onSelectFile: (id: string) => void;
+  onNavigateInto: (folderId: string) => void;
+  onRenameNode: (id: string, newName: string) => void;
+  onRenameEnd: () => void;
+  onContextMenu: (e: React.MouseEvent, nodeId: string) => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (renameTarget?.id === nodeId && inputRef.current) {
+    if (inRename && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [renameTarget?.id, nodeId]);
-
-  if (!node) return null;
-
-  const isFolder = node.type === "folder";
-  const isExpanded = expandedIds.has(nodeId);
-  const isActive = node.id === activeFileId;
-  const indent = depth * 12;
+  }, [inRename]);
 
   const handleClick = () => {
     if (isFolder) {
-      onToggleExpand(nodeId);
+      onNavigateInto(nodeId);
     } else {
       onSelectFile(nodeId);
     }
   };
 
   return (
-    <div>
-      <div
-        role="treeitem"
-        aria-selected={isActive}
-        aria-expanded={isFolder ? isExpanded : undefined}
-        data-ocid={`file_tree.item.${nodeId}`}
-        className={[
-          "flex w-full items-center gap-0.5 px-2 py-1.5 text-left text-xs font-mono rounded",
-          "hover:bg-muted hover:text-foreground transition-colors duration-150",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          isActive
-            ? "bg-accent text-accent-foreground"
-            : "text-muted-foreground",
-        ].join(" ")}
-        style={{ paddingLeft: `${indent + 8}px` }}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") handleClick();
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onContextMenu(e, nodeId);
-        }}
-      >
-        {/* Chevron for folders */}
-        {isFolder ? (
-          <span className="w-2.5 h-2.5 flex-shrink-0 text-muted-foreground">
-            {isExpanded ? (
-              <ChevronDown size={10} />
-            ) : (
-              <ChevronRight size={10} />
-            )}
-          </span>
-        ) : (
-          <span className="w-2.5 h-2.5 flex-shrink-0" />
-        )}
+    <div
+      role="treeitem"
+      aria-selected={isActive}
+      data-ocid={`file_tree.item.${nodeId}`}
+      className={[
+        "flex w-full items-center gap-1 px-2 py-1.5 text-left text-xs font-mono",
+        "hover:bg-muted hover:text-foreground transition-colors duration-150",
+        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+      ].join(" ")}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") handleClick();
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenu(e, nodeId);
+      }}
+    >
+      <span className="flex-shrink-0">
+        {isFolder ? <Folder size={10} /> : <File size={10} />}
+      </span>
 
-        {/* Icon */}
-        <span className="flex-shrink-0">
-          {isFolder ? (
-            isExpanded ? (
-              <FolderOpen size={10} />
-            ) : (
-              <Folder size={10} />
-            )
-          ) : (
-            <File size={10} />
-          )}
-        </span>
-
-        {/* Label */}
-        {renameTarget?.id === nodeId ? (
-          <input
-            ref={inputRef}
-            type="text"
-            defaultValue={node.name}
-            className="min-w-0 flex-1 bg-background border border-border text-foreground text-xs px-1 py-0 focus:outline-none focus:ring-1 focus:ring-ring"
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                onRenameNode(nodeId, e.currentTarget.value.trim());
-                onRenameEnd();
-              } else if (e.key === "Escape") {
-                onRenameEnd();
-              }
-            }}
-            onBlur={(e) => {
-              if (e.currentTarget.value.trim()) {
-                onRenameNode(nodeId, e.currentTarget.value.trim());
-              }
+      {inRename ? (
+        <input
+          ref={inputRef}
+          type="text"
+          defaultValue={node.name}
+          className="min-w-0 flex-1 bg-background border border-border text-foreground text-xs px-1 py-0 focus:outline-none focus:ring-1 focus:ring-ring"
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter" && e.currentTarget.value.trim()) {
+              onRenameNode(nodeId, e.currentTarget.value.trim());
               onRenameEnd();
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <span className="min-w-0 flex-1 break-words" title={node.name}>
-            {node.name}
-          </span>
-        )}
-      </div>
-
-      {/* Children — only rendered when folder is expanded */}
-      {isFolder && isExpanded && node.children.length > 0 && (
-        <div>
-          {node.children.map((childId) => (
-            <TreeNode
-              key={childId}
-              nodeId={childId}
-              nodes={nodes}
-              activeFileId={activeFileId}
-              expandedIds={expandedIds}
-              onToggleExpand={onToggleExpand}
-              onSelectFile={onSelectFile}
-              onContextMenu={onContextMenu}
-              onRenameNode={onRenameNode}
-              depth={depth + 1}
-              renameTarget={renameTarget}
-              onRenameEnd={onRenameEnd}
-            />
-          ))}
-        </div>
+            } else if (e.key === "Escape") {
+              onRenameEnd();
+            }
+          }}
+          onBlur={(e) => {
+            if (e.currentTarget.value.trim()) {
+              onRenameNode(nodeId, e.currentTarget.value.trim());
+            }
+            onRenameEnd();
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className="min-w-0 flex-1 break-words"
+          title={NODE_TYPE_LABELS[node.nodeType] ?? node.nodeType}
+        >
+          {node.name}
+        </span>
       )}
     </div>
   );
@@ -207,47 +155,31 @@ export function FileTree({
   onContextMenu,
   renameTarget,
   onRenameEnd,
+  currentFolderId,
+  onNavigateInto,
 }: FileTreeProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    // Auto-expand root-level curation folders
-    return new Set(rootIds);
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally react only to renameTarget.id change; nodes and renameTarget are stable references
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally react only to renameTarget.id change; nodes, currentFolderId, and onNavigateInto are stable references
   useEffect(() => {
     if (renameTarget) {
       const node = nodes.get(renameTarget.id);
       const parentId = node?.parentId;
-      if (parentId) {
-        setExpandedIds((prev) => {
-          if (prev.has(parentId)) return prev;
-          const next = new Set(prev);
-          next.add(parentId);
-          return next;
-        });
+      if (parentId && parentId !== currentFolderId) {
+        onNavigateInto(parentId);
       }
     }
   }, [renameTarget?.id]);
 
-  const handleToggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
+  const children = currentFolderId
+    ? (nodes.get(currentFolderId)?.children ?? [])
+    : rootIds;
 
-  if (rootIds.length === 0) {
+  if (children.length === 0) {
     return (
       <div
         className="px-3 py-4 text-xs text-muted-foreground text-center"
         data-ocid="file_tree.empty_state"
       >
-        No curations yet
+        {currentFolderId ? "empty folder" : "No curations yet"}
       </div>
     );
   }
@@ -259,22 +191,29 @@ export function FileTree({
       className="w-full overflow-y-auto"
       data-ocid="file_tree.panel"
     >
-      {rootIds.map((rootId) => (
-        <TreeNode
-          key={rootId}
-          nodeId={rootId}
-          nodes={nodes}
-          activeFileId={activeFileId}
-          expandedIds={expandedIds}
-          onToggleExpand={handleToggleExpand}
-          onSelectFile={onSelectFile}
-          onContextMenu={onContextMenu}
-          onRenameNode={onRenameNode}
-          depth={0}
-          renameTarget={renameTarget}
-          onRenameEnd={onRenameEnd}
-        />
-      ))}
+      {children.map((childId) => {
+        const node = nodes.get(childId);
+        if (!node) return null;
+        const isFolder = node.type === "folder";
+        const isActive = node.id === activeFileId;
+        const inRename = renameTarget?.id === childId;
+
+        return (
+          <TreeRow
+            key={childId}
+            nodeId={childId}
+            node={node}
+            isActive={isActive}
+            isFolder={isFolder}
+            inRename={inRename}
+            onSelectFile={onSelectFile}
+            onNavigateInto={onNavigateInto}
+            onRenameNode={onRenameNode}
+            onRenameEnd={onRenameEnd}
+            onContextMenu={onContextMenu}
+          />
+        );
+      })}
     </div>
   );
 }

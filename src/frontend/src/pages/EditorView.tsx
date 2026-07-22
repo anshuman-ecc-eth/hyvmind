@@ -6,6 +6,7 @@ import { MarkdownPreview } from "@/components/markdown-editor/MarkdownPreview";
 import { useMarkdownEditor } from "@/hooks/useMarkdownEditor";
 import type { EditorNode } from "@/types/markdownEditor";
 import { useActor } from "@caffeineai/core-infrastructure";
+import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
@@ -327,6 +328,7 @@ export default function EditorView() {
     currentName: string;
   } | null>(null);
   const [fileTreeCollapsed, setFileTreeCollapsed] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   // File input
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -873,14 +875,26 @@ export default function EditorView() {
         {/* Right sidebar: file tree */}
         {!isEmpty && (
           <div
-            className={`${fileTreeCollapsed ? "w-[40px]" : "w-[200px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
+            className={`${fileTreeCollapsed ? "w-[40px]" : "w-[400px]"} shrink-0 border-l border-dashed border-border bg-card flex flex-col overflow-hidden cursor-default transition-all duration-200`}
             data-ocid="editor.sidebar"
           >
             {fileTreeCollapsed ? (
               <div className="flex-1" />
             ) : (
               <>
-                <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0">
+                <div className="px-2 py-1.5 border-b border-dashed border-border shrink-0 flex items-center gap-1.5">
+                  {currentFolderId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const node = session.nodes.get(currentFolderId);
+                        setCurrentFolderId(node?.parentId ?? null);
+                      }}
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                    >
+                      <ArrowLeft size={12} />
+                    </button>
+                  )}
                   <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                     files
                   </span>
@@ -897,6 +911,8 @@ export default function EditorView() {
                     onContextMenu={handleContextMenu}
                     renameTarget={renameTarget}
                     onRenameEnd={() => setRenameTarget(null)}
+                    currentFolderId={currentFolderId}
+                    onNavigateInto={setCurrentFolderId}
                   />
                 </div>
               </>
