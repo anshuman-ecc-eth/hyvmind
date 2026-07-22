@@ -341,7 +341,15 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface TutorialQuestion {
+    name: string;
+    contact: string | null;
+    question: string;
+    submittedAt: bigint;
+}
 export interface backendInterface {
+    submitTutorialQuestion(name: string, question: string, contact: string[]): Promise<void>;
+    getTutorialQuestions(): Promise<Array<TutorialQuestion>>;
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;

@@ -270,6 +270,12 @@ export interface WeightedAttribute {
   'weightedValues' : Array<WeightedValue>,
 }
 export interface WeightedValue { 'weight' : bigint, 'value' : string }
+export interface TutorialQuestion {
+  'name' : string,
+  'contact' : [] | [string],
+  'question' : string,
+  'submittedAt' : bigint,
+}
 export interface _SERVICE {
   '_initializeAccessControl' : ActorMethod<[], undefined>,
   'approvePluginBinding' : ActorMethod<[Principal], undefined>,
@@ -374,6 +380,8 @@ export interface _SERVICE {
   'track_api_request' : ActorMethod<[string], undefined>,
   'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,
   'updateSourceGraphTerrainParams' : ActorMethod<[string, string], boolean>,
+  'submitTutorialQuestion' : ActorMethod<[string, string, [] | [string]], undefined>,
+  'getTutorialQuestions' : ActorMethod<[], Array<TutorialQuestion>>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -424,6 +424,12 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface TutorialQuestion {
+    name: string;
+    contact: string | null;
+    question: string;
+    submittedAt: bigint;
+}
 export interface backendInterface {
     _initializeAccessControl(): Promise<void>;
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
@@ -545,6 +551,8 @@ export interface backendInterface {
     track_api_request(apiKey: string): Promise<void>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
+    submitTutorialQuestion(name: string, question: string, contact: string[]): Promise<void>;
+    getTutorialQuestions(): Promise<Array<TutorialQuestion>>;
 }
 import type { AttributeChange as _AttributeChange, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, CreditedContribution as _CreditedContribution, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SaveResult as _SaveResult, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, UserProfile as _UserProfile, UserRole as _UserRole, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -1376,6 +1384,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateSourceGraphArtwork(arg0, arg1);
+            return result;
+        }
+    }
+    async submitTutorialQuestion(arg0: string, arg1: string, arg2: string[]): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitTutorialQuestion(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitTutorialQuestion(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async getTutorialQuestions(): Promise<Array<TutorialQuestion>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTutorialQuestions();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTutorialQuestions();
             return result;
         }
     }

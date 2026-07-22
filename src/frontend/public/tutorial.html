@@ -118,22 +118,43 @@
       background: oklch(15% 0 0);
       border-color: oklch(65% 0 0);
     }
-    .questions-msg {
+    .questions-form {
       max-height: 0;
       overflow: hidden;
       opacity: 0;
-      transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-      font-size: 0.8rem;
-      color: oklch(65% 0 0);
-      line-height: 1.6;
+      transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
       width: 100%;
       box-sizing: border-box;
+      text-align: left;
+      margin: 0 auto;
+      max-width: 400px;
     }
-    .questions-msg.open {
-      max-height: 200px;
+    .questions-form.open {
+      max-height: 340px;
       opacity: 1;
       padding-top: 20px;
     }
+    .form-field { margin-bottom: 12px; }
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      padding: 8px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: oklch(15% 0 0);
+      color: #fff;
+      border: 1px dashed oklch(20% 0 0);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-field input:focus,
+    .form-field textarea:focus {
+      border-color: oklch(65% 0 0);
+    }
+    .form-field textarea { resize: vertical; min-height: 60px; }
+    .q-feedback { font-size: 0.8rem; margin-top: 12px; }
+    .q-feedback.success { color: oklch(70% 0.15 145); }
+    .q-feedback.error { color: oklch(70% 0.2 30); }
 
     /* Footer */
     .footer {
@@ -329,8 +350,20 @@
   <div class="container">
     <div class="questions-section">
       <button type="button" class="questions-btn" id="questions-btn">Got Questions?</button>
-      <div class="questions-msg" id="questions-msg">
-        I'm @anshuman.11 on signal.
+      <div class="questions-form" id="questions-form">
+        <form id="q-form">
+          <div class="form-field">
+            <input type="text" id="q-name" placeholder="Name *" required />
+          </div>
+          <div class="form-field">
+            <input type="text" id="q-contact" placeholder="Contact (optional)" />
+          </div>
+          <div class="form-field">
+            <textarea id="q-question" placeholder="Your question *" required rows="2"></textarea>
+          </div>
+          <button type="submit" class="questions-btn" id="q-submit">Send</button>
+          <div class="q-feedback" id="q-feedback" style="display: none;"></div>
+        </form>
       </div>
     </div>
   </div>
@@ -349,20 +382,15 @@
     (function() {
       const videos = document.querySelectorAll('.step-video video');
 
-      // Click to toggle mute
       videos.forEach(v => {
-        v.addEventListener('click', () => {
-          v.muted = !v.muted;
-        });
+        v.addEventListener('click', () => { v.muted = !v.muted; });
       });
 
-      // Hover to play / pause
       videos.forEach(v => {
         v.addEventListener('mouseenter', () => v.play().catch(() => {}));
         v.addEventListener('mouseleave', () => v.pause());
       });
 
-      // Lazy load: set src when video comes near viewport
       const lazyObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           const video = entry.target;
@@ -389,9 +417,58 @@
 
       // Questions toggle
       document.getElementById('questions-btn').addEventListener('click', function() {
-        document.getElementById('questions-msg').classList.toggle('open');
+        document.getElementById('questions-form').classList.toggle('open');
       });
     })();
+  </script>
+  <script type="module">
+    import { Actor, HttpAgent, AnonymousIdentity } from "https://esm.sh/@dfinity/agent@3.3.0";
+    import { IDL } from "https://esm.sh/@dfinity/candid@3.3.0";
+
+    const idlFactory = ({ IDL }) => IDL.Service({
+      submitTutorialQuestion: IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Opt(IDL.Text)], [], [],
+      ),
+    });
+
+    const form = document.getElementById('q-form');
+    const nameInput = document.getElementById('q-name');
+    const contactInput = document.getElementById('q-contact');
+    const questionInput = document.getElementById('q-question');
+    const submitBtn = document.getElementById('q-submit');
+    const feedback = document.getElementById('q-feedback');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      feedback.style.display = 'none';
+
+      try {
+        const env = await fetch('/env.json').then(r => r.json());
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const agent = new HttpAgent({
+          identity: new AnonymousIdentity(),
+          host: isLocal ? undefined : 'https://icp-api.io',
+          shouldFetchRootKey: isLocal,
+        });
+        const actor = Actor.createActor(idlFactory, { agent, canisterId: env.backend_canister_id });
+        await actor.submitTutorialQuestion(
+          nameInput.value.trim(),
+          questionInput.value.trim(),
+          contactInput.value.trim() ? [contactInput.value.trim()] : [],
+        );
+        feedback.className = 'q-feedback success';
+        feedback.textContent = 'Thanks! Your question has been submitted.';
+        feedback.style.display = '';
+        form.reset();
+      } catch (err) {
+        feedback.className = 'q-feedback error';
+        feedback.textContent = 'Something went wrong. Please try again.';
+        feedback.style.display = '';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>

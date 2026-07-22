@@ -1228,6 +1228,43 @@ export default function TerminalPage() {
       return;
     }
 
+    if (command === "questions") {
+      setInput("");
+      if (!isAdmin) {
+        addMessage("error", "Not authorized. This command requires admin.");
+        return;
+      }
+      if (!actor) {
+        addMessage(
+          "error",
+          "Backend not connected. Please wait and try again.",
+        );
+        return;
+      }
+      try {
+        const questions = await actor.getTutorialQuestions();
+        if (questions.length === 0) {
+          addMessage("success", "No tutorial questions yet.");
+        } else {
+          for (const q of questions) {
+            const contact = q.contact ? ` (${q.contact})` : "";
+            const time = new Date(Number(q.submittedAt) / 1_000_000);
+            addMessage("normal", `From: ${q.name}${contact}`);
+            addMessage("normal", `Q: ${q.question}`);
+            addMessage("normal", `Time: ${time.toLocaleString()}`);
+            addMessage("normal", "---");
+          }
+          addMessage(
+            "success",
+            `Total: ${questions.length} question${questions.length === 1 ? "" : "s"}`,
+          );
+        }
+      } catch (e) {
+        addMessage("error", String(e));
+      }
+      return;
+    }
+
     if (command === "buzz") {
       setInput("");
       if (!isAdmin) {

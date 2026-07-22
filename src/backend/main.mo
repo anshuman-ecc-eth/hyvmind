@@ -456,6 +456,13 @@ actor {
     updatedBy : Principal;
   };
 
+  type TutorialQuestion = {
+    name : Text;
+    contact : ?Text;
+    question : Text;
+    submittedAt : Int;
+  };
+
   // Backend State
   var curationMap = Map.empty<NodeId, Curation>();
   var swarmMap = Map.empty<NodeId, Swarm>();
@@ -525,6 +532,9 @@ actor {
 
   // Vault push data: userPrincipal → json blob destined for Obsidian vault
   var vaultPushData = Map.empty<Principal, Text>();
+
+  // Tutorial questions submitted by visitors
+  var tutorialQuestions : [TutorialQuestion] = [];
 
 
   module LawToken {
@@ -4996,6 +5006,26 @@ actor {
 
   public query func icChallengeNonce() : async Text {
     "ic-gateway-challenge-18a800cbf63cf59f";
+  };
+
+  public shared (msg) func submitTutorialQuestion(
+    name : Text,
+    question : Text,
+    contact : ?Text,
+  ) : async () {
+    tutorialQuestions := tutorialQuestions.concat([{
+      name;
+      question;
+      contact;
+      submittedAt = Time.now();
+    }]);
+  };
+
+  public query (msg) func getTutorialQuestions() : async [TutorialQuestion] {
+    if (not AccessControl.isAdmin(accessControlState, msg.caller)) {
+      Runtime.trap("Unauthorized: Only admins can view tutorial questions");
+    };
+    tutorialQuestions;
   };
 
   public shared ({ caller }) func resetAllData() : async () {

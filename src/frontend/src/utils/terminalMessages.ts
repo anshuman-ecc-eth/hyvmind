@@ -35,6 +35,9 @@ export function formatHelpText(): string {
   Example:
     /buzz 5,7
 
+/questions              (admin only)
+  View tutorial questions submitted by visitors
+
 Notes:
   - Use quotes for names with spaces: name="My Node"
   - To create nodes, publish a source graph from the Sources tab
