@@ -330,10 +330,6 @@ Instructions:
                     <Label className="mb-1 block text-sm font-medium">
                       Theme
                     </Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Use the sun/moon toggle in the nav bar to switch
-                      light/dark variants.
-                    </p>
                     <Select
                       value={currentBase}
                       onValueChange={handleThemeChange}
@@ -365,9 +361,6 @@ Instructions:
                     <Label className="mb-1 block text-sm font-medium">
                       Font Pairing
                     </Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Choose a heading + body font combination.
-                    </p>
                     <Select value={fontPairing} onValueChange={setFontPairing}>
                       <SelectTrigger
                         className="w-full font-mono text-sm"
