@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hyvmind Tutorial</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script>
     (function() {
       var theme = localStorage.getItem("hyvmind-theme");
@@ -31,14 +28,100 @@
           document.documentElement.classList.toggle("light", isLight);
           swapLogo();
         }
+        if (e.key === "hyvmind-font-pairing" || e.key === "hyvmind-font-size") {
+          applyTutorialFont();
+        }
       });
+
+      var FONT_FAMILIES = {
+        "system-default": "'JetBrains Mono', monospace",
+        "cedarville-cursive": "'Cedarville Cursive', monospace",
+        "indie-flower": "'Indie Flower', monospace",
+        "zeyada": "'Zeyada', monospace",
+        "sue-ellen-francisco": "'Sue Ellen Francisco', monospace",
+        "architects-daughter": "'Architects Daughter', monospace",
+        "la-belle-aurore": "'La Belle Aurore', monospace",
+        "annie-use-your-telescope": "'Annie Use Your Telescope', monospace",
+        "give-you-glory": "'Give You Glory', monospace",
+      };
+      var FONT_SIZES = {
+        small: "100%",
+        medium: "112.5%",
+        large: "137.5%",
+        huge: "175%",
+        colossal: "225%",
+      };
+
+      function applyTutorialFont() {
+        var pairing = localStorage.getItem("hyvmind-font-pairing") || "system-default";
+        var size = localStorage.getItem("hyvmind-font-size") || "medium";
+        document.body.style.fontFamily = FONT_FAMILIES[pairing] || FONT_FAMILIES["system-default"];
+        document.documentElement.style.fontSize = FONT_SIZES[size] || "112.5%";
+      }
+      applyTutorialFont();
     })();
   </script>
   <style>
+    @font-face {
+      font-family: "Cedarville Cursive";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/cedarville-cursive.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Indie Flower";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/indie-flower.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Zeyada";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/zeyada.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Sue Ellen Francisco";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/sue-ellen-francisco.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Architects Daughter";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/architects-daughter.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "La Belle Aurore";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/la-belle-aurore.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Annie Use Your Telescope";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/annie-use-your-telescope.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Give You Glory";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/give-you-glory.woff2") format("woff2");
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'JetBrains Mono', monospace;
       background: #000;
       color: #fff;
       line-height: 1.6;
@@ -170,7 +253,7 @@
     .form-field textarea {
       width: 100%;
       padding: 8px 12px;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: inherit;
       font-size: 0.75rem;
       background: oklch(15% 0 0);
       color: #fff;

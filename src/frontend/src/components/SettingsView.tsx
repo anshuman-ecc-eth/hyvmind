@@ -396,23 +396,29 @@ Instructions:
                       Font Size
                     </Label>
                     <div className="flex gap-3">
-                      {(["small", "medium", "large"] as FontSize[]).map(
-                        (size) => (
-                          <button
-                            key={size}
-                            type="button"
-                            onClick={() => setFontSize(size)}
-                            data-ocid={`settings.font-size.${size}`}
-                            className={`flex-1 rounded border px-3 py-2 text-xs font-mono capitalize transition-colors ${
-                              fontSize === size
-                                ? "border-primary bg-primary/10 text-primary font-semibold"
-                                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ),
-                      )}
+                      {(
+                        [
+                          "small",
+                          "medium",
+                          "large",
+                          "huge",
+                          "colossal",
+                        ] as FontSize[]
+                      ).map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setFontSize(size)}
+                          data-ocid={`settings.font-size.${size}`}
+                          className={`flex-1 rounded border px-3 py-2 text-xs font-mono capitalize transition-colors ${
+                            fontSize === size
+                              ? "border-primary bg-primary/10 text-primary font-semibold"
+                              : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
