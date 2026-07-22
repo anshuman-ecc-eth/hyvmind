@@ -11,8 +11,8 @@ export const FONT_PAIRINGS: FontPairing[] = [
   {
     id: "system-default",
     name: "System Default",
-    headingFont: "Press Start 2P",
-    bodyFont: "Press Start 2P",
+    headingFont: "Noto Sans Mono",
+    bodyFont: "Noto Sans Mono",
   },
   {
     id: "annie-use-your-telescope",

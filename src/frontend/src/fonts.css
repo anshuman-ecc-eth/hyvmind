@@ -55,6 +55,14 @@
 }
 
 @font-face {
+  font-family: "Noto Sans Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/noto-sans-mono.woff2") format("woff2");
+}
+
+@font-face {
   font-family: "Pangolin";
   font-style: normal;
   font-weight: 400;
