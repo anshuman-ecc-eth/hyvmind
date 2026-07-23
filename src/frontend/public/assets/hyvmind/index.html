@@ -409,10 +409,10 @@ var STARTUP_SENTENCES = [
 
 var GANGESH_UPADHYAY_TREE = [
   { q: "Who are you?", r: "A steward, of sorts." },
-  { q: "What are you doing?", r: "Perfecting my Tai-chi. But I'm here for your questions." },
-  { q: "What is Hyvmind?", r: "It's a collaborative space that treats you as a producer, not a consumer, of legal intelligence. Meditating on that distinction will unlock this world for you. Check the diagrams in the lab if you're wondering where to start. Happy exploring!" },
-  { q: "What can I do here?", r: "Here, you can explore maps and collect points. That'll help you gain Buzz, which you can use in the app to publish notes." },
-  { q: "What's the app for?", r: "It converts your notes into knowledge graphs. This makes it easy for others to use and extend your knowledge. Each graph shows up here as a map, so there's always something to explore on the open seas!" },
+  { q: "What are you doing?", r: "Waiting for a message. But I'm sensing questions." },
+  { q: "What is Hyvmind?", r: "It's a world that treats you as a producer, not a consumer, of legal intelligence. Think about that distinction. Nothing can be consumed unless it is produced." },
+  { q: "What can I do here?", r: "Today, collect Buzz. Tomorrow, who knows. The world expands and contracts." },
+  { q: "Why do I need Buzz?", r: "You can't publish graphs without it." },
 ];
 
 var SEQUENTIAL_AREAS = [
@@ -694,8 +694,7 @@ preload('lua_roll_u_2', ASSETS + '/sprites/lua_roll_u_2.png');
 for (var r = 0; r < 4; r++)
   for (var c = 0; c < 9; c++)
     preload('wizard_' + c + '_' + r, ASSETS + '/sprites/wizard_' + c + '_' + r + '.png');
-for (var s = 0; s < 28; s++)
-  preload('wizard_spell_' + s, ASSETS + '/sprites/wizard_spell_' + s + '.png');
+preload('gangesa_idle', ASSETS + '/sprites/gangesa_idle.png');
 preload('udayan_sit_1_2', ASSETS + '/sprites/udayan_sit_1_2.png');
 preload('rowboat', BOAT_SHEET);
 preload('boat_left', ASSETS + '/sprites/boat_left.png');
@@ -717,9 +716,12 @@ var elPSprite = document.createElement('div');
 elPSprite.className = 'player-sprite';
 elP.appendChild(elPSprite);
 
-// --- Gangesh Upadhyay NPC: stationary with random spell animations ---
+ // --- Gangesh Upadhyay NPC: static idle, facing down ---
 var npcEl = document.createElement('div');
 npcEl.className = 'sprite';
+npcEl.style.width = '40px';
+npcEl.style.height = '40px';
+npcEl.style.backgroundSize = '40px 40px';
 npcEl.style.zIndex = '4';
   layer.appendChild(npcEl);
 
@@ -741,26 +743,16 @@ layer.appendChild(boatEl);
 
 var npx = 0, npy = 0;
 var npcTileX = 0, npcTileY = 0;
-var npcSpellFrame = 0;
-var npcSpellTimer = 0;
-var NPC_SPELL_FRAMES = 28;
 function npcInit() {
   // Permanent spot: tile (16, 170)
   npcTileX = 16; npcTileY = 170;
-  npx = npcTileX * 8 - 12;
-  npy = npcTileY * 8 - 10;
+  npx = npcTileX * 8 - 16;
+  npy = npcTileY * 8 - 12;
 }
 
-function updateNPC() {
-  if (gamePaused) return;
-  npcSpellTimer--;
-  if (npcSpellTimer <= 0) {
-    npcSpellFrame = Math.floor(Math.random() * NPC_SPELL_FRAMES);
-    npcSpellTimer = 12; // ~0.5 seconds at 40ms per tick
-  }
-}
+function updateNPC() {}
 
-var lastNpcSpriteBg = '';
+var lastGangesaBg = '';
 function renderNPC() {
   var scrEl = document.querySelector('.screen');
   var viewW = (scrEl ? scrEl.clientWidth || SCREEN_W : SCREEN_W) / gameZoom;
@@ -768,13 +760,13 @@ function renderNPC() {
   var camX = Math.max(0, Math.min(WORLD_W - viewW, px + 19 - viewW / 2));
   var camY = Math.max(0, Math.min(WORLD_H - viewH, py + 21 - viewH / 2));
 
-  var newBg = 'url(' + ASSETS + '/sprites/wizard_spell_' + npcSpellFrame + '.png)';
+  var newBg = 'url(' + ASSETS + '/sprites/gangesa_idle.png)';
   npcEl.style.transform = 'translate(' + Math.round(npx - camX) + 'px, ' + Math.round(npy - camY) + 'px)';
-  if (newBg !== lastNpcSpriteBg) {
-    var img = imgCache['wizard_spell_' + npcSpellFrame];
+  if (newBg !== lastGangesaBg) {
+    var img = imgCache['gangesa_idle'];
     if (img && img.complete && img.naturalWidth > 0) {
       npcEl.style.backgroundImage = newBg;
-      lastNpcSpriteBg = newBg;
+      lastGangesaBg = newBg;
     }
   }
 }
