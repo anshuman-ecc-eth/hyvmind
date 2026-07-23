@@ -18,7 +18,7 @@ function isComputerScreen(): boolean {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Enter the Hive", "Earn Buzz", "Credits"] as const;
+const MENU_ITEMS = ["Enter the Hive", "Collect Buzz", "Credits"] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -1604,7 +1604,7 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Earn Buzz") onEnter();
+          if (chosen === "Collect Buzz") onEnter();
           else if (chosen === "Enter the Hive") onExit();
           else if (chosen === "Credits") onCredits();
         }
@@ -1759,7 +1759,7 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
-                      if (item === "Earn Buzz") onEnter();
+                      if (item === "Collect Buzz") onEnter();
                       else if (item === "Enter the Hive") onExit();
                       else if (item === "Credits") onCredits();
                     }}

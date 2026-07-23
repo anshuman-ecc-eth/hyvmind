@@ -4,7 +4,7 @@
 
 ---
 
-**Step 1** — Hyvmind is a note-sharing app. Earn Buzz and use it to publish graphs.
+**Step 1** — Hyvmind is a space for sharing and publishing notes. Start by collecting some Buzz. You'll need it later.
 
 **Step 2** — Create a fresh top-level folder or import existing notes from your device.
 
@@ -30,6 +30,6 @@
 
 **Step 13** — Go to the Graphs tab to preview each node and connection. (Note: Graphs don't have to be complete, just accurate.)
 
-**Step 14** — When you're happy with a graph, publish it so others can save and extend it.
+**Step 14** — When you're happy with a graph, publish it so others can save and extend it. Note: publishing costs Buzz.
 
 **Step 15** — Go to the Public page to see what others have published. When someone saves your work, you'll earn Trust. 

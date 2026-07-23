@@ -763,7 +763,7 @@ Instructions:
                       onClick={() => setCreateBuzzOpen(true)}
                       data-ocid="settings.wallet.create_buzz_button"
                     >
-                      Create Buzz
+                      Redeem Buzz
                     </Button>
                   </div>
                 </div>

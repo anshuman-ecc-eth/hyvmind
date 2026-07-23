@@ -57,7 +57,7 @@ export function CreateBuzzModal({ isOpen, onClose }: CreateBuzzModalProps) {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md" data-ocid="create_buzz.dialog">
         <DialogHeader>
-          <DialogTitle>Create Buzz</DialogTitle>
+          <DialogTitle>Redeem Buzz</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -124,7 +124,7 @@ export function CreateBuzzModal({ isOpen, onClose }: CreateBuzzModalProps) {
                       Redeeming...
                     </>
                   ) : (
-                    "Create Buzz"
+                    "Redeem Buzz"
                   )}
                 </Button>
               </div>
