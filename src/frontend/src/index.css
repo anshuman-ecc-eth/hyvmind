@@ -58,8 +58,8 @@
     --panel-sidebar: oklch(8% 0 0);
     --panel-main: oklch(2% 0 0);
     --panel-details: oklch(8% 0 0);
-    --font-heading: "Noto Sans Mono", monospace;
-    --font-body: "Noto Sans Mono", monospace;
+    --font-heading: "Ubuntu Sans", sans-serif;
+    --font-body: "Ubuntu Sans", sans-serif;
   }
 }
 
