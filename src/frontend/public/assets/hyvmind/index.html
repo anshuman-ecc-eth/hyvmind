@@ -413,6 +413,7 @@ var GANGESH_UPADHYAY_TREE = [
   { q: "What is Hyvmind?", r: "It's a world that treats you as a producer, not a consumer, of legal intelligence. Think about that distinction. Nothing can be consumed unless it is produced." },
   { q: "What can I do here?", r: "Today, collect Buzz. Tomorrow, who knows. The world expands and contracts." },
   { q: "Why do I need Buzz?", r: "You can't publish graphs without it." },
+  { q: "What are graphs?", r: "Ahem.. You're starting to block my vision." },
 ];
 
 var SEQUENTIAL_AREAS = [
@@ -776,7 +777,17 @@ var udx = 0, udy = 0;
 var udTileX = 0, udTileY = 0;
 
 function udayanInit() {
-  udTileX = 13; udTileY = 41;
+  var found = false;
+  for (var key in triggerMessages) {
+    if (triggerMessages[key] === 'udayan-dialog') {
+      var parts = key.split(',');
+      udTileX = parseInt(parts[0]);
+      udTileY = parseInt(parts[1]);
+      found = true;
+      break;
+    }
+  }
+  if (!found) { udTileX = 13; udTileY = 41; }
   udx = udTileX * 8 - 16;
   udy = udTileY * 8 - 12;
 }
@@ -1506,8 +1517,8 @@ function reloadCollisionData() {
       }
     fetch(ASSETS + '/triggers.json')
       .then(function(r) { return r.json(); })
-      .then(function(d) { triggerMessages = d || {}; })
-      .catch(function() { triggerMessages = {}; })
+      .then(function(d) { triggerMessages = d || {}; udayanInit(); })
+      .catch(function() { triggerMessages = {}; udayanInit(); })
       .then(function() {
         return fetch(ASSETS + '/doors.json');
       })
