@@ -117,14 +117,6 @@ export default function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                  onClick={() =>
-                    window.dispatchEvent(new CustomEvent("hyvmind-start"))
-                  }
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                >
-                  World
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() => {
                     window.location.href = "/tutorial.html";
                   }}

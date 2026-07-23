@@ -2760,13 +2760,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     hyvmindLoadingStartRef.current = Date.now();
   }, []);
 
-  // Allow external trigger from hamburger menu "World" item
-  useEffect(() => {
-    const handler = () => handleStartHyvmind();
-    window.addEventListener("hyvmind-start", handler);
-    return () => window.removeEventListener("hyvmind-start", handler);
-  }, [handleStartHyvmind]);
-
   // Focus the hyvmind iframe once it becomes visible after loading
   useEffect(() => {
     if (!hyvmindLoading && phase.type === "hyvmind") {
