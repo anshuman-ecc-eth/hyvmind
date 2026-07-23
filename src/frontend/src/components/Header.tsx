@@ -118,7 +118,7 @@ export default function Header() {
                 )}
                 <DropdownMenuItem
                   onClick={() =>
-                    window.open("/assets/hyvmind/index.html", "_blank")
+                    window.dispatchEvent(new CustomEvent("hyvmind-start"))
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
