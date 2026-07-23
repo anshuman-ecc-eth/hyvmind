@@ -117,6 +117,14 @@ export default function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
+                  onClick={() =>
+                    window.open("/assets/hyvmind/index.html", "_blank")
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  World
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={() => {
                     window.location.href = "/tutorial.html";
                   }}
