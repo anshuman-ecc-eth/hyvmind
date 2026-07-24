@@ -1,5 +1,11 @@
 packages:
   - src/**/*
+allowBuilds:
+  '@biomejs/biome': true
+  esbuild: true
+  onnxruntime-node: true
+  protobufjs: true
+  sharp: true
 onlyBuiltDependencies:
   - '@biomejs/biome'
   - esbuild

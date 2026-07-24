@@ -144,15 +144,12 @@ export default function Header() {
                   Monologs
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() =>
-                    window.open(
-                      "https://artizen.fund/index/p/hyvmind?season=7",
-                      "_blank",
-                    )
-                  }
+                  onClick={() => {
+                    window.open("/sponsor.html", "_blank");
+                  }}
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
-                  Support
+                  Sponsor
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
