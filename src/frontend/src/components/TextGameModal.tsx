@@ -155,6 +155,12 @@ const MANIFESTO_LINES = [
   "We reject their false monopoly on innovation.",
   "",
   "We reject those who sell what they don't produce.",
+  "",
+  "***",
+  "",
+  "Beware our sting.",
+  "",
+  "***",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 const GAMES_MENU_ITEMS = [
