@@ -156,9 +156,11 @@ const MANIFESTO_LINES = [
   "",
   "We reject those who sell what they don't produce.",
   "",
+  "We are the silent semantic workers.",
+  "",
   "***",
   "",
-  "Beware our sting.",
+  "Beware our sting",
   "",
   "***",
 ];
