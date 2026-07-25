@@ -1828,7 +1828,7 @@ function StartScreen({
                     className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
+                      fontSize: "0.7em",
                       letterSpacing: "0.2em",
                       background: "none",
                       border: "none",
@@ -1857,7 +1857,7 @@ function StartScreen({
                     className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
                       fontFamily: '"Press Start 2P", monospace',
-                      fontSize: "0.65em",
+                      fontSize: "0.7em",
                       letterSpacing: "0.2em",
                       background: "none",
                       border: "none",
