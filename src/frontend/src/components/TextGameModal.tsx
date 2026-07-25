@@ -1807,7 +1807,7 @@ function StartScreen({
             className="text-white tracking-widest"
             style={{
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: "1em",
+              fontSize: "0.7em",
               letterSpacing: "0.15em",
             }}
           >
@@ -2118,7 +2118,7 @@ function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
           className="w-full flex flex-col items-center gap-0 text-center"
           style={{
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: "1em",
+            fontSize: "0.7em",
             letterSpacing: "0.05em",
           }}
         >
