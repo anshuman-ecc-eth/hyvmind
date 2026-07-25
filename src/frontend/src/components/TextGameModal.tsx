@@ -18,7 +18,12 @@ function isComputerScreen(): boolean {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const MENU_ITEMS = ["Enter the Hive", "Collect Buzz", "Credits"] as const;
+const MENU_ITEMS = [
+  "Manifesto",
+  "Enter the Hive",
+  "Collect Buzz",
+  "Credits",
+] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
 
 const ABOUT_LINES = [
@@ -89,6 +94,67 @@ const ABOUT_LINES = [
   "If you're neither scared nor convinced..",
   "",
   "..then you're a threat.",
+];
+const MANIFESTO_LINES = [
+  "As legal researchers, we're confronted today by two forces.",
+  "",
+  "Irrelevance and dispossession.",
+  "",
+  "One is visible. The other invisible.",
+  "",
+  "Irrelevance says our skills don't matter.",
+  "",
+  "Dispossession is more insidious.",
+  "",
+  "It scrapes in the shadows for our morsels.",
+  "",
+  "Every post. Every comment. Every blog. Every thought.",
+  "",
+  "Appropriated.",
+  "",
+  "How can our skills be irrelevant when our writings are valuable enough to be stolen?",
+  "",
+  "How long can counterfeits outcompete originals?",
+  "",
+  "How long can commodities cover their nakedness?",
+  "",
+  'They point at Code and say: "look, it works!".',
+  "",
+  'They point at Chess and say: "look, it works!".',
+  "",
+  "We stand back and applaud their achievements.",
+  "",
+  "As an adult applauds a child.",
+  "",
+  "Who's going to tell them that Code is intentially unambiguous, but ambiguity is the soul of Law?",
+  "",
+  "Who's going to tell them that synthetic data can be as good as real, but only on the board?",
+  "",
+  "Who's going to show them that legal reasoning is the universal solvent of all reasoning?",
+  "",
+  "It's a waste of time.",
+  "",
+  "These idiots can't think.",
+  "",
+  "That's why they're selling thinking machines.",
+  "",
+  "We're no doomers but we can smell shit.",
+  "",
+  "We're no luddites but we can break things.",
+  "",
+  "We stand for AI as normal technology.",
+  "",
+  "We stand for intelligence as a public good.",
+  "",
+  "We stand for semantic labour power.",
+  "",
+  "We reject the claim that Law is reducible to natural language.",
+  "",
+  "We reject the paid shills of irrelevance and dispossession.",
+  "",
+  "We reject their false monopoly on innovation.",
+  "",
+  "We reject those who sell what they don't produce.",
 ];
 const PUZZLE_MENU_ITEMS = ["Chess", "Wordle", "Back"] as const;
 const GAMES_MENU_ITEMS = [
@@ -196,7 +262,8 @@ type Phase =
   | { type: "wordle" }
   | { type: "hyvmind" }
   | { type: "credits" }
-  | { type: "finalExit" };
+  | { type: "finalExit" }
+  | { type: "manifesto" };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -1570,6 +1637,7 @@ interface StartScreenProps {
   onExit: () => void;
   onEnter: () => void;
   onCredits: () => void;
+  onManifesto: () => void;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -1582,6 +1650,7 @@ function StartScreen({
   onExit,
   onEnter,
   onCredits,
+  onManifesto,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -1607,12 +1676,13 @@ function StartScreen({
           if (chosen === "Collect Buzz") onEnter();
           else if (chosen === "Enter the Hive") onExit();
           else if (chosen === "Credits") onCredits();
+          else if (chosen === "Manifesto") onManifesto();
         }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedIdx, subMenu, onEnter, onCredits, onExit]);
+  }, [selectedIdx, subMenu, onEnter, onCredits, onExit, onManifesto]);
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
@@ -1762,6 +1832,7 @@ function StartScreen({
                       if (item === "Collect Buzz") onEnter();
                       else if (item === "Enter the Hive") onExit();
                       else if (item === "Credits") onCredits();
+                      else if (item === "Manifesto") onManifesto();
                     }}
                   >
                     {isSelected ? `> ${item}` : `  ${item}`}
@@ -2015,6 +2086,68 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
           onSentenceComplete={() => setDone(true)}
         />
       </p>
+    </div>
+  );
+}
+
+function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onBack();
+      else if (e.key === "Enter") onBack();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onBack]);
+
+  return (
+    <div
+      className="flex-1 flex flex-col items-center gap-4 px-6 py-4 select-none min-h-0"
+      style={{ background: "#000" }}
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto w-full max-w-[70rem]">
+        <div
+          className="w-full flex flex-col items-center gap-0 text-center"
+          style={{
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "1em",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {MANIFESTO_LINES.map((line, i) =>
+            line === "" ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static list, order never changes
+              <div key={i} style={{ height: "7em" }} />
+            ) : (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: static list, order never changes
+                key={i}
+                className="text-foreground"
+                style={{ lineHeight: "1.5" }}
+              >
+                {line}
+              </span>
+            ),
+          )}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="text-foreground transition-colors hover:text-muted-foreground"
+        style={{
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em",
+          letterSpacing: "0.15em",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          marginTop: "4px",
+        }}
+        onClick={onBack}
+      >
+        {"> Back"}
+      </button>
     </div>
   );
 }
@@ -2745,6 +2878,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "credits" });
   }, []);
 
+  const handleOpenManifesto = useCallback(() => {
+    setPhase({ type: "manifesto" });
+  }, []);
+
   const handleChessComplete = useCallback((score: number) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
@@ -3210,6 +3347,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onExit={handleExit}
             onEnter={handleStartHyvmind}
             onCredits={handleOpenCredits}
+            onManifesto={handleOpenManifesto}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}
@@ -3231,6 +3369,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
 
       case "credits":
         return <CreditsScreen onBack={handleCloseSubScreen} />;
+
+      case "manifesto":
+        return <ManifestoTextScreen onBack={handleCloseSubScreen} />;
 
       case "leaderboard":
         return (
