@@ -96,6 +96,8 @@ const ABOUT_LINES = [
   "..then you're a threat.",
 ];
 const MANIFESTO_LINES = [
+  "***",
+  "",
   "As legal researchers, we're confronted today by two forces.",
   "",
   "Irrelevance and dispossession.",
@@ -106,35 +108,37 @@ const MANIFESTO_LINES = [
   "",
   "Dispossession is more insidious.",
   "",
-  "It scrapes in the shadows for our morsels.",
+  "It scrapes away in the shadows.",
   "",
   "Every post. Every comment. Every blog. Every thought.",
   "",
   "Appropriated.",
   "",
-  "How can our skills be irrelevant when our writings are valuable enough to be stolen?",
+  "How can our skills be irrelevant if our words are valuable enough to be stolen?",
   "",
-  "How long can counterfeits outcompete originals?",
+  "How long can counterfeits outlast originals?",
   "",
-  "How long can commodities cover their nakedness?",
+  "How long does a commodity cover its nakedness?",
   "",
   'They point at Code and say: "look, it works!".',
   "",
   'They point at Chess and say: "look, it works!".',
   "",
-  "We stand back and applaud their achievements.",
+  "We stand back and applaud these achievements.",
   "",
   "As an adult applauds a child.",
   "",
-  "Who's going to tell them that Code is intentially unambiguous, but ambiguity is the soul of Law?",
+  "Who'll tell them that Code is intentially unambiguous, but ambiguity is the soul of Law?",
   "",
-  "Who's going to tell them that synthetic data can be as good as real, but only on the board?",
+  "Who'll show them that synthetic data can be as good as real, but only on the board?",
   "",
-  "Who's going to show them that legal reasoning is the universal solvent of all reasoning?",
+  "Who'll teach them that legal reasoning is the universal solvent for all reasoning?",
   "",
-  "It's a waste of time.",
+  "No one.",
   "",
-  "These idiots can't think.",
+  "Because it's a waste of time.",
+  "",
+  "They don't want to think anymore.",
   "",
   "That's why they're selling thinking machines.",
   "",
@@ -148,7 +152,7 @@ const MANIFESTO_LINES = [
   "",
   "We stand for semantic labour power.",
   "",
-  "We reject the claim that Law is reducible to natural language.",
+  "We reject the premise that Law is reducible to natural language.",
   "",
   "We reject the paid shills of irrelevance and dispossession.",
   "",
@@ -156,11 +160,9 @@ const MANIFESTO_LINES = [
   "",
   "We reject those who sell what they don't produce.",
   "",
-  "We are the silent semantic workers.",
+  "We are the silent protectors of meaning.",
   "",
-  "***",
-  "",
-  "Beware our sting",
+  "Beware our sting..",
   "",
   "***",
 ];
@@ -2134,6 +2136,15 @@ function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
                 style={{ lineHeight: "1.5" }}
               >
                 {line}
+                {line === "Beware our sting.." && (
+                  <span
+                    style={{
+                      animation: "terminal-blink 1.6s step-end infinite",
+                    }}
+                  >
+                    █
+                  </span>
+                )}
               </span>
             ),
           )}
