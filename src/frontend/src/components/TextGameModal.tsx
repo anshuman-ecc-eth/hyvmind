@@ -118,7 +118,7 @@ const MANIFESTO_LINES = [
   "",
   "How long can counterfeits outlast originals?",
   "",
-  "How long will a commodity cover its nakedness?",
+  "How long can a commodity cover its nakedness?",
   "",
   'They point at Code and say: "look, it works!".',
   "",
