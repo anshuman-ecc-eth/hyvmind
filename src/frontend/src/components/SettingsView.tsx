@@ -350,7 +350,6 @@ ${SAMPLE_PROMPT}`;
                 className="space-y-5"
                 data-ocid="settings.appearance.section"
               >
-                <h2 className="text-sm font-semibold">Appearance</h2>
                 <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">
                   {/* Theme */}
                   <div>
@@ -452,7 +451,6 @@ ${SAMPLE_PROMPT}`;
                 className="space-y-5"
                 data-ocid="settings.profile.section"
               >
-                <h2 className="text-sm font-semibold">Profile</h2>
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="settings-profileName">Profile Name</Label>
@@ -510,7 +508,6 @@ ${SAMPLE_PROMPT}`;
                 className="space-y-5"
                 data-ocid="settings.plugin_binding.section"
               >
-                <h2 className="text-sm font-semibold">Plugin Settings</h2>
                 <p className="text-sm text-muted-foreground">
                   Download and install 'Hyvmind Uploader' from Obsidian's
                   Community Plugins, or click{" "}
@@ -735,7 +732,6 @@ ${SAMPLE_PROMPT}`;
                 className="space-y-4"
                 data-ocid="settings.wallet.section"
               >
-                <h2 className="text-sm font-semibold">Wallet</h2>
                 <p className="text-sm text-muted-foreground">
                   Manage your Buzz and Trust balances.
                 </p>
@@ -803,7 +799,6 @@ ${SAMPLE_PROMPT}`;
                 className="space-y-5"
                 data-ocid="settings.skills.section"
               >
-                <h2 className="text-sm font-semibold">Skill</h2>
                 <p className="text-sm text-muted-foreground">
                   Give your AI agent access to Hyvmind's knowledge graphs.
                 </p>
