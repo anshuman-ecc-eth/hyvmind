@@ -28,6 +28,7 @@ import { useActor } from "@caffeineai/core-infrastructure";
 import {
   Check,
   Copy,
+  Download,
   FileText,
   Loader2,
   RotateCcw,
@@ -111,6 +112,7 @@ export function SettingsView() {
   const [confirmRevokeKey, setConfirmRevokeKey] = useState<string | null>(null);
   const [revokingKey, setRevokingKey] = useState<string | null>(null);
   const [skillPromptCopied, setSkillPromptCopied] = useState(false);
+  const [skillDownloaded, setSkillDownloaded] = useState(false);
   const [selectedSection, setSelectedSection] =
     useState<string>("settings-profile");
   const [sectionNavCollapsed, setSectionNavCollapsed] = useState(false);
@@ -146,11 +148,11 @@ Data structure:
     • tags — array of strings. Labels for discovery and categorization. Can appear on any node type.
 
 Instructions:
-  1. Only invoke when the user says "Hyvmind" or "hyvmind". Do not use this API for general queries.
-  2. Present relevant graph data in a tabular format — use columns appropriate to the data (e.g., name, type, jurisdiction for graph lists; key, values for attributes; name, URL for sources; source, label, target for edges).
-  3. After the table, add a "Reasoning (verify independently):" section analyzing the data in context of the user's request.
-  4. If no data matches the user's request, say: "Hyvmind doesn't have any data on this right now." Do not fabricate, guess, or extrapolate.
-  5. Fetched data is reliable as-is. Your reasoning should be marked for independent verification.`;
+  1. Your primary task is retrieval, not reasoning. Fetched data is reliable as-is. Your own interpretations should be clearly demarcated. See point 4.
+  2. Only invoke when the user says "Hyvmind" or "hyvmind". Do not use this API for general queries.
+  3. Present relevant graph data in a tabular format — use columns appropriate to the data (e.g., name, type, jurisdiction for graph lists; key, values for attributes; name, URL for sources; source, label, target for edges).
+  4. After the table, add a "Reasoning (verify independently):" section analyzing the data in context of the user's request.
+  5. If no data matches the user's request, say: "Hyvmind doesn't have any data on this right now." Never fabricate, guess, or extrapolate.`;
 
   // Load plugin binding data on mount
   useEffect(() => {
@@ -255,6 +257,13 @@ Instructions:
     }
   };
 
+  const SKILL_MD = `---
+name: hyvmind
+description: Give your AI agent access to Hyvmind's legal knowledge graphs.
+---
+
+${SAMPLE_PROMPT}`;
+
   const handleCopySkillPrompt = async () => {
     const ok = await copyText(SAMPLE_PROMPT);
     if (ok) {
@@ -262,6 +271,24 @@ Instructions:
       setTimeout(() => setSkillPromptCopied(false), 2000);
     } else {
       toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  const handleDownloadSkillPrompt = () => {
+    try {
+      const blob = new Blob([SKILL_MD], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hyvmind/SKILL.md";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSkillDownloaded(true);
+      setTimeout(() => setSkillDownloaded(false), 2000);
+    } catch {
+      toast.error("Failed to download skill file");
     }
   };
 
@@ -798,10 +825,34 @@ Instructions:
                     tells the agent everything it needs to use the Hyvmind graph
                     API.
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    If you want to give your agent this skill, download the file
+                    and place it at{" "}
+                    <code className="bg-muted/60 px-1 rounded">
+                      .agents/skills/hyvmind
+                    </code>
+                    .
+                  </p>
                   <div className="relative">
                     <pre className="text-xs font-mono text-foreground bg-muted/40 p-4 rounded border border-border overflow-x-auto whitespace-pre-wrap leading-relaxed">
                       {SAMPLE_PROMPT}
                     </pre>
+                    <button
+                      type="button"
+                      onClick={handleDownloadSkillPrompt}
+                      className="absolute top-2 right-16 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/80 px-2 py-1 rounded"
+                      data-ocid="settings.skills.download_prompt"
+                    >
+                      {skillDownloaded ? (
+                        <>
+                          <Check className="h-3 w-3" /> downloaded
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3 w-3" /> download
+                        </>
+                      )}
+                    </button>
                     <button
                       type="button"
                       onClick={handleCopySkillPrompt}
