@@ -15,52 +15,52 @@ export const FONT_PAIRINGS: FontPairing[] = [
     bodyFont: "Ubuntu Sans",
   },
   {
-    id: "annie-use-your-telescope",
-    name: "Annie Use Your Telescope",
-    headingFont: "Annie Use Your Telescope",
-    bodyFont: "Annie Use Your Telescope",
+    id: "quattrocento-mulish",
+    name: "Quattrocento Sans + Mulish",
+    headingFont: "Quattrocento Sans",
+    bodyFont: "Mulish",
   },
   {
-    id: "architects-daughter",
-    name: "Architects Daughter",
-    headingFont: "Architects Daughter",
-    bodyFont: "Architects Daughter",
+    id: "josefin-cardo",
+    name: "Josefin Sans + Cardo",
+    headingFont: "Josefin Sans",
+    bodyFont: "Cardo",
   },
   {
-    id: "cedarville-cursive",
-    name: "Cedarville Cursive",
-    headingFont: "Cedarville Cursive",
-    bodyFont: "Cedarville Cursive",
+    id: "oswald-barlow",
+    name: "Oswald + Barlow",
+    headingFont: "Oswald",
+    bodyFont: "Barlow",
   },
   {
-    id: "crafty-girls",
-    name: "Crafty Girls",
-    headingFont: "Crafty Girls",
-    bodyFont: "Crafty Girls",
+    id: "montserrat-source-sans",
+    name: "Montserrat + Source Sans 3",
+    headingFont: "Montserrat",
+    bodyFont: "Source Sans 3",
   },
   {
-    id: "give-you-glory",
-    name: "Give You Glory",
-    headingFont: "Give You Glory",
-    bodyFont: "Give You Glory",
+    id: "chivo-krub",
+    name: "Chivo + Krub",
+    headingFont: "Chivo",
+    bodyFont: "Krub",
   },
   {
-    id: "handlee",
-    name: "Handlee",
-    headingFont: "Handlee",
-    bodyFont: "Handlee",
+    id: "lora-roboto",
+    name: "Lora + Roboto",
+    headingFont: "Lora",
+    bodyFont: "Roboto",
   },
   {
-    id: "mansalva",
-    name: "Mansalva",
-    headingFont: "Mansalva",
-    bodyFont: "Mansalva",
+    id: "rubik-assistant",
+    name: "Rubik + Assistant",
+    headingFont: "Rubik",
+    bodyFont: "Assistant",
   },
   {
-    id: "pangolin",
-    name: "Pangolin",
-    headingFont: "Pangolin",
-    bodyFont: "Pangolin",
+    id: "six-caps-open-sans",
+    name: "Six Caps + Open Sans",
+    headingFont: "Six Caps",
+    bodyFont: "Open Sans",
   },
 ];
 
@@ -80,11 +80,11 @@ export function applyFontPairing(pairingId: string): void {
     FONT_PAIRINGS.find((p) => p.id === pairingId) ?? FONT_PAIRINGS[0];
   document.documentElement.style.setProperty(
     "--font-heading",
-    `'${pairing.headingFont}', monospace`,
+    `'${pairing.headingFont}', sans-serif`,
   );
   document.documentElement.style.setProperty(
     "--font-body",
-    `'${pairing.bodyFont}', monospace`,
+    `'${pairing.bodyFont}', sans-serif`,
   );
 }
 
