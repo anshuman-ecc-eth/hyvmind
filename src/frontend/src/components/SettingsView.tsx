@@ -280,7 +280,7 @@ ${SAMPLE_PROMPT}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "hyvmind/SKILL.md";
+      a.download = "SKILL.md";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -834,7 +834,7 @@ ${SAMPLE_PROMPT}`;
                     .
                   </p>
                   <div className="relative">
-                    <pre className="text-xs font-mono text-foreground bg-muted/40 p-4 rounded border border-border overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                    <pre className="text-xs font-mono text-foreground bg-muted/40 pt-10 p-4 rounded border border-border overflow-x-auto whitespace-pre-wrap leading-relaxed">
                       {SAMPLE_PROMPT}
                     </pre>
                     <button
