@@ -4424,10 +4424,17 @@ actor {
         case (null) { 0 };
         case (?b) { b };
       };
+      let _whole = trustBalance / TRUST_DECIMALS;
+      let _frac = Int.abs(trustBalance % TRUST_DECIMALS);
+      let _fracStr = _frac.toText();
+      var _padded = _whole.toText() # ".";
+      var _i = _fracStr.size();
+      while (_i < 7) { _padded #= "0"; _i += 1; };
+      _padded #= _fracStr;
       authorEntries.add(jsonObject([
         ("principal", jsonText(principal.toText())),
         ("name", jsonText(name)),
-        ("trustScore", jsonInt(trustBalance)),
+        ("trustScore", _padded),
         ("profileUrl", switch (userProfiles.get(principal)) {
           case (null) { jsonNull() };
           case (?p) { switch (p.socialUrl) { case (null) { jsonNull() }; case (?url) { jsonText(url) } } };
