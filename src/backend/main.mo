@@ -1591,7 +1591,10 @@ actor {
               case (null) { return false };
             };
           };
-          case (null) { return false };
+          case (null) {
+            // Parent is not a law token — could be swarm, location, or curation
+            if (belongsToPublishedGraph(it.parentLawTokenId, publishedId)) { return true };
+          };
         };
       };
       case (null) {};
