@@ -126,7 +126,10 @@ export default function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
-                    window.open("https://nodes.desci.com/dpid/969", "_blank")
+                    window.open(
+                      "https://ipfs.desci.com/ipfs/bafybeih6hvxjamndbc74qu4uhpco5nuixvyikzyboa5pmfnaxxfhaarqci",
+                      "_blank",
+                    )
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
