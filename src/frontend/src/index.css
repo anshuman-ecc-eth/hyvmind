@@ -217,9 +217,9 @@ h6 {
   animation: terminal-blink 1s step-end infinite;
 }
 
-/* Press Start 2P font for text game modal */
+/* Pixelify Sans font for text game modal */
 .text-game-font {
-  font-family: "Press Start 2P", monospace !important;
+  font-family: "Pixelify Sans", monospace !important;
   letter-spacing: 0.02em;
   line-height: 1.8 !important;
   font-size: 0.7rem !important;

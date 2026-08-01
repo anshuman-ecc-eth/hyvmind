@@ -134,10 +134,7 @@ export default function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
-                    window.open(
-                      "https://www.youtube.com/@y-over-x",
-                      "_blank",
-                    )
+                    window.open("https://www.youtube.com/@y-over-x", "_blank")
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >

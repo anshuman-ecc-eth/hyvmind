@@ -19,7 +19,7 @@ interface WordlePuzzleGameProps {
 }
 
 const BTN_STYLE: React.CSSProperties = {
-  fontFamily: '"Press Start 2P", monospace',
+  fontFamily: '"Pixelify Sans", monospace',
   fontSize: "0.6rem",
   letterSpacing: "0.15em",
   background: "none",
@@ -172,7 +172,7 @@ export default function WordlePuzzleGame({
 
   // ── Shared styles ─────────────────────────────────────────────────────────
   const pxStyle: React.CSSProperties = {
-    fontFamily: '"Press Start 2P", monospace',
+    fontFamily: '"Pixelify Sans", monospace',
   };
 
   const cellSize = "min(13vw, 48px)";

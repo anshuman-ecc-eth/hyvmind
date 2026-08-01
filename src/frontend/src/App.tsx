@@ -91,7 +91,7 @@ function AppShell() {
           <span
             className="text-white/70"
             style={{
-              fontFamily: '"Press Start 2P", monospace',
+              fontFamily: '"Pixelify Sans", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.2em",
             }}
