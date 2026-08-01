@@ -4,14 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HYVMIND</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
-  @font-face {
-    font-family: "Pixelify Sans";
-    font-style: normal;
-    font-weight: 400 700;
-    font-display: swap;
-    src: url("/fonts/pixelify-sans.woff2") format("woff2");
-  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; color-scheme: dark; }
   body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
@@ -29,12 +24,12 @@
   .dpad-right { right: 0; top: 52px; }
   .action-buttons { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 144px; height: 150px; padding-top: 24px; }
   .action-row { display: flex; flex-direction: row; gap: 16px; }
-  .action-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; color: #000; font-family: 'Pixelify Sans', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .action-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; color: #000; font-family: 'Press Start 2P', monospace; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
   .action-btn:active, .action-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
   .zoom-row { display: flex; flex-direction: row; gap: 6px; width: 100%; margin-top: 25px; }
-  .screen-size-btn { display: flex; align-items: center; justify-content: center; padding: 6px 10px; font-family: 'Pixelify Sans', monospace; font-size: 10px; color: #000; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; white-space: nowrap; width: 100%; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
+  .screen-size-btn { display: flex; align-items: center; justify-content: center; padding: 6px 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; color: #000; background: rgba(255,255,255,0.5); border: none; border-radius: 6px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; white-space: nowrap; width: 100%; transition: transform 0.15s; box-shadow: -3px 0 0 0 #666, 3px 0 0 0 #666, 0 -3px 0 0 #666, 0 3px 0 0 #666; position: relative; }
   .screen-size-btn:active, .screen-size-btn.active { background: #fff3d4; color: #c89420; transform: translateY(3px); box-shadow: -2px 0 0 0 #c89420, 2px 0 0 0 #c89420, 0 -2px 0 0 #c89420, 0 2px 0 0 #c89420; }
-   .top-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:"Pixelify Sans",monospace;font-size:10px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+   .top-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
    .top-btn:active,.top-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
    .dpad-btn::after, .action-btn::after, .screen-size-btn::after, .top-btn::after { content: ""; position: absolute; bottom: 0; right: 0; width: 100%; height: 100%; pointer-events: none; border-right: 3px solid rgba(0,0,0,0.15); border-bottom: 3px solid rgba(0,0,0,0.15); border-radius: inherit; }
 
@@ -78,7 +73,7 @@
         </div>
       </div>
     </div>
-    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Pixelify Sans',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
   </div>
 </div>
 
@@ -135,7 +130,7 @@ window.addEventListener('message', function(e) {
     closePopup();
   var pop = document.createElement('div');
   pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-    pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
+    pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
     (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -175,14 +170,14 @@ function renderGangeshUpadhyayMenu(pop) {
     var op = i === sel ? '' : 'opacity:0.5;';
     menuItems += '<div style="font-size:13px;color:' + cls + ';' + op + 'text-align:left;padding:4px 8px;">' + arrow + ' ' + GANGESH_UPADHYAY_DIALOGS[i].question + '</div>';
   }
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Ask me anything:</div>' + items + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Ask me anything:</div>' + items + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
 }
 
 function renderGangeshUpadhyayResponse(pop) {
   var idx = pop._step - 1;
   var response = idx >= 0 && idx < GANGESH_UPADHYAY_DIALOGS.length ? GANGESH_UPADHYAY_DIALOGS[idx].response : '';
   var question = idx >= 0 && idx < GANGESH_UPADHYAY_DIALOGS.length ? GANGESH_UPADHYAY_DIALOGS[idx].question : '';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#888;font-size:22px;margin-bottom:5px;">~ ' + question + ' ~</div><div style="padding:3px 0;">' + response + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] back  [X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#888;font-size:22px;margin-bottom:5px;">~ ' + question + ' ~</div><div style="padding:3px 0;">' + response + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] back  [X] close</div></div>';
 }
   if (e.data?.type === 'hyvmind-buzz-secret') {
     isGenerating = false;
@@ -327,7 +322,7 @@ function showPopup(msg) {
   var pop = document.createElement('div');
   pop._dismissKey = 'msg:' + msg;
   pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + msg + '<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + msg + '<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -336,7 +331,7 @@ function showDefaultPopup() {
   var pop = document.createElement('div');
   pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   var scoreHtml = '<div style="color:#888;padding:0 0 8px 0;border-bottom:1px solid #333;margin-bottom:2px;">Score: ' + currentScore + '</div>';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + scoreHtml + '<div style="margin-bottom:2px;">who am I talking to?</div><div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + scoreHtml + '<div style="margin-bottom:2px;">who am I talking to?</div><div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -363,7 +358,7 @@ function showInputPopup(raw) {
   pop._rules = rules;
   pop._triggerKey = triggerKey;
   pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + question + '<input id="inputField" type="text" style="display:block;margin:12px auto 0;width:80%;background:#111;border:1px solid #444;color:#e0e0e0;font-family:"Pixelify Sans",monospace;font-size:28px;padding:2px 4px;outline:none;text-align:center;"><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Enter] submit  [X] cancel</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + question + '<input id="inputField" type="text" style="display:block;margin:12px auto 0;width:80%;background:#111;border:1px solid #444;color:#e0e0e0;font-family:VT323,monospace;font-size:28px;padding:2px 4px;outline:none;text-align:center;"><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Enter] submit  [X] cancel</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
   // Focus the input field after a delay for Firefox
@@ -397,7 +392,7 @@ function showDoorPopup(label) {
   pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
   var title = label ? '~ ' + label + ' ~' : '~ door ~';
   var verb = (label === 'The Ranting Well') ? 'Listen' : 'Enter';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">' + title + '</div><div style="font-size:26px;">' + verb + '?</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">' + title + '</div><div style="font-size:26px;">' + verb + '?</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
   (document.querySelector('.screen') || document.body).appendChild(pop);
   activePopup = pop;
 }
@@ -477,7 +472,7 @@ function renderGangeshUpadhyayMenu(pop) {
     var parentNode = getGangeshUpadhyayNode(pop._path.slice(0, -1));
     if (parentNode && parentNode.q) parentInfo = '<div style="font-size:22px;color:#888;text-align:center;margin-bottom:2px;">' + parentNode.q + '</div>';
   }
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div>' + parentInfo + menuItems + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] back</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Gangesa ~</div>' + parentInfo + menuItems + '<div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] back</div></div>';
 }
 
 function renderGangeshUpadhyayResponse(pop) {
@@ -504,14 +499,14 @@ function renderGangeshUpadhyayResponse(pop) {
   } else {
     footer = hasChildren ? '[Z] ask more  [X] back' : '[X] back';
   }
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="font-size:22px;color:#888;margin-bottom:5px;">~ ' + node.q + ' ~</div><div style="padding:3px 0;">' + msg + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="font-size:22px;color:#888;margin-bottom:5px;">~ ' + node.q + ' ~</div><div style="padding:3px 0;">' + msg + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function renderSequentialPopup(pop, step, sentences) {
   var sentence = step < sentences.length ? sentences[step] : '';
   var isLast = step >= sentences.length - 1;
   var footer = isLast ? '[X] close' : '[Z] continue &nbsp; [X] close';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function showSequentialPopup(sentences, type, dismissKey) {
@@ -545,7 +540,7 @@ function renderUdayanDialog(pop) {
   var isLast = pop._step >= pop._sentences.length - 1;
   var footer = isLast ? '[X] close' : '[Z] continue  [X] close';
   var titleHtml = '<div style="color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ Udayana ~</div>';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">' + titleHtml + '<div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;white-space:nowrap;">' + titleHtml + '<div>' + sentence + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">' + footer + '</div></div>';
 }
 
 function showStartupPopup() {
@@ -575,7 +570,7 @@ function refreshSecretsMenuContent(pop, selected) {
   var opt1Class = opt1Active ? '#e0e0e0' : (currentScore === 0 ? '#444' : '#888');
   var opt1Arrow = opt1Active ? '>' : '&nbsp;';
   var opt1Op = opt1Active ? '' : 'opacity:0.5;';
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">BUZZ SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="text-align:center;padding:4px 0 6px;border-bottom:1px solid #333;margin-bottom:5px;">' + scoreLine + '</div><div style="color:' + opt0Class + ';' + opt0Op + 'text-align:left;padding:2px 6px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="color:' + opt1Class + ';' + opt1Op + 'text-align:left;padding:2px 6px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">BUZZ SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="text-align:center;padding:4px 0 6px;border-bottom:1px solid #333;margin-bottom:5px;">' + scoreLine + '</div><div style="color:' + opt0Class + ';' + opt0Op + 'text-align:left;padding:2px 6px;">' + opt0Arrow + ' View Secrets (' + secretsCount + ')</div><div style="color:' + opt1Class + ';' + opt1Op + 'text-align:left;padding:2px 6px;">' + opt1Arrow + ' Submit Fresh Score</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] select  [X] close</div></div>';
   pop._selected = selected;
   activePopup = pop;
 }
@@ -595,7 +590,7 @@ function refreshSecretsListContent(pop) {
   if (!pop) return;
   var scroll = pop._scroll || 0;
   var visible = 6;
-  var html = '<div style="background:#0a0a0a;padding:8px 12px 8px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">YOUR SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #333;margin-bottom:5px;"></div>';
+  var html = '<div style="background:#0a0a0a;padding:8px 12px 8px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:2px;">YOUR SECRETS</div><div style="text-align:center;font-size:22px;color:#888;margin-bottom:2px;">Use these within 24 hours (in App&gt;Settings&gt;Wallet)</div><div style="border-bottom:1px solid #333;margin-bottom:5px;"></div>';
   var start = scroll;
   var end = Math.min(scroll + visible, storedSecrets.length);
   for (var i = start; i < end; i++) {
@@ -640,7 +635,7 @@ function showTrunkPopupContent(pop) {
     body = '<div style="padding:3px 0;">No score to submit. Try some games or puzzles.</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div>';
     pop._action = 'none';
   }
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;text-align:center;line-height:1.7;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Trunk ~</div>' + body + '</div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;text-align:center;line-height:1.7;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Trunk ~</div>' + body + '</div>';
   pop._type = 'trunk';
 }
 
@@ -958,7 +953,7 @@ function renderSettingsOverlay(pop) {
   var zoomCls = sel === 1 ? '#e0e0e0' : '#888';
   var zoomOp = sel === 1 ? '' : 'opacity:0.5;';
   var zoomText = zoomLabels[zoomIdx];
-  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:' + audioCls + ';' + audioOp + 'text-align:left;padding:2px 6px;">' + audioArrow + ' Audio: ' + audioText + '</div><div style="color:' + zoomCls + ';' + zoomOp + 'text-align:left;padding:2px 6px;">' + zoomArrow + ' Screen Size: ' + zoomText + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
+  pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:' + audioCls + ';' + audioOp + 'text-align:left;padding:2px 6px;">' + audioArrow + ' Audio: ' + audioText + '</div><div style="color:' + zoomCls + ';' + zoomOp + 'text-align:left;padding:2px 6px;">' + zoomArrow + ' Screen Size: ' + zoomText + '</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
   if (pop) pop._selected = sel;
 }
 function activateSettings() {
@@ -1030,7 +1025,7 @@ function activateZ() {
         closePopup();
         var pop = document.createElement('div');
         pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-        pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
+        pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
         (document.querySelector('.screen') || document.body).appendChild(pop);
         activePopup = pop;
       }
@@ -1087,7 +1082,7 @@ function activateZ() {
       var pop = document.createElement('div');
       pop._type = 'boat-disembark';
       pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Get off the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Get off the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'disembark-prompt';
@@ -1104,7 +1099,7 @@ function activateZ() {
       var pop = document.createElement('div');
       pop._type = 'boat-board';
       pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Take the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;"><div style="color:#e0e0e0;font-size:30px;margin-bottom:2px;">~ Take the boat? ~</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;font-size:24px;color:#666;">[Z] yes  [X] no</div></div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'boat-board-prompt';
@@ -1116,7 +1111,7 @@ function activateZ() {
       closePopup();
       var pop = document.createElement('div');
       pop.style.cssText = 'position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
+      pop.innerHTML = '<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:30px;">Generating secret..</div>';
       (document.querySelector('.screen') || document.body).appendChild(pop);
       activePopup = pop;
       msg = 'trunk-submit';

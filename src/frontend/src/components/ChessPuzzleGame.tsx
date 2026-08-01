@@ -332,7 +332,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "1rem",
             letterSpacing: "0.15em",
           }}
@@ -342,7 +342,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-foreground animate-pulse"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
             letterSpacing: "0.1em",
           }}
@@ -354,7 +354,7 @@ export default function ChessPuzzleGame({
           onClick={onExit}
           className="transition-colors hover:text-muted-foreground text-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
             letterSpacing: "0.15em",
             background: "none",
@@ -380,7 +380,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "1rem",
             letterSpacing: "0.15em",
           }}
@@ -390,7 +390,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-destructive text-center px-4"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.55rem",
             letterSpacing: "0.1em",
           }}
@@ -403,7 +403,7 @@ export default function ChessPuzzleGame({
             onClick={onExit}
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -420,7 +420,7 @@ export default function ChessPuzzleGame({
             onClick={() => void fetchNext()}
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -447,7 +447,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "1rem",
             letterSpacing: "0.15em",
           }}
@@ -457,7 +457,7 @@ export default function ChessPuzzleGame({
         <div
           className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.55rem",
             letterSpacing: "0.1em",
           }}
@@ -477,7 +477,7 @@ export default function ChessPuzzleGame({
         <div className="flex flex-col items-center gap-1">
           <div
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               color: "var(--destructive)",
@@ -489,7 +489,7 @@ export default function ChessPuzzleGame({
           <div
             className="text-muted-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.55rem",
               letterSpacing: "0.1em",
             }}
@@ -500,7 +500,7 @@ export default function ChessPuzzleGame({
           <div
             className="text-muted-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.55rem",
               letterSpacing: "0.1em",
             }}
@@ -513,7 +513,7 @@ export default function ChessPuzzleGame({
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -544,7 +544,7 @@ export default function ChessPuzzleGame({
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -572,7 +572,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "1rem",
             letterSpacing: "0.15em",
           }}
@@ -582,7 +582,7 @@ export default function ChessPuzzleGame({
         <div
           className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.55rem",
             letterSpacing: "0.1em",
           }}
@@ -602,7 +602,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-center text-muted-foreground animate-pulse"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
             letterSpacing: "0.1em",
           }}
@@ -615,7 +615,7 @@ export default function ChessPuzzleGame({
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -639,7 +639,7 @@ export default function ChessPuzzleGame({
             type="button"
             className="transition-colors hover:text-muted-foreground text-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               background: "none",
@@ -666,7 +666,7 @@ export default function ChessPuzzleGame({
       <div
         className="text-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "1rem",
           letterSpacing: "0.15em",
         }}
@@ -676,7 +676,7 @@ export default function ChessPuzzleGame({
       <div
         className="flex items-center justify-between w-full max-w-[min(88vw,400px)] text-muted-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.55rem",
           letterSpacing: "0.1em",
         }}
@@ -688,7 +688,7 @@ export default function ChessPuzzleGame({
         <span
           className="tabular-nums"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.8rem",
             letterSpacing: "0.15em",
             color: timeLeft <= 10 ? "var(--destructive)" : undefined,
@@ -706,7 +706,7 @@ export default function ChessPuzzleGame({
         <div
           className="text-center min-h-[1.5rem]"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.6rem",
             letterSpacing: "0.1em",
             color:
@@ -724,7 +724,7 @@ export default function ChessPuzzleGame({
         onClick={onExit}
         className="transition-colors hover:text-muted-foreground text-foreground mt-1"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.6rem",
           letterSpacing: "0.15em",
           background: "none",

@@ -4,14 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TERRAIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
-  @font-face {
-    font-family: "Pixelify Sans";
-    font-style: normal;
-    font-weight: 400 700;
-    font-display: swap;
-    src: url("/fonts/pixelify-sans.woff2") format("woff2");
-  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; touch-action: none; color-scheme: dark; }
   body { font-family: monospace; display: flex; align-items: center; justify-content: center; }
@@ -25,12 +20,12 @@
   .dpad-left { left:0; top:52px; } .dpad-right { right:0; top:52px; }
   .action-buttons { display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:144px;height:150px;padding-top:24px; }
   .action-row { display:flex;flex-direction:row;gap:16px; }
-  .action-btn { width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.5);border:none;color:#000;font-family:"Pixelify Sans",monospace;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+  .action-btn { width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.5);border:none;color:#000;font-family:'Press Start 2P',monospace;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:none;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
    .action-btn:active,.action-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
    .zoom-row { display:flex;flex-direction:row;gap:6px;width:100%;margin-top:25px; }
-   .screen-size-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:"Pixelify Sans",monospace;font-size:10px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;width:100%;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+   .screen-size-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;width:100%;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
    .screen-size-btn:active,.screen-size-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,-2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
-    .top-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:"Pixelify Sans",monospace;font-size:10px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
+    .top-btn { display:flex;align-items:center;justify-content:center;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:8px;color:#000;background:rgba(255,255,255,0.5);border:none;border-radius:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;transition:transform 0.15s;box-shadow:-3px 0 0 0 #666,3px 0 0 0 #666,0 -3px 0 0 #666,0 3px 0 0 #666;position:relative; }
     .top-btn:active,.top-btn.active { background:#fff3d4;color:#c89420;transform:translateY(3px);box-shadow:-2px 0 0 0 #c89420,2px 0 0 0 #c89420,0 -2px 0 0 #c89420,0 2px 0 0 #c89420; }
     .dpad-btn::after,.action-btn::after,.screen-size-btn::after,.top-btn::after { content:"";position:absolute;bottom:0;right:0;width:100%;height:100%;pointer-events:none;border-right:3px solid rgba(0,0,0,0.15);border-bottom:3px solid rgba(0,0,0,0.15);border-radius:inherit; }
   .screen { width:500px;height:500px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(0,0,0,0.9);flex-shrink:0; }
@@ -71,7 +66,7 @@
         </div>
       </div>
     </div>
-    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Pixelify Sans',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
+    <button id="backBtn" type="button" style="margin-top:5px;font-family:'Press Start 2P',monospace;font-size:0.6rem;letter-spacing:0.15em;background:none;border:none;cursor:pointer;padding:0;color:#ffffff;transition:color 0.15s" onmouseenter="this.style.color='#7a6a4a'" onmouseleave="this.style.color='#ffffff'" onfocus="this.style.color='#7a6a4a'" onblur="this.style.color='#ffffff'">&gt; Back</button>
   </div>
 </div>
 <audio id="bgm" src="/assets/hyvmind/which_brand_of_mustard_shall_i_buy.mp3" loop preload="auto"></audio>
@@ -302,7 +297,7 @@ var pRolling = false, rollTimer = 0, rollCooldown = 0, rollVx = 0, rollVy = 0;
 function showPopup(m) {
   if(activePopup)activePopup.remove();
   var p=document.createElement('div');p.style.cssText='position:absolute;left:0;right:0;bottom:0;z-index:9999;pointer-events:auto;';
-  p.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">'+m+'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
+  p.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;text-align:center;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;line-height:1.4;">'+m+'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[X] close</div></div>';
   (document.querySelector('.screen')||document.body).appendChild(p);activePopup=p;
 }
 function closePopup(){if(activePopup){activePopup.remove();activePopup=null;}}
@@ -617,7 +612,7 @@ function renderSettingsOverlay(pop) {
   var audioArrow=sel===0?'>':'&nbsp;';var audioCls=sel===0?'#e0e0e0':'#888';var audioOp=sel===0?'':'opacity:0.5;';
   var zoomArrow=sel===1?'>':'&nbsp;';var zoomCls=sel===1?'#e0e0e0':'#888';var zoomOp=sel===1?'':'opacity:0.5;';
   var zoomText=zoomLabels[zoomIdx];
-  pop.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;font-family:"Pixelify Sans",monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:'+audioCls+';'+audioOp+'text-align:left;padding:2px 6px;">'+audioArrow+' Audio: '+audioText+'</div><div style="color:'+zoomCls+';'+zoomOp+'text-align:left;padding:2px 6px;">'+zoomArrow+' Screen Size: '+zoomText+'</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
+  pop.innerHTML='<div style="background:#0a0a0a;padding:8px 12px;font-family:VT323,monospace;color:#e0e0e0;font-size:28px;"><div style="text-align:center;color:#e0e0e0;font-size:30px;margin-bottom:5px;">~ SETTINGS ~</div><div style="color:'+audioCls+';'+audioOp+'text-align:left;padding:2px 6px;">'+audioArrow+' Audio: '+audioText+'</div><div style="color:'+zoomCls+';'+zoomOp+'text-align:left;padding:2px 6px;">'+zoomArrow+' Screen Size: '+zoomText+'</div><div style="margin-top:5px;padding-top:4px;border-top:1px solid #333;text-align:center;font-size:24px;color:#666;">[Z] toggle  [X] close</div></div>';
   if(pop)pop._selected=sel;
 }
 function navigateSettings(dir) {

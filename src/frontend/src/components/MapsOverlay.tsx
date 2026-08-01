@@ -78,7 +78,7 @@ export default function MapsOverlay({
       <div
         className="text-foreground tracking-widest"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "1em",
           letterSpacing: "0.15em",
         }}
@@ -90,8 +90,8 @@ export default function MapsOverlay({
         <div
           className="text-muted-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
-            fontSize: "0.6em",
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.55em",
           }}
         >
           Loading..
@@ -102,8 +102,8 @@ export default function MapsOverlay({
         <div
           className="text-muted-foreground text-center px-4"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
-            fontSize: "0.55em",
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: "0.5em",
             lineHeight: 1.8,
           }}
         >
@@ -127,8 +127,8 @@ export default function MapsOverlay({
                     : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"
                 }`}
                 style={{
-                  fontFamily: '"Pixelify Sans", monospace',
-                  fontSize: "0.7em",
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: "0.65em",
                   letterSpacing: "0.2em",
                   background: "none",
                   border: "none",
@@ -151,8 +151,8 @@ export default function MapsOverlay({
         type="button"
         className="text-foreground transition-colors hover:text-muted-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
-          fontSize: "0.6em",
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "0.55em",
           letterSpacing: "0.15em",
           background: "none",
           border: "none",

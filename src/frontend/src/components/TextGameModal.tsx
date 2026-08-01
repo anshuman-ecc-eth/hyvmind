@@ -381,7 +381,7 @@ function SettingsScreen({
     <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
       <div
         className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Pixelify Sans", monospace', fontSize: "1em" }}
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1em" }}
       >
         {heading ?? "Settings"}
       </div>
@@ -395,7 +395,7 @@ function SettingsScreen({
               data-ocid={`text_game.settings.${row.key}`}
               className={`transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground opacity-50 hover:text-foreground"}`}
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6em",
                 letterSpacing: "0.15em",
                 background: "none",
@@ -467,7 +467,7 @@ function LeaderboardScreen({
     >
       <div
         className="text-foreground tracking-widest"
-        style={{ fontFamily: '"Pixelify Sans", monospace', fontSize: "1em" }}
+        style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "1em" }}
       >
         {heading ?? "Leaderboard"}
       </div>
@@ -479,7 +479,7 @@ function LeaderboardScreen({
           <div
             className="text-muted-foreground"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.55em",
               letterSpacing: "0.1em",
             }}
@@ -493,7 +493,7 @@ function LeaderboardScreen({
               data-ocid={`text_game.leaderboard.item.${idx + 1}`}
               className="text-foreground"
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6em",
                 letterSpacing: "0.1em",
                 display: "flex",
@@ -514,7 +514,7 @@ function LeaderboardScreen({
         data-ocid="text_game.leaderboard.back_button"
         className="text-foreground transition-colors hover:text-muted-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.6em",
           letterSpacing: "0.15em",
           background: "none",
@@ -550,7 +550,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
       <div
         className="text-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.7em",
           letterSpacing: "0.05em",
           textAlign: "center",
@@ -562,7 +562,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
         <div
           className="w-full flex flex-col items-start gap-3"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.5em",
             lineHeight: "1.8",
             letterSpacing: "0.05em",
@@ -1626,7 +1626,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
         type="button"
         className="text-foreground transition-colors hover:text-muted-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.55em",
           letterSpacing: "0.15em",
           background: "none",
@@ -1718,7 +1718,7 @@ function StartScreen({
             <span
               className="text-white/70"
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6rem",
                 letterSpacing: "0.2em",
               }}
@@ -1756,7 +1756,7 @@ function StartScreen({
                   <div
                     className="text-white tracking-widest"
                     style={{
-                      fontFamily: '"Pixelify Sans", monospace',
+                      fontFamily: '"Press Start 2P", monospace',
                       fontSize: "2em",
                       lineHeight: 1,
                       letterSpacing: "0.05em",
@@ -1770,6 +1770,7 @@ function StartScreen({
                       ref={yRef}
                       style={{
                         fontSize: "1.25em",
+                        verticalAlign: "middle",
                         lineHeight: 1,
                       }}
                     >
@@ -1786,7 +1787,7 @@ function StartScreen({
                   <div
                     className="text-neutral-400"
                     style={{
-                      fontFamily: '"Pixelify Sans", monospace',
+                      fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.65em",
                       letterSpacing: "0.05em",
                       textAlign: "center",
@@ -1811,7 +1812,7 @@ function StartScreen({
           <div
             className="text-white tracking-widest"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.7em",
               letterSpacing: "0.15em",
             }}
@@ -1832,7 +1833,7 @@ function StartScreen({
                     data-ocid={`text_game.start_screen.${item.toLowerCase().replace("-", "_")}`}
                     className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
-                      fontFamily: '"Pixelify Sans", monospace',
+                      fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.7em",
                       letterSpacing: "0.2em",
                       background: "none",
@@ -1861,7 +1862,7 @@ function StartScreen({
                     data-ocid={`text_game.start_screen.left_${item.toLowerCase().replace("-", "_")}`}
                     className={`transition-all duration-150 ${isSelected ? "text-white scale-105" : "text-neutral-400 opacity-50 hover:text-white hover:scale-105"}`}
                     style={{
-                      fontFamily: '"Pixelify Sans", monospace',
+                      fontFamily: '"Press Start 2P", monospace',
                       fontSize: "0.7em",
                       letterSpacing: "0.2em",
                       background: "none",
@@ -1885,7 +1886,7 @@ function StartScreen({
           <div
             className="text-white text-center mt-4"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.5em",
               letterSpacing: "0.1em",
             }}
@@ -1953,7 +1954,7 @@ function ChoiceMenu({
               data-ocid={`text_game.choice.${idx}`}
               className={`text-left transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.6em",
                 letterSpacing: "0.05em",
                 lineHeight: "2",
@@ -2011,7 +2012,7 @@ function TypewriterDisplay({
       <p
         className="text-foreground text-center leading-relaxed"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.7em",
           letterSpacing: "0.05em",
           lineHeight: "2",
@@ -2079,7 +2080,7 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
       <p
         className="text-foreground text-center leading-relaxed"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.7em",
           letterSpacing: "0.05em",
           lineHeight: "2",
@@ -2122,7 +2123,7 @@ function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
         <div
           className="w-full flex flex-col items-center gap-0 text-center"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.7em",
             letterSpacing: "0.05em",
           }}
@@ -2157,7 +2158,7 @@ function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
         type="button"
         className="text-foreground transition-colors hover:text-muted-foreground"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "0.55em",
           letterSpacing: "0.15em",
           background: "none",
@@ -2203,7 +2204,7 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
         <p
           className="text-foreground text-center leading-relaxed"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.7em",
             letterSpacing: "0.05em",
             lineHeight: "2",
@@ -2227,7 +2228,7 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
           type="button"
           className="text-foreground transition-colors hover:text-muted-foreground"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.55em",
             letterSpacing: "0.15em",
             background: "none",
@@ -2297,7 +2298,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
     background: "rgba(255,255,255,0.5)",
     border: "none",
     color: "#000",
-    fontFamily: '"Pixelify Sans", monospace',
+    fontFamily: '"Press Start 2P", monospace',
     fontSize: "16px",
     cursor: "pointer",
     position: "relative",
@@ -2343,7 +2344,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
         <p
           className="text-foreground text-center leading-relaxed"
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.7em",
             letterSpacing: "0.05em",
             lineHeight: "2",
@@ -2467,7 +2468,7 @@ function GamesOverlay({
       <div
         className="text-foreground tracking-widest"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "1em",
           letterSpacing: "0.15em",
         }}
@@ -2483,7 +2484,7 @@ function GamesOverlay({
               type="button"
               className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.65em",
                 letterSpacing: "0.2em",
                 background: "none",
@@ -2508,7 +2509,7 @@ function GamesOverlay({
       {score > 0 && (
         <div
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.45em",
             color: "#888",
             letterSpacing: "0.1em",
@@ -2573,7 +2574,7 @@ function PuzzlesOverlay({
       <div
         className="text-foreground tracking-widest"
         style={{
-          fontFamily: '"Pixelify Sans", monospace',
+          fontFamily: '"Press Start 2P", monospace',
           fontSize: "1em",
           letterSpacing: "0.15em",
         }}
@@ -2589,7 +2590,7 @@ function PuzzlesOverlay({
               type="button"
               className={`transition-all duration-150 ${isSelected ? "text-foreground scale-105" : "text-muted-foreground opacity-50 hover:text-foreground hover:scale-105"}`}
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.65em",
                 letterSpacing: "0.2em",
                 background: "none",
@@ -2612,7 +2613,7 @@ function PuzzlesOverlay({
       {score !== undefined && score > 0 && (
         <div
           style={{
-            fontFamily: '"Pixelify Sans", monospace',
+            fontFamily: '"Press Start 2P", monospace',
             fontSize: "0.45em",
             color: "#888",
             letterSpacing: "0.1em",
@@ -2668,7 +2669,7 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
     background: "rgba(255,255,255,0.5)",
     border: "none",
     color: "#000",
-    fontFamily: '"Pixelify Sans", monospace',
+    fontFamily: '"Press Start 2P", monospace',
     fontSize: "16px",
     cursor: "pointer",
     display: "flex",
@@ -3410,7 +3411,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             <div
               className="text-foreground"
               style={{
-                fontFamily: '"Pixelify Sans", monospace',
+                fontFamily: '"Press Start 2P", monospace',
                 fontSize: "0.65em",
                 letterSpacing: "0.1em",
               }}
@@ -3645,7 +3646,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 <div
                   className="text-white/70"
                   style={{
-                    fontFamily: '"Pixelify Sans", monospace',
+                    fontFamily: '"Press Start 2P", monospace',
                     fontSize: "0.65em",
                     letterSpacing: "0.1em",
                   }}
@@ -3738,7 +3739,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     <div
                       className="text-foreground"
                       style={{
-                        fontFamily: '"Pixelify Sans", monospace',
+                        fontFamily: '"Press Start 2P", monospace',
                         fontSize: "0.65em",
                         letterSpacing: "0.1em",
                       }}
@@ -3767,7 +3768,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     <div
                       className="text-foreground"
                       style={{
-                        fontFamily: '"Pixelify Sans", monospace',
+                        fontFamily: '"Press Start 2P", monospace',
                         fontSize: "0.65em",
                         letterSpacing: "0.1em",
                       }}
@@ -4029,7 +4030,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             style={{
               fontSize: "0.5em",
               letterSpacing: "0.3em",
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
             }}
           >
             in (uneven) development
@@ -4039,7 +4040,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             data-ocid="text_game.close_button"
             className="text-white/50 hover:text-white px-2 py-1 transition-colors"
             style={{
-              fontFamily: '"Pixelify Sans", monospace',
+              fontFamily: '"Press Start 2P", monospace',
               fontSize: "0.5em",
               letterSpacing: "0.3em",
             }}
@@ -4086,7 +4087,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                         ? "opacity-50 pointer-events-none text-muted-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
-                    style={{ fontFamily: '"Pixelify Sans", monospace' }}
+                    style={{ fontFamily: '"Press Start 2P", monospace' }}
                     data-ocid="text_game.buzz_secret_copy_button"
                     aria-label={copiedCode ? "Copied" : "Copy secret code"}
                     disabled={copiedCode}
@@ -4115,7 +4116,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 <div
                   className="text-muted-foreground"
                   style={{
-                    fontFamily: '"Pixelify Sans", monospace',
+                    fontFamily: '"Press Start 2P", monospace',
                     fontSize: "0.35em",
                     letterSpacing: "0.1em",
                   }}
