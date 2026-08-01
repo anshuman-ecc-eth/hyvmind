@@ -727,7 +727,9 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">player sprite</span>
+            <span className="text-foreground">
+              player, terrain &amp; tree sprites (legend-of-lua)
+            </span>
             <a
               href="https://github.com/challacade/legend-of-lua"
               target="_blank"
@@ -3066,7 +3068,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           .join("\n");
         navigator.clipboard.writeText(secretsStr).catch(() => {});
       } else if (e.data?.type === "hyvmind-close") {
-        if (hyvmindOverlayRef.current === "terrain-world") {
+        if (
+          hyvmindOverlayRef.current === "terrain-world" ||
+          hyvmindOverlayRef.current === "voxel-world"
+        ) {
           setHyvmindOverlay("maps");
           setTerrainSeed(null);
           setTerrainTransition(false);
@@ -3730,6 +3735,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     win.postMessage({ type: "hyvmind-pause-bgm" }, "*");
                   }
                 }}
+                onVoxel={() => {
+                  setTerrainSeed(null);
+                  setHyvmindOverlay("voxel-world");
+                  const win = hyvmindIframeRef.current?.contentWindow;
+                  if (win) {
+                    win.postMessage({ type: "hyvmind-pause-bgm" }, "*");
+                  }
+                }}
               />
             )}
             {hyvmindOverlay === "terrain-world" && (
@@ -3806,6 +3819,18 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     style={{ background: "rgba(0,0,0,0.7)" }}
                   />
                 </div>
+              </div>
+            )}
+            {hyvmindOverlay === "voxel-world" && (
+              <div className="flex-1 flex items-center justify-center p-0">
+                <iframe
+                  src="/assets/voxel/voxel-world.html?seed=Indian%20Constitutional%20Law"
+                  allow="autoplay"
+                  className="w-full h-full border-0"
+                  title="Voxel World"
+                  tabIndex={-1}
+                  style={{ background: "rgba(0,0,0,0.7)" }}
+                />
               </div>
             )}
             {hyvmindOverlay === "games" && (

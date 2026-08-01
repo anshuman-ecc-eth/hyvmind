@@ -27,13 +27,11 @@
 
 ## Learnings
 
-- Terrain world vegetation uses baobab trees from **bluecarrot16** (OGA-BY 3.0+, single pack = coherent style)
-  - Source: OpenTaxa project, hosted on OpenGameArt
-  - Path: `/assets/lpc/baobab/lpc-baobab/`
-  - 7 species, each 96x128 or 96x160 or 128x128 px
+- Terrain world uses the **Legend of Lua** overworld tileset (fill-only, no corner transitions) + Lua tree sprites from **challacade** (MIT). Fill tiles are picked by `FILL` map in `terrain-world.html` (tile id = ry*40 + rx; no sand fill exists — the sand biome maps to dirt).
+  - Path: `/assets/lua/` (overworld.png, lua-tree.png, lua-tree2.png, lua-tree-shadow.png)
+  - Tree collision uses per-sprite trunk rects (`tx/ty/tw/th`) with a direction-dependent check in `isWalkable(gx,gy,h)`: body box for horizontal moves, feet-row segment for vertical moves. `HIT_HALF` tunes the passable lane.
 
-- Hyptosis trees_plants_rocks.png (CC-BY 3.0) was evaluated but not used; baobabs chosen for single-artist coherence.
-  - The `trees_bushes/` directory contains extracted frames from Hyptosis (Adobe ImageReady), currently unused.
+- Hyptosis trees_plants_rocks.png (CC-BY 3.0) was evaluated but not used; baobabs (bluecarrot16) and Lua trees chosen for single-artist coherence.
 
 - Loading/transition overlays use `bg-black` with white Press Start 2P text + 16 blinking █ blocks (`terminal-blink` animation, 0.8s step-end, 0.05s stagger) or a white progress bar animation.
 
@@ -49,3 +47,7 @@
 - algo-chip (MIT, abagames) is a procedural audio library used by crisp-game-lib mini-games for chiptune BGM generation. Not credited separately since main game uses forest.mp3.
 
 - PixiJS is used only in boxsnake.html mini-game (WebGL 2D renderer). Not needed for main game or terrain worlds.
+
+- Voxel world (`/assets/voxel/voxel-world.html`) is a Three.js (WebGL) Minecraft-style explorer over the same perlin/biome terrain as terrain-world.html. Vanilla ESM: `voxel.js` imports `three.module.min.js` + `three.core.min.js` (copied from `node_modules/three/build`). Chunked meshing with face culling (16×16 chunks), pointer-lock WASD + jump + AABB collision, DDA raycast break/place, translucent water. Entered via MapsOverlay's "Voxel World" item; Back button posts `hyvmind-close`. Seeded via `?seed=`.
+  - Block **textures** come from `assets/voxel/textures/` (14 tiles from [vyse12138/minecraft-threejs](https://github.com/vyse12138/minecraft-threejs), MIT) packed into a **runtime canvas atlas** (`TEX_NAMES`/`buildAtlas`; NearestFilter, no mipmaps). The mesher emits a `uv` attribute; `texSlot(t, faceIdx)` picks the tile per block+face (grass top/side/dirt-bottom, log side/top). `blockColor` now returns a **shading tint** (top-light 1.22/0.78 + `h3` speckle) multiplied over the texture; `C[]` is kept only for the minimap. `makeBlockBoxGeometry(t)` builds a textured unit cube for the held block + crumb particles.
+  - vyse-style features added: targeted-block **highlight** (translucent box re-raycast each frame, `updateHighlight`), **auto-repeat** break/place on hold (333 ms interval, cleared on mouseup/blur/unlock), **wheel** block cycling (100 ms throttle; `HOTBAR_BLOCKS`), **crumb particles** (`spawnCrumb`/`updateCrumbs`, 250 ms shrink), **place-overlap guard** (`cellOverlapsPlayer`), and a bottom-center **hotbar** (icons drawn from the atlas) + FPS counter + PAUSED overlay (reuses `#hint`) + `+` crosshair.

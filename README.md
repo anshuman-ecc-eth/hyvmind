@@ -105,8 +105,7 @@ See the in-game Credits screen for the full interactive breakdown. Below is a su
 | `which_brand_of_mustard_shall_i_buy.mp3` — terrain BGM | congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by glitchart | CC-BY 3.0 |
 | Forest background image | [forest-elfs](https://forest-elfs.itch.io/forestmoon) | — |
 | `bottom.png` — world tiles | Ivan Voirol ([OpenGameArt](https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol)) | CC-BY 4.0 |
-| `terrain-map-v7.png` — LPC terrain tileset | Lanea Zimmerman (Sharm), based on LPC base terrain tiles | OGA-BY 3.0+ / CC-BY-SA 3.0 / GPL 3.0 |
-| `lpc-baobab/` — baobab trees | bluecarrot16 ([OpenTaxa](https://opentaxa.miraheze.org/wiki/Index)) | OGA-BY 3.0+ |
+| `assets/lua/overworld.png` — terrain world tileset, `lua-tree*.png` trees, Lua player sprite | [challacade — Legend of Lua](https://github.com/challacade/legend-of-lua) | MIT |
 | `rowboat.png` — boat sprites | shadowfinderstudios, Zabin, Daniel Eddeland ([OpenGameArt](https://opengameart.org/content/lpc-rowboat-topdown-4-directional-recolor-for-rpg)) | CC-BY-SA 4.0 |
 | `sprites/cultist_*.png` — player character | Antifarea | CC-BY |
 | `sprites/gangesh-upadhyay/` — wizard character body/head/face/hat/boots/hair/mustache/vest/jacket | bluecarrot16, JaidynReiman, Benjamin K. Smith, Stephen Challener, Eliza Wyatt, Napsio, Yamilian, Thane Brimhall, and others ([OpenGameArt](https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles)) | OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 |
@@ -133,5 +132,7 @@ All loaded from Google Fonts.
 | chess.js | Jeff Hlywa ([GitHub](https://github.com/jhlywa/chess.js)) | MIT |
 | jquery | OpenJS Foundation | MIT |
 | chessboard.js | Chris Oakman ([chessboardjs.com](https://chessboardjs.com)) | MIT |
+| three.js | three.js contributors ([GitHub](https://github.com/mrdoob/three.js)) | MIT |
+| `assets/voxel/textures/` — voxel world block textures | [vyse12138/minecraft-threejs](https://github.com/vyse12138/minecraft-threejs) | MIT |
 | @dfinity/auth-client / @dfinity/principal | DFINITY Stiftung ([GitHub](https://github.com/dfinity/agent-js)) | Apache-2.0 |
 | @icp-sdk/core | DFINITY Stiftung ([GitHub](https://github.com/dfinity/icp-core)) | Apache-2.0 |

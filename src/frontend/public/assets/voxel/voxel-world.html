@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VOXEL</title>
+<style>
+  @font-face {
+    font-family: "Press Start 2P";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/press-start-2p.woff2") format("woff2");
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
+  #view { position: absolute; inset: 0; }
+  #view canvas { display: block; }
+  #hint {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; z-index: 10;
+    background: rgba(0,0,0,0.55); color: #e0e0e0; font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-align: center; cursor: pointer; user-select: none;
+  }
+  #hint .title { font-size: 15px; color: #fff; }
+  #hint .sub { font-size: 9px; color: #9a9a9a; line-height: 2; }
+  #hint .key { color: #ffd; }
+  #seed {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.75); font-family: 'Press Start 2P', monospace; font-size: 8px;
+    letter-spacing: 0.12em; z-index: 9; pointer-events: none; text-shadow: 0 1px 3px #000; max-width: 90%;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  #crosshair {
+    position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+    z-index: 9; pointer-events: none;
+  }
+  #crosshair::before, #crosshair::after {
+    content: ''; position: absolute; background: rgba(255,255,255,0.8); box-shadow: 0 0 3px #000;
+  }
+  #crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  #crosshair::after { left: 0; top: 8px; width: 18px; height: 2px; }
+  #bar {
+    position: absolute; bottom: 82px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.6); font-family: 'Press Start 2P', monospace; font-size: 7px;
+    letter-spacing: 0.1em; z-index: 9; pointer-events: none; text-shadow: 0 1px 3px #000; white-space: nowrap;
+  }
+  #hotbar {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 9; padding: 6px;
+    background: rgba(0,0,0,0.35); border: 2px solid rgba(255,255,255,0.35); border-radius: 4px;
+  }
+  #hotbar .slot {
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25);
+  }
+  #hotbar .slot canvas { width: 34px; height: 34px; image-rendering: pixelated; }
+  #hotbar .slot.selected { background: rgba(255,255,255,0.35); border-color: #ffd; box-shadow: 0 0 6px rgba(255,221,0,0.4); }
+  #fps {
+    position: absolute; bottom: 10px; right: 10px;
+    color: rgba(255,255,255,0.6); font-family: 'Press Start 2P', monospace; font-size: 8px;
+    letter-spacing: 0.1em; z-index: 9; pointer-events: none; text-shadow: 0 1px 3px #000;
+  }
+  #mode {
+    position: absolute; bottom: 10px; left: 10px;
+    color: #ffd; font-family: 'Press Start 2P', monospace; font-size: 8px;
+    letter-spacing: 0.15em; z-index: 9; pointer-events: none; text-shadow: 0 1px 3px #000;
+  }
+  #backBtn {
+    position: absolute; top: 8px; right: 10px; z-index: 11;
+    font-family: 'Press Start 2P', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+    background: none; border: none; cursor: pointer; padding: 0; color: #ffffff;
+    transition: color 0.15s; text-shadow: 0 1px 3px #000;
+  }
+  #minimap {
+    position: absolute; top: 8px; left: 8px; z-index: 9; pointer-events: none;
+    image-rendering: pixelated; border: 1px solid rgba(255,255,255,0.25); border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<button id="backBtn" type="button">&gt; Back</button>
+<canvas id="minimap" width="100" height="100"></canvas>
+<div id="seed"></div>
+<div id="crosshair"></div>
+<div id="mode"></div>
+<div id="hotbar"></div>
+<div id="fps"></div>
+<div id="bar">LMB break · RMB place · 1-6 / wheel select · WASD move · SPACE jump · F fly · V aerial · ESC look</div>
+<div id="hint">
+  <div class="title">VOXEL WORLD</div>
+  <div class="sub">click to look around<br><span class="key">WASD</span> move · <span class="key">SPACE</span> jump<br><span class="key">LMB</span> break · <span class="key">RMB</span> place · <span class="key">1-6</span>/<span class="key">WHEEL</span> block<br><span class="key">F</span> fly · <span class="key">V</span> aerial view · <span class="key">ESC</span> free the mouse</div>
+</div>
+<script type="module" src="./voxel.js"></script>
+<script>
+  document.getElementById('backBtn').addEventListener('click', function () {
+    window.parent.postMessage({ type: 'hyvmind-resume-bgm' }, '*');
+    window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+  });
+</script>
+</body>
+</html>
