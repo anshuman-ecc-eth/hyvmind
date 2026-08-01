@@ -327,6 +327,14 @@
 }
 
 @font-face {
+  font-family: "Pixelify Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/pixelify-sans.woff2") format("woff2");
+}
+
+@font-face {
   font-family: "Ubuntu Sans";
   font-style: normal;
   font-weight: 400 700;

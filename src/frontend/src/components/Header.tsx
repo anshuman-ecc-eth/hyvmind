@@ -144,14 +144,6 @@ export default function Header() {
                   Videos
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    window.open("/sponsor.html", "_blank");
-                  }}
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                >
-                  Sponsor
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() =>
                     window.open(
                       "https://github.com/anshuman-ecc-eth/hyvmind",

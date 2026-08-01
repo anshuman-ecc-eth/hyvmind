@@ -9,8 +9,14 @@ export type FontSize = "small" | "medium" | "large" | "huge" | "colossal";
 
 export const FONT_PAIRINGS: FontPairing[] = [
   {
-    id: "system-default",
-    name: "System Default",
+    id: "pixelify-sans",
+    name: "Pixelify Sans",
+    headingFont: "Pixelify Sans",
+    bodyFont: "Pixelify Sans",
+  },
+  {
+    id: "ubuntu-sans",
+    name: "Ubuntu Sans",
     headingFont: "Ubuntu Sans",
     bodyFont: "Ubuntu Sans",
   },
@@ -72,7 +78,7 @@ export const FONT_SIZE_OPTIONS: Record<FontSize, string> = {
   colossal: "225%",
 };
 
-export const DEFAULT_FONT_PAIRING = "system-default";
+export const DEFAULT_FONT_PAIRING = "pixelify-sans";
 export const DEFAULT_FONT_SIZE: FontSize = "medium";
 
 export function applyFontPairing(pairingId: string): void {

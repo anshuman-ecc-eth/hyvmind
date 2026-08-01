@@ -58,8 +58,8 @@
     --panel-sidebar: oklch(8% 0 0);
     --panel-main: oklch(2% 0 0);
     --panel-details: oklch(8% 0 0);
-    --font-heading: "Ubuntu Sans", sans-serif;
-    --font-body: "Ubuntu Sans", sans-serif;
+    --font-heading: "Pixelify Sans", sans-serif;
+    --font-body: "Pixelify Sans", sans-serif;
   }
 }
 
