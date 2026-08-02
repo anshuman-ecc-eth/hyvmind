@@ -448,8 +448,8 @@ function setPaused(paused) {
 }
 
 function closeToParent() {
-  window.parent.postMessage({ type: 'hyvmind-resume-bgm' }, '*');
-  window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+  // Flush pending edits (parent shows "Saving changes..", persists, then exits).
+  flushVoxelEdits(true);
 }
 
 function applySettings() {
@@ -549,6 +549,7 @@ function removeGraffitiOn(x, y, z) {
   for (let i = graffitiList.length - 1; i >= 0; i--) {
     const g = graffitiList[i];
     if (g.blocks.some((b) => b.x === x && b.y === y && b.z === z)) {
+      recordGraffitiRemove(g.id);
       scene.remove(g.mesh);
       g.mesh.geometry.dispose();
       g.mesh.material.map.dispose();
@@ -557,8 +558,9 @@ function removeGraffitiOn(x, y, z) {
     }
   }
 }
-async function addGraffiti(text, blocks) {
-  if (!blocks.length || !text) return;
+async function addGraffiti(text, blocks, id) {
+  if (!blocks.length || !text) return null;
+  const gid = id || 'g' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
   const n = blocks[0].face || [0, 0, 1];
   const nVec = new THREE.Vector3(n[0], n[1], n[2]);
   const upVec = Math.abs(n[1]) === 1 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
@@ -607,8 +609,8 @@ async function addGraffiti(text, blocks) {
   mesh.position.set(cx + nVec.x * 0.52, cy + nVec.y * 0.52, cz + nVec.z * 0.52);
   mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(uAxis, vAxis, nVec));
   scene.add(mesh);
-  graffitiList.push({ mesh, blocks });
-  if (graffitiList.length > 12) {
+  graffitiList.push({ id: gid, mesh, blocks });
+  if (graffitiList.length > 64) {
     const old = graffitiList.shift();
     scene.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.map.dispose(); old.mesh.material.dispose();
   }
@@ -629,7 +631,16 @@ async function submitGraffiti() {
   const text = graffitiInput.value.trim();
   const p = pendingGraffiti || { blocks: [], fallbackHit: null };
   const blocks = p.blocks.length ? p.blocks : (p.fallbackHit ? [p.fallbackHit] : []);
-  if (text) await addGraffiti(text, blocks);
+  if (text) {
+    const gid = await addGraffiti(text, blocks);
+    if (gid && !applyingRemote) {
+      pendingVoxelEdits.graffitiAdds.push({
+        id: gid,
+        text,
+        blocks: blocks.map((b) => ({ x: b.x, y: b.y, z: b.z, face: b.face || [0, 0, 1] })),
+      });
+    }
+  }
   closeGraffiti();
   clearSelection();
 }
@@ -913,6 +924,74 @@ document.addEventListener('wheel', (e) => {
 let heldBlock = B.SPADE;
 let lastRemoved = null;
 let bootNotified = false;
+let worldReady = false;
+let applyingRemote = false;
+
+// Pending voxel edits, flushed to the parent (TextGameModal) which persists them.
+// blockEdits: {x,y,z,v} (v=block id, 0=AIR); graffitiAdds: {id,text,blocks}; graffitiRemoves: [id]
+const pendingVoxelEdits = { blockEdits: [], graffitiAdds: [], graffitiRemoves: [] };
+
+function recordBlockEdit(x, y, z, v) {
+  if (applyingRemote) return;
+  pendingVoxelEdits.blockEdits.push({ x, y, z, v });
+}
+function recordGraffitiRemove(id) {
+  if (applyingRemote || !id) return;
+  pendingVoxelEdits.graffitiRemoves.push(id);
+}
+function hasPendingVoxelEdits() {
+  return pendingVoxelEdits.blockEdits.length > 0 ||
+    pendingVoxelEdits.graffitiAdds.length > 0 ||
+    pendingVoxelEdits.graffitiRemoves.length > 0;
+}
+function flushVoxelEdits(exit) {
+  if (!hasPendingVoxelEdits() && !exit) return;
+  const payload = {
+    type: 'hyvmind-voxel-edits',
+    exit: !!exit,
+    blockEdits: pendingVoxelEdits.blockEdits,
+    graffitiAdds: pendingVoxelEdits.graffitiAdds,
+    graffitiRemoves: pendingVoxelEdits.graffitiRemoves,
+  };
+  pendingVoxelEdits.blockEdits = [];
+  pendingVoxelEdits.graffitiAdds = [];
+  pendingVoxelEdits.graffitiRemoves = [];
+  window.parent.postMessage(payload, '*');
+}
+
+// Apply persisted edits sent by the parent after buildWorld completes.
+function applyVoxelState(state) {
+  if (!state) return;
+  applyingRemote = true;
+  try {
+    if (state.blockEdits) {
+      for (const be of state.blockEdits) {
+        const x = Number(be.x), y = Number(be.y), z = Number(be.z);
+        if (be.v === 0) {
+          setBlock(x, y, z, B.AIR);
+          removeGraffitiOn(x, y, z);
+        } else {
+          setBlock(x, y, z, be.v);
+        }
+        markDirty(x, z);
+        paintMinimapColumn(x, z);
+      }
+    }
+    if (state.graffiti) {
+      for (const g of state.graffiti) {
+        const blocks = g.blocks.map((b) => ({
+          x: Number(b.x), y: Number(b.y), z: Number(b.z), face: b.face.map(Number),
+        }));
+        // Skip graffiti whose blocks were broken (block edits may have emptied them).
+        const anchored = blocks.every((b) => getBlock(b.x, b.y, b.z) !== B.AIR);
+        if (anchored) addGraffiti(g.text, blocks, g.id);
+      }
+    }
+  } finally {
+    applyingRemote = false;
+  }
+}
+
 const clock = new THREE.Clock();
 const dir = new THREE.Vector3();
 const fwd = new THREE.Vector3();
@@ -972,6 +1051,7 @@ function doBlockAction(button) {
       spawnCrumb(hit.x, hit.y, hit.z, removed);
       lastRemoved = removed;
       setBlock(hit.x, hit.y, hit.z, B.AIR);
+      recordBlockEdit(hit.x, hit.y, hit.z, B.AIR);
       removeGraffitiOn(hit.x, hit.y, hit.z);
       markDirty(hit.x, hit.z);
       paintMinimapColumn(hit.x, hit.z);
@@ -982,6 +1062,7 @@ function doBlockAction(button) {
       if (t === B.AIR && !cellOverlapsPlayer(nx, ny, nz)) {
         spawnCrumb(nx, ny, nz, lastRemoved);
         setBlock(nx, ny, nz, lastRemoved);
+        recordBlockEdit(nx, ny, nz, lastRemoved);
         markDirty(nx, nz);
         paintMinimapColumn(nx, nz);
       }
@@ -1154,6 +1235,11 @@ function announceTool() {
 
 function startGame() {
   buildWorld(seed);
+  worldReady = true;
+  if (bufferedVoxelState) {
+    applyVoxelState(bufferedVoxelState);
+    bufferedVoxelState = null;
+  }
   buildMinimap();
   updateModeLabel();
   const sp = findSpawn();
@@ -1173,3 +1259,22 @@ loadTextures((imgs) => {
   initHotbar();
   startGame();
 });
+
+// ── Parent bridge: receive persisted state, auto-save on a timer ────────────
+let bufferedVoxelState = null;
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'hyvmind-voxel-state') {
+    if (worldReady) {
+      applyVoxelState(e.data.state);
+    } else {
+      bufferedVoxelState = e.data.state;
+    }
+  }
+});
+
+// Best-effort silent flush if the tab/iframe is closed or refreshed.
+window.addEventListener('pagehide', () => flushVoxelEdits(false));
+window.addEventListener('beforeunload', () => flushVoxelEdits(false));
+
+// Auto-save every 15s while there are unsaved edits (crash protection).
+setInterval(() => flushVoxelEdits(false), 15000);

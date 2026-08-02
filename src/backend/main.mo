@@ -110,6 +110,24 @@ actor {
     authors : [Text];
   };
 
+  type VoxelBlockEdit = {
+    x : Nat;
+    y : Nat;
+    z : Nat;
+    v : Nat8;
+  };
+
+  type VoxelGraffiti = {
+    id : Text;
+    text : Text;
+    blocks : [{ x : Nat; y : Nat; z : Nat; face : [Int] }];
+  };
+
+  type VoxelWorldEdits = {
+    blockEdits : Map.Map<Text, Nat8>;
+    graffiti : Map.Map<Text, VoxelGraffiti>;
+  };
+
   type BuzzSecretRecord = {
     points : Int;
     createdAt : Int;
@@ -506,6 +524,9 @@ actor {
   var forumPosts = Map.empty<Text, ForumPost>();
   var nextForumId : Nat = 0;
   var nextReplyId : Nat = 0;
+
+  // ── Voxel world state (per published graph name) ─────────────────────────────
+  var voxelWorldEdits = Map.empty<Text, VoxelWorldEdits>();
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
@@ -3767,6 +3788,72 @@ actor {
         let updated : PublishedSourceGraphMeta = { meta with terrainParams = ?paramsJson };
         publishedSourceGraphs.add(id, updated);
         true;
+      };
+    };
+  };
+
+  // ─── saveVoxelWorldEdits: Merge voxel world edits for a published graph ───────
+  public shared func saveVoxelWorldEdits(
+    name : Text,
+    blockEdits : [VoxelBlockEdit],
+    graffitiAdds : [VoxelGraffiti],
+    graffitiRemoves : [Text],
+  ) : async Bool {
+    let current = switch (voxelWorldEdits.get(name)) {
+      case (?w) { w };
+      case (null) {
+        {
+          blockEdits = Map.empty<Text, Nat8>();
+          graffiti = Map.empty<Text, VoxelGraffiti>();
+        }
+      };
+    };
+    for (be in blockEdits.vals()) {
+      let key = be.x.toText() # "," # be.y.toText() # "," # be.z.toText();
+      current.blockEdits.add(key, be.v);
+    };
+    for (g in graffitiAdds.vals()) {
+      current.graffiti.add(g.id, g);
+    };
+    for (id in graffitiRemoves.vals()) {
+      current.graffiti.remove(id);
+    };
+    if (current.blockEdits.size() > 100_000) {
+      return false;
+    };
+    if (current.graffiti.size() > 200) {
+      return false;
+    };
+    voxelWorldEdits.add(name, current);
+    true
+  };
+
+  // ─── getVoxelWorldEdits: Return voxel world edits for a published graph ───────
+  public query func getVoxelWorldEdits(name : Text) : async ?{
+    blockEdits : [VoxelBlockEdit];
+    graffiti : [VoxelGraffiti];
+  } {
+    switch (voxelWorldEdits.get(name)) {
+      case (null) { null };
+      case (?w) {
+        let parsed = List.empty<VoxelBlockEdit>();
+        for ((key, v) in w.blockEdits.entries()) {
+          let parts = key.split(#text ",");
+          let xs = parts.toArray();
+          let atoi = func(s : Text) : Nat {
+            switch (Nat.fromText(s)) { case (?n) { n }; case (null) { 0 } }
+          };
+          parsed.add({
+            x = atoi(xs[0]);
+            y = atoi(xs[1]);
+            z = atoi(xs[2]);
+            v;
+          });
+        };
+        ?{
+          blockEdits = parsed.toArray();
+          graffiti = w.graffiti.values().toArray();
+        }
       };
     };
   };

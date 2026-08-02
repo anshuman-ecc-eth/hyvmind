@@ -2,6 +2,7 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuzzLeaderboardEntry } from "../backend.d";
 import {
+  useBackendActor,
   useGenerateBuzzSecret,
   useGetBuzzLeaderboard,
 } from "../hooks/useQueries";
@@ -2836,6 +2837,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [generatingScore, setGeneratingScore] = useState<number | null>(null);
   const [terrainLoading, setTerrainLoading] = useState(false);
   const terrainLoadingStartRef = useRef(0);
+  const [voxelSaving, setVoxelSaving] = useState(false);
 
   // ── Persist settings & leaderboard ────────────────────────────────────────
 
@@ -2855,6 +2857,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const hyvmindOverlayRef = useRef<string | null>(null);
   const unsubmittedScoreRef = useRef(0);
   const [terrainSeed, setTerrainSeed] = useState<string | null>(null);
+  const { actor: backendActor } = useBackendActor();
   const [zoom, setZoom] = useState(() => {
     const saved = localStorage.getItem("hyvmind-zoom");
     return saved ? Number.parseFloat(saved) : 1;
@@ -2966,7 +2969,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Game completion via postMessage ────────────────────────────────────────
 
   useEffect(() => {
-    const handler = (e: MessageEvent) => {
+    const handler = async (e: MessageEvent) => {
       if (e.data?.type === "crisp-game-over") {
         const receivedScore = (e.data.score as number) || 0;
         if (hyvmindOverlayRef.current?.startsWith("games")) {
@@ -3083,6 +3086,90 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         } else {
           setTimeout(() => setTerrainLoading(false), minTime - elapsed);
         }
+        const seed = terrainSeed ?? "Indian Constitutional Law";
+        if (backendActor) {
+          void backendActor
+            .getVoxelWorldEdits(seed)
+            .then((state) => {
+              if (state) {
+                voxelIframeRef.current?.contentWindow?.postMessage(
+                  { type: "hyvmind-voxel-state", state },
+                  "*",
+                );
+              }
+            })
+            .catch((err) =>
+              console.error("Failed to load voxel world state:", err),
+            );
+        }
+      } else if (e.data?.type === "hyvmind-voxel-edits") {
+        const seed = terrainSeed ?? "Indian Constitutional Law";
+        const blockEdits = (
+          (e.data.blockEdits as
+            | Array<{ x: number; y: number; z: number; v: number }>
+            | undefined) ?? []
+        ).map((b) => ({
+          x: BigInt(b.x),
+          y: BigInt(b.y),
+          z: BigInt(b.z),
+          v: b.v,
+        }));
+        const graffitiAdds = (
+          (e.data.graffitiAdds as
+            | Array<{
+                id: string;
+                text: string;
+                blocks: Array<{
+                  x: number;
+                  y: number;
+                  z: number;
+                  face: number[];
+                }>;
+              }>
+            | undefined) ?? []
+        ).map((g) => ({
+          id: g.id,
+          text: g.text,
+          blocks: g.blocks.map((b) => ({
+            x: BigInt(b.x),
+            y: BigInt(b.y),
+            z: BigInt(b.z),
+            face: b.face.map((f) => BigInt(f)),
+          })),
+        }));
+        const graffitiRemoves = (e.data.graffitiRemoves as string[]) ?? [];
+        const isExit = !!e.data.exit;
+
+        const doSave = async () => {
+          if (!backendActor) return;
+          try {
+            await backendActor.saveVoxelWorldEdits(
+              seed,
+              blockEdits,
+              graffitiAdds,
+              graffitiRemoves,
+            );
+          } catch (err) {
+            console.error("Failed to save voxel world:", err);
+          }
+        };
+
+        if (isExit) {
+          setVoxelSaving(true);
+          const timeout = new Promise<void>((resolve) =>
+            setTimeout(resolve, 5000),
+          );
+          await Promise.race([doSave(), timeout]);
+          setVoxelSaving(false);
+          const win = hyvmindIframeRef.current?.contentWindow;
+          if (win) {
+            win.postMessage({ type: "hyvmind-resume-bgm" }, "*");
+          }
+          setHyvmindOverlay("maps");
+          setTerrainSeed(null);
+        } else {
+          void doSave();
+        }
       } else if (e.data?.type === "hyvmind-stop-bgm") {
         const win = hyvmindIframeRef.current?.contentWindow;
         if (win) {
@@ -3107,7 +3194,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [settings, generateBuzzSecret, phase.type]);
+  }, [settings, generateBuzzSecret, phase.type, terrainSeed, backendActor]);
 
   // ── Sync unsubmittedScore to hyvmind iframe ────────────────────────────────
 
@@ -3750,9 +3837,40 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     </div>
                   </div>
                 )}
+                {voxelSaving && (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
+                    <div
+                      className="text-foreground"
+                      style={{
+                        fontFamily: '"Press Start 2P", monospace',
+                        fontSize: "0.65em",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Saving changes..
+                    </div>
+                    <div className="flex gap-[2px]">
+                      {Array.from({ length: 16 }).map((_, i) => (
+                        <span
+                          // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
+                          key={i}
+                          className="text-foreground"
+                          style={{
+                            fontSize: "0.55em",
+                            animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
+                          }}
+                        >
+                          █
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div
                   className="flex-1 flex items-center justify-center p-0"
-                  style={{ display: terrainLoading ? "none" : undefined }}
+                  style={{
+                    display: terrainLoading || voxelSaving ? "none" : undefined,
+                  }}
                 >
                   <iframe
                     ref={voxelIframeRef}

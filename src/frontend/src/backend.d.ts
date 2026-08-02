@@ -16,6 +16,18 @@ export interface Location {
     parentSwarmId: NodeId;
     sources: Array<SourceRef>;
 }
+export interface ForumPostSummary {
+    id: string;
+    upvotes: bigint;
+    title: string;
+    userVote?: bigint;
+    createdAt: bigint;
+    tags: Array<string>;
+    authorName: string;
+    author: Principal;
+    replyCount: bigint;
+    downvotes: bigint;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -26,12 +38,47 @@ export interface LawToken {
     tokenLabel: string;
 }
 export type Time = bigint;
-export interface ChatChannelSummary {
+export interface ForumPostDetail {
     id: string;
-    name: string;
-    isSubchannel: boolean;
-    unreadCount: bigint;
-    parentCuration?: string;
+    upvotes: bigint;
+    title: string;
+    userVote?: bigint;
+    content: string;
+    createdAt: bigint;
+    tags: Array<string>;
+    authorName: string;
+    author: Principal;
+    replies: Array<ForumReplyDetail>;
+    downvotes: bigint;
+}
+export type SaveResult = {
+    __kind__: "ok";
+    ok: {
+        contributions: Array<CreditedContribution>;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+} | {
+    __kind__: "noNewTrust";
+    noNewTrust: {
+        reason: string;
+    };
+} | {
+    __kind__: "selfAuthor";
+    selfAuthor: {
+        message: string;
+    };
+};
+export interface VoxelGraffiti {
+    id: string;
+    text: string;
+    blocks: Array<{
+        x: bigint;
+        y: bigint;
+        z: bigint;
+        face: Array<bigint>;
+    }>;
 }
 export interface PublishedSourceGraphMeta {
     id: string;
@@ -42,12 +89,12 @@ export interface PublishedSourceGraphMeta {
     attributeCount: bigint;
     creatorName: string;
     edgeCount: bigint;
+    authors: Array<string>;
     sourcesCount?: bigint;
     artworkDataUrl?: string;
     hierarchyEdgeCount: bigint;
     nodeCount: bigint;
     terrainParams?: string;
-    authors: string[];
 }
 export interface NodeOperation {
     localName: string;
@@ -63,6 +110,40 @@ export interface NodeOperation {
     backendId?: NodeId;
     parentName?: string;
     nodeType: string;
+}
+export interface EdgeOperation {
+    action: {
+        __kind__: "create";
+        create: null;
+    } | {
+        __kind__: "update";
+        update: {
+            newLabels: Array<string>;
+        };
+    };
+    labels: Array<string>;
+    sourceId?: NodeId;
+    sourceName: string;
+    bidirectional: boolean;
+    targetName: string;
+    targetId?: NodeId;
+}
+export interface ContributionView {
+    id: string;
+    buzzAmount: bigint;
+    nodeId: NodeId;
+    isFromExtension: boolean;
+    extensionIndex?: bigint;
+    description: string;
+    payer: Principal;
+    alreadyCredited: boolean;
+}
+export interface ChatChannelSummary {
+    id: string;
+    name: string;
+    isSubchannel: boolean;
+    unreadCount: bigint;
+    parentCuration?: string;
 }
 export interface BuzzLeaderboardEntry {
     principal: Principal;
@@ -134,6 +215,12 @@ export type PublishCommitResult = {
         nodeMappings: Array<[string, NodeId]>;
     };
 };
+export interface TutorialQuestion {
+    contact?: string;
+    question: string;
+    name: string;
+    submittedAt: bigint;
+}
 export interface ChatMessage {
     text: string;
     sender: Principal;
@@ -197,46 +284,29 @@ export interface ContentVersion {
     timestamp: Time;
     contributor: Principal;
 }
+export interface CreditedContribution {
+    buzzAmount: bigint;
+    contributionId: string;
+    description: string;
+    earned: bigint;
+    payer: Principal;
+    saveCount: bigint;
+}
+export interface VoxelBlockEdit {
+    v: number;
+    x: bigint;
+    y: bigint;
+    z: bigint;
+}
 export interface TrustTransaction {
+    contributionDetails: Array<CreditedContribution>;
     totalBuzzCost: bigint;
     saver: Principal;
     earned: bigint;
     savedAt: bigint;
     saveNumber: bigint;
-    contributionIds: string[];
-    contributionDetails: CreditedContribution[];
+    contributionIds: Array<string>;
 }
-
-export interface CreditedContribution {
-    contributionId: string;
-    description: string;
-    payer: Principal;
-    buzzAmount: bigint;
-    earned: bigint;
-    saveCount: bigint;
-}
-
-export interface ContributionView {
-    id: string;
-    nodeId: NodeId;
-    description: string;
-    payer: Principal;
-    buzzAmount: bigint;
-    alreadyCredited: boolean;
-    isFromExtension: boolean;
-    extensionIndex?: bigint;
-}
-
-export type SaveResult = {
-    __kind__: "ok";
-    ok: { contributions: CreditedContribution[] };
-} | {
-    __kind__: "noNewTrust";
-    noNewTrust: { reason: string };
-} | {
-    __kind__: "err";
-    err: string;
-};
 export interface GraphData {
     curations: Array<Curation>;
     rootNodes: Array<GraphNode>;
@@ -252,41 +322,6 @@ export interface HttpResponse {
     headers: Array<[string, string]>;
     status_code: number;
 }
-export interface ForumPostSummary {
-    id: string;
-    title: string;
-    author: Principal;
-    authorName: string;
-    tags: string[];
-    createdAt: bigint;
-    upvotes: bigint;
-    downvotes: bigint;
-    replyCount: bigint;
-    userVote?: bigint;
-}
-export interface ForumReplyDetail {
-    id: string;
-    author: Principal;
-    authorName: string;
-    text: string;
-    createdAt: bigint;
-    upvotes: bigint;
-    downvotes: bigint;
-    userVote?: bigint;
-}
-export interface ForumPostDetail {
-    id: string;
-    title: string;
-    content: string;
-    author: Principal;
-    authorName: string;
-    tags: string[];
-    createdAt: bigint;
-    upvotes: bigint;
-    downvotes: bigint;
-    userVote?: bigint;
-    replies: ForumReplyDetail[];
-}
 export type BuzzScore = bigint;
 export interface Swarm {
     id: NodeId;
@@ -300,22 +335,15 @@ export interface Swarm {
     sources: Array<SourceRef>;
     forkPrincipal?: Principal;
 }
-export interface EdgeOperation {
-    action: {
-        __kind__: "create";
-        create: null;
-    } | {
-        __kind__: "update";
-        update: {
-            newLabels: Array<string>;
-        };
-    };
-    labels: Array<string>;
-    sourceId?: NodeId;
-    sourceName: string;
-    bidirectional: boolean;
-    targetName: string;
-    targetId?: NodeId;
+export interface ForumReplyDetail {
+    id: string;
+    upvotes: bigint;
+    userVote?: bigint;
+    createdAt: bigint;
+    text: string;
+    authorName: string;
+    author: Principal;
+    downvotes: bigint;
 }
 export interface WeightedValue {
     weight: bigint;
@@ -341,34 +369,48 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
-export interface TutorialQuestion {
-    name: string;
-    contact: string | null;
-    question: string;
-    submittedAt: bigint;
-}
 export interface backendInterface {
-    submitTutorialQuestion(name: string, question: string, contact: string[]): Promise<void>;
-    getTutorialQuestions(): Promise<Array<TutorialQuestion>>;
+    addForumReply(postId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
-    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
     createCuration(name: string, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    createForumPost(title: string, content: string, tags: Array<string>): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
     generateInviteCodes(count: bigint, validDays: bigint): Promise<Array<string>>;
     getAllPublishedSourceGraphs(): Promise<Array<PublishedSourceGraphMeta>>;
+    /**
+     * / Called by the Obsidian plugin to retrieve and clear pending vault push data.
+     * / Atomically reads and removes to prevent re-processing on retry.
+     */
+    getAndClearPendingVaultPush(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
     getBoundPluginKeys(): Promise<Array<Principal>>;
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getChannels(): Promise<Array<ChatChannelSummary>>;
+    getForumPost(postId: string): Promise<ForumPostDetail | null>;
+    getForumPosts(): Promise<Array<ForumPostSummary>>;
+    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -382,10 +424,8 @@ export interface backendInterface {
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
     getNotesData(): Promise<string | null>;
-    getAndClearPendingVaultPush(): Promise<string | null>;
     getPendingPluginBindings(): Promise<Array<Principal>>;
     getPluginBindingStatus(): Promise<boolean>;
-    hasPendingVaultPush(): Promise<boolean>;
     getPublishedSourceGraph(publishedId: string): Promise<GraphData | null>;
     getTelegramConfig(): Promise<{
         chatId: string;
@@ -397,7 +437,16 @@ export interface backendInterface {
         hasToken: boolean;
         hasChatId: boolean;
     }>;
+    getTutorialQuestions(): Promise<Array<TutorialQuestion>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getVoxelWorldEdits(name: string): Promise<{
+        blockEdits: Array<VoxelBlockEdit>;
+        graffiti: Array<VoxelGraffiti>;
+    } | null>;
+    /**
+     * / Called by the Obsidian plugin to cheaply check if push data is available.
+     */
+    hasPendingVaultPush(): Promise<boolean>;
     hasTelegramConfig(): Promise<boolean>;
     hasUserSavedGraph(publishedGraphId: string): Promise<boolean>;
     http_request(req: HttpRequest): Promise<HttpResponse>;
@@ -406,6 +455,10 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
+    /**
+     * / Called by the web app user (via II) to stage notes for Obsidian vault export.
+     */
+    pushToVault(json: string): Promise<void>;
     redeemBuzzSecret(secret: string): Promise<{
         __kind__: "ok";
         ok: string;
@@ -413,13 +466,13 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    savePublishedGraph(publishedGraphId: string, selectedContributionIds: Array<string>): Promise<SaveResult>;
-    getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
-    ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
+    savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
+    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>): Promise<boolean>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -427,22 +480,18 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
-    createForumPost(title: string, content: string, tags: string[]): Promise<{
-        __kind__: "ok";
-        ok: string;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
-    getForumPosts(): Promise<ForumPostSummary[]>;
-    getForumPost(postId: string): Promise<ForumPostDetail | null>;
-    addForumReply(postId: string, text: string): Promise<{
+    setTelegramConfig(botToken: string, chatId: string): Promise<{
         __kind__: "ok";
         ok: null;
     } | {
         __kind__: "err";
         err: string;
     }>;
+    storeNotesData(json: string): Promise<void>;
+    submitTutorialQuestion(name: string, question: string, contact: string | null): Promise<void>;
+    track_api_request(apiKey: string): Promise<void>;
+    updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
+    updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
     voteForumPost(postId: string, vote: bigint): Promise<{
         __kind__: "ok";
         ok: null;
@@ -457,16 +506,4 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
-    setTelegramConfig(botToken: string, chatId: string): Promise<{
-        __kind__: "ok";
-        ok: null;
-    } | {
-        __kind__: "err";
-        err: string;
-    }>;
-    pushToVault(json: string): Promise<void>;
-    storeNotesData(json: string): Promise<void>;
-    track_api_request(apiKey: string): Promise<void>;
-    updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
-    updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
 }
