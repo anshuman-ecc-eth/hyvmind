@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VOXEL</title>
+<title>hyvmind-world</title>
 <style>
   @font-face {
     font-family: "Press Start 2P";
@@ -16,15 +16,54 @@
   html, body { width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
   #view { position: absolute; inset: 0; }
   #view canvas { display: block; }
-  #hint {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 10px; z-index: 10;
-    background: rgba(0,0,0,0.55); color: #e0e0e0; font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 0.1em;
-    text-align: center; cursor: pointer; user-select: none;
+  .menu {
+    position: absolute; inset: 0; z-index: 12;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    background: hsla(0, 0%, 11%, 0.7);
+    font-family: 'Press Start 2P', monospace; text-align: center; user-select: none;
   }
-  #hint .title { font-size: 15px; color: #fff; }
-  #hint .sub { font-size: 9px; color: #9a9a9a; line-height: 2; }
-  #hint .key { color: #ffd; }
+  .menu.hidden { display: none; }
+  .menu .title { font-size: 16px; color: #fff; letter-spacing: 0.15em; margin-bottom: 10px; }
+  .button {
+    width: 300px; padding: 12px;
+    font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 0.1em;
+    color: #fff; background-color: #727272; cursor: pointer;
+    border-left: 2px solid #a4a4a4; border-top: 2px solid #a4a4a4;
+    border-bottom: 2px solid #545655; border-right: 2px solid #545655;
+    box-shadow: 0 0 0 2px black;
+  }
+  .button:hover {
+    background-color: #218306;
+    border-left: 2px solid #17cd07; border-top: 2px solid #17cd07;
+    border-bottom: 2px solid #004e00; border-right: 2px solid #004e00;
+    box-shadow: 0 0 0 2px white;
+  }
+  .modal {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 13; width: 360px; color: #fff; background-color: #727272; padding: 24px 30px;
+    border-left: 2px solid #a4a4a4; border-top: 2px solid #a4a4a4;
+    border-bottom: 2px solid #545655; border-right: 2px solid #545655;
+    box-shadow: 0 0 0 2px black; text-align: left; user-select: none; line-height: 1.9;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .modal.hidden { display: none; }
+  .modal p { font-size: 9px; letter-spacing: 0.05em; }
+  .modal .button { width: 100%; margin-top: 16px; font-size: 10px; }
+  .slider-row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; }
+  .slider-row label { font-size: 9px; letter-spacing: 0.05em; }
+  input[type=range] { appearance: none; width: 170px; height: 16px; background-color: #ddd; box-shadow: 0 0 0 2px black; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none; width: 18px; height: 26px; background-color: #727272;
+    border-left: 2px solid #a4a4a4; border-top: 2px solid #a4a4a4;
+    border-bottom: 2px solid #545655; border-right: 2px solid #545655;
+    box-shadow: 0 0 0 2px black; cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 26px; background-color: #727272;
+    border-left: 2px solid #a4a4a4; border-top: 2px solid #a4a4a4;
+    border-bottom: 2px solid #545655; border-right: 2px solid #545655;
+    box-shadow: 0 0 0 2px black; cursor: pointer;
+  }
   #seed {
     position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
     color: rgba(255,255,255,0.75); font-family: 'Press Start 2P', monospace; font-size: 8px;
@@ -88,9 +127,43 @@
 <div id="hotbar"></div>
 <div id="fps"></div>
 <div id="bar">LMB break · RMB place · 1-6 / wheel select · WASD move · SPACE jump · F fly · V aerial · ESC look</div>
-<div id="hint">
-  <div class="title">VOXEL WORLD</div>
-  <div class="sub">click to look around<br><span class="key">WASD</span> move · <span class="key">SPACE</span> jump<br><span class="key">LMB</span> break · <span class="key">RMB</span> place · <span class="key">1-6</span>/<span class="key">WHEEL</span> block<br><span class="key">F</span> fly · <span class="key">V</span> aerial view · <span class="key">ESC</span> free the mouse</div>
+<div id="menu" class="menu">
+  <div class="title">Hyvmind World</div>
+  <button id="play" class="button" type="button">Play</button>
+  <button id="setting" class="button" type="button">Setting</button>
+  <button id="feature" class="button" type="button">Guide</button>
+  <button id="exit" class="button" type="button">Exit</button>
+</div>
+<div id="settings" class="modal hidden">
+  <p id="fov">Field of View: 100</p>
+  <div class="slider-row">
+    <label>Field of View</label>
+    <input type="range" id="fov-input" min="60" max="100" value="100" step="1">
+  </div>
+  <p id="distance">Render Distance: 0</p>
+  <div class="slider-row">
+    <label>Distance (fog)</label>
+    <input type="range" id="distance-input" min="0" max="8" value="0" step="1">
+  </div>
+  <p id="music">Music: On</p>
+  <div class="slider-row">
+    <label>Music</label>
+    <input type="range" id="music-input" min="0" max="1" value="1" step="1">
+  </div>
+  <button id="setting-back" class="button" type="button">Apply</button>
+</div>
+<div id="features" class="modal hidden">
+  <p>
+    <b>LMB:</b> break<br>
+    <b>RMB:</b> place<br>
+    <b>Wheel / 1-6:</b> change block<br>
+    <b>WASD:</b> move<br>
+    <b>SPACE:</b> jump / fly up<br>
+    <b>F:</b> fly<br>
+    <b>V:</b> aerial view<br>
+    <b>ESC:</b> menu / free mouse
+  </p>
+  <button id="back" class="button" type="button">Back</button>
 </div>
 <script type="module" src="./voxel.js"></script>
 <script>

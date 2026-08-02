@@ -3824,7 +3824,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             {hyvmindOverlay === "voxel-world" && (
               <div className="flex-1 flex items-center justify-center p-0">
                 <iframe
-                  src="/assets/voxel/voxel-world.html?seed=Indian%20Constitutional%20Law"
+                  src={`/assets/voxel/voxel-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
                   allow="autoplay"
                   className="w-full h-full border-0"
                   title="Voxel World"

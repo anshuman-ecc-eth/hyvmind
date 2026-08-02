@@ -55,14 +55,15 @@ function h3(x, y, z) { let n = (x * 374761393 + y * 668265263 + z * 144667) >>> 
 // Per-vertex shading tint multiplied over the texture (top-light + h3 variation)
 function blockColor(t, x, y, z, dirY) {
   if (t === B.LEAVES || t === B.PINE) {
-    const base = t === B.LEAVES ? [0.85, 1.1, 0.8] : [0.5, 0.85, 0.6];
-    const side = dirY === 1 ? 1.22 : 0.78;
-    const m = (h3(x, y, z) % 3) === 0 ? 0.8 : (h3(x, y, z) % 3) === 1 ? 1.0 : 1.15;
+    const base = t === B.LEAVES ? [0.95, 1.1, 0.9] : [0.8, 1.0, 0.9];
+    const side = dirY === 1 ? 1.12 : 0.8;
+    const m = (h3(x, y, z) % 3) === 0 ? 0.85 : (h3(x, y, z) % 3) === 1 ? 1.0 : 1.1;
     return [base[0] * side * m, base[1] * side * m, base[2] * side * m];
   }
   if (t === B.WOOD) {
-    const m = ((h3(x, z) >> 4) % 2) === 0 ? 1 : 0.72;
-    return [m, m, m];
+    const m = 0.9 + (h3(x, y, z) % 5) * 0.04;
+    const base = (H && H[z] && y <= H[z][x] + 2) ? 0.8 : 1;
+    return [0.95 * m * base, 0.9 * m * base, 0.95 * m * base];
   }
   if (t === B.STONE) {
     const m = (h3(x, y, z) % 3) === 0 ? 0.88 : (h3(x, y, z) % 3) === 1 ? 1.0 : 1.1;
@@ -132,6 +133,34 @@ function loadTextures(cb) {
     }, undefined, () => { if (--pending === 0) cb(imgs); });
   });
 }
+// Per-pixel tile recolour applied when packing the atlas. The source leaf/pine
+// tiles are neutral grayscale, so hue is baked in here; logs get a darker, cooler
+// bark tone so trunks stop blending into the warm dirt.
+const TILE_RECOLOR = {
+  leaves: (r) => [0.42 * r, 1.0 * r, 0.3 * r],
+  pine: (r) => [0.32 * r, 0.8 * r, 0.28 * r],
+  log_side: (r, g, b) => [0.62 * r, 0.54 * g, 0.5 * b],
+  log_top: (r, g, b) => [0.68 * r, 0.6 * g, 0.55 * b],
+};
+function colorizeTile(n, img) {
+  const c = document.createElement('canvas');
+  c.width = TILE; c.height = TILE;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0, TILE, TILE);
+  const fn = TILE_RECOLOR[n];
+  if (!fn) return c;
+  const d = g.getImageData(0, 0, TILE, TILE);
+  const px = d.data;
+  for (let i = 0; i < px.length; i += 4) {
+    // Transparent holes get filled with a darker leaf green so the canopy is
+    // fully opaque (no sky showing through) while keeping the speckle texture.
+    const col = px[i + 3] < 128 ? fn(85, 85, 85) : fn(px[i], px[i + 1], px[i + 2]);
+    px[i] = col[0]; px[i + 1] = col[1]; px[i + 2] = col[2];
+    px[i + 3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+  return c;
+}
 function buildAtlas(imgs) {
   atlasCanvas = document.createElement('canvas');
   atlasCanvas.width = ATLAS_COLS * TILE;
@@ -139,7 +168,7 @@ function buildAtlas(imgs) {
   const ctx = atlasCanvas.getContext('2d');
   TEX_NAMES.forEach((n, i) => {
     const col = i % ATLAS_COLS, row = (i / ATLAS_COLS) | 0;
-    if (imgs[n]) ctx.drawImage(imgs[n], col * TILE, row * TILE, TILE, TILE);
+    if (imgs[n]) ctx.drawImage(colorizeTile(n, imgs[n]), col * TILE, row * TILE);
     atlasPos[n] = [col, row];
     atlasTex[n] = [col / ATLAS_COLS, 1 - (row + 1) / ATLAS_ROWS, (col + 1) / ATLAS_COLS, 1 - row / ATLAS_ROWS];
   });
@@ -229,7 +258,7 @@ function placePine(x, topY, z, seed) {
   const layers = [
     { dy: th - 2, size: 3 },
     { dy: th - 1, size: 3 },
-    { dy: th, size: 1 },
+    { dy: th, size: 3 },
     { dy: th + 1, size: 1 },
   ];
   for (const L of layers) {
@@ -244,14 +273,14 @@ function placePine(x, topY, z, seed) {
 function buildWorld(seedName) {
   worldSeedHash = fnv1a(seedName);
   const prng = new PRNG((worldSeedHash ^ 0xdeadbeef) >>> 0);
-  const rawMap = perlinNoise(GRID + 1, GRID + 1, 0.5, 5, 133, prng);
+  const rawMap = perlinNoise(GRID + 1, GRID + 1, 0.5, 3, 133, prng);
   const cornerElev = [];
   for (let y = 0; y <= GRID; y++) {
     const row = [];
     for (let x = 0; x <= GRID; x++) {
       const raw = (rawMap[y] && rawMap[y][x] != null) ? rawMap[y][x] : 0;
       const norm = (raw + 1) / 2 + 0.25;
-      row.push(Math.max(0, Math.min(255, Math.pow(Math.max(0, norm), 3.3) * 255)));
+      row.push(Math.max(0, Math.min(255, Math.pow(Math.max(0, norm), 2.2) * 255)));
     }
     cornerElev.push(row);
   }
@@ -287,7 +316,7 @@ function buildWorld(seedName) {
       }
       if (h < waterLevel) for (let y = h + 1; y <= waterLevel; y++) setBlock(x, y, z, B.WATER);
       const r = (h2(x, z, worldSeedHash) >>> 0) / 4294967296;
-      const rate = bio === 'forest' ? 0.16 : (bio === 'grass' ? 0.045 : 0);
+      const rate = bio === 'forest' ? 0.01 : 0;
       if (rate && r < rate) placeTree(x, h, z);
     }
   }
@@ -307,19 +336,24 @@ function geometryFrom(positions, colors, normals, uvs) {
 function buildChunkGeometry(cx, cz) {
   const pos = [], col = [], nrm = [], uv = [];
   const wPos = [], wCol = [], wNrm = [], wUv = [];
+  const lPos = [], lCol = [], lNrm = [], lUv = [];
   const ox = cx * CH, oz = cz * CH;
   for (let y = 0; y < maxY; y++) {
     for (let z = oz; z < oz + CH; z++) {
       for (let x = ox; x < ox + CH; x++) {
         const t = getBlock(x, y, z);
         if (t === B.AIR) continue;
+        const foliage = t === B.LEAVES || t === B.PINE;
         const water = t === B.WATER;
         for (let f = 0; f < 6; f++) {
           const face = FACES[f];
           const nb = getBlock(x + face.dir[0], y + face.dir[1], z + face.dir[2]);
           const draw = water ? (nb === B.AIR) : (nb === B.AIR || nb === B.WATER);
           if (!draw) continue;
-          const P = water ? wPos : pos, C2 = water ? wCol : col, N = water ? wNrm : nrm, U = water ? wUv : uv;
+          const P = foliage ? lPos : water ? wPos : pos;
+          const C2 = foliage ? lCol : water ? wCol : col;
+          const N = foliage ? lNrm : water ? wNrm : nrm;
+          const U = foliage ? lUv : water ? wUv : uv;
           const cc = blockColor(t, x, y, z, face.dir[1]);
           const r = atlasTex[texSlot(t, f)] || [0, 0, 1, 1];
           const tri = [[face.corners[0], face.corners[1], face.corners[2]], [face.corners[0], face.corners[2], face.corners[3]]];
@@ -340,6 +374,7 @@ function buildChunkGeometry(cx, cz) {
   return {
     opaque: pos.length ? geometryFrom(pos, col, nrm, uv) : null,
     water: wPos.length ? geometryFrom(wPos, wCol, wNrm, wUv) : null,
+    foliage: lPos.length ? geometryFrom(lPos, lCol, lNrm, lUv) : null,
   };
 }
 
@@ -349,37 +384,21 @@ function buildChunkGeometry(cx, cz) {
 const container = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x88bbff);
-scene.fog = new THREE.Fog(0x88bbff, 60, 140);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x667766, 1.25));
-const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x667766, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.6);
 sun.position.set(50, 120, 40);
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+const fill = new THREE.DirectionalLight(0xffffff, 0.2);
 fill.position.set(-40, -20, 30);
 scene.add(fill);
 
-const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 400);
+const camera = new THREE.PerspectiveCamera(100, 1, 0.1, 2000);
 camera.rotation.order = 'YXZ';
-
-// First-person held block (swings on break / place, Minecraft-style)
-const hand = new THREE.Group();
-const handMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-const handMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), handMat);
-hand.add(handMesh);
-function applyHeldBlock() {
-  if (!atlasTexture) return;
-  const geo = makeBlockBoxGeometry(heldBlock);
-  if (handMesh.geometry) handMesh.geometry.dispose();
-  handMesh.geometry = geo;
-}
-const HAND_BASE_X = 0.55, HAND_BASE_Y = -0.35, HAND_BASE_Z = -0.6;
-hand.position.set(HAND_BASE_X, HAND_BASE_Y, HAND_BASE_Z);
-hand.scale.setScalar(0.35);
-camera.add(hand);
 scene.add(camera);
 
 // ─────────────────────────────────────────────────────────────
@@ -393,28 +412,86 @@ function clearHolding() {
   if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
   holdingButton = -1;
 }
-function setHintPaused(paused) {
-  const hint = document.getElementById('hint');
-  if (!hint) return;
-  const title = hint.querySelector('.title');
-  const sub = hint.querySelector('.sub');
+// ── Menu / pause UI (vyse-style) ──
+const menuEl = document.getElementById('menu');
+const settingsEl = document.getElementById('settings');
+const featuresEl = document.getElementById('features');
+const playBtn = document.getElementById('play');
+const settingBtn = document.getElementById('setting');
+const featureBtn = document.getElementById('feature');
+const exitBtn = document.getElementById('exit');
+const settingBack = document.getElementById('setting-back');
+const guideBack = document.getElementById('back');
+const fovLabel = document.getElementById('fov');
+const fovInput = document.getElementById('fov-input');
+const distanceLabel = document.getElementById('distance');
+const distanceInput = document.getElementById('distance-input');
+const musicLabel = document.getElementById('music');
+const musicInput = document.getElementById('music-input');
+
+function setPaused(paused) {
+  if (menuEl) menuEl.classList.toggle('hidden', !paused);
+  const crosshairEl = document.getElementById('crosshair');
+  const hotbarEl = document.getElementById('hotbar');
+  const barEl = document.getElementById('bar');
+  if (crosshairEl) crosshairEl.style.display = paused ? 'none' : 'block';
+  if (hotbarEl) hotbarEl.style.display = paused ? 'none' : 'flex';
+  if (barEl) barEl.style.display = paused ? 'none' : 'block';
   if (paused) {
-    title.textContent = 'PAUSED';
-    sub.innerHTML = 'click to resume<br><span class="key">ESC</span> pause · <span class="key">F</span> fly · <span class="key">V</span> aerial';
-  } else {
-    title.textContent = 'VOXEL WORLD';
-    sub.innerHTML = 'click to look around<br><span class="key">WASD</span> move · <span class="key">SPACE</span> jump<br><span class="key">LMB</span> break · <span class="key">RMB</span> place · <span class="key">1-6</span>/<span class="key">WHEEL</span> block<br><span class="key">F</span> fly · <span class="key">V</span> aerial view · <span class="key">ESC</span> free the mouse';
+    if (settingsEl) settingsEl.classList.add('hidden');
+    if (featuresEl) featuresEl.classList.add('hidden');
   }
 }
-function requestLock() { if (!document.pointerLockElement) { window.focus(); renderer.domElement.requestPointerLock(); } }
+
+function closeToParent() {
+  window.parent.postMessage({ type: 'hyvmind-resume-bgm' }, '*');
+  window.parent.postMessage({ type: 'hyvmind-close' }, '*');
+}
+
+function applySettings() {
+  if (fovInput instanceof HTMLInputElement) {
+    camera.fov = parseInt(fovInput.value);
+    camera.updateProjectionMatrix();
+  }
+  if (distanceInput instanceof HTMLInputElement) {
+    const v = parseInt(distanceInput.value);
+    scene.fog = v === 0 ? null : new THREE.Fog(0x88bbff, v * 20, v * 60);
+  }
+  if (settingsEl) settingsEl.classList.add('hidden');
+}
+
+function requestLock() {
+  if (!document.pointerLockElement) { window.focus(); renderer.domElement.requestPointerLock(); }
+}
 document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   if (pointerLocked) { hasStarted = true; clearHolding(); }
-  else { clearHolding(); setHintPaused(hasStarted); }
-  document.getElementById('hint').style.display = pointerLocked ? 'none' : 'flex';
+  else { clearHolding(); }
+  setPaused(!pointerLocked);
 });
 renderer.domElement.addEventListener('click', requestLock);
-document.getElementById('hint').addEventListener('click', requestLock);
+
+playBtn && playBtn.addEventListener('click', requestLock);
+settingBtn && settingBtn.addEventListener('click', () => { if (settingsEl) settingsEl.classList.remove('hidden'); });
+featureBtn && featureBtn.addEventListener('click', () => { if (featuresEl) featuresEl.classList.remove('hidden'); });
+guideBack && guideBack.addEventListener('click', () => { if (featuresEl) featuresEl.classList.add('hidden'); });
+exitBtn && exitBtn.addEventListener('click', closeToParent);
+settingBack && settingBack.addEventListener('click', applySettings);
+
+fovInput && fovInput.addEventListener('input', () => {
+  camera.fov = parseInt(fovInput.value);
+  camera.updateProjectionMatrix();
+  if (fovLabel) fovLabel.textContent = 'Field of View: ' + fovInput.value;
+});
+distanceInput && distanceInput.addEventListener('input', () => {
+  if (distanceLabel) distanceLabel.textContent = 'Render Distance: ' + distanceInput.value;
+});
+musicInput && musicInput.addEventListener('change', () => {
+  const on = musicInput.value === '1';
+  if (musicLabel) musicLabel.textContent = 'Music: ' + (on ? 'On' : 'Off');
+});
+
+setPaused(true);
 document.addEventListener('mousemove', (e) => {
   if (!pointerLocked) return;
   yaw -= e.movementX * 0.0022;
@@ -431,7 +508,7 @@ const PLAYER_HW = 0.3, PLAYER_H = 1.8, EYE = 1.6;
 let px = 0, py = 0, pz = 0;
 let vx = 0, vy = 0, vz = 0;
 let onGround = false;
-function solidAt(x, y, z) { const t = getBlock(x, y, z); return t !== B.AIR && t !== B.WATER; }
+function solidAt(x, y, z) { const t = getBlock(x, y, z); return t !== B.AIR && t !== B.WATER && t !== B.LEAVES && t !== B.PINE; }
 function aabbCollides(x, y, z) {
   const x0 = Math.floor(x - PLAYER_HW), x1 = Math.floor(x + PLAYER_HW);
   const y0 = Math.floor(y), y1 = Math.floor(y + PLAYER_H);
@@ -479,14 +556,15 @@ function raycast(origin, dir, maxDist) {
   let tMY = ((stepY > 0) ? (y + 1 - origin.y) : (origin.y - y)) * tDY;
   let tMZ = ((stepZ > 0) ? (z + 1 - origin.z) : (origin.z - z)) * tDZ;
   let face = [0, 0, 0];
-  for (let i = 0; i < maxDist * 3; i++) {
-    if (tMX < tMY && tMX < tMZ) { x += stepX; tMX += tDX; face = [-stepX, 0, 0]; }
-    else if (tMY < tMZ) { y += stepY; tMY += tDY; face = [0, -stepY, 0]; }
-    else { z += stepZ; tMZ += tDZ; face = [0, 0, -stepZ]; }
-    const t = getBlock(x, y, z);
-    if (t !== B.AIR && t !== B.WATER) return { x, y, z, face, t };
+  let entry = 0;
+  for (;;) {
+    if (entry > maxDist) return null;
+    const blk = getBlock(x, y, z);
+    if (blk !== B.AIR && blk !== B.WATER) return { x, y, z, face, t: entry };
+    if (tMX < tMY && tMX < tMZ) { x += stepX; entry = tMX; tMX += tDX; face = [-stepX, 0, 0]; }
+    else if (tMY < tMZ) { y += stepY; entry = tMY; tMY += tDY; face = [0, -stepY, 0]; }
+    else { z += stepZ; entry = tMZ; tMZ += tDZ; face = [0, 0, -stepZ]; }
   }
-  return null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -495,6 +573,7 @@ function raycast(origin, dir, maxDist) {
 const builtChunks = new Map();
 const material = new THREE.MeshLambertMaterial({ vertexColors: true });
 const waterMaterial = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide });
+const foliageMaterial = new THREE.MeshLambertMaterial({ vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide });
 const RENDER_DIST = 3;
 const chunkQueue = [];
 const queued = new Set();
@@ -509,6 +588,7 @@ function buildChunk(cx, cz) {
   group.position.set(cx * CH, 0, cz * CH);
   if (geo.opaque) { const m = new THREE.Mesh(geo.opaque, material); group.add(m); }
   if (geo.water) { const m = new THREE.Mesh(geo.water, waterMaterial); group.add(m); }
+  if (geo.foliage) { const m = new THREE.Mesh(geo.foliage, foliageMaterial); group.add(m); }
   scene.add(group);
   builtChunks.set(key, group);
 }
@@ -519,11 +599,25 @@ function removeChunk(key) {
   g.children.forEach((c) => { c.geometry.dispose(); });
   builtChunks.delete(key);
 }
+const MAX_CHUNK = Math.floor((GRID - 1) / CH);
+function rebuildChunkSync(key) {
+  queued.delete(key);
+  const g = builtChunks.get(key);
+  if (g) {
+    scene.remove(g);
+    g.children.forEach((c) => { c.geometry.dispose(); });
+    builtChunks.delete(key);
+  }
+  const [cx, cz] = key.split(',').map(Number);
+  buildChunk(cx, cz);
+}
 function updateChunkSet() {
   const pcx = Math.floor(px / CH), pcz = Math.floor(pz / CH);
   const needed = new Set();
   for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++) for (let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++) {
-    needed.add((pcx + dx) + ',' + (pcz + dz));
+    const cx = Math.max(0, Math.min(MAX_CHUNK, pcx + dx));
+    const cz = Math.max(0, Math.min(MAX_CHUNK, pcz + dz));
+    needed.add(cx + ',' + cz);
   }
   for (const key of needed) {
     if (!builtChunks.has(key) && !queued.has(key)) { queued.add(key); chunkQueue.push(key); }
@@ -531,12 +625,16 @@ function updateChunkSet() {
   for (const key of builtChunks.keys()) if (!needed.has(key)) removeChunk(key);
   for (const key of dirtyChunks) {
     dirtyChunks.delete(key);
-    removeChunk(key);
-    if (!queued.has(key)) { queued.add(key); chunkQueue.push(key); }
+    rebuildChunkSync(key);
   }
 }
 function markDirty(x, z) {
-  dirtyChunks.add(Math.floor(x / CH) + ',' + Math.floor(z / CH));
+  const cx = Math.floor(x / CH), cz = Math.floor(z / CH);
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const nx = cx + dx, nz = cz + dz;
+    if (nx < 0 || nz < 0 || nx > MAX_CHUNK || nz > MAX_CHUNK) continue;
+    dirtyChunks.add(nx + ',' + nz);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -578,12 +676,6 @@ function renderMinimap() {
   minimapCtx.drawImage(minimapImage, 0, 0, mm, mm);
   minimapCtx.fillStyle = 'rgba(0,0,0,0.3)';
   minimapCtx.fillRect(0, 0, mm, mm);
-  const half = (RENDER_DIST + 0.5) * CH;
-  const vx0 = Math.max(0, px - half), vx1 = Math.min(GRID, px + half);
-  const vz0 = Math.max(0, pz - half), vz1 = Math.min(GRID, pz + half);
-  minimapCtx.strokeStyle = '#fff';
-  minimapCtx.lineWidth = 1.5;
-  minimapCtx.strokeRect(vx0 / GRID * mm, vz0 / GRID * mm, (vx1 - vx0) / GRID * mm, (vz1 - vz0) / GRID * mm);
   minimapCtx.fillStyle = '#fff';
   minimapCtx.beginPath();
   minimapCtx.arc(px / GRID * mm, pz / GRID * mm, 2.5, 0, Math.PI * 2);
@@ -619,7 +711,6 @@ const HOTBAR_BLOCKS = [B.STONE, B.DIRT, B.GRASS, B.SAND, B.ROCK, B.WOOD];
 let wheelGap = false;
 function selectBlock(t) {
   heldBlock = t;
-  applyHeldBlock();
   const hotbarEl = document.getElementById('hotbar');
   if (hotbarEl) {
     const slots = hotbarEl.children;
@@ -643,8 +734,6 @@ document.addEventListener('wheel', (e) => {
 // ─────────────────────────────────────────────────────────────
 let heldBlock = B.STONE;
 const clock = new THREE.Clock();
-let swinging = false, swingStart = 0;
-function startSwing() { swinging = true; swingStart = performance.now(); }
 const dir = new THREE.Vector3();
 const fwd = new THREE.Vector3();
 const right = new THREE.Vector3();
@@ -655,8 +744,9 @@ const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(1.005, 1.005, 1.005),
 highlightMesh.visible = false;
 scene.add(highlightMesh);
 function updateHighlight() {
+  if (!pointerLocked) { highlightMesh.visible = false; return; }
   camera.getWorldDirection(dir);
-  const hit = raycast(camera.position, dir, 7);
+  const hit = raycast(camera.position, dir, 4);
   if (hit && !aerialView) {
     highlightMesh.visible = true;
     highlightMesh.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
@@ -694,9 +784,8 @@ function cellOverlapsPlayer(x, y, z) {
 function doBlockAction(button) {
   const origin = camera.position.clone();
   camera.getWorldDirection(dir);
-  const hit = raycast(origin, dir, 7);
+  const hit = raycast(origin, dir, 4);
   if (!hit) return;
-  startSwing();
   if (button === 0) {
     spawnCrumb(hit.x, hit.y, hit.z, getBlock(hit.x, hit.y, hit.z));
     setBlock(hit.x, hit.y, hit.z, B.AIR);
@@ -766,6 +855,7 @@ function animate() {
   }
   // fall off world edge / protect
   if (py < -30) { py = 60; vx = vy = vz = 0; }
+  if (py > 1200) { py = 1200; vy = 0; }
 
   px += vx * dt;
   if (!flyMode && aabbCollides(px, py, pz)) { px -= vx * dt; vx = 0; }
@@ -798,20 +888,6 @@ function animate() {
     if (fpsEl) fpsEl.textContent = fpsCount + ' FPS';
     fpsCount = 0;
     fpsT0 = performance.now();
-  }
-
-  hand.visible = !aerialView;
-  if (swinging) {
-    const t = (performance.now() - swingStart) * 0.01;
-    if (t >= Math.PI) {
-      swinging = false;
-      hand.rotation.set(0, 0, 0);
-      hand.position.set(HAND_BASE_X, HAND_BASE_Y, HAND_BASE_Z);
-    } else {
-      hand.rotation.x = -0.5 * Math.sin(t);
-      hand.rotation.y = -0.3 * Math.sin(t);
-      hand.position.z = HAND_BASE_Z - 0.4 * Math.sin(t);
-    }
   }
 
   renderer.render(scene, camera);
@@ -883,8 +959,7 @@ loadTextures((imgs) => {
   buildAtlas(imgs);
   material.map = atlasTexture; material.needsUpdate = true;
   waterMaterial.map = atlasTexture; waterMaterial.needsUpdate = true;
-  handMat.map = atlasTexture; handMat.needsUpdate = true;
-  applyHeldBlock();
+  foliageMaterial.map = atlasTexture; foliageMaterial.needsUpdate = true;
   initHotbar();
   startGame();
 });
