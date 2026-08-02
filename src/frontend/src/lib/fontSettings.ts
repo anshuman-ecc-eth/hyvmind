@@ -9,16 +9,16 @@ export type FontSize = "small" | "medium" | "large" | "huge" | "colossal";
 
 export const FONT_PAIRINGS: FontPairing[] = [
   {
-    id: "pixelify-sans",
-    name: "Pixelify Sans",
-    headingFont: "Pixelify Sans",
-    bodyFont: "Pixelify Sans",
-  },
-  {
     id: "ubuntu-sans",
     name: "Ubuntu Sans",
     headingFont: "Ubuntu Sans",
     bodyFont: "Ubuntu Sans",
+  },
+  {
+    id: "pixelify-sans",
+    name: "Pixelify Sans",
+    headingFont: "Pixelify Sans",
+    bodyFont: "Pixelify Sans",
   },
   {
     id: "quattrocento-mulish",
@@ -78,7 +78,7 @@ export const FONT_SIZE_OPTIONS: Record<FontSize, string> = {
   colossal: "225%",
 };
 
-export const DEFAULT_FONT_PAIRING = "pixelify-sans";
+export const DEFAULT_FONT_PAIRING = "ubuntu-sans";
 export const DEFAULT_FONT_SIZE: FontSize = "medium";
 
 export function applyFontPairing(pairingId: string): void {
@@ -99,8 +99,10 @@ export function applyFontSize(size: FontSize): void {
     FONT_SIZE_OPTIONS[size] ?? FONT_SIZE_OPTIONS.small;
 }
 
+const FONT_PAIRING_STORAGE_KEY = "hyvmind-font-pairing-v2";
+
 export function getSavedFontPairing(): string {
-  return localStorage.getItem("hyvmind-font-pairing") ?? DEFAULT_FONT_PAIRING;
+  return localStorage.getItem(FONT_PAIRING_STORAGE_KEY) ?? DEFAULT_FONT_PAIRING;
 }
 
 export function getSavedFontSize(): FontSize {
@@ -110,7 +112,7 @@ export function getSavedFontSize(): FontSize {
 }
 
 export function saveFontPairing(pairingId: string): void {
-  localStorage.setItem("hyvmind-font-pairing", pairingId);
+  localStorage.setItem(FONT_PAIRING_STORAGE_KEY, pairingId);
 }
 
 export function saveFontSize(size: FontSize): void {

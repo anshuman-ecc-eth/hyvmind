@@ -1791,6 +1791,8 @@ function StartScreen({
                       letterSpacing: "0.05em",
                       display: "flex",
                       alignItems: "center",
+                      textShadow:
+                        "0.045em 0.045em 0 #666, 0.09em 0.09em 0 #555, 0.135em 0.135em 0 #444, 0.18em 0.18em 0 #333, 0.225em 0.225em 0 #222, 0.27em 0.27em 0 #111",
                     }}
                     aria-label="HYVMIND"
                   >
