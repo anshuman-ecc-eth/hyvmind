@@ -41,7 +41,7 @@ function perlinNoise(w, h, persistence, octaves, wavelength, prng) {
 // ─────────────────────────────────────────────────────────────
 // Block types & colours (vertex-coloured; no texture atlas)
 // ─────────────────────────────────────────────────────────────
-const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12 };
+const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12, SPADE: 13, BRUSH: 14 };
 const C = {
   [B.STONE]: [0.50, 0.52, 0.55], [B.DIRT]: [0.58, 0.44, 0.31],
   [B.GRASS]: [0.35, 0.66, 0.28],
@@ -50,6 +50,7 @@ const C = {
   [B.WOOD]: [0.30, 0.16, 0.09], [B.LEAVES]: [0.28, 0.55, 0.22],
   [B.COAL]: [0.16, 0.16, 0.18], [B.IRON]: [0.72, 0.62, 0.50],
   [B.PINE]: [0.12, 0.35, 0.16],
+  [B.SPADE]: [0.55, 0.45, 0.35], [B.BRUSH]: [0.13, 0.10, 0.24],
 };
 function h3(x, y, z) { let n = (x * 374761393 + y * 668265263 + z * 144667) >>> 0; n = ((n ^ (n >> 13)) * 1274126177) >>> 0; return n >>> 0; }
 // Per-vertex shading tint multiplied over the texture (top-light + h3 variation)
@@ -94,6 +95,8 @@ function texSlot(t, f) {
     case B.COAL: return 'coal';
     case B.IRON: return 'iron';
     case B.PINE: return 'pine';
+    case B.SPADE: return 'spade';
+    case B.BRUSH: return 'brush';
   }
   return 'stone';
 }
@@ -117,7 +120,7 @@ const FACES = [
 // Textures — block tiles from vyse12138/minecraft-threejs (MIT),
 // packed into a runtime canvas atlas (NearestFilter)
 // ─────────────────────────────────────────────────────────────
-const TEX_NAMES = ['stone', 'dirt', 'sand', 'snow', 'grass_top', 'grass_side', 'log_side', 'log_top', 'leaves', 'pine', 'coal', 'iron', 'cobblestone', 'water'];
+const TEX_NAMES = ['stone', 'dirt', 'sand', 'snow', 'grass_top', 'grass_side', 'log_side', 'log_top', 'leaves', 'pine', 'coal', 'iron', 'cobblestone', 'water', 'spade', 'brush'];
 const TILE = 16, ATLAS_COLS = 4, ATLAS_ROWS = Math.ceil(TEX_NAMES.length / ATLAS_COLS);
 let atlasTexture = null, atlasCanvas = null;
 const atlasTex = {}, atlasPos = {};
@@ -421,6 +424,7 @@ const settingBtn = document.getElementById('setting');
 const featureBtn = document.getElementById('feature');
 const exitBtn = document.getElementById('exit');
 const settingBack = document.getElementById('setting-back');
+const settingsBack = document.getElementById('settings-back');
 const guideBack = document.getElementById('back');
 const fovLabel = document.getElementById('fov');
 const fovInput = document.getElementById('fov-input');
@@ -428,15 +432,15 @@ const distanceLabel = document.getElementById('distance');
 const distanceInput = document.getElementById('distance-input');
 const musicLabel = document.getElementById('music');
 const musicInput = document.getElementById('music-input');
+const soundLabel = document.getElementById('sound');
+const soundInput = document.getElementById('sound-input');
 
 function setPaused(paused) {
   if (menuEl) menuEl.classList.toggle('hidden', !paused);
   const crosshairEl = document.getElementById('crosshair');
   const hotbarEl = document.getElementById('hotbar');
-  const barEl = document.getElementById('bar');
   if (crosshairEl) crosshairEl.style.display = paused ? 'none' : 'block';
   if (hotbarEl) hotbarEl.style.display = paused ? 'none' : 'flex';
-  if (barEl) barEl.style.display = paused ? 'none' : 'block';
   if (paused) {
     if (settingsEl) settingsEl.classList.add('hidden');
     if (featuresEl) featuresEl.classList.add('hidden');
@@ -467,7 +471,7 @@ document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   if (pointerLocked) { hasStarted = true; clearHolding(); }
   else { clearHolding(); }
-  setPaused(!pointerLocked);
+  if (!graffitiOpen) setPaused(!pointerLocked);
 });
 renderer.domElement.addEventListener('click', requestLock);
 
@@ -477,6 +481,7 @@ featureBtn && featureBtn.addEventListener('click', () => { if (featuresEl) featu
 guideBack && guideBack.addEventListener('click', () => { if (featuresEl) featuresEl.classList.add('hidden'); });
 exitBtn && exitBtn.addEventListener('click', closeToParent);
 settingBack && settingBack.addEventListener('click', applySettings);
+settingsBack && settingsBack.addEventListener('click', () => { if (settingsEl) settingsEl.classList.add('hidden'); });
 
 fovInput && fovInput.addEventListener('input', () => {
   camera.fov = parseInt(fovInput.value);
@@ -490,6 +495,168 @@ musicInput && musicInput.addEventListener('change', () => {
   const on = musicInput.value === '1';
   if (musicLabel) musicLabel.textContent = 'Music: ' + (on ? 'On' : 'Off');
 });
+soundInput && soundInput.addEventListener('change', () => {
+  const on = soundInput.value === '1';
+  if (soundLabel) soundLabel.textContent = 'Sound: ' + (on ? 'On' : 'Off');
+});
+
+// ── Graffiti (brush) ──
+const LETTERS_PER_BLOCK = 4;
+const graffitiEl = document.getElementById('graffiti');
+const graffitiInput = document.getElementById('graffiti-input');
+const graffitiLabel = document.getElementById('graffiti-label');
+const graffitiOk = document.getElementById('graffiti-ok');
+const graffitiCancel = document.getElementById('graffiti-cancel');
+let graffitiOpen = false;
+let pendingGraffiti = null;
+const graffitiList = [];
+const selection = [];
+const selectionKey = new Set();
+const selectionMeshes = [];
+
+function clearSelection() {
+  selection.length = 0;
+  selectionKey.clear();
+  for (const m of selectionMeshes) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  selectionMeshes.length = 0;
+}
+function refreshSelectionVisual() {
+  for (const m of selectionMeshes) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  selectionMeshes.length = 0;
+  if (!selection.length) return;
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.35, depthWrite: false });
+  for (const s of selection) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.005, 1.005, 1.005), mat);
+    mesh.position.set(s.x + 0.5, s.y + 0.5, s.z + 0.5);
+    scene.add(mesh);
+    selectionMeshes.push(mesh);
+  }
+}
+function toggleSelection(hit) {
+  const key = hit.x + ',' + hit.y + ',' + hit.z;
+  const i = selection.findIndex((s) => s.x === hit.x && s.y === hit.y && s.z === hit.z);
+  if (i >= 0) {
+    selectionKey.delete(key);
+    selection.splice(i, 1);
+  } else {
+    selectionKey.add(key);
+    selection.push({ x: hit.x, y: hit.y, z: hit.z, face: hit.face });
+  }
+  refreshSelectionVisual();
+}
+
+function removeGraffitiOn(x, y, z) {
+  for (let i = graffitiList.length - 1; i >= 0; i--) {
+    const g = graffitiList[i];
+    if (g.blocks.some((b) => b.x === x && b.y === y && b.z === z)) {
+      scene.remove(g.mesh);
+      g.mesh.geometry.dispose();
+      g.mesh.material.map.dispose();
+      g.mesh.material.dispose();
+      graffitiList.splice(i, 1);
+    }
+  }
+}
+async function addGraffiti(text, blocks) {
+  if (!blocks.length || !text) return;
+  const n = blocks[0].face || [0, 0, 1];
+  const nVec = new THREE.Vector3(n[0], n[1], n[2]);
+  const upVec = Math.abs(n[1]) === 1 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
+  const uAxis = new THREE.Vector3().crossVectors(upVec, nVec);
+  if (uAxis.lengthSq() < 1e-6) uAxis.set(1, 0, 0);
+  uAxis.normalize();
+  const vAxis = new THREE.Vector3().crossVectors(nVec, uAxis).normalize();
+  const project = (b, ax) => (b.x + 0.5) * ax.x + (b.y + 0.5) * ax.y + (b.z + 0.5) * ax.z;
+  let loU = Infinity, hiU = -Infinity, loV = Infinity, hiV = -Infinity;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const b of blocks) {
+    const pu = project(b, uAxis), pv = project(b, vAxis);
+    loU = Math.min(loU, pu); hiU = Math.max(hiU, pu);
+    loV = Math.min(loV, pv); hiV = Math.max(hiV, pv);
+    minX = Math.min(minX, b.x); maxX = Math.max(maxX, b.x);
+    minY = Math.min(minY, b.y); maxY = Math.max(maxY, b.y);
+    minZ = Math.min(minZ, b.z); maxZ = Math.max(maxZ, b.z);
+  }
+  const w = Math.max(0.9, hiU - loU);
+  const h = Math.max(0.6, hiV - loV);
+  const cx = (minX + maxX) / 2 + 0.5, cy = (minY + maxY) / 2 + 0.5, cz = (minZ + maxZ) / 2 + 0.5;
+
+  const W = 1024;
+  const H = Math.max(96, Math.round(W * (h + 0.15) / (w + 0.15)));
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  const font = (s) => s + 'px "Finger Paint", cursive';
+  let size = Math.round(H * 0.78);
+  if (document.fonts && document.fonts.load) await document.fonts.load(font(size));
+  ctx.font = font(size);
+  while (ctx.measureText(text).width > W * 0.94 && size > 6) { size -= 2; ctx.font = font(size); }
+  ctx.lineWidth = Math.max(4, size * 0.22);
+  ctx.strokeStyle = 'rgba(10,10,15,0.9)';
+  ctx.strokeText(text, W / 2, H / 2);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(text, W / 2, H / 2);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+  const geo = new THREE.PlaneGeometry(w + 0.15, h + 0.15);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(cx + nVec.x * 0.52, cy + nVec.y * 0.52, cz + nVec.z * 0.52);
+  mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(uAxis, vAxis, nVec));
+  scene.add(mesh);
+  graffitiList.push({ mesh, blocks });
+  if (graffitiList.length > 12) {
+    const old = graffitiList.shift();
+    scene.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.map.dispose(); old.mesh.material.dispose();
+  }
+}
+
+function openGraffiti(hit) {
+  pendingGraffiti = { blocks: selection.slice(), fallbackHit: hit };
+  graffitiOpen = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+  graffitiEl.classList.remove('hidden');
+  const cap = LETTERS_PER_BLOCK * (selection.length || 1);
+  graffitiInput.maxLength = cap;
+  graffitiInput.value = '';
+  graffitiLabel.textContent = 'Enter graffiti (max ' + cap + ' letters)';
+  graffitiInput.focus();
+}
+async function submitGraffiti() {
+  const text = graffitiInput.value.trim();
+  const p = pendingGraffiti || { blocks: [], fallbackHit: null };
+  const blocks = p.blocks.length ? p.blocks : (p.fallbackHit ? [p.fallbackHit] : []);
+  if (text) await addGraffiti(text, blocks);
+  closeGraffiti();
+  clearSelection();
+}
+function cancelGraffiti() { closeGraffiti(); }
+function closeGraffiti() {
+  graffitiOpen = false;
+  pendingGraffiti = null;
+  graffitiEl.classList.add('hidden');
+  requestLock();
+}
+graffitiOk && graffitiOk.addEventListener('click', submitGraffiti);
+graffitiCancel && graffitiCancel.addEventListener('click', cancelGraffiti);
+graffitiInput && graffitiInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); submitGraffiti(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Escape') return;
+  if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
+  if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
+  if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
+  if (pointerLocked) return; // native ESC exits pointer lock -> pause menu
+  if (menuEl && !menuEl.classList.contains('hidden')) {
+    e.preventDefault();
+    // defer past the keydown so the browser's ESC handling can't drop the new lock
+    setTimeout(requestLock, 0);
+  }
+});
 
 setPaused(true);
 document.addEventListener('mousemove', (e) => {
@@ -498,7 +665,10 @@ document.addEventListener('mousemove', (e) => {
   pitch -= e.movementY * 0.0022;
   pitch = Math.max(-1.5, Math.min(1.5, pitch));
 });
-document.addEventListener('keydown', (e) => { keys[e.code] = true; if (e.code === 'Space') e.preventDefault(); });
+document.addEventListener('keydown', (e) => {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  keys[e.code] = true; if (e.code === 'Space') e.preventDefault();
+});
 document.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
 // ─────────────────────────────────────────────────────────────
@@ -700,17 +870,24 @@ function updateModeLabel() {
   modeEl.textContent = aerialView ? 'AERIAL' : (flyMode ? 'FLY' : '');
 }
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyF') { flyMode = !flyMode; updateModeLabel(); }
-  else if (e.code === 'KeyV') {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.code === 'KeyF') {
+    flyMode = !flyMode;
+    updateModeLabel();
+    showToolTip(flyMode ? 'FLY\nspace: up · shift: down' : 'FLY OFF');
+  } else if (e.code === 'KeyV') {
     aerialView = !aerialView;
     if (aerialView) { flyMode = true; aerialAlt = Math.max(aerialAlt, py + 40); }
     updateModeLabel();
+    showToolTip(aerialView ? 'AERIAL' : 'AERIAL OFF');
   }
 });
-const HOTBAR_BLOCKS = [B.STONE, B.DIRT, B.GRASS, B.SAND, B.ROCK, B.WOOD];
+const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, null, null, null, null];
+const SELECTABLE = HOTBAR_BLOCKS.filter((t) => t != null);
 let wheelGap = false;
 function selectBlock(t) {
   heldBlock = t;
+  if (t === B.SPADE) clearSelection();
   const hotbarEl = document.getElementById('hotbar');
   if (hotbarEl) {
     const slots = hotbarEl.children;
@@ -723,16 +900,18 @@ document.addEventListener('wheel', (e) => {
   if (wheelGap) return;
   wheelGap = true;
   setTimeout(() => { wheelGap = false; }, 100);
-  let idx = HOTBAR_BLOCKS.indexOf(heldBlock);
+  let idx = SELECTABLE.indexOf(heldBlock);
   idx += (e.deltaY > 0) ? 1 : -1;
-  idx = (idx + HOTBAR_BLOCKS.length) % HOTBAR_BLOCKS.length;
-  selectBlock(HOTBAR_BLOCKS[idx]);
+  idx = (idx + SELECTABLE.length) % SELECTABLE.length;
+  selectBlock(SELECTABLE[idx]);
+  announceTool();
 });
 
 // ─────────────────────────────────────────────────────────────
 // Main loop
 // ─────────────────────────────────────────────────────────────
-let heldBlock = B.STONE;
+let heldBlock = B.SPADE;
+let lastRemoved = null;
 const clock = new THREE.Clock();
 const dir = new THREE.Vector3();
 const fwd = new THREE.Vector3();
@@ -786,20 +965,29 @@ function doBlockAction(button) {
   camera.getWorldDirection(dir);
   const hit = raycast(origin, dir, 4);
   if (!hit) return;
-  if (button === 0) {
-    spawnCrumb(hit.x, hit.y, hit.z, getBlock(hit.x, hit.y, hit.z));
-    setBlock(hit.x, hit.y, hit.z, B.AIR);
-    markDirty(hit.x, hit.z);
-    paintMinimapColumn(hit.x, hit.z);
-  } else {
-    const nx = hit.x + hit.face[0], ny = hit.y + hit.face[1], nz = hit.z + hit.face[2];
-    const t = getBlock(nx, ny, nz);
-    if (t === B.AIR && !cellOverlapsPlayer(nx, ny, nz)) {
-      spawnCrumb(nx, ny, nz, heldBlock);
-      setBlock(nx, ny, nz, heldBlock);
-      markDirty(nx, nz);
-      paintMinimapColumn(nx, nz);
+  if (heldBlock === B.SPADE) {
+    if (button === 0) {
+      const removed = getBlock(hit.x, hit.y, hit.z);
+      spawnCrumb(hit.x, hit.y, hit.z, removed);
+      lastRemoved = removed;
+      setBlock(hit.x, hit.y, hit.z, B.AIR);
+      removeGraffitiOn(hit.x, hit.y, hit.z);
+      markDirty(hit.x, hit.z);
+      paintMinimapColumn(hit.x, hit.z);
+    } else {
+      if (lastRemoved == null) return;
+      const nx = hit.x + hit.face[0], ny = hit.y + hit.face[1], nz = hit.z + hit.face[2];
+      const t = getBlock(nx, ny, nz);
+      if (t === B.AIR && !cellOverlapsPlayer(nx, ny, nz)) {
+        spawnCrumb(nx, ny, nz, lastRemoved);
+        setBlock(nx, ny, nz, lastRemoved);
+        markDirty(nx, nz);
+        paintMinimapColumn(nx, nz);
+      }
     }
+  } else {
+    if (button === 0) openGraffiti(hit);
+    else toggleSelection(hit);
   }
 }
 
@@ -897,22 +1085,21 @@ function animate() {
 // Break / place
 // ─────────────────────────────────────────────────────────────
 document.addEventListener('mousedown', (e) => {
-  if (!pointerLocked || e.button > 1) return;
+  if (!pointerLocked || (e.button !== 0 && e.button !== 2)) return;
   holdingButton = e.button;
   doBlockAction(e.button);
   clearInterval(holdTimer);
-  holdTimer = setInterval(() => doBlockAction(holdingButton), 333);
+  if (heldBlock === B.SPADE) {
+    holdTimer = setInterval(() => doBlockAction(holdingButton), 333);
+  }
 });
 document.addEventListener('mouseup', clearHolding);
 window.addEventListener('blur', clearHolding);
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Digit1') selectBlock(HOTBAR_BLOCKS[0]);
-  else if (e.code === 'Digit2') selectBlock(HOTBAR_BLOCKS[1]);
-  else if (e.code === 'Digit3') selectBlock(HOTBAR_BLOCKS[2]);
-  else if (e.code === 'Digit4') selectBlock(HOTBAR_BLOCKS[3]);
-  else if (e.code === 'Digit5') selectBlock(HOTBAR_BLOCKS[4]);
-  else if (e.code === 'Digit6') selectBlock(HOTBAR_BLOCKS[5]);
+  if (e.target && e.target.tagName === 'INPUT') return;
+  const digit = e.code === 'Digit1' ? 1 : e.code === 'Digit2' ? 2 : e.code === 'Digit3' ? 3 : e.code === 'Digit4' ? 4 : e.code === 'Digit5' ? 5 : e.code === 'Digit6' ? 6 : 0;
+  if (digit >= 1 && digit <= SELECTABLE.length) { selectBlock(SELECTABLE[digit - 1]); announceTool(); }
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -921,25 +1108,42 @@ document.addEventListener('keydown', (e) => {
 const seed = new URLSearchParams(location.search).get('seed') || 'Indian Constitutional Law';
 document.getElementById('seed').textContent = seed;
 
-const HOTBAR_ICONS = {
-  [B.STONE]: 'stone', [B.DIRT]: 'dirt', [B.GRASS]: 'grass_top',
-  [B.SAND]: 'sand', [B.ROCK]: 'cobblestone', [B.WOOD]: 'log_side',
+const HOTBAR_INITIALS = { [B.SPADE]: 'S', [B.BRUSH]: 'B' };
+const HOTBAR_NAMES = {
+  [B.SPADE]: 'SPADE\nleft: destroy · right: build',
+  [B.BRUSH]: 'BRUSH\nleft: write · right: select',
 };
 function initHotbar() {
   const hotbarEl = document.getElementById('hotbar');
-  if (!hotbarEl || !atlasCanvas) return;
+  if (!hotbarEl) return;
   for (let i = 0; i < HOTBAR_BLOCKS.length; i++) {
     const slot = document.createElement('div');
     slot.className = 'slot';
-    const [col, row] = atlasPos[HOTBAR_ICONS[HOTBAR_BLOCKS[i]]];
-    const icon = document.createElement('canvas');
-    icon.width = 16; icon.height = 16;
-    const ictx = icon.getContext('2d');
-    ictx.drawImage(atlasCanvas, col * TILE, row * TILE, TILE, TILE, 0, 0, 16, 16);
-    slot.appendChild(icon);
+    const t = HOTBAR_BLOCKS[i];
+    if (t != null) {
+      const initial = document.createElement('span');
+      initial.className = 'initial';
+      initial.textContent = HOTBAR_INITIALS[t];
+      slot.appendChild(initial);
+    }
     hotbarEl.appendChild(slot);
   }
   selectBlock(HOTBAR_BLOCKS[0]);
+}
+
+// 1-second center tooltip announcing the selected tool
+const tooltipEl = document.getElementById('tooltip');
+let tooltipTimer = null;
+function showToolTip(text) {
+  if (!tooltipEl) return;
+  tooltipEl.textContent = text;
+  tooltipEl.classList.add('show');
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(() => tooltipEl.classList.remove('show'), 1000);
+}
+function announceTool() {
+  const name = HOTBAR_NAMES[heldBlock];
+  if (name) showToolTip(name);
 }
 
 function startGame() {

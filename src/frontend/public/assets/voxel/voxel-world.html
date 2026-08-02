@@ -12,6 +12,13 @@
     font-display: swap;
     src: url("/fonts/press-start-2p.woff2") format("woff2");
   }
+  @font-face {
+    font-family: "Finger Paint";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/finger-paint-400.woff2") format("woff2");
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
   #view { position: absolute; inset: 0; }
@@ -49,6 +56,40 @@
   .modal.hidden { display: none; }
   .modal p { font-size: 9px; letter-spacing: 0.05em; }
   .modal .button { width: 100%; margin-top: 16px; font-size: 10px; }
+  .modal .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+  .modal .btn-row .button { width: 100%; margin-top: 0; }
+  #graffiti-input {
+    width: 100%; margin: 12px 0 4px; padding: 10px;
+    font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 0.05em;
+    color: #fff; background-color: #222; border: none; box-shadow: 0 0 0 2px black; outline: none;
+  }
+  #graffiti-input:focus { box-shadow: 0 0 0 2px #17cd07; }
+  #settings {
+    width: 520px; padding: 30px 40px;
+  }
+  #settings .title {
+    font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
+  }
+  #settings p { font-size: 12px; letter-spacing: 0.06em; }
+  #settings .slider-row { margin: 14px 0 10px; }
+  #settings .slider-row label { font-size: 11px; letter-spacing: 0.08em; }
+  #settings input[type=range] { width: 260px; height: 20px; }
+  #settings .button { font-size: 12px; }
+  #settings .btn-row { margin-top: 22px; }
+  #features {
+    width: 520px; padding: 30px 40px;
+  }
+  #features .title {
+    font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
+  }
+  #features p { font-size: 12px; letter-spacing: 0.06em; line-height: 2.1; }
+  #features .controls {
+    display: grid; grid-template-columns: auto 1fr; column-gap: 20px; row-gap: 12px;
+    font-size: 12px; letter-spacing: 0.06em; align-items: baseline;
+  }
+  #features .controls .key { color: #ffd; text-align: right; }
+  #features .controls .act { color: #fff; }
+  #features .button { font-size: 12px; margin-top: 22px; }
   .slider-row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; }
   .slider-row label { font-size: 9px; letter-spacing: 0.05em; }
   input[type=range] { appearance: none; width: 170px; height: 16px; background-color: #ddd; box-shadow: 0 0 0 2px black; cursor: pointer; }
@@ -79,11 +120,6 @@
   }
   #crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
   #crosshair::after { left: 0; top: 8px; width: 18px; height: 2px; }
-  #bar {
-    position: absolute; bottom: 82px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.6); font-family: 'Press Start 2P', monospace; font-size: 7px;
-    letter-spacing: 0.1em; z-index: 9; pointer-events: none; text-shadow: 0 1px 3px #000; white-space: nowrap;
-  }
   #hotbar {
     position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
     display: flex; gap: 6px; z-index: 9; padding: 6px;
@@ -93,8 +129,19 @@
     width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25);
   }
-  #hotbar .slot canvas { width: 34px; height: 34px; image-rendering: pixelated; }
+  #hotbar .slot .initial {
+    font-family: 'Press Start 2P', monospace; font-size: 16px; color: #fff;
+    text-shadow: 0 2px 0 #000;
+  }
   #hotbar .slot.selected { background: rgba(255,255,255,0.35); border-color: #ffd; box-shadow: 0 0 6px rgba(255,221,0,0.4); }
+  #tooltip {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P', monospace; font-size: 18px; letter-spacing: 0.2em;
+    color: #fff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,0.8);
+    z-index: 15; pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    white-space: pre-line; text-align: center; line-height: 1.8;
+  }
+  #tooltip.show { opacity: 1; }
   #fps {
     position: absolute; bottom: 10px; right: 10px;
     color: rgba(255,255,255,0.6); font-family: 'Press Start 2P', monospace; font-size: 8px;
@@ -126,15 +173,16 @@
 <div id="mode"></div>
 <div id="hotbar"></div>
 <div id="fps"></div>
-<div id="bar">LMB break · RMB place · 1-6 / wheel select · WASD move · SPACE jump · F fly · V aerial · ESC look</div>
+<div id="tooltip"></div>
 <div id="menu" class="menu">
   <div class="title">Hyvmind World</div>
   <button id="play" class="button" type="button">Play</button>
-  <button id="setting" class="button" type="button">Setting</button>
-  <button id="feature" class="button" type="button">Guide</button>
+  <button id="setting" class="button" type="button">Settings</button>
+  <button id="feature" class="button" type="button">Controls</button>
   <button id="exit" class="button" type="button">Exit</button>
 </div>
 <div id="settings" class="modal hidden">
+  <div class="title">Settings</div>
   <p id="fov">Field of View: 100</p>
   <div class="slider-row">
     <label>Field of View</label>
@@ -150,20 +198,34 @@
     <label>Music</label>
     <input type="range" id="music-input" min="0" max="1" value="1" step="1">
   </div>
-  <button id="setting-back" class="button" type="button">Apply</button>
+  <p id="sound">Sound: On</p>
+  <div class="slider-row">
+    <label>Sound</label>
+    <input type="range" id="sound-input" min="0" max="1" value="1" step="1">
+  </div>
+  <div class="btn-row">
+    <button id="settings-back" class="button" type="button">Back</button>
+    <button id="setting-back" class="button" type="button">Apply</button>
+  </div>
 </div>
 <div id="features" class="modal hidden">
-  <p>
-    <b>LMB:</b> break<br>
-    <b>RMB:</b> place<br>
-    <b>Wheel / 1-6:</b> change block<br>
-    <b>WASD:</b> move<br>
-    <b>SPACE:</b> jump / fly up<br>
-    <b>F:</b> fly<br>
-    <b>V:</b> aerial view<br>
-    <b>ESC:</b> menu / free mouse
-  </p>
+  <div class="title">Controls</div>
+  <div class="controls">
+    <div class="key">WASD</div><div class="act">move</div>
+    <div class="key">SPACE</div><div class="act">jump</div>
+    <div class="key">Mouse Wheel</div><div class="act">select tool</div>
+    <div class="key">F</div><div class="act">fly (space up, shift down)</div>
+    <div class="key">V</div><div class="act">aerial view</div>
+  </div>
   <button id="back" class="button" type="button">Back</button>
+</div>
+<div id="graffiti" class="modal hidden">
+  <p id="graffiti-label">Enter graffiti (max 4 letters)</p>
+  <input id="graffiti-input" type="text" maxlength="4" autocomplete="off" spellcheck="false">
+  <div class="btn-row">
+    <button id="graffiti-ok" class="button" type="button">Write</button>
+    <button id="graffiti-cancel" class="button" type="button">Cancel</button>
+  </div>
 </div>
 <script type="module" src="./voxel.js"></script>
 <script>
