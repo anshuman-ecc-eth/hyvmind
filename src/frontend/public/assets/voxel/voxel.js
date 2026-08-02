@@ -614,6 +614,7 @@ async function addGraffiti(text, blocks, id) {
     const old = graffitiList.shift();
     scene.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.map.dispose(); old.mesh.material.dispose();
   }
+  return gid;
 }
 
 function openGraffiti(hit) {
