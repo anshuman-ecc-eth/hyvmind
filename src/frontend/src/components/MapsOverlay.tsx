@@ -43,7 +43,7 @@ export default function MapsOverlay({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "x" || e.key === "X") {
+      if (e.key === "x" || e.key === "X" || e.key === "k" || e.key === "K") {
         onBack();
         return;
       }
@@ -52,13 +52,18 @@ export default function MapsOverlay({
         return;
       }
       if (allItems.length === 0) return;
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         e.preventDefault();
         setSelectedIdx((prev) => Math.max(0, prev - 1));
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         e.preventDefault();
         setSelectedIdx((prev) => Math.min(allItems.length - 1, prev + 1));
-      } else if (e.key === "z" || e.key === "Z") {
+      } else if (
+        e.key === "z" ||
+        e.key === "Z" ||
+        e.key === "j" ||
+        e.key === "J"
+      ) {
         handleSelect(selectedIdx);
       } else if (e.key === "Enter") {
         handleSelect(selectedIdx);

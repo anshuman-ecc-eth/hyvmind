@@ -337,13 +337,13 @@ function SettingsScreen({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         setSelectedIdx(
           (prev) => (prev - 1 + SETTINGS_ITEMS.length) % SETTINGS_ITEMS.length,
         );
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         setSelectedIdx((prev) => (prev + 1) % SETTINGS_ITEMS.length);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
         const item = SETTINGS_ITEMS[selectedIdx];
         if (item === "back") {
           onBack();
@@ -452,8 +452,8 @@ function LeaderboardScreen({
       if (
         e.key === "Enter" ||
         e.key === "Escape" ||
-        e.key === "x" ||
-        e.key === "X"
+        e.key === "k" ||
+        e.key === "K"
       )
         onBack();
     };
@@ -536,7 +536,7 @@ function LeaderboardScreen({
 function CreditsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onBack();
+      if (e.key === "Escape" || e.key === "k" || e.key === "K") onBack();
       else if (e.key === "Enter") onBack();
     };
     window.addEventListener("keydown", handler);
@@ -1682,24 +1682,50 @@ function StartScreen({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (subMenu === "main") {
-        if (e.key === "ArrowUp") {
+        if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
           setSelectedIdx(
             (prev) => (prev - 1 + MENU_ITEMS.length) % MENU_ITEMS.length,
           );
-        } else if (e.key === "ArrowDown") {
+        } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
-        } else if (e.key === "Enter") {
+        } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Collect Buzz") onEnter();
           else if (chosen === "Enter the Hive") onExit();
           else if (chosen === "Credits") onCredits();
           else if (chosen === "Manifesto") onManifesto();
         }
+      } else if (subMenu === "left") {
+        if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+          setLeftSelectedIdx(
+            (prev) =>
+              (prev - 1 + LEFT_MENU_ITEMS.length) % LEFT_MENU_ITEMS.length,
+          );
+        } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+          setLeftSelectedIdx((prev) => (prev + 1) % LEFT_MENU_ITEMS.length);
+        } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
+          const chosen = LEFT_MENU_ITEMS[leftSelectedIdx];
+          if (chosen === "Story") onStart();
+          else if (chosen === "Settings") onSettings();
+          else if (chosen === "Back") setSubMenu("main");
+        } else if (e.key === "k" || e.key === "K" || e.key === "Escape") {
+          setSubMenu("main");
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedIdx, subMenu, onEnter, onCredits, onExit, onManifesto]);
+  }, [
+    selectedIdx,
+    subMenu,
+    leftSelectedIdx,
+    onEnter,
+    onCredits,
+    onExit,
+    onManifesto,
+    onStart,
+    onSettings,
+  ]);
 
   return (
     <div className="flex-1 relative flex flex-col items-center justify-center gap-8 select-none">
@@ -1930,11 +1956,11 @@ function ChoiceMenu({
 }: ChoiceMenuProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         onSelect(0);
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         onSelect(1);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
         onConfirm(selected);
       }
     };
@@ -2110,7 +2136,7 @@ function AboutScreen({ onBack }: { onBack: () => void }) {
 function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onBack();
+      if (e.key === "Escape" || e.key === "k" || e.key === "K") onBack();
       else if (e.key === "Enter") onBack();
     };
     window.addEventListener("keydown", handler);
@@ -2190,7 +2216,13 @@ function MobileDeniedOverlay({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
+      if (
+        e.key === "Enter" ||
+        e.key === "j" ||
+        e.key === "J" ||
+        e.key === "k" ||
+        e.key === "K"
+      ) {
         handleDismiss();
       }
     };
@@ -2280,10 +2312,10 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "z" || e.key === "Z") {
+      if (e.key === "j" || e.key === "J") {
         flash(setZActive);
         if (!isLast) advance();
-      } else if (e.key === "x" || e.key === "X") {
+      } else if (e.key === "k" || e.key === "K") {
         flash(setXActive);
         onBack();
       } else if (e.key === "Escape") {
@@ -2385,7 +2417,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
                 setDone(false);
               }}
             >
-              {bevel}Z
+              {bevel}J
             </button>
           )}
           <button
@@ -2396,7 +2428,7 @@ function AboutOverlay({ onBack }: AboutOverlayProps) {
               onBack();
             }}
           >
-            {bevel}X
+            {bevel}K
           </button>
         </div>
       </div>
@@ -2429,21 +2461,21 @@ function GamesOverlay({
 }: GamesOverlayProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         onSelect(
           (prev: number) =>
             (prev - 1 + GAMES_MENU_ITEMS.length) % GAMES_MENU_ITEMS.length,
         );
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         onSelect((prev: number) => (prev + 1) % GAMES_MENU_ITEMS.length);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
         const chosen = GAMES_MENU_ITEMS[selectedIdx];
         if (chosen === "Flipo") onFlipo();
         else if (chosen === "Thunder") onThunder();
         else if (chosen === "Box Snake") onBoxSnake();
         else if (chosen === "Charge Beam") onChargeBeam();
         else if (chosen === "Back") onBack();
-      } else if (e.key === "x" || e.key === "X") {
+      } else if (e.key === "k" || e.key === "K") {
         onBack();
       } else if (e.key === "Escape") {
         onBack();
@@ -2547,19 +2579,19 @@ function PuzzlesOverlay({
 }: PuzzlesOverlayProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         onSelect(
           (selectedIdx - 1 + PUZZLE_MENU_ITEMS.length) %
             PUZZLE_MENU_ITEMS.length,
         );
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         onSelect((selectedIdx + 1) % PUZZLE_MENU_ITEMS.length);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
         const chosen = PUZZLE_MENU_ITEMS[selectedIdx];
         if (chosen === "Chess") onChess();
         else if (chosen === "Wordle") onWordle();
         else if (chosen === "Back") onBack();
-      } else if (e.key === "x" || e.key === "X") {
+      } else if (e.key === "k" || e.key === "K") {
         onBack();
       } else if (e.key === "Escape") {
         onBack();
@@ -2651,10 +2683,10 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "z" || e.key === "Z") {
+      if (e.key === "j" || e.key === "J") {
         flash(setZActive);
         if (!isLast) setStep((prev) => prev + 1);
-      } else if (e.key === "x" || e.key === "X") {
+      } else if (e.key === "k" || e.key === "K") {
         flash(setXActive);
         onBack();
       } else if (e.key === "Escape") {
@@ -2731,7 +2763,7 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
                   borderRadius: "inherit",
                 }}
               />
-              Z
+              J
             </button>
           )}
           <button
@@ -2758,7 +2790,7 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
                 borderRadius: "inherit",
               }}
             />
-            X
+            K
           </button>
         </div>
       </div>
