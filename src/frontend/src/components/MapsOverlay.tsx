@@ -5,7 +5,6 @@ import { usePublishedGraphMetas } from "../hooks/usePublicGraphs";
 interface MapsOverlayProps {
   onBack: () => void;
   onPlay?: (name: string) => void;
-  onVoxel?: () => void;
 }
 
 interface TerrainItem {
@@ -16,7 +15,6 @@ interface TerrainItem {
 export default function MapsOverlay({
   onBack,
   onPlay,
-  onVoxel,
 }: MapsOverlayProps): ReactNode {
   const { data: metas, isLoading } = usePublishedGraphMetas();
 
@@ -113,25 +111,6 @@ export default function MapsOverlay({
           <br />
           Publish a graph to generate one.
         </div>
-      )}
-
-      {onVoxel && (
-        <button
-          type="button"
-          className="text-foreground transition-transform duration-150 hover:scale-105"
-          style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: "0.65em",
-            letterSpacing: "0.2em",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0",
-          }}
-          onClick={onVoxel}
-        >
-          {"> Voxel World"}
-        </button>
       )}
 
       {allItems.length > 0 && (

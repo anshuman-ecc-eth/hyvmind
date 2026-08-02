@@ -470,12 +470,14 @@ export async function generateTerrainArtwork(
   const seed = fnv1a(curationName);
   const _prng = new SeedablePRNG(seed);
 
-  // Fixed reference defaults
+  // Fixed reference defaults — aligned with the voxel world's terrain generator
+  // (see voxel.js buildWorld) so the artwork is the exact top-down image of the
+  // voxel terrain.
   const persistence = 0.5;
-  const octaves = 5;
+  const octaves = 3;
   const wavelength = 133;
   const amplitude = 1.0;
-  const exponent = 3.3;
+  const exponent = 2.2;
   const peaks = 0.25;
   const beachSize = 12;
   const lightPosition = 180;

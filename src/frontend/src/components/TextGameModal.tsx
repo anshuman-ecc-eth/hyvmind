@@ -2836,7 +2836,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const [generatingScore, setGeneratingScore] = useState<number | null>(null);
   const [terrainLoading, setTerrainLoading] = useState(false);
   const terrainLoadingStartRef = useRef(0);
-  const [terrainTransition, setTerrainTransition] = useState(false);
 
   // ── Persist settings & leaderboard ────────────────────────────────────────
 
@@ -2847,7 +2846,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   // ── Hyvmind overlay state ──────────────────────────────────────────────────
 
   const hyvmindIframeRef = useRef<HTMLIFrameElement>(null);
-  const terrainIframeRef = useRef<HTMLIFrameElement>(null);
+  const voxelIframeRef = useRef<HTMLIFrameElement>(null);
   const [hyvmindOverlay, setHyvmindOverlay] = useState<string | null>(null);
   const [puzzleIdx, setPuzzleIdx] = useState(0);
   const [gameIdx, setGameIdx] = useState(0);
@@ -2933,10 +2932,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     }
   }, [hyvmindLoading, phase.type]);
 
-  // Focus the terrain iframe once it becomes visible after loading
+  // Focus the voxel iframe once it becomes visible after loading
   useEffect(() => {
-    if (!terrainLoading && hyvmindOverlay === "terrain-world") {
-      const el = terrainIframeRef.current;
+    if (!terrainLoading && hyvmindOverlay === "voxel-world") {
+      const el = voxelIframeRef.current;
       if (el) {
         el.focus();
       }
@@ -3068,13 +3067,9 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           .join("\n");
         navigator.clipboard.writeText(secretsStr).catch(() => {});
       } else if (e.data?.type === "hyvmind-close") {
-        if (
-          hyvmindOverlayRef.current === "terrain-world" ||
-          hyvmindOverlayRef.current === "voxel-world"
-        ) {
+        if (hyvmindOverlayRef.current === "voxel-world") {
           setHyvmindOverlay("maps");
           setTerrainSeed(null);
-          setTerrainTransition(false);
         } else {
           setHyvmindOverlay(null);
           setUnsubmittedScore(0);
@@ -3088,8 +3083,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         } else {
           setTimeout(() => setTerrainLoading(false), minTime - elapsed);
         }
-      } else if (e.data?.type === "hyvmind-transition-start") {
-        setTerrainTransition(true);
       } else if (e.data?.type === "hyvmind-stop-bgm") {
         const win = hyvmindIframeRef.current?.contentWindow;
         if (win) {
@@ -3110,17 +3103,6 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
       } else if (e.data?.type === "hyvmind-zoom-sync") {
         setZoom(e.data.zoom);
         localStorage.setItem("hyvmind-zoom", String(e.data.zoom));
-        // Forward zoom to the other game (whichever isn't the sender)
-        const target =
-          hyvmindOverlayRef.current === "terrain-world"
-            ? hyvmindIframeRef.current?.contentWindow
-            : terrainIframeRef.current?.contentWindow;
-        if (target) {
-          target.postMessage(
-            { type: "hyvmind-set-zoom", zoom: e.data.zoom },
-            "*",
-          );
-        }
       }
     };
     window.addEventListener("message", handler);
@@ -3727,7 +3709,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                 onBack={handleHyvmindResume}
                 onPlay={(name) => {
                   setTerrainSeed(name);
-                  setHyvmindOverlay("terrain-world");
+                  setHyvmindOverlay("voxel-world");
                   setTerrainLoading(true);
                   terrainLoadingStartRef.current = Date.now();
                   const win = hyvmindIframeRef.current?.contentWindow;
@@ -3735,49 +3717,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     win.postMessage({ type: "hyvmind-pause-bgm" }, "*");
                   }
                 }}
-                onVoxel={() => {
-                  setTerrainSeed(null);
-                  setHyvmindOverlay("voxel-world");
-                  const win = hyvmindIframeRef.current?.contentWindow;
-                  if (win) {
-                    win.postMessage({ type: "hyvmind-pause-bgm" }, "*");
-                  }
-                }}
               />
             )}
-            {hyvmindOverlay === "terrain-world" && (
+            {hyvmindOverlay === "voxel-world" && (
               <div className="flex-1 relative flex flex-col overflow-hidden">
                 {terrainLoading && (
                   <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
-                    <div
-                      className="text-foreground"
-                      style={{
-                        fontFamily: '"Press Start 2P", monospace',
-                        fontSize: "0.65em",
-                        letterSpacing: "0.1em",
-                      }}
-                    >
-                      Travelling..
-                    </div>
-                    <div className="flex gap-[2px]">
-                      {Array.from({ length: 16 }).map((_, i) => (
-                        <span
-                          // biome-ignore lint/suspicious/noArrayIndexKey: static decorative blocks, order never changes
-                          key={i}
-                          className="text-foreground"
-                          style={{
-                            fontSize: "0.55em",
-                            animation: `terminal-blink 0.8s step-end ${i * 0.05}s infinite`,
-                          }}
-                        >
-                          █
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {terrainTransition && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 select-none bg-black z-50">
                     <div
                       className="text-foreground"
                       style={{
@@ -3810,27 +3755,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   style={{ display: terrainLoading ? "none" : undefined }}
                 >
                   <iframe
-                    ref={terrainIframeRef}
-                    src={`/assets/hyvmind/terrain-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
+                    ref={voxelIframeRef}
+                    src={`/assets/voxel/voxel-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
                     allow="autoplay"
                     className="w-full h-full border-0"
-                    title="Terrain World"
+                    title="Voxel World"
                     tabIndex={-1}
                     style={{ background: "rgba(0,0,0,0.7)" }}
                   />
                 </div>
-              </div>
-            )}
-            {hyvmindOverlay === "voxel-world" && (
-              <div className="flex-1 flex items-center justify-center p-0">
-                <iframe
-                  src={`/assets/voxel/voxel-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
-                  allow="autoplay"
-                  className="w-full h-full border-0"
-                  title="Voxel World"
-                  tabIndex={-1}
-                  style={{ background: "rgba(0,0,0,0.7)" }}
-                />
               </div>
             )}
             {hyvmindOverlay === "games" && (

@@ -912,6 +912,7 @@ document.addEventListener('wheel', (e) => {
 // ─────────────────────────────────────────────────────────────
 let heldBlock = B.SPADE;
 let lastRemoved = null;
+let bootNotified = false;
 const clock = new THREE.Clock();
 const dir = new THREE.Vector3();
 const fwd = new THREE.Vector3();
@@ -1079,6 +1080,11 @@ function animate() {
   }
 
   renderer.render(scene, camera);
+
+  if (!bootNotified) {
+    bootNotified = true;
+    window.parent.postMessage({ type: 'hyvmind-terrain-ready' }, '*');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
