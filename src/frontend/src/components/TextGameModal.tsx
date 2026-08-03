@@ -3219,7 +3219,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           await Promise.race([doSave(), timeout]);
           setVoxelSaving(false);
           const win = hyvmindIframeRef.current?.contentWindow;
-          if (win) {
+          if (win && mapsEntryRef.current === "game") {
             win.postMessage({ type: "hyvmind-resume-bgm" }, "*");
           }
           setHyvmindOverlay("maps");
