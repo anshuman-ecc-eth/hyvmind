@@ -130,7 +130,7 @@ const MANIFESTO_LINES = [
   "",
   "As an adult applauds a child.",
   "",
-  "Who'll tell them that Code is intentially unambiguous, but ambiguity is the soul of Law?",
+  "Who'll tell them that Code is intentionally unambiguous, but ambiguity is the soul of Law?",
   "",
   "Who'll show them that synthetic data can be as good as real, but only on the board?",
   "",
