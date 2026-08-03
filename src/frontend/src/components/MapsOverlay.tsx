@@ -12,6 +12,8 @@ interface TerrainItem {
   name: string;
 }
 
+const DEV_TEST_MAPS = ["Test Map", "Test Peak"];
+
 export default function MapsOverlay({
   onBack,
   onPlay,
@@ -27,7 +29,8 @@ export default function MapsOverlay({
   );
 
   const allItems = useMemo(() => {
-    return publishedTerrains.map((t) => t.name);
+    const named = publishedTerrains.map((t) => t.name);
+    return import.meta.env.DEV ? [...DEV_TEST_MAPS, ...named] : named;
   }, [publishedTerrains]);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -73,7 +76,7 @@ export default function MapsOverlay({
     return () => window.removeEventListener("keydown", handler);
   }, [allItems.length, selectedIdx, handleSelect, onBack]);
 
-  const loading = isLoading;
+  const loading = import.meta.env.DEV ? false : isLoading;
 
   return (
     <div
