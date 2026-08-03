@@ -465,7 +465,11 @@ function applySettings() {
 }
 
 function requestLock() {
-  if (!document.pointerLockElement) { window.focus(); renderer.domElement.requestPointerLock(); }
+  if (!document.pointerLockElement) {
+    window.focus();
+    const p = renderer.domElement.requestPointerLock();
+    if (p && typeof p.catch === 'function') p.catch(function(){});
+  }
 }
 document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
@@ -658,15 +662,22 @@ graffitiCancel && graffitiCancel.addEventListener('click', cancelGraffiti);
 graffitiInput && graffitiInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); submitGraffiti(); }
 });
+let escToResume = false;
 document.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') return;
+  escToResume = false;
   if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
   if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
   if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
   if (pointerLocked) return; // native ESC exits pointer lock -> pause menu
   if (menuEl && !menuEl.classList.contains('hidden')) {
     e.preventDefault();
-    // defer past the keydown so the browser's ESC handling can't drop the new lock
+    escToResume = true; // resume press: re-lock after the ESC keypress completes
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Escape' && escToResume) {
+    escToResume = false;
     setTimeout(requestLock, 0);
   }
 });
