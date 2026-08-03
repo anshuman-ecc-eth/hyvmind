@@ -3140,6 +3140,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           setTimeout(() => setTerrainLoading(false), minTime - elapsed);
         }
         const seed = terrainSeed ?? "Indian Constitutional Law";
+        voxelIframeRef.current?.contentWindow?.postMessage(
+          { type: "hyvmind-voxel-score", score: unsubmittedScoreRef.current },
+          "*",
+        );
         if (backendActor) {
           void backendActor
             .getVoxelWorldEdits(seed)
@@ -3223,6 +3227,10 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
         } else {
           void doSave();
         }
+      } else if (e.data?.type === "hyvmind-voxel-score-delta") {
+        const delta = Number(e.data.delta) || 0;
+        if (!delta) return;
+        setUnsubmittedScore((prev) => Math.max(0, prev + delta));
       } else if (e.data?.type === "hyvmind-stop-bgm") {
         const win = hyvmindIframeRef.current?.contentWindow;
         if (win) {
@@ -3256,6 +3264,16 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     if (win) {
       win.postMessage(
         { type: "hyvmind-score-update", score: unsubmittedScore },
+        "*",
+      );
+    }
+  }, [unsubmittedScore]);
+
+  useEffect(() => {
+    const win = voxelIframeRef.current?.contentWindow;
+    if (win) {
+      win.postMessage(
+        { type: "hyvmind-voxel-score", score: unsubmittedScore },
         "*",
       );
     }
@@ -3860,6 +3878,12 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   setHyvmindOverlay("voxel-world");
                   setTerrainLoading(true);
                   terrainLoadingStartRef.current = Date.now();
+                  if (
+                    import.meta.env.DEV &&
+                    unsubmittedScoreRef.current === 0
+                  ) {
+                    setUnsubmittedScore(100);
+                  }
                   const win = hyvmindIframeRef.current?.contentWindow;
                   if (win) {
                     win.postMessage({ type: "hyvmind-pause-bgm" }, "*");

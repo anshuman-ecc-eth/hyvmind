@@ -618,6 +618,7 @@ async function addGraffiti(text, blocks, id) {
 }
 
 function openGraffiti(hit) {
+  if (worldScore <= 0) { refuseToolUse(); return; }
   pendingGraffiti = { blocks: selection.slice(), fallbackHit: hit };
   graffitiOpen = true;
   if (document.pointerLockElement) document.exitPointerLock();
@@ -881,6 +882,22 @@ function updateModeLabel() {
   if (!modeEl) return;
   modeEl.textContent = aerialView ? 'AERIAL' : (flyMode ? 'FLY' : '');
 }
+
+// ── Score (mirror of the 2D world's unsubmitted score) ──
+const TOOL_USE_COST = 5;
+const scoreEl = document.getElementById('score');
+let worldScore = 0;
+function updateScoreDisplay() {
+  if (scoreEl) scoreEl.textContent = 'Score: ' + worldScore;
+}
+function refuseToolUse() {
+  showToolTip('Score = 0');
+}
+function deductToolUse() {
+  worldScore = Math.max(0, worldScore - TOOL_USE_COST);
+  updateScoreDisplay();
+  window.parent.postMessage({ type: 'hyvmind-voxel-score-delta', delta: -TOOL_USE_COST }, '*');
+}
 document.addEventListener('keydown', (e) => {
   if (e.target && e.target.tagName === 'INPUT') return;
   if (e.code === 'KeyF') {
@@ -1048,6 +1065,7 @@ function doBlockAction(button) {
   if (!hit) return;
   if (heldBlock === B.SPADE) {
     if (button === 0) {
+      if (worldScore <= 0) { refuseToolUse(); return; }
       const removed = getBlock(hit.x, hit.y, hit.z);
       spawnCrumb(hit.x, hit.y, hit.z, removed);
       lastRemoved = removed;
@@ -1056,16 +1074,19 @@ function doBlockAction(button) {
       removeGraffitiOn(hit.x, hit.y, hit.z);
       markDirty(hit.x, hit.z);
       paintMinimapColumn(hit.x, hit.z);
+      deductToolUse();
     } else {
       if (lastRemoved == null) return;
       const nx = hit.x + hit.face[0], ny = hit.y + hit.face[1], nz = hit.z + hit.face[2];
       const t = getBlock(nx, ny, nz);
       if (t === B.AIR && !cellOverlapsPlayer(nx, ny, nz)) {
+        if (worldScore <= 0) { refuseToolUse(); return; }
         spawnCrumb(nx, ny, nz, lastRemoved);
         setBlock(nx, ny, nz, lastRemoved);
         recordBlockEdit(nx, ny, nz, lastRemoved);
         markDirty(nx, nz);
         paintMinimapColumn(nx, nz);
+        deductToolUse();
       }
     }
   } else {
@@ -1270,6 +1291,9 @@ window.addEventListener('message', (e) => {
     } else {
       bufferedVoxelState = e.data.state;
     }
+  } else if (e.data?.type === 'hyvmind-voxel-score') {
+    worldScore = Number(e.data.score) || 0;
+    updateScoreDisplay();
   }
 });
 
