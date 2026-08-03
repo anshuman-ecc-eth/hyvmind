@@ -23,6 +23,7 @@ const MENU_ITEMS = [
   "Manifesto",
   "Enter the Hive",
   "Collect Buzz",
+  "Explore Maps",
   "Credits",
 ] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
@@ -1653,6 +1654,7 @@ interface StartScreenProps {
   onSettings: () => void;
   onExit: () => void;
   onEnter: () => void;
+  onExploreMaps: () => void;
   onCredits: () => void;
   onManifesto: () => void;
   showScoreConfirmation?: boolean;
@@ -1666,6 +1668,7 @@ function StartScreen({
   onSettings,
   onExit,
   onEnter,
+  onExploreMaps,
   onCredits,
   onManifesto,
   showScoreConfirmation,
@@ -1692,6 +1695,7 @@ function StartScreen({
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Collect Buzz") onEnter();
           else if (chosen === "Enter the Hive") onExit();
+          else if (chosen === "Explore Maps") onExploreMaps();
           else if (chosen === "Credits") onCredits();
           else if (chosen === "Manifesto") onManifesto();
         }
@@ -1722,6 +1726,7 @@ function StartScreen({
     onEnter,
     onCredits,
     onExit,
+    onExploreMaps,
     onManifesto,
     onStart,
     onSettings,
@@ -1876,6 +1881,7 @@ function StartScreen({
                       setSelectedIdx(activeIdx);
                       if (item === "Collect Buzz") onEnter();
                       else if (item === "Enter the Hive") onExit();
+                      else if (item === "Explore Maps") onExploreMaps();
                       else if (item === "Credits") onCredits();
                       else if (item === "Manifesto") onManifesto();
                     }}
@@ -2891,6 +2897,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const hyvmindOverlayRef = useRef<string | null>(null);
   const unsubmittedScoreRef = useRef(0);
   const [terrainSeed, setTerrainSeed] = useState<string | null>(null);
+  const mapsEntryRef = useRef<"game" | "menu">("game");
   const { actor: backendActor } = useBackendActor();
   const [zoom, setZoom] = useState(() => {
     const saved = localStorage.getItem("hyvmind-zoom");
@@ -2956,6 +2963,17 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
     setPhase({ type: "hyvmind" });
     setHyvmindLoading(true);
     hyvmindLoadingStartRef.current = Date.now();
+  }, []);
+
+  const handleExploreMaps = useCallback(() => {
+    if (!isComputerScreen()) {
+      setMobileDenied(true);
+      return;
+    }
+    mapsEntryRef.current = "menu";
+    setPhase({ type: "hyvmind" });
+    setHyvmindLoading(false);
+    setHyvmindOverlay("maps");
   }, []);
 
   // Focus the hyvmind iframe once it becomes visible after loading
@@ -3064,6 +3082,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           Leaderboard: "leaderboard",
           maps: "maps",
         };
+        mapsEntryRef.current = "game";
         setHyvmindOverlay(overlayMap[target] || target);
         setPuzzleIdx(0);
         setGameIdx(0);
@@ -3477,6 +3496,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             onSettings={handleOpenSettings}
             onExit={handleExit}
             onEnter={handleStartHyvmind}
+            onExploreMaps={handleExploreMaps}
             onCredits={handleOpenCredits}
             onManifesto={handleOpenManifesto}
             showScoreConfirmation={showScoreConfirmation}
@@ -3827,7 +3847,14 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             )}
             {hyvmindOverlay === "maps" && (
               <MapsOverlay
-                onBack={handleHyvmindResume}
+                onBack={() => {
+                  if (mapsEntryRef.current === "menu") {
+                    setHyvmindOverlay(null);
+                    setPhase({ type: "idle" });
+                  } else {
+                    handleHyvmindResume();
+                  }
+                }}
                 onPlay={(name) => {
                   setTerrainSeed(name);
                   setHyvmindOverlay("voxel-world");
