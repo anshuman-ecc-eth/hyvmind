@@ -430,24 +430,27 @@ const fovLabel = document.getElementById('fov');
 const fovInput = document.getElementById('fov-input');
 const distanceLabel = document.getElementById('distance');
 const distanceInput = document.getElementById('distance-input');
-const musicLabel = document.getElementById('music');
 const musicInput = document.getElementById('music-input');
-const soundLabel = document.getElementById('sound');
 const soundInput = document.getElementById('sound-input');
 
-function setPaused(paused) {
-  if (menuEl) menuEl.classList.toggle('hidden', !paused);
+let paused = true;
+let lockChangeAt = 0;
+function setPaused(p) {
+  paused = p;
+  if (menuEl) menuEl.classList.toggle('hidden', !p);
   const crosshairEl = document.getElementById('crosshair');
   const hotbarEl = document.getElementById('hotbar');
-  if (crosshairEl) crosshairEl.style.display = paused ? 'none' : 'block';
-  if (hotbarEl) hotbarEl.style.display = paused ? 'none' : 'flex';
-  if (paused) {
+  if (crosshairEl) crosshairEl.style.display = p ? 'none' : 'block';
+  if (hotbarEl) hotbarEl.style.display = p ? 'none' : 'flex';
+  if (p) {
     if (settingsEl) settingsEl.classList.add('hidden');
     if (featuresEl) featuresEl.classList.add('hidden');
+    for (const k in keys) keys[k] = false;
   }
 }
 
 function closeToParent() {
+  stopBirdsong();
   // Flush pending edits (parent shows "Saving changes..", persists, then exits).
   flushVoxelEdits(true);
 }
@@ -472,8 +475,9 @@ function requestLock() {
   }
 }
 document.addEventListener('pointerlockchange', () => {
+  lockChangeAt = performance.now();
   pointerLocked = document.pointerLockElement === renderer.domElement;
-  if (pointerLocked) { hasStarted = true; clearHolding(); }
+  if (pointerLocked) { hasStarted = true; clearHolding(); startBirdsong(); }
   else { clearHolding(); }
   if (!graffitiOpen) setPaused(!pointerLocked);
 });
@@ -495,14 +499,87 @@ fovInput && fovInput.addEventListener('input', () => {
 distanceInput && distanceInput.addEventListener('input', () => {
   if (distanceLabel) distanceLabel.textContent = 'Render Distance: ' + distanceInput.value;
 });
+// ── Birdsongs (ambient BGM) & block break/place SFX ──
+let birdsongEnabled = true;
+let sfxEnabled = true;
+const bgmEl = document.getElementById('bgm');
+
+function startBirdsong() {
+  if (!bgmEl || !birdsongEnabled || (!bgmEl.paused && !bgmEl.ended)) return;
+  bgmEl.volume = 0.5;
+  bgmEl.play().catch(() => {
+    const onInteraction = () => {
+      bgmEl.play().catch(() => {});
+      document.removeEventListener('click', onInteraction);
+      document.removeEventListener('keydown', onInteraction);
+    };
+    document.addEventListener('click', onInteraction);
+    document.addEventListener('keydown', onInteraction);
+  });
+}
+function stopBirdsong() {
+  if (bgmEl) { bgmEl.pause(); bgmEl.currentTime = 0; }
+}
+
 musicInput && musicInput.addEventListener('change', () => {
   const on = musicInput.value === '1';
-  if (musicLabel) musicLabel.textContent = 'Music: ' + (on ? 'On' : 'Off');
+  birdsongEnabled = on;
+  if (on) startBirdsong(); else stopBirdsong();
 });
 soundInput && soundInput.addEventListener('change', () => {
   const on = soundInput.value === '1';
-  if (soundLabel) soundLabel.textContent = 'Sound: ' + (on ? 'On' : 'Off');
+  sfxEnabled = on;
 });
+
+// Block break/place sounds borrowed from vyse12138/minecraft-threejs (MIT).
+const SFX_DIR = './sfx/';
+const SFX_GROUPS = {
+  grass: ['grass1', 'grass2', 'grass3', 'grass4'],
+  sand: ['sand1', 'sand2', 'sand3', 'sand4'],
+  tree: ['tree1', 'tree2', 'tree3', 'tree4'],
+  leaf: ['leaf1', 'leaf2', 'leaf3', 'leaf4'],
+  dirt: ['dirt1', 'dirt2', 'dirt3', 'dirt4'],
+  stone: ['stone1', 'stone2', 'stone3', 'stone4'],
+};
+const sfxPool = {};
+const sfxIdx = {};
+Object.keys(SFX_GROUPS).forEach((g) => {
+  sfxPool[g] = SFX_GROUPS[g].map((name) => {
+    const a = new Audio(SFX_DIR + name + '.ogg');
+    a.volume = 0.15;
+    a.preload = 'auto';
+    return a;
+  });
+  sfxIdx[g] = 0;
+});
+function sfxGroupFor(t) {
+  if (t === B.GRASS) return 'grass';
+  if (t === B.SAND) return 'sand';
+  if (t === B.WOOD) return 'tree';
+  if (t === B.LEAVES || t === B.PINE) return 'leaf';
+  if (t === B.DIRT) return 'dirt';
+  return 'stone';
+}
+function playSfx(t) {
+  if (!sfxEnabled) return;
+  const g = sfxGroupFor(t);
+  const pool = sfxPool[g];
+  if (!pool) return;
+  const a = pool[sfxIdx[g] % pool.length];
+  sfxIdx[g]++;
+  a.currentTime = 0;
+  a.play().catch(() => {});
+}
+
+// Jump sound (Yo Frankie! — Blender Foundation, CC-BY 3.0).
+const jumpAudio = new Audio(SFX_DIR + 'jump1.mp3');
+jumpAudio.volume = 0.15;
+jumpAudio.preload = 'auto';
+function playJump() {
+  if (!sfxEnabled) return;
+  jumpAudio.currentTime = 0;
+  jumpAudio.play().catch(() => {});
+}
 
 // ── Graffiti (brush) ──
 const LETTERS_PER_BLOCK = 4;
@@ -669,16 +746,19 @@ document.addEventListener('keydown', (e) => {
   if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
   if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
   if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
+  // Ignore the ESC that just toggled pointer lock (its keydown can arrive after
+  // pointerlockchange) so it can't be mistaken for a fresh resume press.
+  if (performance.now() - lockChangeAt < 350) return;
   if (pointerLocked) return; // native ESC exits pointer lock -> pause menu
-  if (menuEl && !menuEl.classList.contains('hidden')) {
+  if (paused) {
     e.preventDefault();
-    escToResume = true; // resume press: re-lock after the ESC keypress completes
+    escToResume = true; // resume press: defer re-lock past the ESC keypress
   }
 });
 document.addEventListener('keyup', (e) => {
   if (e.code === 'Escape' && escToResume) {
     escToResume = false;
-    setTimeout(requestLock, 0);
+    setTimeout(requestLock, 0); // one tick after the keypress fully completes
   }
 });
 
@@ -1080,6 +1160,7 @@ function doBlockAction(button) {
       const removed = getBlock(hit.x, hit.y, hit.z);
       spawnCrumb(hit.x, hit.y, hit.z, removed);
       lastRemoved = removed;
+      playSfx(removed);
       setBlock(hit.x, hit.y, hit.z, B.AIR);
       recordBlockEdit(hit.x, hit.y, hit.z, B.AIR);
       removeGraffitiOn(hit.x, hit.y, hit.z);
@@ -1093,6 +1174,7 @@ function doBlockAction(button) {
       if (t === B.AIR && !cellOverlapsPlayer(nx, ny, nz)) {
         if (worldScore <= 0) { refuseToolUse(); return; }
         spawnCrumb(nx, ny, nz, lastRemoved);
+        playSfx(lastRemoved);
         setBlock(nx, ny, nz, lastRemoved);
         recordBlockEdit(nx, ny, nz, lastRemoved);
         markDirty(nx, nz);
@@ -1131,55 +1213,57 @@ function animate() {
     if (!builtChunks.has(key)) buildChunk(cx, cz);
   }
 
-  // movement
-  const speed = (flyMode ? 3 : 1) * 5.2;
-  if (aerialView) {
-    fwd.set(0, 0, -1);
-    right.set(1, 0, 0);
-  } else {
-    fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw));
-    right.set(Math.cos(yaw), 0, -Math.sin(yaw));
-  }
-  dir.set(0, 0, 0);
-  if (keys.KeyW) dir.add(fwd);
-  if (keys.KeyS) dir.sub(fwd);
-  if (keys.KeyD) dir.add(right);
-  if (keys.KeyA) dir.sub(right);
-  if (dir.lengthSq() > 0) dir.normalize();
-  const tx = dir.x * speed, tz = dir.z * speed;
-  vx += (tx - vx) * Math.min(1, dt * 12);
-  vz += (tz - vz) * Math.min(1, dt * 12);
-  if (flyMode) {
-    const vs = (keys.Space ? speed : 0) + (keys.ShiftLeft || keys.ShiftRight ? -speed : 0);
-    vy += (vs - vy) * Math.min(1, dt * 12);
-  } else {
-    vy -= 26 * dt;
-    if (keys.Space && onGround) vy = 8.2;
-  }
-  // fall off world edge / protect
-  if (py < -30) { py = 60; vx = vy = vz = 0; }
-  if (py > 1200) { py = 1200; vy = 0; }
+  if (!paused) {
+    // movement
+    const speed = (flyMode ? 3 : 1) * 5.2;
+    if (aerialView) {
+      fwd.set(0, 0, -1);
+      right.set(1, 0, 0);
+    } else {
+      fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+      right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    }
+    dir.set(0, 0, 0);
+    if (keys.KeyW) dir.add(fwd);
+    if (keys.KeyS) dir.sub(fwd);
+    if (keys.KeyD) dir.add(right);
+    if (keys.KeyA) dir.sub(right);
+    if (dir.lengthSq() > 0) dir.normalize();
+    const tx = dir.x * speed, tz = dir.z * speed;
+    vx += (tx - vx) * Math.min(1, dt * 12);
+    vz += (tz - vz) * Math.min(1, dt * 12);
+    if (flyMode) {
+      const vs = (keys.Space ? speed : 0) + (keys.ShiftLeft || keys.ShiftRight ? -speed : 0);
+      vy += (vs - vy) * Math.min(1, dt * 12);
+    } else {
+      vy -= 26 * dt;
+      if (keys.Space && onGround) { vy = 8.2; playJump(); }
+    }
+    // fall off world edge / protect
+    if (py < -30) { py = 60; vx = vy = vz = 0; }
+    if (py > 1200) { py = 1200; vy = 0; }
 
-  px += vx * dt;
-  if (!flyMode && aabbCollides(px, py, pz)) { px -= vx * dt; vx = 0; }
-  pz += vz * dt;
-  if (!flyMode && aabbCollides(px, py, pz)) { pz -= vz * dt; vz = 0; }
-  py += vy * dt;
-  if (!flyMode && aabbCollides(px, py, pz)) {
-    if (vy < 0) onGround = true;
-    py -= vy * dt; vy = 0;
-  } else if (!flyMode) onGround = false;
+    px += vx * dt;
+    if (!flyMode && aabbCollides(px, py, pz)) { px -= vx * dt; vx = 0; }
+    pz += vz * dt;
+    if (!flyMode && aabbCollides(px, py, pz)) { pz -= vz * dt; vz = 0; }
+    py += vy * dt;
+    if (!flyMode && aabbCollides(px, py, pz)) {
+      if (vy < 0) onGround = true;
+      py -= vy * dt; vy = 0;
+    } else if (!flyMode) onGround = false;
 
-  // keep the player on the island (the grid beyond [0, GRID) is void)
-  px = Math.min(GRID - 0.5, Math.max(0.5, px));
-  pz = Math.min(GRID - 0.5, Math.max(0.5, pz));
+    // keep the player on the island (the grid beyond [0, GRID) is void)
+    px = Math.min(GRID - 0.5, Math.max(0.5, px));
+    pz = Math.min(GRID - 0.5, Math.max(0.5, pz));
 
-  if (aerialView) {
-    camera.position.set(px, aerialAlt, pz);
-    camera.rotation.set(-Math.PI / 2, 0, 0);
-  } else {
-    camera.position.set(px, py + EYE, pz);
-    camera.rotation.set(pitch, yaw, 0);
+    if (aerialView) {
+      camera.position.set(px, aerialAlt, pz);
+      camera.rotation.set(-Math.PI / 2, 0, 0);
+    } else {
+      camera.position.set(px, py + EYE, pz);
+      camera.rotation.set(pitch, yaw, 0);
+    }
   }
   updateChunkSet();
   renderMinimap();

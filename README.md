@@ -110,6 +110,8 @@ See the in-game Credits screen for the full interactive breakdown. Below is a su
 | `sprites/cultist_*.png` — player character | Antifarea | CC-BY |
 | `sprites/gangesh-upadhyay/` — wizard character body/head/face/hat/boots/hair/mustache/vest/jacket | bluecarrot16, JaidynReiman, Benjamin K. Smith, Stephen Challener, Eliza Wyatt, Napsio, Yamilian, Thane Brimhall, and others ([OpenGameArt](https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles)) | OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 |
 | Chess puzzles | [Lichess](https://lichess.org) community puzzle database | — |
+| `assets/voxel/sfx/` — voxel world block break/place sounds (24 oggs) | [vyse12138/minecraft-threejs](https://github.com/vyse12138/minecraft-threejs) | MIT |
+| `assets/voxel/sfx/jump1.mp3` — voxel world jump SFX | Blender Foundation — Yo Frankie! ([OpenGameArt](https://opengameart.org/content/jump-sound-effect-yo-frankie)) | CC-BY 3.0 |
 
 ### Fonts
 
