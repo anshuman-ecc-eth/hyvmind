@@ -547,7 +547,7 @@ const sfxPool = {};
 const sfxIdx = {};
 Object.keys(SFX_GROUPS).forEach((g) => {
   sfxPool[g] = SFX_GROUPS[g].map((name) => {
-    const a = new Audio(SFX_DIR + name + '.ogg');
+    const a = new Audio(SFX_DIR + name + '.mp3');
     a.volume = 0.15;
     a.preload = 'auto';
     return a;
