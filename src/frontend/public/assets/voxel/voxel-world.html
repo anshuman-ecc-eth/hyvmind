@@ -90,6 +90,23 @@
   #features .controls .key { color: #ffd; text-align: right; }
   #features .controls .act { color: #fff; }
   #features .button { font-size: 12px; margin-top: 22px; }
+  #node-details {
+    width: 480px; max-height: 76vh; overflow-y: auto; padding: 26px 32px; z-index: 14;
+  }
+  #node-details .title {
+    font-size: 13px; letter-spacing: 0.12em; margin-bottom: 16px; line-height: 1.7;
+  }
+  #node-details .detail-body { display: flex; flex-direction: column; gap: 12px; }
+  #node-details .kv {
+    display: grid; grid-template-columns: 104px 1fr; column-gap: 14px; align-items: start;
+  }
+  #node-details .kv .k {
+    color: #ffd; font-size: 9px; letter-spacing: 0.08em; padding-top: 2px;
+  }
+  #node-details .kv .v {
+    color: #fff; font-size: 10px; letter-spacing: 0.05em; line-height: 1.8;
+    white-space: pre-line; overflow-wrap: anywhere;
+  }
   .slider-row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; }
   .slider-row label { font-size: 9px; letter-spacing: 0.05em; }
   input[type=range] { appearance: none; width: 170px; height: 16px; background-color: #ddd; box-shadow: 0 0 0 2px black; cursor: pointer; }
@@ -225,6 +242,11 @@
     <button id="graffiti-ok" class="button" type="button">Write</button>
     <button id="graffiti-cancel" class="button" type="button">Cancel</button>
   </div>
+</div>
+<div id="node-details" class="modal hidden">
+  <div class="title"></div>
+  <div class="detail-body"></div>
+  <button id="node-details-close" class="button" type="button">Close</button>
 </div>
 <audio id="bgm" src="/assets/hyvmind/Birds%20and%20Wind%20-%20Ambient.ogg" loop preload="none"></audio>
 <script type="module" src="./voxel.js"></script>

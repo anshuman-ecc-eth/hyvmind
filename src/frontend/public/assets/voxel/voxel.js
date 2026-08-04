@@ -209,6 +209,7 @@ function makeBlockBoxGeometry(t) {
 const GRID = 100;
 const CH = 16;
 let maxY = 0;
+let worldMaxH = 0;
 let waterLevel = 0;
 let voxels = null;
 let worldSeedHash = 0;
@@ -302,6 +303,7 @@ function buildWorld(seedName) {
     }
   }
   maxY = Math.min(192, maxH + 10);
+  worldMaxH = maxH;
   voxels = new Uint8Array(GRID * GRID * maxY);
 
   for (let z = 0; z < GRID; z++) {
@@ -479,9 +481,9 @@ document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   if (pointerLocked) { hasStarted = true; clearHolding(); startBirdsong(); }
   else { clearHolding(); }
-  if (!graffitiOpen) setPaused(!pointerLocked);
+  if (!graffitiOpen && !nodeDetailsOpen) setPaused(!pointerLocked);
 });
-renderer.domElement.addEventListener('click', requestLock);
+renderer.domElement.addEventListener('click', () => { if (graffitiOpen || nodeDetailsOpen) return; requestLock(); });
 
 playBtn && playBtn.addEventListener('click', requestLock);
 settingBtn && settingBtn.addEventListener('click', () => { if (settingsEl) settingsEl.classList.remove('hidden'); });
@@ -744,6 +746,7 @@ document.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') return;
   escToResume = false;
   if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
+  if (nodeDetailsOpen) { e.preventDefault(); closeNodeDetails(false); escToResume = true; return; }
   if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
   if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
   // Ignore the ESC that just toggled pointer lock (its keydown can arrive after
@@ -1112,14 +1115,16 @@ const highlightMesh = new THREE.Mesh(new THREE.BoxGeometry(1.005, 1.005, 1.005),
 highlightMesh.visible = false;
 scene.add(highlightMesh);
 function updateHighlight() {
-  if (!pointerLocked) { highlightMesh.visible = false; return; }
+  if (!pointerLocked) { highlightMesh.visible = false; updateSkyHover(null); return; }
   camera.getWorldDirection(dir);
   const hit = raycast(camera.position, dir, 4);
   if (hit && !aerialView) {
     highlightMesh.visible = true;
     highlightMesh.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
+    updateSkyHover(null); // a terrain block is targeted — sky takes a back seat
   } else {
     highlightMesh.visible = false;
+    updateSkyHover(dir);
   }
 }
 
@@ -1290,6 +1295,8 @@ function animate() {
 // ─────────────────────────────────────────────────────────────
 document.addEventListener('mousedown', (e) => {
   if (!pointerLocked || (e.button !== 0 && e.button !== 2)) return;
+  const skyNode = e.button === 0 ? pickSkyNode() : null;
+  if (skyNode) { openNodeDetails(skyNode); return; }
   holdingButton = e.button;
   doBlockAction(e.button);
   clearInterval(holdTimer);
@@ -1350,9 +1357,395 @@ function announceTool() {
   if (name) showToolTip(name);
 }
 
+// ─────────────────────────────────────────────────────────────
+// Sky graph tree — fetch the published graph for this terrain
+// from the Hyvmind public API and render it as a floating,
+// colour-coded hierarchy of blocks hanging in the sky. Names are
+// read via crosshair hover; left-click opens a node detail modal.
+// ─────────────────────────────────────────────────────────────
+const SKY_COLORS = {
+  curation: '#4a9eff',
+  swarm: '#ff7f50',
+  location: '#90EE90',
+  lawEntity: '#FFD700',
+  interpEntity: '#DA70D6',
+};
+const SKY_TYPE_LABELS = {
+  curation: 'CURATION', swarm: 'SWARM', location: 'LOCATION',
+  lawEntity: 'LAW TOKEN', interpEntity: 'INTERPRETATION',
+};
+const SKY_BUDGET = 300;            // max rendered cubes; bigger subtrees collapse
+const SKY_LEVEL_SPACING = 22;      // vertical drop per hierarchy level
+const SKY_RADIUS_MIN = 6;
+const SKY_RADIUS_STEP = 6;
+const SKY_SIZE_BY_LEVEL = [3.2, 2.4, 1.9, 1.6, 1.35];
+
+let skyGroup = null;
+let skyInitDone = false;
+let skyNodeData = new Map(); // node id -> full API node object (for the detail panel)
+const skyCubes = [];
+const skyEdges = [];
+const skyRay = new THREE.Raycaster();
+const skyDir = new THREE.Vector3();
+let nodeDetailsOpen = false;
+
+function skyHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+function skyColor(t) { return SKY_COLORS[t] || '#888888'; }
+
+async function resolveSkyApiBases() {
+  let cid = '';
+  try {
+    const env = await (await fetch('/env.json')).json();
+    cid = env.backend_canister_id || '';
+  } catch (e) { /* env.json missing */ }
+  const bases = [];
+  if (/^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname)) {
+    bases.push(''); // same-origin /api via the Vite dev proxy (local backend)
+  }
+  if (cid && cid !== 'undefined') bases.push('https://' + cid + '.raw.icp0.io');
+  bases.push('https://4p5ty-yyaaa-aaaam-qfana-cai.raw.icp0.io');
+  return bases;
+}
+
+// The backend sometimes emits raw control characters inside strings
+// (e.g. unescaped newlines in interpretation-token content); strip them.
+function parseGraphJson(text) {
+  return JSON.parse(text.replace(/[\u0000-\u001f]/g, ' '));
+}
+
+// Deterministic demo hierarchy used when the API has no graph for this seed
+// (e.g. the DEV test maps) — exercises every node type colour.
+function demoSkyNodes() {
+  const nodes = [{ id: 'demo-root', label: seed, type: 'curation', parentId: null }];
+  const add = (type, parentId, label) => {
+    const id = parentId + '>' + label;
+    nodes.push({ id, label, type, parentId });
+    return id;
+  };
+  const s1 = add('swarm', 'demo-root', 'Constitutional Framework');
+  const s2 = add('swarm', 'demo-root', 'Rights & Freedoms');
+  const s3 = add('swarm', 'demo-root', 'State Structure');
+  const locs = [['Preamble', s1], ['Art 21', s2], ['Art 19', s2], ['Part III', s2], ['Art 245', s3], ['Art 246', s3]];
+  locs.forEach(([name, p]) => {
+    const loc = add('location', p, name);
+    for (let i = 0; i < 2; i++) {
+      const law = add('lawEntity', loc, 'clause ' + (i + 1));
+      for (let j = 0; j < 2; j++) add('interpEntity', law, 'reading ' + (j + 1));
+    }
+  });
+  return nodes;
+}
+
+async function fetchSkyGraph() {
+  const bases = await resolveSkyApiBases();
+  for (const base of bases) {
+    try {
+      const list = parseGraphJson(await (await fetch(base + '/api/graphs')).text());
+      const meta = (list || []).find((m) => m && m.name === seed)
+        || (list || []).find((m) => m && m.name && m.name.toLowerCase() === seed.toLowerCase());
+      if (!meta || !meta.id) continue; // no graph here — try the next base
+      const raw = parseGraphJson(await (await fetch(base + '/api/nodes/' + encodeURIComponent(meta.id))).text());
+      if (!Array.isArray(raw) || !raw.length) throw new Error('empty node list for ' + meta.id);
+      let edges = [];
+      try {
+        const e = parseGraphJson(await (await fetch(base + '/api/edges/' + encodeURIComponent(meta.id))).text());
+        if (Array.isArray(e)) edges = e;
+      } catch (err) { console.warn('[sky] edges fetch failed:', err); }
+      const nodes = raw.map((n) => ({
+        id: n.id,
+        label: String(n.name || n.id || '').slice(0, 80),
+        type: n.type || 'lawEntity',
+        parentId: n.parentId || null,
+      }));
+      skyNodeData = new Map();
+      raw.forEach((n) => skyNodeData.set(n.id, n));
+      return { nodes, edges };
+    } catch (err) {
+      if (base === '') console.warn('[sky] local /api unavailable, trying live API:', err);
+    }
+  }
+  console.warn('[sky] no graph named ' + seed + ' found on any API, using demo graph');
+  const demoNodes = demoSkyNodes();
+  skyNodeData = new Map(demoNodes.map((n) => [n.id, n]));
+  return { nodes: demoNodes, edges: [] };
+}
+
+async function initSkyTree() {
+  if (skyInitDone) return;
+  skyInitDone = true;
+  const graph = await fetchSkyGraph();
+  buildSkyTree(graph.nodes, graph.edges);
+}
+
+function buildSkyTree(nodeList, edgeList) {
+  if (!nodeList || !nodeList.length) return;
+  const byId = new Map();
+  nodeList.forEach((n) => byId.set(n.id, n));
+
+  // Root = the curation (or the first node); every orphan hangs under it.
+  const root = nodeList.find((n) => n.type === 'curation') || nodeList[0];
+  const children = new Map();
+  const parentOf = new Map();
+  nodeList.forEach((n) => {
+    let p = (n.parentId && byId.has(n.parentId) && n.parentId !== n.id) ? n.parentId : root.id;
+    parentOf.set(n.id, p);
+    if (n.id === root.id) return; // the root is never a child of anything
+    if (!children.has(p)) children.set(p, []);
+    children.get(p).push(n);
+  });
+
+  // Assign levels via BFS with a visited set; prune any back edge that would
+  // otherwise form a cycle in `children` (real data occasionally has them).
+  const levelOf = new Map();
+  const seen = new Set([root.id]);
+  levelOf.set(root.id, 0);
+  const q = [root.id];
+  while (q.length) {
+    const id = q.shift();
+    const kids = children.get(id);
+    if (!kids) continue;
+    const keep = [];
+    for (const c of kids) {
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      levelOf.set(c.id, levelOf.get(id) + 1);
+      keep.push(c);
+      q.push(c.id);
+    }
+    children.set(id, keep);
+  }
+
+  // Collapse oversized subtrees (bottom-up, biggest first) into one block.
+  function subtreeSize(id) {
+    let s = 1;
+    (children.get(id) || []).forEach((c) => { s += subtreeSize(c.id); });
+    return s;
+  }
+  const hidden = new Set();
+  nodeList.forEach((n) => { n.isCluster = false; n.clusterCount = 0; n.hidden = false; });
+  if (nodeList.length > SKY_BUDGET) {
+    const sizes = new Map();
+    nodeList.forEach((n) => sizes.set(n.id, subtreeSize(n.id)));
+    const cands = nodeList
+      .filter((n) => n.id !== root.id && (children.get(n.id) || []).length)
+      .sort((a, b) => sizes.get(b.id) - sizes.get(a.id));
+    let total = nodeList.length;
+    for (const n of cands) {
+      if (total <= SKY_BUDGET) break;
+      if (hidden.has(n.id)) continue;
+      total -= sizes.get(n.id) - 1;
+      n.isCluster = true;
+      n.clusterCount = sizes.get(n.id);
+      const st = [...(children.get(n.id) || [])].map((g) => g.id);
+      while (st.length) {
+        const cid = st.pop();
+        hidden.add(cid);
+        (children.get(cid) || []).forEach((g) => st.push(g.id));
+      }
+    }
+    nodeList.forEach((n) => { if (hidden.has(n.id)) n.hidden = true; });
+  }
+
+  // Chandelier layout: each node owns an angular span proportional to the
+  // weight (visible subtree size) of its descendants.
+  function weight(id) {
+    let w = 1;
+    (children.get(id) || []).forEach((c) => { if (!hidden.has(c.id)) w += weight(c.id); });
+    return w;
+  }
+  const pos = new Map();
+  const rootY = Math.max(130, worldMaxH + 92); // tree bottom clears the highest peak
+  pos.set(root.id, { x: GRID / 2, y: rootY, z: GRID / 2, level: 0 });
+  function place(id, a0, a1) {
+    const kids = (children.get(id) || []).filter((c) => !hidden.has(c.id));
+    const totalW = kids.reduce((s, c) => s + weight(c.id), 0) || 1;
+    let a = a0;
+    kids.forEach((c) => {
+      const span = (a1 - a0) * (weight(c.id) / totalW);
+      const mid = a + span / 2;
+      const lvl = levelOf.get(c.id) || 0;
+      const radius = Math.min(SKY_RADIUS_MIN + lvl * SKY_RADIUS_STEP + ((skyHash(c.id) % 5) - 2), 34);
+      pos.set(c.id, {
+        x: GRID / 2 + Math.sin(mid) * radius,
+        y: rootY - lvl * SKY_LEVEL_SPACING,
+        z: GRID / 2 + Math.cos(mid) * radius,
+        level: lvl,
+      });
+      place(c.id, a, a + span);
+      a += span;
+    });
+  }
+  place(root.id, 0, Math.PI * 2);
+
+  // Meshes — standalone group, never written into the voxel grid.
+  skyGroup = new THREE.Group();
+  const beamMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false });
+  const edgeMat = new THREE.MeshBasicMaterial({ color: 0x9db4ff, transparent: true, opacity: 0.45, depthWrite: false });
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x0a0a0f });
+  const clusterMarkMat = new THREE.MeshLambertMaterial({ color: 0x101018 });
+
+  nodeList.forEach((n) => {
+    if (n.hidden) return;
+    const p = pos.get(n.id);
+    if (!p) return;
+    const pp = pos.get(parentOf.get(n.id));
+    if (pp) {
+      const dv = new THREE.Vector3(p.x - pp.x, p.y - pp.y, p.z - pp.z);
+      const len = dv.length();
+      if (len > 0.01) {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.24, len, 0.24), beamMat);
+        beam.position.set((p.x + pp.x) / 2, (p.y + pp.y) / 2, (p.z + pp.z) / 2);
+        beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dv.clone().normalize());
+        beam.userData.ignored = true; // never raycast
+        skyGroup.add(beam);
+      }
+    }
+    const lvl = Math.min(p.level, SKY_SIZE_BY_LEVEL.length - 1);
+    const size = SKY_SIZE_BY_LEVEL[lvl] + (n.isCluster ? 0.7 : 0);
+    const geo = new THREE.BoxGeometry(size, size, size);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: skyColor(n.type) }));
+    mesh.position.set(p.x, p.y, p.z);
+    mesh.userData = { sky: true, id: n.id, label: n.label, type: n.type, isCluster: n.isCluster, count: n.clusterCount };
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), lineMat));
+    if (n.isCluster) {
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(size * 0.34, size * 0.34, size * 0.34), clusterMarkMat);
+      mark.position.set(0, size / 2 + size * 0.2, 0);
+      mesh.add(mark);
+    }
+    skyGroup.add(mesh);
+    skyCubes.push(mesh);
+  });
+
+  // Cross-reference edges — thin distinct beams between the two rendered cubes.
+  // Only drawn when both endpoints survived the collapse; bidirectional rows deduped.
+  if (edgeList && edgeList.length) {
+    const seenPairs = new Set();
+    edgeList.forEach((e) => {
+      const src = e && e.source, tgt = e && e.target;
+      if (!src || !tgt) return;
+      const key = src < tgt ? src + '\u0000' + tgt : tgt + '\u0000' + src;
+      if (seenPairs.has(key)) return;
+      seenPairs.add(key);
+      const pa = pos.get(src);
+      const pb = pos.get(tgt);
+      if (!pa || !pb) return; // one endpoint hidden/collapsed
+      const dv = new THREE.Vector3(pb.x - pa.x, pb.y - pa.y, pb.z - pa.z);
+      const len = dv.length();
+      if (len < 0.01) return;
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.16, len, 0.16), edgeMat);
+      beam.position.set((pa.x + pb.x) / 2, (pa.y + pb.y) / 2, (pa.z + pb.z) / 2);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dv.clone().normalize());
+      const sa = skyNodeData.get(src) || {};
+      const sb = skyNodeData.get(tgt) || {};
+      beam.userData = {
+        edge: true,
+        label: String(e.label || ''),
+        sourceLabel: String(sa.name || sa.id || src),
+        targetLabel: String(sb.name || sb.id || tgt),
+      };
+      skyGroup.add(beam);
+      skyEdges.push(beam);
+    });
+  }
+
+  scene.add(skyGroup);
+}
+
+function updateSkyHover(dir) {
+  if (!dir || !skyGroup || !pointerLocked) return;
+  skyRay.set(camera.position, dir);
+  let hits = skyRay.intersectObjects(skyCubes, false);
+  if (hits.length) {
+    const ud = hits[0].object.userData;
+    const typeLabel = SKY_TYPE_LABELS[ud.type] || String(ud.type || '').toUpperCase();
+    showToolTip(ud.isCluster
+      ? typeLabel + ' CLUSTER (' + ud.count + ' nodes) — ' + (ud.label || '')
+      : typeLabel + ' — ' + (ud.label || ''));
+    return;
+  }
+  if (skyEdges.length) {
+    hits = skyRay.intersectObjects(skyEdges, false);
+    if (hits.length) {
+      const ud = hits[0].object.userData;
+      showToolTip('REF — ' + ud.sourceLabel + ' → ' + ud.targetLabel + (ud.label ? ' · ' + ud.label : ''));
+    }
+  }
+}
+
+// Reusable sky pick used by hover-free click handling (left mousedown).
+function pickSkyNode() {
+  if (!skyGroup || !skyCubes.length) return null;
+  camera.getWorldDirection(skyDir);
+  skyRay.set(camera.position, skyDir);
+  const hits = skyRay.intersectObjects(skyCubes, false);
+  return hits.length ? hits[0].object.userData : null;
+}
+
+// ── Node detail modal (click a sky cube) ──
+const nodeDetailsEl = document.getElementById('node-details');
+function appendDetailRow(container, key, value) {
+  const row = document.createElement('div');
+  row.className = 'kv';
+  const k = document.createElement('span');
+  k.className = 'k';
+  k.textContent = key;
+  const v = document.createElement('span');
+  v.className = 'v';
+  v.textContent = value;
+  row.appendChild(k);
+  row.appendChild(v);
+  container.appendChild(row);
+}
+function openNodeDetails(ud) {
+  if (!nodeDetailsEl || !ud) return;
+  const node = skyNodeData.get(ud.id) || {};
+  nodeDetailsOpen = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+  nodeDetailsEl.classList.remove('hidden');
+  const titleEl = nodeDetailsEl.querySelector('.title');
+  if (titleEl) {
+    const typeLabel = (SKY_TYPE_LABELS[ud.type] || ud.type || 'NODE') + (ud.isCluster ? ' CLUSTER · ' + ud.count + ' nodes' : '');
+    titleEl.textContent = typeLabel + ' — ' + (ud.label || node.name || '');
+  }
+  const bodyEl = nodeDetailsEl.querySelector('.detail-body');
+  if (bodyEl) {
+    bodyEl.textContent = '';
+    appendDetailRow(bodyEl, 'ID', String(ud.id || node.id || '—'));
+    appendDetailRow(bodyEl, 'CREATOR', String(node.creator || '—'));
+    const createdAt = node.createdAt ? new Date(Number(node.createdAt) / 1e6).toLocaleString() : '—';
+    appendDetailRow(bodyEl, 'CREATED', createdAt);
+    const tags = Array.isArray(node.tags) && node.tags.length ? node.tags.join(', ') : '—';
+    appendDetailRow(bodyEl, 'TAGS', tags);
+    const attrs = Array.isArray(node.attributes) && node.attributes.length
+      ? node.attributes.map((a) => (a.key || '') + ': ' + ((a.weightedValues || []).map((w) => w.value).join(', '))).join('\n')
+      : '—';
+    appendDetailRow(bodyEl, 'ATTRIBUTES', attrs);
+    const sources = Array.isArray(node.sources) && node.sources.length
+      ? node.sources.map((s) => s.name || s.url || '').filter(Boolean).join('\n')
+      : '—';
+    appendDetailRow(bodyEl, 'SOURCES', sources);
+    appendDetailRow(bodyEl, 'CONTENT', node.content ? String(node.content) : '—');
+    if (ud.isCluster) {
+      appendDetailRow(bodyEl, 'NOTE', 'Cluster cube: ' + ud.count + ' nodes of this subtree are collapsed into this block.');
+    }
+  }
+}
+function closeNodeDetails(relock) {
+  nodeDetailsOpen = false;
+  if (nodeDetailsEl) nodeDetailsEl.classList.add('hidden');
+  if (relock) requestLock();
+}
+const nodeDetailsCloseBtn = document.getElementById('node-details-close');
+nodeDetailsCloseBtn && nodeDetailsCloseBtn.addEventListener('click', () => closeNodeDetails(true));
+
 function startGame() {
   buildWorld(seed);
   worldReady = true;
+  initSkyTree();
   if (bufferedVoxelState) {
     applyVoxelState(bufferedVoxelState);
     bufferedVoxelState = null;
