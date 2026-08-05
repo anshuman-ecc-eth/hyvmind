@@ -2039,6 +2039,14 @@ function startGame() {
   pz = sp.z;
   py = sp.h + 2;
   resize();
+  for (const key of neededChunkKeys()) {
+    const [cx, cz] = key.split(',').map(Number);
+    if (!builtChunks.has(key)) buildChunk(cx, cz);
+  }
+  if (!bootNotified) {
+    bootNotified = true;
+    window.parent.postMessage({ type: 'hyvmind-terrain-ready' }, '*');
+  }
   window.focus();
   animate();
 }

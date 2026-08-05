@@ -3904,7 +3904,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
             {hyvmindOverlay === "voxel-world" && (
               <div className="flex-1 relative flex flex-col overflow-hidden">
                 {terrainLoading && (
-                  <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 select-none bg-black">
                     <div
                       className="text-foreground"
                       style={{
@@ -3933,7 +3933,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                   </div>
                 )}
                 {voxelSaving && (
-                  <div className="flex-1 flex flex-col items-center justify-center gap-4 select-none bg-black">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 select-none bg-black">
                     <div
                       className="text-foreground"
                       style={{
@@ -3961,12 +3961,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
                     </div>
                   </div>
                 )}
-                <div
-                  className="flex-1 flex items-center justify-center p-0"
-                  style={{
-                    display: terrainLoading || voxelSaving ? "none" : undefined,
-                  }}
-                >
+                <div className="flex-1 flex items-center justify-center p-0">
                   <iframe
                     ref={voxelIframeRef}
                     src={`/assets/voxel/voxel-world.html?seed=${encodeURIComponent(terrainSeed ?? "Indian Constitutional Law")}`}
