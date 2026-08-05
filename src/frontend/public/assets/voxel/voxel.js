@@ -41,7 +41,7 @@ function perlinNoise(w, h, persistence, octaves, wavelength, prng) {
 // ─────────────────────────────────────────────────────────────
 // Block types & colours (vertex-coloured; no texture atlas)
 // ─────────────────────────────────────────────────────────────
-const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12, SPADE: 13, BRUSH: 14 };
+const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12, SPADE: 13, BRUSH: 14, GRAPHITE: 15 };
 const C = {
   [B.STONE]: [0.50, 0.52, 0.55], [B.DIRT]: [0.58, 0.44, 0.31],
   [B.GRASS]: [0.35, 0.66, 0.28],
@@ -424,6 +424,9 @@ const featuresEl = document.getElementById('features');
 const playBtn = document.getElementById('play');
 const settingBtn = document.getElementById('setting');
 const featureBtn = document.getElementById('feature');
+const guideBtn = document.getElementById('guide-btn');
+const guideEl = document.getElementById('guide');
+const guideBackBtn = document.getElementById('guide-back');
 const exitBtn = document.getElementById('exit');
 const settingBack = document.getElementById('setting-back');
 const settingsBack = document.getElementById('settings-back');
@@ -447,6 +450,7 @@ function setPaused(p) {
   if (p) {
     if (settingsEl) settingsEl.classList.add('hidden');
     if (featuresEl) featuresEl.classList.add('hidden');
+    if (guideEl) guideEl.classList.add('hidden');
     for (const k in keys) keys[k] = false;
   }
 }
@@ -481,13 +485,15 @@ document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   if (pointerLocked) { hasStarted = true; clearHolding(); startBirdsong(); }
   else { clearHolding(); }
-  if (!graffitiOpen && !nodeDetailsOpen) setPaused(!pointerLocked);
+  if (!graffitiOpen && !nodeDetailsOpen && !graphiteOpen) setPaused(!pointerLocked);
 });
-renderer.domElement.addEventListener('click', () => { if (graffitiOpen || nodeDetailsOpen) return; requestLock(); });
+renderer.domElement.addEventListener('click', () => { if (graffitiOpen || nodeDetailsOpen || graphiteOpen) return; requestLock(); });
 
 playBtn && playBtn.addEventListener('click', requestLock);
 settingBtn && settingBtn.addEventListener('click', () => { if (settingsEl) settingsEl.classList.remove('hidden'); });
 featureBtn && featureBtn.addEventListener('click', () => { if (featuresEl) featuresEl.classList.remove('hidden'); });
+guideBtn && guideBtn.addEventListener('click', () => { if (guideEl) guideEl.classList.remove('hidden'); });
+guideBackBtn && guideBackBtn.addEventListener('click', () => { if (guideEl) guideEl.classList.add('hidden'); });
 guideBack && guideBack.addEventListener('click', () => { if (featuresEl) featuresEl.classList.add('hidden'); });
 exitBtn && exitBtn.addEventListener('click', closeToParent);
 settingBack && settingBack.addEventListener('click', applySettings);
@@ -592,10 +598,17 @@ const graffitiOk = document.getElementById('graffiti-ok');
 const graffitiCancel = document.getElementById('graffiti-cancel');
 let graffitiOpen = false;
 let pendingGraffiti = null;
+let graffitiCap = LETTERS_PER_BLOCK;
 const graffitiList = [];
 const selection = [];
 const selectionKey = new Set();
 const selectionMeshes = [];
+
+// ── Graphite: graffiti ↔ graph-node weights ──
+const weightSep = '\u0001'; // must match backend VOXEL_WEIGHT_SEP
+const graphiteWeights = new Map(); // key graffitiId+sep+nodeId -> weight
+function weightKey(graffitiId, nodeId) { return graffitiId + weightSep + nodeId; }
+function getWeight(graffitiId, nodeId) { return graphiteWeights.get(weightKey(graffitiId, nodeId)) || 0; }
 
 function clearSelection() {
   selection.length = 0;
@@ -633,6 +646,14 @@ function removeGraffitiOn(x, y, z) {
     const g = graffitiList[i];
     if (g.blocks.some((b) => b.x === x && b.y === y && b.z === z)) {
       recordGraffitiRemove(g.id);
+      // Drop the weight links attached to this graffiti (negative deltas zero them server-side).
+      for (const [key, weight] of [...graphiteWeights]) {
+        if (key.startsWith(g.id + weightSep)) {
+          graphiteWeights.delete(key);
+          const nid = key.slice(g.id.length + weightSep.length);
+          recordWeightChange(g.id, nid, -weight);
+        }
+      }
       scene.remove(g.mesh);
       g.mesh.geometry.dispose();
       g.mesh.material.map.dispose();
@@ -640,6 +661,7 @@ function removeGraffitiOn(x, y, z) {
       graffitiList.splice(i, 1);
     }
   }
+  refreshGraphiteBeams();
 }
 async function addGraffiti(text, blocks, id) {
   if (!blocks.length || !text) return null;
@@ -692,7 +714,7 @@ async function addGraffiti(text, blocks, id) {
   mesh.position.set(cx + nVec.x * 0.52, cy + nVec.y * 0.52, cz + nVec.z * 0.52);
   mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(uAxis, vAxis, nVec));
   scene.add(mesh);
-  graffitiList.push({ id: gid, mesh, blocks });
+  graffitiList.push({ id: gid, mesh, blocks, text });
   if (graffitiList.length > 64) {
     const old = graffitiList.shift();
     scene.remove(old.mesh); old.mesh.geometry.dispose(); old.mesh.material.map.dispose(); old.mesh.material.dispose();
@@ -706,11 +728,16 @@ function openGraffiti(hit) {
   graffitiOpen = true;
   if (document.pointerLockElement) document.exitPointerLock();
   graffitiEl.classList.remove('hidden');
-  const cap = LETTERS_PER_BLOCK * (selection.length || 1);
-  graffitiInput.maxLength = cap;
+  graffitiCap = LETTERS_PER_BLOCK * (selection.length || 1);
+  graffitiInput.maxLength = graffitiCap;
   graffitiInput.value = '';
-  graffitiLabel.textContent = 'Enter graffiti (max ' + cap + ' letters)';
+  updateGraffitiCount();
   graffitiInput.focus();
+}
+function updateGraffitiCount() {
+  if (!graffitiLabel) return;
+  const left = Math.max(0, graffitiCap - (graffitiInput ? graffitiInput.value.length : 0));
+  graffitiLabel.textContent = 'Enter graffiti — ' + left + ' left';
 }
 async function submitGraffiti() {
   const text = graffitiInput.value.trim();
@@ -741,14 +768,192 @@ graffitiCancel && graffitiCancel.addEventListener('click', cancelGraffiti);
 graffitiInput && graffitiInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); submitGraffiti(); }
 });
+graffitiInput && graffitiInput.addEventListener('input', updateGraffitiCount);
+
+// ── Graphite modal: link a graffiti block to a node in the graph ──
+const graphiteEl = document.getElementById('graphite');
+const graphiteGraffitiEl = document.getElementById('graphite-graffiti');
+const graphiteListEl = document.getElementById('graphite-list');
+const graphiteDescEl = document.getElementById('graphite-desc');
+const graphiteActionBtn = document.getElementById('graphite-action');
+const graphiteCancelBtn = document.getElementById('graphite-cancel');
+let graphiteOpen = false;
+let graphiteGraffiti = null;   // the linked graffiti record
+let graphiteMode = 'add';      // 'add' | 'subtract' (left vs right click)
+let graphiteTarget = null;     // selected node id
+let graphiteRowEl = null;      // currently selected row element (for badge updates)
+const graphiteExpanded = new Set(); // node ids currently expanded in the tree
+let graphiteTree = null;       // { rootId, children: Map<parentId, node[]> }
+
+function buildGraphiteTree() {
+  const nodes = [];
+  skyNodeData.forEach((n, id) => {
+    if (!n) return;
+    nodes.push({
+      id,
+      type: n.type,
+      name: String(n.name || n.label || n.id || id || ''),
+      parentId: n.parentId || null,
+    });
+  });
+  if (!nodes.length) return { rootId: null, children: new Map() };
+  const root = nodes.find((n) => n.type === 'curation') || nodes[0];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const children = new Map();
+  for (const n of nodes) {
+    if (n.id === root.id) continue; // the root is never a child of anything
+    const p = (n.parentId && n.parentId !== n.id && byId.has(n.parentId)) ? n.parentId : root.id;
+    if (!children.has(p)) children.set(p, []);
+    children.get(p).push(n);
+  }
+  children.forEach((arr) => arr.sort((a, b) => a.name.localeCompare(b.name)));
+  return { rootId: root.id, children };
+}
+
+function renderGraphiteRows(parentId, containerEl, visited) {
+  if (visited.has(parentId)) return; // cycle guard (defensive against cyclic parentId)
+  visited.add(parentId);
+  const gid = graphiteGraffiti ? graphiteGraffiti.id : '';
+  const kids = graphiteTree.children.get(parentId) || [];
+  for (const kid of kids) {
+    const hasKids = (graphiteTree.children.get(kid.id) || []).length > 0;
+    const row = document.createElement('div');
+    row.className = 'gi';
+    row.dataset.id = kid.id;
+    if (graphiteTarget === kid.id) row.classList.add('selected');
+
+    const caret = document.createElement('span');
+    caret.className = 'gi-caret';
+    caret.textContent = hasKids ? (graphiteExpanded.has(kid.id) ? '-' : '+') : '';
+    if (hasKids) {
+      caret.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (graphiteExpanded.has(kid.id)) graphiteExpanded.delete(kid.id);
+        else graphiteExpanded.add(kid.id);
+        renderGraphiteTree();
+      });
+    }
+    row.appendChild(caret);
+
+    const dot = document.createElement('span');
+    dot.className = 'gi-dot';
+    dot.style.background = skyColor(kid.type);
+    row.appendChild(dot);
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'gi-name';
+    nameSpan.textContent = kid.name.slice(0, 48);
+    row.appendChild(nameSpan);
+
+    const wSpan = document.createElement('span');
+    wSpan.className = 'gi-w';
+    wSpan.textContent = 'W ' + getWeight(gid, kid.id);
+    row.appendChild(wSpan);
+
+    row.addEventListener('click', () => selectGraphiteRow(row));
+    containerEl.appendChild(row);
+
+    if (hasKids && graphiteExpanded.has(kid.id)) {
+      const kidsContainer = document.createElement('div');
+      kidsContainer.className = 'gi-children';
+      containerEl.appendChild(kidsContainer);
+      renderGraphiteRows(kid.id, kidsContainer, new Set(visited));
+    }
+  }
+}
+
+function renderGraphiteTree() {
+  if (!graphiteListEl || !graphiteTree || !graphiteTree.rootId) return;
+  graphiteListEl.textContent = '';
+  renderGraphiteRows(graphiteTree.rootId, graphiteListEl, new Set());
+}
+
+function selectGraphiteRow(row) {
+  if (!graphiteListEl) return;
+  for (const r of graphiteListEl.querySelectorAll('.gi')) r.classList.toggle('selected', r === row);
+  graphiteTarget = row.dataset.id || null;
+  graphiteRowEl = row;
+  if (graphiteDescEl) graphiteDescEl.classList.remove('hidden');
+  if (graphiteActionBtn) {
+    graphiteActionBtn.textContent = graphiteMode === 'add' ? 'Add Weight' : 'Subtract Weight';
+    graphiteActionBtn.classList.remove('hidden');
+  }
+}
+
+function populateGraphiteList() {
+  if (!graphiteListEl) return;
+  graphiteTarget = null;
+  graphiteRowEl = null;
+  graphiteExpanded.clear();
+  graphiteTree = buildGraphiteTree();
+  if (graphiteActionBtn) graphiteActionBtn.classList.add('hidden');
+  if (graphiteDescEl) graphiteDescEl.classList.add('hidden');
+  if (!graphiteTree.rootId) {
+    graphiteListEl.textContent = '';
+    const empty = document.createElement('div');
+    empty.className = 'gi';
+    empty.textContent = 'No nodes in this graph.';
+    graphiteListEl.appendChild(empty);
+    return;
+  }
+  graphiteExpanded.add(graphiteTree.rootId);
+  renderGraphiteTree();
+}
+function openGraphite(g, mode) {
+  if (worldScore <= 0) { refuseToolUse(); return; }
+  graphiteGraffiti = g;
+  graphiteMode = mode;
+  graphiteOpen = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+  if (graphiteEl) graphiteEl.classList.remove('hidden');
+  if (graphiteGraffitiEl) {
+    const txt = g && g.text ? g.text : 'graffiti';
+    const anchor = g && g.blocks[0] ? g.blocks[0] : null;
+    graphiteGraffitiEl.textContent = 'LINK: "' + txt + '" @ ' + (anchor ? (anchor.x + ',' + anchor.y + ',' + anchor.z) : '?');
+  }
+  populateGraphiteList();
+}
+function applyGraphiteWeight() {
+  if (!graphiteTarget || !graphiteGraffiti) return;
+  if (worldScore <= 0) { refuseToolUse(); return; }
+  const delta = graphiteMode === 'add' ? 1 : -1;
+  const key = weightKey(graphiteGraffiti.id, graphiteTarget);
+  const cur = graphiteWeights.get(key) || 0;
+  if (delta < 0 && cur <= 0) { showToolTip('NO WEIGHT TO REMOVE'); return; }
+  const next = cur + delta;
+  if (next <= 0) graphiteWeights.delete(key); else graphiteWeights.set(key, next);
+  recordWeightChange(graphiteGraffiti.id, graphiteTarget, delta);
+  deductToolUse();
+  refreshGraphiteBeams();
+  if (graphiteRowEl) {
+    const w = graphiteRowEl.querySelector('.gi-w');
+    if (w) w.textContent = 'W ' + getWeight(graphiteGraffiti.id, graphiteTarget);
+  }
+  showToolTip((delta > 0 ? '+1 WEIGHT' : '-1 WEIGHT') + ' — 5 PTS');
+}
+function closeGraphite() {
+  graphiteOpen = false;
+  graphiteGraffiti = null;
+  graphiteTarget = null;
+  graphiteRowEl = null;
+  graphiteExpanded.clear();
+  graphiteTree = null;
+  if (graphiteEl) graphiteEl.classList.add('hidden');
+  requestLock();
+}
+graphiteActionBtn && graphiteActionBtn.addEventListener('click', applyGraphiteWeight);
+graphiteCancelBtn && graphiteCancelBtn.addEventListener('click', closeGraphite);
+
 let escToResume = false;
 document.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') return;
   escToResume = false;
   if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
+  if (graphiteOpen) { e.preventDefault(); closeGraphite(); return; }
   if (nodeDetailsOpen) { e.preventDefault(); closeNodeDetails(false); escToResume = true; return; }
   if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
   if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
+  if (guideEl && !guideEl.classList.contains('hidden')) { e.preventDefault(); guideEl.classList.add('hidden'); return; }
   // Ignore the ESC that just toggled pointer lock (its keydown can arrive after
   // pointerlockchange) so it can't be mistaken for a fresh resume press.
   if (performance.now() - lockChangeAt < 350) return;
@@ -767,7 +972,7 @@ document.addEventListener('keyup', (e) => {
 
 setPaused(true);
 document.addEventListener('mousemove', (e) => {
-  if (!pointerLocked) return;
+  if (!pointerLocked || graffitiOpen || graphiteOpen || nodeDetailsOpen) return;
   yaw -= e.movementX * 0.0022;
   pitch -= e.movementY * 0.0022;
   pitch = Math.max(-1.5, Math.min(1.5, pitch));
@@ -888,7 +1093,7 @@ function rebuildChunkSync(key) {
   const [cx, cz] = key.split(',').map(Number);
   buildChunk(cx, cz);
 }
-function updateChunkSet() {
+function neededChunkKeys() {
   const pcx = Math.floor(px / CH), pcz = Math.floor(pz / CH);
   const needed = new Set();
   for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++) for (let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++) {
@@ -896,6 +1101,10 @@ function updateChunkSet() {
     const cz = Math.max(0, Math.min(MAX_CHUNK, pcz + dz));
     needed.add(cx + ',' + cz);
   }
+  return needed;
+}
+function updateChunkSet() {
+  const needed = neededChunkKeys();
   for (const key of needed) {
     if (!builtChunks.has(key) && !queued.has(key)) { queued.add(key); chunkQueue.push(key); }
   }
@@ -1005,7 +1214,7 @@ document.addEventListener('keydown', (e) => {
     showToolTip(aerialView ? 'AERIAL' : 'AERIAL OFF');
   }
 });
-const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, null, null, null, null];
+const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, B.GRAPHITE, null, null, null];
 const SELECTABLE = HOTBAR_BLOCKS.filter((t) => t != null);
 let wheelGap = false;
 function selectBlock(t) {
@@ -1040,8 +1249,9 @@ let worldReady = false;
 let applyingRemote = false;
 
 // Pending voxel edits, flushed to the parent (TextGameModal) which persists them.
-// blockEdits: {x,y,z,v} (v=block id, 0=AIR); graffitiAdds: {id,text,blocks}; graffitiRemoves: [id]
-const pendingVoxelEdits = { blockEdits: [], graffitiAdds: [], graffitiRemoves: [] };
+// blockEdits: {x,y,z,v} (v=block id, 0=AIR); graffitiAdds: {id,text,blocks};
+// graffitiRemoves: [id]; weightChanges: {graffitiId,nodeId,delta}
+const pendingVoxelEdits = { blockEdits: [], graffitiAdds: [], graffitiRemoves: [], weightChanges: [] };
 
 function recordBlockEdit(x, y, z, v) {
   if (applyingRemote) return;
@@ -1051,10 +1261,15 @@ function recordGraffitiRemove(id) {
   if (applyingRemote || !id) return;
   pendingVoxelEdits.graffitiRemoves.push(id);
 }
+function recordWeightChange(graffitiId, nodeId, delta) {
+  if (applyingRemote) return;
+  pendingVoxelEdits.weightChanges.push({ graffitiId, nodeId, delta });
+}
 function hasPendingVoxelEdits() {
   return pendingVoxelEdits.blockEdits.length > 0 ||
     pendingVoxelEdits.graffitiAdds.length > 0 ||
-    pendingVoxelEdits.graffitiRemoves.length > 0;
+    pendingVoxelEdits.graffitiRemoves.length > 0 ||
+    pendingVoxelEdits.weightChanges.length > 0;
 }
 function flushVoxelEdits(exit) {
   if (!hasPendingVoxelEdits() && !exit) return;
@@ -1064,10 +1279,12 @@ function flushVoxelEdits(exit) {
     blockEdits: pendingVoxelEdits.blockEdits,
     graffitiAdds: pendingVoxelEdits.graffitiAdds,
     graffitiRemoves: pendingVoxelEdits.graffitiRemoves,
+    weightChanges: pendingVoxelEdits.weightChanges,
   };
   pendingVoxelEdits.blockEdits = [];
   pendingVoxelEdits.graffitiAdds = [];
   pendingVoxelEdits.graffitiRemoves = [];
+  pendingVoxelEdits.weightChanges = [];
   window.parent.postMessage(payload, '*');
 }
 
@@ -1099,9 +1316,18 @@ function applyVoxelState(state) {
         if (anchored) addGraffiti(g.text, blocks, g.id);
       }
     }
+    if (state.weights) {
+      for (const w of state.weights) {
+        const gid = String(w.graffitiId || '');
+        const nid = String(w.nodeId || '');
+        const weight = Number(w.weight) || 0;
+        if (gid && nid && weight > 0) graphiteWeights.set(weightKey(gid, nid), weight);
+      }
+    }
   } finally {
     applyingRemote = false;
   }
+  refreshGraphiteBeams();
 }
 
 const clock = new THREE.Clock();
@@ -1154,6 +1380,9 @@ function cellOverlapsPlayer(x, y, z) {
   const px0 = px - PLAYER_HW, px1 = px + PLAYER_HW, py0 = py, py1 = py + PLAYER_H, pz0 = pz - PLAYER_HW, pz1 = pz + PLAYER_HW;
   return x < px1 && x + 1 > px0 && y < py1 && y + 1 > py0 && z < pz1 && z + 1 > pz0;
 }
+function graffitiAt(x, y, z) {
+  return graffitiList.find((g) => g.blocks.some((b) => b.x === x && b.y === y && b.z === z)) || null;
+}
 function doBlockAction(button) {
   const origin = camera.position.clone();
   camera.getWorldDirection(dir);
@@ -1187,9 +1416,14 @@ function doBlockAction(button) {
         deductToolUse();
       }
     }
-  } else {
+  } else if (heldBlock === B.BRUSH) {
     if (button === 0) openGraffiti(hit);
     else toggleSelection(hit);
+  } else {
+    // Graphite — link a graffiti block to a node in the sky tree.
+    const g = graffitiAt(hit.x, hit.y, hit.z);
+    if (!g) { showToolTip('NO GRAFFITI HERE'); return; }
+    openGraphite(g, button === 0 ? 'add' : 'subtract');
   }
 }
 
@@ -1218,7 +1452,7 @@ function animate() {
     if (!builtChunks.has(key)) buildChunk(cx, cz);
   }
 
-  if (!paused) {
+  if (!paused && !graffitiOpen && !graphiteOpen && !nodeDetailsOpen) {
     // movement
     const speed = (flyMode ? 3 : 1) * 5.2;
     if (aerialView) {
@@ -1284,9 +1518,17 @@ function animate() {
 
   renderer.render(scene, camera);
 
+  // Notify the parent only once the terrain is fully meshed so the "Travelling.."
+  // overlay (held by TextGameModal) doesn't clear while chunks are still popping in.
   if (!bootNotified) {
-    bootNotified = true;
-    window.parent.postMessage({ type: 'hyvmind-terrain-ready' }, '*');
+    let allBuilt = true;
+    for (const key of neededChunkKeys()) {
+      if (!builtChunks.has(key)) { allBuilt = false; break; }
+    }
+    if (allBuilt) {
+      bootNotified = true;
+      window.parent.postMessage({ type: 'hyvmind-terrain-ready' }, '*');
+    }
   }
 }
 
@@ -1295,6 +1537,17 @@ function animate() {
 // ─────────────────────────────────────────────────────────────
 document.addEventListener('mousedown', (e) => {
   if (!pointerLocked || (e.button !== 0 && e.button !== 2)) return;
+  if (heldBlock === B.GRAPHITE) {
+    // A graffiti click must win over sky-cube picking (the sky ray has no distance
+    // limit, so a cube behind the graffiti would otherwise steal the click).
+    camera.getWorldDirection(dir);
+    const hit = raycast(camera.position, dir, 4);
+    if (hit && graffitiAt(hit.x, hit.y, hit.z)) {
+      holdingButton = e.button;
+      doBlockAction(e.button);
+      return;
+    }
+  }
   const skyNode = e.button === 0 ? pickSkyNode() : null;
   if (skyNode) { openNodeDetails(skyNode); return; }
   holdingButton = e.button;
@@ -1319,10 +1572,11 @@ document.addEventListener('keydown', (e) => {
 const seed = new URLSearchParams(location.search).get('seed') || 'Indian Constitutional Law';
 document.getElementById('seed').textContent = seed;
 
-const HOTBAR_INITIALS = { [B.SPADE]: 'S', [B.BRUSH]: 'B' };
+const HOTBAR_INITIALS = { [B.SPADE]: 'S', [B.BRUSH]: 'B', [B.GRAPHITE]: 'G' };
 const HOTBAR_NAMES = {
   [B.SPADE]: 'SPADE\nleft: destroy · right: build',
   [B.BRUSH]: 'BRUSH\nleft: write · right: select',
+  [B.GRAPHITE]: 'GRAPHITE\nleft: add weight · right: subtract weight',
 };
 function initHotbar() {
   const hotbarEl = document.getElementById('hotbar');
@@ -1653,6 +1907,34 @@ function buildSkyTree(nodeList, edgeList) {
   }
 
   scene.add(skyGroup);
+  refreshGraphiteBeams();
+}
+
+// ── Graphite beams: graffiti ↔ node weight links ──
+const graphiteBeamMat = new THREE.MeshBasicMaterial({ color: 0x8b7cf6, transparent: true, opacity: 0.55, depthWrite: false });
+let graphiteGroup = null;
+function refreshGraphiteBeams() {
+  if (!graphiteGroup) { graphiteGroup = new THREE.Group(); scene.add(graphiteGroup); }
+  for (const c of [...graphiteGroup.children]) { graphiteGroup.remove(c); c.geometry.dispose(); }
+  graphiteWeights.forEach((weight, key) => {
+    const sepIdx = key.indexOf(weightSep);
+    if (sepIdx < 0) return;
+    const gid = key.slice(0, sepIdx);
+    const nid = key.slice(sepIdx + weightSep.length);
+    const g = graffitiList.find((gr) => gr.id === gid);
+    const cube = skyCubes.find((c) => c.userData && c.userData.id === nid);
+    if (!g || !cube) return; // graffiti gone or node collapsed/hidden
+    const a = g.mesh.position, b = cube.position;
+    const dv = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
+    const len = dv.length();
+    if (len < 0.01) return;
+    const thick = 0.05 + Math.min(weight, 10) * 0.045;
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(thick, len, thick), graphiteBeamMat);
+    beam.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dv.clone().normalize());
+    beam.userData.ignored = true; // never raycast (hover/click)
+    graphiteGroup.add(beam);
+  });
 }
 
 function updateSkyHover(dir) {

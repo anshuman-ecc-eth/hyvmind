@@ -65,7 +65,7 @@
   }
   #graffiti-input:focus { box-shadow: 0 0 0 2px #17cd07; }
   #settings {
-    width: 520px; padding: 30px 40px;
+    width: 640px; padding: 34px 44px;
   }
   #settings .title {
     font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
@@ -73,23 +73,23 @@
   #settings p { font-size: 12px; letter-spacing: 0.06em; }
   #settings .slider-row { margin: 14px 0 10px; }
   #settings .slider-row label { font-size: 11px; letter-spacing: 0.08em; }
-  #settings input[type=range] { width: 260px; height: 20px; }
+  #settings input[type=range] { width: 300px; height: 20px; }
   #settings .button { font-size: 12px; }
   #settings .btn-row { margin-top: 22px; }
-  #features {
-    width: 520px; padding: 30px 40px;
+  #features, #guide {
+    width: 640px; padding: 34px 44px;
   }
-  #features .title {
+  #features .title, #guide .title {
     font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
   }
-  #features p { font-size: 12px; letter-spacing: 0.06em; line-height: 2.1; }
+  #features p, #guide p { font-size: 12px; letter-spacing: 0.06em; line-height: 2.1; }
   #features .controls {
     display: grid; grid-template-columns: auto 1fr; column-gap: 20px; row-gap: 12px;
     font-size: 12px; letter-spacing: 0.06em; align-items: baseline;
   }
   #features .controls .key { color: #ffd; text-align: right; }
   #features .controls .act { color: #fff; }
-  #features .button { font-size: 12px; margin-top: 22px; }
+  #features .button, #guide .button { font-size: 12px; margin-top: 22px; }
   #node-details {
     width: 480px; max-height: 76vh; overflow-y: auto; padding: 26px 32px; z-index: 14;
   }
@@ -107,6 +107,39 @@
     color: #fff; font-size: 10px; letter-spacing: 0.05em; line-height: 1.8;
     white-space: pre-line; overflow-wrap: anywhere;
   }
+  #graphite {
+    width: 480px; max-height: 76vh; overflow-y: auto; padding: 26px 32px; z-index: 14;
+  }
+  #graphite .title {
+    font-size: 13px; letter-spacing: 0.12em; margin-bottom: 16px; line-height: 1.7;
+  }
+  #graphite-graffiti {
+    font-size: 9px; letter-spacing: 0.05em; color: #ffd; line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+  #graphite-list {
+    margin: 12px 0 4px; max-height: 240px; overflow-y: auto;
+    background-color: #222; box-shadow: 0 0 0 2px black;
+  }
+  #graphite-list .gi {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 8px 10px; cursor: pointer; color: #fff;
+    font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 0.04em;
+    line-height: 1.6; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  #graphite-list .gi:last-child { border-bottom: none; }
+  #graphite-list .gi:hover { background-color: #2c2c2c; }
+  #graphite-list .gi.selected { background-color: #218306; box-shadow: inset 0 0 0 2px #17cd07; }
+  #graphite-list .gi .gi-caret { width: 16px; flex-shrink: 0; text-align: center; color: #ffd; cursor: pointer; user-select: none; }
+  #graphite-list .gi .gi-caret:hover { color: #17cd07; }
+  #graphite-list .gi .gi-dot { width: 9px; height: 9px; flex-shrink: 0; border-radius: 1px; border: 1px solid rgba(255,255,255,0.35); }
+  #graphite-list .gi .gi-name { flex: 1; overflow-wrap: anywhere; }
+  #graphite-list .gi .gi-w { color: #ffd; flex-shrink: 0; }
+  #graphite-list .gi-children { border-left: 1px dashed rgba(255,255,255,0.15); margin-left: 10px; padding-left: 4px; }
+  #graphite-desc {
+    margin-top: 12px; font-size: 9px; letter-spacing: 0.05em; color: #ffd;
+  }
+  #graphite-desc.hidden, #graphite-action.hidden { display: none; }
   .slider-row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; }
   .slider-row label { font-size: 9px; letter-spacing: 0.05em; }
   input[type=range] { appearance: none; width: 170px; height: 16px; background-color: #ddd; box-shadow: 0 0 0 2px black; cursor: pointer; }
@@ -194,7 +227,8 @@
 <div id="tooltip"></div>
 <div id="menu" class="menu">
   <div class="title">Hyvmind World</div>
-  <button id="play" class="button" type="button">Play</button>
+  <button id="play" class="button" type="button">Explore</button>
+  <button id="guide-btn" class="button" type="button">Guide</button>
   <button id="setting" class="button" type="button">Settings</button>
   <button id="feature" class="button" type="button">Controls</button>
   <button id="exit" class="button" type="button">Exit</button>
@@ -235,6 +269,14 @@
   </div>
   <button id="back" class="button" type="button">Back</button>
 </div>
+<div id="guide" class="modal hidden">
+  <div class="title">Guide</div>
+  <p>1. Accumulate scores in the 2d world.</p>
+  <p>2. Use the Spade tool to destroy and build.</p>
+  <p>3. Use the Brush tool to add graffiti.</p>
+  <p>4. Use the Graphite tool to link graffiti to sky nodes.</p>
+  <button id="guide-back" class="button" type="button">Back</button>
+</div>
 <div id="graffiti" class="modal hidden">
   <p id="graffiti-label">Enter graffiti (max 4 letters)</p>
   <input id="graffiti-input" type="text" maxlength="4" autocomplete="off" spellcheck="false">
@@ -247,6 +289,16 @@
   <div class="title"></div>
   <div class="detail-body"></div>
   <button id="node-details-close" class="button" type="button">Close</button>
+</div>
+<div id="graphite" class="modal hidden">
+  <div class="title">GRAPHITE — LINK GRAFFITI</div>
+  <p id="graphite-graffiti"></p>
+  <div id="graphite-list"></div>
+  <p id="graphite-desc" class="hidden">1 weight = 5 points</p>
+  <div class="btn-row">
+    <button id="graphite-action" class="button hidden" type="button">Add Weight</button>
+    <button id="graphite-cancel" class="button" type="button">Done</button>
+  </div>
 </div>
 <audio id="bgm" src="/assets/hyvmind/birds-and-wind-ambient.mp3" loop preload="none"></audio>
 <script type="module" src="./voxel.js"></script>

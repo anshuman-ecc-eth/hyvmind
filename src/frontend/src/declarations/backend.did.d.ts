@@ -320,6 +320,11 @@ export interface VoxelGraffiti {
     { 'x' : bigint, 'y' : bigint, 'z' : bigint, 'face' : Array<bigint> }
   >,
 }
+export interface VoxelWeightChange {
+  'graffitiId' : string,
+  'nodeId' : string,
+  'delta' : bigint,
+}
 export interface WeightedAttribute {
   'key' : string,
   'weightedValues' : Array<WeightedValue>,
@@ -414,6 +419,9 @@ export interface _SERVICE {
       {
         'blockEdits' : Array<VoxelBlockEdit>,
         'graffiti' : Array<VoxelGraffiti>,
+        'weights' : Array<
+          { 'weight' : bigint, 'graffitiId' : string, 'nodeId' : string }
+        >,
       }
     ]
   >,
@@ -448,7 +456,13 @@ export interface _SERVICE {
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'savePublishedGraph' : ActorMethod<[string, Array<NodeId>], SaveResult>,
   'saveVoxelWorldEdits' : ActorMethod<
-    [string, Array<VoxelBlockEdit>, Array<VoxelGraffiti>, Array<string>],
+    [
+      string,
+      Array<VoxelBlockEdit>,
+      Array<VoxelGraffiti>,
+      Array<string>,
+      Array<VoxelWeightChange>,
+    ],
     boolean
   >,
   'sendMessage' : ActorMethod<

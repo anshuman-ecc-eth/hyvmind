@@ -3195,6 +3195,15 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
           })),
         }));
         const graffitiRemoves = (e.data.graffitiRemoves as string[]) ?? [];
+        const weightChanges = (
+          (e.data.weightChanges as
+            | Array<{ graffitiId: string; nodeId: string; delta: number }>
+            | undefined) ?? []
+        ).map((w) => ({
+          graffitiId: w.graffitiId,
+          nodeId: w.nodeId,
+          delta: BigInt(w.delta),
+        }));
         const isExit = !!e.data.exit;
 
         const doSave = async () => {
@@ -3205,6 +3214,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
               blockEdits,
               graffitiAdds,
               graffitiRemoves,
+              weightChanges,
             );
           } catch (err) {
             console.error("Failed to save voxel world:", err);

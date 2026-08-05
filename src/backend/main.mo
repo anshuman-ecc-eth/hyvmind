@@ -1,4 +1,5 @@
 import Text "mo:core/Text";
+import Char "mo:core/Char";
 import List "mo:core/List";
 import Array "mo:core/Array";
 import Map "mo:core/Map";
@@ -126,6 +127,12 @@ actor {
   type VoxelWorldEdits = {
     blockEdits : Map.Map<Text, Nat8>;
     graffiti : Map.Map<Text, VoxelGraffiti>;
+  };
+
+  type VoxelWeightChange = {
+    graffitiId : Text;
+    nodeId : Text;
+    delta : Int;
   };
 
   type BuzzSecretRecord = {
@@ -527,6 +534,11 @@ actor {
 
   // ── Voxel world state (per published graph name) ─────────────────────────────
   var voxelWorldEdits = Map.empty<Text, VoxelWorldEdits>();
+
+  // Graphite weights: graffiti↔interpretation-node links (key = graffitiId <SEP> interpNodeId).
+  // Kept in a separate map to avoid a stable-type change on VoxelWorldEdits.
+  let VOXEL_WEIGHT_SEP : Text = Text.fromChar(Char.fromNat32(1));
+  var voxelWorldWeights = Map.empty<Text, Map.Map<Text, Nat>>();
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
@@ -3798,6 +3810,7 @@ actor {
     blockEdits : [VoxelBlockEdit],
     graffitiAdds : [VoxelGraffiti],
     graffitiRemoves : [Text],
+    weightChanges : [VoxelWeightChange],
   ) : async Bool {
     let current = switch (voxelWorldEdits.get(name)) {
       case (?w) { w };
@@ -3825,6 +3838,33 @@ actor {
       return false;
     };
     voxelWorldEdits.add(name, current);
+
+    // Graphite weight changes (merge deltas, clamped at 0).
+    let currentWeights = switch (voxelWorldWeights.get(name)) {
+      case (?w) { w };
+      case (null) { Map.empty<Text, Nat>() };
+    };
+    for (wc in weightChanges.vals()) {
+      let key = wc.graffitiId # VOXEL_WEIGHT_SEP # wc.nodeId;
+      let cur = switch (currentWeights.get(key)) {
+        case (?v) { v };
+        case (null) { 0 };
+      };
+      let nextI = Int.fromNat(cur) + wc.delta;
+      if (nextI <= 0) {
+        currentWeights.remove(key);
+      } else {
+        currentWeights.add(key, Int.abs(nextI));
+      };
+    };
+    if (currentWeights.size() > 5000) {
+      return false;
+    };
+    if (currentWeights.size() > 0) {
+      voxelWorldWeights.add(name, currentWeights);
+    } else {
+      voxelWorldWeights.remove(name);
+    };
     true
   };
 
@@ -3832,6 +3872,7 @@ actor {
   public query func getVoxelWorldEdits(name : Text) : async ?{
     blockEdits : [VoxelBlockEdit];
     graffiti : [VoxelGraffiti];
+    weights : [{ graffitiId : Text; nodeId : Text; weight : Nat }];
   } {
     switch (voxelWorldEdits.get(name)) {
       case (null) { null };
@@ -3850,9 +3891,22 @@ actor {
             v;
           });
         };
+        let weights = List.empty<{ graffitiId : Text; nodeId : Text; weight : Nat }>();
+        switch (voxelWorldWeights.get(name)) {
+          case (null) {};
+          case (?wm) {
+            for ((key, weight) in wm.entries()) {
+              let parts = key.split(#text VOXEL_WEIGHT_SEP).toArray();
+              if (parts.size() >= 2) {
+                weights.add({ graffitiId = parts[0]; nodeId = parts[1]; weight });
+              };
+            };
+          };
+        };
         ?{
           blockEdits = parsed.toArray();
           graffiti = w.graffiti.values().toArray();
+          weights = weights.toArray();
         }
       };
     };

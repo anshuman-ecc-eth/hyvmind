@@ -303,6 +303,11 @@ export interface TutorialQuestion {
     name: string;
     submittedAt: bigint;
 }
+export interface VoxelWeightChange {
+    graffitiId: string;
+    nodeId: string;
+    delta: bigint;
+}
 export interface ChatMessage {
     text: string;
     sender: Principal;
@@ -525,6 +530,11 @@ export interface backendInterface {
     getVoxelWorldEdits(name: string): Promise<{
         blockEdits: Array<VoxelBlockEdit>;
         graffiti: Array<VoxelGraffiti>;
+        weights: Array<{
+            weight: bigint;
+            graffitiId: string;
+            nodeId: string;
+        }>;
     } | null>;
     /**
      * / Called by the Obsidian plugin to cheaply check if push data is available.
@@ -555,7 +565,7 @@ export interface backendInterface {
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
-    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>): Promise<boolean>;
+    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>): Promise<boolean>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -1182,6 +1192,11 @@ export class Backend implements backendInterface {
     async getVoxelWorldEdits(arg0: string): Promise<{
         blockEdits: Array<VoxelBlockEdit>;
         graffiti: Array<VoxelGraffiti>;
+        weights: Array<{
+            weight: bigint;
+            graffitiId: string;
+            nodeId: string;
+        }>;
     } | null> {
         if (this.processError) {
             try {
@@ -1440,17 +1455,17 @@ export class Backend implements backendInterface {
             return from_candid_SaveResult_n83(this._uploadFile, this._downloadFile, result);
         }
     }
-    async saveVoxelWorldEdits(arg0: string, arg1: Array<VoxelBlockEdit>, arg2: Array<VoxelGraffiti>, arg3: Array<string>): Promise<boolean> {
+    async saveVoxelWorldEdits(arg0: string, arg1: Array<VoxelBlockEdit>, arg2: Array<VoxelGraffiti>, arg3: Array<string>, arg4: Array<VoxelWeightChange>): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3);
+                const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3);
+            const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4);
             return result;
         }
     }
@@ -1716,9 +1731,19 @@ function from_candid_opt_n66(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_opt_n70(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [{
         blockEdits: Array<_VoxelBlockEdit>;
         graffiti: Array<_VoxelGraffiti>;
+        weights: Array<{
+            weight: bigint;
+            graffitiId: string;
+            nodeId: string;
+        }>;
     }]): {
     blockEdits: Array<VoxelBlockEdit>;
     graffiti: Array<VoxelGraffiti>;
+    weights: Array<{
+        weight: bigint;
+        graffitiId: string;
+        nodeId: string;
+    }>;
 } | null {
     return value.length === 0 ? null : value[0];
 }

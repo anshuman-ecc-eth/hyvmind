@@ -345,6 +345,11 @@ export const SaveResult = IDL.Variant({
   'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
   'selfAuthor' : IDL.Record({ 'message' : IDL.Text }),
 });
+export const VoxelWeightChange = IDL.Record({
+  'graffitiId' : IDL.Text,
+  'nodeId' : IDL.Text,
+  'delta' : IDL.Int,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControl' : IDL.Func([], [], []),
@@ -469,6 +474,13 @@ export const idlService = IDL.Service({
           IDL.Record({
             'blockEdits' : IDL.Vec(VoxelBlockEdit),
             'graffiti' : IDL.Vec(VoxelGraffiti),
+            'weights' : IDL.Vec(
+              IDL.Record({
+                'weight' : IDL.Nat,
+                'graffitiId' : IDL.Text,
+                'nodeId' : IDL.Text,
+              })
+            ),
           })
         ),
       ],
@@ -509,6 +521,7 @@ export const idlService = IDL.Service({
         IDL.Vec(VoxelBlockEdit),
         IDL.Vec(VoxelGraffiti),
         IDL.Vec(IDL.Text),
+        IDL.Vec(VoxelWeightChange),
       ],
       [IDL.Bool],
       [],
@@ -885,6 +898,11 @@ export const idlFactory = ({ IDL }) => {
     'noNewTrust' : IDL.Record({ 'reason' : IDL.Text }),
     'selfAuthor' : IDL.Record({ 'message' : IDL.Text }),
   });
+  const VoxelWeightChange = IDL.Record({
+    'graffitiId' : IDL.Text,
+    'nodeId' : IDL.Text,
+    'delta' : IDL.Int,
+  });
   
   return IDL.Service({
     '_initializeAccessControl' : IDL.Func([], [], []),
@@ -1021,6 +1039,13 @@ export const idlFactory = ({ IDL }) => {
             IDL.Record({
               'blockEdits' : IDL.Vec(VoxelBlockEdit),
               'graffiti' : IDL.Vec(VoxelGraffiti),
+              'weights' : IDL.Vec(
+                IDL.Record({
+                  'weight' : IDL.Nat,
+                  'graffitiId' : IDL.Text,
+                  'nodeId' : IDL.Text,
+                })
+              ),
             })
           ),
         ],
@@ -1061,6 +1086,7 @@ export const idlFactory = ({ IDL }) => {
           IDL.Vec(VoxelBlockEdit),
           IDL.Vec(VoxelGraffiti),
           IDL.Vec(IDL.Text),
+          IDL.Vec(VoxelWeightChange),
         ],
         [IDL.Bool],
         [],
