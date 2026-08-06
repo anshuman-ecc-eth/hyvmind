@@ -16,8 +16,7 @@ interface UseLichessPuzzlesReturn {
   fetchNext: () => Promise<void>;
 }
 
-const UA = "Hyvmind/1.0 (hyvmind.app)";
-const HEADERS = { Accept: "application/json", "User-Agent": UA };
+const HEADERS = { Accept: "application/json" };
 const CACHE_SIZE = 3;
 
 /** Step 1: get puzzle ID from /api/puzzle/next */

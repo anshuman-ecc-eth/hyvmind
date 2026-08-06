@@ -76,7 +76,6 @@ async function fetchPuzzleMeta(): Promise<{
     const res = await fetch("https://lichess.org/api/puzzle/next", {
       headers: {
         Accept: "application/json",
-        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)",
       },
     });
     if (!res.ok) return null;
@@ -101,7 +100,6 @@ async function fetchPuzzleById(id: string): Promise<Puzzle | null> {
     const res = await fetch(`https://lichess.org/api/puzzle/${id}`, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "Hyvmind Chess/1.0 (https://hyvmind.app)",
       },
     });
     if (!res.ok) return null;
