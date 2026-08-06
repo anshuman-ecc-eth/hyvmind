@@ -102,7 +102,6 @@ See the in-game Credits screen for the full interactive breakdown. Below is a su
 | Asset | Author(s) | License |
 |---|---|---|
 | `forest.mp3` — BGM | syncopika ([Bandcamp](https://greenbearmusic.bandcamp.com/album/bgm-fun-vol-5)) | CC-BY 3.0 |
-| `which_brand_of_mustard_shall_i_buy.mp3` — terrain BGM | congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by glitchart | CC-BY 3.0 |
 | Forest background image | [forest-elfs](https://forest-elfs.itch.io/forestmoon) | — |
 | `bottom.png` — world tiles | Ivan Voirol ([OpenGameArt](https://opengameart.org/content/tinyslates-16x16px-orthogonal-tileset-by-ivan-voirol)) | CC-BY 4.0 |
 | `assets/lua/overworld.png` — terrain world tileset, `lua-tree*.png` trees, Lua player sprite | [challacade — Legend of Lua](https://github.com/challacade/legend-of-lua) | MIT |

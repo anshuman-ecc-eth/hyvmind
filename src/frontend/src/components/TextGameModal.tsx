@@ -1398,38 +1398,6 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 
           <div className="flex flex-col items-start gap-1 w-full">
             <span className="text-foreground">
-              which_brand_of_mustard_shall_i_buy.mp3 — terrain world BGM
-            </span>
-            <span className="text-foreground" style={{ fontSize: "0.85em" }}>
-              congusbongus (CC0), SpringySpringo (CC-BY 3.0), compiled by
-              glitchart
-            </span>
-            <a
-              href="https://opengameart.org/content/which-brand-of-mustard-shall-i-buy-congusbongus-springyspringo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground hover:text-muted-foreground underline"
-            >
-              OpenGameArt
-            </a>
-            <div className="flex flex-row gap-2 items-center flex-wrap">
-              <span
-                className="text-muted-foreground"
-                style={{ background: "rgba(0,0,0,0.7)", padding: "1px 6px" }}
-              >
-                CC-BY 3.0
-              </span>
-              <span
-                className="text-muted-foreground"
-                style={{ border: "1px solid #5a4a2a", padding: "1px 6px" }}
-              >
-                game asset
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-1 w-full">
-            <span className="text-foreground">
               pixelbee-logo-small.png — bee logo
             </span>
             <a
