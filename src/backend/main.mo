@@ -135,6 +135,12 @@ actor {
     delta : Int;
   };
 
+  type VoxelNodeWeight = {
+    nodeId : Text;
+    weight : Nat;
+    graffiti : [{ id : Text; text : Text; weight : Nat }];
+  };
+
   type BuzzSecretRecord = {
     points : Int;
     createdAt : Int;
@@ -4736,6 +4742,71 @@ actor {
     };
   };
 
+  // Aggregate graphite weights by node for a graph name. Each node's total is the
+  // sum over its graffiti links; each link carries the graffiti id + text.
+  func voxelWeightsByNode(name : Text) : [VoxelNodeWeight] {
+    switch (voxelWorldWeights.get(name)) {
+      case (null) { [] };
+      case (?wm) {
+        let edits = voxelWorldEdits.get(name);
+        let byNode = Map.empty<Text, Map.Map<Text, { text : Text; weight : Nat }>>();
+        for ((key, weight) in wm.entries()) {
+          let parts = key.split(#text VOXEL_WEIGHT_SEP).toArray();
+          if (parts.size() >= 2) {
+            let gid = parts[0];
+            let nid = parts[1];
+            let text = switch (edits) {
+              case (null) { "" };
+              case (?we) {
+                switch (we.graffiti.get(gid)) {
+                  case (null) { "" };
+                  case (?g) { g.text };
+                };
+              };
+            };
+            let cur = switch (byNode.get(nid)) {
+              case (?m) { m };
+              case (null) { Map.empty<Text, { text : Text; weight : Nat }>() };
+            };
+            cur.add(gid, { text; weight });
+            byNode.add(nid, cur);
+          };
+        };
+        let items = List.empty<VoxelNodeWeight>();
+        for ((nid, links) in byNode.entries()) {
+          var total : Nat = 0;
+          let gArr = List.empty<{ id : Text; text : Text; weight : Nat }>();
+          for ((gid, l) in links.entries()) {
+            total += l.weight;
+            gArr.add({ id = gid; text = l.text; weight = l.weight });
+          };
+          items.add({ nodeId = nid; weight = total; graffiti = gArr.toArray() });
+        };
+        items.toArray();
+      };
+    };
+  };
+
+  func handleGetWeights(graphId : Text) : HttpResponse {
+    switch (publishedSourceGraphs.get(graphId)) {
+      case (null) { httpError(404, "Graph not found") };
+      case (?meta) {
+        let items = voxelWeightsByNode(meta.name);
+        let jsons = items.map(func(w : VoxelNodeWeight) : Text {
+          let gJsons = w.graffiti.map(func(g : { id : Text; text : Text; weight : Nat }) : Text {
+            jsonObject([("id", jsonText(g.id)), ("text", jsonText(g.text)), ("weight", jsonNat(g.weight))]);
+          });
+          jsonObject([
+            ("nodeId", jsonText(w.nodeId)),
+            ("weight", jsonNat(w.weight)),
+            ("graffiti", jsonArray(gJsons)),
+          ]);
+        });
+        httpOk(jsonArray(jsons));
+      };
+    };
+  };
+
   func handleGetTools() : HttpResponse {
     let tools = [
       jsonObject([
@@ -4976,6 +5047,12 @@ actor {
         case (null) { return httpError(400, "Missing graph ID") };
       };
       handleGetEdges(graphId);
+    } else if (path.startsWith(#text "/api/weights/")) {
+      let graphId = switch (path.stripStart(#text "/api/weights/")) {
+        case (?id) { id };
+        case (null) { return httpError(400, "Missing graph ID") };
+      };
+      handleGetWeights(graphId);
     } else {
       httpError(404, "Not found");
     };

@@ -129,6 +129,7 @@ Endpoints:
   GET /api/graphs/{id}     → full graph (curations, swarms, locations, law tokens, interpretation tokens, edges)
   GET /api/nodes/{id}      → flat node array (type: curation/swarm/location/lawEntity/interpEntity)
   GET /api/edges/{id}      → cross-reference edges only (source, target, label, bidirectional)
+  GET /api/weights/{id}    → per-node graphite weight totals [{nodeId, weight, graffiti: [{id, text, weight}]}]
 
 Data structure:
   Node hierarchy: curation → swarm → location → law token → interpretation token
@@ -146,6 +147,11 @@ Data structure:
     • sources — array of {name, url}. External references. Present as citations; link URLs when available.
     • customAttributes — array of {key, weightedValues: [{value, weight}]}. Custom key-value metadata inherited down the hierarchy. A node's customAttributes includes both its own attributes and those from ancestors. Same-named keys are merged. Display as structured metadata.
     • tags — array of strings. Labels for discovery and categorization. Can appear on any node type.
+
+  Weight data (from /api/weights/{id}) includes:
+    • nodeId — ID of a sky node in the graph
+    • weight — player-assigned graphite score for that node, summed across all graffiti links. Weights change dynamically as players save their voxel-world state.
+    • graffiti — array of {id, text, weight}: each graffiti linked to the node, its text, and that link's individual weight.
 
 Instructions:
   1. Your primary task is retrieval, not reasoning. Fetched data is reliable as-is. Your own interpretations should be clearly demarcated. See point 4.
