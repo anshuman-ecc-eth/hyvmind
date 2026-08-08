@@ -54,14 +54,14 @@ export default function CollaboratorsView({ onClose }: CollaboratorsViewProps) {
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 border border-dashed border-border bg-card p-4 transition-colors hover:bg-accent/50"
+                className="group flex items-center gap-3 border border-dashed border-border bg-card p-4 transition-colors hover:bg-accent/50"
               >
                 <div className="h-12 w-12 flex-shrink-0 overflow-hidden">
                   <img
                     src={partner.logo}
                     alt={partner.name}
                     loading="lazy"
-                    className="h-full w-full object-contain grayscale opacity-70 transition hover:grayscale-0 hover:opacity-100"
+                    className="h-full w-full object-contain grayscale opacity-70 transition group-hover:grayscale-0 group-hover:opacity-100"
                   />
                 </div>
                 <span className="font-mono text-xs leading-tight">
