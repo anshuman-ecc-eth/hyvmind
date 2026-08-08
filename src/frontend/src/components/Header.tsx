@@ -9,12 +9,20 @@ import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 import { clearTreeCache } from "../hooks/useQueries";
 import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
-export default function Header() {
+import CollaboratorsView from "../pages/CollaboratorsView";
+
+interface HeaderProps {
+  onOpenTutorial: () => void;
+}
+
+export default function Header({ onOpenTutorial }: HeaderProps) {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
+  const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
 
   const isAuthenticated = !!identity;
 
@@ -117,10 +125,9 @@ export default function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                  onClick={() => {
-                    window.location.href = "/tutorial.html";
-                  }}
+                  onClick={onOpenTutorial}
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.tutorial.button"
                 >
                   Tutorial
                 </DropdownMenuItem>
@@ -134,6 +141,13 @@ export default function Header() {
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   Whitepaper
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setCollaboratorsOpen(true)}
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.collaborators.button"
+                >
+                  Collabs
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
@@ -159,6 +173,9 @@ export default function Header() {
           </div>
         </div>
       </div>
+      {collaboratorsOpen && (
+        <CollaboratorsView onClose={() => setCollaboratorsOpen(false)} />
+      )}
     </header>
   );
 }

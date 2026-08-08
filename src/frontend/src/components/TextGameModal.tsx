@@ -2778,16 +2778,22 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
 
 interface TextGameModalProps {
   onComplete: () => void;
+  onOpenTutorial?: () => void;
   checkCondition?: (
     condition: string,
     input: string,
   ) => Promise<{ pass: boolean; data?: Record<string, string> }>;
 }
 
-export default function TextGameModal({ onComplete }: TextGameModalProps) {
+export default function TextGameModal({
+  onComplete,
+  onOpenTutorial,
+}: TextGameModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const onOpenTutorialRef = useRef(onOpenTutorial);
+  onOpenTutorialRef.current = onOpenTutorial;
 
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
@@ -2902,7 +2908,7 @@ export default function TextGameModal({ onComplete }: TextGameModalProps) {
   const handleExit = useCallback(() => {
     onCompleteRef.current();
     if (localStorage.getItem("hyvmind-tutorial-seen") !== "true") {
-      window.location.href = "/tutorial.html";
+      onOpenTutorialRef.current?.();
     }
   }, []);
 

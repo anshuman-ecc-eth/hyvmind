@@ -26,11 +26,13 @@ import ForumView from "./pages/ForumView";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import TerminalPage from "./pages/TerminalPage";
+import TutorialView from "./pages/TutorialView";
 
 // Full authenticated app shell with all hooks
 function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
   const [gameComplete, setGameComplete] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const isAuthenticated = !!identity;
 
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
@@ -121,7 +123,7 @@ function AppShell() {
   if (!isAuthenticated) {
     return (
       <div className="flex h-[100dvh] flex-col bg-background">
-        <Header />
+        <Header onOpenTutorial={() => setTutorialOpen(true)} />
         <main className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full min-h-0 relative">
             {/* Graph loads in background, hidden until game completes */}
@@ -138,12 +140,16 @@ function AppShell() {
             {!gameComplete && (
               <TextGameModal
                 onComplete={() => setGameComplete(true)}
+                onOpenTutorial={() => setTutorialOpen(true)}
                 checkCondition={handleCheckCondition}
               />
             )}
           </div>
         </main>
         <Footer />
+        {tutorialOpen && (
+          <TutorialView onClose={() => setTutorialOpen(false)} />
+        )}
         <Toaster />
       </div>
     );
@@ -159,7 +165,7 @@ function AppShell() {
         isAdmin={!!isAdmin}
       />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header />
+        <Header onOpenTutorial={() => setTutorialOpen(true)} />
         <main className="flex-1 overflow-hidden relative">
           <div
             style={{
@@ -216,6 +222,7 @@ function AppShell() {
       </div>
 
       {showProfileSetup && <ProfileSetupModal />}
+      {tutorialOpen && <TutorialView onClose={() => setTutorialOpen(false)} />}
       <Toaster />
 
       {/* CommandPalette removed */}
