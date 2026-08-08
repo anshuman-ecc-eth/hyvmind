@@ -479,9 +479,7 @@ ${SAMPLE_PROMPT}`;
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="settings-socialUrl">
-                      Social URL (optional)
-                    </Label>
+                    <Label htmlFor="settings-socialUrl">Social URL</Label>
                     <Input
                       id="settings-socialUrl"
                       value={socialUrl}
@@ -493,9 +491,7 @@ ${SAMPLE_PROMPT}`;
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="settings-affiliation">
-                      Affiliation (optional)
-                    </Label>
+                    <Label htmlFor="settings-affiliation">Affiliation</Label>
                     <Input
                       id="settings-affiliation"
                       value={affiliation}
@@ -507,9 +503,7 @@ ${SAMPLE_PROMPT}`;
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="settings-identifier">
-                      Identifier (optional)
-                    </Label>
+                    <Label htmlFor="settings-identifier">Identifier</Label>
                     <Input
                       id="settings-identifier"
                       value={identifier}
