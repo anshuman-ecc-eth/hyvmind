@@ -9,12 +9,12 @@ interface Collaborator {
 
 const PARTNERS: Collaborator[] = [
   {
-    name: "Desci Asia",
+    name: "DeSci Asia",
     logo: "/assets/collaborators/Desci%20Asia.png",
     url: "https://desciasia.org/",
   },
   {
-    name: "Desci India",
+    name: "DeSci India",
     logo: "/assets/collaborators/Desci%20India.png",
     url: "https://desciindia.org/",
   },
