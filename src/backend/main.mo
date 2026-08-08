@@ -232,6 +232,20 @@ actor {
   type UserProfile = {
     name : Text;
     socialUrl : ?Text;
+    affiliation : ?Text;
+    identifier : ?Text;
+  };
+
+  // Stored profile (Candid-facing UserProfile minus the extra fields, kept
+  // structurally unchanged so the userProfiles stable type does not change).
+  type StoredProfile = {
+    name : Text;
+    socialUrl : ?Text;
+  };
+
+  type ProfileExtras = {
+    affiliation : ?Text;
+    identifier : ?Text;
   };
 
   type SearchResult = {
@@ -500,7 +514,8 @@ actor {
   var locationMap = Map.empty<NodeId, Location>();
   var lawTokenMap = Map.empty<NodeId, LawToken>();
   var interpretationTokenMap = Map.empty<NodeId, InterpretationToken>();
-  var userProfiles = Map.empty<Principal, UserProfile>();
+  var userProfiles = Map.empty<Principal, StoredProfile>();
+  var userProfileExtras = Map.empty<Principal, ProfileExtras>();
   var buzzScores = Map.empty<Principal, BuzzScore>();
   var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
   let accessControlState = AccessControl.initState();
@@ -1058,11 +1073,29 @@ actor {
   };
 
   // USER PROFILES
+  func mergeProfile(principal : Principal) : ?UserProfile {
+    switch (userProfiles.get(principal)) {
+      case (null) { null };
+      case (?p) {
+        let extras : ProfileExtras = switch (userProfileExtras.get(principal)) {
+          case (null) { { affiliation = null; identifier = null } };
+          case (?e) { e };
+        };
+        ?{
+          name = p.name;
+          socialUrl = p.socialUrl;
+          affiliation = extras.affiliation;
+          identifier = extras.identifier;
+        };
+      };
+    };
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can access profiles");
     };
-    userProfiles.get(caller);
+    mergeProfile(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -1072,14 +1105,21 @@ actor {
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile unless you are an admin");
     };
-    userProfiles.get(user);
+    mergeProfile(user);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    userProfiles.add(caller, profile);
+    userProfiles.add(caller, {
+      name = profile.name;
+      socialUrl = profile.socialUrl;
+    });
+    userProfileExtras.add(caller, {
+      affiliation = profile.affiliation;
+      identifier = profile.identifier;
+    });
   };
 
   // CREATION & UPDATE OPERATIONS
@@ -4588,6 +4628,14 @@ actor {
         ("profileUrl", switch (userProfiles.get(principal)) {
           case (null) { jsonNull() };
           case (?p) { switch (p.socialUrl) { case (null) { jsonNull() }; case (?url) { jsonText(url) } } };
+        }),
+        ("affiliation", switch (userProfileExtras.get(principal)) {
+          case (null) { jsonNull() };
+          case (?e) { switch (e.affiliation) { case (null) { jsonNull() }; case (?a) { jsonText(a) } } };
+        }),
+        ("identifier", switch (userProfileExtras.get(principal)) {
+          case (null) { jsonNull() };
+          case (?e) { switch (e.identifier) { case (null) { jsonNull() }; case (?i) { jsonText(i) } } };
         }),
       ]));
     };

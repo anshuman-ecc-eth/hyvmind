@@ -356,7 +356,9 @@ export interface WeightedValue {
 }
 export interface UserProfile {
     name: string;
+    affiliation?: string;
     socialUrl?: string;
+    identifier?: string;
 }
 export interface HttpRequest {
     url: string;

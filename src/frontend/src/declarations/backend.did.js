@@ -95,7 +95,9 @@ export const BuzzLeaderboardEntry = IDL.Record({
 });
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
+  'affiliation' : IDL.Opt(IDL.Text),
   'socialUrl' : IDL.Opt(IDL.Text),
+  'identifier' : IDL.Opt(IDL.Text),
 });
 export const ChatChannelSummary = IDL.Record({
   'id' : IDL.Text,
@@ -648,7 +650,9 @@ export const idlFactory = ({ IDL }) => {
   });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
+    'affiliation' : IDL.Opt(IDL.Text),
     'socialUrl' : IDL.Opt(IDL.Text),
+    'identifier' : IDL.Opt(IDL.Text),
   });
   const ChatChannelSummary = IDL.Record({
     'id' : IDL.Text,

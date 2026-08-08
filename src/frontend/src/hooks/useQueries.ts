@@ -117,7 +117,12 @@ export function useSaveCallerUserProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (profile: { name: string; socialUrl?: string }) => {
+    mutationFn: async (profile: {
+      name: string;
+      socialUrl?: string;
+      affiliation?: string;
+      identifier?: string;
+    }) => {
       if (!actor) throw new Error("Actor not available");
       return actor.saveCallerUserProfile(profile);
     },

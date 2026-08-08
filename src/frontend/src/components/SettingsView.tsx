@@ -99,6 +99,8 @@ export function SettingsView() {
 
   const [profileName, setProfileName] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
+  const [affiliation, setAffiliation] = useState("");
+  const [identifier, setIdentifier] = useState("");
 
   // Plugin Binding state
   const [myPrincipal, setMyPrincipal] = useState<string | null>(null);
@@ -199,6 +201,8 @@ Instructions:
     if (userProfile) {
       setProfileName(userProfile.name);
       setSocialUrl(userProfile.socialUrl || "");
+      setAffiliation(userProfile.affiliation || "");
+      setIdentifier(userProfile.identifier || "");
     }
   }, [userProfile]);
 
@@ -307,6 +311,8 @@ ${SAMPLE_PROMPT}`;
       await saveProfile.mutateAsync({
         name: profileName.trim(),
         socialUrl: socialUrl.trim() || undefined,
+        affiliation: affiliation.trim() || undefined,
+        identifier: identifier.trim() || undefined,
       });
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -319,6 +325,8 @@ ${SAMPLE_PROMPT}`;
     if (userProfile) {
       setProfileName(userProfile.name);
       setSocialUrl(userProfile.socialUrl || "");
+      setAffiliation(userProfile.affiliation || "");
+      setIdentifier(userProfile.identifier || "");
     }
   };
 
@@ -483,6 +491,39 @@ ${SAMPLE_PROMPT}`;
                       data-ocid="settings.profile.social_url_input"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-affiliation">
+                      Affiliation (optional)
+                    </Label>
+                    <Input
+                      id="settings-affiliation"
+                      value={affiliation}
+                      onChange={(e) => setAffiliation(e.target.value)}
+                      placeholder="e.g. current institution, organisation, independent"
+                      disabled={profileLoading || saveProfile.isPending}
+                      data-ocid="settings.profile.affiliation_input"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-identifier">
+                      Identifier (optional)
+                    </Label>
+                    <Input
+                      id="settings-identifier"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="e.g. orcid id, work email, roll number"
+                      disabled={profileLoading || saveProfile.isPending}
+                      data-ocid="settings.profile.identifier_input"
+                    />
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    This information will be attached to your public
+                    contributions.
+                  </p>
 
                   <div className="flex gap-2">
                     <Button

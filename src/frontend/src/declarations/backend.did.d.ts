@@ -303,7 +303,12 @@ export interface TutorialQuestion {
   'name' : string,
   'submittedAt' : bigint,
 }
-export interface UserProfile { 'name' : string, 'socialUrl' : [] | [string] }
+export interface UserProfile {
+  'name' : string,
+  'affiliation' : [] | [string],
+  'socialUrl' : [] | [string],
+  'identifier' : [] | [string],
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };

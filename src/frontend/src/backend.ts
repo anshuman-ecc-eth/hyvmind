@@ -438,7 +438,9 @@ export interface WeightedValue {
 }
 export interface UserProfile {
     name: string;
+    affiliation?: string;
     socialUrl?: string;
+    identifier?: string;
 }
 export interface HttpRequest {
     url: string;
@@ -1878,14 +1880,20 @@ function from_candid_record_n25(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
+    affiliation: [] | [string];
     socialUrl: [] | [string];
+    identifier: [] | [string];
 }): {
     name: string;
+    affiliation?: string;
     socialUrl?: string;
+    identifier?: string;
 } {
     return {
         name: value.name,
-        socialUrl: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.socialUrl))
+        affiliation: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.affiliation)),
+        socialUrl: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.socialUrl)),
+        identifier: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.identifier))
     };
 }
 function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -2612,14 +2620,20 @@ function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 }
 function to_candid_record_n82(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
+    affiliation?: string;
     socialUrl?: string;
+    identifier?: string;
 }): {
     name: string;
+    affiliation: [] | [string];
     socialUrl: [] | [string];
+    identifier: [] | [string];
 } {
     return {
         name: value.name,
-        socialUrl: value.socialUrl ? candid_some(value.socialUrl) : candid_none()
+        affiliation: value.affiliation ? candid_some(value.affiliation) : candid_none(),
+        socialUrl: value.socialUrl ? candid_some(value.socialUrl) : candid_none(),
+        identifier: value.identifier ? candid_some(value.identifier) : candid_none()
     };
 }
 function to_candid_variant_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
