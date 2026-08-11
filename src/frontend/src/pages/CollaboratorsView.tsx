@@ -19,7 +19,7 @@ const PARTNERS: Collaborator[] = [
     url: "https://desciindia.org/",
   },
   {
-    name: "Symbiosis Law School, Nagpur",
+    name: "Centre for Technology and Law (SLS Nagpur)",
     logo: "/assets/collaborators/symbiosis-lsn.png",
     url: "https://slsnagpur.edu.in/",
   },
