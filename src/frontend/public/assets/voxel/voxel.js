@@ -41,7 +41,7 @@ function perlinNoise(w, h, persistence, octaves, wavelength, prng) {
 // ─────────────────────────────────────────────────────────────
 // Block types & colours (vertex-coloured; no texture atlas)
 // ─────────────────────────────────────────────────────────────
-const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12, SPADE: 13, BRUSH: 14, GRAPHITE: 15 };
+const B = { AIR: 0, STONE: 1, DIRT: 2, GRASS: 3, SAND: 4, ROCK: 5, SNOW: 6, WATER: 7, WOOD: 8, LEAVES: 9, COAL: 10, IRON: 11, PINE: 12, SPADE: 13, BRUSH: 14, GRAPHITE: 15, SHIELD: 16 };
 const C = {
   [B.STONE]: [0.50, 0.52, 0.55], [B.DIRT]: [0.58, 0.44, 0.31],
   [B.GRASS]: [0.35, 0.66, 0.28],
@@ -485,9 +485,9 @@ document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   if (pointerLocked) { hasStarted = true; clearHolding(); startBirdsong(); }
   else { clearHolding(); }
-  if (!graffitiOpen && !nodeDetailsOpen && !graphiteOpen) setPaused(!pointerLocked);
+  if (!graffitiOpen && !nodeDetailsOpen && !graphiteOpen && !shieldOpen) setPaused(!pointerLocked);
 });
-renderer.domElement.addEventListener('click', () => { if (graffitiOpen || nodeDetailsOpen || graphiteOpen) return; requestLock(); });
+renderer.domElement.addEventListener('click', () => { if (graffitiOpen || nodeDetailsOpen || graphiteOpen || shieldOpen) return; requestLock(); });
 
 playBtn && playBtn.addEventListener('click', requestLock);
 settingBtn && settingBtn.addEventListener('click', () => { if (settingsEl) settingsEl.classList.remove('hidden'); });
@@ -610,6 +610,25 @@ const graphiteWeights = new Map(); // key graffitiId+sep+nodeId -> weight
 function weightKey(graffitiId, nodeId) { return graffitiId + weightSep + nodeId; }
 function getWeight(graffitiId, nodeId) { return graphiteWeights.get(weightKey(graffitiId, nodeId)) || 0; }
 
+// Per-graffiti weight totals, cached so the per-frame highlight/hover paths
+// never rescan the whole weights map. Rebuilt lazily on any weight mutation.
+let weightTotals = new Map(); // graffitiId -> total weight
+let weightTotalsDirty = true;
+function rebuildWeightTotals() {
+  weightTotals = new Map();
+  graphiteWeights.forEach((weight, key) => {
+    const sepIdx = key.indexOf(weightSep);
+    if (sepIdx < 0) return;
+    const gid = key.slice(0, sepIdx);
+    weightTotals.set(gid, (weightTotals.get(gid) || 0) + weight);
+  });
+  weightTotalsDirty = false;
+}
+function graffitiTotalWeight(g) {
+  if (weightTotalsDirty) rebuildWeightTotals();
+  return weightTotals.get(g.id) || 0;
+}
+
 function clearSelection() {
   selection.length = 0;
   selectionKey.clear();
@@ -641,6 +660,43 @@ function toggleSelection(hit) {
   refreshSelectionVisual();
 }
 
+// ── Graffiti armor: a weighted text shields all of its blocks ──
+// A spade hit on any block covered by a graffiti with totalWeight > 0 strips
+// one weight instead of breaking the block (mirrors graphite's subtract).
+// Overlapping unweighted texts riding on the same block are shielded too.
+function armoredGraffitiAt(x, y, z) {
+  let best = null;
+  for (const g of graffitiList) {
+    if (graffitiTotalWeight(g) <= 0) continue;
+    if (!g.blocks.some((b) => b.x === x && b.y === y && b.z === z)) continue;
+    if (!best || graffitiTotalWeight(g) > graffitiTotalWeight(best)) best = g;
+  }
+  return best;
+}
+function highestWeightNode(g) {
+  let bestNode = null;
+  for (const [key, weight] of graphiteWeights) {
+    if (!key.startsWith(g.id + weightSep)) continue;
+    const nid = key.slice(g.id.length + weightSep.length);
+    if (!bestNode || weight > graphiteWeights.get(weightKey(g.id, bestNode))) bestNode = nid;
+  }
+  return bestNode;
+}
+function stripOneWeight(g) {
+  if (worldScore <= 0) { refuseToolUse(); return; }
+  const nodeId = highestWeightNode(g);
+  if (!nodeId) return;
+  const key = weightKey(g.id, nodeId);
+  const cur = graphiteWeights.get(key) || 0;
+  const next = cur - 1;
+  if (next <= 0) graphiteWeights.delete(key); else graphiteWeights.set(key, next);
+  weightTotalsDirty = true;
+  recordWeightChange(g.id, nodeId, -1);
+  deductToolUse();
+  refreshGraphiteBeams();
+  showToolTip('Remaining Weight: ' + graffitiTotalWeight(g));
+}
+
 function removeGraffitiOn(x, y, z) {
   for (let i = graffitiList.length - 1; i >= 0; i--) {
     const g = graffitiList[i];
@@ -654,6 +710,7 @@ function removeGraffitiOn(x, y, z) {
           recordWeightChange(g.id, nid, -weight);
         }
       }
+      weightTotalsDirty = true;
       scene.remove(g.mesh);
       g.mesh.geometry.dispose();
       g.mesh.material.map.dispose();
@@ -663,6 +720,194 @@ function removeGraffitiOn(x, y, z) {
   }
   refreshGraphiteBeams();
 }
+
+// ── Shield tool: a protective box over a set of blocks ──
+// A shield has HP = points invested / 5 (e.g. 50 pts → 10 hits). While HP > 0:
+//  • spade LMB inside hits the shield (attacker pays 5 pts), not the block;
+//  • build, new graffiti and weight-subtract are blocked;
+//  • graphite weight-ADD is allowed.
+// Once HP reaches 0 the shield is gone and the zone is fully modifiable again.
+const SHIELD_PRESETS = [10, 25, 50, 100];
+const shields = new Map();      // shieldId -> { id, x0,y0,z0, x1,y1,z1, hp }
+const shieldFields = new Map(); // shieldId -> THREE.Mesh
+const shieldCorners = [];       // up to 2 corner blocks {x,y,z}
+const shieldCornerMeshes = [];
+const SHIELD_FIELD_COLOR = 0xff8800;
+
+function shieldId() { return 'sh' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+function shieldAt(x, y, z) {
+  let best = null;
+  for (const s of shields.values()) {
+    if (x < s.x0 || x > s.x1 || y < s.y0 || y > s.y1 || z < s.z0 || z > s.z1) continue;
+    if (!best || s.hp > best.hp) best = s;
+  }
+  return best;
+}
+// Ray vs. shield-box AABB (slab method). The box spans [x0, x1+1] world units,
+// matching how shieldBox renders. Returns the nearest { sh, t, x, y, z } with
+// t <= maxDist, or null. Works even when the origin is inside the box.
+function shieldRayHit(origin, dir, maxDist) {
+  let best = null;
+  for (const s of shields.values()) {
+    const bx0 = s.x0, by0 = s.y0, bz0 = s.z0;
+    const bx1 = s.x1 + 1, by1 = s.y1 + 1, bz1 = s.z1 + 1;
+    let tmin = 0, tmax = maxDist;
+    let t0, t1;
+    // X slab
+    if (Math.abs(dir.x) < 1e-9) {
+      if (origin.x < bx0 || origin.x > bx1) continue;
+    } else {
+      t0 = (bx0 - origin.x) / dir.x; t1 = (bx1 - origin.x) / dir.x;
+      if (t0 > t1) { const tmp = t0; t0 = t1; t1 = tmp; }
+      if (t0 > tmin) tmin = t0;
+      if (t1 < tmax) tmax = t1;
+      if (tmin > tmax) continue;
+    }
+    // Y slab
+    if (Math.abs(dir.y) < 1e-9) {
+      if (origin.y < by0 || origin.y > by1) continue;
+    } else {
+      t0 = (by0 - origin.y) / dir.y; t1 = (by1 - origin.y) / dir.y;
+      if (t0 > t1) { const tmp = t0; t0 = t1; t1 = tmp; }
+      if (t0 > tmin) tmin = t0;
+      if (t1 < tmax) tmax = t1;
+      if (tmin > tmax) continue;
+    }
+    // Z slab
+    if (Math.abs(dir.z) < 1e-9) {
+      if (origin.z < bz0 || origin.z > bz1) continue;
+    } else {
+      t0 = (bz0 - origin.z) / dir.z; t1 = (bz1 - origin.z) / dir.z;
+      if (t0 > t1) { const tmp = t0; t0 = t1; t1 = tmp; }
+      if (t0 > tmin) tmin = t0;
+      if (t1 < tmax) tmax = t1;
+      if (tmin > tmax) continue;
+    }
+    const hitPoint = {
+      x: origin.x + dir.x * tmin,
+      y: origin.y + dir.y * tmin,
+      z: origin.z + dir.z * tmin,
+    };
+    if (!best || tmin < best.t) best = { sh: s, t: tmin, ...hitPoint };
+  }
+  return best;
+}
+const shieldTintEl = document.getElementById('shield-tint');
+function updateShieldTint() {
+  if (!shieldTintEl) return;
+  // Check the eye position (camera) inside the shield volume.
+  const ex = px, ey = py + EYE, ez = pz;
+  const inside = shieldAt(Math.floor(ex), Math.floor(ey), Math.floor(ez)) != null;
+  shieldTintEl.classList.toggle('show', inside);
+}
+function shieldBox(s) {
+  const PAD = 0.15;
+  const mat = new THREE.MeshBasicMaterial({ color: SHIELD_FIELD_COLOR, transparent: true, opacity: 0.25, depthWrite: false });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(s.x1 - s.x0 + 1 + PAD * 2, s.y1 - s.y0 + 1 + PAD * 2, s.z1 - s.z0 + 1 + PAD * 2), mat);
+  mesh.position.set((s.x0 + s.x1 + 1) / 2, (s.y0 + s.y1 + 1) / 2, (s.z0 + s.z1 + 1) / 2);
+  mesh.userData.ignored = true; // never raycast
+  scene.add(mesh);
+  shieldFields.set(s.id, mesh);
+}
+function disposeShieldField(id) {
+  const m = shieldFields.get(id);
+  if (m) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); shieldFields.delete(id); }
+}
+
+function clearShieldCorners() {
+  shieldCorners.length = 0;
+  for (const m of shieldCornerMeshes) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  shieldCornerMeshes.length = 0;
+}
+function refreshShieldCorners() {
+  for (const m of shieldCornerMeshes) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  shieldCornerMeshes.length = 0;
+  if (!shieldCorners.length) return;
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.5, depthWrite: false });
+  for (const c of shieldCorners) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), mat);
+    mesh.position.set(c.x + 0.5, c.y + 0.5, c.z + 0.5);
+    scene.add(mesh);
+    shieldCornerMeshes.push(mesh);
+  }
+}
+function toggleShieldCorner(hit) {
+  const i = shieldCorners.findIndex((c) => c.x === hit.x && c.y === hit.y && c.z === hit.z);
+  if (i >= 0) shieldCorners.splice(i, 1);
+  else if (shieldCorners.length >= 4) { shieldCorners.shift(); shieldCorners.push({ x: hit.x, y: hit.y, z: hit.z }); }
+  else shieldCorners.push({ x: hit.x, y: hit.y, z: hit.z });
+  refreshShieldCorners();
+}
+// Spend an arbitrary number of points (posts the delta to the parent).
+function spendPoints(amount) {
+  if (amount <= 0) return;
+  const spent = Math.min(amount, worldScore);
+  worldScore -= spent;
+  updateScoreDisplay();
+  window.parent.postMessage({ type: 'hyvmind-voxel-score-delta', delta: -spent }, '*');
+}
+function applyShield(strength) {
+  const amount = Math.max(1, Math.floor(strength)) * 5;
+  if (worldScore < amount) { refuseToolUse(); return; }
+  if (!shieldCorners.length) return;
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (const c of shieldCorners) {
+    x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x);
+    y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y);
+    z0 = Math.min(z0, c.z); z1 = Math.max(z1, c.z);
+  }
+  // The corners are the TOP of the shield; extend it down to the terrain surface
+  // beneath the box so the whole ground area underneath is covered.
+  const cornerTop = y1;
+  if (H) {
+    let ground = Infinity;
+    for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
+      if (x < 0 || z < 0 || x >= GRID || z >= GRID) continue;
+      ground = Math.min(ground, H[z][x]);
+    }
+    if (ground !== Infinity) y0 = ground;
+  }
+  y1 = cornerTop;
+  const id = shieldId();
+  const hp = Math.max(1, Math.floor(strength));
+  const s = { id, x0, y0, z0, x1, y1, z1, hp };
+  shields.set(id, s);
+  shieldBox(s);
+  pendingVoxelEdits.shieldAdds.push({ id, x0, y0, z0, x1, y1, z1, hp });
+  clearShieldCorners();
+  spendPoints(amount);
+  showToolTip('SHIELD ' + hp + ' STRENGTH — ' + amount + ' PTS');
+}
+function shieldHit(s) {
+  if (worldScore <= 0) { refuseToolUse(); return; }
+  s.hp--;
+  deductToolUse();
+  if (s.hp <= 0) {
+    pendingVoxelEdits.shieldRemoves.push(s.id);
+    disposeShieldField(s.id);
+    shields.delete(s.id);
+    showToolTip('SHIELD DESTROYED');
+  } else {
+    showToolTip('SHIELD STRENGTH LEFT: ' + s.hp);
+  }
+}
+
+// ── Shield cost modal ──
+let shieldOpen = false;
+const shieldModalEl = document.getElementById('shield-modal');
+function openShieldModal() {
+  if (!shieldCorners.length) return;
+  shieldOpen = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+  if (shieldModalEl) shieldModalEl.classList.remove('hidden');
+  if (shieldStrengthInput) { shieldStrengthInput.focus(); shieldStrengthInput.select(); }
+}
+function closeShieldModal() {
+  shieldOpen = false;
+  if (shieldModalEl) shieldModalEl.classList.add('hidden');
+  requestLock();
+}
+
 async function addGraffiti(text, blocks, id) {
   if (!blocks.length || !text) return null;
   const gid = id || 'g' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
@@ -922,6 +1167,7 @@ function applyGraphiteWeight() {
   if (delta < 0 && cur <= 0) { showToolTip('NO WEIGHT TO REMOVE'); return; }
   const next = cur + delta;
   if (next <= 0) graphiteWeights.delete(key); else graphiteWeights.set(key, next);
+  weightTotalsDirty = true;
   recordWeightChange(graphiteGraffiti.id, graphiteTarget, delta);
   deductToolUse();
   refreshGraphiteBeams();
@@ -944,6 +1190,22 @@ function closeGraphite() {
 graphiteActionBtn && graphiteActionBtn.addEventListener('click', applyGraphiteWeight);
 graphiteCancelBtn && graphiteCancelBtn.addEventListener('click', closeGraphite);
 
+// ── Shield modal wiring (strength input) ──
+const shieldStrengthInput = document.getElementById('shield-strength');
+const shieldApplyBtn = document.getElementById('shield-apply');
+function applyShieldFromInput() {
+  const strength = shieldStrengthInput ? parseInt(shieldStrengthInput.value, 10) : 0;
+  if (!strength || strength < 1) { showToolTip('ENTER A STRENGTH >= 1'); return; }
+  applyShield(strength);
+  closeShieldModal();
+}
+shieldApplyBtn && shieldApplyBtn.addEventListener('click', applyShieldFromInput);
+shieldStrengthInput && shieldStrengthInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyShieldFromInput(); }
+});
+const shieldModalCancel = document.getElementById('shield-cancel');
+shieldModalCancel && shieldModalCancel.addEventListener('click', closeShieldModal);
+
 let escToResume = false;
 document.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') return;
@@ -951,6 +1213,7 @@ document.addEventListener('keydown', (e) => {
   if (graffitiOpen) { e.preventDefault(); cancelGraffiti(); return; }
   if (graphiteOpen) { e.preventDefault(); closeGraphite(); return; }
   if (nodeDetailsOpen) { e.preventDefault(); closeNodeDetails(false); escToResume = true; return; }
+  if (shieldOpen) { e.preventDefault(); closeShieldModal(); return; }
   if (settingsEl && !settingsEl.classList.contains('hidden')) { e.preventDefault(); settingsEl.classList.add('hidden'); return; }
   if (featuresEl && !featuresEl.classList.contains('hidden')) { e.preventDefault(); featuresEl.classList.add('hidden'); return; }
   if (guideEl && !guideEl.classList.contains('hidden')) { e.preventDefault(); guideEl.classList.add('hidden'); return; }
@@ -972,7 +1235,7 @@ document.addEventListener('keyup', (e) => {
 
 setPaused(true);
 document.addEventListener('mousemove', (e) => {
-  if (!pointerLocked || graffitiOpen || graphiteOpen || nodeDetailsOpen) return;
+  if (!pointerLocked || graffitiOpen || graphiteOpen || nodeDetailsOpen || shieldOpen) return;
   yaw -= e.movementX * 0.0022;
   pitch -= e.movementY * 0.0022;
   pitch = Math.max(-1.5, Math.min(1.5, pitch));
@@ -1214,12 +1477,13 @@ document.addEventListener('keydown', (e) => {
     showToolTip(aerialView ? 'AERIAL' : 'AERIAL OFF');
   }
 });
-const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, B.GRAPHITE, null, null, null];
+const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, B.GRAPHITE, B.SHIELD, null, null];
 const SELECTABLE = HOTBAR_BLOCKS.filter((t) => t != null);
 let wheelGap = false;
 function selectBlock(t) {
   heldBlock = t;
   if (t === B.SPADE) clearSelection();
+  if (t !== B.SHIELD) clearShieldCorners();
   const hotbarEl = document.getElementById('hotbar');
   if (hotbarEl) {
     const slots = hotbarEl.children;
@@ -1250,8 +1514,9 @@ let applyingRemote = false;
 
 // Pending voxel edits, flushed to the parent (TextGameModal) which persists them.
 // blockEdits: {x,y,z,v} (v=block id, 0=AIR); graffitiAdds: {id,text,blocks};
-// graffitiRemoves: [id]; weightChanges: {graffitiId,nodeId,delta}
-const pendingVoxelEdits = { blockEdits: [], graffitiAdds: [], graffitiRemoves: [], weightChanges: [] };
+// graffitiRemoves: [id]; weightChanges: {graffitiId,nodeId,delta};
+// shieldAdds: {id,x0,y0,z0,x1,y1,z1,hp}; shieldRemoves: [id]
+const pendingVoxelEdits = { blockEdits: [], graffitiAdds: [], graffitiRemoves: [], weightChanges: [], shieldAdds: [], shieldRemoves: [] };
 
 function recordBlockEdit(x, y, z, v) {
   if (applyingRemote) return;
@@ -1269,7 +1534,9 @@ function hasPendingVoxelEdits() {
   return pendingVoxelEdits.blockEdits.length > 0 ||
     pendingVoxelEdits.graffitiAdds.length > 0 ||
     pendingVoxelEdits.graffitiRemoves.length > 0 ||
-    pendingVoxelEdits.weightChanges.length > 0;
+    pendingVoxelEdits.weightChanges.length > 0 ||
+    pendingVoxelEdits.shieldAdds.length > 0 ||
+    pendingVoxelEdits.shieldRemoves.length > 0;
 }
 function flushVoxelEdits(exit) {
   if (!hasPendingVoxelEdits() && !exit) return;
@@ -1280,11 +1547,15 @@ function flushVoxelEdits(exit) {
     graffitiAdds: pendingVoxelEdits.graffitiAdds,
     graffitiRemoves: pendingVoxelEdits.graffitiRemoves,
     weightChanges: pendingVoxelEdits.weightChanges,
+    shieldAdds: pendingVoxelEdits.shieldAdds,
+    shieldRemoves: pendingVoxelEdits.shieldRemoves,
   };
   pendingVoxelEdits.blockEdits = [];
   pendingVoxelEdits.graffitiAdds = [];
   pendingVoxelEdits.graffitiRemoves = [];
   pendingVoxelEdits.weightChanges = [];
+  pendingVoxelEdits.shieldAdds = [];
+  pendingVoxelEdits.shieldRemoves = [];
   window.parent.postMessage(payload, '*');
 }
 
@@ -1324,9 +1595,21 @@ function applyVoxelState(state) {
         if (gid && nid && weight > 0) graphiteWeights.set(weightKey(gid, nid), weight);
       }
     }
+    if (state.shields) {
+      for (const s of state.shields) {
+        const x0 = Number(s.x0), y0 = Number(s.y0), z0 = Number(s.z0);
+        const x1 = Number(s.x1), y1 = Number(s.y1), z1 = Number(s.z1);
+        const hp = Math.max(1, Number(s.hp) || 0);
+        if (!(s.id && x1 >= x0 && y1 >= y0 && z1 >= z0)) continue;
+        const sh = { id: String(s.id), x0, y0, z0, x1, y1, z1, hp };
+        shields.set(sh.id, sh);
+        shieldBox(sh);
+      }
+    }
   } finally {
     applyingRemote = false;
   }
+  weightTotalsDirty = true;
   refreshGraphiteBeams();
 }
 
@@ -1347,7 +1630,39 @@ function updateHighlight() {
   if (hit && !aerialView) {
     highlightMesh.visible = true;
     highlightMesh.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
-    updateSkyHover(null); // a terrain block is targeted — sky takes a back seat
+    const sh = shieldAt(hit.x, hit.y, hit.z);
+    if (sh) {
+      highlightMat.color.set(0xff8800); // shielded — spade hits the shield
+      showToolTip('SHIELDED — STRENGTH ' + sh.hp);
+      updateSkyHover(null);
+      return;
+    }
+    const armored = armoredGraffitiAt(hit.x, hit.y, hit.z);
+    if (armored) {
+      highlightMat.color.set(0x8b7cf6); // armored — spade will strip a weight
+      showToolTip('Remaining Weight: ' + graffitiTotalWeight(armored));
+      updateSkyHover(null);
+    } else {
+      highlightMat.color.set(0x000000);
+      updateSkyHover(null); // a terrain block is targeted — sky takes a back seat
+    }
+  } else if (!aerialView) {
+    // Aiming at empty air: check the shield volume (its interior is interactive).
+    const shRay = shieldRayHit(camera.position, dir, 4);
+    if (shRay) {
+      highlightMesh.visible = true;
+      highlightMesh.position.set(
+        Math.floor(shRay.x) + 0.5,
+        Math.floor(shRay.y) + 0.5,
+        Math.floor(shRay.z) + 0.5,
+      );
+      highlightMat.color.set(0xff8800);
+      showToolTip('SHIELDED — STRENGTH ' + shRay.sh.hp);
+      updateSkyHover(null);
+      return;
+    }
+    highlightMesh.visible = false;
+    updateSkyHover(dir);
   } else {
     highlightMesh.visible = false;
     updateSkyHover(dir);
@@ -1387,9 +1702,37 @@ function doBlockAction(button) {
   const origin = camera.position.clone();
   camera.getWorldDirection(dir);
   const hit = raycast(origin, dir, 4);
+  // The shield is a volume, not its solid blocks: detect it via the ray-vs-box
+  // test (works over empty air inside the box), falling back to the aimed block.
+  const shRay = shieldRayHit(origin, dir, 4);
+  let sh = null;
+  if (shRay) sh = shRay.sh;
+  else if (hit) sh = shieldAt(hit.x, hit.y, hit.z);
+  if (sh) {
+    // Shielded zone rules while HP > 0:
+    //  • spade LMB hits the shield (attacker pays 5 pts) — no block break, no weight strip;
+    //  • build / new graffiti / weight-subtract / new shield are blocked;
+    //  • graphite weight-ADD is allowed (proceeds below); brush-RMB select allowed.
+    if (heldBlock === B.SPADE) {
+      if (button === 0) { shieldHit(sh); return; }
+      showToolTip('Shielded'); return;
+    }
+    if (heldBlock === B.BRUSH) {
+      if (button === 0) { showToolTip('Shielded'); return; }
+      if (hit) toggleSelection(hit); // harmless preview selection allowed (solid block only)
+      return;
+    }
+    if (heldBlock === B.SHIELD) {
+      showToolTip('Shielded'); return;
+    }
+    if (heldBlock === B.GRAPHITE && button === 2) { showToolTip('Shielded'); return; }
+    // fall through for graphite LMB (add weight) — allowed.
+  }
   if (!hit) return;
   if (heldBlock === B.SPADE) {
     if (button === 0) {
+      const armored = armoredGraffitiAt(hit.x, hit.y, hit.z);
+      if (armored) { stripOneWeight(armored); return; }
       if (worldScore <= 0) { refuseToolUse(); return; }
       const removed = getBlock(hit.x, hit.y, hit.z);
       spawnCrumb(hit.x, hit.y, hit.z, removed);
@@ -1419,6 +1762,14 @@ function doBlockAction(button) {
   } else if (heldBlock === B.BRUSH) {
     if (button === 0) openGraffiti(hit);
     else toggleSelection(hit);
+  } else if (heldBlock === B.SHIELD) {
+    if (button === 0) {
+      if (!shieldCorners.length) { showToolTip('Right mouse click to select top corners.'); return; }
+      openShieldModal();
+    } else {
+      toggleShieldCorner(hit);
+      showToolTip('SHIELD CORNERS: ' + shieldCorners.length + '/4');
+    }
   } else {
     // Graphite — link a graffiti block to a node in the sky tree.
     const g = graffitiAt(hit.x, hit.y, hit.z);
@@ -1452,7 +1803,7 @@ function animate() {
     if (!builtChunks.has(key)) buildChunk(cx, cz);
   }
 
-  if (!paused && !graffitiOpen && !graphiteOpen && !nodeDetailsOpen) {
+  if (!paused && !graffitiOpen && !graphiteOpen && !nodeDetailsOpen && !shieldOpen) {
     // movement
     const speed = (flyMode ? 3 : 1) * 5.2;
     if (aerialView) {
@@ -1508,6 +1859,7 @@ function animate() {
   renderMinimap();
   updateHighlight();
   updateCrumbs();
+  updateShieldTint();
 
   fpsCount++;
   if (performance.now() - fpsT0 >= 1000) {
@@ -1548,6 +1900,33 @@ document.addEventListener('mousedown', (e) => {
       return;
     }
   }
+  // LMB prefers a terrain block within reach over a distant sky cube behind it —
+  // otherwise a wall between the player and the sky tree would open node modals
+  // instead of letting the spade/brush act on the block.
+  camera.getWorldDirection(dir);
+  const hit = e.button === 0 ? raycast(camera.position, dir, 4) : null;
+  if (hit) {
+    holdingButton = e.button;
+    doBlockAction(e.button);
+    clearInterval(holdTimer);
+    if (heldBlock === B.SPADE) {
+      holdTimer = setInterval(() => doBlockAction(holdingButton), 333);
+    }
+    return;
+  }
+  // Aiming at empty air: a shield box may still be in the way (its interior is a
+  // volume, not just solid blocks). Let the spade hit the shield (and hold-repeat),
+  // and stop a distant sky cube behind the box from stealing the click.
+  const shRay = shieldRayHit(camera.position, dir, 4);
+  if (shRay) {
+    holdingButton = e.button;
+    doBlockAction(e.button);
+    clearInterval(holdTimer);
+    if (heldBlock === B.SPADE) {
+      holdTimer = setInterval(() => doBlockAction(holdingButton), 333);
+    }
+    return;
+  }
   const skyNode = e.button === 0 ? pickSkyNode() : null;
   if (skyNode) { openNodeDetails(skyNode); return; }
   holdingButton = e.button;
@@ -1572,11 +1951,17 @@ document.addEventListener('keydown', (e) => {
 const seed = new URLSearchParams(location.search).get('seed') || 'Indian Constitutional Law';
 document.getElementById('seed').textContent = seed;
 
-const HOTBAR_INITIALS = { [B.SPADE]: 'S', [B.BRUSH]: 'B', [B.GRAPHITE]: 'G' };
 const HOTBAR_NAMES = {
+  [B.SPADE]: 'SPADE',
+  [B.BRUSH]: 'BRUSH',
+  [B.GRAPHITE]: 'WEIGHT',
+  [B.SHIELD]: 'SHIELD',
+};
+const HOTBAR_TIPS = {
   [B.SPADE]: 'SPADE\nleft: destroy · right: build',
   [B.BRUSH]: 'BRUSH\nleft: write · right: select',
-  [B.GRAPHITE]: 'GRAPHITE\nleft: add weight · right: subtract weight',
+  [B.GRAPHITE]: 'WEIGHT\nleft: add · right: subtract',
+  [B.SHIELD]: 'SHIELD\nleft: apply · right: select',
 };
 function initHotbar() {
   const hotbarEl = document.getElementById('hotbar');
@@ -1586,10 +1971,10 @@ function initHotbar() {
     slot.className = 'slot';
     const t = HOTBAR_BLOCKS[i];
     if (t != null) {
-      const initial = document.createElement('span');
-      initial.className = 'initial';
-      initial.textContent = HOTBAR_INITIALS[t];
-      slot.appendChild(initial);
+      const label = document.createElement('span');
+      label.className = 'initial';
+      label.textContent = HOTBAR_NAMES[t];
+      slot.appendChild(label);
     }
     hotbarEl.appendChild(slot);
   }
@@ -1607,8 +1992,8 @@ function showToolTip(text) {
   tooltipTimer = setTimeout(() => tooltipEl.classList.remove('show'), 1000);
 }
 function announceTool() {
-  const name = HOTBAR_NAMES[heldBlock];
-  if (name) showToolTip(name);
+  const tip = HOTBAR_TIPS[heldBlock];
+  if (tip) showToolTip(tip);
 }
 
 // ─────────────────────────────────────────────────────────────

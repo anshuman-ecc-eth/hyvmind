@@ -226,6 +226,16 @@ export interface VoxelWeightChange {
     nodeId: string;
     delta: bigint;
 }
+export interface VoxelShield {
+    hp: bigint;
+    id: string;
+    x0: bigint;
+    x1: bigint;
+    y0: bigint;
+    y1: bigint;
+    z0: bigint;
+    z1: bigint;
+}
 export interface ChatMessage {
     text: string;
     sender: Principal;
@@ -454,6 +464,7 @@ export interface backendInterface {
             graffitiId: string;
             nodeId: string;
         }>;
+        shields: Array<VoxelShield>;
     } | null>;
     /**
      * / Called by the Obsidian plugin to cheaply check if push data is available.
@@ -484,7 +495,7 @@ export interface backendInterface {
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
-    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>): Promise<boolean>;
+    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>, shieldAdds: Array<VoxelShield>, shieldRemoves: Array<string>): Promise<boolean>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;

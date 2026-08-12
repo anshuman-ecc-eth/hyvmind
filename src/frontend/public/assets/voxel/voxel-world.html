@@ -79,6 +79,24 @@
   #features, #guide {
     width: 640px; padding: 34px 44px;
   }
+  #shield-modal {
+    width: 640px; padding: 34px 44px;
+  }
+  #shield-modal .title {
+    font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
+  }
+  #shield-modal p { font-size: 12px; letter-spacing: 0.06em; }
+  #shield-modal .button { font-size: 12px; }
+  #shield-modal .btn-row { margin-top: 18px; }
+  #shield-modal label {
+    display: block; font-size: 11px; letter-spacing: 0.08em; margin-bottom: 10px;
+  }
+  #shield-strength {
+    width: 100%; padding: 10px;
+    font-family: 'Press Start 2P', monospace; font-size: 12px; letter-spacing: 0.05em;
+    color: #fff; background-color: #222; border: none; box-shadow: 0 0 0 2px black; outline: none;
+  }
+  #shield-strength:focus { box-shadow: 0 0 0 2px #17cd07; }
   #features .title, #guide .title {
     font-size: 14px; letter-spacing: 0.15em; margin-bottom: 18px;
   }
@@ -176,12 +194,12 @@
     background: rgba(0,0,0,0.35); border: 2px solid rgba(255,255,255,0.35); border-radius: 4px;
   }
   #hotbar .slot {
-    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    width: 88px; height: 44px; display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25);
   }
   #hotbar .slot .initial {
-    font-family: 'Press Start 2P', monospace; font-size: 16px; color: #fff;
-    text-shadow: 0 2px 0 #000;
+    font-family: 'Press Start 2P', monospace; font-size: 10px; color: #fff;
+    text-shadow: 0 2px 0 #000; letter-spacing: 0.05em;
   }
   #hotbar .slot.selected { background: rgba(255,255,255,0.35); border-color: #ffd; box-shadow: 0 0 6px rgba(255,221,0,0.4); }
   #tooltip {
@@ -213,10 +231,17 @@
     background: rgba(0,0,0,0.35); border: 2px solid rgba(255,255,255,0.35); border-radius: 4px;
     padding: 6px 8px;
   }
+  #shield-tint {
+    position: absolute; inset: 0; z-index: 8; pointer-events: none;
+    background: rgba(255, 136, 0, 0.18);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #shield-tint.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div id="view"></div>
+<div id="shield-tint"></div>
 <canvas id="minimap" width="100" height="100"></canvas>
 <div id="score"></div>
 <div id="seed"></div>
@@ -266,6 +291,7 @@
     <div class="key">Mouse Wheel</div><div class="act">select tool</div>
     <div class="key">F</div><div class="act">fly (space up, shift down)</div>
     <div class="key">V</div><div class="act">aerial view</div>
+    <div class="key">SHIELD</div><div class="act">left: apply · right: select corners</div>
   </div>
   <button id="back" class="button" type="button">Back</button>
 </div>
@@ -274,7 +300,8 @@
   <p>1. Accumulate scores in the 2d world.</p>
   <p>2. Use the Spade tool to destroy and build.</p>
   <p>3. Use the Brush tool to add graffiti.</p>
-  <p>4. Use the Graphite tool to link graffiti to sky nodes.</p>
+  <p>4. Use the Weight tool to link graffiti to sky nodes.</p>
+  <p>5. Use the Shield tool to protect an area from destruction.</p>
   <button id="guide-back" class="button" type="button">Back</button>
 </div>
 <div id="graffiti" class="modal hidden">
@@ -290,8 +317,18 @@
   <div class="detail-body"></div>
   <button id="node-details-close" class="button" type="button">Close</button>
 </div>
+<div id="shield-modal" class="modal hidden">
+  <div class="title">SHIELD</div>
+  <label for="shield-strength">Enter Strength</label>
+  <input id="shield-strength" type="number" min="1" step="1" value="10" autocomplete="off">
+  <p>(strength 1 = 5 points)</p>
+  <div class="btn-row">
+    <button id="shield-apply" class="button" type="button">Apply</button>
+    <button id="shield-cancel" class="button" type="button">Cancel</button>
+  </div>
+</div>
 <div id="graphite" class="modal hidden">
-  <div class="title">GRAPHITE — LINK GRAFFITI</div>
+  <div class="title">WEIGHT — LINK GRAFFITI</div>
   <p id="graphite-graffiti"></p>
   <div id="graphite-list"></div>
   <p id="graphite-desc" class="hidden">1 weight = 5 points</p>

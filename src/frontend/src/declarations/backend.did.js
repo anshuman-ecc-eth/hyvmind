@@ -286,6 +286,16 @@ export const VoxelGraffiti = IDL.Record({
     })
   ),
 });
+export const VoxelShield = IDL.Record({
+  'hp' : IDL.Nat,
+  'id' : IDL.Text,
+  'x0' : IDL.Nat,
+  'x1' : IDL.Nat,
+  'y0' : IDL.Nat,
+  'y1' : IDL.Nat,
+  'z0' : IDL.Nat,
+  'z1' : IDL.Nat,
+});
 export const HttpRequest = IDL.Record({
   'url' : IDL.Text,
   'method' : IDL.Text,
@@ -483,6 +493,7 @@ export const idlService = IDL.Service({
                 'nodeId' : IDL.Text,
               })
             ),
+            'shields' : IDL.Vec(VoxelShield),
           })
         ),
       ],
@@ -524,6 +535,8 @@ export const idlService = IDL.Service({
         IDL.Vec(VoxelGraffiti),
         IDL.Vec(IDL.Text),
         IDL.Vec(VoxelWeightChange),
+        IDL.Vec(VoxelShield),
+        IDL.Vec(IDL.Text),
       ],
       [IDL.Bool],
       [],
@@ -841,6 +854,16 @@ export const idlFactory = ({ IDL }) => {
       })
     ),
   });
+  const VoxelShield = IDL.Record({
+    'hp' : IDL.Nat,
+    'id' : IDL.Text,
+    'x0' : IDL.Nat,
+    'x1' : IDL.Nat,
+    'y0' : IDL.Nat,
+    'y1' : IDL.Nat,
+    'z0' : IDL.Nat,
+    'z1' : IDL.Nat,
+  });
   const HttpRequest = IDL.Record({
     'url' : IDL.Text,
     'method' : IDL.Text,
@@ -1050,6 +1073,7 @@ export const idlFactory = ({ IDL }) => {
                   'nodeId' : IDL.Text,
                 })
               ),
+              'shields' : IDL.Vec(VoxelShield),
             })
           ),
         ],
@@ -1091,6 +1115,8 @@ export const idlFactory = ({ IDL }) => {
           IDL.Vec(VoxelGraffiti),
           IDL.Vec(IDL.Text),
           IDL.Vec(VoxelWeightChange),
+          IDL.Vec(VoxelShield),
+          IDL.Vec(IDL.Text),
         ],
         [IDL.Bool],
         [],

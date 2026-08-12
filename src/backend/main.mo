@@ -135,6 +135,20 @@ actor {
     delta : Int;
   };
 
+  // Protective boxes over blocks. While hp > 0, blocks inside the box are
+  // shielded: spade hits the shield (hp--) instead of the block, and build /
+  // new graffiti / weight-subtract are blocked. hp = points invested / 5.
+  type VoxelShield = {
+    id : Text;
+    x0 : Nat;
+    y0 : Nat;
+    z0 : Nat;
+    x1 : Nat;
+    y1 : Nat;
+    z1 : Nat;
+    hp : Nat;
+  };
+
   type VoxelNodeWeight = {
     nodeId : Text;
     weight : Nat;
@@ -560,6 +574,10 @@ actor {
   // Kept in a separate map to avoid a stable-type change on VoxelWorldEdits.
   let VOXEL_WEIGHT_SEP : Text = Text.fromChar(Char.fromNat32(1));
   var voxelWorldWeights = Map.empty<Text, Map.Map<Text, Nat>>();
+
+  // Protective shields (world name -> shieldId -> shield). Also a separate map
+  // so the VoxelWorldEdits/VoxelWorldWeights stable types stay unchanged.
+  var voxelWorldShields = Map.empty<Text, Map.Map<Text, VoxelShield>>();
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
@@ -3857,6 +3875,8 @@ actor {
     graffitiAdds : [VoxelGraffiti],
     graffitiRemoves : [Text],
     weightChanges : [VoxelWeightChange],
+    shieldAdds : [VoxelShield],
+    shieldRemoves : [Text],
   ) : async Bool {
     let current = switch (voxelWorldEdits.get(name)) {
       case (?w) { w };
@@ -3911,6 +3931,26 @@ actor {
     } else {
       voxelWorldWeights.remove(name);
     };
+
+    // Protective shields (world name -> shieldId -> shield).
+    let currentShields = switch (voxelWorldShields.get(name)) {
+      case (?w) { w };
+      case (null) { Map.empty<Text, VoxelShield>() };
+    };
+    for (s in shieldAdds.vals()) {
+      currentShields.add(s.id, s);
+    };
+    for (id in shieldRemoves.vals()) {
+      currentShields.remove(id);
+    };
+    if (currentShields.size() > 200) {
+      return false;
+    };
+    if (currentShields.size() > 0) {
+      voxelWorldShields.add(name, currentShields);
+    } else {
+      voxelWorldShields.remove(name);
+    };
     true
   };
 
@@ -3919,6 +3959,7 @@ actor {
     blockEdits : [VoxelBlockEdit];
     graffiti : [VoxelGraffiti];
     weights : [{ graffitiId : Text; nodeId : Text; weight : Nat }];
+    shields : [VoxelShield];
   } {
     switch (voxelWorldEdits.get(name)) {
       case (null) { null };
@@ -3949,10 +3990,20 @@ actor {
             };
           };
         };
+        let shields = List.empty<VoxelShield>();
+        switch (voxelWorldShields.get(name)) {
+          case (null) {};
+          case (?sm) {
+            for ((_, s) in sm.entries()) {
+              shields.add(s);
+            };
+          };
+        };
         ?{
           blockEdits = parsed.toArray();
           graffiti = w.graffiti.values().toArray();
           weights = weights.toArray();
+          shields = shields.toArray();
         }
       };
     };

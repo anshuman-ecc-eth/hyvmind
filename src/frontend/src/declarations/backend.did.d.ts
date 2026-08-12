@@ -325,6 +325,16 @@ export interface VoxelGraffiti {
     { 'x' : bigint, 'y' : bigint, 'z' : bigint, 'face' : Array<bigint> }
   >,
 }
+export interface VoxelShield {
+  'hp' : bigint,
+  'id' : string,
+  'x0' : bigint,
+  'x1' : bigint,
+  'y0' : bigint,
+  'y1' : bigint,
+  'z0' : bigint,
+  'z1' : bigint,
+}
 export interface VoxelWeightChange {
   'graffitiId' : string,
   'nodeId' : string,
@@ -427,6 +437,7 @@ export interface _SERVICE {
         'weights' : Array<
           { 'weight' : bigint, 'graffitiId' : string, 'nodeId' : string }
         >,
+        'shields' : Array<VoxelShield>,
       }
     ]
   >,
@@ -467,6 +478,8 @@ export interface _SERVICE {
       Array<VoxelGraffiti>,
       Array<string>,
       Array<VoxelWeightChange>,
+      Array<VoxelShield>,
+      Array<string>,
     ],
     boolean
   >,

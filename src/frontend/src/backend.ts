@@ -308,6 +308,16 @@ export interface VoxelWeightChange {
     nodeId: string;
     delta: bigint;
 }
+export interface VoxelShield {
+    hp: bigint;
+    id: string;
+    x0: bigint;
+    x1: bigint;
+    y0: bigint;
+    y1: bigint;
+    z0: bigint;
+    z1: bigint;
+}
 export interface ChatMessage {
     text: string;
     sender: Principal;
@@ -537,6 +547,7 @@ export interface backendInterface {
             graffitiId: string;
             nodeId: string;
         }>;
+        shields: Array<VoxelShield>;
     } | null>;
     /**
      * / Called by the Obsidian plugin to cheaply check if push data is available.
@@ -567,7 +578,7 @@ export interface backendInterface {
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
-    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>): Promise<boolean>;
+    saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>, shieldAdds: Array<VoxelShield>, shieldRemoves: Array<string>): Promise<boolean>;
     sendMessage(channelId: string, text: string): Promise<{
         __kind__: "ok";
         ok: null;
@@ -602,7 +613,7 @@ export interface backendInterface {
         err: string;
     }>;
 }
-import type { AttributeChange as _AttributeChange, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, ContributionView as _ContributionView, CreditedContribution as _CreditedContribution, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, ForumPostDetail as _ForumPostDetail, ForumPostSummary as _ForumPostSummary, ForumReplyDetail as _ForumReplyDetail, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SaveResult as _SaveResult, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, TutorialQuestion as _TutorialQuestion, UserProfile as _UserProfile, UserRole as _UserRole, VoxelBlockEdit as _VoxelBlockEdit, VoxelGraffiti as _VoxelGraffiti, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
+import type { AttributeChange as _AttributeChange, BuzzLeaderboardEntry as _BuzzLeaderboardEntry, BuzzScore as _BuzzScore, ChatChannelSummary as _ChatChannelSummary, ChatMessage as _ChatMessage, ContributionView as _ContributionView, CreditedContribution as _CreditedContribution, Curation as _Curation, Directionality as _Directionality, EdgeOperation as _EdgeOperation, ExtensionEntry as _ExtensionEntry, ForumPostDetail as _ForumPostDetail, ForumPostSummary as _ForumPostSummary, ForumReplyDetail as _ForumReplyDetail, GraphData as _GraphData, GraphEdge as _GraphEdge, GraphNode as _GraphNode, InterpretationToken as _InterpretationToken, LawToken as _LawToken, Location as _Location, NodeId as _NodeId, NodeOperation as _NodeOperation, PublishCommitResult as _PublishCommitResult, PublishPreviewResult as _PublishPreviewResult, PublishSourceGraphInput as _PublishSourceGraphInput, PublishedSourceGraphMeta as _PublishedSourceGraphMeta, SaveResult as _SaveResult, SourceGraphEdgeInput as _SourceGraphEdgeInput, SourceGraphNodeInput as _SourceGraphNodeInput, SourceRef as _SourceRef, Swarm as _Swarm, Tag as _Tag, Time as _Time, Timestamps as _Timestamps, TutorialQuestion as _TutorialQuestion, UserProfile as _UserProfile, UserRole as _UserRole, VoxelBlockEdit as _VoxelBlockEdit, VoxelGraffiti as _VoxelGraffiti, VoxelShield as _VoxelShield, WeightedAttribute as _WeightedAttribute } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControl(): Promise<void> {
@@ -1199,6 +1210,7 @@ export class Backend implements backendInterface {
             graffitiId: string;
             nodeId: string;
         }>;
+        shields: Array<VoxelShield>;
     } | null> {
         if (this.processError) {
             try {
@@ -1457,17 +1469,17 @@ export class Backend implements backendInterface {
             return from_candid_SaveResult_n83(this._uploadFile, this._downloadFile, result);
         }
     }
-    async saveVoxelWorldEdits(arg0: string, arg1: Array<VoxelBlockEdit>, arg2: Array<VoxelGraffiti>, arg3: Array<string>, arg4: Array<VoxelWeightChange>): Promise<boolean> {
+    async saveVoxelWorldEdits(arg0: string, arg1: Array<VoxelBlockEdit>, arg2: Array<VoxelGraffiti>, arg3: Array<string>, arg4: Array<VoxelWeightChange>, arg5: Array<VoxelShield>, arg6: Array<string>): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4);
+                const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4);
+            const result = await this.actor.saveVoxelWorldEdits(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
             return result;
         }
     }
@@ -1738,6 +1750,7 @@ function from_candid_opt_n70(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
             graffitiId: string;
             nodeId: string;
         }>;
+        shields: Array<_VoxelShield>;
     }]): {
     blockEdits: Array<VoxelBlockEdit>;
     graffiti: Array<VoxelGraffiti>;
@@ -1746,6 +1759,7 @@ function from_candid_opt_n70(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         graffitiId: string;
         nodeId: string;
     }>;
+    shields: Array<VoxelShield>;
 } | null {
     return value.length === 0 ? null : value[0];
 }

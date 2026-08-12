@@ -3178,6 +3178,30 @@ export default function TextGameModal({
           nodeId: w.nodeId,
           delta: BigInt(w.delta),
         }));
+        const shieldAdds = (
+          (e.data.shieldAdds as
+            | Array<{
+                id: string;
+                x0: number;
+                y0: number;
+                z0: number;
+                x1: number;
+                y1: number;
+                z1: number;
+                hp: number;
+              }>
+            | undefined) ?? []
+        ).map((m) => ({
+          id: m.id,
+          x0: BigInt(m.x0),
+          y0: BigInt(m.y0),
+          z0: BigInt(m.z0),
+          x1: BigInt(m.x1),
+          y1: BigInt(m.y1),
+          z1: BigInt(m.z1),
+          hp: BigInt(m.hp),
+        }));
+        const shieldRemoves = (e.data.shieldRemoves as string[]) ?? [];
         const isExit = !!e.data.exit;
 
         const doSave = async () => {
@@ -3189,6 +3213,8 @@ export default function TextGameModal({
               graffitiAdds,
               graffitiRemoves,
               weightChanges,
+              shieldAdds,
+              shieldRemoves,
             );
           } catch (err) {
             console.error("Failed to save voxel world:", err);
