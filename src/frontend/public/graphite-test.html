@@ -22,7 +22,7 @@
     const d = e.data;
     if (!d || typeof d !== 'object') return;
     if (d.type === 'hyvmind-terrain-ready') {
-      iframe.contentWindow.postMessage({ type: 'hyvmind-voxel-score', score: 500 }, '*');
+      iframe.contentWindow.postMessage({ type: 'hyvmind-voxel-score', score: 1000 }, '*');
     }
   });
 </script>

@@ -1480,6 +1480,100 @@ document.addEventListener('keydown', (e) => {
 const HOTBAR_BLOCKS = [B.SPADE, B.BRUSH, B.GRAPHITE, B.SHIELD, null, null];
 const SELECTABLE = HOTBAR_BLOCKS.filter((t) => t != null);
 let wheelGap = false;
+// Held-tool "hand" — a 3D billboarded sprite parented to the camera,
+// replicating voxelworld's hand.rs: positioned in view space at (1, -0.85, -1.5),
+// pre-angled (flip X/Y 180°, rotateY −100°, rotateZ −20°), swung by rotating
+// about X (t·−90°) plus a downward dip, exactly like the repo's quad3d path.
+const TOOL_SPRITES = {
+  [B.SPADE]: 'spade',
+  [B.BRUSH]: 'brush',
+  [B.GRAPHITE]: 'weight',
+  [B.SHIELD]: 'shield',
+};
+const HAND_POS = new THREE.Vector3(2.1, -1.5, -1.5);
+const HAND_PITCH_MAX = Math.PI / 2; // 90°
+// Replicate the repo's hand.rs tool chain exactly:
+//   T(HAND_POS) * Rx(item_rot) * T(0,t,0) * Rx180*Ry180 * Ry(-100)*Rz(-90)
+// The swing rotation and its dip translate live between the position and the
+// flip/pose — the bottom end then stays anchored while the top swings.
+const handPivot = new THREE.Object3D();
+handPivot.position.copy(HAND_POS);
+handPivot.rotation.order = 'XYZ';
+const handSwing = new THREE.Object3D();
+handSwing.rotation.order = 'XYZ';
+const handDip = new THREE.Object3D();
+// Flip the sprite so it faces the camera, then tilt it into the held pose.
+const handFlip = new THREE.Object3D();
+handFlip.rotation.order = 'XYZ';
+handFlip.rotation.set(Math.PI, Math.PI, 0);
+const handPose = new THREE.Object3D();
+handPose.rotation.order = 'XYZ';
+handPose.rotation.set(0, THREE.MathUtils.degToRad(-100), THREE.MathUtils.degToRad(-90));
+handPivot.add(handSwing);
+handSwing.add(handDip);
+handDip.add(handFlip);
+handFlip.add(handPose);
+let handMesh = null;
+let handAnim = 0;
+const handTex = {};
+function loadHandTextures(cb) {
+  const loader = new THREE.TextureLoader();
+  let pending = 0;
+  for (const name of Object.values(TOOL_SPRITES)) {
+    pending++;
+    loader.load('/assets/voxel/tools/' + name + '.png', (tex) => {
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.generateMipmaps = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      // Match the repo's raw-GL upload (no Y-flip): the quad's top edge must
+      // sample the PNG's bottom row, or the hand tool renders upside down.
+      tex.flipY = false;
+      handTex[name] = tex;
+      if (--pending === 0) cb();
+    });
+  }
+}
+function initHand() {
+  loadHandTextures(() => {
+    const geo = new THREE.PlaneGeometry(1, 1);
+    const mat = new THREE.MeshBasicMaterial({
+      map: handTex[TOOL_SPRITES[heldBlock]],
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    handMesh = new THREE.Mesh(geo, mat);
+    handPose.add(handMesh);
+    handMesh.scale.setScalar(1.35);
+    handMesh.renderOrder = 999;
+    handMesh.frustumCulled = false;
+    camera.add(handPivot);
+    updateHand();
+  });
+}
+function updateHand() {
+  if (!handMesh) return;
+  const name = TOOL_SPRITES[heldBlock];
+  if (name && handTex[name]) handMesh.material.map = handTex[name];
+}
+function swingHand() {
+  if (handAnim <= 0) handAnim = 0.01; // kick off a fresh 0→1 loop
+}
+// Advance the hand swing timer (0→1→0 triangle) and rotate the hand about X.
+function updateHandSwing(dt) {
+  if (handAnim > 0) {
+    handAnim += dt * 3.0; // 333ms full swing, matching the spade auto-repeat rate
+    if (handAnim >= 1) handAnim = 0;
+  }
+  if (!handSwing) return;
+  const t = handAnim < 0.5 ? handAnim * 2 : (1 - handAnim) * 2;
+  const pitch = t * -HAND_PITCH_MAX * 0.5; // repo's item_rotation: rotateX(t·−90°), halved
+  handSwing.rotation.set(pitch, 0, 0);
+  handDip.position.y = t * 0.35 * 0.5; // repo's translate(0, t, 0) dip, halved
+}
 function selectBlock(t) {
   heldBlock = t;
   if (t === B.SPADE) clearSelection();
@@ -1489,6 +1583,7 @@ function selectBlock(t) {
     const slots = hotbarEl.children;
     for (let i = 0; i < slots.length; i++) slots[i].classList.toggle('selected', HOTBAR_BLOCKS[i] === t);
   }
+  updateHand();
 }
 document.addEventListener('wheel', (e) => {
   if (aerialView) { aerialAlt = Math.max(12, Math.min(230, aerialAlt - e.deltaY * 0.05)); return; }
@@ -1714,12 +1809,12 @@ function doBlockAction(button) {
     //  • build / new graffiti / weight-subtract / new shield are blocked;
     //  • graphite weight-ADD is allowed (proceeds below); brush-RMB select allowed.
     if (heldBlock === B.SPADE) {
-      if (button === 0) { shieldHit(sh); return; }
+      if (button === 0) { swingHand(); shieldHit(sh); return; }
       showToolTip('Shielded'); return;
     }
     if (heldBlock === B.BRUSH) {
       if (button === 0) { showToolTip('Shielded'); return; }
-      if (hit) toggleSelection(hit); // harmless preview selection allowed (solid block only)
+      if (hit) { swingHand(); toggleSelection(hit); } // harmless preview selection allowed (solid block only)
       return;
     }
     if (heldBlock === B.SHIELD) {
@@ -1732,7 +1827,7 @@ function doBlockAction(button) {
   if (heldBlock === B.SPADE) {
     if (button === 0) {
       const armored = armoredGraffitiAt(hit.x, hit.y, hit.z);
-      if (armored) { stripOneWeight(armored); return; }
+      if (armored) { swingHand(); stripOneWeight(armored); return; }
       if (worldScore <= 0) { refuseToolUse(); return; }
       const removed = getBlock(hit.x, hit.y, hit.z);
       spawnCrumb(hit.x, hit.y, hit.z, removed);
@@ -1743,6 +1838,7 @@ function doBlockAction(button) {
       removeGraffitiOn(hit.x, hit.y, hit.z);
       markDirty(hit.x, hit.z);
       paintMinimapColumn(hit.x, hit.z);
+      swingHand();
       deductToolUse();
     } else {
       if (lastRemoved == null) return;
@@ -1756,17 +1852,20 @@ function doBlockAction(button) {
         recordBlockEdit(nx, ny, nz, lastRemoved);
         markDirty(nx, nz);
         paintMinimapColumn(nx, nz);
+        swingHand();
         deductToolUse();
       }
     }
   } else if (heldBlock === B.BRUSH) {
-    if (button === 0) openGraffiti(hit);
-    else toggleSelection(hit);
+    if (button === 0) { swingHand(); openGraffiti(hit); }
+    else { swingHand(); toggleSelection(hit); }
   } else if (heldBlock === B.SHIELD) {
     if (button === 0) {
       if (!shieldCorners.length) { showToolTip('Right mouse click to select top corners.'); return; }
+      swingHand();
       openShieldModal();
     } else {
+      swingHand();
       toggleShieldCorner(hit);
       showToolTip('SHIELD CORNERS: ' + shieldCorners.length + '/4');
     }
@@ -1774,6 +1873,7 @@ function doBlockAction(button) {
     // Graphite — link a graffiti block to a node in the sky tree.
     const g = graffitiAt(hit.x, hit.y, hit.z);
     if (!g) { showToolTip('NO GRAFFITI HERE'); return; }
+    swingHand();
     openGraphite(g, button === 0 ? 'add' : 'subtract');
   }
 }
@@ -1860,6 +1960,7 @@ function animate() {
   updateHighlight();
   updateCrumbs();
   updateShieldTint();
+  updateHandSwing(dt);
 
   fpsCount++;
   if (performance.now() - fpsT0 >= 1000) {
@@ -1952,10 +2053,10 @@ const seed = new URLSearchParams(location.search).get('seed') || 'Indian Constit
 document.getElementById('seed').textContent = seed;
 
 const HOTBAR_NAMES = {
-  [B.SPADE]: 'SPADE',
-  [B.BRUSH]: 'BRUSH',
-  [B.GRAPHITE]: 'WEIGHT',
-  [B.SHIELD]: 'SHIELD',
+  [B.SPADE]: 'Spade',
+  [B.BRUSH]: 'Brush',
+  [B.GRAPHITE]: 'Weight',
+  [B.SHIELD]: 'Shield',
 };
 const HOTBAR_TIPS = {
   [B.SPADE]: 'SPADE\nleft: destroy · right: build',
@@ -2442,6 +2543,7 @@ loadTextures((imgs) => {
   waterMaterial.map = atlasTexture; waterMaterial.needsUpdate = true;
   foliageMaterial.map = atlasTexture; foliageMaterial.needsUpdate = true;
   initHotbar();
+  initHand();
   startGame();
 });
 

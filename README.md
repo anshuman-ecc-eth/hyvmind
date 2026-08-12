@@ -135,5 +135,6 @@ All loaded from Google Fonts.
 | chessboard.js | Chris Oakman ([chessboardjs.com](https://chessboardjs.com)) | MIT |
 | three.js | three.js contributors ([GitHub](https://github.com/mrdoob/three.js)) | MIT |
 | `assets/voxel/textures/` — voxel world block textures | [vyse12138/minecraft-threejs](https://github.com/vyse12138/minecraft-threejs) | MIT |
+| `assets/voxel/tools-repo/` — voxel world tool icon sprites (30, from items.png) | Nullptr Error — [JLi69/voxelworld](https://github.com/JLi69/voxelworld) | GPL-3.0 |
 | @dfinity/auth-client / @dfinity/principal | DFINITY Stiftung ([GitHub](https://github.com/dfinity/agent-js)) | Apache-2.0 |
 | @icp-sdk/core | DFINITY Stiftung ([GitHub](https://github.com/dfinity/icp-core)) | Apache-2.0 |
