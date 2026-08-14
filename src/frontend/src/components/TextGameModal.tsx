@@ -3892,7 +3892,7 @@ export default function TextGameModal({
                     import.meta.env.DEV &&
                     unsubmittedScoreRef.current === 0
                   ) {
-                    setUnsubmittedScore(100);
+                    setUnsubmittedScore(1000);
                   }
                   const win = hyvmindIframeRef.current?.contentWindow;
                   if (win) {

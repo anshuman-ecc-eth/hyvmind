@@ -260,12 +260,10 @@
 </div>
 <div id="settings" class="modal hidden">
   <div class="title">Settings</div>
-  <p id="fov">Field of View: 100</p>
   <div class="slider-row">
     <label>Field of View</label>
     <input type="range" id="fov-input" min="60" max="100" value="100" step="1">
   </div>
-  <p id="distance">Render Distance: 0</p>
   <div class="slider-row">
     <label>Distance (fog)</label>
     <input type="range" id="distance-input" min="0" max="8" value="0" step="1">
@@ -291,7 +289,7 @@
     <div class="key">Mouse Wheel</div><div class="act">select tool</div>
     <div class="key">F</div><div class="act">fly (space up, shift down)</div>
     <div class="key">V</div><div class="act">aerial view</div>
-    <div class="key">SHIELD</div><div class="act">left: apply · right: select corners</div>
+    <div class="key">Shield</div><div class="act">left: apply · right: select corners</div>
   </div>
   <button id="back" class="button" type="button">Back</button>
 </div>
@@ -318,8 +316,8 @@
   <button id="node-details-close" class="button" type="button">Close</button>
 </div>
 <div id="shield-modal" class="modal hidden">
-  <div class="title">SHIELD</div>
-  <label for="shield-strength">Enter Strength</label>
+  <div class="title">Shield</div>
+  <label for="shield-strength">Enter strength</label>
   <input id="shield-strength" type="number" min="1" step="1" value="10" autocomplete="off">
   <p>(strength 1 = 5 points)</p>
   <div class="btn-row">
@@ -328,12 +326,12 @@
   </div>
 </div>
 <div id="graphite" class="modal hidden">
-  <div class="title">WEIGHT — LINK GRAFFITI</div>
+  <div class="title">Weight — link graffiti</div>
   <p id="graphite-graffiti"></p>
   <div id="graphite-list"></div>
   <p id="graphite-desc" class="hidden">1 weight = 5 points</p>
   <div class="btn-row">
-    <button id="graphite-action" class="button hidden" type="button">Add Weight</button>
+    <button id="graphite-action" class="button hidden" type="button">Add weight</button>
     <button id="graphite-cancel" class="button" type="button">Done</button>
   </div>
 </div>
