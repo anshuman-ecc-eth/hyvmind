@@ -143,19 +143,19 @@ export default function Header({ onOpenTutorial }: HeaderProps) {
                   Whitepaper
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setCollaboratorsOpen(true)}
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                  data-ocid="header.collaborators.button"
-                >
-                  Collabs
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() =>
                     window.open("https://www.youtube.com/@y-over-x", "_blank")
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
-                  Videos
+                  Monologs
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setCollaboratorsOpen(true)}
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.collaborators.button"
+                >
+                  Collabs
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
