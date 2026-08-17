@@ -16,9 +16,10 @@ import CollaboratorsView from "../pages/CollaboratorsView";
 
 interface HeaderProps {
   onOpenTutorial: () => void;
+  onOpenBlog: () => void;
 }
 
-export default function Header({ onOpenTutorial }: HeaderProps) {
+export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -167,6 +168,13 @@ export default function Header({ onOpenTutorial }: HeaderProps) {
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   Code
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={onOpenBlog}
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.blog.button"
+                >
+                  Blog
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

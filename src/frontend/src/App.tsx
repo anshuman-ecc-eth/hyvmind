@@ -21,6 +21,7 @@ import {
   getSavedFontSize,
 } from "./lib/fontSettings";
 import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
+import BlogsView from "./pages/BlogsView";
 import EditorView from "./pages/EditorView";
 import ForumView from "./pages/ForumView";
 import PublicGraphView from "./pages/PublicGraphView";
@@ -33,6 +34,7 @@ function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
   const [gameComplete, setGameComplete] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [blogOpen, setBlogOpen] = useState(false);
   const isAuthenticated = !!identity;
 
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
@@ -123,7 +125,10 @@ function AppShell() {
   if (!isAuthenticated) {
     return (
       <div className="flex h-[100dvh] flex-col bg-background">
-        <Header onOpenTutorial={() => setTutorialOpen(true)} />
+        <Header
+          onOpenTutorial={() => setTutorialOpen(true)}
+          onOpenBlog={() => setBlogOpen(true)}
+        />
         <main className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full min-h-0 relative">
             {/* Graph loads in background, hidden until game completes */}
@@ -150,6 +155,7 @@ function AppShell() {
         {tutorialOpen && (
           <TutorialView onClose={() => setTutorialOpen(false)} />
         )}
+        {blogOpen && <BlogsView onClose={() => setBlogOpen(false)} />}
         <Toaster />
       </div>
     );
@@ -165,7 +171,10 @@ function AppShell() {
         isAdmin={!!isAdmin}
       />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header onOpenTutorial={() => setTutorialOpen(true)} />
+        <Header
+          onOpenTutorial={() => setTutorialOpen(true)}
+          onOpenBlog={() => setBlogOpen(true)}
+        />
         <main className="flex-1 overflow-hidden relative">
           <div
             style={{
@@ -223,6 +232,7 @@ function AppShell() {
 
       {showProfileSetup && <ProfileSetupModal />}
       {tutorialOpen && <TutorialView onClose={() => setTutorialOpen(false)} />}
+      {blogOpen && <BlogsView onClose={() => setBlogOpen(false)} />}
       <Toaster />
 
       {/* CommandPalette removed */}
