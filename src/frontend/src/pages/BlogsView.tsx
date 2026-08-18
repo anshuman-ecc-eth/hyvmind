@@ -1,8 +1,12 @@
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Actor, AnonymousIdentity, HttpAgent } from "@icp-sdk/core/agent";
+import { format } from "date-fns";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { BlogPostMeta } from "../backend";
 import AppPageHeader from "../components/AppPageHeader";
 import { loadConfig } from "../config";
 import { type _SERVICE, idlFactory } from "../declarations/backend.did";
+import { useBackendActor, useIsCallerAdmin } from "../hooks/useQueries";
 
 interface BlogPost {
   id: string;
@@ -36,6 +40,14 @@ function bytesEqualHex(a: Uint8Array, hex: string): boolean {
   return true;
 }
 
+function formatBlogDate(d: Date): string {
+  return format(d, "d MMM, yy");
+}
+
+async function readBytesFile(file: File): Promise<Uint8Array> {
+  return new Uint8Array(await file.arrayBuffer());
+}
+
 export default function BlogsView({ onClose }: BlogsViewProps) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +59,24 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
   const [articleHtml, setArticleHtml] = useState("");
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
+
+  // Admin authoring state
+  const { actor: adminActor } = useBackendActor();
+  const { data: isAdmin } = useIsCallerAdmin();
+  const { identity } = useInternetIdentity();
+  const showAdmin = !!identity && !!isAdmin && !!adminActor;
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [postId, setPostId] = useState("");
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [articleFile, setArticleFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
+  const [adminSuccess, setAdminSuccess] = useState<string | null>(null);
+  const articleInputRef = useRef<HTMLInputElement | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
 
   const actorRef = useRef<_SERVICE | null>(null);
   const digestRef = useRef<Uint8Array | null>(null);
@@ -144,6 +174,107 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
     digestRef.current = config.hash;
     const list = actor ? await actor.getBlogPosts(config.hash) : [];
     setPosts(list.map(toBlogPost));
+  };
+
+  const refreshPosts = useCallback(async () => {
+    const actor = actorRef.current;
+    if (!actor) return;
+    const digest = digestRef.current ?? new Uint8Array();
+    const list = await actor.getBlogPosts(digest);
+    setPosts(list.map(toBlogPost));
+  }, []);
+
+  const resetAdminForm = () => {
+    setPostId("");
+    setTitle("");
+    setAuthor("");
+    setArticleFile(null);
+    setBannerFile(null);
+    setEditingPost(null);
+    setAdminError(null);
+    setAdminSuccess(null);
+    if (articleInputRef.current) articleInputRef.current.value = "";
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
+  const startEdit = (post: BlogPost) => {
+    setEditingPost(post);
+    setPostId(post.id);
+    setTitle(post.title);
+    setAuthor(post.author);
+    setArticleFile(null);
+    setBannerFile(null);
+    setAdminError(null);
+    setAdminSuccess(null);
+    setAdminOpen(true);
+  };
+
+  const handleSavePost = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!adminActor) return;
+    if (!postId.trim() || !title.trim()) {
+      setAdminError("id and title are required.");
+      return;
+    }
+    if (!editingPost && !articleFile) {
+      setAdminError("Select an article.html file.");
+      return;
+    }
+    setSubmitting(true);
+    setAdminError(null);
+    setAdminSuccess(null);
+    try {
+      const today = formatBlogDate(new Date());
+      const meta: BlogPostMeta = {
+        id: postId.trim(),
+        title: title.trim(),
+        author: author.trim(),
+        published: editingPost ? editingPost.published : today,
+        lastEdited: today,
+      };
+      const html = articleFile
+        ? await readBytesFile(articleFile)
+        : new Uint8Array();
+      const banner = bannerFile ? await readBytesFile(bannerFile) : null;
+      const result = await adminActor.setBlogPost(meta, html, banner);
+      if (result.__kind__ === "ok") {
+        setAdminSuccess(editingPost ? "Post updated." : "Post published.");
+        setAdminOpen(false);
+        resetAdminForm();
+        await refreshPosts();
+      } else {
+        setAdminError(result.err || "Failed to save post.");
+      }
+    } catch (e) {
+      setAdminError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePost = async (post: BlogPost) => {
+    if (!adminActor) return;
+    if (!window.confirm(`Delete "${post.title}"?`)) return;
+    setAdminError(null);
+    setAdminSuccess(null);
+    try {
+      const meta: BlogPostMeta = {
+        id: post.id,
+        title: post.title,
+        author: post.author,
+        published: post.published,
+        lastEdited: post.lastEdited,
+      };
+      const result = await adminActor.setBlogPost(meta, new Uint8Array(), null);
+      if (result.__kind__ === "ok") {
+        setAdminSuccess("Post deleted.");
+        await refreshPosts();
+      } else {
+        setAdminError(result.err || "Failed to delete post.");
+      }
+    } catch (e) {
+      setAdminError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const openPost = async (post: BlogPost) => {
@@ -311,6 +442,157 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
       <AppPageHeader title="Blog" onClose={onClose} />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl px-6">
+          {showAdmin && (
+            <div className="border-b border-dashed border-border py-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">
+                  Admin
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminOpen((v) => !v);
+                    setAdminError(null);
+                    setAdminSuccess(null);
+                    if (!adminOpen) resetAdminForm();
+                  }}
+                  data-ocid="blog.admin.toggle"
+                  className="cursor-pointer rounded-md border border-dashed border-border px-3 py-1.5 font-mono text-xs text-foreground transition-colors hover:bg-accent"
+                >
+                  {adminOpen ? "Close" : "New post"}
+                </button>
+              </div>
+
+              {adminSuccess && (
+                <p className="mb-2 font-mono text-xs text-primary">
+                  {adminSuccess}
+                </p>
+              )}
+
+              {adminOpen && (
+                <form
+                  onSubmit={handleSavePost}
+                  className="flex flex-col gap-3 rounded-md border border-dashed border-border p-4"
+                >
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="blog-id"
+                      className="font-mono text-xs text-muted-foreground"
+                    >
+                      id (url slug)
+                    </label>
+                    <input
+                      id="blog-id"
+                      value={postId}
+                      onChange={(e) => setPostId(e.target.value)}
+                      placeholder="e.g. my-post-title"
+                      data-ocid="blog.admin.id"
+                      className="w-full rounded-md border border-dashed border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-ring/50 focus:ring-[3px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="blog-title"
+                      className="font-mono text-xs text-muted-foreground"
+                    >
+                      title
+                    </label>
+                    <input
+                      id="blog-title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Post title"
+                      data-ocid="blog.admin.title"
+                      className="w-full rounded-md border border-dashed border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-ring/50 focus:ring-[3px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="blog-author"
+                      className="font-mono text-xs text-muted-foreground"
+                    >
+                      author
+                    </label>
+                    <input
+                      id="blog-author"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      placeholder="Author name"
+                      data-ocid="blog.admin.author"
+                      className="w-full rounded-md border border-dashed border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-ring/50 focus:ring-[3px]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      article.html
+                    </span>
+                    <input
+                      ref={articleInputRef}
+                      type="file"
+                      accept=".html,text/html"
+                      onChange={(e) => {
+                        setArticleFile(e.target.files?.[0] ?? null);
+                        setAdminError(null);
+                      }}
+                      data-ocid="blog.admin.article"
+                      aria-label="Article HTML file"
+                      className="font-mono text-xs text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-dashed file:border-border file:bg-transparent file:px-3 file:py-1.5 file:font-mono file:text-xs file:text-foreground"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      banner.png (optional)
+                    </span>
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept=".png,image/png"
+                      onChange={(e) => {
+                        setBannerFile(e.target.files?.[0] ?? null);
+                        setAdminError(null);
+                      }}
+                      data-ocid="blog.admin.banner"
+                      aria-label="Banner image file"
+                      className="font-mono text-xs text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-dashed file:border-border file:bg-transparent file:px-3 file:py-1.5 file:font-mono file:text-xs file:text-foreground"
+                    />
+                  </div>
+                  {adminError && (
+                    <p
+                      className="font-mono text-xs text-destructive"
+                      role="alert"
+                    >
+                      {adminError}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      data-ocid="blog.admin.save"
+                      className="cursor-pointer rounded-md border border-dashed border-border px-4 py-2 font-mono text-xs text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {submitting
+                        ? "Saving.."
+                        : editingPost
+                          ? "Update"
+                          : "Publish"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminOpen(false);
+                        resetAdminForm();
+                      }}
+                      className="cursor-pointer rounded-md border border-dashed border-border px-4 py-2 font-mono text-xs text-muted-foreground transition-colors hover:bg-accent"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
           {posts.length === 0 ? (
             <p className="py-8 text-center font-mono text-xs text-muted-foreground">
               No posts yet.
@@ -318,26 +600,51 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
           ) : (
             <div>
               {posts.map((post) => (
-                <button
+                <div
                   key={post.id}
-                  type="button"
-                  onClick={() => openPost(post)}
-                  className="flex w-full cursor-pointer flex-col gap-1 border-b border-dashed border-border py-4 text-left transition-colors hover:bg-accent"
+                  className="group flex w-full items-start justify-between gap-2 border-b border-dashed border-border py-4 text-left"
                 >
-                  <div className="text-sm font-medium text-foreground">
-                    {post.title}
-                  </div>
-                  <div className="font-mono text-xs text-muted-foreground">
-                    {post.author}
-                    <span className="mx-2">·</span>
-                    {post.published}
-                    {post.lastEdited !== post.published && (
-                      <>
-                        <span className="mx-2">·</span>edited {post.lastEdited}
-                      </>
-                    )}
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => openPost(post)}
+                    className="flex flex-1 cursor-pointer flex-col gap-1"
+                  >
+                    <div className="text-sm font-medium text-foreground">
+                      {post.title}
+                    </div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {post.author}
+                      <span className="mx-2">·</span>
+                      {post.published}
+                      {post.lastEdited !== post.published && (
+                        <>
+                          <span className="mx-2">·</span>edited{" "}
+                          {post.lastEdited}
+                        </>
+                      )}
+                    </div>
+                  </button>
+                  {showAdmin && (
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(post)}
+                        data-ocid="blog.admin.edit"
+                        className="cursor-pointer rounded-md border border-dashed border-border px-2 py-1 font-mono text-xs text-muted-foreground transition-colors hover:bg-accent"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePost(post)}
+                        data-ocid="blog.admin.delete"
+                        className="cursor-pointer rounded-md border border-dashed border-destructive/60 px-2 py-1 font-mono text-xs text-destructive transition-colors hover:bg-accent"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
