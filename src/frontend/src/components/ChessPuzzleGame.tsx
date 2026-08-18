@@ -14,6 +14,8 @@ if (typeof window !== "undefined") {
 // after jQuery is loaded. We import jquery first as a side effect, then load
 // the chessboard script dynamically so jQuery is on window when it runs.
 
+const SOLVE_BONUS = 100;
+
 interface ChessPuzzleGameProps {
   onComplete: (score: number) => void;
   onExit: () => void;
@@ -238,8 +240,8 @@ export default function ChessPuzzleGame({
       if (playerSolution.length === 1) {
         // Puzzle complete
         if (timerRef.current) clearInterval(timerRef.current);
-        setScore((s) => s + timeLeft);
-        setFeedback(`+${timeLeft}!`);
+        setScore((s) => s + timeLeft + SOLVE_BONUS);
+        setFeedback(`+${timeLeft + SOLVE_BONUS}!`);
         setTimeout(() => {
           setPuzzleNumber((n) => n + 1);
           setGameOver(false);

@@ -5,6 +5,7 @@ import { VALID_GUESSES } from "./wordLists/validGuesses";
 const MAX_GUESSES = 6;
 const WORD_LENGTH = 5;
 const TIMER_START = 120;
+const SOLVE_BONUS = 100;
 
 // Stable key arrays for the fixed-size grid (avoids noArrayIndexKey lint rule)
 const ROW_KEYS = ["r0", "r1", "r2", "r3", "r4", "r5"] as const;
@@ -132,7 +133,7 @@ export default function WordlePuzzleGame({
     if (g === targetWord) {
       // Correct!
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = timeLeft;
+      const pts = timeLeft + SOLVE_BONUS;
       setScore((s) => s + pts);
       setSolved(true);
       setFeedback(`+${pts}!`);
