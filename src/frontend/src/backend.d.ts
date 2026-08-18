@@ -150,6 +150,20 @@ export interface BuzzLeaderboardEntry {
     score: BuzzScore;
     profileName?: string;
 }
+export interface BlogPostMeta {
+    id: string;
+    lastEdited: string;
+    title: string;
+    published: string;
+    author: string;
+}
+export interface BlogPasswordConfig {
+    ciphertext: Uint8Array;
+    hash: Uint8Array;
+    salt: Uint8Array;
+    updatedAt: bigint;
+    updatedBy: Principal;
+}
 export interface AttributeChange {
     key: string;
     newValues: Array<string>;
@@ -215,6 +229,10 @@ export type PublishCommitResult = {
         nodeMappings: Array<[string, NodeId]>;
     };
 };
+export interface BlogPostContent {
+    html: Uint8Array;
+    banner?: Uint8Array;
+}
 export interface TutorialQuestion {
     contact?: string;
     question: string;
@@ -397,6 +415,13 @@ export interface backendInterface {
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    clearBlogPassword(): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
     createCuration(name: string, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createForumPost(title: string, content: string, tags: Array<string>): Promise<{
@@ -409,6 +434,13 @@ export interface backendInterface {
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    deriveBlogPasswordVetKey(transportPublicKey: Uint8Array): Promise<{
+        __kind__: "ok";
+        ok: Uint8Array;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     ensureContributionsMigrated(publishedGraphId: string): Promise<void>;
     generateApiKey(): Promise<string>;
     generateBuzzSecret(score: bigint): Promise<string>;
@@ -420,6 +452,10 @@ export interface backendInterface {
      */
     getAndClearPendingVaultPush(): Promise<string | null>;
     getArchivedNodeIds(): Promise<Array<NodeId>>;
+    getBlogPasswordConfig(): Promise<BlogPasswordConfig | null>;
+    getBlogPasswordPublicKey(): Promise<Uint8Array>;
+    getBlogPostContent(postId: string, passwordDigest: Uint8Array): Promise<BlogPostContent | null>;
+    getBlogPosts(passwordDigest: Uint8Array): Promise<Array<BlogPostMeta>>;
     getBoundPluginKeys(): Promise<Array<Principal>>;
     getBuzzLeaderboard(topN: bigint): Promise<Array<BuzzLeaderboardEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -497,6 +533,20 @@ export interface backendInterface {
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
     saveVoxelWorldEdits(name: string, blockEdits: Array<VoxelBlockEdit>, graffitiAdds: Array<VoxelGraffiti>, graffitiRemoves: Array<string>, weightChanges: Array<VoxelWeightChange>, shieldAdds: Array<VoxelShield>, shieldRemoves: Array<string>): Promise<boolean>;
     sendMessage(channelId: string, text: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    setBlogPassword(salt: Uint8Array, hash: Uint8Array, ciphertext: Uint8Array): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    setBlogPost(meta: BlogPostMeta, html: Uint8Array, banner: Uint8Array | null): Promise<{
         __kind__: "ok";
         ok: null;
     } | {

@@ -36,8 +36,13 @@ export function parseCommand(input: string): ParsedCommand {
   const command = commandMatch[1];
   const rest = trimmed.slice(commandMatch[0].length);
 
-  // Special handling for /find, /debug, and /buzz commands (take a simple argument, not key=value)
-  if (command === "find" || command === "debug" || command === "buzz") {
+  // Special handling for /find, /debug, /buzz, and /setpw commands (take a simple argument, not key=value)
+  if (
+    command === "find" ||
+    command === "debug" ||
+    command === "buzz" ||
+    command === "setpw"
+  ) {
     return {
       success: true,
       command,

@@ -87,6 +87,24 @@ export const PublishedSourceGraphMeta = IDL.Record({
   'nodeCount' : IDL.Nat,
   'terrainParams' : IDL.Opt(IDL.Text),
 });
+export const BlogPasswordConfig = IDL.Record({
+  'ciphertext' : IDL.Vec(IDL.Nat8),
+  'hash' : IDL.Vec(IDL.Nat8),
+  'salt' : IDL.Vec(IDL.Nat8),
+  'updatedAt' : IDL.Nat64,
+  'updatedBy' : IDL.Principal,
+});
+export const BlogPostContent = IDL.Record({
+  'html' : IDL.Vec(IDL.Nat8),
+  'banner' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+});
+export const BlogPostMeta = IDL.Record({
+  'id' : IDL.Text,
+  'lastEdited' : IDL.Text,
+  'title' : IDL.Text,
+  'published' : IDL.Text,
+  'author' : IDL.Text,
+});
 export const BuzzScore = IDL.Int;
 export const BuzzLeaderboardEntry = IDL.Record({
   'principal' : IDL.Principal,
@@ -373,6 +391,11 @@ export const idlService = IDL.Service({
   'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
   'archiveNode' : IDL.Func([NodeId], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'clearBlogPassword' : IDL.Func(
+      [],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'commitPublishSourceGraph' : IDL.Func(
       [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
       [PublishCommitResult],
@@ -403,6 +426,11 @@ export const idlService = IDL.Service({
       [NodeId],
       [],
     ),
+  'deriveBlogPasswordVetKey' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Variant({ 'ok' : IDL.Vec(IDL.Nat8), 'err' : IDL.Text })],
+      [],
+    ),
   'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
   'generateApiKey' : IDL.Func([], [IDL.Text], []),
   'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
@@ -414,6 +442,18 @@ export const idlService = IDL.Service({
     ),
   'getAndClearPendingVaultPush' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
   'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+  'getBlogPasswordConfig' : IDL.Func(
+      [],
+      [IDL.Opt(BlogPasswordConfig)],
+      ['query'],
+    ),
+  'getBlogPasswordPublicKey' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+  'getBlogPostContent' : IDL.Func(
+      [IDL.Text, IDL.Vec(IDL.Nat8)],
+      [IDL.Opt(BlogPostContent)],
+      [],
+    ),
+  'getBlogPosts' : IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Vec(BlogPostMeta)], []),
   'getBoundPluginKeys' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getBuzzLeaderboard' : IDL.Func(
       [IDL.Nat],
@@ -546,6 +586,16 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
       [],
     ),
+  'setBlogPassword' : IDL.Func(
+      [IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8)],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
+  'setBlogPost' : IDL.Func(
+      [BlogPostMeta, IDL.Vec(IDL.Nat8), IDL.Opt(IDL.Vec(IDL.Nat8))],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'setTelegramConfig' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
@@ -654,6 +704,24 @@ export const idlFactory = ({ IDL }) => {
     'hierarchyEdgeCount' : IDL.Nat,
     'nodeCount' : IDL.Nat,
     'terrainParams' : IDL.Opt(IDL.Text),
+  });
+  const BlogPasswordConfig = IDL.Record({
+    'ciphertext' : IDL.Vec(IDL.Nat8),
+    'hash' : IDL.Vec(IDL.Nat8),
+    'salt' : IDL.Vec(IDL.Nat8),
+    'updatedAt' : IDL.Nat64,
+    'updatedBy' : IDL.Principal,
+  });
+  const BlogPostContent = IDL.Record({
+    'html' : IDL.Vec(IDL.Nat8),
+    'banner' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+  });
+  const BlogPostMeta = IDL.Record({
+    'id' : IDL.Text,
+    'lastEdited' : IDL.Text,
+    'title' : IDL.Text,
+    'published' : IDL.Text,
+    'author' : IDL.Text,
   });
   const BuzzScore = IDL.Int;
   const BuzzLeaderboardEntry = IDL.Record({
@@ -941,6 +1009,11 @@ export const idlFactory = ({ IDL }) => {
     'approvePluginBinding' : IDL.Func([IDL.Principal], [], []),
     'archiveNode' : IDL.Func([NodeId], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'clearBlogPassword' : IDL.Func(
+        [],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
     'commitPublishSourceGraph' : IDL.Func(
         [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
         [PublishCommitResult],
@@ -971,6 +1044,11 @@ export const idlFactory = ({ IDL }) => {
         [NodeId],
         [],
       ),
+    'deriveBlogPasswordVetKey' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Variant({ 'ok' : IDL.Vec(IDL.Nat8), 'err' : IDL.Text })],
+        [],
+      ),
     'ensureContributionsMigrated' : IDL.Func([IDL.Text], [], []),
     'generateApiKey' : IDL.Func([], [IDL.Text], []),
     'generateBuzzSecret' : IDL.Func([IDL.Int], [IDL.Text], []),
@@ -986,6 +1064,18 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getAndClearPendingVaultPush' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
     'getArchivedNodeIds' : IDL.Func([], [IDL.Vec(NodeId)], ['query']),
+    'getBlogPasswordConfig' : IDL.Func(
+        [],
+        [IDL.Opt(BlogPasswordConfig)],
+        ['query'],
+      ),
+    'getBlogPasswordPublicKey' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
+    'getBlogPostContent' : IDL.Func(
+        [IDL.Text, IDL.Vec(IDL.Nat8)],
+        [IDL.Opt(BlogPostContent)],
+        [],
+      ),
+    'getBlogPosts' : IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Vec(BlogPostMeta)], []),
     'getBoundPluginKeys' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getBuzzLeaderboard' : IDL.Func(
         [IDL.Nat],
@@ -1123,6 +1213,16 @@ export const idlFactory = ({ IDL }) => {
       ),
     'sendMessage' : IDL.Func(
         [IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'setBlogPassword' : IDL.Func(
+        [IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8)],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'setBlogPost' : IDL.Func(
+        [BlogPostMeta, IDL.Vec(IDL.Nat8), IDL.Opt(IDL.Vec(IDL.Nat8))],
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
         [],
       ),

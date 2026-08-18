@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@caffeineai/core-infrastructure": "~0.1.0",
-    "@caffeineai/object-storage": "0.1.0",
     "@chenglou/pretext": "^0.0.5",
     "@chrisoakman/chessboardjs": "^1.0.0",
     "@dfinity/agent": "~3.3.0",
@@ -40,6 +39,7 @@
     "@dfinity/candid": "~3.3.0",
     "@dfinity/identity": "~3.3.0",
     "@dfinity/principal": "~3.3.0",
+    "@dfinity/vetkeys": "0.4.0",
     "@gsap/react": "^2.1.2",
     "@huggingface/transformers": "^3.8.1",
     "@icp-sdk/core": "~4.1.0",

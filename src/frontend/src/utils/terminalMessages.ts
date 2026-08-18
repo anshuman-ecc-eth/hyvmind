@@ -38,6 +38,11 @@ export function formatHelpText(): string {
 /questions              (admin only)
   View tutorial questions submitted by visitors
 
+/setpw <password>       (admin only)
+  Set the blog password (overrides any previous one)
+  Example:
+    /setpw my-secret-phrase
+
 Notes:
   - Use quotes for names with spaces: name="My Node"
   - To create nodes, publish a source graph from the Sources tab

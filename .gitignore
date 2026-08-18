@@ -5,3 +5,9 @@ dist/
 src/frontend/dist/
 src/backend/dist/
 /frontend/
+
+# Local backup of blog posts (content lives on-chain; never committed to the repo)
+scripts/blogs_backup/
+
+# Blog content staging (article HTML/banner are uploaded on-chain; never committed to the repo)
+scripts/blogs/staging/

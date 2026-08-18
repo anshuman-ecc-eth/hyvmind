@@ -46,6 +46,25 @@ import {
 } from "../utils/terminalSession";
 import { convertTTLToMermaid } from "../utils/ttlToMermaid";
 
+// SHA-256(salt ++ data) hex digest via Web Crypto
+async function sha256Hex(salt: Uint8Array, data: Uint8Array): Promise<string> {
+  const combined = new Uint8Array(salt.length + data.length);
+  combined.set(salt, 0);
+  combined.set(data, salt.length);
+  const digest = await crypto.subtle.digest("SHA-256", combined);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
 export interface TerminalMessage {
   type: "command" | "success" | "error" | "example" | "ontology" | "normal";
   text: string;
@@ -1225,6 +1244,73 @@ export default function TerminalPage() {
         "error",
         "Unknown /config sub-command. Type /help for available config commands.",
       );
+      return;
+    }
+
+    if (command === "setpw") {
+      setInput("");
+      if (!isAdmin) {
+        addMessage("error", "Not authorized. This command requires admin.");
+        return;
+      }
+      if (!actor) {
+        addMessage(
+          "error",
+          "Backend not connected. Please wait and try again.",
+        );
+        return;
+      }
+      const pw = (argument || "").trim();
+      if (!pw) {
+        addMessage(
+          "error",
+          "Usage: /setpw <password>\nSets the blog password (overrides any previous one).",
+        );
+        return;
+      }
+      try {
+        const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+        const digest = await sha256Hex(saltBytes, new TextEncoder().encode(pw));
+        const hashBytes = hexToBytes(digest);
+
+        // Admin-recovery IBE ciphertext of the plaintext password (vetKeys, at rest only)
+        let ciphertext = new Uint8Array(0);
+        try {
+          const { DerivedPublicKey, IbeCiphertext, IbeIdentity, IbeSeed } =
+            await import("@dfinity/vetkeys");
+          const dpkBytes = await actor.getBlogPasswordPublicKey();
+          const dpk = DerivedPublicKey.deserialize(new Uint8Array(dpkBytes));
+          const adminPrincipal = principal ?? ""; // admin's principal text (caller)
+          const cipher = IbeCiphertext.encrypt(
+            dpk,
+            IbeIdentity.fromString(adminPrincipal),
+            new TextEncoder().encode(pw),
+            IbeSeed.random(),
+          );
+          ciphertext = new Uint8Array(cipher.serialize());
+        } catch (ibeErr) {
+          addMessage(
+            "normal",
+            `Warning: could not create admin-recovery ciphertext (${ibeErr instanceof Error ? ibeErr.message : String(ibeErr)}). Password hash will still be set.`,
+          );
+        }
+
+        const result = await actor.setBlogPassword(
+          saltBytes,
+          hashBytes,
+          ciphertext,
+        );
+        if ("ok" in result) {
+          addMessage("success", "Blog password set.");
+        } else {
+          addMessage(
+            "error",
+            `Failed: ${"err" in result ? String(result.err) : "Unknown error"}`,
+          );
+        }
+      } catch (e) {
+        addMessage("error", String(e));
+      }
       return;
     }
 

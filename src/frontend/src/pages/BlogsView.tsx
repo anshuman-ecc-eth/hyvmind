@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { Actor, AnonymousIdentity, HttpAgent } from "@icp-sdk/core/agent";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AppPageHeader from "../components/AppPageHeader";
+import { loadConfig } from "../config";
+import { type _SERVICE, idlFactory } from "../declarations/backend.did";
 
 interface BlogPost {
   id: string;
@@ -7,20 +10,100 @@ interface BlogPost {
   author: string;
   published: string;
   lastEdited: string;
-  file: string;
-  banner?: string;
 }
 
 interface BlogsViewProps {
   onClose: () => void;
 }
 
+const SESSION_KEY = "hyvmind-blog-unlocked";
+
+async function sha256Hex(salt: Uint8Array, data: Uint8Array): Promise<string> {
+  const combined = new Uint8Array(salt.length + data.length);
+  combined.set(salt, 0);
+  combined.set(data, salt.length);
+  const digest = await crypto.subtle.digest("SHA-256", combined);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function bytesEqualHex(a: Uint8Array, hex: string): boolean {
+  if (a.length * 2 !== hex.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)) return false;
+  }
+  return true;
+}
+
 export default function BlogsView({ onClose }: BlogsViewProps) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unlocked, setUnlocked] = useState(false);
+  const [gateConfigured, setGateConfigured] = useState(false);
+  const [password, setPassword] = useState("");
+  const [pwError, setPwError] = useState(false);
   const [activePost, setActivePost] = useState<BlogPost | null>(null);
   const [articleHtml, setArticleHtml] = useState("");
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
+
+  const actorRef = useRef<_SERVICE | null>(null);
+  const digestRef = useRef<Uint8Array | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+
+  // Build an anonymous agent/actor so the blog works without login. The password
+  // check happens on the backend in the same shared call that returns content.
+  const ensureBackend = useCallback(async () => {
+    if (actorRef.current) return;
+    const { backend_canister_id } = await loadConfig();
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    const agent = await HttpAgent.create({
+      identity: new AnonymousIdentity(),
+      host: isLocal ? undefined : "https://icp-api.io",
+      shouldFetchRootKey: isLocal,
+    });
+    actorRef.current = Actor.createActor<_SERVICE>(idlFactory, {
+      agent,
+      canisterId: backend_canister_id,
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await ensureBackend();
+        const actor = actorRef.current;
+        if (!actor) return;
+        const configRaw = await actor.getBlogPasswordConfig();
+        const config = configRaw[0] ?? null;
+        if (cancelled) return;
+        if (config) {
+          setGateConfigured(true);
+          if (sessionStorage.getItem(SESSION_KEY)) {
+            setUnlocked(true);
+            digestRef.current = config.hash;
+            const list = await actor.getBlogPosts(config.hash);
+            if (!cancelled) setPosts(list.map(toBlogPost));
+          }
+        } else {
+          setUnlocked(true);
+          const list = await actor.getBlogPosts(new Uint8Array());
+          if (!cancelled) setPosts(list.map(toBlogPost));
+        }
+      } catch {
+        // leave in loading/error state below
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ensureBackend]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -34,26 +117,61 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
   }, [activePost, onClose]);
 
   useEffect(() => {
-    fetch("/blogs/blog.json")
-      .then((response) => response.json())
-      .then((data) => setPosts(Array.isArray(data) ? data : []))
-      .catch(() => setPosts([]))
-      .finally(() => setLoading(false));
-  }, []);
+    if (gateConfigured && !unlocked) passwordRef.current?.focus();
+  }, [gateConfigured, unlocked]);
 
-  const openPost = (post: BlogPost) => {
+  const handleUnlock = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const actor = actorRef.current;
+    const configRaw = actor ? await actor.getBlogPasswordConfig() : [];
+    const config = configRaw[0] ?? null;
+    if (!config) {
+      setUnlocked(true);
+      return;
+    }
+    const digest = await sha256Hex(
+      config.salt,
+      new TextEncoder().encode(password),
+    );
+    if (!bytesEqualHex(config.hash, digest)) {
+      setPwError(true);
+      setPassword("");
+      return;
+    }
+    setPwError(false);
+    setUnlocked(true);
+    sessionStorage.setItem(SESSION_KEY, "1");
+    digestRef.current = config.hash;
+    const list = actor ? await actor.getBlogPosts(config.hash) : [];
+    setPosts(list.map(toBlogPost));
+  };
+
+  const openPost = async (post: BlogPost) => {
     setActivePost(post);
     setArticleLoading(true);
     setArticleHtml("");
-    fetch(`/blogs/${post.file}`)
-      .then((response) => response.text())
-      .then((html) => {
-        const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? "";
-        const stripped = body.replace(/<style[\s\S]*?<\/style>/gi, "");
-        setArticleHtml(stripped);
-      })
-      .catch(() => setArticleHtml(""))
-      .finally(() => setArticleLoading(false));
+    setBannerUrl(null);
+    try {
+      const actor = actorRef.current;
+      if (!actor) throw new Error("backend unavailable");
+      const digest = digestRef.current ?? new Uint8Array();
+      const contentRaw = await actor.getBlogPostContent(post.id, digest);
+      const content = contentRaw[0] ?? null;
+      if (!content) throw new Error("not authorized");
+      setArticleHtml(new TextDecoder().decode(content.html));
+      const bannerRaw = content.banner;
+      const bannerBytes = bannerRaw?.[0];
+      if (bannerBytes) {
+        const copy = new Uint8Array(bannerBytes.length);
+        copy.set(bannerBytes);
+        const blob = new Blob([copy.buffer], { type: "image/png" });
+        setBannerUrl(URL.createObjectURL(blob));
+      }
+    } catch {
+      setArticleHtml("");
+    } finally {
+      setArticleLoading(false);
+    }
   };
 
   if (activePost) {
@@ -70,13 +188,9 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
         />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-6 py-8">
-            {activePost.banner && (
+            {bannerUrl && (
               <div className="mb-6">
-                <img
-                  src={`/blogs/${activePost.banner}`}
-                  alt=""
-                  className="w-full rounded"
-                />
+                <img src={bannerUrl} alt="" className="w-full rounded" />
               </div>
             )}
             <div className="mb-3 flex justify-end border-b border-dashed border-border pb-4">
@@ -92,7 +206,7 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
             ) : articleHtml ? (
               <div
                 aria-label="Blog article"
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: first-party pandoc HTML from public/blogs
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: first-party pandoc HTML stored on-chain
                 dangerouslySetInnerHTML={{ __html: articleHtml }}
                 className={[
                   "prose max-w-none",
@@ -136,17 +250,69 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <AppPageHeader title="Blog" onClose={onClose} />
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl px-6 py-8 text-center">
+            <p className="font-mono text-xs text-muted-foreground">Loading..</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!unlocked && gateConfigured) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <AppPageHeader title="Blog" onClose={onClose} />
+        <main className="flex flex-1 items-center justify-center overflow-y-auto">
+          <form
+            onSubmit={handleUnlock}
+            className="mx-auto flex max-w-sm flex-col items-center gap-4 px-6 text-center"
+          >
+            <p className="font-mono text-sm text-muted-foreground">
+              To guard against scrapers and crawlers.
+            </p>
+            <input
+              type="password"
+              ref={passwordRef}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPwError(false);
+              }}
+              placeholder="Enter password"
+              aria-label="Blog password"
+              data-ocid="blog.lock.input"
+              className="w-full rounded-md border border-dashed border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-ring/50 focus:ring-[3px]"
+            />
+            {pwError && (
+              <p className="font-mono text-xs text-destructive">
+                Wrong password.
+              </p>
+            )}
+            <button
+              type="submit"
+              data-ocid="blog.lock.submit"
+              className="cursor-pointer rounded-md border border-dashed border-border px-4 py-2 font-mono text-xs text-foreground transition-colors hover:bg-accent"
+            >
+              Enter
+            </button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <AppPageHeader title="Blog" onClose={onClose} />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl px-6">
-          {loading ? (
-            <p className="text-center font-mono text-xs text-muted-foreground">
-              Loading..
-            </p>
-          ) : posts.length === 0 ? (
-            <p className="text-center font-mono text-xs text-muted-foreground">
+          {posts.length === 0 ? (
+            <p className="py-8 text-center font-mono text-xs text-muted-foreground">
               No posts yet.
             </p>
           ) : (
@@ -179,4 +345,14 @@ export default function BlogsView({ onClose }: BlogsViewProps) {
       </main>
     </div>
   );
+}
+
+function toBlogPost(meta: {
+  id: string;
+  title: string;
+  author: string;
+  published: string;
+  lastEdited: string;
+}): BlogPost {
+  return { ...meta };
 }

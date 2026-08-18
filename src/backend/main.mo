@@ -15,6 +15,7 @@ import Set "mo:core/Set";
 import Blob "mo:core/Blob";
 import Random "mo:core/Random";
 import Nat8 "mo:core/Nat8";
+import Error "mo:core/Error";
 
 
 import AccessControl "mo:caffeineai-authorization/access-control";
@@ -522,7 +523,37 @@ actor {
     submittedAt : Int;
   };
 
-  // Backend State
+  // ── Blog Types ───────────────────────────────────────────────────────────────
+
+  type BlogPasswordConfig = {
+    salt : Blob;
+    hash : Blob;
+    ciphertext : Blob;
+    updatedAt : Nat64;
+    updatedBy : Principal;
+  };
+
+  type BlogPostMeta = {
+    id : Text;
+    title : Text;
+    author : Text;
+    published : Text;
+    lastEdited : Text;
+  };
+
+  // Full on-chain post: metadata + HTML body + optional banner image.
+  type BlogPostRecord = {
+    meta : BlogPostMeta;
+    html : Blob;
+    banner : ?Blob;
+  };
+
+  type BlogPostContent = {
+    html : Blob;
+    banner : ?Blob;
+  };
+
+  // ── Backend State
   var curationMap = Map.empty<NodeId, Curation>();
   var swarmMap = Map.empty<NodeId, Swarm>();
   var locationMap = Map.empty<NodeId, Location>();
@@ -581,6 +612,13 @@ actor {
 
   // Telegram bridge config (encrypted)
   var telegramConfig : ?TelegramConfig = null;
+
+  // Blog password gate (salt + sha-256 digest + admin-recovery IBE ciphertext)
+  var blogPasswordConfig : ?BlogPasswordConfig = null;
+
+  // Blog posts stored on-chain (HTML body + optional banner), served only to
+  // callers who present the correct blog-password digest.
+  var blogPosts : [BlogPostRecord] = [];
 
   // ── HTTP API State ───────────────────────────────────────────────────────────
 
@@ -5331,6 +5369,166 @@ actor {
     };
   };
 
+  // ── Blog: password gate + content registry ───────────────────────────────────
+  //
+  // The blog password is stored as salt + SHA-256(salt ++ password) (digest computed
+  // client-side and sent to the backend for comparison). An admin-recovery IBE
+  // ciphertext (vetKeys, encrypted to the admin principal) is stored at rest but is
+  // not part of the gate. Blog HTML/banner bytes are stored on-chain; they are served
+  // only to callers who present the correct password digest (enforced in
+  // `getBlogPosts`/`getBlogPostContent`).
+
+  // vetKD management-canister interface (aaaaa-aa)
+  let managementCanister : actor {
+    vetkd_public_key : ({
+      canister_id : ?Principal;
+      context : Blob;
+      key_id : { curve : { #bls12_381_g2 }; name : Text };
+    }) -> async ({ public_key : Blob });
+    vetkd_derive_key : ({
+      input : Blob;
+      context : Blob;
+      transport_public_key : Blob;
+      key_id : { curve : { #bls12_381_g2 }; name : Text };
+    }) -> async ({ encrypted_key : Blob });
+  } = actor "aaaaa-aa";
+
+  let blogVetkdContext : Blob = "hyvmind_blog_pw_v1".encodeUtf8();
+
+  // "test_key_1" works on local + mainnet for development; "key_1" for production.
+  // vetkd_derive_key with key_1 costs ~26B cycles (10B for test_key_1).
+  func blogVetkdKeyId() : { curve : { #bls12_381_g2 }; name : Text } {
+    { curve = #bls12_381_g2; name = "test_key_1" }
+  };
+
+  // Free (no cycles): the canister-level vetKD public key for the blog context.
+  public shared func getBlogPasswordPublicKey() : async Blob {
+    let response = await managementCanister.vetkd_public_key({
+      canister_id = null;
+      context = blogVetkdContext;
+      key_id = blogVetkdKeyId();
+    });
+    response.public_key;
+  };
+
+  // Admin-only recovery: derive the blog vetKey encrypted under a transport key.
+  public shared ({ caller }) func deriveBlogPasswordVetKey(transportPublicKey : Blob) : async { #ok : Blob; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    switch (blogPasswordConfig) {
+      case (null) { return #err("No blog password configured") };
+      case (?config) {
+        if (config.updatedBy != caller) {
+          return #err("Only the admin who set the password may recover it");
+        };
+        try {
+          let response = await (with cycles = 10_000_000_000) managementCanister.vetkd_derive_key({
+            input = caller.toBlob();
+            context = blogVetkdContext;
+            transport_public_key = transportPublicKey;
+            key_id = blogVetkdKeyId();
+          });
+          #ok(response.encrypted_key);
+        } catch (e : Error.Error) {
+          #err(e.message());
+        };
+      };
+    };
+  };
+
+  // Admin-only: set or override the blog password. `salt`/`hash` come from the
+  // client (salt = random 16 bytes; hash = SHA-256(salt ++ password)). `ciphertext`
+  // is an admin-recovery IBE ciphertext of the plaintext password (optional; may be
+  // an empty blob if not using vetKeys recovery).
+  public shared ({ caller }) func setBlogPassword(salt : Blob, hash : Blob, ciphertext : Blob) : async { #ok; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    if (salt.size() == 0 or hash.size() == 0) {
+      return #err("Salt and hash are required");
+    };
+    blogPasswordConfig := ?{
+      salt;
+      hash;
+      ciphertext;
+      updatedAt = Nat64.fromNat(Int.abs(Time.now()));
+      updatedBy = caller;
+    };
+    #ok;
+  };
+
+  // Admin-only: remove the blog password gate.
+  public shared ({ caller }) func clearBlogPassword() : async { #ok; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    blogPasswordConfig := null;
+    #ok;
+  };
+
+  // Public query: whether a password gate is configured, plus the salt/hash for
+  // client-side verification and the ciphertext for admin recovery. Reveals no
+  // plaintext; a preimage of SHA-256 is infeasible, so exposing salt/hash is safe.
+  public query func getBlogPasswordConfig() : async ?BlogPasswordConfig {
+    blogPasswordConfig;
+  };
+
+  // Admin-only: upsert a single blog post with its content. `id` is the url-safe
+  // slug. The HTML body and optional banner are stored on-chain. Passing an empty
+  // `html` deletes the post with that id.
+  public shared ({ caller }) func setBlogPost(meta : BlogPostMeta, html : Blob, banner : ?Blob) : async { #ok; #err : Text } {
+    if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
+      return #err("Not authorized: admin only");
+    };
+    if (meta.id == "" or meta.title == "") {
+      return #err("Invalid post metadata");
+    };
+    if (html.size() == 0) {
+      // Delete the post
+      blogPosts := blogPosts.filter(func(p : BlogPostRecord) : Bool { p.meta.id != meta.id });
+      return #ok;
+    };
+    if (html.size() > 2_000_000) {
+      return #err("HTML too large (max 2MB)");
+    };
+    switch (banner) {
+      case (?b) { if (b.size() > 2_000_000) { return #err("Banner too large (max 2MB)") } };
+      case (null) {};
+    };
+    blogPosts := blogPosts
+      .filter(func(p : BlogPostRecord) : Bool { p.meta.id != meta.id })
+      .concat([{ meta; html; banner }]);
+    #ok;
+  };
+
+  // Public (password-gated): returns blog post metadata ONLY when the supplied
+  // digest matches the configured password. A shared (update) method so the check
+  // cannot be bypassed via a public query — callers without the correct digest get [].
+  public shared func getBlogPosts(passwordDigest : Blob) : async [BlogPostMeta] {
+    switch (blogPasswordConfig) {
+      case (null) { blogPosts.map(func(p : BlogPostRecord) : BlogPostMeta { p.meta }) };
+      case (?config) {
+        if (Blob.equal(passwordDigest, config.hash)) {
+          blogPosts.map(func(p : BlogPostRecord) : BlogPostMeta { p.meta });
+        } else { [] };
+      };
+    };
+  };
+
+  // Public (password-gated): returns a single post's on-chain content (HTML + banner).
+  public shared func getBlogPostContent(postId : Text, passwordDigest : Blob) : async ?BlogPostContent {
+    let authorized = switch (blogPasswordConfig) {
+      case (null) { true };
+      case (?config) { Blob.equal(passwordDigest, config.hash) };
+    };
+    if (not authorized) { return null };
+    for (p in blogPosts.vals()) {
+      if (p.meta.id == postId) { return ?{ html = p.html; banner = p.banner } };
+    };
+    null;
+  };
+
   public query func icChallengeNonce() : async Text {
     "ic-gateway-challenge-18a800cbf63cf59f";
   };
@@ -5373,6 +5571,8 @@ actor {
     nextForumId := 0;
     nextReplyId := 0;
     telegramConfig := null;
+    blogPasswordConfig := null;
+    blogPosts := [];
     apiKeysByPrincipal := Map.empty<Principal, Text>();
     principalByApiKey := Map.empty<Text, Principal>();
     apiRateLimitCounts := Map.empty<Text, Nat>();

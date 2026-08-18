@@ -16,6 +16,24 @@ export interface AttributeChange {
   'oldValues' : Array<WeightedValue>,
   'newWeightedValues' : Array<WeightedValue>,
 }
+export interface BlogPasswordConfig {
+  'ciphertext' : Uint8Array,
+  'hash' : Uint8Array,
+  'salt' : Uint8Array,
+  'updatedAt' : bigint,
+  'updatedBy' : Principal,
+}
+export interface BlogPostContent {
+  'html' : Uint8Array,
+  'banner' : [] | [Uint8Array],
+}
+export interface BlogPostMeta {
+  'id' : string,
+  'lastEdited' : string,
+  'title' : string,
+  'published' : string,
+  'author' : string,
+}
 export interface BuzzLeaderboardEntry {
   'principal' : Principal,
   'score' : BuzzScore,
@@ -355,6 +373,7 @@ export interface _SERVICE {
   'approvePluginBinding' : ActorMethod<[Principal], undefined>,
   'archiveNode' : ActorMethod<[NodeId], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'clearBlogPassword' : ActorMethod<[], { 'ok' : null } | { 'err' : string }>,
   'commitPublishSourceGraph' : ActorMethod<
     [PublishSourceGraphInput, Array<[string, NodeId]>],
     PublishCommitResult
@@ -377,6 +396,11 @@ export interface _SERVICE {
     [string, Array<Tag>, NodeId, Array<WeightedAttribute>],
     NodeId
   >,
+  'deriveBlogPasswordVetKey' : ActorMethod<
+    [Uint8Array],
+    { 'ok' : Uint8Array } |
+      { 'err' : string }
+  >,
   'ensureContributionsMigrated' : ActorMethod<[string], undefined>,
   'generateApiKey' : ActorMethod<[], string>,
   'generateBuzzSecret' : ActorMethod<[bigint], string>,
@@ -391,6 +415,13 @@ export interface _SERVICE {
    */
   'getAndClearPendingVaultPush' : ActorMethod<[], [] | [string]>,
   'getArchivedNodeIds' : ActorMethod<[], Array<NodeId>>,
+  'getBlogPasswordConfig' : ActorMethod<[], [] | [BlogPasswordConfig]>,
+  'getBlogPasswordPublicKey' : ActorMethod<[], Uint8Array>,
+  'getBlogPostContent' : ActorMethod<
+    [string, Uint8Array],
+    [] | [BlogPostContent]
+  >,
+  'getBlogPosts' : ActorMethod<[Uint8Array], Array<BlogPostMeta>>,
   'getBoundPluginKeys' : ActorMethod<[], Array<Principal>>,
   'getBuzzLeaderboard' : ActorMethod<[bigint], Array<BuzzLeaderboardEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
@@ -485,6 +516,16 @@ export interface _SERVICE {
   >,
   'sendMessage' : ActorMethod<
     [string, string],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
+  'setBlogPassword' : ActorMethod<
+    [Uint8Array, Uint8Array, Uint8Array],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
+  'setBlogPost' : ActorMethod<
+    [BlogPostMeta, Uint8Array, [] | [Uint8Array]],
     { 'ok' : null } |
       { 'err' : string }
   >,
