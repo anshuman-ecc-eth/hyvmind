@@ -5445,8 +5445,14 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #admin)) {
       return #err("Not authorized: admin only");
     };
-    if (salt.size() == 0 or hash.size() == 0) {
-      return #err("Salt and hash are required");
+    if (salt.size() == 0 or salt.size() > 64) {
+      return #err("Salt must be 1-64 bytes");
+    };
+    if (hash.size() != 32) {
+      return #err("Hash must be 32 bytes (SHA-256 digest)");
+    };
+    if (ciphertext.size() > 4096) {
+      return #err("Recovery ciphertext too large (max 4KB)");
     };
     blogPasswordConfig := ?{
       salt;
@@ -5509,7 +5515,7 @@ actor {
     switch (blogPasswordConfig) {
       case (null) { blogPosts.map(func(p : BlogPostRecord) : BlogPostMeta { p.meta }) };
       case (?config) {
-        if (Blob.equal(passwordDigest, config.hash)) {
+        if (passwordDigest.size() == 32 and Blob.equal(passwordDigest, config.hash)) {
           blogPosts.map(func(p : BlogPostRecord) : BlogPostMeta { p.meta });
         } else { [] };
       };
@@ -5520,7 +5526,7 @@ actor {
   public shared func getBlogPostContent(postId : Text, passwordDigest : Blob) : async ?BlogPostContent {
     let authorized = switch (blogPasswordConfig) {
       case (null) { true };
-      case (?config) { Blob.equal(passwordDigest, config.hash) };
+      case (?config) { passwordDigest.size() == 32 and Blob.equal(passwordDigest, config.hash) };
     };
     if (not authorized) { return null };
     for (p in blogPosts.vals()) {
