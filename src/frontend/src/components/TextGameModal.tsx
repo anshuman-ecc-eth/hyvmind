@@ -2136,7 +2136,7 @@ function ManifestoTextScreen({ onBack }: { onBack: () => void }) {
           {MANIFESTO_LINES.map((line, i) =>
             line === "" ? (
               // biome-ignore lint/suspicious/noArrayIndexKey: static list, order never changes
-              <div key={i} style={{ height: "7em" }} />
+              <div key={i} style={{ height: "3.5em" }} />
             ) : (
               <span
                 // biome-ignore lint/suspicious/noArrayIndexKey: static list, order never changes
