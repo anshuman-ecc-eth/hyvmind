@@ -1,9 +1,13 @@
 {
   "version": 3,
-  "mopsTomlDepsHash": "90da03a29dd2a483f37b5c7b10191f5b83ef81162c110698ace32e65ec09c976",
+  "mopsTomlDepsHash": "817ecbc80ed38c2c7e3663888d5ff4e0e677dddec9b67cff9787cd73629f5c57",
   "deps": {
     "core": "2.2.0",
-    "caffeineai-authorization": "0.1.0"
+    "caffeineai-authorization": "0.1.0",
+    "base": "https://github.com/dfinity/motoko-base#f8112331eb94dcea41741e59c7e2eaf367721866",
+    "libsecp256k1": "https://github.com/av1ctor/libsecp256k1.mo#main",
+    "sha3": "https://github.com/hanbu97/motoko-sha3#v0.1.1",
+    "iterext": "https://github.com/timohanke/motoko-iterext#v2.0.0"
   },
   "hashes": {
     "core@2.2.0": {

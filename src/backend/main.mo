@@ -24,6 +24,7 @@ import Runtime "mo:core/Runtime";
 import Debug "mo:core/Debug";
 import Float "mo:core/Float";
 import Migration "Migration";
+import EvmRecovery "EvmRecovery";
 
 actor {
   // Type Aliases
@@ -110,6 +111,33 @@ actor {
     artworkDataUrl : ?Text;
     terrainParams : ?Text;
     authors : [Text];
+  };
+
+  // A signature-verified EVM wallet bound to an Internet Identity principal.
+  // `lastNonce` is the signed message, stored to prevent replay of the same
+  // signature.
+  type WalletLink = {
+    wallet : Text;
+    linkedAt : Time.Time;
+    lastNonce : Text;
+  };
+
+  // A Juicebox funding project created for a published graph (1:1 by graph id).
+  type JuiceboxProject = {
+    projectId : Nat;
+    chainId : Nat;
+    launchedBy : Principal;
+    launchedAt : Time.Time;
+    ownerWallet : Text;
+  };
+
+  type JuiceboxProjectView = {
+    publishedGraphId : Text;
+    projectId : Nat;
+    chainId : Nat;
+    launchedBy : Principal;
+    launchedAt : Time.Time;
+    ownerWallet : Text;
   };
 
   type VoxelBlockEdit = {
@@ -586,6 +614,11 @@ actor {
   var contributionSavers = Map.empty<Text, Map.Map<Text, List.List<Principal>>>();
   // Per-user credited contribution IDs: graphId -> userPrincipal -> Set<contributionId>
   var userContributionCredits = Map.empty<Text, Map.Map<Principal, Set.Set<Text>>>();
+
+  // EVM wallet <-> principal links (signature-verified, one wallet per principal)
+  var walletLinks = Map.empty<Principal, WalletLink>();
+  // Published graph -> its Juicebox funding project (1:1, keyed by graph id)
+  var juiceboxProjects = Map.empty<Text, JuiceboxProject>();
 
   // Maps curationId → publishedSourceGraphId (avoids stable type change on Curation)
   var curationToPublishedGraphId = Map.empty<NodeId, Text>();
@@ -3878,6 +3911,103 @@ actor {
   // ─── getAllPublishedSourceGraphs: Return all published source graph metadata ──
   public query func getAllPublishedSourceGraphs() : async [PublishedSourceGraphMeta] {
     publishedSourceGraphs.values().toArray()
+  };
+
+  // ─── linkWallet: Bind the caller's principal to an EVM wallet via a ──────────
+  // signature. The message must contain "Principal: <caller>" and the signature
+  // must recover to the claimed wallet. One wallet per principal; re-linking is
+  // allowed with a fresh message (same message cannot be replayed).
+  public shared ({ caller }) func linkWallet(wallet : Text, message : Text, signature : Text) : async Bool {
+    if (caller.isAnonymous()) { return false };
+    switch (EvmRecovery.recoverAddress(message, signature, EvmRecovery.newContext())) {
+      case (null) { return false };
+      case (?recovered) {
+        if (EvmRecovery.normalizeAddress(recovered) != EvmRecovery.normalizeAddress(wallet)) {
+          return false;
+        };
+        if (not message.contains(#text ("Principal: " # caller.toText()))) { return false };
+        switch (walletLinks.get(caller)) {
+          case (?link) {
+            if (link.lastNonce == message) { return false };
+          };
+          case (null) {};
+        };
+        walletLinks.add(caller, { wallet = wallet; linkedAt = Time.now(); lastNonce = message });
+        true;
+      };
+    };
+  };
+
+  public query ({ caller }) func getLinkedWallet() : async ?Text {
+    switch (walletLinks.get(caller)) {
+      case (null) { null };
+      case (?link) { ?link.wallet };
+    };
+  };
+
+  public shared ({ caller }) func unlinkWallet() : async Bool {
+    if (caller.isAnonymous()) { return false };
+    switch (walletLinks.get(caller)) {
+      case (null) { false };
+      case (?_) {
+        walletLinks.remove(caller);
+        true;
+      };
+    };
+  };
+
+  // ─── recordJuiceboxProject: Record the Juicebox project launched for a ───────
+  // published graph. Only the graph's creator can record, and only with the
+  // wallet currently linked to their principal. One project per graph.
+  public shared ({ caller }) func recordJuiceboxProject(
+    graphId : Text,
+    projectId : Nat,
+    chainId : Nat,
+    ownerWallet : Text,
+  ) : async { #ok : (); #err : Text } {
+    if (caller.isAnonymous()) { return #err "anonymous" };
+    switch (publishedSourceGraphs.get(graphId)) {
+      case (null) { return #err "graph not found" };
+      case (?meta) {
+        if (meta.creator != caller) { return #err "not the graph creator" };
+        switch (walletLinks.get(caller)) {
+          case (null) { return #err "wallet not linked" };
+          case (?link) {
+            if (EvmRecovery.normalizeAddress(link.wallet) != EvmRecovery.normalizeAddress(ownerWallet)) {
+              return #err "wallet mismatch";
+            };
+          };
+        };
+        if (projectId == 0) { return #err "invalid project id" };
+        switch (juiceboxProjects.get(graphId)) {
+          case (?_) { return #err "already recorded" };
+          case (null) {};
+        };
+        juiceboxProjects.add(graphId, {
+          projectId = projectId;
+          chainId = chainId;
+          launchedBy = caller;
+          launchedAt = Time.now();
+          ownerWallet = ownerWallet;
+        });
+        #ok;
+      };
+    };
+  };
+
+  public query func getJuiceboxProjects() : async [JuiceboxProjectView] {
+    let entries = juiceboxProjects.toArray();
+    entries.map(func(e : (Text, JuiceboxProject)) : JuiceboxProjectView {
+      let (graphId, p) = e;
+      {
+        publishedGraphId = graphId;
+        projectId = p.projectId;
+        chainId = p.chainId;
+        launchedBy = p.launchedBy;
+        launchedAt = p.launchedAt;
+        ownerWallet = p.ownerWallet;
+      };
+    });
   };
 
   // ─── updateSourceGraphArtwork: Store artwork for a published graph ────────────

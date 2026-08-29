@@ -24,6 +24,7 @@ import { ALL_THEMES, DEFAULT_THEME, migrateTheme } from "./lib/themes";
 import BlogsView from "./pages/BlogsView";
 import EditorView from "./pages/EditorView";
 import ForumView from "./pages/ForumView";
+import { FundingView } from "./pages/FundingView";
 import PublicGraphView from "./pages/PublicGraphView";
 import SourcesView from "./pages/SourcesView";
 import TerminalPage from "./pages/TerminalPage";
@@ -35,7 +36,14 @@ function AppShell() {
   const [gameComplete, setGameComplete] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [blogOpen, setBlogOpen] = useState(false);
-  const isAuthenticated = !!identity;
+  // Localhost-only tester: `?dev` renders the post-login shell without
+  // Internet Identity. Backend queries stay disabled (no local backend),
+  // so the shell renders with empty data — enough to exercise the Funding tab.
+  const devBypass =
+    typeof window !== "undefined" &&
+    ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+    new URLSearchParams(window.location.search).has("dev");
+  const isAuthenticated = !!identity || devBypass;
 
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } =
     useSettings();
@@ -207,6 +215,14 @@ function AppShell() {
             }}
           >
             <PublicGraphView />
+          </div>
+          <div
+            style={{
+              display: activeTab === "funding" ? "block" : "none",
+              height: "100%",
+            }}
+          >
+            <FundingView />
           </div>
           <div
             style={{

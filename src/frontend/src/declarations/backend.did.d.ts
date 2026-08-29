@@ -189,6 +189,14 @@ export interface InterpretationToken {
   'sources' : Array<SourceRef>,
   'parentLawTokenId' : NodeId,
 }
+export interface JuiceboxProjectView {
+  'projectId' : bigint,
+  'launchedAt' : Time,
+  'launchedBy' : Principal,
+  'chainId' : bigint,
+  'ownerWallet' : string,
+  'publishedGraphId' : string,
+}
 export interface LawToken {
   'id' : NodeId,
   'parentLocationId' : NodeId,
@@ -430,6 +438,8 @@ export interface _SERVICE {
   'getForumPost' : ActorMethod<[string], [] | [ForumPostDetail]>,
   'getForumPosts' : ActorMethod<[], Array<ForumPostSummary>>,
   'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
+  'getJuiceboxProjects' : ActorMethod<[], Array<JuiceboxProjectView>>,
+  'getLinkedWallet' : ActorMethod<[], [] | [string]>,
   'getMessages' : ActorMethod<
     [string],
     { 'ok' : Array<ChatMessage> } |
@@ -483,6 +493,7 @@ export interface _SERVICE {
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isNodeArchived' : ActorMethod<[NodeId], boolean>,
+  'linkWallet' : ActorMethod<[string, string, string], boolean>,
   'previewPublishSourceGraph' : ActorMethod<
     [PublishSourceGraphInput, Array<[string, NodeId]>],
     PublishPreviewResult
@@ -491,6 +502,11 @@ export interface _SERVICE {
    * / Called by the web app user (via II) to stage notes for Obsidian vault export.
    */
   'pushToVault' : ActorMethod<[string], undefined>,
+  'recordJuiceboxProject' : ActorMethod<
+    [string, bigint, bigint, string],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
   'redeemBuzzSecret' : ActorMethod<
     [string],
     { 'ok' : string } |
@@ -540,6 +556,7 @@ export interface _SERVICE {
     undefined
   >,
   'track_api_request' : ActorMethod<[string], undefined>,
+  'unlinkWallet' : ActorMethod<[], boolean>,
   'updateSourceGraphArtwork' : ActorMethod<[string, string], boolean>,
   'updateSourceGraphTerrainParams' : ActorMethod<[string, string], boolean>,
   'voteForumPost' : ActorMethod<

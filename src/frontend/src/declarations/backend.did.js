@@ -169,6 +169,14 @@ export const ContributionView = IDL.Record({
   'payer' : IDL.Principal,
   'alreadyCredited' : IDL.Bool,
 });
+export const JuiceboxProjectView = IDL.Record({
+  'projectId' : IDL.Nat,
+  'launchedAt' : Time,
+  'launchedBy' : IDL.Principal,
+  'chainId' : IDL.Nat,
+  'ownerWallet' : IDL.Text,
+  'publishedGraphId' : IDL.Text,
+});
 export const ChatMessage = IDL.Record({
   'text' : IDL.Text,
   'sender' : IDL.Principal,
@@ -470,6 +478,12 @@ export const idlService = IDL.Service({
       [IDL.Vec(ContributionView)],
       ['query'],
     ),
+  'getJuiceboxProjects' : IDL.Func(
+      [],
+      [IDL.Vec(JuiceboxProjectView)],
+      ['query'],
+    ),
+  'getLinkedWallet' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getMessages' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -547,12 +561,18 @@ export const idlService = IDL.Service({
   'initializeAccessControl' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+  'linkWallet' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
   'previewPublishSourceGraph' : IDL.Func(
       [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
       [PublishPreviewResult],
       [],
     ),
   'pushToVault' : IDL.Func([IDL.Text], [], []),
+  'recordJuiceboxProject' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'redeemBuzzSecret' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
@@ -608,6 +628,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'track_api_request' : IDL.Func([IDL.Text], [], []),
+  'unlinkWallet' : IDL.Func([], [IDL.Bool], []),
   'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   'updateSourceGraphTerrainParams' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -786,6 +807,14 @@ export const idlFactory = ({ IDL }) => {
     'description' : IDL.Text,
     'payer' : IDL.Principal,
     'alreadyCredited' : IDL.Bool,
+  });
+  const JuiceboxProjectView = IDL.Record({
+    'projectId' : IDL.Nat,
+    'launchedAt' : Time,
+    'launchedBy' : IDL.Principal,
+    'chainId' : IDL.Nat,
+    'ownerWallet' : IDL.Text,
+    'publishedGraphId' : IDL.Text,
   });
   const ChatMessage = IDL.Record({
     'text' : IDL.Text,
@@ -1096,6 +1125,12 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ContributionView)],
         ['query'],
       ),
+    'getJuiceboxProjects' : IDL.Func(
+        [],
+        [IDL.Vec(JuiceboxProjectView)],
+        ['query'],
+      ),
+    'getLinkedWallet' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getMessages' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -1177,12 +1212,18 @@ export const idlFactory = ({ IDL }) => {
     'initializeAccessControl' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
+    'linkWallet' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
     'previewPublishSourceGraph' : IDL.Func(
         [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
         [PublishPreviewResult],
         [],
       ),
     'pushToVault' : IDL.Func([IDL.Text], [], []),
+    'recordJuiceboxProject' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
     'redeemBuzzSecret' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
@@ -1238,6 +1279,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'track_api_request' : IDL.Func([IDL.Text], [], []),
+    'unlinkWallet' : IDL.Func([], [IDL.Bool], []),
     'updateSourceGraphArtwork' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'updateSourceGraphTerrainParams' : IDL.Func(
         [IDL.Text, IDL.Text],

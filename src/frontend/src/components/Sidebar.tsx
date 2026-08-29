@@ -10,6 +10,7 @@ const TABS = [
   { id: "notes", label: "Notes", ocid: "sidebar.tab.notes" },
   { id: "graphs", label: "Graphs", ocid: "sidebar.tab.graphs" },
   { id: "public", label: "Public", ocid: "sidebar.tab.public" },
+  { id: "funding", label: "Funding", ocid: "sidebar.tab.funding" },
   { id: "forum", label: "Forum", ocid: "sidebar.tab.forum" },
   { id: "settings", label: "Settings", ocid: "sidebar.tab.settings" },
   { id: "terminal", label: "Terminal", ocid: "sidebar.tab.terminal" },

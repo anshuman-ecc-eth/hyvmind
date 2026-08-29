@@ -388,16 +388,19 @@ export interface Timestamps {
 }
 export type TrustScore = bigint;
 export type NodeId = string;
+export interface JuiceboxProjectView {
+    projectId: bigint;
+    launchedAt: Time;
+    launchedBy: Principal;
+    chainId: bigint;
+    ownerWallet: string;
+    publishedGraphId: string;
+}
 export interface GraphEdge {
     source: NodeId;
     directionality: Directionality;
     target: NodeId;
     edgeLabel: string;
-}
-export interface ContentVersion {
-    content: string;
-    timestamp: Time;
-    contributor: Principal;
 }
 export interface CreditedContribution {
     buzzAmount: bigint;
@@ -406,6 +409,11 @@ export interface CreditedContribution {
     earned: bigint;
     payer: Principal;
     saveCount: bigint;
+}
+export interface ContentVersion {
+    content: string;
+    timestamp: Time;
+    contributor: Principal;
 }
 export interface VoxelBlockEdit {
     v: number;
@@ -547,6 +555,8 @@ export interface backendInterface {
     getForumPost(postId: string): Promise<ForumPostDetail | null>;
     getForumPosts(): Promise<Array<ForumPostSummary>>;
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
+    getJuiceboxProjects(): Promise<Array<JuiceboxProjectView>>;
+    getLinkedWallet(): Promise<string | null>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -596,11 +606,19 @@ export interface backendInterface {
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
+    linkWallet(wallet: string, message: string, signature: string): Promise<boolean>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     /**
      * / Called by the web app user (via II) to stage notes for Obsidian vault export.
      */
     pushToVault(json: string): Promise<void>;
+    recordJuiceboxProject(graphId: string, projectId: bigint, chainId: bigint, ownerWallet: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     redeemBuzzSecret(secret: string): Promise<{
         __kind__: "ok";
         ok: string;
@@ -646,6 +664,7 @@ export interface backendInterface {
     storeNotesData(json: string): Promise<void>;
     submitTutorialQuestion(name: string, question: string, contact: string | null): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;
+    unlinkWallet(): Promise<boolean>;
     updateSourceGraphArtwork(id: string, dataUrl: string): Promise<boolean>;
     updateSourceGraphTerrainParams(id: string, paramsJson: string): Promise<boolean>;
     voteForumPost(postId: string, vote: bigint): Promise<{
@@ -1138,6 +1157,34 @@ export class Backend implements backendInterface {
             return from_candid_vec_n50(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getJuiceboxProjects(): Promise<Array<JuiceboxProjectView>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getJuiceboxProjects();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getJuiceboxProjects();
+            return result;
+        }
+    }
+    async getLinkedWallet(): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLinkedWallet();
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLinkedWallet();
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getMessages(arg0: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -1483,6 +1530,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async linkWallet(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.linkWallet(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.linkWallet(arg0, arg1, arg2);
+            return result;
+        }
+    }
     async previewPublishSourceGraph(arg0: PublishSourceGraphInput, arg1: Array<[string, NodeId]>): Promise<PublishPreviewResult> {
         if (this.processError) {
             try {
@@ -1509,6 +1570,26 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.pushToVault(arg0);
             return result;
+        }
+    }
+    async recordJuiceboxProject(arg0: string, arg1: bigint, arg2: bigint, arg3: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordJuiceboxProject(arg0, arg1, arg2, arg3);
+                return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordJuiceboxProject(arg0, arg1, arg2, arg3);
+            return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async redeemBuzzSecret(arg0: string): Promise<{
@@ -1748,6 +1829,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.track_api_request(arg0);
+            return result;
+        }
+    }
+    async unlinkWallet(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.unlinkWallet();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.unlinkWallet();
             return result;
         }
     }
