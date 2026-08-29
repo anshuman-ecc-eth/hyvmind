@@ -3,11 +3,11 @@ import Char "mo:core/Char";
 import Nat32 "mo:core/Nat32";
 import Nat8 "mo:core/Nat8";
 import Text "mo:core/Text";
-import Ecdsa "mo:libsecp256k1/Ecdsa";
-import Message "mo:libsecp256k1/Message";
-import Signature "mo:libsecp256k1/Signature";
-import RecoveryId "mo:libsecp256k1/RecoveryId";
-import ECMult "mo:libsecp256k1/core/ecmult";
+import Ecdsa "vendor/Ecdsa";
+import Message "vendor/Message";
+import Signature "vendor/Signature";
+import RecoveryId "vendor/RecoveryId";
+import ECMult "vendor/core/ecmult";
 import Sha3 "mo:sha3/lib";
 
 // EIP-191 personal_sign signer recovery, implemented on-canister with the

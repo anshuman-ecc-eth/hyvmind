@@ -30,7 +30,6 @@ version = "1.8.2"
 [dependencies]
 core = "2.2.0"
 caffeineai-authorization = "0.1.0"
-# libsecp256k1's package-set pins base at this commit (its Buffer needs toVarArray).
+# base pinned for the vendored libsecp256k1 (src/backend/vendor, needs Buffer.toVarArray) and sha3.
 base = "https://github.com/dfinity/motoko-base#f8112331eb94dcea41741e59c7e2eaf367721866"
-libsecp256k1 = "https://github.com/av1ctor/libsecp256k1.mo#main"
 sha3 = "https://github.com/hanbu97/motoko-sha3#v0.1.1"
