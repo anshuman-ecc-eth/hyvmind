@@ -606,7 +606,13 @@ export interface backendInterface {
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
-    linkWallet(wallet: string, message: string, signature: string): Promise<boolean>;
+    linkWallet(wallet: string, message: string, signature: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     /**
      * / Called by the web app user (via II) to stage notes for Obsidian vault export.
@@ -1530,18 +1536,24 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async linkWallet(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+    async linkWallet(arg0: string, arg1: string, arg2: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
         if (this.processError) {
             try {
                 const result = await this.actor.linkWallet(arg0, arg1, arg2);
-                return result;
+                return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.linkWallet(arg0, arg1, arg2);
-            return result;
+            return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async previewPublishSourceGraph(arg0: PublishSourceGraphInput, arg1: Array<[string, NodeId]>): Promise<PublishPreviewResult> {

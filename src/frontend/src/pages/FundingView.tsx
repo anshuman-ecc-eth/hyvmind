@@ -216,8 +216,12 @@ export function FundingView() {
           signature,
         }),
       )
-      .then((ok) => {
-        if (!ok) setLinkError("Link rejected by backend.");
+      .then((res) => {
+        if (res.__kind__ === "err") {
+          setLinkError(`Link rejected by backend: ${res.err}`);
+        } else {
+          setLinkError(null);
+        }
       })
       .catch((err: Error) => setLinkError(err.message ?? "Link failed"));
   }

@@ -151,10 +151,16 @@ public func recoverAddress(
   ?bytesToLowerHex(address);
 };
 
-/// Lowercases ASCII hex (A-F -> a-f) so address comparisons are case-insensitive.
+/// Lowercases ASCII hex and strips a leading `0x`/`0X` so addresses compare
+/// on their bare 40-hex form regardless of the caller's formatting.
 public func normalizeAddress(addr : Text) : Text {
+  let hasPrefix = addr.size() >= 2 and (addr.startsWith(#text "0x") or addr.startsWith(#text "0X"));
   var out = "";
+  var idx : Nat = 0;
   for (c in addr.toIter()) {
+    let i = idx;
+    idx += 1;
+    if (hasPrefix and i < 2) { continue };
     if (c >= 'A' and c <= 'F') {
       out := out # Char.fromNat32(c.toNat32() +% 32).toText();
     } else {

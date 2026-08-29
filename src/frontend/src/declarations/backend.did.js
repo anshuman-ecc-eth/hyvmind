@@ -561,7 +561,11 @@ export const idlService = IDL.Service({
   'initializeAccessControl' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
-  'linkWallet' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
+  'linkWallet' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
   'previewPublishSourceGraph' : IDL.Func(
       [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
       [PublishPreviewResult],
@@ -1212,7 +1216,11 @@ export const idlFactory = ({ IDL }) => {
     'initializeAccessControl' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isNodeArchived' : IDL.Func([NodeId], [IDL.Bool], ['query']),
-    'linkWallet' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
+    'linkWallet' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
     'previewPublishSourceGraph' : IDL.Func(
         [PublishSourceGraphInput, IDL.Vec(IDL.Tuple(IDL.Text, NodeId))],
         [PublishPreviewResult],

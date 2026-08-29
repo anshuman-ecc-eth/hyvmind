@@ -3916,24 +3916,25 @@ actor {
   // ─── linkWallet: Bind the caller's principal to an EVM wallet via a ──────────
   // signature. The message must contain "Principal: <caller>" and the signature
   // must recover to the claimed wallet. One wallet per principal; re-linking is
-  // allowed with a fresh message (same message cannot be replayed).
-  public shared ({ caller }) func linkWallet(wallet : Text, message : Text, signature : Text) : async Bool {
-    if (caller.isAnonymous()) { return false };
+  // allowed with a fresh message (same message cannot be replayed). Returns the
+  // specific failure reason so the UI can surface it.
+  public shared ({ caller }) func linkWallet(wallet : Text, message : Text, signature : Text) : async { #ok : (); #err : Text } {
+    if (caller.isAnonymous()) { return #err "anonymous" };
     switch (EvmRecovery.recoverAddress(message, signature, EvmRecovery.newContext())) {
-      case (null) { return false };
+      case (null) { return #err "invalid signature" };
       case (?recovered) {
         if (EvmRecovery.normalizeAddress(recovered) != EvmRecovery.normalizeAddress(wallet)) {
-          return false;
+          return #err "address mismatch";
         };
-        if (not message.contains(#text ("Principal: " # caller.toText()))) { return false };
+        if (not message.contains(#text ("Principal: " # caller.toText()))) { return #err "principal not in message" };
         switch (walletLinks.get(caller)) {
           case (?link) {
-            if (link.lastNonce == message) { return false };
+            if (link.lastNonce == message) { return #err "signature already used" };
           };
           case (null) {};
         };
         walletLinks.add(caller, { wallet = wallet; linkedAt = Time.now(); lastNonce = message });
-        true;
+        #ok;
       };
     };
   };

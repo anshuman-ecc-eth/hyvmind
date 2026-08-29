@@ -523,7 +523,13 @@ export interface backendInterface {
     initializeAccessControl(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
-    linkWallet(wallet: string, message: string, signature: string): Promise<boolean>;
+    linkWallet(wallet: string, message: string, signature: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
     /**
      * / Called by the web app user (via II) to stage notes for Obsidian vault export.

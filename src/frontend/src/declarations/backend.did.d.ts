@@ -493,7 +493,11 @@ export interface _SERVICE {
   'initializeAccessControl' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isNodeArchived' : ActorMethod<[NodeId], boolean>,
-  'linkWallet' : ActorMethod<[string, string, string], boolean>,
+  'linkWallet' : ActorMethod<
+    [string, string, string],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
   'previewPublishSourceGraph' : ActorMethod<
     [PublishSourceGraphInput, Array<[string, NodeId]>],
     PublishPreviewResult
