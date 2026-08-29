@@ -189,6 +189,7 @@ export function FundingView() {
   }, [jbProjects]);
 
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [chainError, setChainError] = useState<string | null>(null);
   const [launchTarget, setLaunchTarget] = useState<{
     graphId: string;
     graphName: string;
@@ -258,8 +259,25 @@ export function FundingView() {
     setLaunchCfg(defaultLaunchConfig());
   }
 
-  function handleLaunchSubmit() {
+  // Switch the wallet onto the Juicebox chain (Base) before any write. wagmi's
+  // switchChain resolves only after the wallet emits chainChanged for the target
+  // chain, so `jb.chain` is guaranteed to be Base on success.
+  async function ensureChain(): Promise<boolean> {
+    if (!jb.isConnected) return false;
+    if (!jb.needsSwitch) return true;
+    try {
+      setChainError(null);
+      await jb.switchChain({ chainId: jb.chainId });
+      return true;
+    } catch {
+      setChainError(`Could not switch wallet to ${info.name}.`);
+      return false;
+    }
+  }
+
+  async function handleLaunchSubmit() {
     if (!launchTarget || !jb.address) return;
+    if (!(await ensureChain())) return;
     const { args, value } = buildLaunchProjectRequest(
       jb.chainId,
       jb.address,
@@ -287,7 +305,8 @@ export function FundingView() {
     jb.switchChain({ chainId: jb.chainId });
   }
 
-  function handleApprove() {
+  async function handleApprove() {
+    if (!(await ensureChain())) return;
     approve.writeContract({
       chainId: jb.chainId,
       abi: ERC20_ABI,
@@ -297,8 +316,9 @@ export function FundingView() {
     });
   }
 
-  function handlePay() {
+  async function handlePay() {
     if (!projectId || !jb.address) return;
+    if (!(await ensureChain())) return;
     const isNative = payTokenInfo.isNative;
     pay.writeContract({
       chainId: jb.chainId,
@@ -320,8 +340,9 @@ export function FundingView() {
     });
   }
 
-  function handleCashOut() {
+  async function handleCashOut() {
     if (!projectId || !jb.address) return;
+    if (!(await ensureChain())) return;
     cashOut.writeContract({
       chainId: jb.chainId,
       address: terminal,
@@ -381,6 +402,12 @@ export function FundingView() {
           )}
         </div>
       </div>
+
+      {chainError && (
+        <div className="px-4 py-2 border-b border-dashed border-border bg-muted/30 text-xs text-red-400">
+          {chainError}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
@@ -910,6 +937,12 @@ export function FundingView() {
               Accepts ETH on the canonical terminal. No splits or payout limits
               yet — you keep full ownership and can configure them later.
             </div>
+            {jb.needsSwitch && (
+              <div className="text-xs text-amber-300">
+                Wallet is on {jb.chain?.name ?? "another chain"} — will switch
+                to {info.name} before launching.
+              </div>
+            )}
             {(launch.isError || launchTxStatus === "failed") && (
               <div className="text-xs text-red-400">
                 {launch.error?.message ?? "transaction failed"}
