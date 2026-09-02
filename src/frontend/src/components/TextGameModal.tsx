@@ -24,6 +24,7 @@ const MENU_ITEMS = [
   "Buzz",
   "Maps",
   "Manifesto",
+  "Tutorial",
   "Leaderboard",
   "Credits",
 ] as const;
@@ -1627,6 +1628,7 @@ interface StartScreenProps {
   onCredits: () => void;
   onManifesto: () => void;
   onLeaderboard: () => void;
+  onTutorial: () => void;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -1642,6 +1644,7 @@ function StartScreen({
   onCredits,
   onManifesto,
   onLeaderboard,
+  onTutorial,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -1670,6 +1673,7 @@ function StartScreen({
           else if (chosen === "Leaderboard") onLeaderboard();
           else if (chosen === "Credits") onCredits();
           else if (chosen === "Manifesto") onManifesto();
+          else if (chosen === "Tutorial") onTutorial();
         }
       } else if (subMenu === "left") {
         if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
@@ -1703,6 +1707,7 @@ function StartScreen({
     onManifesto,
     onStart,
     onSettings,
+    onTutorial,
   ]);
 
   return (
@@ -1831,7 +1836,7 @@ function StartScreen({
         )}
 
         {/* Menu */}
-        <div className="flex flex-col items-center gap-1.5 mt-6">
+        <div className="flex flex-col items-stretch gap-1.5 mt-6">
           {subMenu === "main"
             ? MENU_ITEMS.map((item, activeIdx) => {
                 const isSelected = activeIdx === selectedIdx;
@@ -1849,6 +1854,7 @@ function StartScreen({
                       border: "none",
                       cursor: "pointer",
                       padding: "0",
+                      textAlign: "left",
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
@@ -1858,9 +1864,13 @@ function StartScreen({
                       else if (item === "Leaderboard") onLeaderboard();
                       else if (item === "Credits") onCredits();
                       else if (item === "Manifesto") onManifesto();
+                      else if (item === "Tutorial") onTutorial();
                     }}
                   >
-                    {isSelected ? `> ${item}` : `  ${item}`}
+                    <span style={{ display: "inline-block", width: "2em" }}>
+                      {isSelected ? "> " : ""}
+                    </span>
+                    {item}
                   </button>
                 );
               })
@@ -1880,6 +1890,7 @@ function StartScreen({
                       border: "none",
                       cursor: "pointer",
                       padding: "0",
+                      textAlign: "left",
                     }}
                     onClick={() => {
                       setLeftSelectedIdx(activeIdx);
@@ -1888,7 +1899,10 @@ function StartScreen({
                       else if (item === "Back") setSubMenu("main");
                     }}
                   >
-                    {isSelected ? `> ${item}` : `  ${item}`}
+                    <span style={{ display: "inline-block", width: "2em" }}>
+                      {isSelected ? "> " : ""}
+                    </span>
+                    {item}
                   </button>
                 );
               })}
@@ -2913,9 +2927,6 @@ export default function TextGameModal({
 
   const handleExit = useCallback(() => {
     onCompleteRef.current();
-    if (localStorage.getItem("hyvmind-tutorial-seen") !== "true") {
-      onOpenTutorialRef.current?.();
-    }
   }, []);
 
   const handleOpenSettings = useCallback(() => {
@@ -2932,6 +2943,10 @@ export default function TextGameModal({
 
   const handleOpenLeaderboard = useCallback(() => {
     setPhase({ type: "leaderboard" });
+  }, []);
+
+  const handleOpenTutorial = useCallback(() => {
+    onOpenTutorialRef.current?.();
   }, []);
 
   const handleChessComplete = useCallback((score: number) => {
@@ -3538,6 +3553,7 @@ export default function TextGameModal({
             onCredits={handleOpenCredits}
             onManifesto={handleOpenManifesto}
             onLeaderboard={handleOpenLeaderboard}
+            onTutorial={handleOpenTutorial}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}

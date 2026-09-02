@@ -108,7 +108,6 @@ export default function TutorialView({ onClose }: TutorialViewProps) {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
-    localStorage.setItem("hyvmind-tutorial-seen", "true");
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
