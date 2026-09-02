@@ -153,6 +153,18 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
                 <DropdownMenuItem
                   onClick={() =>
                     window.open(
+                      "https://www.youtube.com/@frequently-unasked-questions",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.fuqs.button"
+                >
+                  FUQs
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
                       "https://github.com/anshuman-ecc-eth/hyvmind",
                       "_blank",
                     )
@@ -167,18 +179,6 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
                   data-ocid="header.blog.button"
                 >
                   Blog
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    window.open(
-                      "https://www.youtube.com/@frequently-unasked-questions",
-                      "_blank",
-                    )
-                  }
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                  data-ocid="header.fuqs.button"
-                >
-                  FUQs
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

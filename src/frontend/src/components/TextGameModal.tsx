@@ -20,10 +20,10 @@ function isComputerScreen(): boolean {
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const MENU_ITEMS = [
-  "Manifesto",
   "Graphs",
   "Buzz",
   "Maps",
+  "Manifesto",
   "Leaderboard",
   "Credits",
 ] as const;
