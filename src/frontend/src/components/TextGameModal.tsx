@@ -21,9 +21,10 @@ function isComputerScreen(): boolean {
 
 const MENU_ITEMS = [
   "Manifesto",
-  "Enter the Hive",
-  "Collect Buzz",
-  "Explore Maps",
+  "Graphs",
+  "Buzz",
+  "Maps",
+  "Leaderboard",
   "Credits",
 ] as const;
 const LEFT_MENU_ITEMS = ["Story", "Settings", "Back"] as const;
@@ -1625,6 +1626,7 @@ interface StartScreenProps {
   onExploreMaps: () => void;
   onCredits: () => void;
   onManifesto: () => void;
+  onLeaderboard: () => void;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -1639,6 +1641,7 @@ function StartScreen({
   onExploreMaps,
   onCredits,
   onManifesto,
+  onLeaderboard,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -1661,9 +1664,10 @@ function StartScreen({
           setSelectedIdx((prev) => (prev + 1) % MENU_ITEMS.length);
         } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
           const chosen = MENU_ITEMS[selectedIdx];
-          if (chosen === "Collect Buzz") onEnter();
-          else if (chosen === "Enter the Hive") onExit();
-          else if (chosen === "Explore Maps") onExploreMaps();
+          if (chosen === "Buzz") onEnter();
+          else if (chosen === "Graphs") onExit();
+          else if (chosen === "Maps") onExploreMaps();
+          else if (chosen === "Leaderboard") onLeaderboard();
           else if (chosen === "Credits") onCredits();
           else if (chosen === "Manifesto") onManifesto();
         }
@@ -1695,6 +1699,7 @@ function StartScreen({
     onCredits,
     onExit,
     onExploreMaps,
+    onLeaderboard,
     onManifesto,
     onStart,
     onSettings,
@@ -1847,9 +1852,10 @@ function StartScreen({
                     }}
                     onClick={() => {
                       setSelectedIdx(activeIdx);
-                      if (item === "Collect Buzz") onEnter();
-                      else if (item === "Enter the Hive") onExit();
-                      else if (item === "Explore Maps") onExploreMaps();
+                      if (item === "Buzz") onEnter();
+                      else if (item === "Graphs") onExit();
+                      else if (item === "Maps") onExploreMaps();
+                      else if (item === "Leaderboard") onLeaderboard();
                       else if (item === "Credits") onCredits();
                       else if (item === "Manifesto") onManifesto();
                     }}
@@ -2924,6 +2930,10 @@ export default function TextGameModal({
     setPhase({ type: "manifesto" });
   }, []);
 
+  const handleOpenLeaderboard = useCallback(() => {
+    setPhase({ type: "leaderboard" });
+  }, []);
+
   const handleChessComplete = useCallback((score: number) => {
     setGeneratingScore(score);
     setPhase({ type: "generating" });
@@ -3527,6 +3537,7 @@ export default function TextGameModal({
             onExploreMaps={handleExploreMaps}
             onCredits={handleOpenCredits}
             onManifesto={handleOpenManifesto}
+            onLeaderboard={handleOpenLeaderboard}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}

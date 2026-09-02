@@ -168,6 +168,18 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
                 >
                   Blog
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(
+                      "https://www.youtube.com/@frequently-unasked-questions",
+                      "_blank",
+                    )
+                  }
+                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+                  data-ocid="header.fuqs.button"
+                >
+                  FUQs
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
