@@ -440,6 +440,185 @@ function drawBorder(
 }
 
 // ---------------------------------------------------------------------------
+// Voxel minimap replication — mirrors voxel.js buildWorld + paintMinimapColumn
+// (block top-colors with height shading) so the top-down artwork is the exact
+// top-down image of the voxel terrain, trees included.
+// ---------------------------------------------------------------------------
+
+const MINIMAP_GRID = 100;
+const MINIMAP_B = {
+  GRASS: 3,
+  SAND: 4,
+  ROCK: 5,
+  WATER: 7,
+  WOOD: 8,
+  LEAVES: 9,
+  PINE: 12,
+};
+const MINIMAP_C: Record<number, [number, number, number]> = {
+  [MINIMAP_B.GRASS]: [0.35, 0.66, 0.28],
+  [MINIMAP_B.SAND]: [0.85, 0.78, 0.6],
+  [MINIMAP_B.ROCK]: [0.56, 0.56, 0.59],
+  [MINIMAP_B.WOOD]: [0.3, 0.16, 0.09],
+  [MINIMAP_B.LEAVES]: [0.28, 0.55, 0.22],
+  [MINIMAP_B.PINE]: [0.12, 0.35, 0.16],
+};
+
+function minimapH2(x: number, z: number, s: number): number {
+  let n = (x * 374761393 + z * 668265263 + s * 144667) >>> 0;
+  n = ((n ^ (n >> 13)) * 1274126177) >>> 0;
+  return n >>> 0;
+}
+
+function minimapBiome(h: number, waterLevel: number): string {
+  if (h < waterLevel) return "water";
+  if (h < waterLevel + 12) return "sand";
+  if (h < 100) return "grass";
+  if (h < 160) return "forest";
+  if (h < 190) return "dirt";
+  return "rock";
+}
+
+function renderMinimapTopdown(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  elevationMap: number[][],
+  waterLevel: number,
+  seed: number,
+): void {
+  // Column heights (rounded avg of 4 corners), matching voxel.js buildWorld
+  const H: number[][] = [];
+  let maxH = 0;
+  for (let z = 0; z < MINIMAP_GRID; z++) {
+    H[z] = [];
+    for (let x = 0; x < MINIMAP_GRID; x++) {
+      const h = Math.round(
+        (elevationMap[z][x] +
+          elevationMap[z][x + 1] +
+          elevationMap[z + 1][x] +
+          elevationMap[z + 1][x + 1]) /
+          4,
+      );
+      H[z][x] = h;
+      if (h > maxH) maxH = h;
+    }
+  }
+  const maxY = Math.min(192, maxH + 10);
+
+  // Topmost block (type, y) per column, mirroring voxel array scanning.
+  const topType: Int32Array = new Int32Array(MINIMAP_GRID * MINIMAP_GRID);
+  const topY: Int32Array = new Int32Array(MINIMAP_GRID * MINIMAP_GRID);
+  topY.fill(-1);
+
+  const setBlock = (x: number, y: number, z: number, type: number) => {
+    if (x < 0 || z < 0 || x >= MINIMAP_GRID || z >= MINIMAP_GRID) return;
+    if (y < 0 || y >= maxY) return;
+    const idx = z * MINIMAP_GRID + x;
+    if (y >= topY[idx]) {
+      topY[idx] = y;
+      topType[idx] = type;
+    }
+  };
+
+  // Mirror buildWorld terrain + tree placement
+  for (let z = 0; z < MINIMAP_GRID; z++) {
+    for (let x = 0; x < MINIMAP_GRID; x++) {
+      const fullH = H[z][x];
+      const h = Math.min(fullH, maxY - 1);
+      const bio = minimapBiome(fullH, waterLevel);
+      let surface = MINIMAP_B.GRASS;
+      if (bio === "water" || bio === "sand") surface = MINIMAP_B.SAND;
+      else if (bio === "rock") surface = MINIMAP_B.ROCK;
+      setBlock(x, h, z, surface);
+      if (h < waterLevel) {
+        for (let y = h + 1; y <= waterLevel; y++)
+          setBlock(x, y, z, MINIMAP_B.WATER);
+      }
+      const r = (minimapH2(x, z, seed) >>> 0) / 4294967296;
+      const rate = bio === "forest" ? 0.01 : 0;
+      if (rate && r < rate) placeTree(x, h, z);
+    }
+  }
+
+  // Place a tree exactly like voxel.js placeTree / placeBroadleaf / placePine
+  function placeTree(x: number, topY: number, z: number): void {
+    const s = seed;
+    if ((minimapH2(x, z, s) >> 7) % 2 === 1) placePine(x, topY, z, s);
+    else placeBroadleaf(x, topY, z, s);
+  }
+  function placeBroadleaf(x: number, topY: number, z: number, s: number): void {
+    const th = 4 + ((minimapH2(x, z, s) >> 8) % 3);
+    for (let i = 1; i <= th; i++) setBlock(x, topY + i, z, MINIMAP_B.WOOD);
+    const layers = [
+      { dy: th - 2, size: 5, trim: true },
+      { dy: th - 1, size: 5, trim: true },
+      { dy: th, size: 3, trim: false },
+      { dy: th + 1, size: 1, trim: false },
+    ];
+    for (const L of layers) {
+      const r = (L.size - 1) >> 1;
+      for (let dx = -r; dx <= r; dx++)
+        for (let dz = -r; dz <= r; dz++) {
+          if (dx === 0 && dz === 0 && L.dy <= th) continue;
+          if (L.trim && Math.abs(dx) === r && Math.abs(dz) === r) continue;
+          setBlock(x + dx, topY + L.dy, z + dz, MINIMAP_B.LEAVES);
+        }
+    }
+  }
+  function placePine(x: number, topY: number, z: number, s: number): void {
+    const th = 5 + ((minimapH2(x, z, s + 1) >> 8) % 3);
+    for (let i = 1; i <= th; i++) setBlock(x, topY + i, z, MINIMAP_B.WOOD);
+    const layers = [
+      { dy: th - 2, size: 3 },
+      { dy: th - 1, size: 3 },
+      { dy: th, size: 3 },
+      { dy: th + 1, size: 1 },
+    ];
+    for (const L of layers) {
+      const r = (L.size - 1) >> 1;
+      for (let dx = -r; dx <= r; dx++)
+        for (let dz = -r; dz <= r; dz++) {
+          if (dx === 0 && dz === 0 && L.dy <= th) continue;
+          setBlock(x + dx, topY + L.dy, z + dz, MINIMAP_B.PINE);
+        }
+    }
+  }
+
+  // Paint each column: base block color (water uses the minimap sentinel) with
+  // height shading, matching paintMinimapColumn in voxel.js.
+  const off = document.createElement("canvas");
+  off.width = MINIMAP_GRID;
+  off.height = MINIMAP_GRID;
+  const octx = off.getContext("2d");
+  if (!octx) return;
+  for (let z = 0; z < MINIMAP_GRID; z++) {
+    for (let x = 0; x < MINIMAP_GRID; x++) {
+      const idx = z * MINIMAP_GRID + x;
+      const t = topType[idx];
+      const c =
+        t === MINIMAP_B.WATER
+          ? ([0.16, 0.4, 0.7] as [number, number, number])
+          : MINIMAP_C[t] || ([0.5, 0.5, 0.5] as [number, number, number]);
+      const base = [
+        Math.round(c[0] * 255),
+        Math.round(c[1] * 255),
+        Math.round(c[2] * 255),
+      ];
+      const s = Math.min(255, 170 + (H[z] ? H[z][x] : 0) * 0.3) / 255;
+      octx.fillStyle = `rgb(${Math.round(base[0] * s)},${Math.round(
+        base[1] * s,
+      )},${Math.round(base[2] * s)})`;
+      octx.fillRect(x, z, 1, 1);
+    }
+  }
+
+  // Nearest-neighbor upscale to target canvas (pixelated minimap look)
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, 0, 0, canvasWidth, canvasHeight);
+}
+
+// ---------------------------------------------------------------------------
 // Main export
 // ---------------------------------------------------------------------------
 
@@ -536,8 +715,10 @@ export async function generateTerrainArtwork(
   ctx.fillStyle = projection === "topdown" ? "#2a4a6a" : "rgba(0,0,0,0)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // Generate noise map — use a fresh PRNG seeded from params for reproducibility
-  const noisePrng = new SeedablePRNG(seed ^ 0xdeadbeef);
+  // Generate noise map — use a fresh PRNG seeded from params for reproducibility.
+  // >>> 0 coerces to unsigned so the elevation map matches the voxel world
+  // (voxel.js uses (worldSeedHash ^ 0xdeadbeef) >>> 0).
+  const noisePrng = new SeedablePRNG((seed ^ 0xdeadbeef) >>> 0);
   const rawMap = perlinNoise(
     gridWidth + 1,
     gridHeight + 1,
@@ -588,93 +769,14 @@ export async function generateTerrainArtwork(
   };
 
   if (projection === "topdown") {
-    // Top-down rendering: draw terrain for all tiles, then overlay semi-transparent water
-    const tileSize = canvasWidth / gridWidth;
-    // Pass 1 — terrain for all tiles
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        const h0 = elevationMap[y][x];
-        const h1 = elevationMap[y][x + 1];
-        const h2 = elevationMap[y + 1][x];
-        const h3 = elevationMap[y + 1][x + 1];
-
-        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
-        const [slopeDirection, slopeX, slopeZ] = calculateSlopeDirection(
-          h0,
-          h1,
-          h2,
-          h3,
-        );
-
-        const color = terrainColorLookup(
-          terrainAverageHeight,
-          slopeDirection,
-          slopeX,
-          slopeZ,
-          waterLevel,
-          beachSize,
-          lightPosition,
-          lightHeight,
-          light,
-        );
-
-        const [r, g, b, a] = color;
-        ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-      }
-    }
-    // Pass 2 — water overlay on submerged tiles
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        const h0 = elevationMap[y][x];
-        const h1 = elevationMap[y][x + 1];
-        const h2 = elevationMap[y + 1][x];
-        const h3 = elevationMap[y + 1][x + 1];
-
-        const terrainAverageHeight = (h0 + h1 + h2 + h3) / 4;
-        if (terrainAverageHeight >= waterLevel) continue;
-
-        const depth = waterLevel - terrainAverageHeight;
-        const color = waterColorLookup(depth, waterLevel, lightHeight);
-        const [r, g, b, a] = color;
-        ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-      }
-    }
-    // Water edge outline
-    ctx.strokeStyle = "rgba(30,60,100,0.4)";
-    ctx.lineWidth = 1;
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        const h0 = elevationMap[y][x];
-        const h1 = elevationMap[y][x + 1];
-        const h2 = elevationMap[y + 1][x];
-        const h3 = elevationMap[y + 1][x + 1];
-        const avg = (h0 + h1 + h2 + h3) / 4;
-        if (avg < waterLevel) continue;
-        const neighbors = [
-          [x - 1, y],
-          [x + 1, y],
-          [x, y - 1],
-          [x, y + 1],
-        ];
-        for (const [nx, ny] of neighbors) {
-          if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
-            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
-            break;
-          }
-          const nh0 = elevationMap[ny][nx];
-          const nh1 = elevationMap[ny][nx + 1];
-          const nh2 = elevationMap[ny + 1][nx];
-          const nh3 = elevationMap[ny + 1][nx + 1];
-          const navg = (nh0 + nh1 + nh2 + nh3) / 4;
-          if (navg < waterLevel) {
-            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
-            break;
-          }
-        }
-      }
-    }
+    renderMinimapTopdown(
+      ctx,
+      canvasWidth,
+      canvasHeight,
+      elevationMap,
+      waterLevel,
+      seed,
+    );
   } else {
     const perlinWaterLevel = 2 * (waterLevel / 255) - 1;
 
