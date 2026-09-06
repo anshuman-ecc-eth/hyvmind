@@ -25,7 +25,7 @@ export function parseCommand(input: string): ParsedCommand {
   }
 
   // Extract command (first word after forward slash)
-  const commandMatch = trimmed.match(/^\/([a-z-]+)\s*/i);
+  const commandMatch = trimmed.match(/^\/([a-z]+)\s*/i);
   if (!commandMatch) {
     return {
       success: false,
@@ -36,14 +36,14 @@ export function parseCommand(input: string): ParsedCommand {
   const command = commandMatch[1];
   const rest = trimmed.slice(commandMatch[0].length);
 
-  // Special handling for /find, /debug, /buzz, /setpw, and /regen-terrain
+  // Special handling for /find, /debug, /buzz, /setpw, and /regter
   // commands (take a simple argument, not key=value)
   if (
     command === "find" ||
     command === "debug" ||
     command === "buzz" ||
     command === "setpw" ||
-    command === "regen-terrain"
+    command === "regter"
   ) {
     return {
       success: true,

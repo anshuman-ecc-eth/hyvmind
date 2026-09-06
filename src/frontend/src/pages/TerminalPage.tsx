@@ -1315,7 +1315,7 @@ export default function TerminalPage() {
       return;
     }
 
-    if (command === "regen-terrain") {
+    if (command === "regter") {
       setInput("");
       if (!isAdmin) {
         addMessage("error", "Not authorized. This command requires admin.");
@@ -1332,7 +1332,7 @@ export default function TerminalPage() {
       if (!name) {
         addMessage(
           "error",
-          "Usage: /regen-terrain <name>\nRegenerates the stored terrain artwork for published graph(s) matching <name>.",
+          "Usage: /regter <name>\nRegenerates the stored terrain artwork for published graph(s) matching <name>.",
         );
         return;
       }
