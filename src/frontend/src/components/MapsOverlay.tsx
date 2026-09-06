@@ -125,7 +125,7 @@ export default function MapsOverlay({
       )}
 
       {allItems.length > 0 && (
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="flex flex-col items-stretch gap-1.5">
           {allItems.map((item, i) => {
             const isSelected = i === selectedIdx;
             return (
