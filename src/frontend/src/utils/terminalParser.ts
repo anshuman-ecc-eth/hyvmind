@@ -25,7 +25,7 @@ export function parseCommand(input: string): ParsedCommand {
   }
 
   // Extract command (first word after forward slash)
-  const commandMatch = trimmed.match(/^\/([a-z]+)\s*/i);
+  const commandMatch = trimmed.match(/^\/([a-z-]+)\s*/i);
   if (!commandMatch) {
     return {
       success: false,
