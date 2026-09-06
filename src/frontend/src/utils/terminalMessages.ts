@@ -43,6 +43,11 @@ export function formatHelpText(): string {
   Example:
     /setpw my-secret-phrase
 
+/regen-terrain <name>   (admin only)
+  Regenerate stored terrain artwork for published graph(s) matching <name>
+  Example:
+    /regen-terrain "Cheng 2020"
+
 Notes:
   - Use quotes for names with spaces: name="My Node"
   - To create nodes, publish a source graph from the Sources tab

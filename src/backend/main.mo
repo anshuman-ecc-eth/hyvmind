@@ -4016,7 +4016,7 @@ actor {
     switch (publishedSourceGraphs.get(id)) {
       case (null) { false };
       case (?meta) {
-        if (meta.creator != caller) { return false };
+        if (meta.creator != caller and not AccessControl.isAdmin(accessControlState, caller)) { return false };
         let updated : PublishedSourceGraphMeta = { meta with artworkDataUrl = ?dataUrl };
         publishedSourceGraphs.add(id, updated);
         true;
@@ -4029,7 +4029,7 @@ actor {
     switch (publishedSourceGraphs.get(id)) {
       case (null) { false };
       case (?meta) {
-        if (meta.creator != caller) { return false };
+        if (meta.creator != caller and not AccessControl.isAdmin(accessControlState, caller)) { return false };
         let updated : PublishedSourceGraphMeta = { meta with terrainParams = ?paramsJson };
         publishedSourceGraphs.add(id, updated);
         true;

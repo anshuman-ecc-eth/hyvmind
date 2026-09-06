@@ -12,6 +12,7 @@ import {
   useIsCallerAdmin,
   useResetAllData,
 } from "../hooks/useQueries";
+import { generateTerrainArtwork } from "../utils/perlinTerrainGenerator";
 import { executeArchiveCommand } from "../utils/terminalCommands";
 import {
   formatArchiveMissingNameError,
@@ -1306,6 +1307,71 @@ export default function TerminalPage() {
           addMessage(
             "error",
             `Failed: ${"err" in result ? String(result.err) : "Unknown error"}`,
+          );
+        }
+      } catch (e) {
+        addMessage("error", String(e));
+      }
+      return;
+    }
+
+    if (command === "regen-terrain") {
+      setInput("");
+      if (!isAdmin) {
+        addMessage("error", "Not authorized. This command requires admin.");
+        return;
+      }
+      if (!actor) {
+        addMessage(
+          "error",
+          "Backend not connected. Please wait and try again.",
+        );
+        return;
+      }
+      const name = (argument || "").trim().replace(/^"|"$/g, "");
+      if (!name) {
+        addMessage(
+          "error",
+          "Usage: /regen-terrain <name>\nRegenerates the stored terrain artwork for published graph(s) matching <name>.",
+        );
+        return;
+      }
+      try {
+        const metas = await actor.getAllPublishedSourceGraphs();
+        const matches = metas.filter((m) => m.name === name);
+        if (matches.length === 0) {
+          addMessage("error", `No published graph named "${name}" found.`);
+          return;
+        }
+        for (const meta of matches) {
+          const { dataUrl, params } = await generateTerrainArtwork(
+            meta.name,
+            "full",
+            "topdown",
+          );
+          if (!dataUrl) {
+            addMessage("error", `Artwork generation failed for ${meta.name}.`);
+            continue;
+          }
+          const artworkOk = await actor.updateSourceGraphArtwork(
+            meta.id,
+            dataUrl,
+          );
+          let paramsOk = true;
+          try {
+            paramsOk = await actor.updateSourceGraphTerrainParams(
+              meta.id,
+              JSON.stringify(params),
+            );
+          } catch (paramsErr) {
+            addMessage(
+              "normal",
+              `Terrain params save failed for ${meta.name} (${paramsErr instanceof Error ? paramsErr.message : String(paramsErr)}).`,
+            );
+          }
+          addMessage(
+            "success",
+            `Regenerated terrain for "${meta.name}" (${meta.id}): artwork=${artworkOk ? "ok" : "rejected"}, params=${paramsOk ? "ok" : "failed"}.`,
           );
         }
       } catch (e) {
