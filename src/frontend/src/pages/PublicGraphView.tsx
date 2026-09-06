@@ -77,6 +77,12 @@ function matchesAttributeFilter(node: SourceNode, filter: string): boolean {
   );
 }
 
+function fmtPrincipal(p: unknown): string {
+  return typeof (p as { toText?: () => string }).toText === "function"
+    ? `${(p as { toText: () => string }).toText().slice(0, 10)}...`
+    : `${String(p).slice(0, 10)}...`;
+}
+
 function Spinner() {
   return (
     <div className="flex flex-1 items-center justify-center min-h-0">
@@ -104,6 +110,12 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
   const crossRefEdges =
     Number(meta.edgeCount) - Number(meta.hierarchyEdgeCount ?? 0n);
   const hierarchyEdges = Number(meta.hierarchyEdgeCount ?? 0n);
+  const authorIds = Array.from(
+    new Set([
+      meta.creator.toText(),
+      ...meta.extensionLog.map((e) => e.extendedBy.toText()),
+    ]),
+  );
 
   return (
     <div
@@ -112,12 +124,12 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
     >
       {/* Authors */}
       <div className="font-mono text-xs text-muted-foreground mb-0.5">
-        Authors: {meta.authors.join(", ")}
+        Authors: {authorIds.map(fmtPrincipal).join(", ")}
       </div>
 
       {/* Core line */}
       <div className="font-mono text-xs text-muted-foreground mb-1">
-        Core &mdash; {meta.creatorName} &mdash; {date}
+        Core &mdash; {fmtPrincipal(meta.creator)} &mdash; {date}
       </div>
 
       {/* Stats */}
@@ -134,15 +146,14 @@ function GraphCardWithSave({ meta, onView, onSave }: GraphCardWithSaveProps) {
           {meta.extensionLog.map((entry, i) => {
             const extMs = Number(entry.extendedAt) / 1_000_000;
             const extDate = new Date(extMs).toLocaleDateString();
-            const byName = entry.extendedByName || "Unknown";
             return (
               <li
                 key={String(entry.extendedAt)}
                 className="font-mono text-xs text-muted-foreground"
               >
-                Extension #{i + 1} &mdash; {byName} &mdash; {extDate} &mdash; +
-                {Number(entry.addedNodes)} nodes, +{Number(entry.addedEdges)}{" "}
-                edges
+                Extension #{i + 1} &mdash; {fmtPrincipal(entry.extendedBy)}{" "}
+                &mdash; {extDate} &mdash; +{Number(entry.addedNodes)} nodes, +
+                {Number(entry.addedEdges)} edges
               </li>
             );
           })}
