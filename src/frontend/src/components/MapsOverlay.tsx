@@ -30,7 +30,10 @@ export default function MapsOverlay({
 
   const allItems = useMemo(() => {
     const named = publishedTerrains.map((t) => t.name);
-    return import.meta.env.DEV ? [...DEV_TEST_MAPS, ...named] : named;
+    const items = import.meta.env.DEV ? [...DEV_TEST_MAPS, ...named] : named;
+    return items.sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }),
+    );
   }, [publishedTerrains]);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -142,6 +145,7 @@ export default function MapsOverlay({
                   border: "none",
                   cursor: "pointer",
                   padding: "0",
+                  textAlign: "left",
                 }}
                 onClick={() => {
                   setSelectedIdx(i);
@@ -149,7 +153,10 @@ export default function MapsOverlay({
                 }}
                 onMouseEnter={() => setSelectedIdx(i)}
               >
-                {isSelected ? `> ${item}` : `  ${item}`}
+                <span style={{ display: "inline-block", width: "2em" }}>
+                  {isSelected ? "> " : ""}
+                </span>
+                {item}
               </button>
             );
           })}
