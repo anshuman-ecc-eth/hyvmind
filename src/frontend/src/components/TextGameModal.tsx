@@ -1622,7 +1622,7 @@ function CreditsScreen({ onBack }: { onBack: () => void }) {
 interface StartScreenProps {
   onStart: () => void;
   onSettings: () => void;
-  onExit: () => void;
+  onOpenGraphs: () => void;
   onEnter: () => void;
   onExploreMaps: () => void;
   onCredits: () => void;
@@ -1638,7 +1638,7 @@ interface StartScreenProps {
 function StartScreen({
   onStart,
   onSettings,
-  onExit,
+  onOpenGraphs,
   onEnter,
   onExploreMaps,
   onCredits,
@@ -1668,7 +1668,7 @@ function StartScreen({
         } else if (e.key === "Enter" || e.key === "j" || e.key === "J") {
           const chosen = MENU_ITEMS[selectedIdx];
           if (chosen === "Buzz") onEnter();
-          else if (chosen === "Graphs") onExit();
+          else if (chosen === "Graphs") onOpenGraphs();
           else if (chosen === "Maps") onExploreMaps();
           else if (chosen === "Leaderboard") onLeaderboard();
           else if (chosen === "Credits") onCredits();
@@ -1701,7 +1701,7 @@ function StartScreen({
     leftSelectedIdx,
     onEnter,
     onCredits,
-    onExit,
+    onOpenGraphs,
     onExploreMaps,
     onLeaderboard,
     onManifesto,
@@ -1859,7 +1859,7 @@ function StartScreen({
                     onClick={() => {
                       setSelectedIdx(activeIdx);
                       if (item === "Buzz") onEnter();
-                      else if (item === "Graphs") onExit();
+                      else if (item === "Graphs") onOpenGraphs();
                       else if (item === "Maps") onExploreMaps();
                       else if (item === "Leaderboard") onLeaderboard();
                       else if (item === "Credits") onCredits();
@@ -2799,6 +2799,7 @@ function LabDiagramsOverlay({ onBack }: { onBack: () => void }) {
 interface TextGameModalProps {
   onComplete: () => void;
   onOpenTutorial?: () => void;
+  onOpenGraphs?: () => void;
   checkCondition?: (
     condition: string,
     input: string,
@@ -2808,12 +2809,15 @@ interface TextGameModalProps {
 export default function TextGameModal({
   onComplete,
   onOpenTutorial,
+  onOpenGraphs,
 }: TextGameModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const onOpenTutorialRef = useRef(onOpenTutorial);
   onOpenTutorialRef.current = onOpenTutorial;
+  const onOpenGraphsRef = useRef(onOpenGraphs);
+  onOpenGraphsRef.current = onOpenGraphs;
 
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
@@ -2925,8 +2929,8 @@ export default function TextGameModal({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleExit = useCallback(() => {
-    onCompleteRef.current();
+  const handleOpenGraphs = useCallback(() => {
+    onOpenGraphsRef.current?.();
   }, []);
 
   const handleOpenSettings = useCallback(() => {
@@ -3547,7 +3551,7 @@ export default function TextGameModal({
             modalRef={modalRef}
             onStart={handleStart}
             onSettings={handleOpenSettings}
-            onExit={handleExit}
+            onOpenGraphs={handleOpenGraphs}
             onEnter={handleStartHyvmind}
             onExploreMaps={handleExploreMaps}
             onCredits={handleOpenCredits}

@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import LandingGraphDiagram from "./components/LandingGraphDiagram";
 import ProfileSetupModal from "./components/ProfileSetupModal";
+import PublicGraphsOverlay from "./components/PublicGraphsOverlay";
 import { SettingsView } from "./components/SettingsView";
 import { Sidebar } from "./components/Sidebar";
 import TextGameModal from "./components/TextGameModal";
@@ -36,6 +37,7 @@ function AppShell() {
   const [gameComplete, setGameComplete] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [blogOpen, setBlogOpen] = useState(false);
+  const [graphsOpen, setGraphsOpen] = useState(false);
   // Localhost-only tester: `?dev` renders the post-login shell without
   // Internet Identity. Backend queries stay disabled (no local backend),
   // so the shell renders with empty data — enough to exercise the Funding tab.
@@ -154,6 +156,7 @@ function AppShell() {
               <TextGameModal
                 onComplete={() => setGameComplete(true)}
                 onOpenTutorial={() => setTutorialOpen(true)}
+                onOpenGraphs={() => setGraphsOpen(true)}
                 checkCondition={handleCheckCondition}
               />
             )}
@@ -162,6 +165,9 @@ function AppShell() {
         <Footer />
         {tutorialOpen && (
           <TutorialView onClose={() => setTutorialOpen(false)} />
+        )}
+        {graphsOpen && (
+          <PublicGraphsOverlay onClose={() => setGraphsOpen(false)} />
         )}
         {blogOpen && <BlogsView onClose={() => setBlogOpen(false)} />}
         <Toaster />

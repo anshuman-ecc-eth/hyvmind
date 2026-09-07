@@ -44,6 +44,7 @@ export default function OntologyModal({
       ref={overlayRef}
       tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 outline-none"
+      data-ocid="ontology_modal.dialog"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
