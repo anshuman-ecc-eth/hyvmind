@@ -153,21 +153,23 @@ function AppShell() {
             </div>
             {/* Text game overlay */}
             {!gameComplete && (
-              <TextGameModal
-                onComplete={() => setGameComplete(true)}
-                onOpenTutorial={() => setTutorialOpen(true)}
-                onOpenGraphs={() => setGraphsOpen(true)}
-                checkCondition={handleCheckCondition}
-              />
+              <div style={{ display: graphsOpen ? "none" : undefined }}>
+                <TextGameModal
+                  onComplete={() => setGameComplete(true)}
+                  onOpenTutorial={() => setTutorialOpen(true)}
+                  onOpenGraphs={() => setGraphsOpen(true)}
+                  checkCondition={handleCheckCondition}
+                />
+              </div>
+            )}
+            {graphsOpen && !gameComplete && (
+              <PublicGraphsOverlay onClose={() => setGraphsOpen(false)} />
             )}
           </div>
         </main>
         <Footer />
         {tutorialOpen && (
           <TutorialView onClose={() => setTutorialOpen(false)} />
-        )}
-        {graphsOpen && (
-          <PublicGraphsOverlay onClose={() => setGraphsOpen(false)} />
         )}
         {blogOpen && <BlogsView onClose={() => setBlogOpen(false)} />}
         <Toaster />
