@@ -16,6 +16,7 @@ import {
 } from "../hooks/usePublicGraphs";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
 import { graphDataToSourceGraph } from "../utils/graphDataConverter";
+import { computeVisibleNodeIds, isAllVisible } from "../utils/graphVisibility";
 import { generateFullSourceGraphTurtle } from "../utils/sourceGraphOntologyTurtle";
 
 // artworkDataUrl is included in the generated bindings as string | undefined
@@ -37,7 +38,6 @@ interface FilterState {
   searchText: string;
   visibleNodeTypes: Set<string>;
   isCollapsed: boolean;
-  focusedNodeNames?: Set<string>;
   attributeFilterText?: string;
 }
 
@@ -45,37 +45,12 @@ const defaultFilterState = (): FilterState => ({
   searchText: "",
   visibleNodeTypes: new Set(ALL_NODE_TYPES),
   isCollapsed: false,
-  focusedNodeNames: undefined,
   attributeFilterText: undefined,
 });
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
-
-function matchesAttributeFilter(node: SourceNode, filter: string): boolean {
-  const attrs = node.attributes;
-  if (!attrs) return false;
-  const colonIdx = filter.indexOf(":");
-  if (colonIdx === -1) {
-    return Object.keys(attrs).some((k) =>
-      k.toLowerCase().includes(filter.toLowerCase()),
-    );
-  }
-  const key = filter.slice(0, colonIdx).toLowerCase();
-  const value = filter
-    .slice(colonIdx + 1)
-    .trim()
-    .toLowerCase();
-  if (!key) return false;
-  if (!value) {
-    return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));
-  }
-  return Object.entries(attrs).some(
-    ([k, v]) =>
-      k.toLowerCase().includes(key) && String(v).toLowerCase().includes(value),
-  );
-}
 
 function fmtPrincipal(p: unknown): string {
   return typeof (p as { toText?: () => string }).toText === "function"
@@ -245,6 +220,7 @@ interface GraphDetailProps {
   graphs: PublishedSourceGraphMeta[];
   onBack: () => void;
   filterStatesRef: React.MutableRefObject<Map<string, FilterState>>;
+  autoFitOnOpen?: boolean;
 }
 
 function GraphDetail({
@@ -252,6 +228,7 @@ function GraphDetail({
   graphs,
   onBack,
   filterStatesRef,
+  autoFitOnOpen = false,
 }: GraphDetailProps) {
   const { data: graphData, isLoading } = usePublishedGraphData(selectedId);
   const meta = graphs.find((g) => g.id === selectedId);
@@ -338,28 +315,17 @@ function GraphDetail({
   // ---------------------------------------------------------------------------
   const visibleNodeCount = useMemo(() => {
     if (!convertedGraph) return 0;
-    const search = filterState.searchText.trim().toLowerCase();
-    const types = filterState.visibleNodeTypes;
-    const focused = filterState.focusedNodeNames;
-    const attrFilter = (filterState.attributeFilterText ?? "").trim();
-    const allTypesVisible = types.size >= ALL_NODE_TYPES.size;
-    const noSearch = search.length === 0;
-    const noFocused = !focused || focused.size === 0;
-    const noAttr = attrFilter.length === 0;
-    if (allTypesVisible && noSearch && noFocused && noAttr)
-      return convertedGraph.nodes.length;
-    return convertedGraph.nodes.filter((n) => {
-      const typeOk = allTypesVisible || types.has(n.nodeType);
-      const searchOk = noSearch || n.name.toLowerCase().includes(search);
-      const focusedOk = noFocused || focused.has(n.name);
-      const attrOk = noAttr || matchesAttributeFilter(n, attrFilter);
-      return typeOk && searchOk && focusedOk && attrOk;
-    }).length;
+    const filters = {
+      searchText: filterState.searchText,
+      visibleNodeTypes: filterState.visibleNodeTypes,
+      attributeFilterText: filterState.attributeFilterText,
+    };
+    if (isAllVisible(filters)) return convertedGraph.nodes.length;
+    return computeVisibleNodeIds(convertedGraph, filters).size;
   }, [
     convertedGraph,
     filterState.searchText,
     filterState.visibleNodeTypes,
-    filterState.focusedNodeNames,
     filterState.attributeFilterText,
   ]);
 
@@ -390,9 +356,9 @@ function GraphDetail({
               onNodeClick={setSelectedNode}
               searchText={filterState.searchText}
               visibleNodeTypes={filterState.visibleNodeTypes}
-              focusedNodeNames={filterState.focusedNodeNames}
               attributeFilterText={filterState.attributeFilterText}
               onFitToVisible={handleFitRegister}
+              autoFitOnLoad={autoFitOnOpen}
             />
           </div>
           <FilterPanel
@@ -423,10 +389,6 @@ function GraphDetail({
               }))
             }
             onOntology={handleOntology}
-            hasFocusedFilter={
-              filterState.focusedNodeNames !== undefined &&
-              filterState.focusedNodeNames.size > 0
-            }
           />
         </div>
       )}
@@ -473,37 +435,39 @@ export default function PublicGraphView({
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
   const [savingGraphId, setSavingGraphId] = useState<string | null>(null);
   const [searchSelectKey, setSearchSelectKey] = useState(0);
+  // Only fuzzy-finder selections auto-frame the diagram on open
+  const [autoFitOnOpen, setAutoFitOnOpen] = useState(false);
 
   // Per-graph filter state persistence — survives navigation between graphs
   const filterStatesRef = useRef<Map<string, FilterState>>(new Map());
 
   const handleFuzzySelect = (item: SearchableItem) => {
-    let focusedNodeNames: Set<string> | undefined;
     let attributeFilterText: string | undefined;
-    let searchText: string | undefined;
+    let searchText = "";
 
     if (item.type === "node" && item.node) {
-      focusedNodeNames = new Set([item.node.name]);
       searchText = item.node.name;
-    } else if (item.type === "edge" && item.sourceName && item.targetName) {
-      focusedNodeNames = new Set([item.sourceName, item.targetName]);
+    } else if (item.type === "edge" && item.sourceName) {
+      // The target endpoint shows up as an immediate neighbour
+      searchText = item.sourceName;
     } else if (item.type === "attribute" && item.nodeName) {
-      focusedNodeNames = new Set([item.nodeName]);
+      searchText = item.nodeName;
       attributeFilterText = `${item.key}${item.value ? `:${item.value}` : ""}`;
     }
 
     filterStatesRef.current.set(item.graphId, {
       ...defaultFilterState(),
-      ...(focusedNodeNames && { focusedNodeNames }),
       ...(attributeFilterText && { attributeFilterText }),
-      searchText: searchText ?? "",
+      searchText,
     });
 
+    setAutoFitOnOpen(true);
     setSelectedGraphId(item.graphId);
     setSearchSelectKey((k) => k + 1);
   };
 
   const handleViewGraph = (id: string) => {
+    setAutoFitOnOpen(false);
     setSelectedGraphId(id);
   };
 
@@ -548,6 +512,7 @@ export default function PublicGraphView({
         graphs={graphs}
         onBack={() => setSelectedGraphId(null)}
         filterStatesRef={filterStatesRef}
+        autoFitOnOpen={autoFitOnOpen}
       />
     );
   }

@@ -18,7 +18,6 @@ export interface FilterPanelProps {
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
   onOntology?: () => void;
-  hasFocusedFilter?: boolean;
 }
 
 const ALL_NODE_TYPES: { key: string; label: string; color: string }[] = [
@@ -99,7 +98,6 @@ export default function FilterPanel({
   isCollapsed,
   onToggleCollapsed,
   onOntology,
-  hasFocusedFilter = false,
 }: FilterPanelProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const attributeInputRef = useRef<HTMLInputElement>(null);
@@ -125,8 +123,7 @@ export default function FilterPanel({
   const isFiltered =
     searchText.trim().length > 0 ||
     visibleNodeTypes.size < ALL_NODE_TYPES.length ||
-    attributeFilterText.trim().length > 0 ||
-    hasFocusedFilter;
+    attributeFilterText.trim().length > 0;
 
   return (
     <div

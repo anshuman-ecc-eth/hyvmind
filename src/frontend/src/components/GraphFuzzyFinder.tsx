@@ -32,6 +32,42 @@ interface GraphFuzzyFinderProps {
   onClose?: () => void;
 }
 
+const SEARCH_LIMIT = 10;
+const SEARCH_DEBOUNCE_MS = 120;
+
+// ---------------------------------------------------------------------------
+// Highlight the fuzzy-matched characters in a result label
+// ---------------------------------------------------------------------------
+
+function HighlightedLabel({
+  text,
+  result,
+}: {
+  text: string;
+  result: FuseResult<SearchableItem>;
+}) {
+  const ranges =
+    result.matches?.find((m) => m.key === "label")?.indices ?? null;
+  if (!ranges || ranges.length === 0) return <>{text}</>;
+
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    if (start > cursor) parts.push(text.slice(cursor, start));
+    parts.push(
+      <span
+        key={start}
+        className="font-bold text-current underline decoration-dotted underline-offset-2"
+      >
+        {text.slice(start, end + 1)}
+      </span>,
+    );
+    cursor = end + 1;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
+
 // ---------------------------------------------------------------------------
 // Section header for dropdown grouping
 // ---------------------------------------------------------------------------
@@ -56,6 +92,7 @@ export default function GraphFuzzyFinder({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [results, setResults] = useState<FuseResult<SearchableItem>[]>([]);
+  const [totalMatches, setTotalMatches] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { queries, metas } = useAllPublishedGraphDatas();
@@ -141,6 +178,7 @@ export default function GraphFuzzyFinder({
         ],
         threshold: 0.4,
         includeScore: true,
+        includeMatches: true,
       }),
     [items],
   );
@@ -159,18 +197,34 @@ export default function GraphFuzzyFinder({
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value;
-    setQuery(val);
-    if (val.length > 0) {
-      const r = fuse.search(val).slice(0, 10);
-      setResults(r);
+  // Debounced search — avoids running Fuse on every keystroke over the corpus
+  useEffect(() => {
+    const val = query;
+    if (val.trim().length === 0) {
+      setResults([]);
+      setTotalMatches(0);
+      setIsOpen(false);
+      return;
+    }
+    const t = setTimeout(() => {
+      const r = fuse.search(val);
+      setTotalMatches(r.length);
+      setResults(r.slice(0, SEARCH_LIMIT));
       setIsOpen(true);
       setSelectedIndex(0);
-    } else {
-      setResults([]);
-      setIsOpen(false);
-    }
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [query, fuse]);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+  }
+
+  function reset() {
+    setQuery("");
+    setResults([]);
+    setTotalMatches(0);
+    setIsOpen(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -186,22 +240,17 @@ export default function GraphFuzzyFinder({
       const item = ordered[selectedIndex]?.item;
       if (item) {
         onSelect(item);
-        setIsOpen(false);
-        setQuery("");
-        setResults([]);
+        reset();
       }
     } else if (e.key === "Escape") {
-      setIsOpen(false);
-      setQuery("");
+      reset();
       onClose?.();
     }
   }
 
   function handleSelect(item: SearchableItem) {
     onSelect(item);
-    setIsOpen(false);
-    setQuery("");
-    setResults([]);
+    reset();
   }
 
   // Group results by type for section headers
@@ -253,11 +302,7 @@ export default function GraphFuzzyFinder({
         {query.length > 0 && (
           <button
             type="button"
-            onClick={() => {
-              setQuery("");
-              setResults([]);
-              setIsOpen(false);
-            }}
+            onClick={reset}
             className="pr-2 pl-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
             aria-label="Clear search"
             data-ocid="fuzzy_finder.clear_button"
@@ -327,11 +372,17 @@ export default function GraphFuzzyFinder({
               })}
             </div>
           )}
+          {totalMatches > results.length && (
+            <div className="px-3 py-1 border-t border-border bg-muted/20 font-mono text-[10px] text-muted-foreground">
+              top {results.length} of {totalMatches} matches — keep typing to
+              narrow
+            </div>
+          )}
         </div>
       )}
 
       {/* No results */}
-      {isOpen && query.length > 0 && results.length === 0 && (
+      {isOpen && query.trim().length > 0 && totalMatches === 0 && (
         <div
           className="absolute top-full left-0 right-0 z-50 mt-0.5 border border-border bg-background px-3 py-2"
           data-ocid="fuzzy_finder.empty_state"
@@ -381,7 +432,7 @@ function ResultRow({
           isSelected ? "text-accent-foreground" : "text-foreground"
         }`}
       >
-        {item.label}
+        <HighlightedLabel text={item.label} result={result} />
       </span>
       <span
         className={`font-mono text-xs truncate ${

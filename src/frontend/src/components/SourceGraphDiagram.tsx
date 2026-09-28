@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { getVariant } from "../lib/themes";
 import type { SourceRef } from "../types/sourceGraph";
 import type { SourceGraph, SourceNode } from "../types/sourceGraph";
+import { computeVisibleNodeIds, isAllVisible } from "../utils/graphVisibility";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -44,41 +45,6 @@ const NODE_COLORS: Record<string, string> = {
 const BG_DARK = "#0a0a0a";
 const BG_LIGHT = "#f5f5f5";
 
-const ALL_NODE_TYPES = new Set([
-  "curation",
-  "swarm",
-  "location",
-  "lawEntity",
-  "interpEntity",
-]);
-
-function matchesAttributeFilter(
-  node: { attributes?: Record<string, unknown> },
-  filter: string,
-): boolean {
-  const attrs = node.attributes;
-  if (!attrs) return false;
-  const colonIdx = filter.indexOf(":");
-  if (colonIdx === -1) {
-    return Object.keys(attrs).some((k) =>
-      k.toLowerCase().includes(filter.toLowerCase()),
-    );
-  }
-  const key = filter.slice(0, colonIdx).toLowerCase();
-  const value = filter
-    .slice(colonIdx + 1)
-    .trim()
-    .toLowerCase();
-  if (!key) return false;
-  if (!value) {
-    return Object.keys(attrs).some((k) => k.toLowerCase().includes(key));
-  }
-  return Object.entries(attrs).some(
-    ([k, v]) =>
-      k.toLowerCase().includes(key) && String(v).toLowerCase().includes(value),
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -91,9 +57,9 @@ interface SourceGraphDiagramProps {
   graphId?: string;
   searchText?: string;
   visibleNodeTypes?: Set<string>;
-  focusedNodeNames?: Set<string>;
   attributeFilterText?: string;
   onFitToVisible?: (fitFn: () => void) => void;
+  autoFitOnLoad?: boolean;
 }
 
 export function SourceGraphDiagram({
@@ -104,9 +70,9 @@ export function SourceGraphDiagram({
   graphId,
   searchText,
   visibleNodeTypes,
-  focusedNodeNames,
   attributeFilterText,
   onFitToVisible,
+  autoFitOnLoad,
 }: SourceGraphDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<FGInstance | null>(null);
@@ -145,29 +111,32 @@ export function SourceGraphDiagram({
     graphIdRef.current = graphId;
   }, [graphId]);
 
-  // Stable refs for filter props
-  const searchTextRef = useRef(searchText);
-  useEffect(() => {
-    searchTextRef.current = searchText;
-  }, [searchText]);
+  // Current visible node id set + whether everything is visible — read by the
+  // zoomToFit callbacks without recreating the graph instance.
+  const visibleIdsRef = useRef<Set<string>>(new Set());
+  const allVisibleRef = useRef(true);
+  const hasAutoFittedRef = useRef(false);
 
-  const visibleNodeTypesRef = useRef(visibleNodeTypes);
+  // Keep the graph prop available to the visibility effect
+  const graphRef = useRef(graph);
   useEffect(() => {
-    visibleNodeTypesRef.current = visibleNodeTypes;
-  }, [visibleNodeTypes]);
+    graphRef.current = graph;
+  }, [graph]);
 
-  const focusedNodeNamesRef = useRef(focusedNodeNames);
-  useEffect(() => {
-    focusedNodeNamesRef.current = focusedNodeNames;
-  }, [focusedNodeNames]);
+  const autoFitOnLoadRef = useRef(autoFitOnLoad);
 
-  const attributeFilterTextRef = useRef(attributeFilterText);
-  useEffect(() => {
-    attributeFilterTextRef.current = attributeFilterText;
-  }, [attributeFilterText]);
-
-  // Holds the current node visibility predicate for use in zoomToFit callbacks
-  const nodeFilterRef = useRef<(node: FGNode) => boolean>(() => true);
+  // Zoom to the currently visible nodes (all nodes, or just the filtered set)
+  const fitVisible = useCallback(() => {
+    const fg = fgRef.current;
+    if (!fg) return;
+    if (allVisibleRef.current) {
+      fg.zoomToFit(400);
+    } else {
+      fg.zoomToFit(400, undefined, (node) =>
+        visibleIdsRef.current.has((node as FGNode).id),
+      );
+    }
+  }, []);
 
   // Ref to expose the fit-to-visible function to the parent
   const onFitToVisibleRef = useRef(onFitToVisible);
@@ -240,6 +209,7 @@ export function SourceGraphDiagram({
   // ------------------------------------------------------------------
   // Mount: create force-graph instance with correct `new` constructor
   // ------------------------------------------------------------------
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount once — refs carry all updates
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -381,19 +351,13 @@ export function SourceGraphDiagram({
 
       // Expose the fit function to the parent after first layout
       if (onFitToVisibleRef.current) {
-        onFitToVisibleRef.current(() => {
-          const filter = nodeFilterRef.current;
-          const allVisible = filter({
-            name: "",
-            nodeType: "",
-            id: "",
-          } as FGNode);
-          if (allVisible) {
-            fg.zoomToFit(400);
-          } else {
-            fg.zoomToFit(400, undefined, (node) => filter(node as FGNode));
-          }
-        });
+        onFitToVisibleRef.current(fitVisible);
+      }
+
+      // Auto-frame once when opened from a fuzzy-finder selection
+      if (autoFitOnLoadRef.current && !hasAutoFittedRef.current) {
+        hasAutoFittedRef.current = true;
+        fitVisible();
       }
     });
 
@@ -423,36 +387,27 @@ export function SourceGraphDiagram({
   }, [graphData]);
 
   // ------------------------------------------------------------------
-  // Apply visibility filter when searchText, visibleNodeTypes, or focusedNodeNames change
+  // Apply visibility filter when searchText / node types / attributes change.
+  // Matched nodes keep their immediate (one undirected hop) neighbours visible.
   // ------------------------------------------------------------------
   useEffect(() => {
-    if (!fgRef.current) return;
+    const fg = fgRef.current;
+    if (!fg) return;
 
-    const search = (searchText ?? "").trim().toLowerCase();
-    const types = visibleNodeTypes;
-    const focused = focusedNodeNames;
-    const attrFilter = (attributeFilterText ?? "").trim();
-    const allTypesVisible = !types || types.size >= ALL_NODE_TYPES.size;
-    const noSearch = search.length === 0;
-    const noFocused = !focused || focused.size === 0;
-    const noAttr = attrFilter.length === 0;
+    const filters = { searchText, visibleNodeTypes, attributeFilterText };
+    const allVisible = isAllVisible(filters);
+    const visibleIds = computeVisibleNodeIds(graphRef.current, filters);
 
-    const isNodeVisible = (node: FGNode) => {
-      const typeOk = allTypesVisible || (types?.has(node.nodeType) ?? true);
-      const searchOk = noSearch || node.name.toLowerCase().includes(search);
-      const focusedOk = noFocused || focused!.has(node.name);
-      const attrOk = noAttr || matchesAttributeFilter(node, attrFilter);
-      return typeOk && searchOk && focusedOk && attrOk;
-    };
+    allVisibleRef.current = allVisible;
+    visibleIdsRef.current = visibleIds;
 
-    nodeFilterRef.current = isNodeVisible;
-
-    if (allTypesVisible && noSearch && noFocused && noAttr) {
-      fgRef.current.nodeVisibility(true);
-      fgRef.current.linkVisibility(true);
+    if (allVisible) {
+      fg.nodeVisibility(true);
+      fg.linkVisibility(true);
     } else {
-      fgRef.current.nodeVisibility(isNodeVisible);
-      fgRef.current.linkVisibility((link) => {
+      const isNodeVisible = (node: FGNode) => visibleIds.has(node.id);
+      fg.nodeVisibility(isNodeVisible);
+      fg.linkVisibility((link) => {
         const src = link.source;
         const tgt = link.target;
         if (typeof src === "object" && typeof tgt === "object") {
@@ -464,26 +419,15 @@ export function SourceGraphDiagram({
         return true;
       });
     }
-  }, [searchText, visibleNodeTypes, focusedNodeNames, attributeFilterText]);
+  }, [searchText, visibleNodeTypes, attributeFilterText]);
 
   // ------------------------------------------------------------------
   // Re-expose fit function whenever onFitToVisible prop changes
   // ------------------------------------------------------------------
   useEffect(() => {
     if (!fgRef.current || !onFitToVisible) return;
-    onFitToVisible(() => {
-      if (!fgRef.current) return;
-      const filter = nodeFilterRef.current;
-      const allVisible = filter({ name: "", nodeType: "", id: "" } as FGNode);
-      if (allVisible) {
-        fgRef.current.zoomToFit(400);
-      } else {
-        fgRef.current.zoomToFit(400, undefined, (node) =>
-          filter(node as FGNode),
-        );
-      }
-    });
-  }, [onFitToVisible]);
+    onFitToVisible(fitVisible);
+  }, [onFitToVisible, fitVisible]);
 
   // ------------------------------------------------------------------
   // Sync dimensions
@@ -508,24 +452,11 @@ export function SourceGraphDiagram({
   }, [updateSize]);
 
   // Compute visible node count for the status bar
-  const search = (searchText ?? "").trim().toLowerCase();
-  const types = visibleNodeTypes;
-  const focused = focusedNodeNames;
-  const attrFilter = (attributeFilterText ?? "").trim();
-  const allTypesVisible = !types || types.size >= ALL_NODE_TYPES.size;
-  const noSearch = search.length === 0;
-  const noFocused = !focused || focused.size === 0;
-  const noAttr = attrFilter.length === 0;
-  const visibleNodeCount =
-    allTypesVisible && noSearch && noFocused && noAttr
-      ? graph.nodes.length
-      : graph.nodes.filter((n) => {
-          const typeOk = allTypesVisible || (types?.has(n.nodeType) ?? true);
-          const searchOk = noSearch || n.name.toLowerCase().includes(search);
-          const focusedOk = noFocused || focused!.has(n.name);
-          const attrOk = noAttr || matchesAttributeFilter(n, attrFilter);
-          return typeOk && searchOk && focusedOk && attrOk;
-        }).length;
+  const visibleNodeCount = useMemo(() => {
+    const filters = { searchText, visibleNodeTypes, attributeFilterText };
+    if (isAllVisible(filters)) return graph.nodes.length;
+    return computeVisibleNodeIds(graph, filters).size;
+  }, [graph, searchText, visibleNodeTypes, attributeFilterText]);
 
   return (
     <div
