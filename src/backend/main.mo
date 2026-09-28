@@ -304,6 +304,11 @@ actor {
     score : BuzzScore;
   };
 
+  type MemberEntry = {
+    name : Text;
+    online : Bool;
+  };
+
   // Graph Types for visualization
   type GraphNode = {
     id : NodeId;
@@ -589,6 +594,7 @@ actor {
   var interpretationTokenMap = Map.empty<NodeId, InterpretationToken>();
   var userProfiles = Map.empty<Principal, StoredProfile>();
   var userProfileExtras = Map.empty<Principal, ProfileExtras>();
+  var userLastSeen = Map.empty<Principal, Int>();
   var buzzScores = Map.empty<Principal, BuzzScore>();
   var buzzSecrets = Map.empty<Text, BuzzSecretRecord>();
   let accessControlState = AccessControl.initState();
@@ -1209,6 +1215,40 @@ actor {
       affiliation = profile.affiliation;
       identifier = profile.identifier;
     });
+    userLastSeen.add(caller, Time.now());
+  };
+
+  // PRESENCE / MEMBERS
+  public shared ({ caller }) func reportPresence() : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can report presence");
+    };
+    let now = Time.now();
+    let minGap : Int = 15_000_000_000;
+    let last = switch (userLastSeen.get(caller)) {
+      case (null) { 0 };
+      case (?t) { t };
+    };
+    if (now - last > minGap) {
+      userLastSeen.add(caller, now);
+    };
+  };
+
+  public query ({ caller }) func getMembers() : async [MemberEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view members");
+    };
+    let now = Time.now();
+    let window : Int = 75_000_000_000;
+    let members = List.empty<MemberEntry>();
+    for ((principal, profile) in userProfiles.entries()) {
+      let last = switch (userLastSeen.get(principal)) {
+        case (null) { 0 };
+        case (?t) { t };
+      };
+      members.add({ name = profile.name; online = now - last < window });
+    };
+    members.toArray();
   };
 
   // CREATION & UPDATE OPERATIONS

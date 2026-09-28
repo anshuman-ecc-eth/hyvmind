@@ -150,6 +150,10 @@ export interface BuzzLeaderboardEntry {
     score: BuzzScore;
     profileName?: string;
 }
+export interface MemberEntry {
+    name: string;
+    online: boolean;
+}
 export interface BlogPostMeta {
     id: string;
     lastEdited: string;
@@ -474,6 +478,7 @@ export interface backendInterface {
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getJuiceboxProjects(): Promise<Array<JuiceboxProjectView>>;
     getLinkedWallet(): Promise<string | null>;
+    getMembers(): Promise<Array<MemberEntry>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -549,6 +554,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    reportPresence(): Promise<void>;
     requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;

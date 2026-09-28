@@ -232,6 +232,10 @@ export interface BuzzLeaderboardEntry {
     score: BuzzScore;
     profileName?: string;
 }
+export interface MemberEntry {
+    name: string;
+    online: boolean;
+}
 export interface BlogPostMeta {
     id: string;
     lastEdited: string;
@@ -557,6 +561,7 @@ export interface backendInterface {
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getJuiceboxProjects(): Promise<Array<JuiceboxProjectView>>;
     getLinkedWallet(): Promise<string | null>;
+    getMembers(): Promise<Array<MemberEntry>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -632,6 +637,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    reportPresence(): Promise<void>;
     requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
     revokeApiKey(): Promise<void>;
@@ -1191,6 +1197,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getMembers(): Promise<Array<MemberEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMembers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMembers();
+            return result;
+        }
+    }
     async getMessages(arg0: string): Promise<{
         __kind__: "ok";
         ok: Array<ChatMessage>;
@@ -1622,6 +1642,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.redeemBuzzSecret(arg0);
             return from_candid_variant_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async reportPresence(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.reportPresence();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.reportPresence();
+            return result;
         }
     }
     async requestPluginBinding(arg0: Principal, arg1: Principal): Promise<void> {

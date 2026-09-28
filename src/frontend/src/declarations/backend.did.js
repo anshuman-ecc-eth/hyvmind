@@ -242,6 +242,10 @@ export const Location = IDL.Record({
   'parentSwarmId' : NodeId,
   'sources' : IDL.Vec(SourceRef),
 });
+export const MemberEntry = IDL.Record({
+  'name' : IDL.Text,
+  'online' : IDL.Bool,
+});
 export const Swarm = IDL.Record({
   'id' : NodeId,
   'creator' : IDL.Principal,
@@ -484,6 +488,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getLinkedWallet' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
+  'getMembers' : IDL.Func([], [IDL.Vec(MemberEntry)], ['query']),
   'getMessages' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -582,6 +587,7 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
       [],
     ),
+  'reportPresence' : IDL.Func([], [], []),
   'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
   'resetAllData' : IDL.Func([], [], []),
   'revokeApiKey' : IDL.Func([], [], []),
@@ -885,6 +891,10 @@ export const idlFactory = ({ IDL }) => {
     'parentSwarmId' : NodeId,
     'sources' : IDL.Vec(SourceRef),
   });
+  const MemberEntry = IDL.Record({
+    'name' : IDL.Text,
+    'online' : IDL.Bool,
+  });
   const Swarm = IDL.Record({
     'id' : NodeId,
     'creator' : IDL.Principal,
@@ -1134,7 +1144,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(JuiceboxProjectView)],
         ['query'],
       ),
-    'getLinkedWallet' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
+  'getLinkedWallet' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
+  'getMembers' : IDL.Func([], [IDL.Vec(MemberEntry)], ['query']),
     'getMessages' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Vec(ChatMessage), 'err' : IDL.Text })],
@@ -1237,7 +1248,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
         [],
       ),
-    'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
+  'reportPresence' : IDL.Func([], [], []),
+  'requestPluginBinding' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
     'resetAllData' : IDL.Func([], [], []),
     'revokeApiKey' : IDL.Func([], [], []),
     'revokePluginBinding' : IDL.Func([IDL.Principal], [], []),

@@ -11,9 +11,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDown, ArrowUp, MessageSquare, Plus, Search } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  MessageSquare,
+  Plus,
+  Search,
+  Users,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import MembersDialog from "../components/MembersDialog";
 import {
   useAddForumReply,
   useCreateForumPost,
@@ -330,6 +338,7 @@ export default function ForumView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: posts = [] } = useGetForumPosts();
@@ -383,6 +392,15 @@ export default function ForumView() {
             />
           </div>
         </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setMembersOpen(true)}
+          className="shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5"
+        >
+          <Users className="h-3.5 w-3.5 mr-1" />
+          Members
+        </Button>
         <Button
           size="sm"
           variant="ghost"
@@ -531,6 +549,7 @@ export default function ForumView() {
       </div>
 
       <CreatePostDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <MembersDialog open={membersOpen} onOpenChange={setMembersOpen} />
     </div>
   );
 }

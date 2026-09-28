@@ -213,7 +213,11 @@ export interface Location {
   'customAttributes' : Array<WeightedAttribute>,
   'timestamps' : Timestamps,
   'parentSwarmId' : NodeId,
-  'sources' : Array<SourceRef>,
+     'sources' : Array<SourceRef>,
+}
+export interface MemberEntry {
+  'name' : string,
+  'online' : boolean,
 }
 export type NodeId = string;
 export interface NodeOperation {
@@ -440,6 +444,7 @@ export interface _SERVICE {
   'getGraphContributions' : ActorMethod<[string], Array<ContributionView>>,
   'getJuiceboxProjects' : ActorMethod<[], Array<JuiceboxProjectView>>,
   'getLinkedWallet' : ActorMethod<[], [] | [string]>,
+  'getMembers' : ActorMethod<[], Array<MemberEntry>>,
   'getMessages' : ActorMethod<
     [string],
     { 'ok' : Array<ChatMessage> } |
@@ -516,6 +521,7 @@ export interface _SERVICE {
     { 'ok' : string } |
       { 'err' : string }
   >,
+  'reportPresence' : ActorMethod<[], undefined>,
   'requestPluginBinding' : ActorMethod<[Principal, Principal], undefined>,
   'resetAllData' : ActorMethod<[], undefined>,
   'revokeApiKey' : ActorMethod<[], undefined>,

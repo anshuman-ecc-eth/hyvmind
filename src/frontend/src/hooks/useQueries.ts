@@ -1,5 +1,6 @@
 import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import type {
   BuzzLeaderboardEntry,
   BuzzScore,
@@ -8,6 +9,7 @@ import type {
   ForumPostDetail,
   ForumPostSummary,
   GraphData,
+  MemberEntry,
   NodeId,
   backendInterface,
 } from "../backend";
@@ -130,6 +132,52 @@ export function useSaveCallerUserProfile() {
       queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] });
     },
   });
+}
+
+// ─── Presence / Members ───────────────────────────────────────────────────────
+
+export function useGetMembers(enabled = true) {
+  const { actor, isFetching } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<MemberEntry[]>({
+    queryKey: ["members", identity?.getPrincipal().toText() ?? "anonymous"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMembers();
+    },
+    enabled: enabled && !!actor && !isFetching && !!identity,
+    refetchInterval: 30_000,
+  });
+}
+
+export function usePresenceHeartbeat() {
+  const { actor } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  useEffect(() => {
+    if (!actor || !identity) return;
+
+    let cancelled = false;
+    const ping = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      actor.reportPresence().catch(() => {});
+    };
+
+    ping();
+    const interval = setInterval(ping, 30_000);
+    const onVisibility = () => {
+      if (!document.hidden) ping();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [actor, identity]);
 }
 
 export function useGetBuzzLeaderboard() {

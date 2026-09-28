@@ -13,7 +13,11 @@ import { SettingsView } from "./components/SettingsView";
 import { Sidebar } from "./components/Sidebar";
 import TextGameModal from "./components/TextGameModal";
 import { useDebugTools } from "./hooks/useDebugHooks";
-import { useGetCallerUserProfile, useIsCallerAdmin } from "./hooks/useQueries";
+import {
+  useGetCallerUserProfile,
+  useIsCallerAdmin,
+  usePresenceHeartbeat,
+} from "./hooks/useQueries";
 import { useSettings } from "./hooks/useSettings";
 import {
   applyFontPairing,
@@ -60,6 +64,8 @@ function AppShell() {
   }, []);
 
   // Keyboard shortcut removed with CommandPalette deletion
+
+  usePresenceHeartbeat();
 
   const {
     data: userProfile,
