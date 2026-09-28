@@ -94,10 +94,18 @@ export default function GraphFuzzyFinder({
   const [results, setResults] = useState<FuseResult<SearchableItem>[]>([]);
   const [totalMatches, setTotalMatches] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<number | null>(null);
 
   const { queries, metas } = useAllPublishedGraphDatas();
 
+  // Stable signature: only changes when the underlying graph data changes, so
+  // the corpus (and Fuse index) is not rebuilt on every render.
+  const dataKey = queries
+    .map((q) => (q.isSuccess ? q.dataUpdatedAt : 0))
+    .join("|");
+
   // Build flat searchable items from all graph data
+  // biome-ignore lint/correctness/useExhaustiveDependencies: corpus keyed by dataKey
   const items = useMemo<SearchableItem[]>(() => {
     if (!metas) return [];
     const out: SearchableItem[] = [];
@@ -166,7 +174,7 @@ export default function GraphFuzzyFinder({
       }
     }
     return out;
-  }, [queries, metas]);
+  }, [metas, dataKey]);
 
   // Fuse instance — recreated when items change
   const fuse = useMemo(
@@ -197,30 +205,40 @@ export default function GraphFuzzyFinder({
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  // Debounced search — avoids running Fuse on every keystroke over the corpus
-  useEffect(() => {
-    const val = query;
+  // Clear any pending debounced search on unmount
+  useEffect(
+    () => () => {
+      if (debounceRef.current !== null)
+        window.clearTimeout(debounceRef.current);
+    },
+    [],
+  );
+
+  function runSearch(val: string) {
+    const r = fuse.search(val);
+    setTotalMatches(r.length);
+    setResults(r.slice(0, SEARCH_LIMIT));
+    setIsOpen(true);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setQuery(val);
+    if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     if (val.trim().length === 0) {
       setResults([]);
       setTotalMatches(0);
       setIsOpen(false);
       return;
     }
-    const t = setTimeout(() => {
-      const r = fuse.search(val);
-      setTotalMatches(r.length);
-      setResults(r.slice(0, SEARCH_LIMIT));
-      setIsOpen(true);
+    debounceRef.current = window.setTimeout(() => {
+      runSearch(val);
       setSelectedIndex(0);
     }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(t);
-  }, [query, fuse]);
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setQuery(e.target.value);
   }
 
   function reset() {
+    if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     setQuery("");
     setResults([]);
     setTotalMatches(0);
