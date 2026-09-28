@@ -39,6 +39,7 @@ import {
   useDeleteForumPost,
   useGetForumPost,
   useGetForumPosts,
+  useGetMembers,
   useIsCallerAdmin,
   useVoteForumPost,
   useVoteForumReply,
@@ -357,6 +358,7 @@ export default function ForumView() {
 
   const { data: posts = [] } = useGetForumPosts();
   const { data: selectedPost } = useGetForumPost(selectedId);
+  const { data: members = [] } = useGetMembers();
   const { data: isAdmin } = useIsCallerAdmin();
   const deletePostMutation = useDeleteForumPost();
   const votePostMutation = useVoteForumPost();
@@ -433,7 +435,7 @@ export default function ForumView() {
           className="shrink-0 border border-dashed border-border hover:bg-accent font-mono text-xs px-2.5"
         >
           <Users className="h-3.5 w-3.5 mr-1" />
-          Members
+          Members ({members.filter((m) => m.online).length}/{members.length})
         </Button>
         <Button
           size="sm"
