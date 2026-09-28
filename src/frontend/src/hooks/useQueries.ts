@@ -207,6 +207,7 @@ export function useGetMyBuzzBalance() {
 }
 
 import type { BuzzBackendExtensions } from "../types/buzzExtensions.d";
+import type { ForumBackendExtensions } from "../types/forumExtensions.d";
 import type {
   TrustBackendExtensions,
   TrustTransaction,
@@ -522,6 +523,28 @@ export function useVoteForumReply() {
     },
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({ queryKey: ["forumPost", postId] });
+    },
+  });
+}
+
+export function useDeleteForumPost() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      if (!actor) throw new Error("Actor not available");
+      return (actor as unknown as ForumBackendExtensions).deleteForumPost(
+        postId,
+      );
+    },
+    onSuccess: (result, postId) => {
+      if (result.__kind__ !== "ok") return;
+      queryClient.setQueryData<ForumPostSummary[]>(["forumPosts"], (old) =>
+        old?.filter((post) => post.id !== postId),
+      );
+      queryClient.removeQueries({ queryKey: ["forumPost", postId] });
+      queryClient.invalidateQueries({ queryKey: ["forumPosts"] });
     },
   });
 }

@@ -133,6 +133,25 @@ const members = [
   { name: "Frank", online: true },
 ];
 
+const mockPosts = [...posts];
+const mockDetails: Record<string, ForumPostDetail> = { ...details };
+
+const mockActor = {
+  getForumPosts: async () => mockPosts,
+  getForumPost: async (id: string) => mockDetails[id] ?? null,
+  getMembers: async () => members,
+  isCallerAdmin: async () => true,
+  reportPresence: async () => undefined,
+  deleteForumPost: async (id: string) => {
+    const index = mockPosts.findIndex((post) => post.id === id);
+    if (index === -1)
+      return { __kind__: "err" as const, err: "Post not found" };
+    mockPosts.splice(index, 1);
+    delete mockDetails[id];
+    return { __kind__: "ok" as const, ok: null };
+  },
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -142,11 +161,13 @@ const queryClient = new QueryClient({
   },
 });
 
+queryClient.setQueryData(["actor", undefined], mockActor);
 queryClient.setQueryData(["forumPosts"], posts);
 for (const [id, detail] of Object.entries(details)) {
   queryClient.setQueryData(["forumPost", id], detail);
 }
 queryClient.setQueryData(["members", "anonymous"], members);
+queryClient.setQueryData(["isCallerAdmin"], true);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>

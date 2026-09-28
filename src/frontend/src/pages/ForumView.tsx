@@ -1,5 +1,15 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +27,7 @@ import {
   MessageSquare,
   Plus,
   Search,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -25,8 +36,10 @@ import MembersDialog from "../components/MembersDialog";
 import {
   useAddForumReply,
   useCreateForumPost,
+  useDeleteForumPost,
   useGetForumPost,
   useGetForumPosts,
+  useIsCallerAdmin,
   useVoteForumPost,
   useVoteForumReply,
 } from "../hooks/useQueries";
@@ -339,10 +352,13 @@ export default function ForumView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: posts = [] } = useGetForumPosts();
   const { data: selectedPost } = useGetForumPost(selectedId);
+  const { data: isAdmin } = useIsCallerAdmin();
+  const deletePostMutation = useDeleteForumPost();
   const votePostMutation = useVoteForumPost();
   const voteReplyMutation = useVoteForumReply();
 
@@ -374,6 +390,24 @@ export default function ForumView() {
 
   const handleVoteReply = (postId: string, replyId: string, vote: 1n | -1n) => {
     voteReplyMutation.mutate({ postId, replyId, vote });
+  };
+
+  const handleDeletePost = async () => {
+    if (!selectedId) return;
+    const postId = selectedId;
+    try {
+      const result = await deletePostMutation.mutateAsync(postId);
+      if (result.__kind__ === "ok") {
+        toast.success("Post deleted");
+        setSelectedId(null);
+      } else {
+        toast.error(result.err);
+      }
+    } catch {
+      toast.error("Failed to delete post");
+    } finally {
+      setDeleteOpen(false);
+    }
   };
 
   return (
@@ -452,7 +486,7 @@ export default function ForumView() {
           {selectedPost && (
             <ScrollArea className="flex-1 min-h-0 px-4 py-3">
               {/* Post header */}
-              <div className="mb-1 flex items-start justify-between">
+              <div className="mb-1 flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base font-bold text-foreground break-words">
                     {selectedPost.title}
@@ -462,6 +496,17 @@ export default function ForumView() {
                     {formatTime(selectedPost.createdAt)}
                   </p>
                 </div>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeleteOpen(true)}
+                    title="Delete post"
+                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
 
               {/* Tags */}
@@ -550,6 +595,32 @@ export default function ForumView() {
 
       <CreatePostDialog open={createOpen} onOpenChange={setCreateOpen} />
       <MembersDialog open={membersOpen} onOpenChange={setMembersOpen} />
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="font-mono">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{selectedPost?.title}&rdquo; and all of its replies will be
+              permanently removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePostMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDeletePost();
+              }}
+              disabled={deletePostMutation.isPending}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

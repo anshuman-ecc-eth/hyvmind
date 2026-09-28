@@ -4631,6 +4631,22 @@ actor {
     };
   };
 
+  // ─── Forum: deletePost (admin only) ─────────────────────────────────────────
+
+  public shared ({ caller }) func deleteForumPost(postId : Text) : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      return #err("Unauthorized: only admins can delete posts");
+    };
+    switch (forumPosts.get(postId)) {
+      case (null) { #err("Post not found") };
+      case (?_) {
+        forumPosts.remove(postId);
+        #ok;
+      };
+    };
+  };
+
   // ── HTTP API: Types ──────────────────────────────────────────────────────────
 
   type HttpRequest = {
