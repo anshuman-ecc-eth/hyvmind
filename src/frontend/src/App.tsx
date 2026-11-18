@@ -165,6 +165,7 @@ function AppShell() {
                   onOpenTutorial={() => setTutorialOpen(true)}
                   onOpenGraphs={() => setGraphsOpen(true)}
                   checkCondition={handleCheckCondition}
+                  suspended={graphsOpen || tutorialOpen || blogOpen}
                 />
               </div>
             )}

@@ -1629,6 +1629,10 @@ interface StartScreenProps {
   onManifesto: () => void;
   onLeaderboard: () => void;
   onTutorial: () => void;
+  /** Same effect as the X button: skips the game entirely. */
+  onClose: () => void;
+  /** True while another overlay sits on top, so Escape must not close us. */
+  suspended?: boolean;
   showScoreConfirmation?: boolean;
   setShowScoreConfirmation?: (v: boolean) => void;
   setSecretCode?: (v: string | null) => void;
@@ -1645,6 +1649,8 @@ function StartScreen({
   onManifesto,
   onLeaderboard,
   onTutorial,
+  onClose,
+  suspended,
   showScoreConfirmation,
   setShowScoreConfirmation,
   setSecretCode,
@@ -1674,6 +1680,8 @@ function StartScreen({
           else if (chosen === "Credits") onCredits();
           else if (chosen === "Manifesto") onManifesto();
           else if (chosen === "Tutorial") onTutorial();
+        } else if (e.key === "Escape" && !e.repeat && !suspended) {
+          onClose();
         }
       } else if (subMenu === "left") {
         if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
@@ -1708,6 +1716,8 @@ function StartScreen({
     onStart,
     onSettings,
     onTutorial,
+    onClose,
+    suspended,
   ]);
 
   return (
@@ -2800,6 +2810,8 @@ interface TextGameModalProps {
   onComplete: () => void;
   onOpenTutorial?: () => void;
   onOpenGraphs?: () => void;
+  /** True while another overlay (graphs, tutorial, blog) sits on top. */
+  suspended?: boolean;
   checkCondition?: (
     condition: string,
     input: string,
@@ -2810,6 +2822,7 @@ export default function TextGameModal({
   onComplete,
   onOpenTutorial,
   onOpenGraphs,
+  suspended = false,
 }: TextGameModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
@@ -2951,6 +2964,11 @@ export default function TextGameModal({
 
   const handleOpenTutorial = useCallback(() => {
     onOpenTutorialRef.current?.();
+  }, []);
+
+  /** Single exit path shared by the X button and the title-screen Escape key. */
+  const handleCloseGame = useCallback(() => {
+    onCompleteRef.current();
   }, []);
 
   const handleChessComplete = useCallback((score: number) => {
@@ -3558,6 +3576,8 @@ export default function TextGameModal({
             onManifesto={handleOpenManifesto}
             onLeaderboard={handleOpenLeaderboard}
             onTutorial={handleOpenTutorial}
+            onClose={handleCloseGame}
+            suspended={suspended}
             showScoreConfirmation={showScoreConfirmation}
             setShowScoreConfirmation={setShowScoreConfirmation}
             setSecretCode={setSecretCode}
@@ -4242,7 +4262,7 @@ export default function TextGameModal({
               letterSpacing: "0.3em",
             }}
             onClick={() => {
-              onComplete();
+              handleCloseGame();
             }}
             aria-label="Close text game"
           >
