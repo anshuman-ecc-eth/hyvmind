@@ -9,10 +9,8 @@ import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useState } from "react";
 import { clearTreeCache } from "../hooks/useQueries";
 import { DEFAULT_THEME, getVariant, toggleVariant } from "../lib/themes";
-import CollaboratorsView from "../pages/CollaboratorsView";
 
 interface HeaderProps {
   onOpenTutorial: () => void;
@@ -23,7 +21,6 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
-  const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
 
   const isAuthenticated = !!identity;
 
@@ -144,23 +141,13 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
                   Whitepaper
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setCollaboratorsOpen(true)}
-                  className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                  data-ocid="header.collaborators.button"
-                >
-                  Collabs
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() =>
-                    window.open(
-                      "https://www.youtube.com/@frequently-unasked-questions",
-                      "_blank",
-                    )
+                    window.open("https://www.youtube.com/@hyvmind-tv", "_blank")
                   }
                   className="font-mono text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-                  data-ocid="header.fuqs.button"
+                  data-ocid="header.videos.button"
                 >
-                  FUQs
+                  Videos
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
@@ -185,9 +172,6 @@ export default function Header({ onOpenTutorial, onOpenBlog }: HeaderProps) {
           </div>
         </div>
       </div>
-      {collaboratorsOpen && (
-        <CollaboratorsView onClose={() => setCollaboratorsOpen(false)} />
-      )}
     </header>
   );
 }
