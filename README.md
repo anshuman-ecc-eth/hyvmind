@@ -2,7 +2,27 @@
 
 A shared note-taking space for legal researchers. Notes are organised as a five-level hierarchy and published as immutable legal knowledge graphs; the first thing a new user meets is a game.
 
-Hyvmind is one product split across two origins. **xyz** ([`hyvmind.xyz`](https://www.hyvmind.xyz), [repo](https://github.com/anshuman-ecc-eth/hm-xyz)) is the social layer: posts, replies, citations. **app** is the knowledge layer: the editor, the graphs, the public read API. This README covers the knowledge layer and the seam that lets the social layer cite it. xyz's README covers its side of the same seam.
+Hyvmind is one project split across two origins. **xyz** ([`hyvmind.xyz`](https://www.hyvmind.xyz), [repo](https://github.com/anshuman-ecc-eth/hm-xyz)) is the social layer: posts, replies, citations. **app** is the knowledge layer: the editor, the graphs, the public read API. This README covers the knowledge layer and the seam that lets the social layer cite it. xyz's README covers its side of the same seam.
+
+## Contents
+
+- [Stack](#stack)
+  - [Live deployments](#live-deployments)
+- [Build & check](#build--check)
+- [The knowledge model](#the-knowledge-model)
+- [The app](#the-app)
+- [The world](#the-world)
+- [Public API & MCP](#public-api--mcp)
+- [Roadmap: make the knowledge layer citable from xyz](#roadmap-make-the-knowledge-layer-citable-from-xyz)
+  - [Goal](#goal)
+  - [Constraints (verified, not assumed)](#constraints-verified-not-assumed)
+  - [Decisions](#decisions)
+  - [Phases](#phases)
+  - [Not doing (and why)](#not-doing-and-why)
+  - [Open items](#open-items)
+  - [Reference — read shapes](#reference--read-shapes)
+- [Economy](#economy)
+- [License](#license)
 
 ---
 
