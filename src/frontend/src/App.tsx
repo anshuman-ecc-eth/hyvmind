@@ -55,6 +55,21 @@ function AppShell() {
     useSettings();
   useDebugTools();
 
+  // Deep link used by hyvmind.xyz for the Buzz top-up flow:
+  // https://hyvmind.app/?settings=wallet&redeem=1
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+  const linkedSettingsSection = searchParams.get("settings");
+  const linkedOpenRedeem = searchParams.get("redeem") === "1";
+
+  useEffect(() => {
+    if (linkedSettingsSection) {
+      setActiveTab("settings");
+    }
+  }, [linkedSettingsSection, setActiveTab]);
+
   // Initialize font settings on mount
   useEffect(() => {
     const savedPairing = getSavedFontPairing();
@@ -245,7 +260,14 @@ function AppShell() {
               height: "100%",
             }}
           >
-            <SettingsView />
+            <SettingsView
+              initialSection={
+                linkedSettingsSection
+                  ? `settings-${linkedSettingsSection}`
+                  : undefined
+              }
+              openRedeem={linkedOpenRedeem}
+            />
           </div>
           {isAdmin && (
             <div

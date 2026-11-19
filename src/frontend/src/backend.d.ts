@@ -7,14 +7,119 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface Location {
-    id: NodeId;
+export interface AttributeChange {
+    key: string;
+    newValues: Array<string>;
+    oldValues: Array<WeightedValue>;
+    newWeightedValues: Array<WeightedValue>;
+}
+export interface BlogPasswordConfig {
+    ciphertext: Uint8Array;
+    hash: Uint8Array;
+    salt: Uint8Array;
+    updatedAt: bigint;
+    updatedBy: Principal;
+}
+export interface BlogPostContent {
+    html: Uint8Array;
+    banner?: Uint8Array;
+}
+export interface BlogPostMeta {
+    id: string;
+    lastEdited: string;
     title: string;
+    published: string;
+    author: string;
+}
+export interface BuzzLeaderboardEntry {
+    principal: Principal;
+    score: BuzzScore;
+    profileName?: string;
+}
+export type BuzzScore = bigint;
+export interface ChatChannelSummary {
+    id: string;
+    name: string;
+    isSubchannel: boolean;
+    unreadCount: bigint;
+    parentCuration?: string;
+}
+export interface ChatMessage {
+    text: string;
+    sender: Principal;
+    timestamp: bigint;
+    senderName: string;
+}
+export interface ContentVersion {
+    content: string;
+    timestamp: Time;
+    contributor: Principal;
+}
+export interface ContributionView {
+    id: string;
+    buzzAmount: bigint;
+    nodeId: NodeId;
+    isFromExtension: boolean;
+    extensionIndex?: bigint;
+    description: string;
+    payer: Principal;
+    alreadyCredited: boolean;
+}
+export interface CreditedContribution {
+    buzzAmount: bigint;
+    contributionId: string;
+    description: string;
+    earned: bigint;
+    payer: Principal;
+    saveCount: bigint;
+}
+export interface Curation {
+    id: NodeId;
     creator: Principal;
     customAttributes: Array<WeightedAttribute>;
+    name: string;
     timestamps: Timestamps;
-    parentSwarmId: NodeId;
     sources: Array<SourceRef>;
+}
+export interface EdgeOperation {
+    action: {
+        __kind__: "create";
+        create: null;
+    } | {
+        __kind__: "update";
+        update: {
+            newLabels: Array<string>;
+        };
+    };
+    labels: Array<string>;
+    sourceId?: NodeId;
+    sourceName: string;
+    bidirectional: boolean;
+    targetName: string;
+    targetId?: NodeId;
+}
+export interface ExtensionEntry {
+    addedNodes: bigint;
+    extendedByName: string;
+    addedSources?: bigint;
+    addedAttributes: bigint;
+    extendedAt: Time;
+    extendedBy: Principal;
+    addedHierarchyEdges: bigint;
+    addedEdges: bigint;
+}
+export interface ForumPostDetail {
+    id: string;
+    upvotes: bigint;
+    title: string;
+    userVote?: bigint;
+    content: string;
+    createdAt: bigint;
+    tags: Array<string>;
+    authorName: string;
+    author: Principal;
+    replies: Array<ForumReplyDetail>;
+    downvotes: bigint;
 }
 export interface ForumPostSummary {
     id: string;
@@ -28,6 +133,71 @@ export interface ForumPostSummary {
     replyCount: bigint;
     downvotes: bigint;
 }
+export interface ForumReplyDetail {
+    id: string;
+    upvotes: bigint;
+    userVote?: bigint;
+    createdAt: bigint;
+    text: string;
+    authorName: string;
+    author: Principal;
+    downvotes: bigint;
+}
+export interface GraphData {
+    curations: Array<Curation>;
+    rootNodes: Array<GraphNode>;
+    edges: Array<GraphEdge>;
+    locations: Array<Location>;
+    sources: Array<SourceRef>;
+    swarms: Array<Swarm>;
+    lawTokens: Array<LawToken>;
+    interpretationTokens: Array<InterpretationToken>;
+}
+export interface GraphEdge {
+    source: NodeId;
+    directionality: Directionality;
+    target: NodeId;
+    edgeLabel: string;
+}
+export interface GraphNode {
+    id: NodeId;
+    customAttributes: Array<WeightedAttribute>;
+    children: Array<GraphNode>;
+    jurisdiction?: string;
+    sources: Array<SourceRef>;
+    parentId?: NodeId;
+    tokenLabel: string;
+    nodeType: string;
+}
+export interface HttpRequest {
+    url: string;
+    method: string;
+    body: Uint8Array;
+    headers: Array<[string, string]>;
+}
+export interface HttpResponse {
+    body: Uint8Array;
+    headers: Array<[string, string]>;
+    status_code: number;
+}
+export interface InterpretationToken {
+    id: NodeId;
+    title: string;
+    creator: Principal;
+    customAttributes: Array<WeightedAttribute>;
+    timestamps: Timestamps;
+    contentVersions: Array<ContentVersion>;
+    sources: Array<SourceRef>;
+    parentLawTokenId: NodeId;
+}
+export interface JuiceboxProjectView {
+    projectId: bigint;
+    launchedAt: Time;
+    launchedBy: Principal;
+    chainId: bigint;
+    ownerWallet: string;
+    publishedGraphId: string;
+}
 export interface LawToken {
     id: NodeId;
     parentLocationId: NodeId;
@@ -37,19 +207,86 @@ export interface LawToken {
     sources: Array<SourceRef>;
     tokenLabel: string;
 }
-export type Time = bigint;
-export interface ForumPostDetail {
-    id: string;
-    upvotes: bigint;
+export interface Location {
+    id: NodeId;
     title: string;
-    userVote?: bigint;
-    content: string;
-    createdAt: bigint;
-    tags: Array<string>;
-    authorName: string;
-    author: Principal;
-    replies: Array<ForumReplyDetail>;
-    downvotes: bigint;
+    creator: Principal;
+    customAttributes: Array<WeightedAttribute>;
+    timestamps: Timestamps;
+    parentSwarmId: NodeId;
+    sources: Array<SourceRef>;
+}
+export interface MemberEntry {
+    name: string;
+    online: boolean;
+}
+export type NodeId = string;
+export interface NodeOperation {
+    localName: string;
+    action: {
+        __kind__: "create";
+        create: null;
+    } | {
+        __kind__: "update";
+        update: Array<AttributeChange>;
+    };
+    sourceChanges: Array<SourceRef>;
+    attributes: Array<[string, Array<string>]>;
+    backendId?: NodeId;
+    parentName?: string;
+    nodeType: string;
+}
+export type PublishCommitResult = {
+    __kind__: "error";
+    error: {
+        message: string;
+        failedAt?: {
+            name: string;
+            nodeType: string;
+        };
+    };
+} | {
+    __kind__: "success";
+    success: {
+        publishedSourceGraphId?: string;
+        buzzCost: bigint;
+        message: string;
+        nodeMappings: Array<[string, NodeId]>;
+    };
+};
+export interface PublishPreviewResult {
+    buzzCost: bigint;
+    summary: {
+        hierarchyEdgesToCreate: bigint;
+        edgesToCreate: bigint;
+        edgesToUpdate: bigint;
+        attributesAdded: bigint;
+        sourcesAdded: bigint;
+        nodesToCreate: bigint;
+        nodesToUpdate: bigint;
+    };
+    edgeOperations: Array<EdgeOperation>;
+    nodeOperations: Array<NodeOperation>;
+}
+export interface PublishSourceGraphInput {
+    edges: Array<SourceGraphEdgeInput>;
+    nodes: Array<SourceGraphNodeInput>;
+}
+export interface PublishedSourceGraphMeta {
+    id: string;
+    creator: Principal;
+    extensionLog: Array<ExtensionEntry>;
+    name: string;
+    publishedAt: Time;
+    attributeCount: bigint;
+    creatorName: string;
+    edgeCount: bigint;
+    authors: Array<string>;
+    sourcesCount?: bigint;
+    artworkDataUrl?: string;
+    hierarchyEdgeCount: bigint;
+    nodeCount: bigint;
+    terrainParams?: string;
 }
 export type SaveResult = {
     __kind__: "ok";
@@ -70,229 +307,11 @@ export type SaveResult = {
         message: string;
     };
 };
-export interface VoxelGraffiti {
-    id: string;
-    text: string;
-    blocks: Array<{
-        x: bigint;
-        y: bigint;
-        z: bigint;
-        face: Array<bigint>;
-    }>;
-}
-export interface PublishedSourceGraphMeta {
-    id: string;
-    creator: Principal;
-    extensionLog: Array<ExtensionEntry>;
-    name: string;
-    publishedAt: Time;
-    attributeCount: bigint;
-    creatorName: string;
-    edgeCount: bigint;
-    authors: Array<string>;
-    sourcesCount?: bigint;
-    artworkDataUrl?: string;
-    hierarchyEdgeCount: bigint;
-    nodeCount: bigint;
-    terrainParams?: string;
-}
-export interface NodeOperation {
-    localName: string;
-    action: {
-        __kind__: "create";
-        create: null;
-    } | {
-        __kind__: "update";
-        update: Array<AttributeChange>;
-    };
-    sourceChanges: Array<SourceRef>;
-    attributes: Array<[string, Array<string>]>;
-    backendId?: NodeId;
-    parentName?: string;
-    nodeType: string;
-}
-export interface EdgeOperation {
-    action: {
-        __kind__: "create";
-        create: null;
-    } | {
-        __kind__: "update";
-        update: {
-            newLabels: Array<string>;
-        };
-    };
-    labels: Array<string>;
-    sourceId?: NodeId;
-    sourceName: string;
-    bidirectional: boolean;
-    targetName: string;
-    targetId?: NodeId;
-}
-export interface ContributionView {
-    id: string;
-    buzzAmount: bigint;
-    nodeId: NodeId;
-    isFromExtension: boolean;
-    extensionIndex?: bigint;
-    description: string;
-    payer: Principal;
-    alreadyCredited: boolean;
-}
-export interface ChatChannelSummary {
-    id: string;
-    name: string;
-    isSubchannel: boolean;
-    unreadCount: bigint;
-    parentCuration?: string;
-}
-export interface BuzzLeaderboardEntry {
-    principal: Principal;
-    score: BuzzScore;
-    profileName?: string;
-}
-export interface MemberEntry {
-    name: string;
-    online: boolean;
-}
-export interface BlogPostMeta {
-    id: string;
-    lastEdited: string;
-    title: string;
-    published: string;
-    author: string;
-}
-export interface BlogPasswordConfig {
-    ciphertext: Uint8Array;
-    hash: Uint8Array;
-    salt: Uint8Array;
-    updatedAt: bigint;
-    updatedBy: Principal;
-}
-export interface AttributeChange {
-    key: string;
-    newValues: Array<string>;
-    oldValues: Array<WeightedValue>;
-    newWeightedValues: Array<WeightedValue>;
-}
-export type Tag = string;
 export interface SourceGraphEdgeInput {
     sourceName: string;
     bidirectional: boolean;
     targetName: string;
     edgeLabel: string;
-}
-export interface PublishPreviewResult {
-    buzzCost: bigint;
-    summary: {
-        hierarchyEdgesToCreate: bigint;
-        edgesToCreate: bigint;
-        edgesToUpdate: bigint;
-        attributesAdded: bigint;
-        sourcesAdded: bigint;
-        nodesToCreate: bigint;
-        nodesToUpdate: bigint;
-    };
-    edgeOperations: Array<EdgeOperation>;
-    nodeOperations: Array<NodeOperation>;
-}
-export interface GraphNode {
-    id: NodeId;
-    customAttributes: Array<WeightedAttribute>;
-    children: Array<GraphNode>;
-    jurisdiction?: string;
-    sources: Array<SourceRef>;
-    parentId?: NodeId;
-    tokenLabel: string;
-    nodeType: string;
-}
-export interface ExtensionEntry {
-    addedNodes: bigint;
-    extendedByName: string;
-    addedSources?: bigint;
-    addedAttributes: bigint;
-    extendedAt: Time;
-    extendedBy: Principal;
-    addedHierarchyEdges: bigint;
-    addedEdges: bigint;
-}
-export type PublishCommitResult = {
-    __kind__: "error";
-    error: {
-        message: string;
-        failedAt?: {
-            name: string;
-            nodeType: string;
-        };
-    };
-} | {
-    __kind__: "success";
-    success: {
-        publishedSourceGraphId?: string;
-        buzzCost: bigint;
-        message: string;
-        nodeMappings: Array<[string, NodeId]>;
-    };
-};
-export interface BlogPostContent {
-    html: Uint8Array;
-    banner?: Uint8Array;
-}
-export interface TutorialQuestion {
-    contact?: string;
-    question: string;
-    name: string;
-    submittedAt: bigint;
-}
-export interface VoxelWeightChange {
-    graffitiId: string;
-    nodeId: string;
-    delta: bigint;
-}
-export interface VoxelShield {
-    hp: bigint;
-    id: string;
-    x0: bigint;
-    x1: bigint;
-    y0: bigint;
-    y1: bigint;
-    z0: bigint;
-    z1: bigint;
-}
-export interface ChatMessage {
-    text: string;
-    sender: Principal;
-    timestamp: bigint;
-    senderName: string;
-}
-export interface Curation {
-    id: NodeId;
-    creator: Principal;
-    customAttributes: Array<WeightedAttribute>;
-    name: string;
-    timestamps: Timestamps;
-    sources: Array<SourceRef>;
-}
-export interface SourceRef {
-    url: string;
-    name: string;
-}
-export interface InterpretationToken {
-    id: NodeId;
-    title: string;
-    creator: Principal;
-    customAttributes: Array<WeightedAttribute>;
-    timestamps: Timestamps;
-    contentVersions: Array<ContentVersion>;
-    sources: Array<SourceRef>;
-    parentLawTokenId: NodeId;
-}
-export interface PublishSourceGraphInput {
-    edges: Array<SourceGraphEdgeInput>;
-    nodes: Array<SourceGraphNodeInput>;
-}
-export interface WeightedAttribute {
-    key: string;
-    weightedValues: Array<WeightedValue>;
 }
 export interface SourceGraphNodeInput {
     id?: string;
@@ -305,69 +324,10 @@ export interface SourceGraphNodeInput {
     parentName?: string;
     nodeType: string;
 }
-export interface Timestamps {
-    createdAt: Time;
+export interface SourceRef {
+    url: string;
+    name: string;
 }
-export type TrustScore = bigint;
-export type NodeId = string;
-export interface JuiceboxProjectView {
-    projectId: bigint;
-    launchedAt: Time;
-    launchedBy: Principal;
-    chainId: bigint;
-    ownerWallet: string;
-    publishedGraphId: string;
-}
-export interface GraphEdge {
-    source: NodeId;
-    directionality: Directionality;
-    target: NodeId;
-    edgeLabel: string;
-}
-export interface CreditedContribution {
-    buzzAmount: bigint;
-    contributionId: string;
-    description: string;
-    earned: bigint;
-    payer: Principal;
-    saveCount: bigint;
-}
-export interface ContentVersion {
-    content: string;
-    timestamp: Time;
-    contributor: Principal;
-}
-export interface VoxelBlockEdit {
-    v: number;
-    x: bigint;
-    y: bigint;
-    z: bigint;
-}
-export interface TrustTransaction {
-    contributionDetails: Array<CreditedContribution>;
-    totalBuzzCost: bigint;
-    saver: Principal;
-    earned: bigint;
-    savedAt: bigint;
-    saveNumber: bigint;
-    contributionIds: Array<string>;
-}
-export interface GraphData {
-    curations: Array<Curation>;
-    rootNodes: Array<GraphNode>;
-    edges: Array<GraphEdge>;
-    locations: Array<Location>;
-    sources: Array<SourceRef>;
-    swarms: Array<Swarm>;
-    lawTokens: Array<LawToken>;
-    interpretationTokens: Array<InterpretationToken>;
-}
-export interface HttpResponse {
-    body: Uint8Array;
-    headers: Array<[string, string]>;
-    status_code: number;
-}
-export type BuzzScore = bigint;
 export interface Swarm {
     id: NodeId;
     creator: Principal;
@@ -380,19 +340,26 @@ export interface Swarm {
     sources: Array<SourceRef>;
     forkPrincipal?: Principal;
 }
-export interface ForumReplyDetail {
-    id: string;
-    upvotes: bigint;
-    userVote?: bigint;
-    createdAt: bigint;
-    text: string;
-    authorName: string;
-    author: Principal;
-    downvotes: bigint;
+export type Tag = string;
+export type Time = bigint;
+export interface Timestamps {
+    createdAt: Time;
 }
-export interface WeightedValue {
-    weight: bigint;
-    value: string;
+export type TrustScore = bigint;
+export interface TrustTransaction {
+    contributionDetails: Array<CreditedContribution>;
+    totalBuzzCost: bigint;
+    saver: Principal;
+    earned: bigint;
+    savedAt: bigint;
+    saveNumber: bigint;
+    contributionIds: Array<string>;
+}
+export interface TutorialQuestion {
+    contact?: string;
+    question: string;
+    name: string;
+    submittedAt: bigint;
 }
 export interface UserProfile {
     name: string;
@@ -400,11 +367,209 @@ export interface UserProfile {
     socialUrl?: string;
     identifier?: string;
 }
-export interface HttpRequest {
-    url: string;
-    method: string;
-    body: Uint8Array;
-    headers: Array<[string, string]>;
+export interface VoxelBlockEdit {
+    v: number;
+    x: bigint;
+    y: bigint;
+    z: bigint;
+}
+export interface VoxelGraffiti {
+    id: string;
+    text: string;
+    blocks: Array<{
+        x: bigint;
+        y: bigint;
+        z: bigint;
+        face: Array<bigint>;
+    }>;
+}
+export interface VoxelShield {
+    hp: bigint;
+    id: string;
+    x0: bigint;
+    x1: bigint;
+    y0: bigint;
+    y1: bigint;
+    z0: bigint;
+    z1: bigint;
+}
+export interface VoxelWeightChange {
+    graffitiId: string;
+    nodeId: string;
+    delta: bigint;
+}
+export interface WeightedAttribute {
+    key: string;
+    weightedValues: Array<WeightedValue>;
+}
+export interface WeightedValue {
+    weight: bigint;
+    value: string;
+}
+export interface XyzCitation {
+    target: XyzRef;
+    bidirectional: boolean;
+    edgeLabel: string;
+}
+export interface XyzCommitOk {
+    costText: string;
+    cost: bigint;
+    path: Array<string>;
+    nodes: Array<{
+        ref: string;
+        nodeId: NodeId;
+        path: Array<string>;
+    }>;
+    interpNodeId: NodeId;
+    revision: bigint;
+    publishedGraphId: string;
+}
+export type XyzCommitResult = {
+    __kind__: "ok";
+    ok: XyzCommitOk;
+} | {
+    __kind__: "err";
+    err: {
+        kind: XyzErrKind;
+        message: string;
+    };
+} | {
+    __kind__: "conflict";
+    conflict: {
+        message: string;
+    };
+} | {
+    __kind__: "blocked";
+    blocked: {
+        plan: XyzPlan;
+        pathCreators: Array<XyzPathCreator>;
+        message: string;
+        reason: string;
+    };
+} | {
+    __kind__: "notLinked";
+    notLinked: {
+        writerXyz: Principal;
+        message: string;
+    };
+} | {
+    __kind__: "stale";
+    stale: {
+        plan: XyzPlan;
+        message: string;
+    };
+} | {
+    __kind__: "insufficient";
+    insufficient: {
+        topUpPath: string;
+        plan: XyzPlan;
+        message: string;
+    };
+};
+export interface XyzConflict {
+    kind: string;
+    line: string;
+    severity: Variant_warn_block;
+}
+export interface XyzEdgePlan {
+    cost: bigint;
+    line: string;
+    bidirectional: boolean;
+    targetType: string;
+    edgeLabel: string;
+    targetId: NodeId;
+}
+export interface XyzNodePlan {
+    ref: string;
+    owner?: Principal;
+    cost: bigint;
+    pathText: string;
+    line: string;
+    name: string;
+    path: Array<string>;
+    parentId?: NodeId;
+    nodeType: string;
+}
+export interface XyzPathCreator {
+    appPrincipal: Principal;
+    displayName?: string;
+    linked: boolean;
+}
+export interface XyzPathNode {
+    ref: string;
+    name: string;
+    tags: Array<string>;
+    parentRef?: XyzRef;
+    attributes: Array<[string, Array<string>]>;
+    sources: Array<SourceRef>;
+    nodeType: string;
+}
+export interface XyzPlan {
+    creates: bigint;
+    balance: bigint;
+    costText: string;
+    cost: bigint;
+    edges: Array<XyzEdgePlan>;
+    pathCreators: Array<XyzPathCreator>;
+    lines: Array<string>;
+    conflicts: Array<XyzConflict>;
+    nodes: Array<XyzNodePlan>;
+    balanceText: string;
+    digest: string;
+    revision: bigint;
+    rootCuration: string;
+    publishedGraphId?: string;
+}
+export interface XyzPostInput {
+    title: string;
+    content: string;
+    ancestors: Array<XyzPathNode>;
+    parentLaw: XyzRef;
+    citations: Array<XyzCitation>;
+    apiVersion: bigint;
+}
+export type XyzPreviewResult = {
+    __kind__: "err";
+    err: {
+        kind: XyzErrKind;
+        message: string;
+    };
+} | {
+    __kind__: "blocked";
+    blocked: {
+        plan: XyzPlan;
+        pathCreators: Array<XyzPathCreator>;
+        message: string;
+        reason: string;
+    };
+} | {
+    __kind__: "notLinked";
+    notLinked: {
+        writerXyz: Principal;
+        message: string;
+    };
+} | {
+    __kind__: "insufficient";
+    insufficient: {
+        topUpPath: string;
+        plan: XyzPlan;
+        message: string;
+    };
+} | {
+    __kind__: "throttled";
+    throttled: {
+        retryAfterMs: bigint;
+    };
+} | {
+    __kind__: "ready";
+    ready: {
+        plan: XyzPlan;
+        message: string;
+    };
+};
+export interface XyzRef {
+    ref: string;
+    nodeType?: string;
 }
 export enum Directionality {
     none = "none",
@@ -415,6 +580,14 @@ export enum UserRole {
     admin = "admin",
     user = "user",
     guest = "guest"
+}
+export enum Variant_warn_block {
+    warn = "warn",
+    block = "block"
+}
+export enum XyzErrKind {
+    malformed = "malformed",
+    internal = "internal"
 }
 export interface backendInterface {
     addForumReply(postId: string, text: string): Promise<{
@@ -427,6 +600,13 @@ export interface backendInterface {
     approvePluginBinding(pluginPubKey: Principal): Promise<void>;
     archiveNode(nodeId: NodeId): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    beginLink(): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     clearBlogPassword(): Promise<{
         __kind__: "ok";
         ok: null;
@@ -435,6 +615,14 @@ export interface backendInterface {
         err: string;
     }>;
     commitPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishCommitResult>;
+    commitXyzWrite(writerXyz: Principal, writeId: string, expectedDigest: string, mutualFollowXyz: Array<Principal>, input: XyzPostInput): Promise<XyzCommitResult>;
+    confirmLink(code: string, xyzPrincipal: Principal): Promise<{
+        __kind__: "ok";
+        ok: Principal;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     createCuration(name: string, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createForumPost(title: string, content: string, tags: Array<string>): Promise<{
         __kind__: "ok";
@@ -446,6 +634,13 @@ export interface backendInterface {
     createInterpretationToken(title: string, content: string, parentLawTokenId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
     createLocation(title: string, customAttributes: Array<WeightedAttribute>, parentSwarmId: NodeId): Promise<NodeId>;
     createSwarm(name: string, tags: Array<Tag>, parentCurationId: NodeId, customAttributes: Array<WeightedAttribute>): Promise<NodeId>;
+    deleteForumPost(postId: string): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     deriveBlogPasswordVetKey(transportPublicKey: Uint8Array): Promise<{
         __kind__: "ok";
         ok: Uint8Array;
@@ -477,7 +672,9 @@ export interface backendInterface {
     getForumPosts(): Promise<Array<ForumPostSummary>>;
     getGraphContributions(publishedGraphId: string): Promise<Array<ContributionView>>;
     getJuiceboxProjects(): Promise<Array<JuiceboxProjectView>>;
+    getLinkForXyz(xyzPrincipal: Principal): Promise<Principal | null>;
     getLinkedWallet(): Promise<string | null>;
+    getLinkedXyzPrincipal(appPrincipal: Principal): Promise<Principal | null>;
     getMembers(): Promise<Array<MemberEntry>>;
     getMessages(channelId: string): Promise<{
         __kind__: "ok";
@@ -488,6 +685,10 @@ export interface backendInterface {
     }>;
     getMyApiKey(): Promise<string | null>;
     getMyBuzzBalance(): Promise<BuzzScore>;
+    getMyLink(): Promise<{
+        linkedAt: Time;
+        xyzPrincipal: Principal;
+    } | null>;
     getMyPrincipal(): Promise<Principal>;
     getMyTrustBalance(): Promise<TrustScore>;
     getMyTrustTransactions(): Promise<Array<TrustTransaction>>;
@@ -517,6 +718,12 @@ export interface backendInterface {
         }>;
         shields: Array<VoxelShield>;
     } | null>;
+    getXyzBackendPrincipals(): Promise<Array<Principal>>;
+    getXyzBuzzBalance(writerXyz: Principal): Promise<{
+        text: string;
+        units: bigint;
+    } | null>;
+    getXyzWrite(xyzPrincipal: Principal, writeId: string): Promise<XyzCommitOk | null>;
     /**
      * / Called by the Obsidian plugin to cheaply check if push data is available.
      */
@@ -526,6 +733,7 @@ export interface backendInterface {
     http_request(req: HttpRequest): Promise<HttpResponse>;
     icChallengeNonce(): Promise<string>;
     initializeAccessControl(): Promise<void>;
+    isAppPrincipalLinked(appPrincipal: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     isNodeArchived(nodeId: NodeId): Promise<boolean>;
     linkWallet(wallet: string, message: string, signature: string): Promise<{
@@ -536,6 +744,7 @@ export interface backendInterface {
         err: string;
     }>;
     previewPublishSourceGraph(input: PublishSourceGraphInput, existingMappings: Array<[string, NodeId]>): Promise<PublishPreviewResult>;
+    previewXyzWrite(writerXyz: Principal, writeId: string, mutualFollowXyz: Array<Principal>, input: XyzPostInput): Promise<XyzPreviewResult>;
     /**
      * / Called by the web app user (via II) to stage notes for Obsidian vault export.
      */
@@ -557,7 +766,26 @@ export interface backendInterface {
     reportPresence(): Promise<void>;
     requestPluginBinding(pluginPubKey: Principal, forPrincipal: Principal): Promise<void>;
     resetAllData(): Promise<void>;
+    resolveLinkCode(code: string): Promise<{
+        expiresAt: Time;
+        appPrincipal: Principal;
+        displayName?: string;
+    } | null>;
     revokeApiKey(): Promise<void>;
+    revokeLink(): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    revokeLinkAsXyz(xyzPrincipal: Principal): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     revokePluginBinding(pluginKey: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePublishedGraph(publishedGraphId: string, selectedNodeIds: Array<NodeId>): Promise<SaveResult>;
@@ -590,6 +818,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    setXyzBackendPrincipal(p: Principal, enabled: boolean): Promise<void>;
     storeNotesData(json: string): Promise<void>;
     submitTutorialQuestion(name: string, question: string, contact: string | null): Promise<void>;
     track_api_request(apiKey: string): Promise<void>;

@@ -30,6 +30,7 @@ import {
   Copy,
   Download,
   FileText,
+  Link2,
   Loader2,
   RotateCcw,
   Trash2,
@@ -39,6 +40,11 @@ import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createActor } from "../backend";
 import type { backendInterface } from "../backend.d";
+import {
+  useBeginLink,
+  useMyLink,
+  useRevokeLink,
+} from "../hooks/usePrincipalLink";
 import {
   useGetCallerUserProfile,
   useGetMyBuzzBalance,
@@ -60,6 +66,25 @@ import {
 import type { TrustTransaction } from "../types/trustExtensions";
 import { CreateBuzzModal } from "./CreateBuzzModal";
 
+const LINK_CODE_TTL_MS = 10 * 60 * 1000;
+
+function formatLinkCode(code: string): string {
+  return code.match(/.{1,4}/g)?.join("-") ?? code;
+}
+
+function formatLinkRemaining(issuedAt: number | null, now: number): string {
+  if (!issuedAt) return "";
+  const remaining = Math.max(0, LINK_CODE_TTL_MS - (now - issuedAt));
+  const minutes = Math.floor(remaining / 60_000);
+  const seconds = Math.floor((remaining % 60_000) / 1000);
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function truncatePrincipal(principal: string): string {
+  if (principal.length <= 22) return principal;
+  return `${principal.slice(0, 10)}…${principal.slice(-6)}`;
+}
+
 function parseEntity(description: string): string {
   const createMatch = description.match(
     /^Created\s+(curation|swarm|location|law entity|interpretation)\s+'(.+)'$/,
@@ -76,7 +101,15 @@ function parseEntity(description: string): string {
   return description;
 }
 
-export function SettingsView() {
+interface SettingsViewProps {
+  initialSection?: string;
+  openRedeem?: boolean;
+}
+
+export function SettingsView({
+  initialSection,
+  openRedeem = false,
+}: SettingsViewProps = {}) {
   const { theme, setTheme } = useTheme();
   const { data: userProfile, isLoading: profileLoading } =
     useGetCallerUserProfile();
@@ -115,9 +148,28 @@ export function SettingsView() {
   const [revokingKey, setRevokingKey] = useState<string | null>(null);
   const [skillPromptCopied, setSkillPromptCopied] = useState(false);
   const [skillDownloaded, setSkillDownloaded] = useState(false);
-  const [selectedSection, setSelectedSection] =
-    useState<string>("settings-profile");
+  const [selectedSection, setSelectedSection] = useState<string>(
+    initialSection ?? "settings-profile",
+  );
   const [sectionNavCollapsed, setSectionNavCollapsed] = useState(false);
+
+  // Principal link (hyvmind.xyz) state
+  const { data: myLink, isLoading: myLinkLoading } = useMyLink();
+  const beginLink = useBeginLink();
+  const revokeLink = useRevokeLink();
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linkIssuedAt, setLinkIssuedAt] = useState<number | null>(null);
+  const [linkNow, setLinkNow] = useState(Date.now());
+  const [linkCodeCopied, setLinkCodeCopied] = useState(false);
+  const [linkedPrincipalCopied, setLinkedPrincipalCopied] = useState(false);
+  const [confirmUnlink, setConfirmUnlink] = useState(false);
+
+  // Deep link from xyz: open the wallet section and the Redeem Buzz modal.
+  useEffect(() => {
+    if (!openRedeem) return;
+    setSelectedSection("settings-wallet");
+    setCreateBuzzOpen(true);
+  }, [openRedeem]);
 
   const SAMPLE_PROMPT = `You have access to the Hyvmind knowledge graph retrieval API for legal knowledge.
 
@@ -264,6 +316,69 @@ Instructions:
       toast.error("Failed to revoke plugin binding");
     } finally {
       setRevokingKey(null);
+    }
+  };
+
+  // Countdown for the visible link code.
+  useEffect(() => {
+    if (!linkCode) return;
+    setLinkNow(Date.now());
+    const id = window.setInterval(() => setLinkNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [linkCode]);
+
+  // Drop the code once the link becomes active.
+  useEffect(() => {
+    if (myLink) {
+      setLinkCode(null);
+      setLinkIssuedAt(null);
+    }
+  }, [myLink]);
+
+  const handleBeginLink = async () => {
+    try {
+      const code = await beginLink.mutateAsync();
+      setLinkCode(code);
+      setLinkIssuedAt(Date.now());
+      setLinkCodeCopied(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not create a link code",
+      );
+    }
+  };
+
+  const handleCopyLinkCode = async () => {
+    if (!linkCode) return;
+    const ok = await copyText(formatLinkCode(linkCode));
+    if (ok) {
+      setLinkCodeCopied(true);
+      setTimeout(() => setLinkCodeCopied(false), 2000);
+    } else {
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  const handleCopyLinkedPrincipal = async () => {
+    if (!myLink) return;
+    const ok = await copyText(myLink.xyzPrincipal);
+    if (ok) {
+      setLinkedPrincipalCopied(true);
+      setTimeout(() => setLinkedPrincipalCopied(false), 2000);
+    } else {
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  const handleRevokeLink = async () => {
+    try {
+      await revokeLink.mutateAsync();
+      setConfirmUnlink(false);
+      toast.success("hyvmind.xyz account unlinked");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not unlink account",
+      );
     }
   };
 
@@ -767,6 +882,208 @@ ${SAMPLE_PROMPT}`;
               </section>
             )}
 
+            {selectedSection === "settings-linked-accounts" && (
+              <section
+                id="settings-linked-accounts"
+                className="space-y-5"
+                data-ocid="settings.linked_accounts.section"
+              >
+                <p className="text-sm text-muted-foreground">
+                  Connect your accounts so contributions made from xyz are
+                  attributed to you. xyz users can only extend your nodes if you
+                  and they follow each other.
+                </p>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">
+                  {myLinkLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </div>
+                  ) : myLink ? (
+                    <>
+                      <div className="space-y-2">
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: "oklch(0.55 0.15 145)" }}
+                          data-ocid="settings.linked_accounts.status_linked"
+                        >
+                          ✓ Linked to hyvmind.xyz
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <code
+                            className="font-mono text-xs bg-muted px-2 py-1 rounded break-all"
+                            title={myLink.xyzPrincipal}
+                            data-ocid="settings.linked_accounts.xyz_principal"
+                          >
+                            {truncatePrincipal(myLink.xyzPrincipal)}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={handleCopyLinkedPrincipal}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/80 px-2 py-1 rounded shrink-0"
+                            data-ocid="settings.linked_accounts.copy_xyz_principal_button"
+                          >
+                            {linkedPrincipalCopied ? (
+                              <>
+                                <Check className="h-3 w-3" /> copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" /> copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p
+                          className="text-xs text-muted-foreground"
+                          data-ocid="settings.linked_accounts.linked_at"
+                        >
+                          Linked{" "}
+                          {new Date(
+                            Number(myLink.linkedAt / 1_000_000n),
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {confirmUnlink ? (
+                          <>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmUnlink(false)}
+                                disabled={revokeLink.isPending}
+                                data-ocid="settings.linked_accounts.cancel_unlink_button"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={handleRevokeLink}
+                                disabled={revokeLink.isPending}
+                                data-ocid="settings.linked_accounts.confirm_unlink_button"
+                              >
+                                {revokeLink.isPending ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                    Unlinking...
+                                  </>
+                                ) : (
+                                  "Confirm unlink"
+                                )}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Nodes you created stay. Future xyz writes stop
+                              being attributed to this account.
+                            </p>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs text-destructive hover:text-destructive"
+                            onClick={() => setConfirmUnlink(true)}
+                            data-ocid="settings.linked_accounts.unlink_button"
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            Unlink
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  ) : linkCode ? (
+                    <>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          Enter this code at hyvmind.xyz
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Settings → Linked accounts. It expires in{" "}
+                          {formatLinkRemaining(linkIssuedAt, linkNow)}.
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <code
+                            className="font-mono text-lg tracking-widest bg-muted px-3 py-2 rounded"
+                            data-ocid="settings.linked_accounts.code"
+                          >
+                            {formatLinkCode(linkCode)}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={handleCopyLinkCode}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors bg-muted/80 px-2 py-1 rounded shrink-0"
+                            data-ocid="settings.linked_accounts.copy_code_button"
+                          >
+                            {linkCodeCopied ? (
+                              <>
+                                <Check className="h-3 w-3" /> copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" /> copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          xyz shows this profile's name and principal before you
+                          confirm. The code is single-use and never stored
+                          outside this page.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBeginLink}
+                        disabled={beginLink.isPending}
+                        data-ocid="settings.linked_accounts.new_code_button"
+                      >
+                        {beginLink.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Generate a new code"
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-ocid="settings.linked_accounts.status_unlinked"
+                      >
+                        No hyvmind.xyz account linked.
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={handleBeginLink}
+                        disabled={beginLink.isPending}
+                        data-ocid="settings.linked_accounts.connect_button"
+                      >
+                        {beginLink.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Creating code...
+                          </>
+                        ) : (
+                          <>
+                            <Link2 className="mr-2 h-3 w-3" />
+                            Connect a hyvmind.xyz account
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </section>
+            )}
+
             {selectedSection === "settings-wallet" && (
               <section
                 id="settings-wallet"
@@ -1110,6 +1427,23 @@ ${SAMPLE_PROMPT}`;
                   data-ocid="settings.nav.obsidian"
                 >
                   obsidian
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSection("settings-linked-accounts");
+                    document
+                      .getElementById("settings-linked-accounts")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className={`w-full text-left px-2 py-1.5 text-xs font-mono transition-colors rounded ${
+                    selectedSection === "settings-linked-accounts"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-ocid="settings.nav.linked_accounts"
+                >
+                  linked accounts
                 </button>
                 <button
                   type="button"

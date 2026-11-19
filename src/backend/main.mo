@@ -25,6 +25,7 @@ import Debug "mo:core/Debug";
 import Float "mo:core/Float";
 import Migration "Migration";
 import EvmRecovery "EvmRecovery";
+import Sha3 "mo:sha3/lib";
 
 actor {
   // Type Aliases
@@ -446,6 +447,186 @@ actor {
     };
   };
 
+  // ── xyz Write Channel Types ─────────────────────────────────────────────────
+
+  type XyzRef = {
+    ref : Text;
+    nodeType : ?Text;
+  };
+
+  type XyzPathNode = {
+    ref : Text;
+    nodeType : Text;
+    name : Text;
+    parentRef : ?XyzRef;
+    tags : [Text];
+    attributes : [(Text, [Text])];
+    sources : [SourceRef];
+  };
+
+  type XyzCitation = {
+    target : XyzRef;
+    edgeLabel : Text;
+    bidirectional : Bool;
+  };
+
+  type XyzPostInput = {
+    apiVersion : Nat;
+    title : Text;
+    content : Text;
+    parentLaw : XyzRef;
+    ancestors : [XyzPathNode];
+    citations : [XyzCitation];
+  };
+
+  type XyzPathCreator = {
+    appPrincipal : Principal;
+    displayName : ?Text;
+    linked : Bool;
+  };
+
+  type XyzNodePlan = {
+    ref : Text;
+    nodeType : Text;
+    name : Text;
+    parentId : ?NodeId;
+    path : [Text];
+    pathText : Text;
+    owner : ?Principal;
+    cost : Int;
+    line : Text;
+  };
+
+  type XyzEdgePlan = {
+    targetId : NodeId;
+    targetType : Text;
+    edgeLabel : Text;
+    bidirectional : Bool;
+    cost : Int;
+    line : Text;
+  };
+
+  type XyzConflict = {
+    severity : { #block; #warn };
+    kind : Text;
+    line : Text;
+  };
+
+  type XyzPlan = {
+    rootCuration : Text;
+    publishedGraphId : ?Text;
+    revision : Nat;
+    creates : Nat;
+    cost : Int;
+    costText : Text;
+    balance : Int;
+    balanceText : Text;
+    nodes : [XyzNodePlan];
+    edges : [XyzEdgePlan];
+    conflicts : [XyzConflict];
+    pathCreators : [XyzPathCreator];
+    lines : [Text];
+    digest : Text;
+  };
+
+  type XyzCommitOk = {
+    publishedGraphId : Text;
+    revision : Nat;
+    cost : Int;
+    costText : Text;
+    interpNodeId : NodeId;
+    path : [Text];
+    nodes : [{ ref : Text; nodeId : NodeId; path : [Text] }];
+  };
+
+  type XyzErrKind = { #malformed; #internal };
+
+  type XyzPreviewResult = {
+    #ready : { message : Text; plan : XyzPlan };
+    #insufficient : { message : Text; plan : XyzPlan; topUpPath : Text };
+    #blocked : { message : Text; plan : XyzPlan; pathCreators : [XyzPathCreator]; reason : Text };
+    #throttled : { retryAfterMs : Nat };
+    #notLinked : { writerXyz : Principal; message : Text };
+    #err : { kind : XyzErrKind; message : Text };
+  };
+
+  type XyzCommitResult = {
+    #ok : XyzCommitOk;
+    #stale : { message : Text; plan : XyzPlan };
+    #insufficient : { message : Text; plan : XyzPlan; topUpPath : Text };
+    #blocked : { message : Text; plan : XyzPlan; pathCreators : [XyzPathCreator]; reason : Text };
+    #conflict : { message : Text };
+    #notLinked : { writerXyz : Principal; message : Text };
+    #err : { kind : XyzErrKind; message : Text };
+  };
+
+  type XyzWriteRecord = {
+    owner : Principal;
+    xyz : Principal;
+    writeId : Text;
+    digest : Text;
+    cost : Int;
+    result : XyzCommitOk;
+    createdAt : Time.Time;
+  };
+
+  type XyzOriginEntry = {
+    writerApp : Principal;
+    writerXyz : Principal;
+    writeId : Text;
+    at : Time.Time;
+    nodes : Nat;
+    cost : Int;
+  };
+
+  type XyzResolvedNode = {
+    ref : Text;
+    nodeType : Text;
+    name : Text;
+    nodeId : NodeId;
+    parentId : ?NodeId;
+    path : [Text];
+    tags : [Text];
+    attributes : [(Text, [Text])];
+    sources : [SourceRef];
+    cost : Int;
+  };
+
+  type XyzResolved = {
+    newNodes : [XyzResolvedNode];       // root-first, excludes the interp
+    interp : XyzResolvedNode;
+    citations : [{ targetId : NodeId; edgeLabel : Text; bidirectional : Bool }];
+    rootCurationId : ?NodeId;            // existing root (null when the root is new)
+    rootCurationName : Text;
+    publishedGraphId : ?Text;
+    revision : Nat;
+    pathCreators : [XyzPathCreator];
+    cost : Int;
+  };
+
+  type XyzPlanOutcome = {
+    plan : XyzPlan;
+    resolved : XyzResolved;
+    blockedReason : ?Text;
+  };
+
+  type XyzPlanAttempt = {
+    #ok : XyzPlanOutcome;
+    #malformed : Text;
+  };
+
+  type XyzSeed = {
+    existingId : ?NodeId;
+    nodeType : Text;
+    name : Text;
+    parentId : ?NodeId;
+    newRef : ?Text;
+    parentRef : ?XyzRef;
+    tags : [Text];
+    attributes : [(Text, [Text])];
+    sources : [SourceRef];
+  };
+
   // ── Chat Types ──────────────────────────────────────────────────────────────
 
   type ChatMessage = {
@@ -607,6 +788,11 @@ actor {
 
   // Published source graph metadata
   var publishedSourceGraphs = Map.empty<Text, PublishedSourceGraphMeta>();
+
+  // Content version per published graph. Kept in a separate map so the stable
+  // PublishedSourceGraphMeta type is unchanged (no migration). The public API
+  // exposes it as `revision`; caches key on (id, revision), not publishedAt.
+  var publishedGraphRevisions = Map.empty<Text, Nat>();
   var publishedGraphBuzzMetrics = Map.empty<Text, { cumulativeBuzzSpent : Int; extensionCount : Nat }>();
   var trustScores = Map.empty<Principal, TrustScore>();
   var buzzTransactions = Map.empty<Principal, List.List<BuzzTransaction>>();
@@ -681,6 +867,67 @@ actor {
 
   // Vault push data: userPrincipal → json blob destined for Obsidian vault
   var vaultPushData = Map.empty<Principal, Text>();
+
+  // ── xyz Principal Link State ────────────────────────────────────────────────
+
+  // A code is a bearer token proving the app side of a link. It is bound to the
+  // app principal that requested it and consumed by the xyz backend.
+  type LinkCodeStatus = { #pending; #used : Principal };
+
+  type LinkCode = {
+    owner : Principal;      // app principal that requested the code
+    createdAt : Time.Time;
+    expiresAt : Time.Time;
+    status : LinkCodeStatus;
+  };
+
+  type PrincipalLink = {
+    appPrincipal : Principal;
+    xyzPrincipal : Principal;
+    linkedAt : Time.Time;
+  };
+
+  var linkCodes = Map.empty<Text, LinkCode>();
+
+  // Two directional maps, not one symmetric map: the direction of authorization
+  // is explicit in the types and cannot be reversed by accident.
+  var linksByApp = Map.empty<Principal, PrincipalLink>();  // P_hv  -> link
+  var xyzToApp = Map.empty<Principal, Principal>();        // P_xyz -> P_hv
+
+  // Allowlisted xyz backend canisters. Seeded with the deployed xyz backend;
+  // admins flip it with setXyzBackendPrincipal when that canister changes.
+  var xyzBackendPrincipals =
+    Map.singleton(Principal.fromText("2xtge-siaaa-aaaan-q6y3a-cai"), true);
+
+  // Per-caller guard for beginLink, which awaits Random.blob() before mutating.
+  var linkOps = Map.empty<Principal, Bool>();
+
+  let LINK_CODE_TTL : Int = 600_000_000_000;           // 10 minutes
+  let LINK_CODE_RETENTION : Int = 86_400_000_000_000;  // 24 hours
+  let MAX_PENDING_CODES : Nat = 3;
+  let MAX_OUTSTANDING_CODES : Nat = 5_000;             // global backstop
+
+  // ── xyz Write Channel State ─────────────────────────────────────────────────
+
+  // Committed write results, retained indefinitely for idempotent retries.
+  // Key: writerXyz # writeId.
+  var xyzWrites = Map.empty<Text, XyzWriteRecord>();
+
+  // Provenance per published graph, capped at MAX_XYZ_ORIGINS entries.
+  var xyzWriteOrigins = Map.empty<Text, [XyzOriginEntry]>();
+
+  // Preview throttle, keyed by the linked app principal.
+  var lastXyzPreviewAt = Map.empty<Principal, Int>();
+
+  let MAX_XYZ_ANCESTORS : Nat = 4;
+  let MAX_XYZ_CITATIONS : Nat = 20;
+  let MAX_XYZ_TITLE : Nat = 200;
+  let MAX_XYZ_CONTENT : Nat = 20_000;
+  let MAX_XYZ_NAME : Nat = 200;
+  let MAX_XYZ_FOLLOWS : Nat = 500;
+  let MAX_XYZ_ORIGINS : Nat = 100;
+  let XYZ_PREVIEW_COOLDOWN : Int = 2_000_000_000;      // 2 seconds
+  let XYZ_TOP_UP_PATH : Text = "/?settings=wallet&redeem=1";
 
   // Tutorial questions submitted by visitors
   var tutorialQuestions : [TutorialQuestion] = [];
@@ -1083,6 +1330,1535 @@ actor {
 
   public query ({ caller }) func getNotesData() : async ?Text {
     notesImports.get(caller);
+  };
+
+  // ── xyz Principal Link Helpers ─────────────────────────────────────────────
+
+  func isXyzBackend(p : Principal) : Bool {
+    switch (xyzBackendPrincipals.get(p)) {
+      case (?true) { true };
+      case (_) { false };
+    };
+  };
+
+  func requireXyzBackend(caller : Principal) {
+    if (not isXyzBackend(caller)) {
+      Runtime.trap("Unauthorized: caller is not the registered xyz backend");
+    };
+  };
+
+  func normalizeLinkCode(code : Text) : Text {
+    code.replace(#text "-", "").replace(#text " ", "").toLower();
+  };
+
+  // Bounded purge of stale codes. Keys are collected first because Map.delete
+  // mutates nodes in place and would corrupt an active iterator.
+  func purgeLinkCodes(now : Time.Time) {
+    let stale = List.empty<Text>();
+    let iter = linkCodes.entries();
+    var purged : Nat = 0;
+    var scanning = true;
+    while (scanning) {
+      switch (iter.next()) {
+        case (null) { scanning := false };
+        case (?entry) {
+          let (code, linkCode) = entry;
+          if (purged >= 200) {
+            scanning := false;
+          } else if (now - linkCode.createdAt > LINK_CODE_RETENTION) {
+            stale.add(code);
+            purged += 1;
+          };
+        };
+      };
+    };
+    for (code in stale.values()) { linkCodes.remove(code) };
+  };
+
+  // Only unexpired pending codes count toward the per-user cap.
+  func countPendingCodes(owner : Principal, now : Time.Time) : Nat {
+    var pending : Nat = 0;
+    for ((_, entry) in linkCodes.entries()) {
+      if (Principal.equal(entry.owner, owner)) {
+        switch (entry.status) {
+          case (#pending) {
+            if (now <= entry.expiresAt) { pending += 1 };
+          };
+          case (#used(_)) {};
+        };
+      };
+    };
+    pending;
+  };
+
+  func unlinkPrincipal(app : Principal) {
+    switch (linksByApp.get(app)) {
+      case (?link) {
+        xyzToApp.remove(link.xyzPrincipal);
+        linksByApp.remove(app);
+      };
+      case (null) {};
+    };
+  };
+
+  // ── xyz Principal Link Methods ──────────────────────────────────────────────
+
+  public shared ({ caller }) func beginLink() : async { #ok : Text; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      return #err("Not authorized");
+    };
+    switch (linksByApp.get(caller)) {
+      case (?_) { return #err("Already linked. Unlink first.") };
+      case (null) {};
+    };
+    switch (linkOps.get(caller)) {
+      case (?true) { return #err("A link request is already in progress") };
+      case (_) {};
+    };
+    linkOps.add(caller, true);
+
+    var result : { #ok : Text; #err : Text } = #err("Could not generate a link code");
+    try {
+      let now = Time.now();
+      purgeLinkCodes(now);
+      if (linkCodes.size() > MAX_OUTSTANDING_CODES) {
+        result := #err("Too many outstanding codes, try again later");
+      } else if (countPendingCodes(caller, now) >= MAX_PENDING_CODES) {
+        result := #err("Too many pending codes");
+      } else {
+        let code = blobToHex(await Random.blob(), 0, 8);
+        linkCodes.add(code, {
+          owner = caller;
+          createdAt = now;
+          expiresAt = now + LINK_CODE_TTL;
+          status = #pending;
+        });
+        result := #ok(code);
+      };
+    } catch (_e) {
+      result := #err("Could not generate a link code");
+    } finally {
+      linkOps.remove(caller);
+    };
+    result;
+  };
+
+  // Queried by the xyz backend to render a confirmation card before binding.
+  // Never consumes the code and never traps. Null covers unknown, expired and
+  // already-used codes; the caller reconciles via getLinkForXyz.
+  public query ({ caller }) func resolveLinkCode(code : Text) : async ?{
+    appPrincipal : Principal;
+    displayName : ?Text;
+    expiresAt : Time.Time;
+  } {
+    if (not isXyzBackend(caller)) { return null };
+    let normalized = normalizeLinkCode(code);
+    let now = Time.now();
+    switch (linkCodes.get(normalized)) {
+      case (null) { null };
+      case (?entry) {
+        switch (entry.status) {
+          case (#pending) {
+            if (now > entry.expiresAt) { return null };
+            let displayName = switch (userProfiles.get(entry.owner)) {
+              case (?profile) { ?profile.name };
+              case (null) { null };
+            };
+            ?{ appPrincipal = entry.owner; displayName; expiresAt = entry.expiresAt };
+          };
+          case (#used(_)) { null };
+        };
+      };
+    };
+  };
+
+  // Called only by the allowlisted xyz backend. No await: atomic and reentrancy
+  // free. Binds P_hv <-> P_xyz and invalidates the owner's other pending codes.
+  public shared ({ caller }) func confirmLink(
+    code : Text,
+    xyzPrincipal : Principal,
+  ) : async { #ok : Principal; #err : Text } {
+    requireXyzBackend(caller);
+    if (xyzPrincipal.isAnonymous()) { return #err("Invalid xyz principal") };
+
+    let normalized = normalizeLinkCode(code);
+    let now = Time.now();
+    let entry = switch (linkCodes.get(normalized)) {
+      case (?e) { e };
+      case (null) { return #err("Invalid or expired code") };
+    };
+
+    // Idempotent retry: the xyz backend may resend after a SYS_UNKNOWN reply.
+    switch (entry.status) {
+      case (#used(p)) {
+        if (Principal.equal(p, xyzPrincipal)) {
+          switch (linksByApp.get(entry.owner)) {
+            case (?link) {
+              if (Principal.equal(link.xyzPrincipal, xyzPrincipal)) {
+                return #ok(entry.owner);
+              };
+            };
+            case (null) {};
+          };
+        };
+        return #err("Invalid or expired code");
+      };
+      case (#pending) {};
+    };
+
+    if (now > entry.expiresAt) { return #err("Invalid or expired code") };
+
+    // One xyz account per app account; the only way to relink is to unlink.
+    switch (linksByApp.get(entry.owner)) {
+      case (?_) { return #err("This app account is already linked") };
+      case (null) {};
+    };
+    switch (xyzToApp.get(xyzPrincipal)) {
+      case (?existing) {
+        if (not Principal.equal(existing, entry.owner)) {
+          return #err("This xyz account is already linked");
+        };
+      };
+      case (null) {};
+    };
+
+    linksByApp.add(entry.owner, {
+      appPrincipal = entry.owner;
+      xyzPrincipal;
+      linkedAt = now;
+    });
+    xyzToApp.add(xyzPrincipal, entry.owner);
+    linkCodes.add(normalized, { entry with status = #used(xyzPrincipal) });
+
+    // Other codes minted by this owner must not be able to relink later.
+    let stale = List.empty<Text>();
+    for ((otherCode, otherEntry) in linkCodes.entries()) {
+      if (Principal.equal(otherEntry.owner, entry.owner) and otherCode != normalized) {
+        switch (otherEntry.status) {
+          case (#pending) { stale.add(otherCode) };
+          case (#used(_)) {};
+        };
+      };
+    };
+    for (otherCode in stale.values()) { linkCodes.remove(otherCode) };
+
+    #ok(entry.owner);
+  };
+
+  // The app user revokes their own link. Not allowlisted: unlink must work even
+  // when xyz is unreachable.
+  public shared ({ caller }) func revokeLink() : async { #ok; #err : Text } {
+    if (caller.isAnonymous()) { return #err("Not authenticated") };
+    switch (linksByApp.get(caller)) {
+      case (null) { #err("Not linked") };
+      case (?_) { unlinkPrincipal(caller); #ok };
+    };
+  };
+
+  // The xyz backend revokes on behalf of its own user.
+  public shared ({ caller }) func revokeLinkAsXyz(xyzPrincipal : Principal) : async { #ok; #err : Text } {
+    requireXyzBackend(caller);
+    switch (xyzToApp.get(xyzPrincipal)) {
+      case (null) { #err("Not linked") };
+      case (?app) { unlinkPrincipal(app); #ok };
+    };
+  };
+
+  public query ({ caller }) func getMyLink() : async ?{
+    xyzPrincipal : Principal;
+    linkedAt : Time.Time;
+  } {
+    switch (linksByApp.get(caller)) {
+      case (null) { null };
+      case (?link) { ?{ xyzPrincipal = link.xyzPrincipal; linkedAt = link.linkedAt } };
+    };
+  };
+
+  // Reconciliation read for the xyz backend. Queries must not trap.
+  public query ({ caller }) func getLinkForXyz(xyzPrincipal : Principal) : async ?Principal {
+    if (not isXyzBackend(caller)) { return null };
+    xyzToApp.get(xyzPrincipal);
+  };
+
+  // Reverse reconciliation: app principal -> its linked xyz principal. Lets the
+  // xyz backend repair a lost reverse index from authority.
+  public query ({ caller }) func getLinkedXyzPrincipal(appPrincipal : Principal) : async ?Principal {
+    if (not isXyzBackend(caller)) { return null };
+    switch (linksByApp.get(appPrincipal)) {
+      case (?link) { ?link.xyzPrincipal };
+      case (null) { null };
+    };
+  };
+
+  // Boolean form for UI. Same authority, same allowlist rule.
+  public query ({ caller }) func isAppPrincipalLinked(appPrincipal : Principal) : async Bool {
+    if (not isXyzBackend(caller)) { return false };
+    switch (linksByApp.get(appPrincipal)) {
+      case (?_) { true };
+      case (null) { false };
+    };
+  };
+
+  // Admin-only: operability read so the allowlist seed can be verified.
+  public query ({ caller }) func getXyzBackendPrincipals() : async [Principal] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: admin only");
+    };
+    let out = List.empty<Principal>();
+    for ((p, enabled) in xyzBackendPrincipals.entries()) {
+      if (enabled) { out.add(p) };
+    };
+    out.toArray();
+  };
+
+  // Admin-only: change the allowlisted xyz backend canister principal.
+  public shared ({ caller }) func setXyzBackendPrincipal(p : Principal, enabled : Bool) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: admin only");
+    };
+    if (p.isAnonymous()) { Runtime.trap("Invalid principal") };
+    if (enabled) { xyzBackendPrincipals.add(p, true) } else { xyzBackendPrincipals.remove(p) };
+  };
+
+  // ── xyz Write Channel Helpers ───────────────────────────────────────────────
+
+  func formatBuzz(units : Int) : Text {
+    let whole = units / 10;
+    let frac = Int.abs(units % 10);
+    whole.toText() # "." # frac.toText();
+  };
+
+  func buzzBalanceOf(p : Principal) : Int {
+    switch (buzzScores.get(p)) {
+      case (?b) { b };
+      case (null) { 0 };
+    };
+  };
+
+  func xyzWriteKey(xyz : Principal, writeId : Text) : Text {
+    xyz.toText() # "#" # writeId;
+  };
+
+  func xyzDisplayName(p : Principal) : ?Text {
+    switch (userProfiles.get(p)) {
+      case (?profile) { ?profile.name };
+      case (null) { null };
+    };
+  };
+
+  func xyzNameOrPrincipal(p : Principal) : Text {
+    switch (xyzDisplayName(p)) {
+      case (?name) { name };
+      case (null) { p.toText() };
+    };
+  };
+
+  func xyzRevisionOf(publishedId : Text) : Nat {
+    switch (publishedGraphRevisions.get(publishedId)) {
+      case (?revision) { revision };
+      case (null) { 0 };
+    };
+  };
+
+  func xyzIsValidName(name : Text, max : Nat) : Bool {
+    let trimmed = name.trim(#char ' ');
+    trimmed.size() > 0 and trimmed.size() <= max and not trimmed.contains(#text "@");
+  };
+
+  func xyzJoin(parts : [Text], sep : Text) : Text {
+    var out = "";
+    var i = 0;
+    for (p in parts.values()) {
+      if (i > 0) { out #= sep };
+      out #= p;
+      i += 1;
+    };
+    out;
+  };
+
+  func xyzTypeLabel(t : Text) : Text {
+    switch (t) {
+      case ("curation") { "curation" };
+      case ("swarm") { "swarm" };
+      case ("location") { "location" };
+      case ("lawEntity") { "law token" };
+      case ("interpEntity") { "interpretation" };
+      case (_) { t };
+    };
+  };
+
+  func xyzNodeTypeOf(id : NodeId) : ?Text {
+    if (curationMap.containsKey(id)) { return ?"curation" };
+    if (swarmMap.containsKey(id)) { return ?"swarm" };
+    if (locationMap.containsKey(id)) { return ?"location" };
+    if (lawTokenMap.containsKey(id)) { return ?"lawEntity" };
+    if (interpretationTokenMap.containsKey(id)) { return ?"interpEntity" };
+    null;
+  };
+
+  func xyzNameOf(id : NodeId, nodeType : Text) : ?Text {
+    switch (nodeType) {
+      case ("curation") { switch (curationMap.get(id)) { case (?c) { ?c.name }; case (null) { null } } };
+      case ("swarm") { switch (swarmMap.get(id)) { case (?s) { ?s.name }; case (null) { null } } };
+      case ("location") { switch (locationMap.get(id)) { case (?l) { ?l.title }; case (null) { null } } };
+      case ("lawEntity") { switch (lawTokenMap.get(id)) { case (?lt) { ?lt.tokenLabel }; case (null) { null } } };
+      case ("interpEntity") { switch (interpretationTokenMap.get(id)) { case (?it) { ?it.title }; case (null) { null } } };
+      case (_) { null };
+    };
+  };
+
+  func xyzCreatorOf(id : NodeId, nodeType : Text) : ?Principal {
+    switch (nodeType) {
+      case ("curation") { switch (curationMap.get(id)) { case (?c) { ?c.creator }; case (null) { null } } };
+      case ("swarm") { switch (swarmMap.get(id)) { case (?s) { ?s.creator }; case (null) { null } } };
+      case ("location") { switch (locationMap.get(id)) { case (?l) { ?l.creator }; case (null) { null } } };
+      case ("lawEntity") { switch (lawTokenMap.get(id)) { case (?lt) { ?lt.creator }; case (null) { null } } };
+      case ("interpEntity") { switch (interpretationTokenMap.get(id)) { case (?it) { ?it.creator }; case (null) { null } } };
+      case (_) { null };
+    };
+  };
+
+  func xyzParentIdOf(id : NodeId, nodeType : Text) : ?NodeId {
+    switch (nodeType) {
+      case ("swarm") { switch (swarmMap.get(id)) { case (?s) { ?s.parentCurationId }; case (null) { null } } };
+      case ("location") { switch (locationMap.get(id)) { case (?l) { ?l.parentSwarmId }; case (null) { null } } };
+      case ("lawEntity") { switch (lawTokenMap.get(id)) { case (?lt) { ?lt.parentLocationId }; case (null) { null } } };
+      case ("interpEntity") { switch (interpretationTokenMap.get(id)) { case (?it) { ?it.parentLawTokenId }; case (null) { null } } };
+      case (_) { null };
+    };
+  };
+
+  func xyzRootCurationOf(id : NodeId) : ?NodeId {
+    var current : ?NodeId = ?id;
+    var guard = 0;
+    while (current != null and guard < 8) {
+      guard += 1;
+      let cid = switch (current) { case (?x) { x }; case (null) { return null } };
+      if (curationMap.containsKey(cid)) { return ?cid };
+      let t = switch (xyzNodeTypeOf(cid)) { case (?x) { x }; case (null) { return null } };
+      current := xyzParentIdOf(cid, t);
+    };
+    null;
+  };
+
+  func xyzPathNamesOf(id : NodeId, nodeType : Text) : [Text] {
+    let leafFirst = List.empty<Text>();
+    var currentId : ?NodeId = ?id;
+    var currentType : ?Text = ?nodeType;
+    var guard = 0;
+    while (currentId != null and guard < 8) {
+      guard += 1;
+      let cid = switch (currentId) { case (?x) { x }; case (null) { "" } };
+      let ctype = switch (currentType) { case (?x) { x }; case (null) { "" } };
+      switch (xyzNameOf(cid, ctype)) {
+        case (?name) { leafFirst.add(name) };
+        case (null) {};
+      };
+      let parent = xyzParentIdOf(cid, ctype);
+      currentId := parent;
+      currentType := switch (parent) {
+        case (?pid) { xyzNodeTypeOf(pid) };
+        case (null) { null };
+      };
+    };
+    let arr = leafFirst.toArray();
+    Array.tabulate<Text>(arr.size(), func(i : Nat) : Text { arr[arr.size() - 1 - i] });
+  };
+
+  func xyzKeccakHex(text : Text) : Text {
+    let k = Sha3.Keccak(256);
+    k.update(text.encodeUtf8().toArray());
+    blobToHex(Blob.fromArray(k.finalize()), 0, 32);
+  };
+
+  func xyzResolveAttestation(xyzPrincipals : [Principal]) : Set.Set<Principal> {
+    let out = Set.empty<Principal>();
+    var count = 0;
+    for (p in xyzPrincipals.values()) {
+      if (count >= MAX_XYZ_FOLLOWS) { return out };
+      if (not p.isAnonymous()) {
+        count += 1;
+        switch (xyzToApp.get(p)) {
+          case (?app) { out.add(app) };
+          case (null) {};
+        };
+      };
+    };
+    out;
+  };
+
+  func xyzPushOrigin(publishedId : Text, entry : XyzOriginEntry) {
+    let existing = switch (xyzWriteOrigins.get(publishedId)) {
+      case (?list) { list };
+      case (null) { [] };
+    };
+    let appended = existing.concat([entry]);
+    let bounded = if (appended.size() > MAX_XYZ_ORIGINS) {
+      Array.tabulate(MAX_XYZ_ORIGINS, func(i : Nat) : XyzOriginEntry {
+        appended[i + (appended.size() - MAX_XYZ_ORIGINS)]
+      })
+    } else { appended };
+    xyzWriteOrigins.add(publishedId, bounded);
+  };
+
+  func xyzExpectedParent(childType : Text) : ?Text {
+    switch (childType) {
+      case ("swarm") { ?"curation" };
+      case ("location") { ?"swarm" };
+      case ("lawEntity") { ?"location" };
+      case ("interpEntity") { ?"lawEntity" };
+      case (_) { null };
+    };
+  };
+
+  func xyzCurationNameExists(name : Text) : Bool {
+    for ((_, c) in curationMap.entries()) {
+      if (c.name == name) { return true };
+    };
+    false;
+  };
+
+  func xyzSiblingExists(nodeType : Text, parentId : NodeId, name : Text) : Bool {
+    switch (nodeType) {
+      case ("swarm") {
+        for ((_, s) in swarmMap.entries()) {
+          if (s.parentCurationId == parentId and s.name == name) { return true };
+        };
+        false;
+      };
+      case ("location") {
+        for ((_, l) in locationMap.entries()) {
+          if (l.parentSwarmId == parentId and l.title == name) { return true };
+        };
+        false;
+      };
+      case ("lawEntity") {
+        for ((_, lt) in lawTokenMap.entries()) {
+          if (lt.parentLocationId == parentId and lt.tokenLabel == name) { return true };
+        };
+        false;
+      };
+      case (_) { false };
+    };
+  };
+
+  func xyzResolveRef(
+    r : XyzRef,
+    ancestorsByRef : Map.Map<Text, XyzPathNode>,
+  ) : { #ok : XyzSeed; #err : Text } {
+    switch (r.nodeType) {
+      case (null) {
+        switch (ancestorsByRef.get(r.ref)) {
+          case (?node) {
+            #ok({
+              existingId = null;
+              nodeType = node.nodeType;
+              name = node.name;
+              parentId = null;
+              newRef = ?node.ref;
+              parentRef = node.parentRef;
+              tags = node.tags;
+              attributes = node.attributes;
+              sources = node.sources;
+            });
+          };
+          case (null) { #err("Unknown ancestor ref: " # r.ref) };
+        };
+      };
+      case (?t) {
+        switch (xyzNodeTypeOf(r.ref)) {
+          case (null) { #err("Node does not exist: " # r.ref) };
+          case (?actual) {
+            if (actual != t) {
+              #err("Node " # r.ref # " is a " # actual # ", not a " # t)
+            } else {
+              let name = switch (xyzNameOf(r.ref, t)) { case (?n) { n }; case (null) { r.ref } };
+              #ok({
+                existingId = ?r.ref;
+                nodeType = t;
+                name;
+                parentId = xyzParentIdOf(r.ref, t);
+                newRef = null;
+                parentRef = null;
+                tags = [];
+                attributes = [];
+                sources = [];
+              });
+            };
+          };
+        };
+      };
+    };
+  };
+
+  // ── xyz Write Channel Planner ───────────────────────────────────────────────
+
+  func planXyzWrite(
+    writerApp : Principal,
+    writeId : Text,
+    input : XyzPostInput,
+    attested : Set.Set<Principal>,
+  ) : XyzPlanAttempt {
+    if (input.apiVersion != 1) { return #malformed("Unsupported apiVersion") };
+    if (not xyzIsValidName(input.title, MAX_XYZ_TITLE)) {
+      return #malformed("A graph post needs a title (1-200 chars, no '@').");
+    };
+    if (input.content.size() == 0) { return #malformed("A graph post needs its content.") };
+    if (input.content.size() > MAX_XYZ_CONTENT) { return #malformed("Post content is too large.") };
+    if (input.ancestors.size() > MAX_XYZ_ANCESTORS) { return #malformed("Too many new ancestors.") };
+    if (input.citations.size() > MAX_XYZ_CITATIONS) { return #malformed("Too many citations.") };
+
+    let ancestorsByRef = Map.empty<Text, XyzPathNode>();
+    for (node in input.ancestors.values()) {
+      if (ancestorsByRef.containsKey(node.ref)) {
+        return #malformed("Duplicate ancestor ref: " # node.ref);
+      };
+      if (not xyzIsValidName(node.name, MAX_XYZ_NAME)) {
+        return #malformed("Invalid name for " # node.ref);
+      };
+      if (node.nodeType != "curation" and node.nodeType != "swarm" and node.nodeType != "location" and node.nodeType != "lawEntity") {
+        return #malformed("Invalid ancestor type: " # node.nodeType);
+      };
+      if (node.nodeType != "swarm" and node.tags.size() > 0) {
+        return #malformed("Tags are only allowed on swarms.");
+      };
+      if (node.nodeType == "curation" and node.parentRef != null) {
+        return #malformed("A new curation cannot have a parent.");
+      };
+      if (node.nodeType != "curation" and node.parentRef == null) {
+        return #malformed("A new " # node.nodeType # " needs a parentRef.");
+      };
+      ancestorsByRef.add(node.ref, node);
+    };
+
+    let parentLawSeed = switch (xyzResolveRef(input.parentLaw, ancestorsByRef)) {
+      case (#err(m)) { return #malformed(m) };
+      case (#ok(s)) { s };
+    };
+    if (parentLawSeed.nodeType != "lawEntity") {
+      return #malformed("The post must attach to a law token, not a " # parentLawSeed.nodeType);
+    };
+
+    let chainLeafFirst = List.empty<XyzSeed>();
+    let seen = Set.empty<Text>();
+    chainLeafFirst.add(parentLawSeed);
+    switch (parentLawSeed.existingId) {
+      case (?id) { seen.add("id:" # id) };
+      case (null) {
+        switch (parentLawSeed.newRef) {
+          case (?r) { seen.add("ref:" # r) };
+          case (null) {};
+        };
+      };
+    };
+    var current = parentLawSeed;
+    var stopped = false;
+    var guard = 0;
+    while (not stopped and guard < 8) {
+      guard += 1;
+      switch (current.existingId) {
+        case (?id) {
+          if (current.nodeType == "curation") {
+            stopped := true;
+          } else {
+            let expected = switch (xyzExpectedParent(current.nodeType)) {
+              case (?t) { t };
+              case (null) { return #malformed("Invalid node type in path") };
+            };
+            let parent = switch (xyzParentIdOf(id, current.nodeType)) {
+              case (null) { return #malformed("The path stops before a curation.") };
+              case (?p) { p };
+            };
+            let pt = switch (xyzNodeTypeOf(parent)) {
+              case (null) { return #malformed("A path parent is missing.") };
+              case (?t) { t };
+            };
+            if (pt != expected) {
+              return #malformed("Invalid hierarchy: " # current.nodeType # " under " # pt);
+            };
+            let key = "id:" # parent;
+            if (seen.contains(key)) { return #malformed("The path contains a cycle.") };
+            seen.add(key);
+            let name = switch (xyzNameOf(parent, pt)) {
+              case (?n) { n };
+              case (null) { parent };
+            };
+            current := {
+              existingId = ?parent;
+              nodeType = pt;
+              name;
+              parentId = xyzParentIdOf(parent, pt);
+              newRef = null;
+              parentRef = null;
+              tags = [];
+              attributes = [];
+              sources = [];
+            };
+            chainLeafFirst.add(current);
+          };
+        };
+        case (null) {
+          switch (current.parentRef) {
+            case (null) {
+              if (current.nodeType == "curation") {
+                stopped := true;
+              } else {
+                return #malformed("The path stops before a curation.");
+              };
+            };
+            case (?pr) {
+              let next = switch (xyzResolveRef(pr, ancestorsByRef)) {
+                case (#err(m)) { return #malformed(m) };
+                case (#ok(s)) { s };
+              };
+              let expected = switch (xyzExpectedParent(current.nodeType)) {
+                case (?t) { t };
+                case (null) { return #malformed("Invalid node type in path") };
+              };
+              if (next.nodeType != expected) {
+                return #malformed("Invalid hierarchy: " # current.nodeType # " under " # next.nodeType);
+              };
+              let key = switch (next.newRef) {
+                case (?r) { "ref:" # r };
+                case (null) {
+                  switch (next.existingId) {
+                    case (?id) { "id:" # id };
+                    case (null) { "none" };
+                  };
+                };
+              };
+              if (seen.contains(key)) { return #malformed("The path contains a cycle.") };
+              seen.add(key);
+              current := next;
+              chainLeafFirst.add(next);
+            };
+          };
+        };
+      };
+    };
+    if (not stopped) { return #malformed("The path is too deep or cyclic.") };
+
+    let leafArr = chainLeafFirst.toArray();
+    let chain = Array.tabulate(leafArr.size(), func(i : Nat) : XyzSeed {
+      leafArr[leafArr.size() - 1 - i]
+    });
+    let root = chain[0];
+    if (root.nodeType != "curation") {
+      return #malformed("The path does not reach a curation.");
+    };
+
+    let chainRefs = Set.empty<Text>();
+    for (seg in chain.values()) {
+      switch (seg.newRef) {
+        case (?r) { chainRefs.add(r) };
+        case (null) {};
+      };
+    };
+    for ((ref, _) in ancestorsByRef.entries()) {
+      if (not chainRefs.contains(ref)) {
+        return #malformed("Only nodes on the path to the interpretation token may be created.");
+      };
+    };
+
+    let conflicts = List.empty<XyzConflict>();
+    var blockedReason : ?Text = null;
+    func addBlock(kind : Text, line : Text) {
+      conflicts.add({ severity = #block; kind; line });
+      if (blockedReason == null) { blockedReason := ?line };
+    };
+
+    // Assign ids and paths, root first. Existing nodes keep their ids.
+    let ids = List.empty<NodeId>();
+    let paths = List.empty<[Text]>();
+    let namesSoFar = List.empty<Text>();
+    let resolvedNew = List.empty<XyzResolvedNode>();
+    var parentId : ?NodeId = null;
+    var newCurations : Nat = 0;
+    for (seg in chain.values()) {
+      namesSoFar.add(seg.name);
+      let names = namesSoFar.toArray();
+      let nodeId = switch (seg.existingId) {
+        case (?id) { id };
+        case (null) {
+          if (seg.nodeType == "curation") {
+            newCurations += 1;
+            let base = generateId("curation", seg.name, writerApp);
+            let candidate = if (xyzNodeTypeOf(base) == null) { base } else { base # "-" # writeId };
+            if (xyzNodeTypeOf(candidate) != null) {
+              addBlock("ambiguousId", "Could not allocate an id for \"" # seg.name # "\".");
+            };
+            candidate;
+          } else {
+            let candidate = xyzJoin(names, "@");
+            if (xyzNodeTypeOf(candidate) != null) {
+              addBlock("ambiguousId", "The id \"" # candidate # "\" is already used.");
+            };
+            candidate;
+          };
+        };
+      };
+      switch (seg.existingId) {
+        case (null) {
+          let parentForCheck = switch (parentId) { case (?p) { p }; case (null) { "" } };
+          if (seg.nodeType == "curation") {
+            if (xyzCurationNameExists(seg.name)) {
+              addBlock("duplicate", "A curation named \"" # seg.name # "\" already exists.");
+            };
+          } else if (xyzSiblingExists(seg.nodeType, parentForCheck, seg.name)) {
+            addBlock("duplicate", "A " # xyzTypeLabel(seg.nodeType) # " named \"" # seg.name # "\" already exists under this parent.");
+          };
+          let nodeCost = switch (seg.nodeType) {
+            case ("curation") { 10 };
+            case ("swarm") { 20 };
+            case ("location") { 30 };
+            case ("lawEntity") { 40 };
+            case (_) { 0 };
+          };
+          resolvedNew.add({
+            ref = switch (seg.newRef) { case (?r) { r }; case (null) { "" } };
+            nodeType = seg.nodeType;
+            name = seg.name;
+            nodeId;
+            parentId;
+            path = names;
+            tags = seg.tags;
+            attributes = seg.attributes;
+            sources = seg.sources;
+            cost = nodeCost;
+          });
+        };
+        case (?_) {};
+      };
+      ids.add(nodeId);
+      paths.add(names);
+      parentId := ?nodeId;
+    };
+    let idArr = ids.toArray();
+    let pathArr = paths.toArray();
+    let parentLawId = parentId;
+
+    // Interp token id, unique by principal + timestamp.
+    let interpBase = generateId("interpretationToken", input.title, writerApp);
+    let interpId = if (xyzNodeTypeOf(interpBase) == null) { interpBase } else { interpBase # "-" # writeId };
+    if (xyzNodeTypeOf(interpId) != null) {
+      addBlock("ambiguousId", "Could not allocate an id for the interpretation token.");
+    };
+    let interpPath = namesSoFar.toArray().concat([input.title]);
+    let interpResolved : XyzResolvedNode = {
+      ref = "interp";
+      nodeType = "interpEntity";
+      name = input.title;
+      nodeId = interpId;
+      parentId = parentLawId;
+      path = interpPath;
+      tags = [];
+      attributes = [];
+      sources = [];
+      cost = 50;
+    };
+
+    // Permission: every existing creator on the path.
+    let creatorMap = Map.empty<Principal, XyzPathCreator>();
+    for (seg in chain.values()) {
+      switch (seg.existingId) {
+        case (?id) {
+          switch (xyzCreatorOf(id, seg.nodeType)) {
+            case (?creator) {
+              if (not Principal.equal(creator, writerApp)) {
+                creatorMap.add(creator, {
+                  appPrincipal = creator;
+                  displayName = xyzDisplayName(creator);
+                  linked = linksByApp.containsKey(creator);
+                });
+              };
+            };
+            case (null) {};
+          };
+        };
+        case (null) {};
+      };
+    };
+    let pathCreators = creatorMap.values().toArray();
+    for (creator in pathCreators.values()) {
+      if (not creator.linked) {
+        addBlock("unlinkedPathCreator", xyzNameOrPrincipal(creator.appPrincipal) # " has not linked a hyvmind.xyz account.");
+      } else if (not attested.contains(creator.appPrincipal)) {
+        addBlock("unattestedPathCreator", "The attestation does not cover " # xyzNameOrPrincipal(creator.appPrincipal) # ".");
+      };
+    };
+
+    // Citations: this interp -> existing nodes.
+    let citationResolved = List.empty<{ targetId : NodeId; edgeLabel : Text; bidirectional : Bool }>();
+    let citationPlans = List.empty<XyzEdgePlan>();
+    let seenTargets = Set.empty<NodeId>();
+    for (cit in input.citations.values()) {
+      let t = switch (cit.target.nodeType) {
+        case (null) { return #malformed("A citation target needs its nodeType.") };
+        case (?t) { t };
+      };
+      let targetType = switch (xyzNodeTypeOf(cit.target.ref)) {
+        case (null) { addBlock("missingTarget", "The cited node does not exist: " # cit.target.ref); "" };
+        case (?actual) { actual };
+      };
+      if (targetType != "") {
+        if (targetType != t) {
+          addBlock("targetTypeMismatch", "The cited node is a " # targetType # ", not a " # t # ".");
+        } else if (cit.edgeLabel.size() == 0 or cit.edgeLabel.size() > 100) {
+          return #malformed("A citation needs a label (1-100 chars).");
+        } else if (seenTargets.contains(cit.target.ref)) {
+          addBlock("duplicateCitation", "The same node is cited twice.");
+        } else {
+          var onPath = false;
+          for (seg in chain.values()) {
+            switch (seg.existingId) {
+              case (?id) {
+                if (id == cit.target.ref) { onPath := true };
+              };
+              case (null) {};
+            };
+          };
+          if (onPath) {
+            addBlock("hierarchyEdge", "Hierarchy is implied by the parent; remove this citation.");
+          } else {
+            seenTargets.add(cit.target.ref);
+            let targetRoot = xyzRootCurationOf(cit.target.ref);
+            let sameRoot = switch (targetRoot) {
+              case (?tr) {
+                switch (root.existingId) {
+                  case (?wr) { tr == wr };
+                  case (null) { false };
+                };
+              };
+              case (null) { false };
+            };
+            if (not sameRoot) {
+              let published = switch (targetRoot) {
+                case (?tr) { curationToPublishedGraphId.containsKey(tr) };
+                case (null) { false };
+              };
+              if (not published) {
+                addBlock("unpublishedTarget", "The cited node belongs to an unpublished graph.");
+              } else {
+                citationResolved.add({ targetId = cit.target.ref; edgeLabel = cit.edgeLabel; bidirectional = cit.bidirectional });
+                let tname = switch (xyzNameOf(cit.target.ref, targetType)) {
+                  case (?n) { n };
+                  case (null) { cit.target.ref };
+                };
+                citationPlans.add({
+                  targetId = cit.target.ref;
+                  targetType;
+                  edgeLabel = cit.edgeLabel;
+                  bidirectional = cit.bidirectional;
+                  cost = 1;
+                  line = "This will create a cross-reference \"" # input.title # " → " # tname # "\" labelled \"" # cit.edgeLabel # "\".";
+                });
+              };
+            } else {
+              citationResolved.add({ targetId = cit.target.ref; edgeLabel = cit.edgeLabel; bidirectional = cit.bidirectional });
+              let tname = switch (xyzNameOf(cit.target.ref, targetType)) {
+                case (?n) { n };
+                case (null) { cit.target.ref };
+              };
+              citationPlans.add({
+                targetId = cit.target.ref;
+                targetType;
+                edgeLabel = cit.edgeLabel;
+                bidirectional = cit.bidirectional;
+                cost = 1;
+                line = "This will create a cross-reference \"" # input.title # " → " # tname # "\" labelled \"" # cit.edgeLabel # "\".";
+              });
+            };
+          };
+        };
+      };
+    };
+
+    // Cost, balance, published graph, revision.
+    var cost : Int = 50;
+    var creates : Nat = 1;
+    for (node in resolvedNew.values()) {
+      cost += node.cost;
+      creates += 1;
+    };
+    for (_ in citationResolved.values()) { cost += 1 };
+    let balance = buzzBalanceOf(writerApp);
+    let publishedGraphId = switch (root.existingId) {
+      case (?rid) { curationToPublishedGraphId.get(rid) };
+      case (null) { null };
+    };
+    let revision = switch (publishedGraphId) {
+      case (?pid) { xyzRevisionOf(pid) + 1 };
+      case (null) { 1 };
+    };
+
+    // Lines.
+    let lines = List.empty<Text>();
+    var i = 0;
+    for (seg in chain.values()) {
+      if (seg.existingId == null) {
+        let names = pathArr[i];
+        let pathText = xyzJoin(names, " › ");
+        let typeLabel = xyzTypeLabel(seg.nodeType);
+        if (i == 0) {
+          lines.add("This will create an entirely new curation named \"" # seg.name # "\".");
+        } else {
+          let prev = chain[i - 1];
+          let prevPathText = xyzJoin(pathArr[i - 1], " › ");
+          if (prev.existingId != null) {
+            lines.add(prevPathText # " already exists. This will add a new " # typeLabel # " \"" # seg.name # "\".");
+          } else {
+            lines.add("Under the new " # xyzTypeLabel(prev.nodeType) # " \"" # prev.name # "\", this will create a " # typeLabel # " \"" # seg.name # "\".");
+          };
+        };
+      };
+      i += 1;
+    };
+    // Interp line.
+    let lastIndex = chain.size() - 1;
+    let lastSeg = chain[lastIndex];
+    let lastPathText = xyzJoin(pathArr[lastIndex], " › ");
+    if (lastSeg.existingId != null) {
+      lines.add(lastPathText # " already exists. This will add a new interpretation \"" # input.title # "\".");
+    } else {
+      lines.add("Under the new law token \"" # lastSeg.name # "\", this will create the interpretation \"" # input.title # "\".");
+    };
+    switch (publishedGraphId) {
+      case (?_) {
+        lines.add("This will extend the published graph \"" # root.name # "\" (revision " # (revision - 1).toText() # " → " # revision.toText() # ").");
+      };
+      case (null) {};
+    };
+    for (edge in citationPlans.values()) { lines.add(edge.line) };
+    if (pathCreators.size() > 0 and blockedReason == null) {
+      let names = pathCreators.map(func(c : XyzPathCreator) : Text { xyzNameOrPrincipal(c.appPrincipal) });
+      lines.add("You and " # xyzJoin(names, ", ") # " follow each other; you may extend this path.");
+    };
+
+    // Node plans (chain + interp).
+    let nodePlans = List.empty<XyzNodePlan>();
+    i := 0;
+    for (seg in chain.values()) {
+      let names = pathArr[i];
+      let pathText = xyzJoin(names, " › ");
+      let nodeCost = if (seg.existingId == null) {
+        switch (seg.nodeType) {
+          case ("curation") { 10 };
+          case ("swarm") { 20 };
+          case ("location") { 30 };
+          case ("lawEntity") { 40 };
+          case (_) { 0 };
+        };
+      } else { 0 };
+      nodePlans.add({
+        ref = switch (seg.newRef) { case (?r) { r }; case (null) { switch (seg.existingId) { case (?id) { id }; case (null) { "" } } } };
+        nodeType = seg.nodeType;
+        name = seg.name;
+        parentId = if (i == 0) { null } else { ?idArr[i - 1] };
+        path = names;
+        pathText;
+        owner = if (i == 0) { null } else {
+          switch (xyzNodeTypeOf(idArr[i - 1])) {
+            case (?t) { xyzCreatorOf(idArr[i - 1], t) };
+            case (null) { null };
+          };
+        };
+        cost = nodeCost;
+        line = "";
+      });
+      i += 1;
+    };
+    nodePlans.add({
+      ref = "interp";
+      nodeType = "interpEntity";
+      name = input.title;
+      parentId = parentLawId;
+      path = interpPath;
+      pathText = xyzJoin(interpPath, " › ");
+      owner = switch (parentLawId) {
+        case (?p) { switch (xyzNodeTypeOf(p)) { case (?t) { xyzCreatorOf(p, t) }; case (null) { null } } };
+        case (null) { null };
+      };
+      cost = 50;
+      line = "";
+    });
+
+    // Conflicts lines.
+    let conflictArr = conflicts.toArray();
+    for (c in conflictArr.values()) { lines.add(c.line) };
+
+    // Digest: canonical, stable across preview and commit (no generated ids).
+    let digestLines = List.empty<Text>();
+    digestLines.add("writer|" # writerApp.toText());
+    digestLines.add("api|" # input.apiVersion.toText());
+    digestLines.add("title|" # input.title);
+    digestLines.add("content|" # input.content);
+    digestLines.add("root|" # root.name);
+    let digestPid = switch (publishedGraphId) { case (?p) { p }; case (null) { "-" } };
+    digestLines.add("pid|" # digestPid);
+    digestLines.add("revision|" # revision.toText());
+    digestLines.add("cost|" # cost.toText());
+    for (seg in chain.values()) {
+      let existing = switch (seg.existingId) {
+        case (?id) { "id:" # id };
+        case (null) {
+          let refText = switch (seg.newRef) { case (?r) { r }; case (null) { "" } };
+          "new:" # refText;
+        };
+      };
+      let attrs = List.empty<Text>();
+      for ((k, vs) in seg.attributes.values()) {
+        attrs.add(k # "=" # xyzJoin(vs.sort(), ","));
+      };
+      let srcs = List.empty<Text>();
+      for (s in seg.sources.values()) { srcs.add(s.name # "|" # s.url) };
+      digestLines.add("seg|" # seg.nodeType # "|" # seg.name # "|" # existing # "|" # xyzJoin(attrs.toArray().sort(), ";") # "|" # xyzJoin(srcs.toArray().sort(), ";") # "|" # xyzJoin(seg.tags.sort(), ","));
+    };
+    digestLines.add("interp|" # input.title);
+    for (edge in citationResolved.values()) {
+      let directionFlag = if (edge.bidirectional) { "1" } else { "0" };
+      digestLines.add("cit|" # edge.targetId # "|" # edge.edgeLabel # "|" # directionFlag);
+    };
+    let creatorLines = List.empty<Text>();
+    for (c in pathCreators.values()) { creatorLines.add(c.appPrincipal.toText()) };
+    for (line in creatorLines.toArray().sort().values()) { digestLines.add("creator|" # line) };
+    for (c in conflictArr.values()) {
+      let severityText = switch (c.severity) { case (#block) { "block" }; case (#warn) { "warn" } };
+      digestLines.add("conflict|" # c.kind # "|" # severityText);
+    };
+    let digest = xyzKeccakHex(xyzJoin(digestLines.toArray(), "\n"));
+
+    let plan : XyzPlan = {
+      rootCuration = root.name;
+      publishedGraphId;
+      revision;
+      creates;
+      cost;
+      costText = formatBuzz(cost);
+      balance;
+      balanceText = formatBuzz(balance);
+      nodes = nodePlans.toArray();
+      edges = citationPlans.toArray();
+      conflicts = conflictArr;
+      pathCreators;
+      lines = lines.toArray();
+      digest;
+    };
+    let resolved : XyzResolved = {
+      newNodes = resolvedNew.toArray();
+      interp = interpResolved;
+      citations = citationResolved.toArray();
+      rootCurationId = root.existingId;
+      rootCurationName = root.name;
+      publishedGraphId;
+      revision;
+      pathCreators;
+      cost;
+    };
+    #ok({ plan; resolved; blockedReason });
+  };
+
+  // ── xyz Write Channel Applier ───────────────────────────────────────────────
+
+  func applyXyzWrite(
+    writerApp : Principal,
+    writerXyz : Principal,
+    writeId : Text,
+    input : XyzPostInput,
+    resolved : XyzResolved,
+  ) : XyzCommitOk {
+    let now = Time.now();
+
+    for (node in resolved.newNodes.values()) {
+      switch (node.nodeType) {
+        case ("curation") {
+          curationMap.add(node.nodeId, {
+            id = node.nodeId;
+            name = node.name;
+            creator = writerApp;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = now };
+          });
+        };
+        case ("swarm") {
+          swarmMap.add(node.nodeId, {
+            id = node.nodeId;
+            name = node.name;
+            tags = node.tags;
+            parentCurationId = switch (node.parentId) { case (?p) { p }; case (null) { "" } };
+            creator = writerApp;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = now };
+            forkSource = null;
+            forkPrincipal = null;
+          });
+        };
+        case ("location") {
+          locationMap.add(node.nodeId, {
+            id = node.nodeId;
+            title = node.name;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            parentSwarmId = switch (node.parentId) { case (?p) { p }; case (null) { "" } };
+            creator = writerApp;
+            timestamps = { createdAt = now };
+          });
+        };
+        case ("lawEntity") {
+          lawTokenMap.add(node.nodeId, {
+            id = node.nodeId;
+            tokenLabel = node.name;
+            parentLocationId = switch (node.parentId) { case (?p) { p }; case (null) { "" } };
+            creator = writerApp;
+            customAttributes = attributesToWeighted(node.attributes);
+            sources = node.sources;
+            timestamps = { createdAt = now };
+          });
+        };
+        case (_) {};
+      };
+    };
+
+    let interp = resolved.interp;
+    interpretationTokenMap.add(interp.nodeId, {
+      id = interp.nodeId;
+      title = interp.name;
+      contentVersions = [{ content = input.content; contributor = writerApp; timestamp = now }];
+      parentLawTokenId = switch (interp.parentId) { case (?p) { p }; case (null) { "" } };
+      customAttributes = [];
+      sources = [];
+      creator = writerApp;
+      timestamps = { createdAt = now };
+    });
+
+    for (cit in resolved.citations.values()) {
+      let edge : SourceGraphEdge = {
+        source = interp.nodeId;
+        target = cit.targetId;
+        weightedLabels = [{ value = cit.edgeLabel; weight = 1 }];
+        directionality = if (cit.bidirectional) { #bidirectional } else { #unidirectional };
+      };
+      let existing = switch (sourceEdges.get(interp.nodeId)) {
+        case (?list) { list };
+        case (null) { List.empty<SourceGraphEdge>() };
+      };
+      existing.add(edge);
+      sourceEdges.add(interp.nodeId, existing);
+    };
+
+    let newCurations = resolved.newNodes.filter(func(n : XyzResolvedNode) : Bool {
+      n.nodeType == "curation"
+    }).size();
+    let hierarchyEdges = resolved.newNodes.size() + 1 - newCurations;
+    var attributeCount : Nat = 0;
+    var sourcesCount : Nat = 0;
+    for (node in resolved.newNodes.values()) {
+      attributeCount += countRawAttributes(node.attributes);
+      sourcesCount += node.sources.size();
+    };
+    let totalNodes = resolved.newNodes.size() + 1;
+
+    let pid = switch (resolved.publishedGraphId) {
+      case (?existingPid) { existingPid };
+      case (null) {
+        let base = generatePublishedSourceGraphId(writerApp);
+        if (publishedSourceGraphs.containsKey(base)) { base # "-" # writeId } else { base };
+      };
+    };
+    let creatorName = xyzNameOrPrincipal(writerApp);
+
+    switch (resolved.publishedGraphId) {
+      case (?existingPid) {
+        switch (publishedSourceGraphs.get(existingPid)) {
+          case (?meta) {
+            let entry : ExtensionEntry = {
+              extendedAt = now;
+              extendedBy = writerApp;
+              extendedByName = creatorName;
+              addedNodes = totalNodes;
+              addedEdges = resolved.citations.size();
+              addedHierarchyEdges = hierarchyEdges;
+              addedAttributes = attributeCount;
+              addedSources = ?sourcesCount;
+            };
+            let authors = if (meta.authors.find(func(a : Text) : Bool { a == creatorName }) == null) {
+              Array.tabulate(meta.authors.size() + 1, func(i : Nat) : Text {
+                if (i < meta.authors.size()) { meta.authors[i] } else { creatorName }
+              })
+            } else { meta.authors };
+            let updated : PublishedSourceGraphMeta = {
+              meta with
+              nodeCount = meta.nodeCount + totalNodes;
+              edgeCount = meta.edgeCount + resolved.citations.size() + hierarchyEdges;
+              hierarchyEdgeCount = meta.hierarchyEdgeCount + hierarchyEdges;
+              attributeCount = meta.attributeCount + attributeCount;
+              sourcesCount = ?(meta.sourcesCount.get(0) + sourcesCount);
+              extensionLog = meta.extensionLog.concat([entry]);
+              authors;
+            };
+            publishedSourceGraphs.add(existingPid, updated);
+            ignore bumpPublishedGraphRevision(existingPid);
+            let metrics = switch (publishedGraphBuzzMetrics.get(existingPid)) {
+              case (?m) { m };
+              case (null) { { cumulativeBuzzSpent = 0; extensionCount = 0 } };
+            };
+            publishedGraphBuzzMetrics.add(existingPid, {
+              cumulativeBuzzSpent = metrics.cumulativeBuzzSpent + resolved.cost;
+              extensionCount = metrics.extensionCount + 1;
+            });
+          };
+          case (null) {};
+        };
+      };
+      case (null) {
+        let meta : PublishedSourceGraphMeta = {
+          id = pid;
+          name = resolved.rootCurationName;
+          creator = writerApp;
+          creatorName;
+          publishedAt = now;
+          nodeCount = totalNodes;
+          edgeCount = resolved.citations.size() + hierarchyEdges;
+          hierarchyEdgeCount = hierarchyEdges;
+          attributeCount;
+          sourcesCount = ?sourcesCount;
+          extensionLog = [];
+          artworkDataUrl = null;
+          terrainParams = null;
+          authors = [creatorName];
+        };
+        publishedSourceGraphs.add(pid, meta);
+        ignore bumpPublishedGraphRevision(pid);
+        publishedGraphBuzzMetrics.add(pid, { cumulativeBuzzSpent = resolved.cost; extensionCount = 0 });
+      };
+    };
+
+    let rootId = switch (resolved.rootCurationId) {
+      case (?id) { id };
+      case (null) {
+        switch (resolved.newNodes.find(func(n : XyzResolvedNode) : Bool { n.nodeType == "curation" })) {
+          case (?n) { n.nodeId };
+          case (null) { "" };
+        };
+      };
+    };
+    if (rootId != "") { curationToPublishedGraphId.add(rootId, pid) };
+
+    let contributions = List.empty<ContributionEntry>();
+    var contribIndex = 0;
+    for (node in resolved.newNodes.values()) {
+      contributions.add({
+        id = "x:" # writeId # ":" # contribIndex.toText();
+        nodeId = node.nodeId;
+        payer = writerApp;
+        buzzAmount = node.cost;
+        description = "Created " # xyzTypeLabel(node.nodeType) # " '" # node.name # "'";
+      });
+      contribIndex += 1;
+    };
+    contributions.add({
+      id = "x:" # writeId # ":" # contribIndex.toText();
+      nodeId = interp.nodeId;
+      payer = writerApp;
+      buzzAmount = 50;
+      description = "Created interpretation '" # interp.name # "'";
+    });
+    let existingContribs = switch (graphContributionList.get(pid)) {
+      case (?list) { list };
+      case (null) { [] };
+    };
+    graphContributionList.add(pid, existingContribs.concat(contributions.toArray()));
+
+    let existingNodeContribs = switch (publishedNodeContributions.get(pid)) {
+      case (?m) { m };
+      case (null) { Map.empty<NodeId, NodeContribution>() };
+    };
+    for (node in resolved.newNodes.values()) {
+      existingNodeContribs.add(node.nodeId, {
+        payers = List.singleton<(Principal, Int)>((writerApp, node.cost));
+      });
+    };
+    existingNodeContribs.add(interp.nodeId, {
+      payers = List.singleton<(Principal, Int)>((writerApp, 50));
+    });
+    publishedNodeContributions.add(pid, existingNodeContribs);
+
+    updateBuzzScore(writerApp, -resolved.cost);
+    let txs = switch (buzzTransactions.get(writerApp)) {
+      case (?list) { list };
+      case (null) { List.empty<BuzzTransaction>() };
+    };
+    txs.add({ amount = resolved.cost; timestamp = now; publishedGraphId = pid });
+    buzzTransactions.add(writerApp, txs);
+
+    xyzPushOrigin(pid, {
+      writerApp;
+      writerXyz;
+      writeId;
+      at = now;
+      nodes = totalNodes;
+      cost = resolved.cost;
+    });
+
+    let nodeResults = resolved.newNodes.map(
+      func(n : XyzResolvedNode) : { ref : Text; nodeId : NodeId; path : [Text] } {
+        { ref = n.ref; nodeId = n.nodeId; path = n.path };
+      }
+    );
+
+    {
+      publishedGraphId = pid;
+      revision = xyzRevisionOf(pid);
+      cost = resolved.cost;
+      costText = formatBuzz(resolved.cost);
+      interpNodeId = interp.nodeId;
+      path = interp.path;
+      nodes = nodeResults.concat([{ ref = "interp"; nodeId = interp.nodeId; path = interp.path }]);
+    };
+  };
+
+  // ── xyz Write Channel Methods ───────────────────────────────────────────────
+
+  public shared ({ caller }) func previewXyzWrite(
+    writerXyz : Principal,
+    writeId : Text,
+    mutualFollowXyz : [Principal],
+    input : XyzPostInput,
+  ) : async XyzPreviewResult {
+    requireXyzBackend(caller);
+    let writerApp = switch (xyzToApp.get(writerXyz)) {
+      case (?app) { app };
+      case (null) {
+        return #notLinked({ writerXyz; message = "This xyz account is not linked to a hyvmind.app account." });
+      };
+    };
+    let now = Time.now();
+    switch (lastXyzPreviewAt.get(writerApp)) {
+      case (?last) {
+        if (now - last < XYZ_PREVIEW_COOLDOWN) {
+          let remaining = (XYZ_PREVIEW_COOLDOWN - (now - last)) / 1_000_000;
+          return #throttled({ retryAfterMs = Int.abs(remaining).toNat() });
+        };
+      };
+      case (null) {};
+    };
+    lastXyzPreviewAt.add(writerApp, now);
+
+    let attested = xyzResolveAttestation(mutualFollowXyz);
+    let outcome = switch (planXyzWrite(writerApp, writeId, input, attested)) {
+      case (#malformed(m)) { return #err({ kind = #malformed; message = m }) };
+      case (#ok(o)) { o };
+    };
+    let plan = outcome.plan;
+    switch (outcome.blockedReason) {
+      case (?reason) {
+        return #blocked({
+          message = "Cannot write: " # reason;
+          plan;
+          pathCreators = plan.pathCreators;
+          reason;
+        });
+      };
+      case (null) {};
+    };
+    if (plan.cost > plan.balance) {
+      return #insufficient({
+        message = "Insufficient BUZZ. This write costs " # plan.costText # " BUZZ; the linked account has " # plan.balanceText # ".";
+        plan;
+        topUpPath = XYZ_TOP_UP_PATH;
+      });
+    };
+    #ready({ message = "This will cost you " # plan.costText # " BUZZ. Proceed?"; plan });
+  };
+
+  public shared ({ caller }) func commitXyzWrite(
+    writerXyz : Principal,
+    writeId : Text,
+    expectedDigest : Text,
+    mutualFollowXyz : [Principal],
+    input : XyzPostInput,
+  ) : async XyzCommitResult {
+    requireXyzBackend(caller);
+    let key = xyzWriteKey(writerXyz, writeId);
+    switch (xyzWrites.get(key)) {
+      case (?record) {
+        if (record.digest == expectedDigest) { return #ok(record.result) };
+        return #conflict({ message = "This writeId was already used with a different payload." });
+      };
+      case (null) {};
+    };
+    let writerApp = switch (xyzToApp.get(writerXyz)) {
+      case (?app) { app };
+      case (null) {
+        return #notLinked({ writerXyz; message = "This xyz account is not linked to a hyvmind.app account." });
+      };
+    };
+    let attested = xyzResolveAttestation(mutualFollowXyz);
+    let outcome = switch (planXyzWrite(writerApp, writeId, input, attested)) {
+      case (#malformed(m)) { return #err({ kind = #malformed; message = m }) };
+      case (#ok(o)) { o };
+    };
+    let plan = outcome.plan;
+    switch (outcome.blockedReason) {
+      case (?reason) {
+        return #blocked({
+          message = "Cannot write: " # reason;
+          plan;
+          pathCreators = plan.pathCreators;
+          reason;
+        });
+      };
+      case (null) {};
+    };
+    if (plan.cost > plan.balance) {
+      return #insufficient({
+        message = "Insufficient BUZZ. This write costs " # plan.costText # " BUZZ; the linked account has " # plan.balanceText # ".";
+        plan;
+        topUpPath = XYZ_TOP_UP_PATH;
+      });
+    };
+    if (plan.digest != expectedDigest) {
+      return #stale({ message = "The graph changed; review the updated plan."; plan });
+    };
+    let result = applyXyzWrite(writerApp, writerXyz, writeId, input, outcome.resolved);
+    xyzWrites.add(key, {
+      owner = writerApp;
+      xyz = writerXyz;
+      writeId;
+      digest = plan.digest;
+      cost = plan.cost;
+      result;
+      createdAt = Time.now();
+    });
+    #ok(result);
+  };
+
+  public query ({ caller }) func getXyzWrite(
+    xyzPrincipal : Principal,
+    writeId : Text,
+  ) : async ?XyzCommitOk {
+    if (not isXyzBackend(caller)) { return null };
+    switch (xyzWrites.get(xyzWriteKey(xyzPrincipal, writeId))) {
+      case (?record) {
+        if (Principal.equal(record.xyz, xyzPrincipal)) { ?record.result } else { null };
+      };
+      case (null) { null };
+    };
+  };
+
+  public query ({ caller }) func getXyzBuzzBalance(
+    writerXyz : Principal,
+  ) : async ?{ units : Int; text : Text } {
+    if (not isXyzBackend(caller)) { return null };
+    switch (xyzToApp.get(writerXyz)) {
+      case (null) { null };
+      case (?app) {
+        let units = buzzBalanceOf(app);
+        ?{ units; text = formatBuzz(units) };
+      };
+    };
   };
 
   // ── Vault Push Methods ─────────────────────────────────────────────────────
@@ -3736,6 +5512,7 @@ actor {
               authors = newAuthors;
             };
             publishedSourceGraphs.add(pid, updatedMeta);
+            ignore bumpPublishedGraphRevision(pid);
             let existingMetrics = switch (publishedGraphBuzzMetrics.get(pid)) {
               case (?m) { m };
               case (null) { { cumulativeBuzzSpent = 0; extensionCount = 0 } };
@@ -3773,6 +5550,7 @@ actor {
           authors = [creatorName];
         };
         publishedSourceGraphs.add(newPid, newMeta);
+        ignore bumpPublishedGraphRevision(newPid);
         publishedGraphBuzzMetrics.add(newPid, { cumulativeBuzzSpent = publishCost; extensionCount = 0 });
         newPid
       };
@@ -4059,6 +5837,7 @@ actor {
         if (meta.creator != caller and not AccessControl.isAdmin(accessControlState, caller)) { return false };
         let updated : PublishedSourceGraphMeta = { meta with artworkDataUrl = ?dataUrl };
         publishedSourceGraphs.add(id, updated);
+        ignore bumpPublishedGraphRevision(id);
         true;
       };
     };
@@ -4072,6 +5851,7 @@ actor {
         if (meta.creator != caller and not AccessControl.isAdmin(accessControlState, caller)) { return false };
         let updated : PublishedSourceGraphMeta = { meta with terrainParams = ?paramsJson };
         publishedSourceGraphs.add(id, updated);
+        ignore bumpPublishedGraphRevision(id);
         true;
       };
     };
@@ -4748,6 +6528,22 @@ actor {
         ("Access-Control-Allow-Origin", "*"),
         ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
         ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+        ("Access-Control-Expose-Headers", "x-hyvmind-revision"),
+      ];
+      body = body.encodeUtf8();
+    };
+  };
+
+  func httpOkWithRevision(body : Text, revision : Nat) : HttpResponse {
+    {
+      status_code = 200;
+      headers = [
+        ("Content-Type", "application/json"),
+        ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+        ("Access-Control-Expose-Headers", "x-hyvmind-revision"),
+        ("x-hyvmind-revision", revision.toText()),
       ];
       body = body.encodeUtf8();
     };
@@ -4863,6 +6659,16 @@ actor {
     ]);
   };
 
+  // Increments and returns the next revision for a published graph.
+  func bumpPublishedGraphRevision(id : Text) : Nat {
+    let next = switch (publishedGraphRevisions.get(id)) {
+      case (null) { 1 };
+      case (?revision) { revision + 1 };
+    };
+    publishedGraphRevisions.add(id, next);
+    next;
+  };
+
   func serializeMeta(m : PublishedSourceGraphMeta) : Text {
     let authorNames = Map.empty<Principal, Text>();
     authorNames.add(m.creator, m.creatorName);
@@ -4926,6 +6732,14 @@ actor {
       ("hierarchyEdgeCount", jsonNat(m.hierarchyEdgeCount)),
       ("attributeCount", jsonNat(m.attributeCount)),
       ("sourcesCount", jsonNat(m.sourcesCount.get(0))),
+      ("revision", jsonNat(switch (publishedGraphRevisions.get(m.id)) {
+        case (null) { 0 };
+        case (?revision) { revision };
+      })),
+      ("xyzWriteCount", jsonNat(switch (xyzWriteOrigins.get(m.id)) {
+        case (null) { 0 };
+        case (?entries) { entries.size() };
+      })),
       ("extensions", jsonArray(extEntries.toArray())),
       ("authorDetails", jsonArray(authorEntries.toArray())),
     ]);
@@ -5036,8 +6850,9 @@ actor {
           ("lawTokens", jsonArray(data.lawTokens.map<LawToken, Text>(serializeLawToken))),
           ("interpretationTokens", jsonArray(data.interpretationTokens.map<InterpretationToken, Text>(serializeInterpToken))),
           ("edges", jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge))),
+          ("revision", jsonNat(xyzRevisionOf(graphId))),
         ]);
-        httpOk(body);
+        httpOkWithRevision(body, xyzRevisionOf(graphId));
       };
     };
   };
@@ -5052,7 +6867,7 @@ actor {
         for (l in data.locations.vals()) { nodes.add(serializeLocation(l)) };
         for (lt in data.lawTokens.vals()) { nodes.add(serializeLawToken(lt)) };
         for (it in data.interpretationTokens.vals()) { nodes.add(serializeInterpToken(it)) };
-        httpOk(jsonArray(nodes.toArray()));
+        httpOkWithRevision(jsonArray(nodes.toArray()), xyzRevisionOf(graphId));
       };
     };
   };
@@ -5061,7 +6876,7 @@ actor {
     switch (lookupPublishedGraph(graphId)) {
       case (null) { httpError(404, "Graph not found") };
       case (?data) {
-        httpOk(jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge)));
+        httpOkWithRevision(jsonArray(data.edges.map<GraphEdge, Text>(serializeEdge)), xyzRevisionOf(graphId));
       };
     };
   };
@@ -5126,7 +6941,7 @@ actor {
             ("graffiti", jsonArray(gJsons)),
           ]);
         });
-        httpOk(jsonArray(jsons));
+        httpOkWithRevision(jsonArray(jsons), xyzRevisionOf(graphId));
       };
     };
   };
@@ -5758,6 +7573,7 @@ actor {
     archivedNodes := Map.empty<NodeId, ()>();
     sourceEdges := Map.empty<NodeId, List.List<SourceGraphEdge>>();
     publishedSourceGraphs := Map.empty<Text, PublishedSourceGraphMeta>();
+    publishedGraphRevisions := Map.empty<Text, Nat>();
     curationToPublishedGraphId := Map.empty<NodeId, Text>();
     chatChannels := Map.empty<Text, ChatChannel>();
     forumPosts := Map.empty<Text, ForumPost>();
@@ -5773,6 +7589,13 @@ actor {
     pendingPluginBindings := Map.empty<Principal, List.List<Principal>>();
     pluginBindings := Map.empty<Principal, Principal>();
     notesImports := Map.empty<Principal, Text>();
+    linkCodes := Map.empty<Text, LinkCode>();
+    linksByApp := Map.empty<Principal, PrincipalLink>();
+    xyzToApp := Map.empty<Principal, Principal>();
+    linkOps := Map.empty<Principal, Bool>();
+    xyzWrites := Map.empty<Text, XyzWriteRecord>();
+    xyzWriteOrigins := Map.empty<Text, [XyzOriginEntry]>();
+    lastXyzPreviewAt := Map.empty<Principal, Int>();
     trustScores := Map.empty<Principal, TrustScore>();
     buzzTransactions := Map.empty<Principal, List.List<BuzzTransaction>>();
     graphSavers := Map.empty<Text, List.List<Principal>>();
