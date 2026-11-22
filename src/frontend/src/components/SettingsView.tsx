@@ -890,8 +890,8 @@ ${SAMPLE_PROMPT}`;
               >
                 <p className="text-sm text-muted-foreground">
                   Connect your accounts so contributions made from xyz are
-                  attributed to you. xyz users can only extend your nodes if you
-                  and they follow each other.
+                  attributed to you. xyz decides who may extend which nodes;
+                  this app only checks that the structure is valid.
                 </p>
 
                 <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-5">

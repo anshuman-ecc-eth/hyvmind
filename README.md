@@ -41,7 +41,7 @@ Hyvmind is one project split across two origins. **xyz** ([`hyvmind.xyz`](https:
 ```
 src/backend/     main.mo, Migration.mo, EvmRecovery.mo, vendor/, dist/ (.wasm + .did)
 src/frontend/    React app, public/assets/{games,hyvmind,lua,voxel}, env.json, dist/
-scripts/         blog-admin.mjs, fetch-juicebox-deployments.mjs
+scripts/         blog-admin.mjs, xyz-digest-check.mjs, fetch-juicebox-deployments.mjs
 mops.toml        backend canister + toolchain pins
 caffeine.toml    workspace manifest
 icp.yaml         canisters for the local icp-cli network
@@ -73,6 +73,8 @@ cd src/frontend && pnpm build
 ```
 
 Bindings are generated from `src/backend/dist/backend.did` — **any backend signature change requires `mops build` + `pnpm bindgen`**, or the frontend silently disagrees with the canister.
+
+The xyz write channel's plan digest is the idempotency and `#stale` contract with xyz, so it is checked across deploys: `node scripts/xyz-digest-check.mjs capture` before the deploy, `compare` after, then `cleanup` (which removes the temporary backend allowlist entry it creates).
 
 `pnpm dev` does not exist at the root; run `npx vite` from `src/frontend/`. `./deploy.sh` starts a local `icp` network, creates both canisters and deploys them. On localhost, `?dev` renders the post-login shell without Internet Identity (queries stay disabled).
 
@@ -129,7 +131,7 @@ The shapes are whole-graph: one fetch returns every node, because the payload is
 
 ## Roadmap: make the knowledge layer citable from xyz
 
-`xyz` cites nodes here; linked xyz users can also publish new interpretation tokens into the graph, subject to the follow rule. Reads stay public, unauthenticated and cacheable; only writes need an identity.
+`xyz` cites nodes here; linked xyz users can also publish new interpretation tokens into the graph, and xyz applies its own social rules to who may extend what. Reads stay public, unauthenticated and cacheable; only writes need an identity.
 
 ### Goal
 
@@ -145,7 +147,7 @@ A post in xyz attaches to a node here. A linked xyz user can turn a post into an
 
 4. **Node IDs are paths, not identifiers.** Paths collide (`SARFAESI ACT, 2002` and `SARFAESI Act, 2002`); a citation pins the published snapshot and stores the display path.
 
-5. **The follow graph lives in xyz.** The app cannot read it. The app enforces linked + attestation coverage + path consistency; xyz enforces mutual follow. A compromised xyz backend can skip the follow check and still write — the same trust boundary as `confirmLink`.
+5. **The allowlisted xyz backend is the entire social fence.** The app enforces structure and charges the writer's own Buzz; it does not and cannot evaluate mutuals, vouching or governance. Anything that must hold here has to be expressible as a structural rule: path completeness, hierarchy, duplicates, citation targets, cost, idempotency. A compromised or buggy xyz backend can therefore insert any structurally valid extension into any graph. That is the same boundary as `confirmLink`, with the graph rather than a link row as the blast radius. Social policy lives in xyz.
 
 6. **The plugin binding is not a link primitive.** `storeNotesData` resolves through `getEffectiveUser`; `getNotesData` reads the raw caller. The Obsidian import works as intended and the link carries no notes or editor data.
 
@@ -161,7 +163,7 @@ A post in xyz attaches to a node here. A linked xyz user can turn a post into an
 
 - **The link is code-based and owned by this backend.** `beginLink` → `resolveLinkCode` → `confirmLink` (allowlisted xyz backend) → `revokeLink` / `revokeLinkAsXyz`. `getLinkForXyz` and `getLinkedXyzPrincipal` reconcile both directions; `isAppPrincipalLinked` is the boolean form.
 
-- **Every xyz post is one interpretation token.** `previewXyzWrite` returns cost, path, conflicts and a digest; `commitXyzWrite` is create-only, idempotent by `writeId`, and charges Buzz to the linked app account. The post must sit on a complete path to a curation, and every existing creator on that path must be linked and mutually followed (self exempt).
+- **Every xyz post is one interpretation token.** `previewXyzWrite` returns cost, path, conflicts and a digest; `commitXyzWrite` is create-only, idempotent by `writeId`, and charges Buzz to the linked app account. The post must sit on a complete path to a curation. Every existing creator on that path is reported in the plan for xyz's benefit, but is never a blocker here.
 
 - **Citations are the post's interpretation → an existing node.** One anchor in v1 (`citations[0] ?? parentLaw`); label `"cites"`; no edges between two pre-existing nodes; cross-graph targets must be published.
 
@@ -175,7 +177,7 @@ A post in xyz attaches to a node here. A linked xyz user can turn a post into an
 | --- | --- | --- |
 | 1 | app | **Read surface** — `revision` + `xyzWriteCount` in `/api/graphs`, `revision` on `/api/graphs/{id}`, `x-hyvmind-revision` on per-graph endpoints |
 | 2 | both | **Principal link** — begin/resolve/confirm/revoke, allowlist, both-direction reconciliation |
-| 3 | app | **Write channel** — post-shaped preview/commit, idempotency, permissions, citations, Buzz |
+| 3 | app | **Write channel** — post-shaped preview/commit, idempotency, structure, citations, Buzz |
 | 4 | app | **Deep links** — `?graph=&node=` and the wallet redeem link |
 
 #### Phase 1 — read surface (implemented)
@@ -188,7 +190,7 @@ Additive only: no Candid changes to existing types. Published graphs are live vi
 
 #### Phase 3 — writes from xyz (implemented)
 
-`previewXyzWrite` / `commitXyzWrite` / `getXyzWrite` / `getXyzBuzzBalance`. Post-shaped input: `title`, `content`, `parentLaw`, new `ancestors` (path only), `citations` (this interp → existing node). Create-only; no updates, no merges. A post is at most four ancestors plus one interpretation; citations are capped at 20. `writeId` is retained indefinitely for idempotent retries. `#blocked` carries every existing path creator with a `linked` flag; the app never evaluates follows.
+`previewXyzWrite` / `commitXyzWrite` / `getXyzWrite` / `getXyzBuzzBalance`. Post-shaped input: `title`, `content`, `parentLaw`, new `ancestors` (path only), `citations` (this interp → existing node). Create-only; no updates, no merges. A post is at most four ancestors plus one interpretation; citations are capped at 20. `writeId` is retained indefinitely for idempotent retries. `#blocked` carries every existing path creator with a `linked` flag; the app never evaluates follows, and has no opinion on who may extend a path (see constraint 5).
 
 #### Phase 4 — deep links (app)
 

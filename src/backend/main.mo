@@ -600,7 +600,6 @@ actor {
     rootCurationName : Text;
     publishedGraphId : ?Text;
     revision : Nat;
-    pathCreators : [XyzPathCreator];
     cost : Int;
   };
 
@@ -924,6 +923,9 @@ actor {
   let MAX_XYZ_TITLE : Nat = 200;
   let MAX_XYZ_CONTENT : Nat = 20_000;
   let MAX_XYZ_NAME : Nat = 200;
+  // Retained as a stable field until the next deploy introduces the migration
+  // chain. No longer read: social policy (mutuals, vouching, governance) lives
+  // in xyz; this backend enforces structure only.
   let MAX_XYZ_FOLLOWS : Nat = 500;
   let MAX_XYZ_ORIGINS : Nat = 100;
   let XYZ_PREVIEW_COOLDOWN : Int = 2_000_000_000;      // 2 seconds
@@ -1772,22 +1774,6 @@ actor {
     blobToHex(Blob.fromArray(k.finalize()), 0, 32);
   };
 
-  func xyzResolveAttestation(xyzPrincipals : [Principal]) : Set.Set<Principal> {
-    let out = Set.empty<Principal>();
-    var count = 0;
-    for (p in xyzPrincipals.values()) {
-      if (count >= MAX_XYZ_FOLLOWS) { return out };
-      if (not p.isAnonymous()) {
-        count += 1;
-        switch (xyzToApp.get(p)) {
-          case (?app) { out.add(app) };
-          case (null) {};
-        };
-      };
-    };
-    out;
-  };
-
   func xyzPushOrigin(publishedId : Text, entry : XyzOriginEntry) {
     let existing = switch (xyzWriteOrigins.get(publishedId)) {
       case (?list) { list };
@@ -1898,7 +1884,6 @@ actor {
     writerApp : Principal,
     writeId : Text,
     input : XyzPostInput,
-    attested : Set.Set<Principal>,
   ) : XyzPlanAttempt {
     if (input.apiVersion != 1) { return #malformed("Unsupported apiVersion") };
     if (not xyzIsValidName(input.title, MAX_XYZ_TITLE)) {
@@ -1911,6 +1896,15 @@ actor {
 
     let ancestorsByRef = Map.empty<Text, XyzPathNode>();
     for (node in input.ancestors.values()) {
+      if (node.ref.size() == 0) {
+        return #malformed("An ancestor ref cannot be empty.");
+      };
+      if (node.ref.size() > MAX_XYZ_NAME) {
+        return #malformed("The ancestor ref \"" # node.ref # "\" is too long.");
+      };
+      if (node.ref == "interp") {
+        return #malformed("The ref \"interp\" is reserved for the interpretation token.");
+      };
       if (ancestorsByRef.containsKey(node.ref)) {
         return #malformed("Duplicate ancestor ref: " # node.ref);
       };
@@ -2179,14 +2173,10 @@ actor {
         case (null) {};
       };
     };
+    // Preview information only: who created the existing nodes on this path.
+    // Never a blocker. Social policy (mutuals, vouching, governance) lives in xyz;
+    // this backend enforces structure only.
     let pathCreators = creatorMap.values().toArray();
-    for (creator in pathCreators.values()) {
-      if (not creator.linked) {
-        addBlock("unlinkedPathCreator", xyzNameOrPrincipal(creator.appPrincipal) # " has not linked a hyvmind.xyz account.");
-      } else if (not attested.contains(creator.appPrincipal)) {
-        addBlock("unattestedPathCreator", "The attestation does not cover " # xyzNameOrPrincipal(creator.appPrincipal) # ".");
-      };
-    };
 
     // Citations: this interp -> existing nodes.
     let citationResolved = List.empty<{ targetId : NodeId; edgeLabel : Text; bidirectional : Bool }>();
@@ -2330,9 +2320,9 @@ actor {
       case (null) {};
     };
     for (edge in citationPlans.values()) { lines.add(edge.line) };
-    if (pathCreators.size() > 0 and blockedReason == null) {
+    if (pathCreators.size() > 0) {
       let names = pathCreators.map(func(c : XyzPathCreator) : Text { xyzNameOrPrincipal(c.appPrincipal) });
-      lines.add("You and " # xyzJoin(names, ", ") # " follow each other; you may extend this path.");
+      lines.add("This path was created by " # xyzJoin(names, ", ") # "; xyz decides whether you may extend it.");
     };
 
     // Node plans (chain + interp).
@@ -2452,7 +2442,6 @@ actor {
       rootCurationName = root.name;
       publishedGraphId;
       revision;
-      pathCreators;
       cost;
     };
     #ok({ plan; resolved; blockedReason });
@@ -2724,9 +2713,11 @@ actor {
   public shared ({ caller }) func previewXyzWrite(
     writerXyz : Principal,
     writeId : Text,
+    // deprecated: accepted and ignored; social policy lives in xyz. Removed in a later deploy.
     mutualFollowXyz : [Principal],
     input : XyzPostInput,
   ) : async XyzPreviewResult {
+    ignore mutualFollowXyz;
     requireXyzBackend(caller);
     let writerApp = switch (xyzToApp.get(writerXyz)) {
       case (?app) { app };
@@ -2746,8 +2737,7 @@ actor {
     };
     lastXyzPreviewAt.add(writerApp, now);
 
-    let attested = xyzResolveAttestation(mutualFollowXyz);
-    let outcome = switch (planXyzWrite(writerApp, writeId, input, attested)) {
+    let outcome = switch (planXyzWrite(writerApp, writeId, input)) {
       case (#malformed(m)) { return #err({ kind = #malformed; message = m }) };
       case (#ok(o)) { o };
     };
@@ -2777,9 +2767,11 @@ actor {
     writerXyz : Principal,
     writeId : Text,
     expectedDigest : Text,
+    // deprecated: accepted and ignored; social policy lives in xyz. Removed in a later deploy.
     mutualFollowXyz : [Principal],
     input : XyzPostInput,
   ) : async XyzCommitResult {
+    ignore mutualFollowXyz;
     requireXyzBackend(caller);
     let key = xyzWriteKey(writerXyz, writeId);
     switch (xyzWrites.get(key)) {
@@ -2795,8 +2787,7 @@ actor {
         return #notLinked({ writerXyz; message = "This xyz account is not linked to a hyvmind.app account." });
       };
     };
-    let attested = xyzResolveAttestation(mutualFollowXyz);
-    let outcome = switch (planXyzWrite(writerApp, writeId, input, attested)) {
+    let outcome = switch (planXyzWrite(writerApp, writeId, input)) {
       case (#malformed(m)) { return #err({ kind = #malformed; message = m }) };
       case (#ok(o)) { o };
     };

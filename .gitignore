@@ -11,3 +11,6 @@ scripts/blogs_backup/
 
 # Blog content staging (article HTML/banner are uploaded on-chain; never committed to the repo)
 scripts/blogs/staging/
+
+# Digest-check fixture: captures live deploy state, recreated by `capture`
+scripts/xyz-digest-fixture.json
